@@ -257,6 +257,7 @@ import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.COMPILESTATIC_CLASSNODE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashMap_TYPE;
@@ -1582,19 +1583,19 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
 
-                MethodNode getter = findGetter(current, isserName, pexp.isImplicitThis());
-                getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter == null) getter = findGetter(current, getterName, pexp.isImplicitThis());
-                getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter != null
-                        // GROOVY-11319:
-                        && (!hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())
-                        // GROOVY-11369:
-                        || (!isThisExpression(objectExpression) && !isSuperExpression(objectExpression) && isOrImplements(objectExpressionType, MAP_TYPE)))) {
-                    getter = null;
+                MethodNode getter = null;
+                if (!isMapProperty(pexp)) { // GROOVY-11369: map entry before getter
+                    getter = findGetter(current, isserName, pexp.isImplicitThis());
+                    getter = allowStaticAccessToMember(getter, staticOnly);
+                    if (getter == null) {
+                        getter = findGetter(current, getterName, pexp.isImplicitThis());
+                        getter = allowStaticAccessToMember(getter, staticOnly);
+                    }
+                    if (getter != null && !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())) {
+                        getter = null; // GROOVY-11319
+                    }
+                    if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
                 }
-
-                if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
 
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
@@ -1823,6 +1824,15 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         }
         return null;
+    }
+
+    private boolean isMapProperty(final PropertyExpression pexp) {
+        final Expression objectExpression = pexp.getObjectExpression();
+        if ((isThisExpression(objectExpression) || isSuperExpression(objectExpression))
+                && Arrays.asList(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)) {
+            return false;
+        }
+        return isOrImplements(getType(objectExpression), MAP_TYPE);
     }
 
     /**
