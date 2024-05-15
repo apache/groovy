@@ -1583,6 +1583,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
 
+                PropertyNode property = current.getProperty(propertyName);
+                property = allowStaticAccessToMember(property, staticOnly);
+
                 MethodNode getter = null;
                 if (!isMapProperty(pexp)) { // GROOVY-11369: map entry before getter
                     getter = findGetter(current, isserName, pexp.isImplicitThis());
@@ -1594,11 +1597,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (getter != null && !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())) {
                         getter = null; // GROOVY-11319
                     }
-                    if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
+                    if (readMode && getter != null && visitor != null) {
+                        visitor.visitMethod(getter);
+                    }
+                } else if (readMode) { // GROOVY-5001, GROOVY-5491, GROOVY-8555
+                    if (property != null) { property = null; field = null; }
                 }
 
-                PropertyNode property = current.getProperty(propertyName);
-                property = allowStaticAccessToMember(property, staticOnly);
                 // prefer explicit getter or setter over property if receiver is not 'this'
                 if (property == null || !enclosingTypes.contains(receiverType)) {
                     if (readMode) {
@@ -1622,9 +1627,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                                     visitor.visitField(virtual);
                                 }
                             }
-                            SetterInfo info = new SetterInfo(current, setterName, setters);
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression != null) {
+                                SetterInfo info = new SetterInfo(current, setterName, setters);
                                 putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
                             }
                             String delegationData = receiver.getData();
@@ -1752,7 +1757,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return Modifier.isProtected(modifiers) && accessor.isDerivedFrom(receiver);
     }
 
-    private MethodNode findGetter(final ClassNode current, String name, final boolean searchOuterClasses) {
+    private static MethodNode findGetter(final ClassNode current, String name, final boolean searchOuterClasses) {
         MethodNode getterMethod = current.getGetterMethod(name);
         if (getterMethod == null && searchOuterClasses && current.getOuterClass() != null) {
             return findGetter(current.getOuterClass(), name, true);
@@ -1828,7 +1833,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private boolean isMapProperty(final PropertyExpression pexp) {
         final Expression objectExpression = pexp.getObjectExpression();
-        if ((isThisExpression(objectExpression) || isSuperExpression(objectExpression))
+        if (isThisExpression(objectExpression)
                 && Arrays.asList(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)) {
             return false;
         }

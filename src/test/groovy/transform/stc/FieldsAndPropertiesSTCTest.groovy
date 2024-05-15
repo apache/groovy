@@ -716,7 +716,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         for (mod in ['def', 'public', 'protected', '@groovy.transform.PackageScope', 'private']) {
             assertScript """
                 class C implements Map<String,String> {
-                    @Delegate Map<String,String> impl = [:].withDefault{'entry'}
+                    @Delegate Map<String,String> impl = [:].withDefault{ 'entry' }
                     $mod getFoo() { 'getter' }
                     void test() {
                         @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -756,7 +756,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         """
     }
 
-    // GROOVY-5001, GROOVY-5491, GROOVY-6144
+    // GROOVY-5001, GROOVY-5491, GROOVY-6144, GROOVY-8555
     void testMapPropertyAccess7() {
         String types = '''
             class A { }
@@ -770,23 +770,55 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             map.put('a', new A())
             assert map.get('a') != null
             assert map.get('b') == null
-            A a = map.a
-            B b = map.b
+            def a = map.a
+            def b = map.b
+            assert a  instanceof A
+            assert b !instanceof B : 'not yet'
             a = map['a']
-          //b = map['b']
-            assert a instanceof A
-          //assert b instanceof B
+            b = map['b']
+            assert a  instanceof A
+            assert b !instanceof B : 'not yet'
         '''
         assertScript types + '''
             def test(C map) {
-                A a = map.a
-                B b = map.b
+                def a = map.a
+                def b = map.b
+                assert a  instanceof A
+                assert b !instanceof B : 'not yet'
                 a = map['a']
-              //b = map['b']
-                assert a instanceof A
-              //assert b instanceof B
+                b = map['b']
+                assert a  instanceof A
+                assert b !instanceof B : 'not yet'
             }
             test(new C().tap{ put('a', new A()) })
+        '''
+        assertScript types + '''
+            C map = new C()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE).name == 'A'
+            })
+            def b = map.b // entry
+            assert b == null
+            map.b = null // setter
+            assert map.getB() == null
+            assert !map.containsKey('b')
+        '''
+        assertScript types + '''
+            class D extends C {
+                void test() {
+                    //this.a fails hard for SC
+                    //typeof(this.b) is A for STC and B for SC
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE).name == 'A'
+                    })
+                    def b = super.b
+                    assert b instanceof A
+                }
+            }
+            def map = new D()
+            map.put('a', new A())
+            map.put('b', new A())
+            map.test()
         '''
     }
 
