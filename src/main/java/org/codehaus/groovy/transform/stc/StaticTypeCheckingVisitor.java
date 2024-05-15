@@ -1568,6 +1568,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
 
+                PropertyNode property = current.getProperty(propertyName);
+                property = allowStaticAccessToMember(property, staticOnly);
+
                 MethodNode getter = null;
                 if (!isMapProperty(pexp)) { // GROOVY-11369: map entry before getter
                     getter = findGetter(current, getterName, pexp.isImplicitThis());
@@ -1576,11 +1579,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         getter = findGetter(current, isserName, pexp.isImplicitThis());
                         getter = allowStaticAccessToMember(getter, staticOnly);
                     }
-                    if (readMode && getter != null && visitor != null) visitor.visitMethod(getter);
+                    if (readMode && getter != null && visitor != null) {
+                        visitor.visitMethod(getter);
+                    }
+                } else if (readMode) { // GROOVY-5001, GROOVY-5491, GROOVY-8555
+                    if (property != null) { property = null; field = null; }
                 }
 
-                PropertyNode property = current.getProperty(propertyName);
-                property = allowStaticAccessToMember(property, staticOnly);
                 // prefer explicit getter or setter over property if receiver is not 'this'
                 if (property == null || !enclosingTypes.contains(receiverType)) {
                     if (readMode) {
@@ -1791,8 +1796,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     private boolean isMapProperty(final PropertyExpression pexp) {
         final Expression objectExpression = pexp.getObjectExpression();
-        if ((isThisExpression(objectExpression) || isSuperExpression(objectExpression))
-                && Arrays.asList(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)) {
+        if (isSuperExpression(objectExpression) || (isThisExpression(objectExpression)
+                && Arrays.asList(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE))) {
             return false;
         }
         return isOrImplements(getType(objectExpression), MAP_TYPE);
