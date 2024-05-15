@@ -1633,7 +1633,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
 
-            if (readMode && (isThisExpression(objectExpression) || isSuperExpression(objectExpression) || !isOrImplements(objectExpressionType, MAP_TYPE))) { // GROOVY-11370, GROOVY-11372
+            if (readMode && !isMapProperty(pexp)) { // GROOVY-11369, GROOVY-11370, GROOVY-11372
                 // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be defined by an extension
                 for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
                     Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);

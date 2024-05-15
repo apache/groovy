@@ -818,14 +818,20 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         assertScript types + '''
             class D extends C {
                 void test() {
-                    def x = this.a
-                    assert x instanceof A
+                    def a = this.a
+                    assert a instanceof A
                     //typeof(this.b) is A for STC and B for SC
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
                         assert node.getNodeMetaData(INFERRED_TYPE).name == 'B'
                     })
-                    def z = super.b
-                    assert z instanceof B
+                    def b = super.b
+                    assert b instanceof B
+                    //typeof(this.metaClass) is A for STC and MetaClass for SC
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == METACLASS_TYPE
+                    })
+                    def c = super.metaClass
+                    assert c instanceof MetaClass
                 }
             }
             def map = new D()
