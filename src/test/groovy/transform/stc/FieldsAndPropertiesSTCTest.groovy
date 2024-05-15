@@ -729,6 +729,25 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 new C().test()
             """
         }
+        assertScript '''
+            class C implements Map<String,String> {
+                @Delegate Map<String,String> impl = [:].withDefault{ 'entry' }
+            }
+            class D extends C {
+                void test() {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+                    })
+                    def one = this.metaClass; assert one == 'entry'
+
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+                    })
+                    def two = super.metaClass; assert two == 'entry'
+                }
+            }
+            new D().test()
+        '''
     }
 
     // GROOVY-8074
