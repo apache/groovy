@@ -23,14 +23,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.NullObject;
-import org.codehaus.groovy.runtime.ResourceGroovyMethods;
-import org.codehaus.groovy.runtime.StringGroovyMethods;
+import org.codehaus.groovy.runtime.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Class providing various type conversions, coercions and boxing/unboxing operations.
@@ -248,25 +242,35 @@ public class DefaultTypeTransformation {
             return new LinkedHashSet((Collection) object);
         }
 
-        if (object.getClass().isArray()) {
-            Collection answer;
+        Supplier<Collection> newCollection = () -> {
             if (type.isAssignableFrom(ArrayList.class) && Modifier.isAbstract(type.getModifiers())) {
-                answer = new ArrayList();
+                return new ArrayList();
             } else if (type.isAssignableFrom(LinkedHashSet.class) && Modifier.isAbstract(type.getModifiers())) {
-                answer = new LinkedHashSet();
+                return new LinkedHashSet();
             } else {
                 try {
-                    answer = (Collection) type.getDeclaredConstructor().newInstance();
+                    return (Collection) type.getDeclaredConstructor().newInstance();
                 } catch (Exception e) {
                     throw new GroovyCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
                 }
             }
+        };
 
+        if (object.getClass().isArray()) {
+            Collection answer = newCollection.get();
             // we cannot just wrap in a List as we support primitive type arrays
             int length = Array.getLength(object);
             for (int i = 0; i < length; i += 1) {
                 answer.add(Array.get(object, i));
             }
+            return answer;
+        }
+
+        if (object instanceof Iterable // GROOVY-11378
+              && !(object instanceof Collection)) { // GROOVY-7867
+            Collection answer = newCollection.get();
+            Iterator iterator = ((Iterable) object).iterator();
+            while (iterator.hasNext()) answer.add(iterator.next());
             return answer;
         }
 
@@ -442,22 +446,24 @@ public class DefaultTypeTransformation {
             return map.entrySet();
         } else if (value.getClass().isArray()) {
             return arrayAsCollection(value);
-        } else if (value instanceof MethodClosure) {
-            MethodClosure method = (MethodClosure) value;
-            IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());
-            method.call(adapter);
-            return adapter.asList();
         } else if (value instanceof String || value instanceof GString) {
             return StringGroovyMethods.toList((CharSequence) value);
+        } else if (value instanceof Iterable) { // GROOVY-10378
+            return DefaultGroovyMethods.toList((Iterable<?>) value);
+        } else if (value instanceof Class && ((Class) value).isEnum()) {
+            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
+            return Arrays.asList(values);
         } else if (value instanceof File) {
             try {
                 return ResourceGroovyMethods.readLines((File) value);
             } catch (IOException e) {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
-        } else if (value instanceof Class && ((Class) value).isEnum()) {
-            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
-            return Arrays.asList(values);
+        } else if (value instanceof MethodClosure) {
+            MethodClosure method = (MethodClosure) value;
+            IteratorClosureAdapter<?> adapter = new IteratorClosureAdapter<>(method.getDelegate());
+            method.call(adapter);
+            return adapter.asList();
         } else {
             // let's assume it's a collection of 1
             return Collections.singletonList(value);
