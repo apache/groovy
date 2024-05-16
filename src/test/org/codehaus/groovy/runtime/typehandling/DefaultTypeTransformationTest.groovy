@@ -119,8 +119,33 @@ final class DefaultTypeTransformationTest {
         assert result[1] == 1
     }
 
-    @Test // GROOVY-10223
+    @Test // GROOVY-11378
     void testCastToType5() {
+        def input = new org.codehaus.groovy.util.ArrayIterable<Integer>(0,1), result
+
+        result = DefaultTypeTransformation.castToType(input, Number[])
+        assert result instanceof Number[]
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(input, int[])
+        assert result instanceof int[]
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(input, List)
+        assert result instanceof List
+        assert result[0] == 0
+        assert result[1] == 1
+
+        result = DefaultTypeTransformation.castToType(input, Set)
+        assert result instanceof Set
+        assert result[0] == 0
+        assert result[1] == 1
+    }
+
+    @Test // GROOVY-10223
+    void testCastToType6() {
         def err = shouldFail GroovyCastException, {
             DefaultTypeTransformation.castToType(Optional.of('123'), Number[])
         }

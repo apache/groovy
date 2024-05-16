@@ -274,7 +274,10 @@ public class DefaultTypeTransformation {
             return answer;
         }
 
-        if (object instanceof BaseStream || object instanceof Optional) {
+        if (object instanceof BaseStream   // GROOVY-10028
+            || object instanceof Optional  // GROOVY-10223
+            || (object instanceof Iterable // GROOVY-11378
+                && !(object instanceof Collection))) { // GROOVY-7867
             Collection answer = newCollection.get();
             answer.addAll(asCollection(object));
             return answer;
@@ -479,6 +482,8 @@ public class DefaultTypeTransformation {
             return StreamGroovyMethods.toList((BaseStream) value);
         } else if (value instanceof String || value instanceof GString) {
             return StringGroovyMethods.toList((CharSequence) value);
+        } else if (value instanceof Iterable) { // GROOVY-10378
+            return DefaultGroovyMethods.toList((Iterable<?>) value);
         } else if (value instanceof Optional) { // GROOVY-10223
             return ((Optional<?>) value).map(Collections::singleton).orElseGet(Collections::emptySet);
         } else if (value instanceof Class && ((Class) value).isEnum()) {
