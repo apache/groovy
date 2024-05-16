@@ -23,16 +23,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.FormatHelper;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
-import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-import org.codehaus.groovy.runtime.MethodClosure;
-import org.codehaus.groovy.runtime.NullObject;
-import org.codehaus.groovy.runtime.ResourceGroovyMethods;
-import org.codehaus.groovy.runtime.StreamGroovyMethods;
-import org.codehaus.groovy.runtime.StringGroovyMethods;
+import org.codehaus.groovy.runtime.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -272,12 +263,6 @@ public class DefaultTypeTransformation {
             }
         };
 
-        if (object instanceof BaseStream) {
-            Collection answer = newCollection.get();
-            answer.addAll(asCollection(object));
-            return answer;
-        }
-
         if (object.getClass().isArray()) {
             Collection answer = newCollection.get();
             // we cannot just wrap in a List as we support primitive type arrays
@@ -285,6 +270,14 @@ public class DefaultTypeTransformation {
             for (int i = 0; i < length; i += 1) {
                 answer.add(Array.get(object, i));
             }
+            return answer;
+        }
+
+        if (object instanceof BaseStream   // GROOVY-10028
+            || (object instanceof Iterable // GROOVY-11378
+                && !(object instanceof Collection))) { // GROOVY-7867
+            Collection answer = newCollection.get();
+            answer.addAll(asCollection(object));
             return answer;
         }
 
@@ -485,22 +478,24 @@ public class DefaultTypeTransformation {
             return arrayAsCollection(value);
         } else if (value instanceof BaseStream) {
             return StreamGroovyMethods.toList((BaseStream) value);
-        } else if (value instanceof MethodClosure) {
-            MethodClosure method = (MethodClosure) value;
-            IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());
-            method.call(adapter);
-            return adapter.asList();
         } else if (value instanceof String || value instanceof GString) {
             return StringGroovyMethods.toList((CharSequence) value);
+        } else if (value instanceof Iterable) { // GROOVY-10378
+            return DefaultGroovyMethods.toList((Iterable<?>) value);
+        } else if (value instanceof Class && ((Class) value).isEnum()) {
+            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
+            return Arrays.asList(values);
         } else if (value instanceof File) {
             try {
                 return ResourceGroovyMethods.readLines((File) value);
             } catch (IOException e) {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
-        } else if (value instanceof Class && ((Class) value).isEnum()) {
-            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
-            return Arrays.asList(values);
+        } else if (value instanceof MethodClosure) {
+            MethodClosure method = (MethodClosure) value;
+            IteratorClosureAdapter<?> adapter = new IteratorClosureAdapter<>(method.getDelegate());
+            method.call(adapter);
+            return adapter.asList();
         } else {
             // let's assume it's a collection of 1
             return Collections.singletonList(value);
