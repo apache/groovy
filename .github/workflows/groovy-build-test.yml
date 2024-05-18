@@ -39,6 +39,8 @@ jobs:
           java-version: ${{ matrix.java }}
           check-latest: true
       - uses: gradle/actions/setup-gradle@v3
+      - name: Bootstrap Gradle
+        run: gradle -p bootstrap
       - name: Test with Gradle
         run: ./gradlew test
         timeout-minutes: 60
@@ -59,6 +61,8 @@ jobs:
           java-version: ${{ matrix.java }}
           check-latest: true
       - uses: gradle/actions/setup-gradle@v3
+      - name: Bootstrap Gradle
+        run: gradle -p bootstrap
       - name: Test with Gradle
         run: ./gradlew test
         timeout-minutes: 60
@@ -85,6 +89,8 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: gradle/actions/setup-gradle@v3
+      - name: Bootstrap Gradle
+        run: gradle -p bootstrap
       - name: Test with Gradle
         run: ./gradlew test -Ptarget.java.home=/home/runner/openjdk
         timeout-minutes: 60
