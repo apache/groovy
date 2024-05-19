@@ -108,7 +108,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     static final String DEFAULT_SCRIPT_NAME_START = 'ConsoleScript'
 
-    static private prefs = Preferences.userNodeForPackage(Console)
+    static prefs = Preferences.userNodeForPackage(Console)
 
     // Whether or not std output should be captured to the console
     static boolean captureStdOut = prefs.getBoolean('captureStdOut', true)
