@@ -26,4 +26,3 @@ out/
 .vscode
 .jqwik-database
 verification-metadata.dryrun.xml
-gradle/wrapper/gradle-wrapper.jar

@@ -37,8 +37,6 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: gradle/actions/setup-gradle@v3
-      - name: Bootstrap Gradle
-        run: gradle -p bootstrap
       - name: Test with Gradle
         run: ./gradlew -Pcoverage=true jacocoAllReport
         timeout-minutes: 60

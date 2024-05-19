@@ -38,9 +38,6 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: actions/checkout@v4
-      - uses: gradle/actions/setup-gradle@v3
-      - name: Bootstrap Gradle
-        run: gradle -p bootstrap
       - name: Build and package
         run: ./gradlew clean dist --no-build-cache --no-scan --refresh-dependencies
         timeout-minutes: 90

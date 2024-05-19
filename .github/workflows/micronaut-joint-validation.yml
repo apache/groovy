@@ -35,8 +35,6 @@ jobs:
           java-version: 17
           check-latest: true
       - uses: gradle/actions/setup-gradle@v3
-      - name: Bootstrap Gradle
-        run: gradle -p bootstrap
       - name: env
         run: env
 
