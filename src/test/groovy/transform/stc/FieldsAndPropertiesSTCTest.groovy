@@ -393,7 +393,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testGetterForProperty1() {
+    void testGetterForProperty() {
         assertScript '''
             class C {
                 String p
@@ -403,103 +403,18 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10981
-    void testGetterForProperty2() {
-        for (mode in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
-            assertScript """
-                abstract class A {
-                    $mode Object p = 'field'
-                    CharSequence getP() { 'property' }
-                }
-                class C extends A {
-                    def m() {
-                        final int len = p.length()
-                        if (p instanceof String) {
-                            p.toLowerCase()
-                            p.toUpperCase()
-                        }
-                    }
-                }
-                String which = new C().m()
-                assert which == 'PROPERTY'
-            """
-        }
-    }
-
-    // GROOVY-9973
-    void testGetterForProperty3() {
-        assertScript '''
-            class C {
-                private int f
-                int getP() { f }
-                Integer m() { 123456 - p }
-                Integer m(int i) { i - p }
-            }
-            def c = new C()
-            assert c.m() == 123456 // BUG! exception in phase 'class generation' ...
-            assert c.m(123) == 123 // ClassCastException: class org.codehaus.groovy.ast.Parameter cannot be cast to ...
-        '''
-    }
-
-    // GROOVY-11005
-    void testGetterForProperty4() {
-        File parentDir = File.createTempDir()
-        config.with {
-            targetDirectory = File.createTempDir()
-            jointCompilationOptions = [memStub: true]
-        }
-        try {
-            def a = new File(parentDir, 'Pogo.groovy')
-            a.write '''
-                class Pogo {
-                    String value
-                    String getValue() { value }
-                }
-            '''
-            def b = new File(parentDir, 'Test.groovy')
-            b.write '''
-                class Test extends Pogo {
-                    void test() {
-                        value = 'string'
-                    }
-                }
-            '''
-
-            def loader = new GroovyClassLoader(this.class.classLoader)
-            def cu = new JavaAwareCompilationUnit(config, loader)
-            cu.addSources(a, b)
-            cu.compile()
-
-            loader.loadClass('Test').newInstance().test()
-        } finally {
-            parentDir.deleteDir()
-            config.targetDirectory.deleteDir()
-        }
-    }
-
     // GROOVY-5232
-    void testSetterForProperty1() {
+    void testSetterForProperty() {
         assertScript '''
             class Person {
                 String name
                 static Person create() {
                     def p = new Person()
                     p.setName("Guillaume")
-                    // but p.name = "Guillaume" works
                     return p
                 }
             }
             Person.create()
-        '''
-    }
-
-    // GROOVY-11372
-    void testSetterForProperty2() {
-        assertScript '''
-            def baos = new ByteArrayOutputStream()
-            assert baos.size() == 0
-            baos.bytes= new byte[1]
-            assert baos.size() == 1
         '''
     }
 
@@ -585,15 +500,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10380
+    void testGetterUsingPropertyNotation() {
+        assertScript '''
+            class C {
+                def getFoo(foo = 'foo') { foo }
+            }
+            def c = new C()
+            def v = c.foo
+            assert v == 'foo'
+        '''
+    }
+
     void testSetterUsingPropertyNotation() {
         assertScript '''
             class C {
-                boolean ok = false
-                void setFoo(String foo) { ok = (foo == 'foo') }
+                boolean set
+                void setFoo(foo) { set = (foo == 'foo') }
             }
             def c = new C()
             c.foo = 'foo'
-            assert c.ok
+            assert c.set
         '''
     }
 
@@ -608,6 +535,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             def c = new C()
             test(c)
+        '''
+    }
+
+    // GROOVY-11372
+    void testSetterUsingPropertyNotationViaExtension() {
+        assertScript '''
+            def baos = new ByteArrayOutputStream()
+            assert baos.size() == 0
+            baos.bytes= new byte[1]
+            assert baos.size() == 1
         '''
     }
 
@@ -1163,6 +1100,65 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10981
+    void testSuperPropertyAccess4() {
+        for (mode in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
+            assertScript """
+                abstract class A {
+                    $mode Object p = 'field'
+                    CharSequence getP() { 'property' }
+                }
+                class C extends A {
+                    def m() {
+                        final int len = p.length()
+                        if (p instanceof String) {
+                            p.toLowerCase()
+                            p.toUpperCase()
+                        }
+                    }
+                }
+                String which = new C().m()
+                assert which == 'PROPERTY'
+            """
+        }
+    }
+
+    // GROOVY-11005
+    void testSuperPropertyAccess5() {
+        File parentDir = File.createTempDir()
+        config.with {
+            targetDirectory = File.createTempDir()
+            jointCompilationOptions = [memStub: true]
+        }
+        try {
+            def a = new File(parentDir, 'Pogo.groovy')
+            a.write '''
+                class Pogo {
+                    String value
+                    String getValue() { value }
+                }
+            '''
+            def b = new File(parentDir, 'Test.groovy')
+            b.write '''
+                class Test extends Pogo {
+                    void test() {
+                        value = 'string'
+                    }
+                }
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b)
+            cu.compile()
+
+            loader.loadClass('Test').newInstance().test()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
     void testPrivateFieldAccessInClosure1() {
         assertScript '''
             class C {
@@ -1248,6 +1244,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new GreetingActor()
+        '''
+    }
+
+    // GROOVY-9973
+    void testPrivateFieldVersusPublicGetter() {
+        assertScript '''
+            class C {
+                private int f
+                int getP() { f }
+                Integer m() { 123456 - p }
+                Integer m(int i) { i - p }
+            }
+            def c = new C()
+            assert c.m() == 123456 // BUG! exception in phase 'class generation' ...
+            assert c.m(123) == 123 // ClassCastException: class org.codehaus.groovy.ast.Parameter cannot be cast to ...
         '''
     }
 

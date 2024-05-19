@@ -310,7 +310,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
     private static void addSetterIfNeeded(final DelegateDescription delegate, final PropertyNode prop, final String name, final boolean allNames) {
         String setterName = getSetterName(name);
-        if ((prop.getModifiers() & ACC_FINAL) == 0
+        if (!prop.isFinal()
                 && delegate.owner.getSetterMethod(setterName) == null && delegate.owner.getProperty(name) == null
                 && !shouldSkipPropertyMethod(name, setterName, delegate.excludes, delegate.includes, allNames)) {
             addGeneratedMethod(

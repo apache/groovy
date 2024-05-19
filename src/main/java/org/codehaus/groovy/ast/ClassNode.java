@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.GroovyBugError;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -1050,14 +1052,25 @@ public class ClassNode extends AnnotatedNode {
 
         boolean booleanReturnOnly = getterName.startsWith("is");
         for (MethodNode method : getDeclaredMethods(getterName)) {
-            if (method.getName().equals(getterName) && method.getParameters().length == 0
-                    && (booleanReturnOnly ? ClassHelper.isPrimitiveBoolean(method.getReturnType()) : !method.isVoidMethod())) {
-                // GROOVY-7363, GROOVY-11341: There can be multiple matches if a method returns a non-final type due to
-                // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
-                // has the most specific and exact return type of the two. Picking the bridge method results in loss of
-                // type information, as it down-casts the return type to the lower bound of the generic parameter.
-                if (isNullOrSynthetic.test(getterMethod)) {
-                    getterMethod = method;
+            if (booleanReturnOnly ? ClassHelper.isPrimitiveBoolean(method.getReturnType()) : !method.isVoidMethod()) {
+                if (method.getParameters().length == 0) {
+                    // GROOVY-7363, GROOVY-11341: There can be multiple matches if a method returns a non-final type due to
+                    // the generation of a bridge method. The real getter is really the non-bridge, non-synthetic one as it
+                    // has the most specific and exact return type of the two. Picking the bridge method results in loss of
+                    // type information, as it down-casts the return type to the lower bound of the generic parameter.
+                    if (isNullOrSynthetic.test(getterMethod)) {
+                        getterMethod = method;
+                    }
+                } else if (method.hasDefaultValue() && Stream.of(method.getParameters()).allMatch(Parameter::hasInitialExpression)) {
+                    // GROOVY-11380: getter generated later by default arguments
+                    if (isNullOrSynthetic.test(getterMethod)) {
+                        getterMethod = new MethodNode(method.getName(), method.getModifiers() & ~ACC_ABSTRACT, method.getReturnType(), Parameter.EMPTY_ARRAY, method.getExceptions(), null);
+                        getterMethod.setSynthetic(true);
+                        getterMethod.setDeclaringClass(this);
+                        getterMethod.addAnnotations(method.getAnnotations());
+                        AnnotatedNodeUtils.markAsGenerated(this, getterMethod);
+                        getterMethod.setGenericsTypes(method.getGenericsTypes());
+                    }
                 }
             }
         }
