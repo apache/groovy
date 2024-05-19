@@ -909,7 +909,7 @@ public class ClassNode extends AnnotatedNode {
      * @return method node or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
-        boolean zeroParameters = ArrayGroovyMethods.asBoolean(parameters);
+        boolean zeroParameters = !ArrayGroovyMethods.asBoolean(parameters);
         for (MethodNode method : getDeclaredMethods(name)) {
             if (zeroParameters ? method.getParameters().length == 0
                     : parametersEqual(method.getParameters(), parameters)) {
