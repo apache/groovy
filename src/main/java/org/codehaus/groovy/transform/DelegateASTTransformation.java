@@ -49,7 +49,6 @@ import java.util.Set;
 import static java.util.Arrays.copyOf;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
-import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isGroovyObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
@@ -292,7 +291,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             }
             mNames.add(getGetterName(name));
             if (isPrimitiveBoolean(pNode.getOriginType())) {
-                mNames.add(getPredicateName(name));
+                mNames.add(getGetterName(name, Boolean.TYPE));
             }
         }
         for (MethodNode mNode : cNode.getAllDeclaredMethods()) {
@@ -331,7 +330,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         boolean willHaveGetAccessor = true;
         boolean willHaveIsAccessor = isPrimBool;
         String getterName = getGetterName(name);
-        String isserName = getPredicateName(name);
+        String  isserName = getGetterName(name, Boolean.TYPE);
         if (isPrimBool) {
             ClassNode cNode = prop.getDeclaringClass();
             if (cNode.getGetterMethod(isserName) != null && cNode.getGetterMethod(getterName) == null)
@@ -372,7 +371,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
     private static void extractAccessorInfo(final ClassNode owner, final String name, final Reference<Boolean> willHaveGetAccessor, final Reference<Boolean> willHaveIsAccessor) {
         boolean hasGetAccessor = owner.getGetterMethod(getGetterName(name)) != null;
-        boolean hasIsAccessor = owner.getGetterMethod(getPredicateName(name)) != null;
+        boolean hasIsAccessor  = owner.getGetterMethod(getGetterName(name, Boolean.TYPE)) != null;
         PropertyNode prop = owner.getProperty(name);
         willHaveGetAccessor.set(hasGetAccessor || (prop != null && !hasIsAccessor));
         willHaveIsAccessor.set(hasIsAccessor || (prop != null && !hasGetAccessor && isPrimitiveBoolean(prop.getOriginType())));
@@ -469,10 +468,6 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (params[j].getName().equals(name)) return true;
         }
         return false;
-    }
-
-    private static String getPredicateName(final String propertyName) {
-        return "is" + capitalize(propertyName);
     }
 
     static class DelegateDescription {

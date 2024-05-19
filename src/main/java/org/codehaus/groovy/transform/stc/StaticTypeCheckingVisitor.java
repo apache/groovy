@@ -285,7 +285,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extrac
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.extractGenericsParameterMapOfThis;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filterMethodsByVisibility;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolve;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
@@ -1585,14 +1584,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         final String setterName = getSetterName(propertyName);
 
         boolean foundGetterOrSetter = false;
-        Set<ClassNode> handledNodes = new HashSet<>();
+        Set<ClassNode> handledTypes = new HashSet<>();
         List<Receiver<String>> receivers = new ArrayList<>();
         addReceivers(receivers, makeOwnerList(objectExpression), pexp.isImplicitThis());
 
         for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
 
-            if (receiverType.isArray() && "length".equals(propertyName)) {
+            if (receiverType.isArray() && propertyName.equals("length")) {
                 pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
                 storeType(pexp, int_TYPE);
                 if (visitor != null) {
@@ -1608,10 +1607,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             boolean staticOnly = isClassClassNodeWrappingConcreteType(receiverType) ? false
                                    : (receiver.getData() == null ? staticOnlyAccess : false);
 
-            List<MethodNode> setters = findSetters(wrapTypeIfNecessary(receiverType), setterName, /*voidOnly:*/false);
-            setters = allowStaticAccessToMember(setters, staticOnly);
-            // GROOVY-11319:
-            setters.removeIf(setter -> !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), setter.getDeclaringClass(), setter.getModifiers()));
+            List<MethodNode> setters = new ArrayList<>(4);
+            for (MethodNode method : findMethodsWithGenerated(wrapTypeIfNecessary(receiverType), setterName)) {
+                if ((!staticOnly || method.isStatic()) && method.getParameters().length == 1
+                        // GROOVY-11319:
+                        && hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), method.getDeclaringClass(), method.getModifiers())) {
+                    setters.add(method);
+                }
+            }
             // GROOVY-11372:
             var loader = getSourceUnit().getClassLoader();
             var dgmSet = (TreeSet<MethodNode>) findDGMMethodsForClassNode(loader,            receiverType,  setterName);
@@ -1629,7 +1632,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
             while (!queue.isEmpty()) {
                 ClassNode current = queue.remove();
-                if (!handledNodes.add(current)) continue;
+                if (!handledTypes.add(current)) continue;
 
                 FieldNode field = current.getDeclaredField(propertyName);
                 if (field == null) {
@@ -1637,8 +1640,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         queue.addFirst(current.getSuperClass());
                     Collections.addAll(queue, current.getInterfaces());
                 }
-
-                field = allowStaticAccessToMember(field, staticOnly);
+                else field = allowStaticAccessToMember(field, staticOnly);
 
                 // skip property/accessor checks for "x.@field"
                 if (pexp instanceof AttributeExpression) {

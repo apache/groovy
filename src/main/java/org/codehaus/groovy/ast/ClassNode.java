@@ -909,8 +909,10 @@ public class ClassNode extends AnnotatedNode {
      * @return method node or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
+        boolean zeroParameters = ArrayGroovyMethods.asBoolean(parameters);
         for (MethodNode method : getDeclaredMethods(name)) {
-            if (parametersEqual(method.getParameters(), parameters)) {
+            if (zeroParameters ? method.getParameters().length == 0
+                    : parametersEqual(method.getParameters(), parameters)) {
                 return method;
             }
         }
@@ -1044,7 +1046,7 @@ public class ClassNode extends AnnotatedNode {
         return getGetterMethod(getterName, true);
     }
 
-    public MethodNode getGetterMethod(String getterName, boolean searchSuperClasses) {
+    public MethodNode getGetterMethod(String getterName, boolean searchSupers) {
         MethodNode getterMethod = null;
 
         java.util.function.Predicate<MethodNode> isNullOrSynthetic = (method) ->
@@ -1075,12 +1077,22 @@ public class ClassNode extends AnnotatedNode {
             }
         }
 
-        if (searchSuperClasses && isNullOrSynthetic.test(getterMethod)) {
-            ClassNode parent = getSuperClass();
-            if (parent != null) {
-                MethodNode method = parent.getGetterMethod(getterName);
+        if (searchSupers && isNullOrSynthetic.test(getterMethod)) {
+            ClassNode superClass = getSuperClass();
+            if (superClass != null) {
+                MethodNode method = superClass.getGetterMethod(getterName);
                 if (getterMethod == null || !isNullOrSynthetic.test(method)) {
                     getterMethod = method;
+                }
+            }
+            // GROOVY-11381:
+            if (getterMethod == null && ArrayGroovyMethods.asBoolean(getInterfaces())) {
+                for (ClassNode anInterface : getAllInterfaces()) {
+                    MethodNode method = anInterface.getDeclaredMethod(getterName, Parameter.EMPTY_ARRAY);
+                    if (method != null && method.isDefault() && (booleanReturnOnly ? ClassHelper.isPrimitiveBoolean(method.getReturnType()) : !method.isVoidMethod())) {
+                        getterMethod = method;
+                        break;
+                    }
                 }
             }
         }

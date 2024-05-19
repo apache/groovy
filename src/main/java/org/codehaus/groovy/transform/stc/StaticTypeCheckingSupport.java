@@ -2290,6 +2290,7 @@ public abstract class StaticTypeCheckingSupport {
                 && !genericsTypes[0].isWildcard();
     }
 
+    @Deprecated(since = "5.0.0")
     public static List<MethodNode> findSetters(final ClassNode cn, final String setterName, final boolean voidOnly) {
         List<MethodNode> result = new ArrayList<>();
         if (!cn.isInterface()) {

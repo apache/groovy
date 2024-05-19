@@ -524,7 +524,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testSetterUsingPropertyNotationOnInterface() {
+    void testSetterUsingPropertyNotation2() {
         assertScript '''
             interface FooAware { void setFoo(String arg) }
             class C implements FooAware {
@@ -539,7 +539,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11372
-    void testSetterUsingPropertyNotationViaExtension() {
+    void testSetterUsingPropertyNotation3() {
         assertScript '''
             def baos = new ByteArrayOutputStream()
             assert baos.size() == 0
@@ -1247,6 +1247,20 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-6277
+    void testPublicFieldVersusPrivateGetter() {
+        assertScript '''
+            class C {
+                private String getWho() { 'C' }
+            }
+            class D extends C {
+                public String who = 'D'
+            }
+            String result = new D().who
+            assert result == 'D'
+        '''
+    }
+
     // GROOVY-9973
     void testPrivateFieldVersusPublicGetter() {
         assertScript '''
@@ -1262,18 +1276,47 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-6277
-    void testPublicFieldVersusPrivateGetter() {
+    // GROOVY-11381
+    void testPrivateFieldVersusPublicGetterOnInterface() {
         assertScript '''
-            class C {
-                private String getWho() { 'C' }
+            interface I {
+                default int getP() { 42 }
+            }
+            class C implements I {
+                private String p
+            }
+            def c = new C()
+            assert c.p == 42
+            Number c_p = c.p // Cannot assign value of type String to variable of type Number
+        '''
+    }
+
+    void testPrivateFieldVersusPublicSetterOnInterface() {
+        assertScript '''
+            interface I {
+                Object[] set = new Object[1]
+                default void setP(int p) { set[0] = true }
+            }
+            class C implements I {
+                private String p
             }
             class D extends C {
-                public String who = 'D'
             }
-            String result = new D().who
-            assert result == 'D'
+            def d = new D()
+            d.p = 42
+            assert I.set[0]
         '''
+        shouldFailWithMessages '''
+            interface I {
+                default void setP(int p) { }
+            }
+            class C implements I {
+                private String p
+            }
+            def c = new C()
+            c.p = 'xxx'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testProtectedAccessorFromSamePackage() {
