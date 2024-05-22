@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -458,7 +457,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             getterName = "get" + capitalize(propertyName);
             getterNode = receiverType.getGetterMethod(getterName);
         }
-        if (getterNode != null && receiver instanceof ClassExpression && !isClassType(receiverType) && !getterNode.isStatic()) {
+        if (getterNode != null && !getterNode.isStatic() && receiver instanceof ClassExpression && !isClassType(receiverType)) {
             return false;
         }
 
@@ -486,22 +485,27 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             return true;
         }
 
-        if (receiverType instanceof InnerClassNode && !receiverType.isStaticClass()) {
-            if (makeGetPropertyWithGetter(receiver,  receiverType.getOuterClass(), propertyName,  safe, implicitThis)) {
-                return true;
-            }
-        }
-
         // GROOVY-7149: check direct interfaces
-        for (ClassNode node : receiverType.getInterfaces()) {
-            if (makeGetPropertyWithGetter(receiver, node, propertyName, safe, implicitThis)) {
+        for (ClassNode traitClass : receiverType.getInterfaces()) {
+            if (makeGetPropertyWithGetter(receiver, traitClass, propertyName, safe, implicitThis)) {
                 return true;
             }
         }
-        // go upper level
+        // check super class
         ClassNode superClass = receiverType.getSuperClass();
         if (superClass != null) {
-            return makeGetPropertyWithGetter(receiver, superClass, propertyName, safe, implicitThis);
+            if (makeGetPropertyWithGetter(receiver, superClass, propertyName, safe, implicitThis)) {
+                return true;
+            }
+        }
+        // check outer class
+        ClassNode outerClass = receiverType.getOuterClass();
+        if (implicitThis && outerClass != null
+                && !outerClass.implementsInterface(MAP_TYPE)
+                && (receiverType.getModifiers() & ACC_STATIC) == 0) {
+            if (makeGetPropertyWithGetter(receiver, outerClass, propertyName, safe, implicitThis)) {
+                return true;
+            }
         }
 
         return false;
