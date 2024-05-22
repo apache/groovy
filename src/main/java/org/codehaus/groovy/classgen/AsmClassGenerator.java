@@ -1158,9 +1158,14 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    private boolean isGroovyObject(final Expression objectExpression) {
+    private boolean isGroovyObject(final PropertyExpression expression) {
+        Expression objectExpression = expression.getObjectExpression();
         if (objectExpression instanceof ClassExpression) return false;
-        if (isThisOrSuper(objectExpression)) return true;//GROOVY-8693
+
+        if (org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression(objectExpression)
+                && !(expression.isImplicitThis() && controller.isInGeneratedFunction())) {
+            return !controller.isStaticContext(); // TODO: not @POJO
+        }
 
         ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
         if (isObjectType(objectExpressionType)) objectExpressionType = objectExpression.getType();
@@ -1224,14 +1229,11 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (!visited) {
-            boolean useMetaObjectProtocol = isGroovyObject(objectExpression)
-                    && (!isThisOrSuper(objectExpression) || !controller.isStaticContext() || controller.isInGeneratedFunction());
-
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setPropertyOnSuper : useMetaObjectProtocol ? setGroovyObjectProperty : setProperty;
+                adapter = isSuperExpression(objectExpression) ? setPropertyOnSuper : isGroovyObject(expression) ? setGroovyObjectProperty : setProperty;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getPropertyOnSuper : useMetaObjectProtocol ? getGroovyObjectProperty : getProperty;
+                adapter = isSuperExpression(objectExpression) ? getPropertyOnSuper : isGroovyObject(expression) ? getGroovyObjectProperty : getProperty;
             }
             visitAttributeOrProperty(expression, adapter);
         }
@@ -1265,9 +1267,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (!visited) {
             MethodCallerMultiAdapter adapter;
             if (controller.getCompileStack().isLHS()) {
-                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(objectExpression) ? setGroovyObjectField : setField;
+                adapter = isSuperExpression(objectExpression) ? setFieldOnSuper : isGroovyObject(expression) ? setGroovyObjectField : setField;
             } else {
-                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(objectExpression) ? getGroovyObjectField : getField;
+                adapter = isSuperExpression(objectExpression) ? getFieldOnSuper : isGroovyObject(expression) ? getGroovyObjectField : getField;
             }
             visitAttributeOrProperty(expression, adapter);
         }
