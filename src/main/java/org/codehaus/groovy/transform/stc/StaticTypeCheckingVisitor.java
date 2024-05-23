@@ -1629,6 +1629,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             queue.add(receiverType);
             if (isPrimitiveType(receiverType)) {
                 queue.add(getWrapper(receiverType));
+            } else if (receiverType.isInterface()) {
+                queue.add(OBJECT_TYPE);//GROOVY-5585
             }
             while (!queue.isEmpty()) {
                 ClassNode current = queue.remove();
@@ -3956,9 +3958,7 @@ out:                if (mn.size() != 1) {
                 addBoundType(receiver, owners);
                 addSelfTypes(receiver, owners);
                 addTraitType(receiver, owners);
-                if (receiver.redirect().isInterface()) {
-                    owners.add(Receiver.make(OBJECT_TYPE));
-                } else if (isSuperExpression(objectExpression)) { //GROOVY-9909: super.defaultMethod()
+                if (isSuperExpression(objectExpression)) { // GROOVY-9909: super.defaultMethod()
                     for (ClassNode in : typeCheckingContext.getEnclosingClassNode().getInterfaces()) {
                         if (!receiver.implementsInterface(in)) owners.add(Receiver.make(in));
                     }
