@@ -1565,8 +1565,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         queue.addFirst(current.getSuperClass());
                     Collections.addAll(queue, current.getInterfaces());
                 }
-
-                field = allowStaticAccessToMember(field, staticOnly);
+                else field = allowStaticAccessToMember(field, staticOnly);
 
                 // skip property/accessor checks for "x.@field"
                 if (pexp instanceof AttributeExpression) {
@@ -1587,7 +1586,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 property = allowStaticAccessToMember(property, staticOnly);
 
                 MethodNode getter = null;
-                if (!isMapProperty(pexp)) { // GROOVY-11369: map entry before getter
+                if (!isMapProperty(pexp, receiverType)) { // GROOVY-11369: map entry before getter
                     getter = findGetter(current, isserName, pexp.isImplicitThis());
                     getter = allowStaticAccessToMember(getter, staticOnly);
                     if (getter == null) {
@@ -1651,8 +1650,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
 
-            if (readMode && !isMapProperty(pexp)) { // GROOVY-11369, GROOVY-11370, GROOVY-11372
-                // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be defined by an extension
+            if (readMode && !isMapProperty(pexp, receiverType)) { // GROOVY-11369, GROOVY-11370, GROOVY-11372
+                // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be provided by an extension method
                 for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
                     Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
                     for (MethodNode method : findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, isserName)) {
@@ -1717,8 +1716,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 continue;
             if (visitor != null) {
                 // TODO: type inference on maps and lists, if possible
-                PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, receiver.getType(), null, null, null);
-                node.setDeclaringClass(receiver.getType());
+                PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, receiverType, null, null, null);
+                node.setDeclaringClass(receiverType);
                 visitor.visitProperty(node);
             }
             storeType(pexp, propertyType);
@@ -1831,13 +1830,14 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
-    private boolean isMapProperty(final PropertyExpression pexp) {
-        final Expression objectExpression = pexp.getObjectExpression();
+    private boolean isMapProperty(final PropertyExpression pexp, final ClassNode receiverType) {
+        Expression objectExpression = pexp.getObjectExpression();
         if (isThisExpression(objectExpression)
+                && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null)
                 && Arrays.asList(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)) {
             return false;
         }
-        return isOrImplements(getType(objectExpression), MAP_TYPE);
+        return isOrImplements(receiverType, MAP_TYPE);
     }
 
     /**

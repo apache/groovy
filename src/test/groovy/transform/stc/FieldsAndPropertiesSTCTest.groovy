@@ -163,7 +163,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
              c.@x = '1'
          ''',
          'Cannot assign value of type java.lang.String to variable of type int'
-     }
+    }
 
     void testInferenceFromAttributeType() {
         assertScript '''
@@ -512,6 +512,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 Closure<List> bar = { Date date -> date.getTime() }
             }
+            new C()
         ''',
         'Cannot return value of type long for closure expecting java.util.List'
 
@@ -519,6 +520,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 java.util.function.Supplier<String> bar = { -> 123 }
             }
+            new C()
         ''',
         'Cannot return value of type int for closure expecting java.lang.String'
     }
@@ -687,7 +689,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-11369
+    // GROOVY-11369, GROOVY-11384
     void testMapPropertyAccess5() {
         assertScript '''
             def map = [:]
@@ -708,6 +710,17 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert  map.containsKey('class')
             assert !map.containsKey('metaClass')
             assert  map.containsKey('properties')
+        '''
+        assertScript '''
+            void test(Map map) {
+                def str = ''
+                str += map.empty
+                str += map.with{ empty }
+                str += map.with{ delegate.empty }
+                str += map.with{ {->owner.empty}() }
+                assert str == 'entryentryentryentry'
+            }
+            test( [:].withDefault{ 'entry' } )
         '''
     }
 
