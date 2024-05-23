@@ -638,6 +638,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             def x = list.x
             assert x == [1,2]
         '''
+        assertScript '''
+            void test(List list) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.toString(false) == 'java.lang.Class<? extends java.lang.Object>'
+                })
+                def c = list.class
+            }
+            test([])
+        '''
     }
 
     // GROOVY-5700
@@ -938,6 +948,15 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-11370
     void testMapPropertyAccess11() {
+        assertScript '''
+            void test(Map map) { // not LinkedHashMap
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == OBJECT_TYPE // not METACLASS_TYPE
+                })
+                def val = map.metaClass
+            }
+            test([:])
+        '''
         assertScript '''
             def map = [:]
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
