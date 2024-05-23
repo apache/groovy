@@ -164,7 +164,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
              c.@x = '1'
          ''',
          'Cannot assign value of type java.lang.String to variable of type int'
-     }
+    }
 
     void testInferenceFromAttributeType() {
         assertScript '''
@@ -699,7 +699,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-11369
+    // GROOVY-11369, GROOVY-11384
     void testMapPropertyAccess5() {
         assertScript '''
             def map = [:]
@@ -720,6 +720,17 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert  map.containsKey('class')
             assert !map.containsKey('metaClass')
             assert  map.containsKey('properties')
+        '''
+        assertScript '''
+            void test(Map map) {
+                def str = ''
+                str += map.empty
+                str += map.with{ empty }
+                str += map.with{ delegate.empty }
+                str += map.with{ {->owner.empty}() }
+                assert str == 'entryentryentryentry'
+            }
+            test( [:].withDefault{ 'entry' } )
         '''
     }
 
