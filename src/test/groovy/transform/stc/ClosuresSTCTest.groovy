@@ -150,8 +150,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    //
-
     void testClosureReturnTypeInference1() {
         assertScript '''
             def c = { int a, int b -> return a + b }
@@ -325,36 +323,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 void doCall(int x) { x }
             }
             List<String> strings = [1,2,3].collect(new StringClosure())
-        '''
-    }
-
-    // GROOVY-7701
-    void testWithDelegateVsOwnerField() {
-        assertScript '''
-            class Foo {
-                List type
-            }
-
-            class Bar {
-                int type = 10
-
-                @Lazy
-                List<Foo> something = { ->
-                    List<Foo> tmp = []
-                    def foo = new Foo()
-                    foo.with {
-                        type = ['String']
-                    //  ^^^^ should be Foo.type, not Bar.type
-                    }
-                    tmp.add(foo)
-                    tmp
-                }()
-            }
-
-            def bar = new Bar()
-            assert bar.type == 10
-            assert bar.something*.type == [['String']]
-            assert bar.type == 10
         '''
     }
 
@@ -784,6 +752,36 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-7701
+    void testOwnerVersusDelegate() {
+        assertScript '''
+            class Foo {
+                List type
+            }
+
+            class Bar {
+                int type = 10
+
+                @Lazy
+                List<Foo> something = { ->
+                    List<Foo> tmp = []
+                    def foo = new Foo()
+                    foo.with {
+                        type = ['String']
+                    //  ^^^^ should be Foo.type, not Bar.type
+                    }
+                    tmp.add(foo)
+                    tmp
+                }()
+            }
+
+            def bar = new Bar()
+            assert bar.type == 10
+            assert bar.something*.type == [['String']]
+            assert bar.type == 10
+        '''
+    }
+
     // GROOVY-9089
     void testOwnerVersusDelegateFromNestedClosure() {
         String declarations = '''
@@ -910,6 +908,18 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
             String result = test()
             assert result == 'foo'
+        '''
+    }
+
+    // GROOVY-11386
+    void testClosurePropertyPrecedence() {
+        assertScript '''
+            String x = { -> metaClass }()
+            assert x.contains('$_run_closure')
+            String y = { -> getMetaClass() }()
+            assert y.contains('$_run_closure')
+            String z = { -> owner.metaClass }()
+            assert !z.contains('$_run_closure')
         '''
     }
 }

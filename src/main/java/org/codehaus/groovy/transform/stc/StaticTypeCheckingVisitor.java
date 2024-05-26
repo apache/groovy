@@ -161,6 +161,7 @@ import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Long_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.METACLASS_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.PATTERN_TYPE;
@@ -650,26 +651,29 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                   case "delegate":
                     DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
                     if (dm != null) {
-                        storeType(vexp, dm.getType());
+                        vexp.putNodeMetaData(INFERRED_TYPE, dm.getType());
                         return;
                     }
                     // falls through
                   case "owner":
                     if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
-                        storeType(vexp, CLOSURE_TYPE);
+                        vexp.putNodeMetaData(INFERRED_TYPE, CLOSURE_TYPE.getPlainNodeReference());
                         return;
                     }
                     // falls through
                   case "thisObject":
-                    storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                    vexp.putNodeMetaData(INFERRED_TYPE, makeThis());
                     return;
                   case "parameterTypes":
-                    storeType(vexp, CLASS_Type.makeArray());
+                    vexp.putNodeMetaData(INFERRED_TYPE, CLASS_Type.getPlainNodeReference().makeArray());
                     return;
                   case "maximumNumberOfParameters":
                   case "resolveStrategy":
                   case "directive":
-                    storeType(vexp, int_TYPE);
+                    vexp.putNodeMetaData(INFERRED_TYPE, int_TYPE);
+                    return;
+                  case "metaClass": // GROOVY-11386
+                    vexp.putNodeMetaData(INFERRED_TYPE, METACLASS_TYPE);
                     return;
                 }
             }
@@ -1271,7 +1275,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             TupleExpression tuple = (TupleExpression) leftExpression;
             for (int i = 0; i < tuple.getExpressions().size(); i++) {
                 Expression expression = indexX(rightExpression, constX(i, true));
-                expression.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, type);
+                expression.putNodeMetaData(INFERRED_TYPE, type);
                 listExpression.addExpression(expression);
             }
             if (!listExpression.getExpressions().isEmpty()) {
@@ -3694,46 +3698,52 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : Integer.MAX_VALUE;
                 storeTargetMethod(call, nArgs == 0 ? CLOSURE_CALL_NO_ARG : nArgs == 1 ? CLOSURE_CALL_ONE_ARG : CLOSURE_CALL_VARGS);
             } else {
-                // method call receivers are :
-                //   - possible "with" receivers
-                //   - the actual receiver as found in the method call expression
-                //   - any of the potential receivers found in the instanceof temporary table
-                // in that order
-                List<Receiver<String>> receivers = new ArrayList<>();
-                addReceivers(receivers, makeOwnerList(objectExpression), call.isImplicitThis());
-
-                MethodNode first = null;
                 List<MethodNode> mn = null;
                 Receiver<String> chosenReceiver = null;
-                for (Receiver<String> currentReceiver : receivers) {
-                    mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
-                    if (!mn.isEmpty()) {
-                        first = mn.get(0); // capture for error string
-                        // for "this" in a static context, only static methods are compatible
-                        if (currentReceiver.getData() == null && !isClassType(currentReceiver.getType())) {
-                            boolean staticThis = (isThisObjectExpression || call.isImplicitThis()) && typeCheckingContext.isInStaticContext;
-                            boolean staticThat = isClassClassNodeWrappingConcreteType(receiver); // GROOVY-10819, GROOVY-10820
-                            mn = allowStaticAccessToMember(mn, staticThis || staticThat);
-                        }
-                    }
-                    if (!mn.isEmpty()) {
-                        chosenReceiver = currentReceiver;
-                        break;
-                    }
-                }
-                if (mn.isEmpty() && isThisObjectExpression && call.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
-                    mn = CLOSURE_TYPE.getDeclaredMethods(name);
+                // GROOVY-11386:
+                if (isThisObjectExpression && call.isImplicitThis()
+                    && typeCheckingContext.getEnclosingClosure() != null
+                    && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
+                    mn = CLOSURE_TYPE.getMethods(name);
                     if (!mn.isEmpty()) {
                         objectExpression.removeNodeMetaData(INFERRED_TYPE);
                     }
                 }
-                if (mn.isEmpty()) {
-                    mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
-                    if (mn.isEmpty() && first != null) mn.add(first); // non-static method error?
+                if (mn == null || mn.isEmpty()) {
+                    // method call receivers are:
+                    //   - closure delegate(s) or owner(s) and trait self type(s)
+                    //   - the actual receiver as found in the method call expression
+                    //   - any of the potential receivers found in the instanceof temporary table
+                    // in that order
+                    List<Receiver<String>> receivers = new ArrayList<>();
+                    addReceivers(receivers, makeOwnerList(objectExpression), call.isImplicitThis());
+
+                    MethodNode first = null;
+                    for (Receiver<String> currentReceiver : receivers) {
+                        mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
+                        if (!mn.isEmpty()) {
+                            first = mn.get(0); // capture for error string
+                            // for "this" in a static context, only static methods are compatible
+                            if (currentReceiver.getData() == null && !isClassType(currentReceiver.getType())) {
+                                boolean staticThis = (isThisObjectExpression || call.isImplicitThis()) && typeCheckingContext.isInStaticContext;
+                                boolean staticThat = isClassClassNodeWrappingConcreteType(receiver); // GROOVY-10819, GROOVY-10820
+                                mn = allowStaticAccessToMember(mn, staticThis || staticThat);
+                            }
+                        }
+                        if (!mn.isEmpty()) {
+                            chosenReceiver = currentReceiver;
+                            break;
+                        }
+                    }
+                    if (mn.isEmpty()) {
+                        mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
+                        if (mn.isEmpty()) {
+                            if (first != null) mn.add(first); // non-static method error?
+                            else addNoMatchingMethodError(receiver, name, args, call);
+                        }
+                    }
                 }
-                if (mn.isEmpty()) {
-                    addNoMatchingMethodError(receiver, name, args, call);
-                } else {
+                if (!mn.isEmpty()) {
                     if (areCategoryMethodCalls(mn, name, args)) addCategoryMethodCallError(call);
 
                     {
