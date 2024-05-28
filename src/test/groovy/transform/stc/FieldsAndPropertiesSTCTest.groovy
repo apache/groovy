@@ -163,7 +163,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
              c.@x = '1'
          ''',
          'Cannot assign value of type java.lang.String to variable of type int'
-     }
+    }
 
     void testInferenceFromAttributeType() {
         assertScript '''
@@ -445,6 +445,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 Closure<List> bar = { Date date -> date.getTime() }
             }
+            new C()
         ''',
         'Cannot return value of type long for closure expecting java.util.List'
 
@@ -452,6 +453,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 java.util.function.Supplier<String> bar = { -> 123 }
             }
+            new C()
         ''',
         'Cannot return value of type int for closure expecting java.lang.String'
     }
@@ -578,6 +580,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             def x = list.x
             assert x == [1,2]
         '''
+        assertScript '''
+            void test(List list) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.toString(false) == 'java.lang.Class<? extends java.lang.Object>'
+                })
+                def c = list.class
+            }
+            test([])
+        '''
     }
 
     // GROOVY-5700
@@ -629,7 +641,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-11369, GROOVY-11372
+    // GROOVY-11369, GROOVY-11372, GROOVY-11384
     void testMapPropertyAccess5() {
         assertScript '''
             def map = [:]
@@ -654,6 +666,18 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             map.properties = null
         ''',
         'Cannot set read-only property: properties'
+
+        assertScript '''
+            void test(Map map) {
+                def str = ''
+                str += map.empty
+                str += map.with{ empty }
+                str += map.with{ delegate.empty }
+                str += map.with{ {->owner.empty}() }
+                assert str == 'entryentryentryentry'
+            }
+            test( [:].withDefault{ 'entry' } )
+        '''
     }
 
     // GROOVY-8074
@@ -929,6 +953,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
+            def i = new Outer.Inner()
+            def x = i.m()
         ''',
         'The variable [p] is undeclared.'
     }
@@ -943,6 +969,8 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                 }
                 def p = 1
             }
+            def i = new Outer.Inner()
+            def x = i.m()
         ''',
         'No such property: p for class: Outer$Inner'
     }

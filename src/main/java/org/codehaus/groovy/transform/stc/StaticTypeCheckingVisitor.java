@@ -1556,7 +1556,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
         if (staticOnlyAccess) {
-            if ("this".equals(propertyName)) {
+            if (propertyName.equals("this")) {
                 // handle "Outer.this" for any level of nesting
                 ClassNode outer = objectExpressionType.getGenericsTypes()[0].getType();
 
@@ -1571,7 +1571,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     storeType(pexp, outer);
                     return true;
                 }
-            } else if ("super".equals(propertyName)) {
+            } else if (propertyName.equals("super")) {
                 // GROOVY-8299: handle "Iface.super" for interface default methods
                 ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
                 ClassNode accessor = objectExpressionType.getGenericsTypes()[0].getType();
@@ -1665,13 +1665,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 MethodNode getter = current.getGetterMethod(isserName);
                 getter = allowStaticAccessToMember(getter, staticOnly);
-                if (getter == null) getter = current.getGetterMethod(getterName);
-                getter = allowStaticAccessToMember(getter, staticOnly);
+                if (getter == null) {
+                    getter = current.getGetterMethod(getterName);
+                    getter = allowStaticAccessToMember(getter, staticOnly);
+                }
                 if (getter != null
                         // GROOVY-11319:
                         && (!hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())
                         // GROOVY-11369:
-                        || (!isThisExpression(objectExpression) && !isSuperExpression(objectExpression) && isOrImplements(objectExpressionType, MAP_TYPE)
+                        || (isOrImplements(receiverType, MAP_TYPE)
+                            && !isSuperExpression(objectExpression)
+                            && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null)) // GROOVY-11384
                             && (!getter.isPublic() || (propertyName.matches("empty|class|metaClass") && !List.of(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)))))) {
                     getter = null;
                 }

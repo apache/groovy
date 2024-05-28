@@ -918,6 +918,18 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             map.properties = null
         ''',
         'Cannot set read-only property: properties'
+
+        assertScript '''
+            void test(Map map) {
+                def str = ''
+                str += map.empty
+                str += map.with{ empty }
+                str += map.with{ delegate.empty }
+                str += map.with{ {->owner.empty}() }
+                assert str.equals('truetruetruetrue')
+            }
+            test( [:].withDefault{ 'entry' } )
+        '''
     }
 
     // GROOVY-11367, GROOVY-11368
