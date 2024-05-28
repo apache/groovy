@@ -1577,11 +1577,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     continue;
                 }
 
-                // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. in declaring class of field
-                if (field != null && enclosingTypes.contains(current)) {
-                    if (storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
-                        return true;
-                    }
+                if (field != null // GROOVY-11387: entry before field for indirect or non-this property expressions
+                        && (!receiverType.equals(field.getDeclaringClass()) || !(isThisExpression(objectExpression)
+                            && !(pexp.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null)))
+                        && (readMode || !(field.isPublic() || field.isProtected()))
+                        && isMapProperty(pexp, receiverType)) {
+                    field = null;
+                }
+                // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. within the declaring class of the field
+                else if (field != null && enclosingTypes.contains(current) && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
+                    return true;
                 }
 
                 PropertyNode property = current.getProperty(propertyName);
@@ -1602,7 +1607,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         visitor.visitMethod(getter);
                     }
                 } else if (readMode) { // GROOVY-5001, GROOVY-5491, GROOVY-8555
-                    if (property != null) { property = null; field = null; }
+                    if (property != null) { property = null; assert field == null; }
                 }
 
                 // prefer explicit getter or setter over property if receiver is not 'this'
@@ -1809,6 +1814,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             };
 
             if (!pexp.isSpreadSafe()) {
+                if (pexp.isImplicitThis() && isThisExpression(pexp.getObjectExpression()))
+                    pexp.putNodeMetaData(DYNAMIC_RESOLUTION,Boolean.TRUE); // GROOVY-11387
                 return getCombinedBoundType(gts[1]);
             } else {
                 // map*.property syntax acts on Entry
