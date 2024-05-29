@@ -822,6 +822,28 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         """
     }
 
+    // GROOVY-11387
+    void testMapPropertyAccess11() {
+        assertScript '''
+            def map = new HashMap<String,String>()
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+            })
+            def xxx = map.table
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+            })
+            def yyy = map.with{
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+                })
+                def zzz = table
+            }
+            assert xxx == null
+            assert yyy == null
+        '''
+    }
+
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
         assertScript '''
             // a base class defining a read-only property

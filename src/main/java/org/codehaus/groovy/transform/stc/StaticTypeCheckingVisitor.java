@@ -1656,11 +1656,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     continue;
                 }
 
-                // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. in declaring class of field
-                if (field != null && enclosingTypes.contains(current)) {
-                    if (storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
-                        return true;
-                    }
+                if (field != null && !(field.isPublic() || (field.isProtected() && !readMode)) // GROOVY-11387: map entry before non-public field
+                        && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null))
+                        && isOrImplements(receiverType, MAP_TYPE)) {
+                    field = null;
+                }
+                // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. within the declaring class of the field
+                else if (field != null && enclosingTypes.contains(current) && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
+                    return true;
                 }
 
                 MethodNode getter = current.getGetterMethod(isserName);
@@ -1882,6 +1885,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             };
 
             if (!pexp.isSpreadSafe()) {
+                if (pexp.isImplicitThis() && isThisExpression(pexp.getObjectExpression()))
+                    pexp.putNodeMetaData(DYNAMIC_RESOLUTION,Boolean.TRUE); // GROOVY-11387
                 return getCombinedBoundType(gts[1]);
             } else {
                 // map*.property syntax acts on Entry
@@ -1946,12 +1951,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private boolean storeField(final FieldNode field, final PropertyExpression expressionToStoreOn, final ClassNode receiver, final ClassCodeVisitorSupport visitor, final String delegationData, final boolean lhsOfAssignment) {
-        if (visitor != null) visitor.visitField(field);
-        checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
         boolean superField = isSuperExpression(expressionToStoreOn.getObjectExpression());
         boolean accessible = (!superField && receiver.equals(field.getDeclaringClass()) && !field.getDeclaringClass().isAbstract()) // GROOVY-7300, GROOVY-11358
                 || hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
-
         if (!accessible) {
             if (expressionToStoreOn instanceof AttributeExpression) {
                 addStaticTypeError("Cannot access field: " + field.getName() + " of class: " + prettyPrintTypeName(field.getDeclaringClass()), expressionToStoreOn.getProperty());
@@ -1960,6 +1962,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
+        if (visitor != null) visitor.visitField(field);
+        checkOrMarkPrivateAccess(expressionToStoreOn, field, lhsOfAssignment);
         storeWithResolve(field.getOriginType(), receiver, field.getDeclaringClass(), field.isStatic(), expressionToStoreOn);
         if (delegationData != null) {
             expressionToStoreOn.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);

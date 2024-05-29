@@ -408,13 +408,24 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         if (makeGetPropertyWithGetter(receiver, receiverType, propertyName, safe, implicitThis)) return;
-        if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
         boolean isStaticProperty = (receiver instanceof ClassExpression
                 && (receiverType.isDerivedFrom(receiver.getType()) || receiverType.implementsInterface(receiver.getType())));
-        // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for maps, replace "map.foo" with "map.get('foo')"
-        if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)) {
+        boolean isMapDotProperty = !isStaticProperty && isOrImplements(receiverType, MAP_TYPE);
+
+        // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
+        // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
+        if (isMapDotProperty
+                && (!isThisExpression(receiver) || (implicitThis && controller.isInGeneratedFunction())) // GROOVY-8978
+                && Optional.ofNullable( getField(receiverType, propertyName) ).filter(FieldNode::isPublic).isEmpty()) {
+            writeMapDotProperty(receiver, propertyName, safe);
+            return;
+        }
+
+        if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
+        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
+
+        if (isMapDotProperty) {
             writeMapDotProperty(receiver, propertyName, safe);
             return;
         }

@@ -1144,17 +1144,12 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
 
-        if (propertyName != null) {
-            // TODO: spread safe should be handled inside
-            if (adapter == getProperty && !pexp.isSpreadSafe()) {
-                controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
-            } else if (adapter == getGroovyObjectProperty && !pexp.isSpreadSafe()) {
-                controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
-            } else {
-                controller.getCallSiteWriter().fallbackAttributeOrPropertySite(pexp, objectExpression, propertyName, adapter);
-            }
+        if (adapter == getGroovyObjectProperty && propertyName != null && !pexp.isSpreadSafe()) { // TODO: spread safe should be handled by each
+            controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
+        } else if (adapter == getProperty && propertyName != null && !pexp.isSpreadSafe()) {
+            controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
         } else {
-            controller.getCallSiteWriter().fallbackAttributeOrPropertySite(pexp, objectExpression, null, adapter);
+            controller.getCallSiteWriter().fallbackAttributeOrPropertySite(pexp, objectExpression, propertyName, adapter);
         }
     }
 
