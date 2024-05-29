@@ -85,6 +85,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -434,9 +435,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
         boolean isScriptVariable = (receiverType.isScript() && receiver instanceof VariableExpression && ((VariableExpression) receiver).getAccessedVariable() == null);
-        if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
+        // script variables, self entry lookup and outer class property resolution still require the dynamic property sequence
+        if (!isScriptVariable && !isOrImplements(receiverType, MAP_TYPE) && controller.getClassNode().getOuterClass() == null)
             addPropertyAccessError(receiver, propertyName, receiverType);
-        }
 
         MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
@@ -476,6 +477,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             getterNode.setDeclaringClass(receiverType);
         }
         if (getterNode != null) {
+            // GROOVY-6277, GROOVY-11390: ensure accessibility
+            ClassNode accessingClass = controller.getClassNode();
+            ClassNode declaringClass = getterNode.getDeclaringClass();
+            if (!getterNode.isPublic() && !accessingClass.equals(declaringClass)
+                    && !(getterNode.isProtected() && accessingClass.isDerivedFrom(declaringClass))
+                    && (getterNode.isPrivate() || !inSamePackage(accessingClass, declaringClass))) {
+                return false;
+            }
             MethodCallExpression call = callX(receiver, getterName);
             call.setImplicitThis(implicitThis);
             call.setMethodTarget(getterNode);
