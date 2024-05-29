@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
 
 /**
@@ -820,12 +819,6 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             }
             assert new C(['foo1', 'foo2']).fooNames.size() == 2
         '''
-    }
-
-    // GROOVY-6277
-    @Override @NotYetImplemented
-    void testPublicFieldVersusPrivateGetter() {
-        super.testPublicFieldVersusPrivateGetter()
     }
 
     // GROOVY-11369

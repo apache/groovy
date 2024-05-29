@@ -85,6 +85,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -475,6 +476,14 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
             getterNode.setDeclaringClass(receiverType);
         }
         if (getterNode != null) {
+            // GROOVY-6277, GROOVY-11390: ensure accessibility
+            ClassNode accessingClass = controller.getClassNode();
+            ClassNode declaringClass = getterNode.getDeclaringClass();
+            if (!getterNode.isPublic() && !accessingClass.equals(declaringClass)
+                    && !(getterNode.isProtected() && accessingClass.isDerivedFrom(declaringClass))
+                    && (getterNode.isPrivate() || !inSamePackage(accessingClass, declaringClass))) {
+                return false;
+            }
             MethodCallExpression call = callX(receiver, getterName);
             call.setImplicitThis(implicitThis);
             call.setMethodTarget(getterNode);
