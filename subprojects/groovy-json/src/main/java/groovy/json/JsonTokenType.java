@@ -31,9 +31,9 @@ import java.util.regex.Pattern;
  * @since 1.8.0
  */
 public enum JsonTokenType {
-    OPEN_CURLY      ( "an openning curly brace '{'",        "{"         ),
+    OPEN_CURLY      ( "an opening curly brace '{'",        "{"         ),
     CLOSE_CURLY     ( "a closing curly brace '}'",          "}"         ),
-    OPEN_BRACKET    ( "an openning square bracket '['",     "["         ),
+    OPEN_BRACKET    ( "an opening square bracket '['",     "["         ),
     CLOSE_BRACKET   ( "a closing square bracket ']'",       "]"         ),
     COLON           ( "a colon ':'",                        ":"         ),
     COMMA           ( "a comma ','",                        ","         ),
