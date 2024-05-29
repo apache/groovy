@@ -759,7 +759,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8074
+    // GROOVY-8074, GROOVY-11390
     void testMapPropertyAccess6() {
         assertScript '''
             class C extends HashMap {
@@ -781,6 +781,26 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             map.put('baz', 33)
             assert map.baz == 33
             assert map['baz'] == 33
+        """
+        assertScript """ // map entry before super property
+            class C extends ${PogoType.name} implements Map {
+                @Delegate private Map impl = [:]
+                void test() {
+                    put('foo', 11)
+                  //assert this.foo    == 11 // public getter of super
+                    assert this['foo'] == 11
+                    put('bar', 22)
+                  //assert this.bar    == 22 // protected getter of super
+                    assert this['bar'] == 22
+                    put('baz', 33)
+                    assert this.baz    == 33 // package-private getter of super
+                    assert this['baz'] == 33
+                    put('xxx', 44)
+                    assert this.xxx    == 44 // private getter of super
+                    assert this['xxx'] == 44
+                }
+            }
+            new C().test()
         """
     }
 
@@ -2458,6 +2478,13 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         @PackageScope baz = 3
         protected void setBar(bar) {}
         @PackageScope void setBaz(baz) {}
+    }
+
+    static class PogoType {
+        public        getFoo() { 1 }
+        protected     getBar() { 2 }
+        @PackageScope getBaz() { 3 }
+        private       getXxx() { 4 }
     }
 
     static class BaseClass {
