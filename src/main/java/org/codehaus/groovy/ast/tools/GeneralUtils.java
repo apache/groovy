@@ -26,7 +26,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Variable;
@@ -84,6 +83,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -1117,17 +1117,13 @@ public class GeneralUtils {
     }
 
     public static boolean inSamePackage(final ClassNode first, final ClassNode second) {
-        PackageNode firstPackage = first.getPackage();
-        PackageNode secondPackage = second.getPackage();
-        return ((firstPackage == null && secondPackage == null)
-                || firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
+        return Objects.equals(first.getPackageName(), second.getPackageName());
     }
 
-    public static boolean inSamePackage(final Class<?> first, final Class<?> second) {
-        Package firstPackage = first.getPackage();
-        Package secondPackage = second.getPackage();
-        return ((firstPackage == null && secondPackage == null)
-                || firstPackage != null && secondPackage != null && firstPackage.getName().equals(secondPackage.getName()));
+    public static boolean inSamePackage(final Class<?>  first, final Class<?>  second) {
+        Package firstPackage = first.getPackage(), secondPackage = second.getPackage();
+        return (firstPackage == secondPackage || (firstPackage != null && secondPackage != null
+                                                  && firstPackage.getName().equals(secondPackage.getName())));
     }
 
     public static boolean isDefaultVisibility(final int modifiers) {
