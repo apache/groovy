@@ -1656,7 +1656,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     continue;
                 }
 
-                if (field != null && !(field.isPublic() || (field.isProtected() && !readMode)) // GROOVY-11387: map entry before non-public field
+                if (field != null && !staticOnly && !(field.isPublic() || (field.isProtected() && !readMode)) // GROOVY-11387: entry before field
                         && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null))
                         && isOrImplements(receiverType, MAP_TYPE)) {
                     field = null;
@@ -1677,6 +1677,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         && (!hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())
                         // GROOVY-11369:
                         || (isOrImplements(receiverType, MAP_TYPE)
+                            && !staticOnly // GROOVY-10387: Map.foo
                             && !isSuperExpression(objectExpression)
                             && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null)) // GROOVY-11384
                             && (!getter.isPublic() || (propertyName.matches("empty|class|metaClass") && !List.of(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)))))) {
@@ -1791,25 +1792,26 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
-        for (Receiver<String> receiver : receivers) {
-            ClassNode receiverType = receiver.getType();
-            ClassNode propertyType = getTypeForMapPropertyExpression(receiverType, pexp);
-            if (propertyType == null)
-                propertyType = getTypeForListPropertyExpression(receiverType, pexp);
-            if (propertyType == null)
-                propertyType = getTypeForSpreadExpression(receiverType, pexp);
-            if (propertyType == null)
-                continue;
-            if (visitor != null) {
-                // TODO: type inference on maps and lists, if possible
-                PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, receiver.getType(), null, null, null);
-                node.setDeclaringClass(receiver.getType());
-                visitor.visitProperty(node);
+        if (pexp.isImplicitThis() || !staticOnlyAccess) {
+            for (Receiver<String> receiver : receivers) {
+                ClassNode receiverType = receiver.getType();
+                ClassNode propertyType = getTypeForMapPropertyExpression(receiverType, pexp);
+                if (propertyType == null)
+                    propertyType = getTypeForListPropertyExpression(receiverType, pexp);
+                if (propertyType == null)
+                    propertyType = getTypeForSpreadExpression(receiverType, pexp);
+                if (propertyType == null)
+                    continue;
+                if (visitor != null) {
+                    PropertyNode node = new PropertyNode(propertyName, Opcodes.ACC_PUBLIC, propertyType, receiverType, null, null, null);
+                    node.setDeclaringClass(receiverType);
+                    visitor.visitProperty(node);
+                }
+                storeType(pexp, propertyType);
+                String delegationData = receiver.getData();
+                if (delegationData != null) pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
+                return true;
             }
-            storeType(pexp, propertyType);
-            String delegationData = receiver.getData();
-            if (delegationData != null) pexp.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
-            return true;
         }
 
         if (pexp.isImplicitThis() && isThisExpression(objectExpression)) {

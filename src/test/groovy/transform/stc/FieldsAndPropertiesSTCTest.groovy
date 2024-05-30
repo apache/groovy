@@ -842,6 +842,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert xxx == null
             assert yyy == null
         '''
+        assertScript '''
+            class HttpHeaders extends HashMap<String,List<String>> {
+                protected static final String ACCEPT = 'Accept'
+            }
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+            })
+            def accept = HttpHeaders.ACCEPT
+            assert accept == 'Accept'
+        '''
     }
 
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
