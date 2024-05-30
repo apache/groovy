@@ -1846,7 +1846,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 && Arrays.asList(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)) {
             return false;
         }
-        return isOrImplements(receiverType, MAP_TYPE);
+        return isOrImplements(receiverType, MAP_TYPE) && !isClassType(getType(objectExpression));
     }
 
     /**
