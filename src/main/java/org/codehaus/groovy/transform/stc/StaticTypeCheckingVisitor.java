@@ -3717,6 +3717,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
                     mn = CLOSURE_TYPE.getMethods(name);
                     if (!mn.isEmpty()) {
+                        receiver = CLOSURE_TYPE.getPlainNodeReference();
                         objectExpression.removeNodeMetaData(INFERRED_TYPE);
                     }
                 }

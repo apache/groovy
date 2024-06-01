@@ -932,5 +932,14 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             String z = { -> owner.metaClass }()
             assert !z.contains('$_run_closure')
         '''
+        assertScript '''
+            static foo() {
+                String x = { -> metaClass }()
+                assert x.contains('$_foo_closure')
+                String y = { -> getMetaClass() }()
+                assert y.contains('$_foo_closure')
+            }
+            foo()
+        '''
     }
 }
