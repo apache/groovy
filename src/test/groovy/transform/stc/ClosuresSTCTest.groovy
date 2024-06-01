@@ -18,8 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
-
 /**
  * Unit tests for static type checking : closures.
  */
@@ -39,7 +37,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    @NotYetImplemented
+    // GROOVY-11394
     void testCallClosure3() {
         shouldFailWithMessages '''
             def c = { -> }
@@ -147,6 +145,19 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def c = { p, q = p.toString() -> '' + p + q }
             assert c('foo', 'bar') == 'foobar'
             assert c('foo') == 'foofoo'
+        '''
+    }
+
+    // GROOVY-11394
+    void testCallClosure16() {
+        assertScript '''
+            def c = { Object[] arr, opt = null -> Arrays.toString(arr) + opt }
+            def x = c()
+            assert x == '[]null'
+            def y = c(1)
+            assert y == '[1]null'
+            def z = c(null)
+            assert z == 'nullnull'
         '''
     }
 

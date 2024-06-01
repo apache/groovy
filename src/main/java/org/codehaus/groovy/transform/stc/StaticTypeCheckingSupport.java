@@ -387,41 +387,6 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     /**
-     * Checks that arguments and parameter types match, expecting that the number of parameters is strictly greater
-     * than the number of arguments, allowing possible inclusion of default parameters.
-     *
-     * @return -1 if arguments do not match, 0 if arguments are of the exact type and >0 when one or more argument is
-     * not of the exact type but still match
-     */
-    static int allParametersAndArgumentsMatchWithDefaultParams(final Parameter[] parameters, final ClassNode[] argumentTypes) {
-        int dist = 0;
-        ClassNode ptype = null;
-        for (int i = 0, j = 0, n = parameters.length; i < n; i += 1) {
-            Parameter param = parameters[i];
-            ClassNode paramType = param.getType();
-            ClassNode arg = (j >= argumentTypes.length ? null : argumentTypes[j]);
-            if (arg == null || !isAssignableTo(arg, paramType)) {
-                if (!param.hasInitialExpression() && (ptype == null || !ptype.equals(paramType))) {
-                    return -1; // no default value
-                }
-                // a default value exists, we can skip this param
-                ptype = null;
-            } else {
-                j += 1;
-                if (!paramType.equals(arg)) {
-                    dist += getDistance(arg, paramType);
-                }
-                if (param.hasInitialExpression()) {
-                    ptype = arg;
-                } else {
-                    ptype = null;
-                }
-            }
-        }
-        return dist;
-    }
-
-    /**
      * Checks that excess arguments match the vararg signature parameter.
      *
      * @return -1 if no match, 0 if all arguments matches the vararg type and >0 if one or more vararg argument is
@@ -446,7 +411,7 @@ public abstract class StaticTypeCheckingSupport {
      * @return -1 if no match, 0 if the last argument is exactly the vararg type and 1 if of an assignable type
      */
     @SuppressWarnings("removal")
-    static int lastArgMatchesVarg(final Parameter[] parameters, final ClassNode... argumentTypes) {
+    private static int lastArgMatchesVarg(final Parameter[] parameters, final ClassNode... argumentTypes) {
         if (!isVargs(parameters)) return -1;
         int lastParamIndex = parameters.length - 1;
         if (lastParamIndex == argumentTypes.length) return 0;

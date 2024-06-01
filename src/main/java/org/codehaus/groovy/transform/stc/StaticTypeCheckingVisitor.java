@@ -245,6 +245,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isNumberCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.init;
+import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 import static org.codehaus.groovy.syntax.Types.ASSIGN;
 import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL;
 import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL;
@@ -274,7 +275,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Linked
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Matcher_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.NUMBER_OPS;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.UNKNOWN_PARAMETER_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.allParametersAndArgumentsMatchWithDefaultParams;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsConnections;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.applyGenericsContext;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.boundUnboundedWildcards;
@@ -311,7 +311,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isShif
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isTraitSelf;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isUsingGenericsOrIsArrayUsingGenerics;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isWildcardLeftHandSide;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.lastArgMatchesVarg;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.missesGenericsTypes;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.prettyPrintTypeName;
@@ -951,7 +950,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // propagate closure parameter type information
                 if (leftExpression instanceof VariableExpression) {
                     if (rightExpression instanceof ClosureExpression) {
-                        leftExpression.putNodeMetaData(CLOSURE_ARGUMENTS, ((ClosureExpression) rightExpression).getParameters());
+                        ClosureExpression closure = (ClosureExpression) rightExpression;
+                        if (!hasImplicitParameter(closure)) // GROOVY-11394: arrow means zero parameters
+                            leftExpression.putNodeMetaData(CLOSURE_ARGUMENTS, getParametersSafe(closure));
                     } else if (rightExpression instanceof VariableExpression
                             && ((VariableExpression) rightExpression).getAccessedVariable() instanceof Expression
                             && ((Expression) ((VariableExpression) rightExpression).getAccessedVariable()).getNodeMetaData(CLOSURE_ARGUMENTS) != null) {
@@ -4088,9 +4089,57 @@ out:                if (mn.size() != 1) {
     }
 
     protected void typeCheckClosureCall(final Expression arguments, final ClassNode[] argumentTypes, final Parameter[] parameters) {
-        if (allParametersAndArgumentsMatchWithDefaultParams(parameters, argumentTypes) < 0 && lastArgMatchesVarg(parameters, argumentTypes) < 0) {
-            addStaticTypeError("Cannot call closure that accepts " + formatArgumentList(extractTypesFromParameters(parameters)) + " with " + formatArgumentList(argumentTypes), arguments);
+        int nArguments = argumentTypes.length;
+        List<ClassNode[]> signatures = new LinkedList<>();
+        signatures.add(extractTypesFromParameters(parameters));
+
+        var n = Arrays.stream(parameters).filter(Parameter::hasInitialExpression).count();
+        for (int i = 1; i <= n; i += 1) { // drop parameters with value from right to left
+            ClassNode[] signature = new ClassNode[parameters.length - i];
+            int j = 1, index = 0;
+            for (Parameter parameter : parameters) {
+                if (j > n - i && parameter.hasInitialExpression()) {
+                    // skip parameter with default argument
+                } else {
+                    signature[index++] = parameter.getType();
+                }
+                if (parameter.hasInitialExpression()) j += 1;
+            }
+            signatures.add(signature);
         }
+
+        for (var it = signatures.listIterator(); it.hasNext(); ) { var signature = it.next();
+            if (asBoolean(signature) && last(signature).isArray()) {
+                int vaIndex = signature.length - 1;
+                if (vaIndex == nArguments) { // empty array
+                    it.add(Arrays.copyOf(signature, nArguments));
+                } else if (vaIndex < nArguments) { // spread arg(s)?
+                    var subType = last(signature).getComponentType();
+                    signature = Arrays.copyOf(signature, nArguments);
+                    Arrays.fill(signature, vaIndex, nArguments, subType);
+                    it.add(signature);
+                }
+            }
+        }
+
+        ClassNode[] firstMatch = null;
+
+trying: for (ClassNode[] signature : signatures) {
+            if (nArguments == signature.length) {
+                if (firstMatch == null)
+                    firstMatch = signature;
+                for (int i = 0; i < nArguments; i += 1) {
+                    if (!isAssignableTo(argumentTypes[i], signature[i])) {
+                        continue trying;
+                    }
+                }
+                return; // arguments match
+            }
+        }
+
+        String actual = formatArgumentList(argumentTypes);
+        String expect = formatArgumentList(firstMatch != null ? firstMatch : signatures.get(0));
+        addStaticTypeError("Cannot call closure that accepts " + expect + " with " + actual, arguments);
     }
 
     @Override
