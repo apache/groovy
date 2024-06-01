@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [12, 13, 14, 15, 16, 18, 19, 20]
+        java: [12, 13, 14, 15, 16, 18, 19, 20, 22]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -70,8 +70,7 @@ jobs:
         os: [ubuntu-latest]
         # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
         jdk:
-          - "https://download.java.net/java/GA/jdk22/830ec9fcccef480bb3e73fb7ecafe059/36/GPL/openjdk-22_linux-x64_bin.tar.gz"
-          - "https://download.java.net/java/early_access/jdk23/15/GPL/openjdk-23-ea+15_linux-x64_bin.tar.gz"
+          - "https://download.java.net/java/early_access/jdk23/25/GPL/openjdk-23-ea+25_linux-x64_bin.tar.gz"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Download JDK ${{ matrix.jdk }}
