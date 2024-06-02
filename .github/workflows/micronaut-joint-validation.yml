@@ -15,13 +15,7 @@
 
 name: "Micronaut Joint Validation Build"
 
-on:
-  push:
-    branches:
-      - disableForNowDueToFreakyDependency
-  pull_request:
-    branches:
-      - disableForNowDueToFreakyDependency
+on: [push, pull_request]
 
 permissions:
   contents: read
