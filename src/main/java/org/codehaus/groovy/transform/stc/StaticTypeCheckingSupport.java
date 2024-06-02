@@ -481,20 +481,17 @@ public abstract class StaticTypeCheckingSupport {
         return op == LEFT_SQUARE_BRACKET;
     }
 
+    private static final int[] BOOL_INTRINSIC_OPS = {
+        LOGICAL_AND, LOGICAL_OR, MATCH_REGEX, IMPLIES,
+        COMPARE_NOT_IDENTICAL, COMPARE_IDENTICAL,
+        KEYWORD_INSTANCEOF, COMPARE_NOT_INSTANCEOF
+    };
+    static {
+        Arrays.sort(BOOL_INTRINSIC_OPS);
+    }
+
     static boolean isBoolIntrinsicOp(final int op) {
-        switch (op) {
-            case LOGICAL_AND:
-            case LOGICAL_OR:
-            case COMPARE_NOT_IDENTICAL:
-            case COMPARE_IDENTICAL:
-            case MATCH_REGEX:
-            case KEYWORD_INSTANCEOF:
-            case COMPARE_NOT_INSTANCEOF:
-            case IMPLIES:
-                return true;
-            default:
-                return false;
-        }
+        return Arrays.binarySearch(BOOL_INTRINSIC_OPS, op) >= 0;
     }
 
     static boolean isPowerOperator(final int op) {
@@ -588,37 +585,35 @@ public abstract class StaticTypeCheckingSupport {
         return "leftShift".equals(name) || "rightShift".equals(name) || "rightShiftUnsigned".equals(name);
     }
 
+    private static final int[] OPERATIONS_IN_GROUP = {
+        PLUS, PLUS_EQUAL,
+        MINUS, MINUS_EQUAL,
+        MULTIPLY, MULTIPLY_EQUAL
+    };
+    static {
+        Arrays.sort(OPERATIONS_IN_GROUP);
+    }
+
     /**
      * Returns true for operations that are of the class, that given a common type class for left and right, the
      * operation "left op right" will have a result in the same type class In Groovy on numbers that is +,-,* as well as
      * their variants with equals.
      */
     static boolean isOperationInGroup(final int op) {
-        switch (op) {
-            case PLUS:
-            case PLUS_EQUAL:
-            case MINUS:
-            case MINUS_EQUAL:
-            case MULTIPLY:
-            case MULTIPLY_EQUAL:
-                return true;
-            default:
-                return false;
-        }
+        return Arrays.binarySearch(OPERATIONS_IN_GROUP, op) >= 0;
+    }
+
+    private static final int[] BIT_OPERATORS = {
+        BITWISE_OR_EQUAL, BITWISE_OR,
+        BITWISE_AND_EQUAL, BITWISE_AND,
+        BITWISE_XOR_EQUAL, BITWISE_XOR
+    };
+    static {
+        Arrays.sort(BIT_OPERATORS);
     }
 
     static boolean isBitOperator(final int op) {
-        switch (op) {
-            case BITWISE_OR_EQUAL:
-            case BITWISE_OR:
-            case BITWISE_AND_EQUAL:
-            case BITWISE_AND:
-            case BITWISE_XOR_EQUAL:
-            case BITWISE_XOR:
-                return true;
-            default:
-                return false;
-        }
+        return Arrays.binarySearch(BIT_OPERATORS, op) >= 0;
     }
 
     public static boolean isAssignment(final int op) {
