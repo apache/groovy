@@ -117,9 +117,10 @@ public final class ExpressionUtils {
      * @return the transformed expression or the original if no transformation was performed
      */
     public static ConstantExpression transformBinaryConstantExpression(final BinaryExpression be, final ClassNode targetType) {
-        ClassNode wrapperType = ClassHelper.getWrapper(targetType);
+        ClassNode wrapperType;
         if (isTypeOrArrayOfType(targetType, ClassHelper.STRING_TYPE, false)) {
-            if (be.getOperation().getType() == PLUS) {
+            final int opType = be.getOperation().getType();
+            if (opType == PLUS) {
                 Expression left = transformInlineConstants(be.getLeftExpression(), targetType);
                 Expression right = transformInlineConstants(be.getRightExpression(), targetType);
                 if (left instanceof ConstantExpression && right instanceof ConstantExpression) {
@@ -130,16 +131,16 @@ public final class ExpressionUtils {
                     }
                 }
             }
-        } else if (isNumberOrArrayOfNumber(wrapperType, false)) {
-            int type = be.getOperation().getType();
-            if (Arrays.binarySearch(HANDLED_TYPES, type) >= 0) {
+        } else if (isNumberOrArrayOfNumber(wrapperType = ClassHelper.getWrapper(targetType), false)) {
+            final int opType = be.getOperation().getType();
+            if (Arrays.binarySearch(HANDLED_TYPES, opType) >= 0) {
                 Expression leftX = be.getLeftExpression();
                 if (!(leftX instanceof ConstantExpression)) {
                     leftX = transformInlineConstants(leftX, targetType);
                 }
                 Expression rightX = be.getRightExpression();
                 if (!(rightX instanceof ConstantExpression)) {
-                    boolean isShift = (type >= LEFT_SHIFT && type <= RIGHT_SHIFT_UNSIGNED); // GROOVY-9336
+                    boolean isShift = (opType >= LEFT_SHIFT && opType <= RIGHT_SHIFT_UNSIGNED); // GROOVY-9336
                     rightX = transformInlineConstants(rightX, isShift ? ClassHelper.int_TYPE : targetType);
                 }
                 if (leftX instanceof ConstantExpression && rightX instanceof ConstantExpression) {
@@ -147,7 +148,7 @@ public final class ExpressionUtils {
                     Number right = safeNumber((ConstantExpression) rightX);
                     if (left == null || right == null) return null;
                     Number result = null;
-                    switch (type) {
+                    switch (opType) {
                       case PLUS:
                         result = NumberMath.add(left, right);
                         break;
@@ -183,27 +184,9 @@ public final class ExpressionUtils {
                         break;
                     }
                     if (result != null) {
-                        if (ClassHelper.isWrapperInteger(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.intValue(), true));
-                        }
-                        if (ClassHelper.isWrapperByte(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.byteValue(), true));
-                        }
-                        if (ClassHelper.isWrapperLong(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.longValue(), true));
-                        }
-                        if (ClassHelper.isWrapperShort(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.shortValue(), true));
-                        }
-                        if (ClassHelper.isWrapperFloat(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.floatValue(), true));
-                        }
-                        if (ClassHelper.isWrapperDouble(wrapperType)) {
-                            return configure(be, new ConstantExpression(result.doubleValue(), true));
-                        }
-                        if (ClassHelper.isWrapperCharacter(wrapperType)) {
-                            return configure(be, new ConstantExpression((char) result.intValue(), true));
-                        }
+                        ConstantExpression constantExpression = transformNumberConstantExpression(be, wrapperType, result);
+                        if (constantExpression != null) return constantExpression;
+
                         return configure(be, new ConstantExpression(result, true));
                     }
                 }
@@ -328,24 +311,8 @@ public final class ExpressionUtils {
             ClassNode targetType = ClassHelper.getWrapper(attrType);
             if (value instanceof Integer) {
                 Integer integer = (Integer) value;
-                if (ClassHelper.isWrapperByte(targetType)) {
-                    return configure(exp, new ConstantExpression(integer.byteValue(), true));
-                }
-                if (ClassHelper.isWrapperLong(targetType)) {
-                    return configure(exp, new ConstantExpression(integer.longValue(), true));
-                }
-                if (ClassHelper.isWrapperShort(targetType)) {
-                    return configure(exp, new ConstantExpression(integer.shortValue(), true));
-                }
-                if (ClassHelper.isWrapperFloat(targetType)) {
-                    return configure(exp, new ConstantExpression(integer.floatValue(), true));
-                }
-                if (ClassHelper.isWrapperDouble(targetType)) {
-                    return configure(exp, new ConstantExpression(integer.doubleValue(), true));
-                }
-                if (ClassHelper.isWrapperCharacter(targetType)) {
-                    return configure(exp, new ConstantExpression((char) integer.intValue(), true));
-                }
+                ConstantExpression constantExpression = transformNumberConstantExpression(exp, targetType, integer);
+                if (constantExpression != null) return constantExpression;
             } else if (value instanceof BigDecimal) {
                 BigDecimal decimal = (BigDecimal) value;
                 if (ClassHelper.isWrapperFloat(targetType)) {
@@ -374,6 +341,31 @@ public final class ExpressionUtils {
             return transformListOfConstants((ListExpression) exp, attrType);
         }
         return exp;
+    }
+
+    private static ConstantExpression transformNumberConstantExpression(Expression exp, ClassNode type, Number number) {
+        if (ClassHelper.isWrapperInteger(type)) {
+            return configure(exp, new ConstantExpression(number.intValue(), true));
+        }
+        if (ClassHelper.isWrapperByte(type)) {
+            return configure(exp, new ConstantExpression(number.byteValue(), true));
+        }
+        if (ClassHelper.isWrapperLong(type)) {
+            return configure(exp, new ConstantExpression(number.longValue(), true));
+        }
+        if (ClassHelper.isWrapperDouble(type)) {
+            return configure(exp, new ConstantExpression(number.doubleValue(), true));
+        }
+        if (ClassHelper.isWrapperFloat(type)) {
+            return configure(exp, new ConstantExpression(number.floatValue(), true));
+        }
+        if (ClassHelper.isWrapperShort(type)) {
+            return configure(exp, new ConstantExpression(number.shortValue(), true));
+        }
+        if (ClassHelper.isWrapperCharacter(type)) {
+            return configure(exp, new ConstantExpression((char) number.intValue(), true));
+        }
+        return null;
     }
 
     /**
