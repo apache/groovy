@@ -88,7 +88,8 @@ final class AutoImplementTransformTest {
         '''
     }
 
-    @Test // GROOVY-9816
+    // GROOVY-9816
+    @Test
     void testPropertyMethodsNotOverwritten() {
         assertScript shell, '''
             interface Bar {
@@ -205,7 +206,8 @@ final class AutoImplementTransformTest {
             '''
     }
 
-    @Test // GROOVY-8270
+    // GROOVY-8270
+    @Test
     void testGenericParameterTypes() {
         assertScript shell, '''
             @AutoImplement
@@ -217,7 +219,8 @@ final class AutoImplementTransformTest {
             '''
     }
 
-    @Test // GROOVY-10472
+    // GROOVY-10472
+    @Test
     void testCovariantReturnTypes() {
         assertScript shell, '''
             interface Super { List findAll() }
@@ -300,7 +303,8 @@ final class AutoImplementTransformTest {
         '''
     }
 
-    @Test // GROOVY-10552
+    // GROOVY-10552
+    @Test
     void testMethodWithTypeParameter() {
         assertScript shell, '''
             interface I {
@@ -321,6 +325,28 @@ final class AutoImplementTransformTest {
             }
 
             new C().commit()
+        '''
+    }
+
+    // GROOVY-11339
+    @Test
+    void testMethodWithDefaultArgument() {
+        assertScript shell, '''
+            interface I {
+                def foo()
+                def foo(bar)
+                def foo(bar,baz)
+            }
+            @AutoImplement
+            class C implements I {
+                @Override // foo(bar) and foo(bar,baz)
+                def foo(bar, baz = null) {
+                    return bar
+                }
+            }
+            def c = new C()
+            assert c.foo() == null
+            assert c.foo(12) == 12
         '''
     }
 }

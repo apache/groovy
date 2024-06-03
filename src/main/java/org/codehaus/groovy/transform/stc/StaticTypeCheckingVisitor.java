@@ -145,6 +145,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.AUTOCLOSEABLE_TYPE;
@@ -4968,65 +4969,10 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         if (!receiver.isResolved() && !methods.isEmpty()) {
-            methods = addGeneratedMethods(receiver, methods);
+            methods = withDefaultArgumentMethods(methods);
         }
 
         return methods;
-    }
-
-    private static List<MethodNode> addGeneratedMethods(final ClassNode receiver, final List<? extends MethodNode> methods) {
-        // using a comparator of parameters
-        List<MethodNode> result = new LinkedList<>();
-        for (MethodNode method : methods) {
-            result.add(method);
-            Parameter[] parameters = method.getParameters();
-            int counter = 0;
-            int size = parameters.length;
-            for (int i = size - 1; i >= 0; i--) {
-                Parameter parameter = parameters[i];
-                if (parameter != null && parameter.hasInitialExpression()) {
-                    counter++;
-                }
-            }
-
-            for (int j = 1; j <= counter; j++) {
-                Parameter[] newParams = new Parameter[parameters.length - j];
-                int index = 0;
-                int k = 1;
-                for (Parameter parameter : parameters) {
-                    if (k > counter - j && parameter != null && parameter.hasInitialExpression()) {
-                        k++;
-                    } else if (parameter != null && parameter.hasInitialExpression()) {
-                        newParams[index++] = parameter;
-                        k++;
-                    } else {
-                        newParams[index++] = parameter;
-                    }
-                }
-                MethodNode stubbed;
-                if (method.isConstructor()) {
-                    stubbed = new ConstructorNode(
-                            method.getModifiers(),
-                            newParams,
-                            method.getExceptions(),
-                            GENERATED_EMPTY_STATEMENT
-                    );
-                } else {
-                    stubbed = new MethodNode(
-                            method.getName(),
-                            method.getModifiers(),
-                            method.getReturnType(),
-                            newParams,
-                            method.getExceptions(),
-                            GENERATED_EMPTY_STATEMENT
-                    );
-                    stubbed.setGenericsTypes(method.getGenericsTypes());
-                }
-                stubbed.setDeclaringClass(method.getDeclaringClass());
-                result.add(stubbed);
-            }
-        }
-        return result;
     }
 
     protected List<MethodNode> findMethod(ClassNode receiver, final String name, final ClassNode... args) {
@@ -5034,7 +4980,7 @@ trying: for (ClassNode[] signature : signatures) {
 
         List<MethodNode> methods;
         if ("<init>".equals(name) && !receiver.isInterface()) {
-            methods = addGeneratedMethods(receiver, receiver.getDeclaredConstructors());
+            methods = withDefaultArgumentMethods(receiver.getDeclaredConstructors());
             if (methods.isEmpty()) {
                 MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
                 node.setDeclaringClass(receiver);

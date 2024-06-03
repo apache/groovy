@@ -18,13 +18,20 @@
  */
 package org.apache.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.apache.groovy.util.BeanUtils.decapitalize;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 
 /**
  * Utility class for working with MethodNodes
@@ -155,5 +162,49 @@ public class MethodNodeUtils {
         Parameter[] parameters = mNode.getParameters();
         return (parameters == null || parameters.length == 0)
                 && mNode.isPublic() && !mNode.isStatic() && !mNode.isAbstract() && !mNode.isVoidMethod();
+    }
+
+    /**
+     * Returns new list that includes methods that will be generated for default
+     * argument expressions.
+     *
+     * @since 5.0.0
+     */
+    public static List<MethodNode> withDefaultArgumentMethods(final List<? extends MethodNode> methods) {
+        List<MethodNode> result = new ArrayList<>(methods.size());
+
+        for (MethodNode method : methods) {
+            result.add(method);
+
+            if (!method.hasDefaultValue()) continue;
+
+            Parameter[] parameters = method.getParameters();
+            var n = Arrays.stream(parameters).filter(Parameter::hasInitialExpression).count();
+            for (int i = 1; i <= n; i += 1) { // drop parameters with value from right to left
+                Parameter[] newParams = new Parameter[parameters.length - i];
+                int j = 1, index = 0;
+                for (Parameter parameter : parameters) {
+                    if (j > n - i && parameter.hasInitialExpression()) {
+                        ;
+                    } else {
+                        newParams[index++] = parameter;
+                    }
+                    if (parameter.hasInitialExpression()) j += 1;
+                }
+
+                MethodNode stub;
+                if (method.isConstructor()) {
+                    stub = new ConstructorNode(method.getModifiers(), newParams, method.getExceptions(), EmptyStatement.INSTANCE);
+                } else {
+                    stub = new MethodNode(method.getName(), method.getModifiers() & ~ACC_ABSTRACT, method.getReturnType(), newParams, method.getExceptions(), EmptyStatement.INSTANCE);
+                }
+                stub.setDeclaringClass(method.getDeclaringClass());
+                stub.setGenericsTypes(method.getGenericsTypes());
+                stub.setSynthetic(true);
+                result.add(stub);
+            }
+        }
+
+        return result;
     }
 }

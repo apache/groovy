@@ -45,7 +45,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
-import static org.apache.groovy.util.BeanUtils.capitalize;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -119,7 +119,7 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
         if (mNode.getParameters().length == 0) {
             String propertyName = getPropertyName(mNode);
             if (propertyName != null) {
-                String accessorName = mNode.getName().startsWith("is") ? getGetterName(propertyName) : "is" + capitalize(propertyName);
+                String accessorName = mNode.getName().startsWith("is") ? getGetterName(propertyName) : getGetterName(propertyName, Boolean.TYPE);
                 if (cNode.hasMethod(accessorName, Parameter.EMPTY_ARRAY)) {
                     // delegate to existing accessor to reduce the surprise
                     return returnS(callX(varX("this"), accessorName));
@@ -148,14 +148,14 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
      */
     private static Map<String, MethodNode> getAllCorrectedMethodsMap(final ClassNode cNode) {
         Map<String, MethodNode> result = new HashMap<>();
-        for (MethodNode mn : cNode.getMethods()) {
+        for (MethodNode mn : getMethodsWithGenerated(cNode)) {
             result.put(methodDescriptorWithoutReturnType(mn), mn);
         }
         ClassNode next = cNode;
         while (true) {
             Map<String, ClassNode> genericsSpec = createGenericsSpec(next);
             if (next != cNode) {
-                for (MethodNode mn : next.getMethods()) {
+                for (MethodNode mn : getMethodsWithGenerated(next)) {
                     MethodNode correctedMethod = correctToGenericsSpec(genericsSpec, mn);
                     ClassNode correctedClass = correctToGenericsSpecRecurse(genericsSpec, next);
                     MethodNode found = getDeclaredMethodCorrected(genericsSpec, correctedMethod, correctedClass);
@@ -194,33 +194,59 @@ public class AutoImplementASTTransformation extends AbstractASTTransformation {
             next = correctToGenericsSpecRecurse(updatedGenericsSpec, superClass);
         }
 
-        // GROOVY-9816: remove entries for to-be-generated property access and mutate methods
-        for (ClassNode cn = cNode; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
-            for (PropertyNode pn : cn.getProperties()) {
-                if (!pn.getField().isFinal()) {
-                    result.remove(pn.getSetterNameOrDefault() + ":" + pn.getType().getText() + ",");
-                }
-                if (!ClassHelper.isPrimitiveBoolean(pn.getType())) {
-                    result.remove(pn.getGetterNameOrDefault() + ":");
-                } else if (pn.getGetterName() != null) {
-                    result.remove(pn.getGetterName() + ":");
-                } else {
-                    // getter generated only if no explicit isser and vice versa
-                    String isserName  = "is" + capitalize(pn.getName());
-                    String getterName = getGetterName(pn.getName());
-                    if (!cNode.hasMethod(isserName, Parameter.EMPTY_ARRAY)) {
-                        result.remove(getterName + ":");
-                    }
-                    if (!cNode.hasMethod(getterName, Parameter.EMPTY_ARRAY)) {
-                        result.remove(isserName + ":");
-                    }
-                }
-            }
-        }
         return result;
     }
 
-    private static boolean isWeakerCandidate(MethodNode existing, MethodNode found) {
+    private static List<MethodNode> getMethodsWithGenerated(final ClassNode cNode) {
+        List<MethodNode> methods = cNode.getMethods();
+
+        // GROOVY-11339:
+        methods = withDefaultArgumentMethods(methods);
+
+        // GROOVY-9816:
+        for (PropertyNode pn : cNode.getProperties()) {
+            int modifiers = pn.isStatic() ? 9 : 1;
+            if (!pn.isFinal()) {
+                String setterName = pn.getSetterNameOrDefault();
+                Parameter[] oneParameter = {new Parameter(pn.getType(), "value")};
+                if (!cNode.hasMethod(setterName, oneParameter)) {
+                    MethodNode mn = new MethodNode(setterName, modifiers, ClassHelper.VOID_TYPE, oneParameter, null, null);
+                    mn.setDeclaringClass(cNode);
+                    mn.setSynthetic(true);
+                    methods.add(mn);
+                }
+            }
+            if (pn.getGetterName() != null || !ClassHelper.isPrimitiveBoolean(pn.getType())) {
+                String getterName = pn.getGetterNameOrDefault();
+                if (!cNode.hasMethod(getterName, Parameter.EMPTY_ARRAY)) {
+                    MethodNode mn = new MethodNode(getterName, modifiers, pn.getType(), Parameter.EMPTY_ARRAY, null, null);
+                    mn.setDeclaringClass(cNode);
+                    mn.setSynthetic(true);
+                    methods.add(mn);
+                }
+            } else {
+                // getter generated only if no explicit isser and vice versa
+                String  isserName = getGetterName(pn.getName(), Boolean.TYPE);
+                String getterName = getGetterName(pn.getName());
+                if (!cNode.hasMethod(isserName, Parameter.EMPTY_ARRAY)) {
+                    MethodNode mn = new MethodNode(getterName, modifiers, pn.getType(), Parameter.EMPTY_ARRAY, null, null);
+                    mn.setDeclaringClass(cNode);
+                    mn.setSynthetic(true);
+                    methods.add(mn);
+                }
+                if (!cNode.hasMethod(getterName, Parameter.EMPTY_ARRAY)) {
+                    MethodNode mn = new MethodNode(isserName, modifiers, pn.getType(), Parameter.EMPTY_ARRAY, null, null);
+                    mn.setDeclaringClass(cNode);
+                    mn.setSynthetic(true);
+                    methods.add(mn);
+                }
+            }
+        }
+
+        return methods;
+    }
+
+    private static boolean isWeakerCandidate(final MethodNode existing, final MethodNode found) {
         return !(existing.isAbstract() && !found.isAbstract()) &&
                 // GROOVY-10472: prefer covariant method with more concrete type
                 isSubtype(found.getReturnType(), existing.getReturnType());
