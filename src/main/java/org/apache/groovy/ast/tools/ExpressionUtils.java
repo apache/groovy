@@ -35,7 +35,6 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -99,15 +98,6 @@ public final class ExpressionUtils {
 
     //--------------------------------------------------------------------------
 
-    private static final int[] HANDLED_TYPES = {
-            PLUS, MINUS, MULTIPLY, DIVIDE, POWER,
-            BITWISE_OR, BITWISE_AND, BITWISE_XOR,
-            LEFT_SHIFT, RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED
-    };
-    static {
-        Arrays.sort(HANDLED_TYPES);
-    }
-
     /**
      * Converts expressions like ConstantExpression(40) + ConstantExpression(2)
      * into the simplified ConstantExpression(42) at compile time.
@@ -133,7 +123,10 @@ public final class ExpressionUtils {
             }
         } else if (isNumberOrArrayOfNumber(wrapperType = ClassHelper.getWrapper(targetType), false)) {
             final int opType = be.getOperation().getType();
-            if (Arrays.binarySearch(HANDLED_TYPES, opType) >= 0) {
+            if (opType == PLUS || opType == MINUS || opType == MULTIPLY || opType == DIVIDE
+                || opType == POWER || opType == BITWISE_OR || opType == BITWISE_AND || opType == BITWISE_XOR
+                || opType == LEFT_SHIFT || opType == RIGHT_SHIFT || opType == RIGHT_SHIFT_UNSIGNED) {
+
                 Expression leftX = be.getLeftExpression();
                 if (!(leftX instanceof ConstantExpression)) {
                     leftX = transformInlineConstants(leftX, targetType);
