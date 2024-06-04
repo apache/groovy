@@ -676,6 +676,20 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11397
+    void testSAMsInMethodSelection7() {
+        assertScript '''
+            interface Action<T> { void run(T t) }
+            interface Proc { void doSomething() }
+            void trigger(Action<Proc> action) {
+                action.run({->})
+            }
+            trigger { Proc it ->
+                it.doSomething()
+            }
+        '''
+    }
+
     // GROOVY-6238
     void testDirectMethodCallOnClosureExpression() {
         assertScript '''
