@@ -30,77 +30,86 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { it / 2 } }
-        ''', 'Cannot find matching method java.lang.Object#div(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#div(int)'
     }
-    void testShouldNotAllowDivBynUntypedVariable() {
+    void testShouldNotAllowDivByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 / it } }
-        ''', 'Cannot find matching method int#div(java.lang.Object)'
+        ''',
+        'Cannot find matching method int#div(java.lang.Object)'
     }
     void testShouldNotAllowModOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { it % 2 } }
-        ''', 'Cannot find matching method java.lang.Object#mod(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#mod(int)'
     }
-    void testShouldNotAllowModBynUntypedVariable() {
+    void testShouldNotAllowModByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 % it } }
-        ''', 'Cannot find matching method int#mod(java.lang.Object)'
+        ''',
+        'Cannot find matching method int#mod(java.lang.Object)'
     }
     void testShouldNotAllowMulOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { it * 2 } }
-        ''', 'Cannot find matching method java.lang.Object#multiply(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#multiply(int)'
     }
-    void testShouldNotAllowMulBynUntypedVariable() {
+    void testShouldNotAllowMulByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 * it } }
-        ''', 'Cannot find matching method int#multiply(java.lang.Object)'
+        ''',
+        'Cannot find matching method int#multiply(java.lang.Object)'
     }
     void testShouldNotAllowPlusOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { it + 2 } }
-        ''', 'Cannot find matching method java.lang.Object#plus(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#plus(int)'
     }
     void testShouldNotAllowPlusWithUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 + it } }
-        ''', 'Cannot find matching method int#plus(java.lang.Object)'
+        ''',
+        'Cannot find matching method int#plus(java.lang.Object)'
     }
     void testShouldNotAllowMinusOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { it - 2 } }
-        ''', 'Cannot find matching method java.lang.Object#minus(int)'
+        ''',
+        'Cannot find matching method java.lang.Object#minus(int)'
     }
     void testShouldNotAllowMinusByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
             def bar() { foo { 2 - it } }
-        ''', 'Cannot find matching method int#minus(java.lang.Object)'
+        ''',
+        'Cannot find matching method int#minus(java.lang.Object)'
     }
 
     // GROOVY-7929
     void testShouldDetectInvalidMethodUseWithinTraitWithCompileStaticAndSelfType() {
         shouldFailWithMessages '''
             class C {
-                def m() { }
             }
-            @groovy.transform.CompileStatic
             @groovy.transform.SelfType(C)
             trait T {
                 void test() {
                     x()
                 }
             }
-        ''', 'Cannot find matching method <UnionType:C+T>#x'
+        ''',
+        'Cannot find matching method <UnionType:C+T>#x'
     }
 
     // GROOVY-10102
@@ -155,33 +164,33 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     void testGroovy5487ReturnNull() {
         assertScript '''
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
-        })
-        List getList() {
-            null
-        }
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
+            })
+            List getList() {
+                null
+            }
         '''
     }
 
     void testGroovy5487ReturnNullWithExplicitReturn() {
         assertScript '''
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
-        })
-        List getList() {
-            return null
-        }
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
+            })
+            List getList() {
+                return null
+            }
         '''
     }
 
     void testGroovy5487ReturnNullWithEmptyBody() {
         assertScript '''
-        @ASTTest(phase=INSTRUCTION_SELECTION, value= {
-            assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
-        })
-        List getList() {
-        }
+            @ASTTest(phase=INSTRUCTION_SELECTION, value= {
+                assert node.getNodeMetaData(INFERRED_RETURN_TYPE) == null // null since 2.1.9
+            })
+            List getList() {
+            }
         '''
     }
 
@@ -204,7 +213,8 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             L<String> items = ['foo', 'bar'] as L<String>
             items.removeIf({a, b -> 1} as Comparator<?>)
             assert items
-        ''', 'Cannot call L#removeIf(java.util.Comparator<? super java.lang.String>) with arguments [java.util.Comparator<?>]'
+        ''',
+        'Cannot call L#removeIf(java.util.Comparator<? super java.lang.String>) with arguments [java.util.Comparator<?>]'
     }
 
     void testGroovy5482ListsAndFlowTyping() {
@@ -219,177 +229,84 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testClosureThisObjectDelegateOwnerProperty() {
-        assertScript '''
-            class C {
-                void m() {
-                    C that = this;
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = thisObject
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = delegate
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = owner
-                        assert ref == that
-                    }();
-                }
-            }
-            new C().m()
-        '''
-    }
-
-    void testClosureThisObjectDelegateOwnerAccessor() {
-        assertScript '''
-            class C {
-                void m() {
-                    C that = this;
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = getThisObject()
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = getDelegate()
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = getOwner()
-                        assert ref == that
-                    }();
-                }
-            }
-            new C().m()
-        '''
-    }
-
-    // GROOVY-9604
-    void testClosureResolveStrategy() {
-        assertScript '''
-            class C {
-                def m() {
-                    return { ->
-                        resolveStrategy + getResolveStrategy()
-                    }();
-                }
-            }
-            assert new C().m() == 0
-        '''
-    }
-
     // GROOVY-5616
     void testAssignToGroovyObject() {
         assertScript '''
-        class A {}
-        GroovyObject obj = new A()
+            class A {}
+            GroovyObject obj = new A()
         '''
     }
 
     void testAssignJavaClassToGroovyObject() {
         shouldFailWithMessages '''
-        GroovyObject obj = 'foo'
-        ''', 'Cannot assign value of type java.lang.String to variable of type groovy.lang.GroovyObject'
+            GroovyObject obj = 'foo'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type groovy.lang.GroovyObject'
     }
 
     void testCastToGroovyObject() {
         assertScript '''
-        class A {}
-        GroovyObject obj = new A()
+            class A {}
+            GroovyObject obj = new A()
         '''
     }
 
     void testAssignInnerClassToGroovyObject() {
         assertScript '''
-        class A { static class B {} }
-        GroovyObject obj = new A.B()
+            class A { static class B {} }
+            GroovyObject obj = new A.B()
         '''
     }
 
     void testCastInnerClassToGroovyObject() {
         assertScript '''
-        class A { static class B {} }
-        GroovyObject obj = (GroovyObject)new A.B()
+            class A { static class B {} }
+            GroovyObject obj = (GroovyObject)new A.B()
         '''
     }
 
     void testGroovyObjectInGenerics() {
         assertScript '''
-        class A {}
-        List<? extends GroovyObject> list = new LinkedList<? extends GroovyObject>()
-        list.add(new A())
+            class A {}
+            List<? extends GroovyObject> list = new LinkedList<? extends GroovyObject>()
+            list.add(new A())
         '''
     }
 
     // GROOVY-5656
     void testShouldNotThrowAmbiguousMethodError() {
         assertScript '''import groovy.transform.*
+            class Expr {}
+            class VarExpr extends Expr {}
 
-        class Expr {}
-        class VarExpr extends Expr {}
-
-        class ArgList {
-            ArgList(Expr e1) {  }
-            ArgList(Expr[] es) {  }
-        }
-
-        class Bug4 {
-            void test() {
-                new ArgList(new VarExpr())
+            class ArgList {
+                ArgList(Expr e1) {  }
+                ArgList(Expr[] es) {  }
             }
-        }
 
-        new Bug4().test()
+            class Bug4 {
+                void test() {
+                    new ArgList(new VarExpr())
+                }
+            }
+
+            new Bug4().test()
         '''
     }
 
     // GROOVY-5793
     void testByteAsParameter() {
         assertScript '''
-        void testMethod(java.lang.Byte param){
-            println(param)
-        }
+            void testMethod(java.lang.Byte param){
+                println(param)
+            }
 
-        void execute(){
-            testMethod(java.lang.Byte.valueOf("123"))
-        }
+            void execute(){
+                testMethod(java.lang.Byte.valueOf("123"))
+            }
 
-        execute()'''
-    }
-
-    // GROOVY-5874 (pt.1)
-    void testClosureSharedVariableInBinExp() {
-        shouldFailWithMessages '''
-            def sum = 0
-            def cl1 = { sum = sum + 1 }
-            def cl2 = { sum = new Date() }
-
-        ''', 'A closure shared variable [sum] has been assigned with various types'
+            execute()
+        '''
     }
 
     // GROOVY-5870
@@ -403,71 +320,71 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5889
     void testShouldNotGoIntoInfiniteLoop() {
         assertScript '''
-        class Enclosing {
-            static class FMessage {
-                static enum LogLevel { finest, finer, fine, config, info, warning, severe }
-                LogLevel logLevel
+            class Enclosing {
+                static class FMessage {
+                    static enum LogLevel { finest, finer, fine, config, info, warning, severe }
+                    LogLevel logLevel
+                }
             }
-        }
-        new Enclosing()
+            new Enclosing()
         '''
     }
 
     // GROOVY-5959
     void testSwitchCaseShouldNotRemoveBreakStatements() {
         assertScript '''
-        int test(Map<String, String> token) {
-          switch(token.type) {
-            case 'case one':
-              1
-              break
-            case 'case two':
-              2
-              break
-            default:
-              3
-              break
-          }
-        }
-        assert test([type:'case one']) == 1
-        assert test([type:'case two']) == 2
-        assert test([type:'default']) == 3
+            int test(Map<String, String> token) {
+              switch(token.type) {
+                case 'case one':
+                  1
+                  break
+                case 'case two':
+                  2
+                  break
+                default:
+                  3
+                  break
+              }
+            }
+            assert test([type:'case one']) == 1
+            assert test([type:'case two']) == 2
+            assert test([type:'default']) == 3
         '''
     }
 
     void testShouldChooseFindMethodFromList() {
         assertScript '''
-        class Mylist implements List<Object> {
+            class Mylist implements List<Object> {
+                int size() { }
+                boolean isEmpty() {}
+                boolean contains(final Object o) {}
+                Iterator iterator() {[].iterator()}
+                Object[] toArray() {}
+                Object[] toArray(final Object[] a) {}
+                boolean add(final Object e) {}
+                boolean remove(final Object o) {}
+                boolean containsAll(final Collection<?> c) {}
+                boolean addAll(final Collection c) {}
+                boolean addAll(final int index, final Collection c) {}
+                boolean removeAll(final Collection<?> c) {}
+                boolean retainAll(final Collection<?> c) {}
+                void clear() {}
+                Object get(final int index) {}
+                Object set(final int index, final Object element) {}
+                void add(final int index, final Object element) {}
+                Object remove(final int index) {}
+                int indexOf(final Object o) {}
+                int lastIndexOf(final Object o) {}
+                ListIterator listIterator() {}
+                ListIterator listIterator(final int index) {}
+                List subList(final int fromIndex, final int toIndex) {}
+            }
 
-            int size() { }
-            boolean isEmpty() {}
-            boolean contains(final Object o) {}
-            Iterator iterator() {[].iterator()}
-            Object[] toArray() {}
-            Object[] toArray(final Object[] a) {}
-            boolean add(final Object e) {}
-            boolean remove(final Object o) {}
-            boolean containsAll(final Collection<?> c) {}
-            boolean addAll(final Collection c) {}
-            boolean addAll(final int index, final Collection c) {}
-            boolean removeAll(final Collection<?> c) {}
-            boolean retainAll(final Collection<?> c) {}
-            void clear() {}
-            Object get(final int index) {}
-            Object set(final int index, final Object element) {}
-            void add(final int index, final Object element) {}
-            Object remove(final int index) {}
-            int indexOf(final Object o) {}
-            int lastIndexOf(final Object o) {}
-            ListIterator listIterator() {}
-            ListIterator listIterator(final int index) {}
-            List subList(final int fromIndex, final int toIndex) {}
-        }
+            def whatthe(Mylist a) {
+                a.find { true }
+            }
 
-           def whatthe(Mylist a) {
-               a.find { true }
-           }
-        whatthe(new Mylist())
+            whatthe(new Mylist())
         '''
     }
 
@@ -583,32 +500,31 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     void testConstructorNewInstance() {
         assertScript '''import java.lang.reflect.Constructor
+            class Person {
+                String name
+                Person(String name) { this.name = name }
+            }
 
-class Person {
-    String name
-    Person(String name) { this.name = name }
-}
-
-Constructor<Person> ctor = Person.getConstructor(String)
-def p = ctor.newInstance('Bob')
-assert p.name == 'Bob'
-'''
+            Constructor<Person> ctor = Person.getConstructor(String)
+            def p = ctor.newInstance('Bob')
+            assert p.name == 'Bob'
+        '''
     }
 
     void testOuterDotThisNotation() {
         assertScript '''
-class Outer {
-    int x
-    class Inner {
-        int foo() { 2*Outer.this.x }
-    }
-    int bar() {
-        new Inner().foo()
-    }
-}
-def o = new Outer(x:123)
-assert o.bar() == 2*o.x
-'''
+            class Outer {
+                int x
+                class Inner {
+                    int foo() { 2*Outer.this.x }
+                }
+                int bar() {
+                    new Inner().foo()
+                }
+            }
+            def o = new Outer(x:123)
+            assert o.bar() == 2*o.x
+        '''
     }
 
     // GROOVY-6965
@@ -716,7 +632,8 @@ assert o.bar() == 2*o.x
     void testAmbiguousMethodResolutionNoArgsOverload() {
         shouldFailWithMessages '''
             Arrays.sort()
-        ''', 'Reference to method is ambiguous. Cannot choose between '
+        ''',
+        'Reference to method is ambiguous. Cannot choose between '
     }
 
     // GROOVY-7711
@@ -784,6 +701,7 @@ assert o.bar() == 2*o.x
 
             assert AbstractSubClass.name == 'AbstractSubClass'
         '''
+
         assertScript '''
             interface SomeInterface { void foo() }
             interface SomeOtherInterface { void bar() }
@@ -844,6 +762,7 @@ assert o.bar() == 2*o.x
             }
             assert new Foo().bar() == ['x']
         '''
+
         assertScript '''
             class Foo {
                 def bar() {
@@ -856,6 +775,7 @@ assert o.bar() == 2*o.x
             }
             assert new Foo().bar() == [[x:1], [y:2]]
         '''
+
         assertScript '''
             import groovy.transform.*
             @ToString(includeFields=true)

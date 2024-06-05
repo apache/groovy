@@ -601,26 +601,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                   case "delegate":
                     DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
                     if (dm != null) {
-                        storeType(vexp, dm.getType());
+                        vexp.putNodeMetaData(INFERRED_TYPE, dm.getType());
                         return;
                     }
                     // falls through
                   case "owner":
                     if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
-                        storeType(vexp, CLOSURE_TYPE);
+                        vexp.putNodeMetaData(INFERRED_TYPE, CLOSURE_TYPE.getPlainNodeReference());
                         return;
                     }
                     // falls through
                   case "thisObject":
-                    storeType(vexp, typeCheckingContext.getEnclosingClassNode());
+                    vexp.putNodeMetaData(INFERRED_TYPE, makeThis());
                     return;
                   case "parameterTypes":
-                    storeType(vexp, CLASS_Type.makeArray());
+                    vexp.putNodeMetaData(INFERRED_TYPE, CLASS_Type.getPlainNodeReference().makeArray());
                     return;
                   case "maximumNumberOfParameters":
                   case "resolveStrategy":
                   case "directive":
-                    storeType(vexp, int_TYPE);
+                    vexp.putNodeMetaData(INFERRED_TYPE, int_TYPE);
                     return;
                 }
             }
@@ -3611,6 +3611,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (mn.isEmpty() && isThisObjectExpression && call.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
                     mn = CLOSURE_TYPE.getDeclaredMethods(name);
                     if (!mn.isEmpty()) {
+                        receiver = CLOSURE_TYPE.getPlainNodeReference();
                         objectExpression.removeNodeMetaData(INFERRED_TYPE);
                     }
                 }
@@ -3661,19 +3662,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, targetMethodCandidate); callArgsVisited = true;
 
                         ClassNode returnType = getType(targetMethodCandidate);
-                        if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
+                        // GROOVY-5470, GROOVY-6091, GROOVY-9604, GROOVY-11399:
+                        if (isThisObjectExpression && call.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null
+                                && (targetMethodCandidate == GET_DELEGATE || targetMethodCandidate == GET_OWNER || targetMethodCandidate == GET_THISOBJECT)) {
+                            switch (name) {
+                              case "getDelegate":
+                                DelegationMetadata dm = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+                                if (dm != null) {
+                                    returnType = dm.getType();
+                                    break;
+                                }
+                                // falls through
+                              case "getOwner":
+                                if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                                    returnType = CLOSURE_TYPE.getPlainNodeReference();
+                                    break;
+                                }
+                                // falls through
+                              case "getThisObject":
+                                returnType = makeThis();
+                            }
+                        } else if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethodCandidate, callArguments, call.getGenericsTypes());
                             if (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType))
                                 returnType = irtg;
-                        }
-                        // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
-                        if (targetMethodCandidate == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
-                            DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
-                            if (md != null) {
-                                returnType = md.getType();
-                            } else {
-                                returnType = typeCheckingContext.getEnclosingClassNode();
-                            }
                         }
                         // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
                         Parameter[] parameters = targetMethodCandidate.getParameters();
@@ -5240,10 +5252,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
 
         if (node instanceof MethodNode) {
-            if ((node == GET_DELEGATE || node == GET_OWNER || node == GET_THISOBJECT)
-                    && typeCheckingContext.getEnclosingClosure() != null) {
-                return typeCheckingContext.getEnclosingClassNode();
-            }
             type = ((MethodNode) node).getReturnType();
             return Optional.ofNullable(getInferredReturnType(node)).orElse(type);
         }
