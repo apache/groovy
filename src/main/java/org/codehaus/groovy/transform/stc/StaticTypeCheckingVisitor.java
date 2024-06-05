@@ -649,7 +649,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (enclosingClosure != null) {
                 switch (name) {
                   case "delegate":
-                    DelegationMetadata dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
+                    var dm = getDelegationMetadata(enclosingClosure.getClosureExpression());
                     if (dm != null) {
                         vexp.putNodeMetaData(INFERRED_TYPE, dm.getType());
                         return;
@@ -3797,19 +3797,30 @@ out:                if (mn.size() != 1) {
                         visitMethodCallArguments(chosenReceiver.getType(), argumentList, true, targetMethod); functorsVisited = true;
 
                         ClassNode returnType = getType(targetMethod);
-                        if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
+                        // GROOVY-5470, GROOVY-6091, GROOVY-9604, GROOVY-11399:
+                        if (isThisObjectExpression && call.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null
+                                && (targetMethod == GET_DELEGATE || targetMethod == GET_OWNER || targetMethod == GET_THISOBJECT)) {
+                            switch (name) {
+                              case "getDelegate":
+                                var dm = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
+                                if (dm != null) {
+                                    returnType = dm.getType();
+                                    break;
+                                }
+                                // falls through
+                              case "getOwner":
+                                if (typeCheckingContext.getEnclosingClosureStack().size() > 1) {
+                                    returnType = CLOSURE_TYPE.getPlainNodeReference();
+                                    break;
+                                }
+                                // falls through
+                              case "getThisObject":
+                                returnType = makeThis();
+                            }
+                        } else if (isUsingGenericsOrIsArrayUsingGenerics(returnType)) {
                             ClassNode irtg = inferReturnTypeGenerics(chosenReceiver.getType(), targetMethod, callArguments, call.getGenericsTypes());
                             if (irtg != null && implementsInterfaceOrIsSubclassOf(irtg, returnType))
                                 returnType = irtg;
-                        }
-                        // GROOVY-6091: use of "delegate" or "getDelegate()" does not make use of @DelegatesTo metadata
-                        if (targetMethod == GET_DELEGATE && typeCheckingContext.getEnclosingClosure() != null) {
-                            DelegationMetadata md = getDelegationMetadata(typeCheckingContext.getEnclosingClosure().getClosureExpression());
-                            if (md != null) {
-                                returnType = md.getType();
-                            } else {
-                                returnType = typeCheckingContext.getEnclosingClassNode();
-                            }
                         }
                         // GROOVY-7106, GROOVY-7274, GROOVY-8909, GROOVY-8961, GROOVY-9734, GROOVY-9844, GROOVY-9915, et al.
                         Parameter[] parameters = targetMethod.getParameters();
@@ -5116,10 +5127,12 @@ trying: for (ClassNode[] signature : signatures) {
         if (type != null) {
             return type;
         }
+
         if (node instanceof ClassExpression) {
             type = ((ClassExpression) node).getType();
             return makeClassSafe0(CLASS_Type, new GenericsType(type));
         }
+
         if (node instanceof VariableExpression) {
             VariableExpression vexp = (VariableExpression) node;
             type = isTraitSelf(vexp);
@@ -5159,18 +5172,16 @@ trying: for (ClassNode[] signature : signatures) {
             }
             return vexp.getOriginType();
         }
+
         if (node instanceof Parameter || node instanceof FieldNode || node instanceof PropertyNode) {
             return ((Variable) node).getOriginType();
         }
 
         if (node instanceof MethodNode) {
-            if ((node == GET_DELEGATE || node == GET_OWNER || node == GET_THISOBJECT)
-                    && typeCheckingContext.getEnclosingClosure() != null) {
-                return typeCheckingContext.getEnclosingClassNode();
-            }
             type = ((MethodNode) node).getReturnType();
             return Optional.ofNullable(getInferredReturnType(node)).orElse(type);
         }
+
         if (node instanceof MethodCall) {
             if (node instanceof ConstructorCallExpression) {
                 return ((ConstructorCallExpression) node).getType();
@@ -5180,6 +5191,7 @@ trying: for (ClassNode[] signature : signatures) {
                 return getType(target);
             }
         }
+
         if (node instanceof ClosureExpression) {
             type = CLOSURE_TYPE.getPlainNodeReference();
             ClassNode returnType = getInferredReturnType(node);
@@ -5198,9 +5210,11 @@ trying: for (ClassNode[] signature : signatures) {
         if (node instanceof ListExpression) {
             return inferListExpressionType((ListExpression) node);
         }
+
         if (node instanceof MapExpression) {
             return inferMapExpressionType((MapExpression) node);
         }
+
         if (node instanceof RangeExpression) {
             RangeExpression re = (RangeExpression) node;
             ClassNode fromType = getType(re.getFrom());
@@ -5212,19 +5226,24 @@ trying: for (ClassNode[] signature : signatures) {
             }
             return makeClassSafe0(RANGE_TYPE, new GenericsType(type));
         }
+
         if (node instanceof SpreadExpression) {
             type = getType(((SpreadExpression) node).getExpression());
             return inferComponentType(type, null); // for list literal
         }
+
         if (node instanceof UnaryPlusExpression) {
             return getType(((UnaryPlusExpression) node).getExpression());
         }
+
         if (node instanceof UnaryMinusExpression) {
             return getType(((UnaryMinusExpression) node).getExpression());
         }
+
         if (node instanceof BitwiseNegationExpression) {
             return getType(((BitwiseNegationExpression) node).getExpression());
         }
+
         return ((Expression) node).getType();
     }
 

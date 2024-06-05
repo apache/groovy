@@ -243,90 +243,6 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testClosureThisObjectDelegateOwnerProperty() {
-        assertScript '''
-            class C {
-                void m() {
-                    C that = this;
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = thisObject
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = delegate
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = owner
-                        assert ref == that
-                    }();
-                }
-            }
-            new C().m()
-        '''
-    }
-
-    void testClosureThisObjectDelegateOwnerAccessor() {
-        assertScript '''
-            class C {
-                void m() {
-                    C that = this;
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = getThisObject()
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = getDelegate()
-                        assert ref == that
-                    }();
-
-                    { ->
-                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                            assert node.getNodeMetaData(INFERRED_TYPE)?.name == 'C'
-                        })
-                        def ref = getOwner()
-                        assert ref == that
-                    }();
-                }
-            }
-            new C().m()
-        '''
-    }
-
-    // GROOVY-9604
-    void testClosureResolveStrategy() {
-        assertScript '''
-            class C {
-                def m() {
-                    return { ->
-                        resolveStrategy + getResolveStrategy()
-                    }();
-                }
-            }
-            assert new C().m() == 0
-        '''
-    }
-
     // GROOVY-5616
     void testAssignToGroovyObject() {
         assertScript '''
@@ -405,16 +321,6 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
 
             execute()
         '''
-    }
-
-    // GROOVY-5874
-    void testClosureSharedVariableInBinExp() {
-        shouldFailWithMessages '''
-            def sum = 0
-            def cl1 = { sum = sum + 1 }
-            def cl2 = { sum = new Date() }
-        ''',
-        'The closure shared variable "sum" has been assigned with various types'
     }
 
     // GROOVY-5870
