@@ -21,26 +21,45 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 
+import static java.util.Objects.requireNonNull;
+
 public class Receiver<T> {
-    private final ClassNode type;
-    private final T data;
 
     public static <T> Receiver<T> make(final ClassNode type) {
-        return new Receiver<T>(type == null ? ClassHelper.OBJECT_TYPE.getPlainNodeReference() : type);
+        return new Receiver<>(type == null ? ClassHelper.OBJECT_TYPE.getPlainNodeReference() : type);
     }
 
+    private final ClassNode type;
+    private final boolean object;
+    private final T data;
+
     public Receiver(final ClassNode type) {
-        this.type = type;
-        this.data = null;
+        this(type, true, null);
     }
 
     public Receiver(final ClassNode type, final T data) {
-        this.data = data;
-        this.type = type;
+        this(type, true, data);
     }
+
+    public Receiver(final ClassNode type, final boolean object, final T data) {
+        this.type = requireNonNull(type);
+        this.object = object;
+        this.data = data;
+    }
+
+    //--------------------------------------------------------------------------
 
     public T getData() {
         return data;
+    }
+
+    /**
+     * Indicates if receiver is an object instance or a class (static) reference.
+     *
+     * @since 5.0.0
+     */
+    public boolean isObject() {
+        return object;
     }
 
     public ClassNode getType() {
@@ -48,11 +67,7 @@ public class Receiver<T> {
     }
 
     @Override
-    public String toString() {
-        String sb = "Receiver" +
-                "{type=" + type +
-                ", data=" + data +
-                '}';
-        return sb;
+    public final String toString() {
+        return "Receiver{data=" + data + ", type=" + (object ? "" : "*") + type.toString(false) + "}";
     }
 }

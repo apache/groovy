@@ -1546,9 +1546,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (propertyName == null) return false;
 
         Expression objectExpression = pexp.getObjectExpression();
-        ClassNode objectExpressionType = getType(objectExpression);
         if (objectExpression instanceof ConstructorCallExpression) {
-            ClassNode rawType = objectExpressionType.getPlainNodeReference();
+            ClassNode rawType = getType(objectExpression).getPlainNodeReference();
             inferDiamondType((ConstructorCallExpression) objectExpression, rawType);
         }
         // enclosing excludes classes that skip STC
@@ -1556,11 +1555,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         enclosingTypes.add(typeCheckingContext.getEnclosingClassNode());
         enclosingTypes.addAll(enclosingTypes.iterator().next().getOuterClasses());
 
-        boolean staticOnlyAccess = isClassClassNodeWrappingConcreteType(objectExpressionType);
-        if (staticOnlyAccess) {
+        if (objectExpression instanceof ClassExpression) {
             if (propertyName.equals("this")) {
                 // handle "Outer.this" for any level of nesting
-                ClassNode outer = objectExpressionType.getGenericsTypes()[0].getType();
+                ClassNode outer = getType(objectExpression).getGenericsTypes()[0].getType();
 
                 ClassNode found = null;
                 for (ClassNode enclosingType : enclosingTypes) {
@@ -1576,9 +1574,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             } else if (propertyName.equals("super")) {
                 // GROOVY-8299: handle "Iface.super" for interface default methods
                 ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
-                ClassNode accessor = objectExpressionType.getGenericsTypes()[0].getType();
-                if (accessor.isInterface() && enclosingType.implementsInterface(accessor)) {
-                    storeType(pexp, accessor);
+                ClassNode accessingType = getType(objectExpression).getGenericsTypes()[0].getType();
+                if (accessingType.isInterface() && enclosingType.implementsInterface(accessingType)) {
+                    storeType(pexp, accessingType);
                     return true;
                 }
                 return false;
@@ -1609,9 +1607,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
 
             // in case of a lookup on java.lang.Class, look for instance methods on Class
-            // as well; in case of static property access Class<Type> and Type are listed
-            boolean staticOnly = isClassClassNodeWrappingConcreteType(receiverType) ? false
-                                   : (receiver.getData() == null ? staticOnlyAccess : false);
+            // in case of static property access, Type (static) and Class<Type> are tried
+            boolean staticOnly = !receiver.isObject();
 
             List<MethodNode> setters = new ArrayList<>(4);
             for (MethodNode method : findMethodsWithGenerated(wrapTypeIfNecessary(receiverType), setterName)) {
@@ -1743,7 +1740,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 for (MethodNode method : findDGMMethodsForClassNode(loader, dgmReceiver, isserName)) {
                     if (isPrimitiveBoolean(method.getReturnType())) methods.add(method);
                 }
-                if (staticOnlyAccess && receiver.getData() == null && !isClassType(receiver.getType())) {
+                if (!receiver.isObject()) {
                     // GROOVY-10820: ensure static extension when property accessed in static manner
                     methods.removeIf(method -> !((ExtensionMethodNode) method).isStaticExtension());
                 }
@@ -1794,8 +1791,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
-        if (pexp.isImplicitThis() || !staticOnlyAccess) {
-            for (Receiver<String> receiver : receivers) {
+        for (Receiver<String> receiver : receivers) {
+            if (receiver.isObject()) {
                 ClassNode receiverType = receiver.getType();
                 ClassNode propertyType = getTypeForMapPropertyExpression(receiverType, pexp);
                 if (propertyType == null)
@@ -1818,7 +1815,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         if (pexp.isImplicitThis() && isThisExpression(objectExpression)) {
             Iterator<ClassNode> iter = enclosingTypes.iterator(); // first enclosing is "this" type
-            boolean staticOnly = Modifier.isStatic(iter.next().getModifiers()) || staticOnlyAccess;
+            boolean staticOnly = Modifier.isStatic(iter.next().getModifiers()) || typeCheckingContext.isInStaticContext;
             while (iter.hasNext()) {
                 ClassNode outer = iter.next();
                 // GROOVY-7994, GROOVY-11198: try "this.propertyName" as "Outer.propertyName" or "Outer.this.propertyName"
@@ -3585,8 +3582,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private static void addDelegateReceiver(final List<Receiver<String>> receivers, final ClassNode delegate, final String path) {
-        if (isClassClassNodeWrappingConcreteType(delegate)) { // add Type from Class<Type>
-            addDelegateReceiver(receivers, delegate.getGenericsTypes()[0].getType(), path);
+        if (isClassClassNodeWrappingConcreteType(delegate)) { // GROOVY-11393: Type from Class<Type>
+            receivers.add(new Receiver<>(delegate.getGenericsTypes()[0].getType(), false, path));
         }
         if (receivers.stream().map(Receiver::getType).noneMatch(delegate::equals)) {
             receivers.add(new Receiver<>(delegate, path));
@@ -3735,23 +3732,20 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     for (Receiver<String> currentReceiver : receivers) {
                         mn = findMethod(currentReceiver.getType().getPlainNodeReference(), name, args);
                         if (!mn.isEmpty()) {
-                            first = mn.get(0); // capture for error string
-                            // for "this" in a static context, only static methods are compatible
-                            if (currentReceiver.getData() == null && !isClassType(currentReceiver.getType())) {
-                                boolean staticThis = (isThisObjectExpression || call.isImplicitThis()) && typeCheckingContext.isInStaticContext;
-                                boolean staticThat = isClassClassNodeWrappingConcreteType(receiver); // GROOVY-10819, GROOVY-10820
-                                mn = allowStaticAccessToMember(mn, staticThis || staticThat);
-                            }
-                        }
-                        if (!mn.isEmpty()) {
+                            first = mn.get(0); // capture for error reporting
                             chosenReceiver = currentReceiver;
-                            break;
+                            // GROOVY-10819, GROOVY-10820, GROOVY-11393, et al.:
+                            // for a static receiver, only static methods are compatible
+                            mn = allowStaticAccessToMember(mn, !currentReceiver.isObject());
+                            if (!mn.isEmpty()) {
+                                break;
+                            }
                         }
                     }
                     if (mn.isEmpty()) {
                         mn = extension.handleMissingMethod(receiver, name, argumentList, args, call);
-                        if (mn.isEmpty()) {
-                            if (first != null) mn.add(first); // non-static method error?
+                        if (mn == null || mn.isEmpty()) {
+                            if (first != null) mn = List.of(first); // instance method
                             else addNoMatchingMethodError(receiver, name, args, call);
                         }
                     }
@@ -3788,7 +3782,7 @@ out:                if (mn.size() != 1) {
                             chosenReceiver = Receiver.make(declaringClass.getPlainNodeReference());
                         }
                         if (!targetMethod.isStatic() && !(isClassType(declaringClass) || isObjectType(declaringClass)) // GROOVY-10939: Class or Object
-                                && isClassType(receiver) && chosenReceiver.getData() == null && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
+                                && !chosenReceiver.isObject() && !Boolean.TRUE.equals(call.getNodeMetaData(DYNAMIC_RESOLUTION))) {
                             addStaticTypeError("Non-static method " + prettyPrintTypeName(declaringClass) + "#" + targetMethod.getName() + " cannot be called from static context", call);
                         } else if ((chosenReceiver.getType().isInterface() || targetMethod.isAbstract()) && isSuperExpression(objectExpression)) { // GROOVY-8299, GROOVY-10341
                             String target = toMethodParametersString(targetMethod.getName(), extractTypesFromParameters(targetMethod.getParameters()));
@@ -3948,8 +3942,8 @@ out:                if (mn.size() != 1) {
      * Given an object expression (a message receiver expression), generate list
      * of possible types.
      *
-     * @param objectExpression the receiver expression
-     * @return the list of types the receiver may be
+     * @param objectExpression the message receiver
+     * @return types and qualifiers of the receiver
      */
     protected List<Receiver<String>> makeOwnerList(final Expression objectExpression) {
         ClassNode receiver = getType(objectExpression);
@@ -3958,23 +3952,19 @@ out:                if (mn.size() != 1) {
                 && objectExpression instanceof VariableExpression
                 && ((Variable) objectExpression).getName().equals("owner")
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
-            List<Receiver<String>> enclosingClass = Collections.singletonList(
-                    Receiver.make(typeCheckingContext.getEnclosingClassNode()));
-            addReceivers(owners, enclosingClass, typeCheckingContext.delegationMetadata.getParent(), "owner.");
+            owners.add(new Receiver<>(receiver, "owner")); // if nested, Closure is the first owner
+            List<Receiver<String>> thisType = new ArrayList<>(2); // and the enclosing class is the
+            addDelegateReceiver(thisType, makeThis(), null);      // end of the closure owner chain
+            addReceivers(owners, thisType, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         } else {
             List<ClassNode> temporaryTypes = getTemporaryTypesForExpression(objectExpression);
             int temporaryTypesCount = (temporaryTypes != null ? temporaryTypes.size() : 0);
             if (temporaryTypesCount > 0) { // GROOVY-8965, GROOVY-10180, GROOVY-10668
                 owners.add(Receiver.make(lowestUpperBound(temporaryTypes)));
             }
-            if (typeCheckingContext.lastImplicitItType != null
-                    && objectExpression instanceof VariableExpression
-                    && ((Variable) objectExpression).getName().equals("it")) {
-                owners.add(Receiver.make(typeCheckingContext.lastImplicitItType));
-            }
             if (isClassClassNodeWrappingConcreteType(receiver)) {
                 ClassNode staticType = receiver.getGenericsTypes()[0].getType();
-                owners.add(Receiver.make(staticType)); // Type from Class<Type>
+                owners.add(new Receiver<>(staticType, false, null)); // Type from Class<Type>
                 addTraitType(staticType, owners); // T in Class<T$Trait$Helper>
                 owners.add(Receiver.make(receiver)); // Class<Type>
             } else {

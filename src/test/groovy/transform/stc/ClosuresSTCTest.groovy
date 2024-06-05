@@ -320,20 +320,108 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5145
-    void testCollect() {
+    void testCollect1() {
         assertScript '''
             List<String> strings = [1,2,3].collect { it.toString() }
         '''
     }
 
     // GROOVY-5145
-    void testCollectWithSubclass() {
+    void testCollect2() {
         assertScript '''
             class StringClosure extends Closure<String> {
                 StringClosure() { super(null,null) }
                 void doCall(int x) { x }
             }
             List<String> strings = [1,2,3].collect(new StringClosure())
+        '''
+    }
+
+    void testWithIntReturnType() {
+        assertScript '''
+            class Test {
+               static int a(String s) {
+                    s.toCharArray().with {
+                        length
+                    }
+                }
+            }
+            assert Test.a( 'Daniel' ) == 6
+        '''
+    }
+
+    void testWithLongReturnType() {
+        assertScript '''
+            class Test {
+               static long a() {
+                    Long.with {
+                        MAX_VALUE
+                    }
+                }
+            }
+            assert Test.a() == Long.MAX_VALUE
+        '''
+    }
+
+    void testWithStringReturnType() {
+        assertScript '''
+            class Test {
+              static String a( String s ) {
+                s.with { String it -> it.toLowerCase() }
+              }
+            }
+            assert Test.a( 'TIM' ) == 'tim'
+        '''
+    }
+
+    // GROOVY-5907
+    void testWithGenericReturnType() {
+        assertScript '''
+            class Test {
+              static List<String> a( String s ) {
+                s.with { String it -> [ "$it".toString() ] }
+              }
+            }
+            assert Test.a( 'tim' ) == [ 'tim' ]
+        '''
+    }
+
+    void testWithNestedMemberAccess() {
+        assertScript '''
+            class Foo {
+                String foo = 'foo'
+                String foom() { 'foom' }
+            }
+            class Bar {
+                String bar = 'bar'
+                String barm() { 'barm' }
+            }
+            class Baz {
+                String baz = 'baz'
+                String bazm() { 'bazm' }
+            }
+            String other() { 'other' }
+            new Foo().with {
+                assert foo == 'foo'
+                assert foom() == 'foom'
+                assert other() == 'other'
+                new Bar().with {
+                    assert foo == 'foo'
+                    assert bar == 'bar'
+                    assert foom() == 'foom'
+                    assert barm() == 'barm'
+                    assert other() == 'other'
+                    new Baz().with {
+                        assert foo == 'foo'
+                        assert bar == 'bar'
+                        assert baz == 'baz'
+                        assert foom() == 'foom'
+                        assert barm() == 'barm'
+                        assert bazm() == 'bazm'
+                        assert other() == 'other'
+                    }
+                }
+            }
         '''
     }
 
@@ -825,7 +913,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 new B().with(block)
             }
         '''
-
         assertScript declarations + '''
             outer {
                 inner {
@@ -835,7 +922,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         '''
-
         assertScript declarations + '''
             outer {
                 inner {
@@ -856,6 +942,36 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 optimizationOptions.indy = true
             }
         '''
+    }
+
+    // GROOVY-11393
+    void testClassClosureDelegateProperty() {
+        String foo = '''
+            class Foo {
+                static getBar() { 'bar' }
+                Object getBaz() { 'baz' }
+            }
+        '''
+        assertScript foo + '''
+            Foo.with {
+                assert name == 'Foo'
+                assert getName() == 'Foo'
+            }
+        '''
+        assertScript foo + '''
+            Foo.with {
+                assert bar == 'bar'
+                assert getBar() == 'bar'
+            }
+        '''
+        shouldFailWithMessages foo + '''
+            Foo.with {
+                print baz
+                print getBaz()
+            }
+        ''',
+        'The variable [baz] is undeclared', // TODO: instance method error
+        'Non-static method Foo#getBaz cannot be called from static context'
     }
 
     // GROOVY-9652

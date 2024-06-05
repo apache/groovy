@@ -21,10 +21,9 @@ package org.codehaus.groovy.transform.stc;
 import org.codehaus.groovy.ast.ClassNode;
 
 /**
- * Delegation metadata is used to store the delegation strategy and delegate type of
- * closures.
- *
- * As closures can be organized in a hierarchy, a delegation metadata may have a parent.
+ * Stores the delegation strategy and delegate type of closures.
+ * <p>
+ * As closures can be nested, a delegation metadata may have a parent.
  */
 class DelegationMetadata {
     private final DelegationMetadata parent;
@@ -33,7 +32,7 @@ class DelegationMetadata {
 
     public DelegationMetadata(final ClassNode type, final int strategy, final DelegationMetadata parent) {
         this.strategy = strategy;
-        this.type = type;
+        this.type = StaticTypeCheckingVisitor.wrapTypeIfNecessary(type); // non-primitive
         this.parent = parent;
     }
 
