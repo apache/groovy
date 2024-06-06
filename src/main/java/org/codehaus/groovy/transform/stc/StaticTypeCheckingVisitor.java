@@ -937,30 +937,30 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // track conditional assignment
                 if (leftExpression instanceof VariableExpression
                         && typeCheckingContext.ifElseForWhileAssignmentTracker != null) {
-                    Variable accessedVariable = ((VariableExpression) leftExpression).getAccessedVariable();
-                    if (accessedVariable instanceof Parameter) {
-                        accessedVariable = new ParameterVariableExpression((Parameter) accessedVariable);
+                    var targetVariable = ((VariableExpression) leftExpression).getAccessedVariable();
+                    if (targetVariable instanceof Parameter) {
+                        targetVariable = new ParameterVariableExpression((Parameter) targetVariable);
                     }
-                    if (accessedVariable instanceof VariableExpression) {
-                        recordAssignment((VariableExpression) accessedVariable, resultType);
+                    if (targetVariable instanceof VariableExpression) {
+                        recordAssignment((VariableExpression) targetVariable, resultType);
                     }
                 }
 
                 storeType(leftExpression, resultType);
 
-                // propagate closure parameter type information
-                if (leftExpression instanceof VariableExpression) {
+                // propagate closure parameter information
+                if (leftExpression instanceof VariableExpression
+                        // GROOVY-11400: save to declared variable; skip field, property, parameter or dynamic variable
+                        && ((VariableExpression) leftExpression).getAccessedVariable() instanceof VariableExpression) {
+                    var targetVariable = (VariableExpression) ((VariableExpression) leftExpression).getAccessedVariable();
                     if (rightExpression instanceof ClosureExpression) {
-                        ClosureExpression closure = (ClosureExpression) rightExpression;
+                        var closure = (ClosureExpression) rightExpression;
                         if (!hasImplicitParameter(closure)) // GROOVY-11394: arrow means zero parameters
-                            leftExpression.putNodeMetaData(CLOSURE_ARGUMENTS, getParametersSafe(closure));
+                            targetVariable.putNodeMetaData(CLOSURE_ARGUMENTS, getParametersSafe(closure));
                     } else if (rightExpression instanceof VariableExpression
-                            && ((VariableExpression) rightExpression).getAccessedVariable() instanceof Expression
-                            && ((Expression) ((VariableExpression) rightExpression).getAccessedVariable()).getNodeMetaData(CLOSURE_ARGUMENTS) != null) {
-                        Variable targetVariable = findTargetVariable((VariableExpression) leftExpression);
-                        if (targetVariable instanceof ASTNode) {
-                            ((ASTNode) targetVariable).putNodeMetaData(CLOSURE_ARGUMENTS, ((Expression) ((VariableExpression) rightExpression).getAccessedVariable()).getNodeMetaData(CLOSURE_ARGUMENTS));
-                        }
+                            && ((VariableExpression) rightExpression).getAccessedVariable() instanceof VariableExpression) {
+                        var sourceVariable = (VariableExpression) ((VariableExpression) rightExpression).getAccessedVariable();
+                        targetVariable.putNodeMetaData(CLOSURE_ARGUMENTS, sourceVariable.getNodeMetaData(CLOSURE_ARGUMENTS));
                     }
                 }
             } else if (op == KEYWORD_INSTANCEOF) {
