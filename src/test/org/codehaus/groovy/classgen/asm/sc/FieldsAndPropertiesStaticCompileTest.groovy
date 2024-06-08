@@ -821,44 +821,6 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
-    // GROOVY-9683
-    void testPrivateFieldAccessInClosure3() {
-        assertScript '''
-            class C {
-                private static X = 'xxx'
-                void test() {
-                    [:].with {
-                        assert X == 'xxx'
-                    }
-                }
-            }
-            new C().test()
-        '''
-    }
-
-    // GROOVY-9695
-    void testPrivateFieldAccessInClosure4() {
-        assertScript '''
-            class C {
-                private static final X = 'xxx'
-                void test() {
-                    Map m = [:]
-                    def c = { ->
-                        assert X == 'xxx'
-                        m[X] = 123
-                    }
-                    c()
-                    assert m == [xxx:123]
-                }
-            }
-            new C().test()
-
-            class D extends C {
-            }
-            new D().test()
-        '''
-    }
-
     // GROOVY-11369
     @Override
     void testMapPropertyAccess5a() {

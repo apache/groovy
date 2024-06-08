@@ -1211,10 +1211,10 @@ public class AsmClassGenerator extends ClassGenerator {
                                 && fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE)) {
                             fieldNode = null;
                         }
-                        // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
-                        if (fieldNode == null && !isFieldDirectlyAccessible(getField(classNode, name), classNode)) {
-                            if (checkStaticOuterField(expression, name)) return;
-                        }
+                    }
+                    // GROOVY-9501, GROOVY-9569, GROOVY-9650, GROOVY-9655, GROOVY-9665, GROOVY-9683, GROOVY-9695
+                    if (fieldNode == null && !isFieldDirectlyAccessible(getField(classNode, name), classNode)) {
+                        if (checkStaticOuterField(expression, name)) return;
                     }
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);

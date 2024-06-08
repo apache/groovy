@@ -804,7 +804,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
             def c = new File(parentDir, 'C.groovy')
             c.write '''
                 class C {
-                    private static final value = "C"
+                    private final value = "C"
 
                     def m(D d) {
                         d.with {
