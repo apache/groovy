@@ -634,7 +634,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             FieldNode accessedField = (FieldNode) accessedVariable;
             ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
             // GROOVY-10981: prior to Groovy 5, outer class field is preferred over self-type property
-            boolean declaredInScope = enclosingClosure == null && getOutermost(accessedField.getDeclaringClass()) == getOutermost(typeCheckingContext.getEnclosingClassNode());
+            boolean declaredInScope = (getOutermost(accessedField.getDeclaringClass()) == getOutermost(typeCheckingContext.getEnclosingClassNode())
+                    && (enclosingClosure == null || accessedField.isStatic())); // GROOVY-9655, GROOVY-9683, GROOVY-9695, GROOVY-9768, GROOVY-11387
             if (declaredInScope || tryVariableExpressionAsProperty(vexp, name)) {
                 if (temporaryType == null) {
                     storeType(vexp, getType(vexp));
