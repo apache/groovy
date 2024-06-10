@@ -620,15 +620,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (accessedVariable instanceof FieldNode) {
             FieldNode accessedField = (FieldNode) accessedVariable;
             ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
-            if (enclosingClosure != null) {
-                tryVariableExpressionAsProperty(vexp, name);
-            } else if (getOutermost(accessedField.getDeclaringClass()) == getOutermost(typeCheckingContext.getEnclosingClassNode())
-                    || !tryVariableExpressionAsProperty(vexp, name)) { // GROOVY-10981: check for property before super class field
-                checkOrMarkPrivateAccess(vexp, accessedField, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
-                if (temporaryType == null) storeType(vexp, getType(vexp));
-            }
-            if (temporaryType != null && !temporaryType.equals(OBJECT_TYPE)) {
-                vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
+            boolean declaredInScope = (getOutermost(accessedField.getDeclaringClass()) == getOutermost(typeCheckingContext.getEnclosingClassNode())
+                    && (enclosingClosure == null || accessedField.isStatic())); // GROOVY-9655, GROOVY-9683, GROOVY-9695, GROOVY-9768, GROOVY-11387
+            if (declaredInScope || tryVariableExpressionAsProperty(vexp, name)) { // GROOVY-10981: check for property before super class field
+                if (temporaryType == null) {
+                    storeType(vexp, getType(vexp));
+                } else if (!temporaryType.equals(OBJECT_TYPE)) {
+                    vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
+                }
+                if (declaredInScope) {
+                    checkOrMarkPrivateAccess(vexp, accessedField, typeCheckingContext.isTargetOfEnclosingAssignment(vexp));
+                }
             }
         } else if (accessedVariable instanceof PropertyNode) {
             // we must be careful, because the property node may be of a wrong type:

@@ -1020,6 +1020,21 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             def accept = HttpHeaders.ACCEPT
             assert accept == 'Accept'
         '''
+        assertScript '''
+            class MapSub extends HashMap<String,String> {
+                private static final short ANSWER = 42
+                def m() {
+                    {->
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE) == short_TYPE
+                        })
+                        def answer = ANSWER
+                    }()
+                }
+            }
+            Object answer = new MapSub().m()
+            assert answer == 42
+        '''
     }
 
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
