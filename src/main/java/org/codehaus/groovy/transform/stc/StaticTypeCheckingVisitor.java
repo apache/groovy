@@ -1658,7 +1658,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 foundGetterOrSetter = (foundGetterOrSetter || getter != null || !setters.isEmpty());
             }
 
-            if (readMode && !isMapProperty(pexp, receiverType)) { // GROOVY-11369, GROOVY-11370, GROOVY-11372
+            // GROOVY-11369, GROOVY-11370, GROOVY-11372, GROOVY-11401: map entry
+            if (isMapProperty(pexp, receiverType)) break;
+
+            if (readMode) {
                 // GROOVY-5568, GROOVY-9115, GROOVY-9123: the property may be provided by an extension method
                 for (ClassNode dgmReceiver : isPrimitiveType(receiverType) ? new ClassNode[]{receiverType, getWrapper(receiverType)} : new ClassNode[]{receiverType}) {
                     Set<MethodNode> methods = findDGMMethodsForClassNode(getSourceUnit().getClassLoader(), dgmReceiver, getterName);
@@ -1690,7 +1693,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            // GROOVY-7996: check if receiver implements get(String)/set(String,Object) or propertyMissing(String) or $static_propertyMissing(String)?
+            // GROOVY-7996: check if receiver implements get(String)/set(String,Object) or propertyMissing(String)
             if (!receiverType.isArray() && !isPrimitiveType(getUnwrapper(receiverType))
                     && pexp.isImplicitThis() && typeCheckingContext.getEnclosingClosure() != null) {
                 MethodNode mopMethod;
