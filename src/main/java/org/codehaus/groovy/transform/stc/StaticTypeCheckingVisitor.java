@@ -1789,6 +1789,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     return true;
                 }
             }
+
+            // GROOVY-11401
+            if (!staticOnly && isOrImplements(receiverType, MAP_TYPE)) break;
         }
 
         for (Receiver<String> receiver : receivers) {

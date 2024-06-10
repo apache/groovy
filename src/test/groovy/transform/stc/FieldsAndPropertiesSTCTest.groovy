@@ -842,6 +842,10 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert xxx == null
             assert yyy == null
         '''
+    }
+
+    // GROOVY-11387
+    void testMapPropertyAccess12() {
         assertScript '''
             class HttpHeaders extends HashMap<String,List<String>> {
                 protected static final String ACCEPT = 'Accept'
@@ -851,6 +855,25 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             })
             def accept = HttpHeaders.ACCEPT
             assert accept == 'Accept'
+        '''
+    }
+
+    // GROOVY-11401
+    void testMapPropertyAccess13() {
+        assertScript '''
+            class C {
+                private Object obj = 'field'
+                def m() {
+                    Map<String,String> map = [:].withDefault{'entry'}
+                    map.with {
+                        @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                            assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+                        })
+                        def xxx = obj
+                    }
+                }
+            }
+            assert new C().m() == 'entry'
         '''
     }
 
@@ -1224,8 +1247,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             class C {
                 private int x
                 void test() {
-                    def func = { -> x = 666 }
-                    func()
+                    {-> x = 666 }()
                     assert x == 666
                 }
             }
@@ -1233,18 +1255,95 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9683
     void testPrivateFieldAccessInClosure2() {
+        assertScript '''
+            class C {
+                private static int x
+                static test() {
+                    {-> x = 666 }()
+                    assert x == 666
+                }
+            }
+            C.test()
+        '''
+    }
+
+    // GROOVY-9683
+    void testPrivateFieldAccessInClosure3() {
         assertScript '''
             class C {
                 private static X = 'xxx'
                 void test() {
-                    [:].withDefault { throw new MissingPropertyException(it.toString()) }.with {
+                    {->
                         assert X == 'xxx'
-                    }
+                    }()
                 }
             }
             new C().test()
+        '''
+    }
+
+    // GROOVY-9695
+    void testPrivateFieldAccessInClosure4() {
+        assertScript '''
+            class C {
+                private static final X = 'xxx'
+                void test() {
+                    Map m = [:];
+                    {->
+                        assert X == 'xxx'
+                        m[X] = 123
+                    }()
+                    assert m == [xxx:123]
+                }
+            }
+            new C().test()
+
+            class D extends C {
+            }
+            new D().test()
+        '''
+    }
+
+    // GROOVY-9768
+    void testPrivateFieldAccessInClosure5() {
+        assertScript '''import groovy.transform.stc.FirstParam
+            class C {
+                private <T> void foo(
+                        @DelegatesTo.Target T target,
+                        @DelegatesTo(strategy=Closure.OWNER_FIRST)
+                        @ClosureParams(FirstParam.class) Closure action) {
+                    action.setResolveStrategy(Closure.OWNER_FIRST)
+                    action.setDelegate(target)
+                    action.call(target)
+                }
+                void test() {
+                    def map = [V: 'val']
+                    foo(map) {
+                        assert V == 'val'
+                        assert X == 'xxx'
+                        assert it.X == null
+                    }
+                }
+                private static final X = 'xxx'
+            }
+            new C().test()
+        '''
+    }
+
+    // GROOVY-11144
+    void testPrivateFieldAccessInClosure6() {
+        assertScript '''
+            abstract class A {
+                private static final String NAME = 'name'
+                final String name
+                A() {
+                    name = { -> NAME }()
+                }
+            }
+            class C extends A {
+            }
+            assert new C().name == 'name'
         '''
     }
 
