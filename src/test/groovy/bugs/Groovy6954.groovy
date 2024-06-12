@@ -56,7 +56,7 @@ final class Groovy6954 extends AbstractBytecodeTestCase {
             def other = new M()
             map.testThat(other)
             assert map.isEmpty()
-            assert other.toString() == '[d:d, e:e]'
+            assert other.toString() == '[c:c, d:d, e:e]'
         '''
     }
 

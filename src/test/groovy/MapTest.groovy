@@ -158,29 +158,67 @@ final class MapTest extends GroovyTestCase {
         assert foo == 5
     }
 
-    // GROOVY-5001, GROOVY-5491
+    // GROOVY-5001, GROOVY-5491, GROOVY-11367
     void testMapMutation2() {
-        for (tag : ['','@TypeChecked','@CompileStatic']) {
+        for (mode in ['','static']) {
             assertScript """import groovy.transform.*
-                    $tag class C extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
-                    private boo
-                    def foo
+                class M extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
+                    def           $mode v = 'v'
+                    public        $mode w = 'w'
+                    protected     $mode x = 'x'
+                    @PackageScope $mode y = 'y'
+                    private       $mode z = 'z'
                 }
 
-                def map = new C(foo:'bar')
-                assert map.@boo == null
-                assert map.boo  == null
-                assert map.foo == 'bar'
+                def map = new M()
+                assert map.@v == 'v'
+                assert map.@w == 'w'
+                assert map.@x == 'x'
+                assert map.@y == 'y'
+                assert map.@z == 'z'
 
-                map.foo = 'baz' // set not put
-                assert map.foo == 'baz'
-                assert map.keySet().isEmpty()
+                map.v = 'V'
+                map.w = 'W'
+                map.x = 'X'
+                map.y = 'Y'
+                map.z = 'Z'
 
-                map.boo = 'xx'
-                assert map.@boo == null
-                assert map.boo == 'xx'
-                assert map['boo'] == 'xx'
-                assert map.containsKey('boo')
+                assert map.@v == 'V'
+                assert map.@w == 'W'
+                assert map.@x == 'x'
+                assert map.@y == 'y'
+                assert map.@z == 'z'
+
+                assert map.keySet() == ['x','y','z'].toSet()
+            """
+            assertScript """import groovy.transform.*
+                import static groovy.test.GroovyAssert.*
+                class M extends HashMap {
+                    def           $mode final v = 'v'
+                    public        $mode final w = 'w'
+                    protected     $mode final x = 'x'
+                    @PackageScope $mode final y = 'y'
+                    private       $mode final z = 'z'
+                }
+
+                def map = new M()
+                shouldFail(ReadOnlyPropertyException) {
+                    map.v = 'V'
+                }
+                shouldFail(ReadOnlyPropertyException) {
+                    map.w = 'W'
+                }
+                map.x = 'X'
+                map.y = 'Y'
+                map.z = 'Z'
+
+                assert map.@v == 'v'
+                assert map.@w == 'w'
+                assert map.@x == 'x'
+                assert map.@y == 'y'
+                assert map.@z == 'z'
+
+                assert map.keySet() == ['x','y','z'].toSet()
             """
         }
     }

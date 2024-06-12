@@ -1655,7 +1655,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     continue;
                 }
 
-                if (field != null && !staticOnly && !(field.isPublic() || (field.isProtected() && !readMode)) // GROOVY-11387: entry before field
+                if (field != null && !staticOnly && !field.isPublic() // GROOVY-11367, GROOVY-11387: map entry before a non-public instance field
                         && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null))
                         && isOrImplements(receiverType, MAP_TYPE)) {
                     field = null;

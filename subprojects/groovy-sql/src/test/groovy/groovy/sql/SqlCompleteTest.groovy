@@ -507,8 +507,7 @@ class SqlCompleteTest extends SqlHelperTestCase {
     }
 
     void testNewInstanceMapShouldNotHavePropertiesAndAccountInfo() {
-        def args = [url: getURI(), user: DB_USER, password: DB_PASSWORD]
-        args.properties = [:] as Properties
+        def args = [url: getURI(), user: DB_USER, password: DB_PASSWORD, properties: new Properties()]
         shouldFail(IllegalArgumentException) {
             Sql.newInstance(args)
         }

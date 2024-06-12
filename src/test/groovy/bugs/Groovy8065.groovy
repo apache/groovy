@@ -23,7 +23,6 @@ import org.junit.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy8065 {
-
     @Test
     void testMapWithCustomSetDuringAsTypeCast() {
         assertScript '''
@@ -34,22 +33,6 @@ final class Groovy8065 {
             }
             def m = [Foo: 'Bar'] as MapWithSet
             assert m == [foo: 'BAR']
-        '''
-    }
-
-    @Test
-    void testMapWithPublicField() {
-        assertScript '''
-            class C extends HashMap {
-                public foo
-            }
-            def c = new C()
-            c.x = 1
-            assert c.x == 1
-            c.foo = 2
-            assert c.@foo == 2
-            assert c.foo == 2
-            assert c == [x:1]
         '''
     }
 }

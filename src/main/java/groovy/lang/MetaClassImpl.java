@@ -2723,11 +2723,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         boolean ambiguousListener = false;
         if (method == null) {
             method = listeners.get(name);
-            ambiguousListener = method == AMBIGUOUS_LISTENER_METHOD;
-            if (method != null &&
-                    !ambiguousListener &&
-                    newValue instanceof Closure) {
-                // let's create a dynamic proxy
+            ambiguousListener = (method == AMBIGUOUS_LISTENER_METHOD);
+            if (method != null && !ambiguousListener && newValue instanceof Closure) {
                 Object proxy = Proxy.newProxyInstance(
                         theClass.getClassLoader(),
                         new Class[]{method.getParameterTypes()[0].getTheClass()},
@@ -2742,18 +2739,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // field
         //----------------------------------------------------------------------
-        if (method == null && field != null) {
-            boolean mapInstance = (isMap && !isStatic);
-            if (field.isFinal()) {
-                if (mapInstance) { // GROOVY-8065
-                    ((Map) object).put(name, newValue);
-                    return;
-                }
-                throw new ReadOnlyPropertyException(name, theClass); // GROOVY-5985
-            }
-            if (!mapInstance || field.isPublic() || field.isProtected()) {
+        if (method == null && field != null
+                && (!isMap || isStatic // GROOVY-8065
+                    || field.isPublic())) { // GROOVY-11367
+            if (!field.isFinal()) {
                 field.setProperty(object, newValue);
                 return;
+            } else {
+                throw new ReadOnlyPropertyException(name, theClass); // GROOVY-5985
             }
         }
 
@@ -2793,7 +2786,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //------------------------------------------------------------------
         // java.util.Map put method
         //------------------------------------------------------------------
-        if (isMap && !isStatic) {
+        if (isMap && !isStatic && (mp == null || !mp.isPublic() || isSpecialProperty(name))) {
             ((Map) object).put(name, newValue);
             return;
         }
