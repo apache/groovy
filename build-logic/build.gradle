@@ -33,6 +33,7 @@ dependencies {
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.1'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:6.0.7'
     implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.2'
+    implementation 'org.cyclonedx:cyclonedx-gradle-plugin:1.8.2'
 }
 
 tasks.withType(Jar).configureEach {
