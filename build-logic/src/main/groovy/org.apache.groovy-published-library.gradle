@@ -1,10 +1,12 @@
 import groovy.swing.SwingBuilder
+import org.gradle.api.publish.maven.MavenPublication
 
 plugins {
     id 'maven-publish'
     id 'signing'
     id 'org.apache.groovy-publish-validation'
     id 'org.apache.groovy-artifactory'
+    id 'org.cyclonedx.bom'
 }
 
 def componentName
@@ -14,6 +16,16 @@ if (pluginManager.hasPlugin('java-platform')) {
     componentName = 'groovyDistribution'
 } else {
     componentName = 'groovyLibrary'
+}
+
+afterEvaluate {
+    def bomTask = tasks.cyclonedxBom
+    def bomFile = new File(bomTask.outputs.files.singleFile, "${bomTask.outputName.get()}.${bomTask.outputFormat.get()}")
+    def mavenPublish = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
+    mavenPublish?.publications.each {
+        it.artifact(bomFile) { classifier = "cyclonedx" }
+    }
+    tasks.matching { it.group == PublishingExtension.NAME }.configureEach { dependsOn(bomTask) }
 }
 
 publishing {
@@ -855,4 +867,12 @@ def promptUser(String prompt) {
         throw new InvalidUserDataException("Null response detected!")
     }
     response
+}
+
+cyclonedxBom {
+    includeConfigs = ['runtimeClasspath']
+    skipConfigs = ['compileClasspath', 'testCompileClasspath', 'detached.*']
+    outputName = "cyclonedx"
+    outputFormat = 'json'
+    includeLicenseText = false
 }
