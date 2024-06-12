@@ -774,6 +774,60 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11367
+    void testMapPropertyAccess8a() {
+        for (mode in ['','static']) {
+            assertScript """import groovy.transform.*
+                class M {
+                    @Delegate final Map m = [:].withDefault{ 'entry' }
+                    def           $mode v = 'field'
+                    public        $mode w = 'field'
+                    protected     $mode x = 'field'
+                    @PackageScope $mode y = 'field'
+                    private       $mode z = 'field'
+                }
+                def map = new M()
+                assert map.m         === map.@m
+                assert map.v         == 'field'
+                assert map.w         == 'field'
+                assert map.x         == 'entry'
+                assert map.y         == 'entry'
+                assert map.z         == 'entry'
+                map.with {
+                    assert v         == 'field'
+                    assert w         == 'field'
+                    assert x         == 'entry'
+                    assert y         == 'entry'
+                    assert z         == 'entry'
+                }
+            """
+            assertScript """import groovy.transform.*
+                class M {
+                    @Delegate final Map m = [:].withDefault{ 'entry' }
+                    def           $mode getV() { 'getter' }
+                    public        $mode getW() { 'getter' }
+                    protected     $mode getX() { 'getter' }
+                    @PackageScope $mode getY() { 'getter' }
+                    private       $mode getZ() { 'getter' }
+                }
+                def map = new M()
+                assert map.m         === map.@m
+                assert map.v         == 'getter'
+                assert map.w         == 'getter'
+                assert map.x         == 'entry'
+                assert map.y         == 'entry'
+                assert map.z         == 'entry'
+                map.with {
+                    assert v         == 'getter'
+                    assert w         == 'getter'
+                    assert x         == 'entry'
+                    assert y         == 'entry'
+                    assert z         == 'entry'
+                }
+            """
+        }
+    }
+
     // GROOVY-11368
     void testMapPropertyAccess9() {
         String type = '''

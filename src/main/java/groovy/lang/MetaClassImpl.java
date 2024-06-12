@@ -1856,6 +1856,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //----------------------------------------------------------------------
+        // java.util.Map get method before non-public getter -- see GROOVY-11367
+        //----------------------------------------------------------------------
+        if (isMap && !isStatic && !method.isPublic()) {
+            return ((Map<?,?>) object).get(name);
+        }
+
+        //----------------------------------------------------------------------
         // propertyMissing (via category) or generic get method
         //----------------------------------------------------------------------
         Object[] arguments = EMPTY_ARGUMENTS;
@@ -1947,9 +1954,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return mp;
             }
 
-            //----------------------------------------------------------------------
+            //------------------------------------------------------------------
             // java.util.Map get method
-            //----------------------------------------------------------------------
+            //------------------------------------------------------------------
             if (isMap && !isStatic) {
                 return new MetaProperty(name, Object.class) {
                     @Override
@@ -1970,6 +1977,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (mp != null) {
                 return mp;
             }
+        }
+
+        //----------------------------------------------------------------------
+        // java.util.Map get method before non-public getter -- see GROOVY-11367
+        //----------------------------------------------------------------------
+        if (isMap && !isStatic && !method.isPublic()) {
+            return new MetaProperty(name, Object.class) {
+                @Override
+                public Object getProperty(Object object) {
+                    return ((Map<?,?>) object).get(name);
+                }
+
+                @Override
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
 
         if (method != null) {

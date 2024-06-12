@@ -113,24 +113,72 @@ final class MapTest extends GroovyTestCase {
         assert m.MetaClass == null
     }
 
-    // GROOVY-5001
+    // GROOVY-5001, GROOVY-11367
     void testMapDelegate() {
-        for (tag : ['','@TypeChecked','@CompileStatic']) {
+        for (mode in ['','static']) {
             assertScript """import groovy.transform.*
-                $tag class C {
-                    @Delegate Map m = [:]
-                    private def x = 'x'
-                    public  def y = 'y'
-                    def getZ() { 'z' }
+                class M {
+                    @Delegate final Map m = [:].withDefault{ 'entry' }
+                    def           $mode v = 'field'
+                    public        $mode w = 'field'
+                    protected     $mode x = 'field'
+                    @PackageScope $mode y = 'field'
+                    private       $mode z = 'field'
                 }
-                def c = new C()
 
-                assert c.class == null
-                assert c.empty == null
-                assert c.m === c.@m
-                assert c.x == null
-                assert c.y == 'y'
-                assert c.z == 'z'
+                def map = new M()
+                assert map.m         === map.@m
+                assert map.v         == 'field'
+                assert map.w         == 'field'
+                assert map.x         == 'entry'
+                assert map.y         == 'entry'
+                assert map.z         == 'entry'
+                assert map.empty     == 'entry'
+                assert map.class     == 'entry'
+                assert map.metaClass == 'entry'
+
+                map.with {
+                    assert v         == 'field'
+                    assert w         == 'field'
+                    assert x         == 'entry'
+                    assert y         == 'entry'
+                    assert z         == 'entry'
+                    assert empty     == 'entry'
+                    assert it.class  == 'entry' // "class" cannot be a variable expression
+                    assert metaClass instanceof org.codehaus.groovy.runtime.metaclass.ClosureMetaClass
+                }
+            """
+            assertScript """import groovy.transform.*
+                class M {
+                    @Delegate final Map m = [:].withDefault{ 'entry' }
+                    def           $mode getV() { 'getter' }
+                    public        $mode getW() { 'getter' }
+                    protected     $mode getX() { 'getter' }
+                    @PackageScope $mode getY() { 'getter' }
+                    private       $mode getZ() { 'getter' }
+                }
+
+                def map = new M()
+                assert map.m         === map.@m
+                assert map.v         == 'getter'
+                assert map.w         == 'getter'
+                assert map.x         == 'entry'
+                assert map.y         == 'entry'
+                assert map.z         == 'entry'
+                assert map.empty     == 'entry'
+                assert map.class     == 'entry'
+                assert map.metaClass == 'entry'
+
+                map.with {
+                    assert v         == 'getter'
+                    assert w         == 'getter'
+                    assert x         == 'entry'
+                    assert y         == 'entry'
+                    assert z         == 'entry'
+                    assert empty     == 'entry'
+                    assert it.class  == 'entry' // "class" cannot be a variable expression
+                    assert metaClass instanceof org.codehaus.groovy.runtime.metaclass.ClosureMetaClass
+                }
             """
         }
     }
