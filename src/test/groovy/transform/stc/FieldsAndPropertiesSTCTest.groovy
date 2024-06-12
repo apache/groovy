@@ -641,14 +641,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-11369, GROOVY-11372, GROOVY-11384
+    // GROOVY-11367, GROOVY-11369, GROOVY-11372, GROOVY-11384
     void testMapPropertyAccess5() {
         assertScript '''
             def map = [:]
             assert map.entry      == null
             assert map.empty      == null
             assert map.class      == null
-            assert map.metaClass  == null // TODO
+            assert map.metaClass  != null
             assert map.properties != null
 
             map.entry      = null
@@ -667,6 +667,34 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot set read-only property: properties'
 
+        assertScript '''
+            Map<String,Number> map = [:]
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Number_TYPE
+            })
+            def e = map.entry
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Number_TYPE
+            })
+            def a = map.empty
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == Number_TYPE
+            })
+            def b = map.class
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == METACLASS_TYPE
+            })
+            def c = map.metaClass
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                assert node.getNodeMetaData(INFERRED_TYPE) == MAP_TYPE
+            })
+            def d = map.properties
+        '''
         assertScript '''
             void test(Map map) {
                 def str = ''
@@ -840,14 +868,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert map.entry == null
             assert map.empty == null
             assert map.class == null
-            assert map.metaClass == null
+            assert map.metaClass != null
         '''
         assertScript type + '''
             def test(C map) { // no diff
                 assert map.entry == null
                 assert map.empty == null
                 assert map.class == null
-                assert map.metaClass == null
+                assert map.metaClass != null
             }
             test(new C())
         '''

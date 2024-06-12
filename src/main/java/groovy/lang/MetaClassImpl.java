@@ -2104,10 +2104,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Object#getClass, Map#isEmpty, GroovyObject#getMetaClass
+     * Object#getClass and Map#isEmpty
      */
     private boolean isSpecialProperty(final String name) {
-        return "class".equals(name) || (isMap && ("empty".equals(name) || "metaClass".equals(name)));
+        return "class".equals(name) || (isMap && ("empty".equals(name)));
     }
 
     private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class sender, final String name, final boolean useSuper, final boolean isStatic) {

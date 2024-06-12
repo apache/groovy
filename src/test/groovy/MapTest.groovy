@@ -89,28 +89,24 @@ final class MapTest extends GroovyTestCase {
      * Map "empty" property isn't Map#isEmpty.
      */
     void testMapEmpty() {
-        def m = [empty: 'no']
+        def m = [:].withDefault{ 'entry' }
 
-        assert m.get('empty') == 'no'
-        assert m['empty'] == 'no'
-        assert m.empty == 'no'
+        assert m.get('empty') == 'entry'
+        assert m['empty'] == 'entry'
+        assert m.empty == 'entry'
+        assert m.Empty == false
     }
 
     /**
-     * Map "class" and "metaClass" properties aren't Object#getClass or GroovyObject#getMetaClass.
+     * Map "class" property isn't Object#getClass.
      */
     void testMapClass() {
-        def m = [class: 'xx', metaClass: 'yy']
+        def m = [:].withDefault{ 'entry' }
 
-        assert m.get('class') == 'xx'
-        assert m['class'] == 'xx'
-        assert m.class == 'xx'
-        assert m.Class == null
-
-        assert m.get('metaClass') == 'yy'
-        assert m['metaClass'] == 'yy'
-        assert m.metaClass == 'yy'
-        assert m.MetaClass == null
+        assert m.get('class') == 'entry'
+        assert m['class'] == 'entry'
+        assert m.class == 'entry'
+        assert m.Class == 'entry'
     }
 
     // GROOVY-5001, GROOVY-11367
@@ -135,7 +131,7 @@ final class MapTest extends GroovyTestCase {
                 assert map.z         == 'entry'
                 assert map.empty     == 'entry'
                 assert map.class     == 'entry'
-                assert map.metaClass == 'entry'
+                assert map.metaClass instanceof MetaClass
 
                 map.with {
                     assert v         == 'field'
@@ -159,25 +155,17 @@ final class MapTest extends GroovyTestCase {
                 }
 
                 def map = new M()
-                assert map.m         === map.@m
-                assert map.v         == 'getter'
-                assert map.w         == 'getter'
-                assert map.x         == 'entry'
-                assert map.y         == 'entry'
-                assert map.z         == 'entry'
-                assert map.empty     == 'entry'
-                assert map.class     == 'entry'
-                assert map.metaClass == 'entry'
-
+                assert map.v == 'getter'
+                assert map.w == 'getter'
+                assert map.x == 'entry'
+                assert map.y == 'entry'
+                assert map.z == 'entry'
                 map.with {
-                    assert v         == 'getter'
-                    assert w         == 'getter'
-                    assert x         == 'entry'
-                    assert y         == 'entry'
-                    assert z         == 'entry'
-                    assert empty     == 'entry'
-                    assert it.class  == 'entry' // "class" cannot be a variable expression
-                    assert metaClass instanceof org.codehaus.groovy.runtime.metaclass.ClosureMetaClass
+                    assert v == 'getter'
+                    assert w == 'getter'
+                    assert x == 'entry'
+                    assert y == 'entry'
+                    assert z == 'entry'
                 }
             """
         }

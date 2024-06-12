@@ -268,7 +268,6 @@ import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.syntax.Types.REMAINDER;
 import static org.codehaus.groovy.syntax.Types.REMAINDER_EQUAL;
-import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.COMPILESTATIC_CLASSNODE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashMap_TYPE;
@@ -1679,7 +1678,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             && !staticOnly // GROOVY-10387: Map.foo
                             && !isSuperExpression(objectExpression)
                             && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null)) // GROOVY-11384
-                            && (!getter.isPublic() || (propertyName.matches("empty|class|metaClass") && !List.of(getTypeCheckingAnnotations()).contains(COMPILESTATIC_CLASSNODE)))))) {
+                            && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty"))))) { // GROOVY-11367: public (not class or empty)
                     getter = null;
                 }
 
