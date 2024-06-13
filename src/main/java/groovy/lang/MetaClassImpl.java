@@ -2788,6 +2788,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //----------------------------------------------------------------------
+        // java.util.Map put method before non-public method -- see GROOVY-11367
+        //----------------------------------------------------------------------
+        if (isMap && !isStatic && !(method != null && method.isPublic())
+                  && (mp == null || !mp.isPublic() || isSpecialProperty(name))) {
+            ((Map) object).put(name, newValue);
+            return;
+        }
+
+        //----------------------------------------------------------------------
         // executing the method
         //----------------------------------------------------------------------
         if (method != null) {
@@ -2804,14 +2813,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             VM_PLUGIN.transformMetaMethod(this, method).doMethodInvoke(object, arguments);
-            return;
-        }
-
-        //------------------------------------------------------------------
-        // java.util.Map put method
-        //------------------------------------------------------------------
-        if (isMap && !isStatic && (mp == null || !mp.isPublic() || isSpecialProperty(name))) {
-            ((Map) object).put(name, newValue);
             return;
         }
 

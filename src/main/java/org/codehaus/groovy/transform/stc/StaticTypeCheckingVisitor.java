@@ -1608,10 +1608,14 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             // in case of a lookup on java.lang.Class, look for instance methods on Class
             // in case of static property access, Type (static) and Class<Type> are tried
             boolean staticOnly = !receiver.isObject();
+            // GROOVY-11367, GROOVY-11384: map entry before a non-public getter/setter
+            boolean publicOnly = !staticOnly && isOrImplements(receiverType, MAP_TYPE)
+                    && !isSuperExpression(objectExpression) && !(isThisExpression(objectExpression)
+                        && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null));
 
             List<MethodNode> setters = new ArrayList<>(4);
             for (MethodNode method : findMethodsWithGenerated(wrapTypeIfNecessary(receiverType), setterName)) {
-                if ((!staticOnly || method.isStatic()) && method.getParameters().length == 1
+                if (method.getParameters().length == 1 && (!staticOnly || method.isStatic()) && (!publicOnly || method.isPublic())
                         // GROOVY-11319:
                         && hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), method.getDeclaringClass(), method.getModifiers())) {
                     setters.add(method);
@@ -1622,7 +1626,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             var dgmSet = (TreeSet<MethodNode>) findDGMMethodsForClassNode(loader,            receiverType,  setterName);
             if (isPrimitiveType(receiverType)) findDGMMethodsForClassNode(loader, getWrapper(receiverType), setterName, dgmSet);
             for (MethodNode method : dgmSet) {
-                if ((!staticOnly || method.isStatic()) && method.getParameters().length == 1) {
+                if (method.getParameters().length == 1 && (!staticOnly || method.isStatic())) {
                     setters.add(method);
                 }
             }
@@ -1670,15 +1674,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     getter = current.getGetterMethod(getterName);
                     getter = allowStaticAccessToMember(getter, staticOnly);
                 }
-                if (getter != null
+                if (getter != null && ((publicOnly && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty")))
                         // GROOVY-11319:
-                        && (!hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers())
-                        // GROOVY-11369:
-                        || (isOrImplements(receiverType, MAP_TYPE)
-                            && !staticOnly // GROOVY-10387: Map.foo
-                            && !isSuperExpression(objectExpression)
-                            && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null)) // GROOVY-11384
-                            && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty"))))) { // GROOVY-11367: public (not class or empty)
+                        || !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers()))) {
                     getter = null;
                 }
 

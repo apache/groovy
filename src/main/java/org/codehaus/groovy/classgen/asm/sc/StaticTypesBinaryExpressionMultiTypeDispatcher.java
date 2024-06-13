@@ -64,6 +64,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -292,8 +293,10 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             String setterName = getSetterName(property);
             MethodNode setterMethod = receiverType.getSetterMethod(setterName, false);
             if (setterMethod != null) {
-                if (isThisReceiver && setterMethod.getDeclaringClass().equals(controller.getClassNode())) {
-                    // this.x = ... should not use setter from same class
+                if (isThisReceiver ? setterMethod.getDeclaringClass().equals(controller.getClassNode())
+                    : (!setterMethod.isPublic() && isOrImplements(receiverType, ClassHelper.MAP_TYPE))) {
+                    // this.x = ... should not use same-class setter
+                    // that.x = ... should not use non-public setter for map
                     setterMethod = null;
                 } else { // GROOVY-11119
                     java.util.List<MethodNode> setters = receiverType.getMethods(setterName);

@@ -881,27 +881,25 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-11223
+    // GROOVY-11367
     void testMapPropertyAccess10() {
-        assertScript """
-            def map = new ${MapType.name}()
+        String map = "def map = new ${MapType.name}()"
+        assertScript map + '''
             map.foo = 11 // public setter
             assert map.foo == 11
             assert map.getFoo() == 11
             assert map.get('foo') == null
-        """
-        assertScript """
-            def map = new ${MapType.name}()
-            map.bar = 22 // protected setter
-            assert map.bar == null
+        '''
+        assertScript map + '''
+            map.bar = 22 // (not) protected setter
+            assert map.bar == 22
             assert map.@bar == 2
-        """
-        assertScript """
-            def map = new ${MapType.name}()
-            map.baz = 33 // package-private setter
-            assert map.baz == null
+        '''
+        assertScript map + '''
+            map.baz = 33 // (not) package-private setter
+            assert map.baz == 33
             assert map.@baz == 3
-        """
+        '''
     }
 
     // GROOVY-11387

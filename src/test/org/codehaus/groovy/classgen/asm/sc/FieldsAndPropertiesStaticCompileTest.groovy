@@ -820,27 +820,4 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
             assert new C(['foo1', 'foo2']).fooNames.size() == 2
         '''
     }
-
-    // GROOVY-11223, GROOVY-11373
-    @Override
-    void testMapPropertyAccess10() {
-        assertScript """
-            def map = new ${MapType.name}()
-            map.foo = 11 // public setter
-            assert map.foo == 11
-            assert map.getFoo() == 11
-            assert map.get('foo') == null
-        """
-        shouldFailWithMessages """
-            def map = new ${MapType.name}()
-            map.bar = 22 // protected setter
-        """,
-        "Cannot access method: setBar(java.lang.Object) of class: ${MapType.name}"
-
-        shouldFailWithMessages """
-            def map = new ${MapType.name}()
-            map.baz = 33 // package-private setter
-        """,
-        "Cannot access method: setBaz(java.lang.Object) of class: ${MapType.name}"
-    }
 }

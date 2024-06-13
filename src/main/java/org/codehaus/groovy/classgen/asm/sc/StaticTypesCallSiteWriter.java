@@ -798,9 +798,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                 }
             }
             // GROOVY-6954, GROOVY-11376: for map types, replace "map.foo = ..."
-            // with "map.put('foo', ...)" if no public or protected field exists
+            // with "map.put('foo', ...)" if no public field exists
             if (!isClassReceiver[0] && isOrImplements(receiverType, MAP_TYPE)
-                    && Optional.ofNullable(getField(receiverType, name)).filter(f -> f.isPublic() || f.isProtected()).isEmpty()) {
+                    && Optional.ofNullable(getField(receiverType, name)).filter(FieldNode::isPublic).isEmpty()) {
                 MethodVisitor mv = controller.getMethodVisitor();
 
                 // store value in temporary variable

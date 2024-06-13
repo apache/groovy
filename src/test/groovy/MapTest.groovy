@@ -172,11 +172,15 @@ final class MapTest extends GroovyTestCase {
     }
 
     void testMapMutation() {
-        def m = [ 'abc' : 'def', 'def' : 134, 'xyz' : 'zzz' ]
+        def k = 'abc'
+        def m = [(k): 'xyz', 'def': 123, ghi: null]
 
-        assert m['unknown'] == null
+        assert m['abc'] == 'xyz'
+        assert m['def'] ==  123
+        assert m['ghi'] == null
+        assert m['jkl'] == null
 
-        assert m['def'] == 134
+        assert m.size() == 3
 
         m['def'] = 'cafebabe'
 
@@ -192,6 +196,11 @@ final class MapTest extends GroovyTestCase {
         def foo = m['def'] = 5
         assert m['def'] == 5
         assert foo == 5
+
+        m['class'] = 'entry'
+        m['empty'] = 'entry'
+
+        assert m.size() == 5
     }
 
     // GROOVY-5001, GROOVY-5491, GROOVY-11367
@@ -255,6 +264,40 @@ final class MapTest extends GroovyTestCase {
                 assert map.@z == 'z'
 
                 assert map.keySet() == ['x','y','z'].toSet()
+            """
+        }
+    }
+
+    // GROOVY-5001, GROOVY-5491, GROOVY-11367
+    void testMapMutation3() {
+        for (mode in [''/*,'static'*/]) {
+            assertScript """import groovy.transform.*
+                class M extends HashMap { // just like GROOVY-662, GROOVY-8065, GROOVY-8074
+                    def           $mode void setV(value) { put('setV', value) }
+                    public        $mode void setW(value) { put('setW', value) }
+                    protected     $mode void setX(value) { put('setX', value) }
+                    @PackageScope $mode void setY(value) { put('setY', value) }
+                    private       $mode void setZ(value) { put('setZ', value) }
+                }
+
+                def map = new M()
+                map.v = 'V'
+                map.w = 'W'
+                map.x = 'X'
+                map.y = 'Y'
+                map.z = 'Z'
+
+                assert map.v    == null
+                assert map.w    == null
+                assert map.x    ==  'X'
+                assert map.y    ==  'Y'
+                assert map.z    ==  'Z'
+                assert map.setV ==  'V'
+                assert map.setW ==  'W'
+                assert map.setX == null
+                assert map.setY == null
+                assert map.setZ == null
+                assert map.keySet() == ['setV','setW','x','y','z'].toSet()
             """
         }
     }
