@@ -480,7 +480,7 @@ public class CharScanner {
 
                 buf.addLine(new String(array, start, index));
             } catch (Exception ex2) {
-                buf.addLine(new String(array, 0, array.length));
+                buf.addLine(new String(array));
             }
         }
         for (int i = 0; i < (index - lastLineIndex); i++) {

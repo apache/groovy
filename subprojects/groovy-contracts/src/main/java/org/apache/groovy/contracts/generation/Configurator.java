@@ -63,11 +63,11 @@ public final class Configurator {
 
                 assertionConfiguration.put(packageName, Boolean.FALSE);
             } else if (arg.startsWith(ENABLE_PACKAGE_ASSERTIONS)) {
-                final String className = arg.substring(ENABLE_PACKAGE_ASSERTIONS.length(), arg.length());
+                final String className = arg.substring(ENABLE_PACKAGE_ASSERTIONS.length());
                 assertionConfiguration.put(className, Boolean.TRUE);
 
             } else if (arg.startsWith(DISABLE_PACKAGE_ASSERTIONS)) {
-                final String className = arg.substring(DISABLE_PACKAGE_ASSERTIONS.length(), arg.length());
+                final String className = arg.substring(DISABLE_PACKAGE_ASSERTIONS.length());
 
                 assertionConfiguration.put(className, Boolean.FALSE);
             }
