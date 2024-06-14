@@ -71,7 +71,7 @@ public class GroovyMBean extends GroovyObjectSupport {
 
         MBeanOperationInfo[] operationInfos = beanInfo.getOperations();
         for (MBeanOperationInfo info : operationInfos) {
-            String signature[] = createSignature(info);
+            String[] signature = createSignature(info);
             // Construct a simplistic key to support overloaded operations on the MBean.
             String operationKey = createOperationKey(info.getName(), signature.length);
             operations.put(operationKey, signature);
