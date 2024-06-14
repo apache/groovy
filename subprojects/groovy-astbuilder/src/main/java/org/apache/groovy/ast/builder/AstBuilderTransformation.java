@@ -123,9 +123,9 @@ public class AstBuilderTransformation extends MethodCallTransformation {
         private static List<Expression> getNonClosureArguments(MethodCallExpression call) {
             List<Expression> result = new ArrayList<>();
             if (call.getArguments() instanceof TupleExpression) {
-                for (ASTNode node : ((TupleExpression) call.getArguments()).getExpressions()) {
+                for (Expression node : ((TupleExpression) call.getArguments()).getExpressions()) {
                     if (!(node instanceof ClosureExpression)) {
-                        result.add((Expression) node);
+                        result.add(node);
                     }
                 }
             }
