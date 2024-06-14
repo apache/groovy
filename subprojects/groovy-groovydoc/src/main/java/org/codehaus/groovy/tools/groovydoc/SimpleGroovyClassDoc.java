@@ -18,9 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.JavaParser;
-
+import com.github.javaparser.ast.expr.Name;
 import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
@@ -947,7 +946,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         Matcher matcher = regex.matcher(self);
         if (matcher.find()) {
             matcher.reset();
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             while (matcher.find()) {
                 String tagname = matcher.group(1);
                 if (!"interface".equals(tagname)) {
@@ -972,7 +971,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         if (matcher.find()) {
             matcher.reset();
             Map<String, List<String>> savedTags = new LinkedHashMap<>();
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             while (matcher.find()) {
                 String tagname = matcher.group(1);
                 if (!"interface".equals(tagname)) {
@@ -1003,7 +1002,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             }
             matcher.appendTail(sb);
             // remove @endMarker
-            sb = new StringBuffer(sb.substring(0, sb.length() - 10));
+            sb = new StringBuilder(sb.substring(0, sb.length() - 10));
             for (Map.Entry<String, List<String>> e : savedTags.entrySet()) {
                 sb.append(preKey);
                 sb.append(e.getKey());
@@ -1027,7 +1026,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         Matcher matcher = regex.matcher(text);
         if (matcher.find()) {
             matcher.reset();
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             while (matcher.find()) {
                 String tagName = matcher.group(1);
                 String tagBody = matcher.group(2);
