@@ -4592,7 +4592,7 @@ public class Sql implements AutoCloseable {
     }
 
     private void clearStatementCache() {
-        Statement statements[];
+        Statement[] statements;
         if (statementCache.isEmpty())
             return;
         statements = new Statement[statementCache.size()];

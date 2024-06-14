@@ -454,7 +454,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
          * @param regexps
          * @param style
          */
-        public void putStyle(String regexps[], Style style) {
+        public void putStyle(String[] regexps, Style style) {
             putStyle(buildRegexp(regexps), style);
         }
 
@@ -476,7 +476,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         /**
          * @param regexps
          */
-        public void removeStyle(String regexps[]) {
+        public void removeStyle(String[] regexps) {
             removeStyle(buildRegexp(regexps));
         }
 
