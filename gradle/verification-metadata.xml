@@ -638,6 +638,11 @@
             <pgp value="2DB4F1EF0FA761ECC4EA935C86FDC7E2A11262CB"/>
          </artifact>
       </component>
+      <component group="org.apache.bcel" name="bcel" version="6.9.0">
+         <artifact name="bcel-6.9.0.jar">
+            <pgp value="2DB4F1EF0FA761ECC4EA935C86FDC7E2A11262CB"/>
+         </artifact>
+      </component>
       <component group="org.apache.commons" name="commons-math3" version="3.6.1">
          <artifact name="commons-math3-3.6.1.jar">
             <pgp value="41A1A08C62FCA78B79D3081164A16FAAEC16A4BE"/>
