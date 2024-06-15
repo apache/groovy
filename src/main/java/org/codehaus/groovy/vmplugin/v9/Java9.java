@@ -343,25 +343,22 @@ public class Java9 extends Java8 {
 
     static {
         ModuleFinder finder = ModuleFinder.ofSystem();
-        Map<String, ModuleDescriptor> map = new HashMap<>();
+        Map<String, ModuleDescriptor> packages = new HashMap<>(1024);
         finder.findAll().stream()
                 .map(ModuleReference::descriptor)
-                .forEach(md -> md.packages().forEach(pn -> map.putIfAbsent(pn, md)));
+                .forEach(md -> md.packages().forEach(pn -> packages.putIfAbsent(pn, md)));
 
-        Map<String, Set<String>> concealedPackagesToOpen = new ConcurrentHashMap<>();
-        Map<String, Set<String>> exportedPackagesToOpen = new ConcurrentHashMap<>();
+        Map<String, Set<String>> concealedPackagesToOpen = new ConcurrentHashMap<>(64);
+        Map<String, Set<String>> exportedPackagesToOpen = new ConcurrentHashMap<>(64);
 
-        Arrays.stream(JAVA8_PACKAGES())
-                .forEach(pn -> {
-                    ModuleDescriptor descriptor = map.get(pn);
-                    if (descriptor != null && !isOpen(descriptor, pn)) {
-                        if (isExported(descriptor, pn)) {
-                            exportedPackagesToOpen.computeIfAbsent(descriptor.name(), k -> new HashSet<>()).add(pn);
-                        } else {
-                            concealedPackagesToOpen.computeIfAbsent(descriptor.name(), k -> new HashSet<>()).add(pn);
-                        }
-                    }
-                });
+        for (String j8pn : JAVA8_PACKAGES()) {
+            ModuleDescriptor descriptor = packages.get(j8pn);
+            if (descriptor == null || isOpen(descriptor, j8pn)) continue;
+
+            Map<String, Set<String>> packagesToOpen =
+                isExported(descriptor, j8pn) ? exportedPackagesToOpen : concealedPackagesToOpen;
+            packagesToOpen.computeIfAbsent(descriptor.name(), k -> new HashSet<>(128)).add(j8pn);
+        }
 
         CONCEALED_PACKAGES_TO_OPEN = concealedPackagesToOpen;
         EXPORTED_PACKAGES_TO_OPEN = exportedPackagesToOpen;
