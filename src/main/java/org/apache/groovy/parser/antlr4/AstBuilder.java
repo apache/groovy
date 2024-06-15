@@ -20,7 +20,11 @@ package org.apache.groovy.parser.antlr4;
 
 import groovy.lang.Tuple2;
 import groovy.lang.Tuple3;
-import groovy.transform.*;
+import groovy.transform.CompileStatic;
+import groovy.transform.NonSealed;
+import groovy.transform.Sealed;
+import groovy.transform.Trait;
+import groovy.transform.TupleConstructor;
 import org.antlr.v4.runtime.ANTLRErrorListener;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -2406,6 +2410,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
+    public Expression visitEnhancedExpression(final EnhancedExpressionContext ctx) {
+        Expression expression;
+
+        if (asBoolean(ctx.expression())) {
+            expression = (Expression) this.visit(ctx.expression());
+        } else if (asBoolean(ctx.standardLambdaExpression())) {
+            expression = this.visitStandardLambdaExpression(ctx.standardLambdaExpression());
+        } else {
+            throw createParsingFailedException("Unsupported enhanced expression: " + ctx.getText(), ctx);
+        }
+
+        return configureAST(expression, ctx);
+    }
+
+    @Override
     public Expression visitEnhancedStatementExpression(final EnhancedStatementExpressionContext ctx) {
         Expression expression;
 
@@ -3462,7 +3481,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public MapEntryExpression visitMapEntry(final MapEntryContext ctx) {
         Expression keyExpr;
-        Expression valueExpr = (Expression) this.visit(ctx.expression());
+        Expression valueExpr = this.visitEnhancedExpression(ctx.enhancedExpression());
 
         if (asBoolean(ctx.MUL())) {
             keyExpr = configureAST(new SpreadMapExpression(valueExpr), ctx);

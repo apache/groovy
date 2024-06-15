@@ -743,6 +743,11 @@ expressionListElement[boolean canSpread]
     :   MUL? expression
     ;
 
+enhancedExpression
+    :   expression
+    |   standardLambdaExpression
+    ;
+
 enhancedStatementExpression
     :   statementExpression
     |   standardLambdaExpression
@@ -1096,20 +1101,20 @@ options { baseContext = mapEntryList; }
     ;
 
 mapEntry
-    :   mapEntryLabel COLON nls expression
-    |   MUL COLON nls expression
+    :   mapEntryLabel COLON nls enhancedExpression
+    |   MUL COLON nls enhancedExpression
     ;
 
 namedPropertyArg
 options { baseContext = mapEntry; }
-    :   namedPropertyArgLabel COLON nls expression
-    |   MUL COLON nls expression
+    :   namedPropertyArgLabel COLON nls enhancedExpression
+    |   MUL COLON nls enhancedExpression
     ;
 
 namedArg
 options { baseContext = mapEntry; }
-    :   namedArgLabel COLON nls expression
-    |   MUL COLON nls expression
+    :   namedArgLabel COLON nls enhancedExpression
+    |   MUL COLON nls enhancedExpression
     ;
 
 mapEntryLabel
