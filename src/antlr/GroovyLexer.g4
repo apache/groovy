@@ -39,6 +39,7 @@ options {
 
 @header {
     import java.util.*;
+    import java.util.function.Supplier;
     import org.apache.groovy.util.Maps;
     import static org.apache.groovy.parser.antlr4.SemanticPredicates.*;
 }
@@ -220,11 +221,11 @@ options {
     }
 
     private void addComment(int type) {
-        String text = _input.getText(Interval.of(_tokenStartCharIndex, getCharIndex() - 1));
-        handleComment(type, text);
+        Supplier<String> textSupplier = () -> _input.getText(Interval.of(_tokenStartCharIndex, getCharIndex() - 1));
+        handleComment(type, textSupplier);
     }
 
-    protected void handleComment(int type, String text) {
+    protected void handleComment(int type, Supplier<String> textSupplier) {
     }
 
     private static boolean isJavaIdentifierStartAndNotIdentifierIgnorable(int codePoint) {
