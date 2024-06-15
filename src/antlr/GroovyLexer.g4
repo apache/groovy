@@ -221,6 +221,10 @@ options {
 
     private void addComment(int type) {
         String text = _input.getText(Interval.of(_tokenStartCharIndex, getCharIndex() - 1));
+        handleComment(type, text);
+    }
+
+    protected void handleComment(int type, String text) {
     }
 
     private static boolean isJavaIdentifierStartAndNotIdentifierIgnorable(int codePoint) {
