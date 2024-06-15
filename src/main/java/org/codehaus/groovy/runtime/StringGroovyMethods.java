@@ -3439,7 +3439,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self == null) {
             return true;
         }
-        return self.toString().matches("\\s*");
+        return matches(self, LazyInitializer.BLANK_PATTERN);
     }
 
     /**
@@ -3977,5 +3977,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return false;
 
         return self.toString().toLowerCase().contains(searchString.toString().toLowerCase());
+    }
+
+    private static class LazyInitializer {
+        static final Pattern BLANK_PATTERN = Pattern.compile("\\s*");
     }
 }
