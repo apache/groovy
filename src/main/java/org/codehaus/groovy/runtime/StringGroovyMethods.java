@@ -3436,10 +3436,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #isAllWhitespace(CharSequence)
      */
     public static boolean isBlank(final CharSequence self) {
-        if (self == null) {
-            return true;
-        }
-        return matches(self, LazyInitializer.BLANK_PATTERN);
+        return self == null || self.isEmpty() || self.toString().isBlank();
     }
 
     /**
@@ -3977,9 +3974,5 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             return false;
 
         return self.toString().toLowerCase().contains(searchString.toString().toLowerCase());
-    }
-
-    private static class LazyInitializer {
-        static final Pattern BLANK_PATTERN = Pattern.compile("\\s*");
     }
 }
