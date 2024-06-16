@@ -3436,7 +3436,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #isAllWhitespace(CharSequence)
      */
     public static boolean isBlank(final CharSequence self) {
-        return self == null || self.isEmpty() || self.toString().isBlank();
+        return self == null || self.length() == 0 || self.toString().isBlank();
     }
 
     /**
