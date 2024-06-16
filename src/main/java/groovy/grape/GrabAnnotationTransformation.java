@@ -210,7 +210,12 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             grapesAnnotations       = new ArrayList<>();
             grabResolverAnnotations = new ArrayList<>();
 
-            visitClass(classNode);
+            if (classNode.getOuterClass() == null) {
+                visitClass(classNode);
+            } else { // GROOVY-11409
+                visitAnnotations(classNode);
+                classNode.visitContents(this);
+            }
 
             List<Statement> grabResolverInitializers = new ArrayList<>();
 
