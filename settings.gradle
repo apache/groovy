@@ -32,7 +32,7 @@ pluginManagement {
 plugins {
     // Before updating this, please check the compatibility from https://docs.gradle.com/enterprise/compatibility/#develocity_compatibility and https://ge.apache.org/scans.
     id "com.gradle.develocity" version "3.17.5"
-    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.0.1'
+    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.0.2'
 }
 
 apply from: 'gradle/build-scans.gradle'
