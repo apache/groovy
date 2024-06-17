@@ -1608,10 +1608,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             // in case of a lookup on java.lang.Class, look for instance methods on Class
             // in case of static property access, Type (static) and Class<Type> are tried
             boolean staticOnly = !receiver.isObject();
-            // GROOVY-11367, GROOVY-11384: map entry before a non-public getter/setter
-            boolean publicOnly = !staticOnly && isOrImplements(receiverType, MAP_TYPE)
-                    && !isSuperExpression(objectExpression) && !(isThisExpression(objectExpression)
-                        && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null));
+            // GROOVY-11367, GROOVY-11384, GROOVY-11387: entry before a non-public member
+            boolean publicOnly = !staticOnly && isOrImplements(receiverType, MAP_TYPE);
 
             List<MethodNode> setters = new ArrayList<>(4);
             for (MethodNode method : findMethodsWithGenerated(wrapTypeIfNecessary(receiverType), setterName)) {
@@ -1658,9 +1656,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     continue;
                 }
 
-                if (field != null && !staticOnly && !field.isPublic() // GROOVY-11367, GROOVY-11387: map entry before a non-public instance field
-                        && !(isThisExpression(objectExpression) && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null))
-                        && isOrImplements(receiverType, MAP_TYPE)) {
+                if (field != null && publicOnly && !field.isPublic() && !(isThisExpression(objectExpression)
+                        && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null))) {
                     field = null;
                 }
                 // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. within the declaring class of the field
