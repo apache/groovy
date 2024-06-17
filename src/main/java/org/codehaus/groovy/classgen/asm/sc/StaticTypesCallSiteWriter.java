@@ -416,8 +416,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
         // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
         if (isMapDotProperty
-                && (!isThisExpression(receiver) || (implicitThis && controller.isInGeneratedFunction())) // GROOVY-8978
-                && Optional.ofNullable( getField(receiverType, propertyName) ).filter(FieldNode::isPublic).isEmpty()) {
+                && (!isThisExpression(receiver) || controller.isInGeneratedFunction()) // GROOVY-8978, GROOVY-11402
+                && Optional.ofNullable(getField(receiverType, propertyName)).filter(FieldNode::isPublic).isEmpty()) {
             writeMapDotProperty(receiver, propertyName, safe);
             return;
         }

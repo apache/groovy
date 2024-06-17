@@ -920,7 +920,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-11403
+    // GROOVY-11402, GROOVY-11403
     void testMapPropertyAccess11() {
         for (mode in ['','static']) {
             assertScript """
@@ -937,7 +937,14 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                         assert this.w     == 'field'
                         assert this.x     == 'field'
                         assert this.y     == 'field'
-                        assert this.z     == 'field'
+                        assert this.z     == 'field';
+                        {->
+                            assert this.v == 'field'
+                            assert this.w == 'field'
+                            assert this.x == 'entry'
+                            assert this.y == 'entry'
+                            assert this.z == 'entry'
+                        }()
                     }
                 }
                 new M().test()

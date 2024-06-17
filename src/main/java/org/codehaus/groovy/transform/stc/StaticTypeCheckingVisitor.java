@@ -1656,8 +1656,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     continue;
                 }
 
-                if (field != null && publicOnly && !field.isPublic() && !(isThisExpression(objectExpression)
-                        && (!pexp.isImplicitThis() || typeCheckingContext.getEnclosingClosure() == null))) {
+                if (field != null && publicOnly && !field.isPublic()
+                        // GROOVY-11367, GROOVY-11402, GROOVY-11403:
+                        && !(isThisExpression(objectExpression) && typeCheckingContext.getEnclosingClosure() == null)) {
                     field = null;
                 }
                 // skip property/accessor checks for "field", "this.field", "this.with { field }", etc. within the declaring class of the field
