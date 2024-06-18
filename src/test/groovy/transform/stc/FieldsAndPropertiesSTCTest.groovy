@@ -982,6 +982,54 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         for (mode in ['','static']) {
             assertScript """
                 class M {
+                    @Delegate final Map m = [:].withDefault{ 'entry' }
+                    def           $mode v = 'field'
+                    public        $mode w = 'field'
+                    protected     $mode x = 'field'
+                    @PackageScope $mode y = 'field'
+                    private       $mode z = 'field'
+                    void test1() {
+                        assert this.m    === this.@m
+                        assert this.v     == 'field'
+                        assert this.w     == 'field'
+                        assert this.x     == 'field'
+                        assert this.y     == 'field'
+                        assert this.z     == 'field';
+                        {->
+                            assert this.v == 'field'
+                            assert this.w == 'field'
+                            assert this.x == 'entry'
+                            assert this.y == 'entry'
+                            assert this.z == 'entry'
+                        }()
+                    }
+                }
+                class MM extends M {
+                    void test2() {
+                        assert this.v     == 'field'
+                        assert this.w     == 'field'
+                        assert this.x     == 'entry'
+                        assert this.y     == 'entry'
+                        assert this.z     == 'entry';
+                        {->
+                            assert this.v == 'field'
+                            assert this.w == 'field'
+                            assert this.x == 'entry'
+                            assert this.y == 'entry'
+                            assert this.z == 'entry'
+                        }()
+                    }
+                }
+                new MM().with { test1(); test2() }
+            """
+        }
+    }
+
+    // GROOVY-11403
+    void testMapPropertyAccess13() {
+        for (mode in ['','static']) {
+            assertScript """
+                class M {
                     @Delegate private final Map<String,String> m = [:]
                     def           $mode v
                     public        $mode w
@@ -1109,7 +1157,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11368
-    void testMapPropertyAccess13() {
+    void testMapPropertyAccess14() {
         String type = '''
             class M implements Map<String,String> {
                 @Delegate Map<String,String> impl = [:]
@@ -1134,7 +1182,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11367
-    void testMapPropertyAccess14() {
+    void testMapPropertyAccess15() {
         String map = "def map = new ${MapType.name}()"
         assertScript map + '''
             map.foo = 11 // public setter
@@ -1155,7 +1203,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11387
-    void testMapPropertyAccess15() {
+    void testMapPropertyAccess16() {
         assertScript '''
             def map = new HashMap<String,String>()
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -1177,7 +1225,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11387
-    void testMapPropertyAccess16() {
+    void testMapPropertyAccess17() {
         assertScript '''
             class HttpHeaders extends HashMap<String,List<String>> {
                 protected static final String ACCEPT = 'Accept'
@@ -1191,7 +1239,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11401
-    void testMapPropertyAccess17() {
+    void testMapPropertyAccess18() {
         assertScript '''
             class C {
                 private Object obj = 'field'

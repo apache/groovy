@@ -53,7 +53,6 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -190,7 +189,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
         // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
         if (!isStaticProperty && isOrImplements(receiverType, MAP_TYPE)
-                && Optional.ofNullable(getField(receiverType, propertyName)).filter(FieldNode::isPublic).isEmpty()) {
+                && getField(receiverType, propertyName, FieldNode::isPublic) == null) {
             writeMapDotProperty(receiver, propertyName, safe);
             return;
         }
@@ -416,8 +415,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         // GROOVY-5001, GROOVY-5491, GROOVY-5517, GROOVY-6144, GROOVY-8788: for map types,
         // replace "map.foo" with "map.get('foo')" -- if no public field "foo" is declared
         if (isMapDotProperty
-                && (!isThisExpression(receiver) || controller.isInGeneratedFunction()) // GROOVY-8978, GROOVY-11402
-                && Optional.ofNullable(getField(receiverType, propertyName)).filter(FieldNode::isPublic).isEmpty()) {
+                && getField(receiverType, propertyName, FieldNode::isPublic) == null
+                // GROOVY-11367, GROOVY-11402, GROOVY-11403: "this.name" outside closure includes non-public fields of lexical scope
+                && (!isThisExpression(receiver) || controller.isInGeneratedFunction() || receiverType.getDeclaredField(propertyName) == null)) {
             writeMapDotProperty(receiver, propertyName, safe);
             return;
         }
@@ -800,7 +800,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             // GROOVY-6954, GROOVY-11376: for map types, replace "map.foo = ..."
             // with "map.put('foo', ...)" if no public field exists
             if (!isClassReceiver[0] && isOrImplements(receiverType, MAP_TYPE)
-                    && Optional.ofNullable(getField(receiverType, name)).filter(FieldNode::isPublic).isEmpty()) {
+                    && getField(receiverType, name, FieldNode::isPublic) == null) {
                 MethodVisitor mv = controller.getMethodVisitor();
 
                 // store value in temporary variable

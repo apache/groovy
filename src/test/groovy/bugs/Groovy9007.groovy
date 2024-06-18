@@ -70,19 +70,21 @@ final class Groovy9007 {
 
             @CompileStatic
             class TaskConfig extends LazyMap implements Cloneable {
-                TaskConfig() {
-                }
                 @Override
                 TaskConfig clone() {
                     def copy = (TaskConfig) super.clone()
-                    copy.target = new HashMap<>(this.target)
+                    copy.@target = new HashMap<>(this)
                     return copy
                 }
             }
 
-            def t1 = new TaskConfig()
-            t1.a = 'b'
+            def t1 = new TaskConfig().tap{ a = 'b' }
             def t2 = t1.clone()
+            assert t2 !== t1
+            assert t2.a == 'b'
+
+            t1.remove('a') // ensure independence
+            assert !t1.containsKey('a')
             assert t2.a == 'b'
         '''
     }
