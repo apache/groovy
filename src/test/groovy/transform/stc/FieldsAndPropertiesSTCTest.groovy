@@ -28,7 +28,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
 
     @Override
-    void configure() {
+    protected void configure() {
         config.addCompilationCustomizers(
             new ImportCustomizer().addImports('groovy.transform.PackageScope')
         )
@@ -977,33 +977,164 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-11368
+    // GROOVY-11403
     void testMapPropertyAccess12() {
+        for (mode in ['','static']) {
+            assertScript """
+                class M {
+                    @Delegate private final Map<String,String> m = [:]
+                    def           $mode v
+                    public        $mode w
+                    protected     $mode x
+                    @PackageScope $mode y
+                    private       $mode z
+                    void test1() {
+                        this.v     = 'value'
+                        this.w     = 'value'
+                        this.x     = 'value'
+                        this.y     = 'value'
+                        this.z     = 'value'
+                    }
+                    void test2() {
+                        {->
+                            this.v = 'value'
+                            this.w = 'value'
+                            this.x = 'value'
+                            this.y = 'value'
+                            this.z = 'value'
+                        }()
+                    }
+                }
+                def map = new M()
+                map.test1()
+                assert map.isEmpty()
+                map.test2()
+                assert map.keySet().toSorted() == ['x','y','z']
+
+                class MM extends M {
+                    void test3() {
+                        this.v     = 'value'
+                        this.w     = 'value'
+                        this.x     = 'value'
+                        this.y     = 'value'
+                        this.z     = 'value'
+                    }
+                    void test4() {
+                        {->
+                            this.v = 'value'
+                            this.w = 'value'
+                            this.x = 'value'
+                            this.y = 'value'
+                            this.z = 'value'
+                        }()
+                    }
+                }
+                def sub = new MM()
+                sub.test1()
+                assert sub.isEmpty()
+                sub.test2()
+                assert sub.keySet().toSorted() == ['x','y','z']
+                sub.clear()
+                sub.test3()
+                assert sub.keySet().toSorted() == ['x','y','z']
+                sub.clear()
+                sub.test4()
+                assert sub.keySet().toSorted() == ['x','y','z']
+            """
+            // unlike fields, only public setter before map put
+            assertScript """
+                class M {
+                    @Delegate private final Map<String,String> m = [:]
+                    def           $mode void setV(value) { print 'v' }
+                    public        $mode void setW(value) { print 'w' }
+                    protected     $mode void setX(value) { print 'x' }
+                    @PackageScope $mode void setY(value) { print 'y' }
+                    private       $mode void setZ(value) { print 'z' }
+                    void test1() {
+                        this.v     = 'value'
+                        this.w     = 'value'
+                        this.x     = 'value'
+                        this.y     = 'value'
+                        this.z     = 'value'
+                    }
+                    void test2() {
+                        {->
+                            this.v = 'value'
+                            this.w = 'value'
+                            this.x = 'value'
+                            this.y = 'value'
+                            this.z = 'value'
+                        }()
+                    }
+                }
+                def map = new M()
+                map.test1()
+                assert map.keySet().toSorted() == ['x','y','z']
+                map.clear()
+                map.test2()
+                assert map.keySet().toSorted() == ['x','y','z']
+
+                class MM extends M {
+                    void test3() {
+                        this.v     = 'value'
+                        this.w     = 'value'
+                        this.x     = 'value'
+                        this.y     = 'value'
+                        this.z     = 'value'
+                    }
+                    void test4() {
+                        {->
+                            this.v = 'value'
+                            this.w = 'value'
+                            this.x = 'value'
+                            this.y = 'value'
+                            this.z = 'value'
+                        }()
+                    }
+                }
+                def sub = new MM()
+                sub.test1()
+                assert sub.keySet().toSorted() == ['x','y','z']
+                sub.clear()
+                sub.test2()
+                assert sub.keySet().toSorted() == ['x','y','z']
+                sub.clear()
+                sub.test3()
+                assert sub.keySet().toSorted() == ['x','y','z']
+                sub.clear()
+                sub.test4()
+                assert sub.keySet().toSorted() == ['x','y','z']
+            """
+        }
+    }
+
+    // GROOVY-11368
+    void testMapPropertyAccess13() {
         String type = '''
-            class C implements Map<String,String> {
+            class M implements Map<String,String> {
                 @Delegate Map<String,String> impl = [:]
             }
         '''
         assertScript type + '''
-            def map = new C()
+            def map = new M()
             assert map.entry == null
             assert map.empty == null
             assert map.class == null
             assert map.metaClass != null
         '''
         assertScript type + '''
-            def test(C map) { // no diff
+            def test(M map) { // no diff
                 assert map.entry == null
                 assert map.empty == null
                 assert map.class == null
                 assert map.metaClass != null
             }
-            test(new C())
+            test(new M())
         '''
     }
 
     // GROOVY-11367
-    void testMapPropertyAccess13() {
+    void testMapPropertyAccess14() {
         String map = "def map = new ${MapType.name}()"
         assertScript map + '''
             map.foo = 11 // public setter
@@ -1024,7 +1155,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11387
-    void testMapPropertyAccess14() {
+    void testMapPropertyAccess15() {
         assertScript '''
             def map = new HashMap<String,String>()
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -1046,7 +1177,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11387
-    void testMapPropertyAccess15() {
+    void testMapPropertyAccess16() {
         assertScript '''
             class HttpHeaders extends HashMap<String,List<String>> {
                 protected static final String ACCEPT = 'Accept'
@@ -1060,7 +1191,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11401
-    void testMapPropertyAccess16() {
+    void testMapPropertyAccess17() {
         assertScript '''
             class C {
                 private Object obj = 'field'

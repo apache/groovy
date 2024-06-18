@@ -252,15 +252,15 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     }
 
     private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean isAttribute) {
-        ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
-        boolean isThisReceiver = isThisExpression(receiver);
-        String property = message.getText();
+        var receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+        var thisReceiver = isThisExpression(receiver);
+        var propertyName = message.getText();
 
-        if (isAttribute || (isThisReceiver && receiverType.getDeclaredField(property) != null)) {
+        if (isAttribute || (thisReceiver && receiverType.getDeclaredField(propertyName) != null)) {
             ClassNode current = receiverType;
             FieldNode fn = null;
             while (fn == null && current != null) {
-                fn = current.getDeclaredField(property);
+                fn = current.getDeclaredField(propertyName);
                 if (fn == null) {
                     current = current.getSuperClass();
                 }
@@ -282,7 +282,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 MethodVisitor mv = controller.getMethodVisitor();
                 mv.visitFieldInsn(fn.isStatic() ? PUTSTATIC : PUTFIELD,
                         BytecodeHelper.getClassInternalName(fn.getOwner()),
-                        property,
+                        propertyName,
                         BytecodeHelper.getTypeDescription(fn.getOriginType()));
                 operandStack.remove(fn.isStatic() ? 1 : 2);
                 return true;
@@ -290,11 +290,11 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
 
         if (!isAttribute) {
-            String setterName = getSetterName(property);
+            String setterName = getSetterName(propertyName);
             MethodNode setterMethod = receiverType.getSetterMethod(setterName, false);
             if (setterMethod != null) {
-                if (isThisReceiver ? setterMethod.getDeclaringClass().equals(controller.getClassNode())
-                    : (!setterMethod.isPublic() && isOrImplements(receiverType, ClassHelper.MAP_TYPE))) {
+                if ((thisReceiver && setterMethod.getDeclaringClass().equals(controller.getClassNode()))
+                    || (!setterMethod.isPublic() && isOrImplements(receiverType, ClassHelper.MAP_TYPE))) {
                     // this.x = ... should not use same-class setter
                     // that.x = ... should not use non-public setter for map
                     setterMethod = null;
@@ -304,7 +304,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     if (setters.size() > 1) setterMethod = null;
                 }
             } else {
-                PropertyNode propertyNode = receiverType.getProperty(property);
+                PropertyNode propertyNode = receiverType.getProperty(propertyName);
                 if (propertyNode != null && !propertyNode.isFinal()) {
                     setterMethod = new MethodNode(
                             setterName,
@@ -332,10 +332,10 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 call.visit(controller.getAcg());
                 return true;
             }
-            if (isThisReceiver && !controller.isInGeneratedFunction()) {
+            if (thisReceiver && !controller.isInGeneratedFunction()) {
                 receiverType = controller.getClassNode();
             }
-            if (makeSetPrivateFieldWithBridgeMethod(receiver, receiverType, property, arguments, safe, spreadSafe, implicitThis)) {
+            if (makeSetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, arguments, safe, spreadSafe, implicitThis)) {
                 return true;
             }
         }
