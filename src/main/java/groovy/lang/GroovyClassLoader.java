@@ -98,7 +98,7 @@ public class GroovyClassLoader extends URLClassLoader {
     protected final StampedCommonCache<String, Class> sourceCache = new StampedCommonCache<>();
 
     private final CompilerConfiguration config;
-    private String sourceEncoding;
+    private final String sourceEncoding;
     private Boolean recompile;
 
     /**
