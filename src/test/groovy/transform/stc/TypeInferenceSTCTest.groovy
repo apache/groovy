@@ -910,7 +910,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 method().toUpperCase()
             }
         ''',
-        'Cannot find matching method int#toUpperCase()'
+        'Cannot find matching method java.lang.Integer#toUpperCase()'
    }
 
     void testDeclarationTypeInference() {

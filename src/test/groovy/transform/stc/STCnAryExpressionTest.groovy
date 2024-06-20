@@ -54,7 +54,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
             int num = 2
             num+obj
         ''',
-        'Cannot find matching method int#plus(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#plus(java.lang.Object)'
     }
 
     // GROOVY-10818

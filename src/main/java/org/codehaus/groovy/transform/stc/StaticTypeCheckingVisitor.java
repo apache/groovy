@@ -5928,7 +5928,7 @@ trying: for (ClassNode[] signature : signatures) {
             if (receiver.isEnum() && args.length >= 2) args = Arrays.copyOfRange(args, 2, args.length);
             error = "Cannot find matching constructor " + prettyPrintTypeName(receiver) + toMethodParametersString("", args);
         } else {
-            ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : receiver;
+            ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : wrapTypeIfNecessary(receiver);
             error = "Cannot find matching method " + prettyPrintTypeName(type) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.";
         }
         addStaticTypeError(error, origin);
