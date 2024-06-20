@@ -1020,6 +1020,35 @@ final class MethodReferenceTest {
         '''
     }
 
+    @Test // class::new -- GROOVY-11385
+    void testFunctionCN8() {
+        def err = shouldFail shell, '''
+            abstract class A {
+                A(String s) {}
+            }
+            @CompileStatic
+            void test() {
+                Function<String, A> f = A::new
+                f.apply("") // InstantiationException
+            }
+
+            test()
+        '''
+        assert err =~ /Cannot instantiate the type A/
+
+        for (op in ['::','.&']) {
+            err = shouldFail shell, """
+                @CompileStatic
+                void test() {
+                    Supplier<Number> s = Number${op}new
+                }
+
+                test()
+            """
+            assert err =~ /Cannot instantiate the type java.lang.Number/
+        }
+    }
+
     @Test // arrayClass::new
     void testIntFunctionCN() {
         assertScript shell, '''
