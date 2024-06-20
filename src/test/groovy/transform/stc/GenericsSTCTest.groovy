@@ -152,6 +152,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testCompareToOnPrimitive() {
+        assertScript '''
+            int a = 1
+            assert (a < 2)
+            assert !(a < 1)
+            assert (a <= 1)
+        '''
+        // GROOVY-11383
+        shouldFailWithMessages '''
+            int a = 42
+            def b = (a < new Object())
+        ''',
+        'Cannot call java.lang.Integer#compareTo(java.lang.Integer) with arguments [java.lang.Object]'
+    }
+
     void testReturnTypeInference1() {
         assertScript '''
             class Foo<U> {

@@ -1484,9 +1484,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     static class Inner {
                         $propertySource
                         def test(int i) {
-                            if (i > VALUE) {
-                                // ...
-                            }
                             return VALUE
                         }
                     }

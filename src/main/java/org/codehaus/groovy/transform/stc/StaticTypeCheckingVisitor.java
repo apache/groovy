@@ -5849,6 +5849,8 @@ trying: for (ClassNode[] signature : signatures) {
                 at = new ClassNode[arguments.length + 1];
                 at[0] = receiver; // object expression is first argument
                 System.arraycopy(arguments, 0, at, 1, arguments.length);
+            } else {
+                r = wrapTypeIfNecessary(r); // GROOVY-11383
             }
             Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(r, m, null);
             GenericsType[] gt = applyGenericsContext(spec, m.getGenericsTypes()); // class params in bounds
