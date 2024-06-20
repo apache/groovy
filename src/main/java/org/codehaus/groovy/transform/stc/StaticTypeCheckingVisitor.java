@@ -2532,6 +2532,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (isClassClassNodeWrappingConcreteType(type)){
                     type = type.getGenericsTypes()[0].getType();
                     storeType(expression,wrapClosureType(type));
+                    // GROOVY-11385: check if create possible
+                    if (type.isAbstract() && !type.isArray())
+                        addStaticTypeError("Cannot instantiate the type " +
+                                    prettyPrintTypeName(type), expression);
                 }
                 return;
             }
