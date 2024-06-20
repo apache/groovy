@@ -146,7 +146,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int i = 0
             i += new Object()
         ''',
-        'Cannot find matching method int#plus(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#plus(java.lang.Object)'
     }
 
     void testIntMinusEqualsObject() {
@@ -154,7 +154,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             int i = 0
             i -= new Object()
         ''',
-        'Cannot find matching method int#minus(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#minus(java.lang.Object)'
     }
 
     void testStringPlusEqualsString() {

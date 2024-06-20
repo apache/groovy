@@ -5921,6 +5921,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 at = new ClassNode[arguments.length + 1];
                 at[0] = receiver; // object expression is first argument
                 System.arraycopy(arguments, 0, at, 1, arguments.length);
+            } else {
+                r = wrapTypeIfNecessary(r); // GROOVY-11383
             }
             Map<GenericsTypeName, GenericsType> spec = extractPlaceHoldersVisibleToDeclaration(r, m, null);
             GenericsType[] gt = applyGenericsContext(spec, m.getGenericsTypes()); // class params in bounds
@@ -5998,7 +6000,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (receiver.isEnum() && args.length >= 2) args = Arrays.copyOfRange(args, 2, args.length);
             error = "Cannot find matching constructor " + prettyPrintTypeName(receiver) + toMethodParametersString("", args);
         } else {
-            ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : receiver;
+            ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : wrapTypeIfNecessary(receiver);
             error = "Cannot find matching method " + prettyPrintTypeName(type) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.";
         }
         addStaticTypeError(error, origin);

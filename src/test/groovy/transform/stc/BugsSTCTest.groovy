@@ -38,7 +38,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def foo(Closure cls) {}
             def bar() { foo { 2 / it } }
         ''',
-        'Cannot find matching method int#div(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#div(java.lang.Object)'
     }
     void testShouldNotAllowModOnUntypedVariable() {
         shouldFailWithMessages '''
@@ -52,7 +52,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def foo(Closure cls) {}
             def bar() { foo { 2 % it } }
         ''',
-        'Cannot find matching method int#mod(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#mod(java.lang.Object)'
     }
     void testShouldNotAllowMulOnUntypedVariable() {
         shouldFailWithMessages '''
@@ -66,7 +66,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def foo(Closure cls) {}
             def bar() { foo { 2 * it } }
         ''',
-        'Cannot find matching method int#multiply(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#multiply(java.lang.Object)'
     }
     void testShouldNotAllowPlusOnUntypedVariable() {
         shouldFailWithMessages '''
@@ -80,7 +80,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def foo(Closure cls) {}
             def bar() { foo { 2 + it } }
         ''',
-        'Cannot find matching method int#plus(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#plus(java.lang.Object)'
     }
     void testShouldNotAllowMinusOnUntypedVariable() {
         shouldFailWithMessages '''
@@ -94,7 +94,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             def foo(Closure cls) {}
             def bar() { foo { 2 - it } }
         ''',
-        'Cannot find matching method int#minus(java.lang.Object)'
+        'Cannot find matching method java.lang.Integer#minus(java.lang.Object)'
     }
 
     // GROOVY-7929
