@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -40,6 +41,22 @@ public final class ClassNodeTest {
     @Before
     public void setUp() {
         classNode.addField("field", ACC_PUBLIC, ClassHelper.STRING_TYPE, null);
+    }
+
+    @Test // GROOVY-11413
+    public void testArrayClass() {
+        ClassNode array1 = ClassHelper.make(Integer[].class);
+        ClassNode array2 = classNode.makeArray();
+
+        assertEquals(array1.getModifiers(), array2.getModifiers());
+        assertEquals(array1.getSuperClass(), array2.getSuperClass());
+        assertArrayEquals(array1.getInterfaces(), array2.getInterfaces());
+
+        // members; TODO: "length" and "clone()"
+        assertTrue(array1.getFields().isEmpty());
+        assertTrue(array2.getFields().isEmpty());
+        assertTrue(array1.getMethods().isEmpty());
+        assertTrue(array2.getMethods().isEmpty());
     }
 
     @Test

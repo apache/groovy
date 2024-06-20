@@ -59,6 +59,7 @@ import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -239,7 +240,8 @@ public class ClassNode extends AnnotatedNode {
      * Constructor used by {@code makeArray()} if no real class is available.
      */
     private ClassNode(final ClassNode componentType) {
-        this(componentType.getName() + "[]", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        this(componentType.getName() + "[]", ACC_ABSTRACT | ACC_FINAL | ACC_PUBLIC, ClassHelper.OBJECT_TYPE,
+          new ClassNode[]{ClassHelper.CLONEABLE_TYPE, ClassHelper.SERIALIZABLE_TYPE}, MixinNode.EMPTY_ARRAY);
         this.componentType = componentType.redirect();
         this.isPrimaryNode = false;
     }

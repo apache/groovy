@@ -142,6 +142,7 @@ public class ClassHelper {
             Annotation_TYPE = makeCached(Annotation.class),
             ELEMENT_TYPE_TYPE = makeCached(ElementType.class),
             AUTOCLOSEABLE_TYPE = makeCached(AutoCloseable.class),
+            CLONEABLE_TYPE = makeCached(Cloneable.class),
             SERIALIZABLE_TYPE = makeCached(Serializable.class),
             SERIALIZEDLAMBDA_TYPE = makeCached(SerializedLambda.class),
             SEALED_TYPE = makeCached(Sealed.class),

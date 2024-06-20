@@ -48,8 +48,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
-import static org.codehaus.groovy.ast.ClassHelper.make;
-import static org.codehaus.groovy.ast.ClassHelper.makeWithoutCaching;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
@@ -58,9 +56,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 
 public class ImmutablePropertyUtils {
-    private static final ClassNode DATE_TYPE = make(Date.class);
-    private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
-    public  static final ClassNode IMMUTABLE_OPTIONS_TYPE = makeWithoutCaching(ImmutableOptions.class, false);
+    private static final ClassNode DATE_TYPE = ClassHelper.make(Date.class);
+    public  static final ClassNode IMMUTABLE_OPTIONS_TYPE = ClassHelper.makeWithoutCaching(ImmutableOptions.class, false);
 
     private static final String MEMBER_KNOWN_IMMUTABLE_CLASSES = "knownImmutableClasses";
     private static final String MEMBER_KNOWN_IMMUTABLES = "knownImmutables";
@@ -185,7 +182,7 @@ public class ImmutablePropertyUtils {
     }
 
     public static boolean implementsCloneable(final ClassNode fieldType) {
-        return isOrImplements(fieldType, CLONEABLE_TYPE);
+        return isOrImplements(fieldType, ClassHelper.CLONEABLE_TYPE);
     }
 
     public static Expression cloneDateExpr(final Expression origDate) {

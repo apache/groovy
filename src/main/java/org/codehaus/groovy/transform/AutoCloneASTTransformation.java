@@ -54,6 +54,8 @@ import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.codehaus.groovy.ast.ClassHelper.CLONEABLE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
@@ -83,7 +85,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.COMPILESTATIC_CLASSNODE;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -98,7 +99,6 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     static final Class MY_CLASS = AutoClone.class;
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode CLONEABLE_TYPE = make(Cloneable.class);
     private static final ClassNode BAOS_TYPE = make(ByteArrayOutputStream.class);
     private static final ClassNode BAIS_TYPE = make(ByteArrayInputStream.class);
     private static final ClassNode OOS_TYPE = make(ObjectOutputStream.class);
