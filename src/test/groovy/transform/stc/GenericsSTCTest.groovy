@@ -86,7 +86,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<String> list = []
             list << 1
         ''',
-        'Cannot call <T> java.util.ArrayList <String>#leftShift(T) with arguments [int]'
+        'Cannot call <T> java.util.ArrayList#leftShift(T) with arguments [int]'
     }
 
     void testAddOnList2UsingLeftShift() {
@@ -143,7 +143,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Integer> list = new LinkedList<>()
             list << 'Hello'
         ''',
-        'Cannot call <T> java.util.LinkedList <java.lang.Integer>#leftShift(T) with arguments [java.lang.String]'
+        'Cannot call <T> java.util.LinkedList#leftShift(T) with arguments [java.lang.String]'
     }
 
     void testAddOnListWithDiamondAndNullUsingLeftShift() {
@@ -151,6 +151,21 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Integer> list = new LinkedList<>()
             list << null
         '''
+    }
+
+    void testCompareToOnPrimitive() {
+        assertScript '''
+            int a = 1
+            assert (a < 2)
+            assert !(a < 1)
+            assert (a <= 1)
+        '''
+        // GROOVY-11383
+        shouldFailWithMessages '''
+            int a = 42
+            def b = (a < new Object())
+        ''',
+        'Cannot find matching method java.lang.Integer#compareTo(java.lang.Object)'
     }
 
     void testReturnTypeInference1() {
@@ -1941,7 +1956,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             List<String> list = new LinkedList<String>([1,2,3])
         ''',
-        'Cannot call java.util.LinkedList <String>#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.ArrayList <java.lang.Integer>]'
+        'Cannot call java.util.LinkedList#<init>(java.util.Collection <? extends java.lang.String>) with arguments [java.util.ArrayList <java.lang.Integer>]'
     }
 
     void testCompatibleGenericAssignmentWithInference() {
@@ -2336,7 +2351,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             A<String, Integer> a = new B()
             a.test()
         ''',
-        'Cannot call A <String, Integer>#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
+        'Cannot call A#<init>(java.lang.Class <String>, java.lang.Class <Integer>) with arguments [java.lang.Class <java.lang.Integer>, java.lang.Class <java.lang.String>]'
     }
 
     void testConstructorCallWithClassParameterUsingClassLiteralArg() {
@@ -2392,13 +2407,13 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def map = new HashMap<Integer, Integer>()
             map[123] = new Object()
         ''',
-        'Cannot call <K,V> java.util.HashMap <Integer, Integer>#putAt(java.lang.Integer, java.lang.Integer) with arguments [int, java.lang.Object]'
+        'Cannot call <K,V> java.util.HashMap#putAt(java.lang.Integer, java.lang.Integer) with arguments [int, java.lang.Object]'
 
         shouldFailWithMessages '''
             def map = new HashMap<String, Integer>()
             map['x'] = new Object()
         ''',
-        'Cannot call <K,V> java.util.HashMap <String, Integer>#putAt(java.lang.String, java.lang.Integer) with arguments [java.lang.String, java.lang.Object]'
+        'Cannot call <K,V> java.util.HashMap#putAt(java.lang.String, java.lang.Integer) with arguments [java.lang.String, java.lang.Object]'
     }
 
     // GROOVY-9069
@@ -2414,8 +2429,8 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot call java.util.Map <String, Map>#put(java.lang.String, java.util.Map <String, List>) with arguments [java.lang.String, java.util.LinkedHashMap <String, List>]',
-        'Cannot call <K,V> java.util.Map <String, Map>#putAt(java.lang.String, java.util.Map <String, List>) with arguments [java.lang.String, java.util.LinkedHashMap <String, List>]'
+        'Cannot call java.util.Map#put(java.lang.String, java.util.Map <String, List>) with arguments [java.lang.String, java.util.LinkedHashMap <String, List>]',
+        'Cannot call <K,V> java.util.Map#putAt(java.lang.String, java.util.Map <String, List>) with arguments [java.lang.String, java.util.LinkedHashMap <String, List>]'
 
         assertScript '''
             void test(Map<String, Map<String, List<String>>> maps) {
@@ -2559,7 +2574,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
         ''',
-        'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA <Long>#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
+        'Cannot call <X> groovy.transform.stc.GenericsSTCTest$ClassA#bar(java.lang.Class <Long>) with arguments [java.lang.Class <? extends java.lang.Object>]'
     }
 
     // GROOVY-8961, GROOVY-9915
@@ -2929,7 +2944,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Collection<Integer> numbers = (Collection<Integer>) [1,2,3]
             boolean r = list.addAll(numbers)
         ''',
-        'Cannot call java.util.ArrayList <java.lang.String>#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
+        'Cannot call java.util.ArrayList#addAll(java.util.Collection <? extends java.lang.String>) with arguments [java.util.Collection <Integer>]'
     }
 
     // GROOVY-5528
@@ -3241,7 +3256,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Map<Date, Date> map = new HashMap<>()
             map['foo'] = new Date()
         ''',
-        'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.lang.String, java.util.Date]'
+        'Cannot call <K,V> java.util.HashMap#putAt(java.util.Date, java.util.Date) with arguments [java.lang.String, java.util.Date]'
     }
     void testInferDiamondForAssignmentWithDatesAndIllegalValueUsingPut() {
         shouldFailWithMessages '''
@@ -3281,7 +3296,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Map<Date, Date> map = new HashMap<>()
             map[new Date()] = 'foo'
         ''',
-        'Cannot call <K,V> java.util.HashMap <java.util.Date, java.util.Date>#putAt(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
+        'Cannot call <K,V> java.util.HashMap#putAt(java.util.Date, java.util.Date) with arguments [java.util.Date, java.lang.String]'
     }
 
     void testCallMethodWithParameterizedArrayList() {

@@ -1401,7 +1401,7 @@ public abstract class StaticTypeCheckingSupport {
             return typeCheckMethodsWithGenerics(receiver.getGenericsTypes()[0].getType(), argumentTypes, candidateMethod);
         }
 
-        return typeCheckMethodsWithGenerics(receiver, argumentTypes, candidateMethod, false);
+        return typeCheckMethodsWithGenerics(StaticTypeCheckingVisitor.wrapTypeIfNecessary(receiver), argumentTypes, candidateMethod, false);
     }
 
     private static boolean typeCheckMethodsWithGenerics(final ClassNode receiver, final ClassNode[] argumentTypes, final MethodNode candidateMethod, final boolean isExtensionMethod) {

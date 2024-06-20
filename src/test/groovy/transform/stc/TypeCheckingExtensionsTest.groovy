@@ -345,7 +345,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             Date y = new Date()
             x+y
         ''',
-        'Cannot find matching method int#plus(java.util.Date)'
+        'Cannot find matching method java.lang.Integer#plus(java.util.Date)'
 
         extension = 'groovy/transform/stc/BinaryOperatorTestExtension.groovy'
         assertScript '''
@@ -364,7 +364,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
             Date y = new Date()
             x << y
         ''',
-        'Cannot find matching method int#leftShift(java.util.Date)'
+        'Cannot find matching method java.lang.Integer#leftShift(java.util.Date)'
 
         extension = 'groovy/transform/stc/BinaryOperatorTestExtension.groovy'
         assertScript '''

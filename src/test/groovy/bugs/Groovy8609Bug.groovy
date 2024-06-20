@@ -98,7 +98,7 @@ final class Groovy8609Bug extends GroovyTestCase {
                 }
             }
         '''
-        assert err.contains('Cannot call A <ArrayList, HashMap>#getFirstRecord(java.util.ArrayList <HashMap>) with arguments [java.util.ArrayList <TreeMap>]')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList <HashMap>) with arguments [java.util.ArrayList <TreeMap>]')
     }
 
     void testUpperBoundWithGenericsThroughWrongType2() {
@@ -118,7 +118,7 @@ final class Groovy8609Bug extends GroovyTestCase {
                 }
             }
         '''
-        assert err.contains('Cannot call A <ArrayList, HashMap>#getFirstRecord(java.util.ArrayList <HashMap>) with arguments [java.util.ArrayList <HashMap>]')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList <HashMap>) with arguments [java.util.ArrayList <HashMap>]')
     }
 
     void testUpperBoundWithGenericsThroughWrongType3() {
@@ -138,6 +138,6 @@ final class Groovy8609Bug extends GroovyTestCase {
                 }
             }
         '''
-        assert err.contains('Cannot call A <ArrayList, HashMap>#getFirstRecord(java.util.ArrayList <HashMap>) with arguments [java.util.ArrayList <HashMap>]')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList <HashMap>) with arguments [java.util.ArrayList <HashMap>]')
     }
 }
