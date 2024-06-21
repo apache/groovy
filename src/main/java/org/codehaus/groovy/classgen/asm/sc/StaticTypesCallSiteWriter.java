@@ -474,7 +474,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             if (!getterNode.isStatic() && receiver instanceof ClassExpression && !isClassType(receiverType)) {
                 return false;
             }
-            if ((!getterNode.isPublic() || propertyName.matches("class|empty")) && isOrImplements(receiverType, MAP_TYPE)) {
+            if ((!getterNode.isPublic() || "class".equals(propertyName) || "empty".equals(propertyName)) && isOrImplements(receiverType, MAP_TYPE)) {
                 return false; // GROOVY-11367
             }
             if (!AsmClassGenerator.isMemberDirectlyAccessible(getterNode.getModifiers(), getterNode.getDeclaringClass(), controller.getClassNode())) {
