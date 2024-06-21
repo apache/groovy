@@ -685,9 +685,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } else if (accessedVariable instanceof FieldNode) {
             if (tryVariableExpressionAsProperty(vexp, name)) {
                 ClassNode temporaryType = getInferredTypeFromTempInfo(vexp, null); // GROOVY-9454
-                if (temporaryType == null) {
-                    storeType(vexp, getType(vexp));
-                } else if (!isObjectType(temporaryType)) {
+                if (temporaryType != null && !isObjectType(temporaryType)) {
                     vexp.putNodeMetaData(INFERRED_TYPE, temporaryType);
                 }
                 if (vexp.getAccessedVariable() != accessedVariable) { // GROOVY-11360: field hidden by dynamic property
@@ -753,9 +751,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         PropertyExpression pexp = thisPropX(true, dynName);
         if (existsProperty(pexp, !typeCheckingContext.isTargetOfEnclosingAssignment(vexp))) {
             vexp.copyNodeMetaData(pexp.getObjectExpression());
-            for (Object key : new Object[]{IMPLICIT_RECEIVER, READONLY_PROPERTY, PV_FIELDS_ACCESS, PV_FIELDS_MUTATION, DECLARATION_INFERRED_TYPE, DIRECT_METHOD_CALL_TARGET}) {
-                Object val = pexp.getNodeMetaData(key);
-                if (val != null) vexp.putNodeMetaData(key, val);
+            for (Object key : new Object[]{IMPLICIT_RECEIVER, READONLY_PROPERTY, PV_FIELDS_ACCESS, PV_FIELDS_MUTATION, DIRECT_METHOD_CALL_TARGET}) {
+                vexp.putNodeMetaData(key, pexp.getNodeMetaData(key));
             }
             ClassNode type = pexp.getNodeMetaData(INFERRED_TYPE);
             if (vexp.isClosureSharedVariable()) {
@@ -1986,7 +1983,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         if (delegationData != null) {
             expression.putNodeMetaData(IMPLICIT_RECEIVER, delegationData);
         }
-        if (Modifier.isFinal(property.getModifiers())) {
+        if (property.isFinal()) {
             expression.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
         } else {
             expression.removeNodeMetaData(READONLY_PROPERTY);

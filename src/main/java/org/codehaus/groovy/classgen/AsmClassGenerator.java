@@ -260,7 +260,6 @@ public class AsmClassGenerator extends ClassGenerator {
     private static final MethodCaller createGroovyObjectWrapperMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createGroovyObjectWrapper");
 
     private final Map<String,ClassNode> referencedClasses = new HashMap<>();
-    private boolean passingParams;
 
     public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
@@ -1390,12 +1389,12 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     public void visitVariableExpression(final VariableExpression expression) {
-        final String variableName = expression.getName();
+        CompileStack compileStack = controller.getCompileStack();
 
         if (expression.isThisExpression()) {
             // "this" in static context is Class instance
-            if (controller.isStaticMethod() || controller.getCompileStack().isInSpecialConstructorCall()
-                    || (!controller.getCompileStack().isImplicitThis() && controller.isStaticContext())) {
+            if (controller.isStaticMethod() || compileStack.isInSpecialConstructorCall()
+                    || (!compileStack.isImplicitThis() && controller.isStaticContext())) {
                 classX(controller.getThisType()).visit(this);
             } else {
                 loadThis(expression);
@@ -1414,26 +1413,18 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
 
-        BytecodeVariable variable = controller.getCompileStack().getVariable(variableName, false);
+        BytecodeVariable variable = compileStack.getVariable(expression.getName(), /*throwIfMissing*/false);
         if (variable != null) {
             controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
-        } else if (passingParams && controller.isInScriptBody()) {
-            MethodVisitor mv = controller.getMethodVisitor();
-            mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
-            mv.visitInsn(DUP);
-            loadThisOrOwner();
-            mv.visitLdcInsn(variableName);
-            mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/ScriptReference", "<init>", "(Lgroovy/lang/Script;Ljava/lang/String;)V", false);
         } else {
-            PropertyExpression pexp = thisPropX(true, variableName);
-            pexp.getObjectExpression().setSourcePosition(expression);
+            PropertyExpression pexp = thisPropX(true, expression.getName());
             pexp.getProperty().setSourcePosition(expression);
             pexp.setType(expression.getType());
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
         }
 
-        if (!controller.getCompileStack().isLHS()) {
+        if (!compileStack.isLHS()) {
             controller.getAssertionWriter().record(expression);
         }
     }

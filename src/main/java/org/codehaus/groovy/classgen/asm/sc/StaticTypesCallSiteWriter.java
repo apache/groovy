@@ -331,8 +331,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (field != null) {
             ClassNode classNode = controller.getClassNode();
             if (field.isPrivate() && !receiverType.equals(classNode)
-                    && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
-                        || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
+                    && StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)) {
                 Map<String, MethodNode> accessors = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
                 if (accessors != null) {
                     MethodNode methodNode = accessors.get(fieldName);
@@ -355,12 +354,13 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             }
         } else if (implicitThis) {
             ClassNode outerClass = receiverType.getOuterClass();
-            if (outerClass != null && !receiverType.isStaticClass()) {
+            if (outerClass != null && (receiverType.getModifiers() & ACC_STATIC) == 0) {
                 Expression expr;
                 ClassNode thisType = outerClass;
                 if (controller.isInGeneratedFunction()) {
                     while (isGeneratedFunction(thisType)) {
                         thisType = thisType.getOuterClass();
+                        // TODO: stop if thisType is static?
                     }
 
                     MethodCallExpression call = callThisX("getThisObject");
@@ -383,9 +383,11 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     @Override
     public void makeGroovyObjectGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
-        ClassNode receiverType = controller.getClassNode();
+        ClassNode receiverType;
         if (!isThisExpression(receiver) || controller.isInGeneratedFunction()) {
             receiverType = getPropertyOwnerType(receiver); // GROOVY-9967, et al.
+        } else {
+            receiverType = controller.getClassNode();
         }
 
         if (implicitThis && controller.getInvocationWriter() instanceof StaticInvocationWriter) {
