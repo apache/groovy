@@ -1,3 +1,5 @@
+import groovy.transform.CompileStatic
+
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -16,15 +18,52 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-def x = []
-def y = []
-assert y !== x
 
-assert 'a' === 'a'
-def otherA = new String('a')
-assert 'a' == otherA && 'a'.equals(otherA)
-assert 'a' !== otherA && !'a'.is(otherA)
-assert null === null
-assert true === true
-assert false === false
-assert 0 == 0 && 'a' === 'a' && 1 != 2 && 'a' !== new String('a') && 1 == 1
+def c() {
+    def x = []
+    def y = []
+    assert y !== x
+    assert 'a' === 'a'
+    def otherA = new String('a')
+    assert 'a' == otherA && 'a'.equals(otherA)
+    assert 'a' !== otherA && !'a'.is(otherA)
+    assert 0 == 0 && 'a' === 'a' && 1 != 2 && 'a' !== new String('a') && 1 == 1
+
+    def a = 'abc'
+    def b = a
+    assert a === b
+    assert !(a !== b)
+    assert a === b && !(a !== b)
+    assert null === null
+    assert true === true
+    assert false === false
+    assert 0 === 0
+    assert 0 !== null
+    assert null !== 0
+}
+c()
+
+@CompileStatic
+def c_cs() {
+    def x = []
+    def y = []
+    assert y !== x
+    assert 'a' === 'a'
+    def otherA = new String('a')
+    assert 'a' == otherA && 'a'.equals(otherA)
+    assert 'a' !== otherA && !'a'.is(otherA)
+    assert 0 == 0 && 'a' === 'a' && 1 != 2 && 'a' !== new String('a') && 1 == 1
+
+    def a = 'abc'
+    def b = a
+    assert a === b
+    assert !(a !== b)
+    assert a === b && !(a !== b)
+    assert null === null
+    assert true === true
+    assert false === false
+    assert 0 === 0
+    assert 0 !== null
+    assert null !== 0
+}
+c_cs()
