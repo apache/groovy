@@ -118,13 +118,12 @@ import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
+import static org.objectweb.asm.Opcodes.IF_ACMPNE;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
 import static org.objectweb.asm.Opcodes.POP;
 
 public class BinaryExpressionHelper {
     // compare
-    private static final MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
-    private static final MethodCaller compareNotIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotIdentical");
     private static final MethodCaller compareEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareEqual");
     private static final MethodCaller compareNotEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotEqual");
     private static final MethodCaller compareToMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareTo");
@@ -352,16 +351,41 @@ public class BinaryExpressionHelper {
             break;
 
         case COMPARE_IDENTICAL:
-            evaluateCompareExpression(compareIdenticalMethod, expression);
+            evaluateIdentity(expression, true);
             break;
 
         case COMPARE_NOT_IDENTICAL:
-            evaluateCompareExpression(compareNotIdenticalMethod, expression);
+            evaluateIdentity(expression, false);
             break;
 
         default:
             throw new GroovyBugError("Operation: " + expression.getOperation() + " not supported");
         }
+    }
+
+    private void evaluateIdentity(BinaryExpression expression, boolean identical) {
+        AsmClassGenerator acg = controller.getAcg();
+        MethodVisitor mv = controller.getMethodVisitor();
+        OperandStack operandStack = controller.getOperandStack();
+
+        Expression lhs = expression.getLeftExpression();
+        lhs.visit(acg);
+        if (ClassHelper.isPrimitiveType(lhs.getType())) operandStack.box();
+
+        Expression rhs = expression.getRightExpression();
+        rhs.visit(acg);
+        if (ClassHelper.isPrimitiveType(rhs.getType())) operandStack.box();
+
+        Label trueCase = operandStack.jump(identical ? IF_ACMPEQ : IF_ACMPNE);
+        ConstantExpression.PRIM_FALSE.visit(acg);
+        Label end = new Label();
+        mv.visitJumpInsn(GOTO, end);
+
+        mv.visitLabel(trueCase);
+        ConstantExpression.PRIM_TRUE.visit(acg);
+
+        mv.visitLabel(end);
+        operandStack.replace(ClassHelper.boolean_TYPE, 3);
     }
 
     @Deprecated
