@@ -81,5 +81,7 @@ tasks.withType(GroovyCompile).configureEach {
     groovyOptions.fork(memoryMaximumSize: sharedConfiguration.groovycMaxMemory.get())
     groovyClasspath = configurations.groovyCompilerClasspath
 
+    // See also https://docs.gradle.org/current/userguide/groovy_plugin.html#sec:incremental_groovy_compilation
     options.incremental = true
+    options.incrementalAfterFailure = true
 }
