@@ -41,18 +41,18 @@ public class Grape {
     protected static GrapeEngine instance;
 
     /**
-     * This is a static access kill-switch.  All of the static shortcut
-     * methods in this class will not work if this property is set to false.
-     * By default it is set to true.
+     * This is a static access kill-switch.  All the static shortcut
+     * methods in this class will be disabled if this property is set to false.
+     * By default, it is set to true.
      */
     public static boolean getEnableGrapes() {
         return enableGrapes;
     }
 
     /**
-     * This is a static access kill-switch.  All of the static shortcut
-     * methods in this class will not work if this property is set to false.
-     * By default it is set to true.
+     * This is a static access kill-switch.  All the static shortcut
+     * methods in this class will be disabled if this property is set to false.
+     * By default, it is set to true.
      */
     public static void setEnableGrapes(boolean enableGrapes) {
         Grape.enableGrapes = enableGrapes;
@@ -74,7 +74,7 @@ public class Grape {
      * will be checked for new versions and downloaded (with dependencies)
      * if found.
      * <p>
-     * By default it is set to true.
+     * By default, it is set to true.
      */
     public static boolean getEnableAutoDownload() {
         return enableAutoDownload;
@@ -94,7 +94,7 @@ public class Grape {
      * If it is set to true, then any jars not already downloaded will
      * automatically be downloaded.  Also, any versions expressed as a range
      * will be checked for new versions and downloaded (with dependencies)
-     * if found. By default it is set to true.
+     * if found. By default, it is set to true.
      */
     public static void setEnableAutoDownload(boolean enableAutoDownload) {
         Grape.enableAutoDownload = enableAutoDownload;
@@ -102,7 +102,7 @@ public class Grape {
 
     /**
      * Global flag to ignore checksums.
-     * By default it is set to false.
+     * By default, it is set to false.
      */
     public static boolean getDisableChecksums() {
         return disableChecksums;
@@ -110,7 +110,7 @@ public class Grape {
 
     /**
      * Set global flag to ignore checksums.
-     * By default it is set to false.
+     * By default, it is set to false.
      */
     public static void setDisableChecksums(boolean disableChecksums) {
         Grape.disableChecksums = disableChecksums;

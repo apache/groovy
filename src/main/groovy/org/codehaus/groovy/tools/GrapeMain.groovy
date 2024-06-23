@@ -84,7 +84,7 @@ class GrapeMain implements Runnable {
     }
 
     @SuppressWarnings('UnusedPrivateMethod') // used in run()
-    private void setupLogging(int defaultLevel = 2) { // = Message.MSG_INFO -> some parsing error :(
+    private void setupLogging(int defaultLevel = Message.MSG_INFO) {
         if (quiet) {
             Message.defaultLogger = new DefaultMessageLogger(Message.MSG_ERR)
         } else if (warn) {
