@@ -1014,6 +1014,18 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert yyy == null
         '''
         assertScript '''
+            static void test() {
+                def map = new HashMap<String,String>()
+                map.with{
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        assert node.getNodeMetaData(INFERRED_TYPE) == STRING_TYPE
+                    })
+                    def xxx = table
+                }
+            }
+            test()
+        '''
+        assertScript '''
             class HttpHeaders extends HashMap<String,List<String>> {
                 public static final String ACCEPT = 'Accept'
             }
