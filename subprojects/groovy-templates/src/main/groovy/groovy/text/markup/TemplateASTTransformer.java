@@ -56,7 +56,7 @@ class TemplateASTTransformer extends CompilationCustomizer {
     private static final ClassNode TEMPLATECONFIG_CLASSNODE = ClassHelper.make(TemplateConfiguration.class);
     private final TemplateConfiguration config;
 
-    public TemplateASTTransformer(TemplateConfiguration config) {
+    TemplateASTTransformer(TemplateConfiguration config) {
         super(CompilePhase.SEMANTIC_ANALYSIS);
         this.config = config;
     }

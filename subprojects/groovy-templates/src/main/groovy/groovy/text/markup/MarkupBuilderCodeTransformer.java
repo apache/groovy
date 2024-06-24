@@ -67,7 +67,7 @@ class MarkupBuilderCodeTransformer extends ClassCodeExpressionTransformer {
     private final boolean autoEscape;
     private final ClassNode classNode;
 
-    public MarkupBuilderCodeTransformer(final SourceUnit unit, final ClassNode classNode, final boolean autoEscape) {
+    MarkupBuilderCodeTransformer(final SourceUnit unit, final ClassNode classNode, final boolean autoEscape) {
         this.unit = unit;
         this.autoEscape = autoEscape;
         this.classNode = classNode;

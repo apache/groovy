@@ -23,8 +23,8 @@ package groovy.text;
  */
 public class TemplateParseException extends RuntimeException {
     private static final long serialVersionUID = 1607958968337123274L;
-    private int lineNumber;
-    private int column;
+    private final int lineNumber;
+    private final int column;
 
     public TemplateParseException(int lineNumber, int column) {
         super();

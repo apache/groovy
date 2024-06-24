@@ -37,7 +37,7 @@ import java.util.Map;
  * the normal JDK SQL classes when inside the Groovy environment.
  * Static methods are used with the first parameter the destination class.
  */
-public class SqlExtensions {
+public final class SqlExtensions {
 
     /**
      * Returns a GroovyRowResult given a ResultSet.
@@ -98,7 +98,7 @@ public class SqlExtensions {
         private final ResultSetMetaData target;
         private int index = 1;
 
-        public ResultSetMetaDataIterator(ResultSetMetaData target) {
+        ResultSetMetaDataIterator(ResultSetMetaData target) {
             this.target = target;
         }
 

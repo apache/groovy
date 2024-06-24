@@ -38,7 +38,7 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     private boolean fallingThrough;
 
     static class FallThroughMarker extends Closure {
-        public FallThroughMarker(Object owner) {
+        FallThroughMarker(Object owner) {
             super(owner);
         }
     }

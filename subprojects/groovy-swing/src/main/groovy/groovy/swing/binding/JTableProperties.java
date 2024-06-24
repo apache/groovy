@@ -18,9 +18,7 @@
  */
 package groovy.swing.binding;
 
-import org.apache.groovy.swing.binding.FullBinding;
 import org.apache.groovy.swing.binding.PropertyBinding;
-import org.apache.groovy.swing.binding.SourceBinding;
 import org.apache.groovy.swing.binding.TargetBinding;
 import org.apache.groovy.swing.binding.TriggerBinding;
 
@@ -39,26 +37,11 @@ public class JTableProperties {
     public static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JTable.class.getName() + "#elements",
-                new TriggerBinding() {
-                    @Override
-                    public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                        return new JTableElementsBinding((PropertyBinding) source, target);
-                    }
-                });
+            (source, target) -> new JTableElementsBinding((PropertyBinding) source, target));
         result.put(JTable.class.getName() + "#selectedElement",
-                new TriggerBinding() {
-                    @Override
-                    public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                        return new JTableSelectedElementBinding((PropertyBinding) source, target, "selectedElement");
-                    }
-                });
+            (source, target) -> new JTableSelectedElementBinding((PropertyBinding) source, target, "selectedElement"));
         result.put(JTable.class.getName() + "#selectedElements",
-                new TriggerBinding() {
-                    @Override
-                    public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                        return new JTableSelectedElementBinding((PropertyBinding) source, target, "selectedElements");
-                    }
-                });
+            (source, target) -> new JTableSelectedElementBinding((PropertyBinding) source, target, "selectedElements"));
         return result;
     }
 }
@@ -66,7 +49,7 @@ public class JTableProperties {
 class JTableElementsBinding extends AbstractSyntheticBinding implements TableModelListener, PropertyChangeListener {
     JTable boundTable;
 
-    public JTableElementsBinding(PropertyBinding propertyBinding, TargetBinding target) {
+    JTableElementsBinding(PropertyBinding propertyBinding, TargetBinding target) {
         super(propertyBinding, target, JTable.class, "elements");
     }
 

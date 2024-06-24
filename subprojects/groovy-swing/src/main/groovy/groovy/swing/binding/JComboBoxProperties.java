@@ -18,9 +18,7 @@
  */
 package groovy.swing.binding;
 
-import org.apache.groovy.swing.binding.FullBinding;
 import org.apache.groovy.swing.binding.PropertyBinding;
-import org.apache.groovy.swing.binding.SourceBinding;
 import org.apache.groovy.swing.binding.TargetBinding;
 import org.apache.groovy.swing.binding.TriggerBinding;
 
@@ -42,35 +40,15 @@ public class JComboBoxProperties {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
 
         // to match property name
-        result.put(JComboBox.class.getName() + "#selectedItem", new TriggerBinding() {
-            @Override
-            public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                return new JComboBoxSelectedElementBinding((PropertyBinding) source, target, "selectedItem");
-            }
-        });
+        result.put(JComboBox.class.getName() + "#selectedItem", (source, target) -> new JComboBoxSelectedElementBinding((PropertyBinding) source, target, "selectedItem"));
         // to match JSR-295
-        result.put(JComboBox.class.getName() + "#selectedElement", new TriggerBinding() {
-            @Override
-            public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                return new JComboBoxSelectedElementBinding((PropertyBinding) source, target, "selectedElement");
-            }
-        });
+        result.put(JComboBox.class.getName() + "#selectedElement", (source, target) -> new JComboBoxSelectedElementBinding((PropertyBinding) source, target, "selectedElement"));
 
-        result.put(JComboBox.class.getName() + "#selectedIndex", new TriggerBinding() {
-            @Override
-            public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                return new JComboBoxSelectedIndexBinding((PropertyBinding) source, target);
-            }
-        });
+        result.put(JComboBox.class.getName() + "#selectedIndex", (source, target) -> new JComboBoxSelectedIndexBinding((PropertyBinding) source, target));
 
 
         // to match JSR-295
-        result.put(JComboBox.class.getName() + "#elements", new TriggerBinding() {
-            @Override
-            public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                return new JComboBoxElementsBinding((PropertyBinding) source, target);
-            }
-        });
+        result.put(JComboBox.class.getName() + "#elements", (source, target) -> new JComboBoxElementsBinding((PropertyBinding) source, target));
 
         return result;
     }
@@ -80,7 +58,7 @@ public class JComboBoxProperties {
 class JComboBoxSelectedElementBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ItemListener {
     JComboBox boundComboBox;
 
-    public JComboBoxSelectedElementBinding(PropertyBinding source, TargetBinding target, String propertyName) {
+    JComboBoxSelectedElementBinding(PropertyBinding source, TargetBinding target, String propertyName) {
         super(source, target, JComboBox.class, propertyName);
     }
 
@@ -118,7 +96,7 @@ class JComboBoxSelectedElementBinding extends AbstractSyntheticBinding implement
 class JComboBoxSelectedIndexBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ItemListener {
     JComboBox boundComboBox;
 
-    public JComboBoxSelectedIndexBinding(PropertyBinding source, TargetBinding target) {
+    JComboBoxSelectedIndexBinding(PropertyBinding source, TargetBinding target) {
         super(source, target, JComboBox.class, "selectedIndex");
     }
 
@@ -156,7 +134,7 @@ class JComboBoxSelectedIndexBinding extends AbstractSyntheticBinding implements 
 class JComboBoxElementsBinding extends AbstractSyntheticBinding implements ListDataListener, PropertyChangeListener {
     JComboBox boundComboBox;
 
-    public JComboBoxElementsBinding(PropertyBinding propertyBinding, TargetBinding target) {
+    JComboBoxElementsBinding(PropertyBinding propertyBinding, TargetBinding target) {
         super(propertyBinding, target, JComboBox.class, "elements");
     }
 

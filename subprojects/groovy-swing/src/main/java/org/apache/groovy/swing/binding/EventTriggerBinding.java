@@ -59,7 +59,7 @@ public class EventTriggerBinding implements TriggerBinding {
 
         Closure handler;
 
-        public EventTriggerFullBinding(final SourceBinding sourceBinding, TargetBinding targetBinding) {
+        EventTriggerFullBinding(final SourceBinding sourceBinding, TargetBinding targetBinding) {
             setSourceBinding(sourceBinding);
             setTargetBinding(targetBinding);
             handler = new Closure(triggerBean) {

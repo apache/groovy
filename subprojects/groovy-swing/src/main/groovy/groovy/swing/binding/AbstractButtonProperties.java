@@ -18,9 +18,7 @@
  */
 package groovy.swing.binding;
 
-import org.apache.groovy.swing.binding.FullBinding;
 import org.apache.groovy.swing.binding.PropertyBinding;
-import org.apache.groovy.swing.binding.SourceBinding;
 import org.apache.groovy.swing.binding.TargetBinding;
 import org.apache.groovy.swing.binding.TriggerBinding;
 
@@ -39,12 +37,7 @@ public class AbstractButtonProperties {
     public static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(AbstractButton.class.getName() + "#selected",
-            new TriggerBinding() {
-                @Override
-                public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                    return new AbstractButtonSelectedBinding((PropertyBinding) source, target);
-                }
-            });
+            (source, target) -> new AbstractButtonSelectedBinding((PropertyBinding) source, target));
         return result;
     }
 }
@@ -53,7 +46,7 @@ public class AbstractButtonProperties {
 class AbstractButtonSelectedBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ItemListener {
     AbstractButton boundButton;
 
-    public AbstractButtonSelectedBinding(PropertyBinding source, TargetBinding target) {
+    AbstractButtonSelectedBinding(PropertyBinding source, TargetBinding target) {
         super(source, target, AbstractButton.class, "selected");
     }
 

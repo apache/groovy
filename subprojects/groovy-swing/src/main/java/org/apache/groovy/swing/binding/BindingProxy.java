@@ -153,7 +153,7 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
     }
 
     class ModelBindingPropertyBinding extends PropertyBinding {
-        public ModelBindingPropertyBinding(Object bean, String propertyName) {
+        ModelBindingPropertyBinding(Object bean, String propertyName) {
             super(bean, propertyName);
         }
 

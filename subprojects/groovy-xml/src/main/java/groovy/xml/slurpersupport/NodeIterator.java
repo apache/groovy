@@ -58,5 +58,5 @@ public abstract class NodeIterator implements Iterator {
         throw new UnsupportedOperationException();
     }
 
-    protected abstract Object getNextNode(final Iterator iter);
+    protected abstract Object getNextNode(Iterator iter);
 }

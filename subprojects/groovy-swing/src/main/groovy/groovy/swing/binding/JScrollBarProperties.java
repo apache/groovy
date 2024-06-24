@@ -18,9 +18,7 @@
  */
 package groovy.swing.binding;
 
-import org.apache.groovy.swing.binding.FullBinding;
 import org.apache.groovy.swing.binding.PropertyBinding;
-import org.apache.groovy.swing.binding.SourceBinding;
 import org.apache.groovy.swing.binding.TargetBinding;
 import org.apache.groovy.swing.binding.TriggerBinding;
 
@@ -39,12 +37,7 @@ public class JScrollBarProperties {
     public static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JScrollBar.class.getName() + "#value",
-                new TriggerBinding() {
-                    @Override
-                    public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                        return new JScrollBarValueBinding((PropertyBinding) source, target);
-                    }
-                });
+            (source, target) -> new JScrollBarValueBinding((PropertyBinding) source, target));
         return result;
     }
 }
@@ -54,7 +47,7 @@ class JScrollBarValueBinding extends AbstractSyntheticBinding implements Propert
     JScrollBar boundScrollBar;
 
 
-    public JScrollBarValueBinding(PropertyBinding source, TargetBinding target) {
+    JScrollBarValueBinding(PropertyBinding source, TargetBinding target) {
         super(source, target, JScrollBar.class, "value");
     }
 

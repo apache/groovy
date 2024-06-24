@@ -18,9 +18,7 @@
  */
 package groovy.swing.binding;
 
-import org.apache.groovy.swing.binding.FullBinding;
 import org.apache.groovy.swing.binding.PropertyBinding;
-import org.apache.groovy.swing.binding.SourceBinding;
 import org.apache.groovy.swing.binding.TargetBinding;
 import org.apache.groovy.swing.binding.TriggerBinding;
 
@@ -39,12 +37,7 @@ public class JSliderProperties {
     public static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JSlider.class.getName() + "#value",
-                new TriggerBinding() {
-                    @Override
-                    public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                        return new JSliderValueBinding((PropertyBinding) source, target);
-                    }
-                });
+            (source, target) -> new JSliderValueBinding((PropertyBinding) source, target));
         return result;
     }
 }
@@ -54,7 +47,7 @@ class JSliderValueBinding extends AbstractSyntheticBinding implements PropertyCh
     JSlider boundSlider;
 
 
-    public JSliderValueBinding(PropertyBinding source, TargetBinding target) {
+    JSliderValueBinding(PropertyBinding source, TargetBinding target) {
         super(source, target, JSlider.class, "value");
     }
 

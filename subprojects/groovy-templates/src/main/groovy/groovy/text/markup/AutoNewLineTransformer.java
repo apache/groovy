@@ -43,7 +43,7 @@ class AutoNewLineTransformer extends ClassCodeVisitorSupport {
     private final SourceUnit unit;
     private boolean inBuilderMethod;
 
-    public AutoNewLineTransformer(final SourceUnit unit) {
+    AutoNewLineTransformer(final SourceUnit unit) {
         this.unit = unit;
     }
 

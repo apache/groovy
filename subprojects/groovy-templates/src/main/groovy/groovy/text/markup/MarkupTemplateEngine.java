@@ -208,7 +208,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
         final Map<String, String> modeltypes;
 
         @SuppressWarnings("unchecked")
-        public MarkupTemplateMaker(final Reader reader, String sourceName, Map<String, String> modelTypes) {
+        MarkupTemplateMaker(final Reader reader, String sourceName, Map<String, String> modelTypes) {
             String name = sourceName != null ? sourceName : "GeneratedMarkupTemplate" + counter.getAndIncrement();
             templateClass = groovyClassLoader.parseClass(new GroovyCodeSource(reader, name, "x"), modelTypes);
             this.modeltypes = modelTypes;
@@ -253,7 +253,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
     static class TemplateGroovyClassLoader extends GroovyClassLoader {
         static final ThreadLocal<Map<String, String>> modelTypes = new ThreadLocal<Map<String, String>>();
 
-        public TemplateGroovyClassLoader(final ClassLoader parentLoader, final CompilerConfiguration compilerConfiguration) {
+        TemplateGroovyClassLoader(final ClassLoader parentLoader, final CompilerConfiguration compilerConfiguration) {
             super(parentLoader, compilerConfiguration);
         }
 

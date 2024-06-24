@@ -83,7 +83,7 @@ public class BaseMarkupBuilder extends Builder {
         private abstract class OutputSink extends GroovyObjectSupport {
             private final String name;
 
-            public OutputSink(final String name) {
+            OutputSink(final String name) {
                 this.name = name;
             }
 
@@ -102,7 +102,7 @@ public class BaseMarkupBuilder extends Builder {
             }
         }
 
-        public Document(final Closure root, final Map namespaceMethodMap) {
+        Document(final Closure root, final Map namespaceMethodMap) {
             super(root, namespaceMethodMap);
         }
 

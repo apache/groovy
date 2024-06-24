@@ -18,9 +18,7 @@
  */
 package groovy.swing.binding;
 
-import org.apache.groovy.swing.binding.FullBinding;
 import org.apache.groovy.swing.binding.PropertyBinding;
-import org.apache.groovy.swing.binding.SourceBinding;
 import org.apache.groovy.swing.binding.TargetBinding;
 import org.apache.groovy.swing.binding.TriggerBinding;
 
@@ -41,12 +39,7 @@ public class JTextComponentProperties {
     public static Map<String, TriggerBinding> getSyntheticProperties() {
         Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JTextComponent.class.getName() + "#text",
-            new TriggerBinding() {
-                @Override
-                public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-                    return new JTextComponentTextBinding((PropertyBinding) source, target);
-                }
-            });
+            (source, target) -> new JTextComponentTextBinding((PropertyBinding) source, target));
         return result;
     }
 }
@@ -55,7 +48,7 @@ public class JTextComponentProperties {
 class JTextComponentTextBinding extends AbstractSyntheticBinding implements PropertyChangeListener, DocumentListener {
     JTextComponent boundTextComponent;
 
-    public JTextComponentTextBinding(PropertyBinding source, TargetBinding target) {
+    JTextComponentTextBinding(PropertyBinding source, TargetBinding target) {
         super(source, target, JTextComponent.class, "text");
         source.setNonChangeCheck(true);
     }

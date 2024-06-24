@@ -488,7 +488,7 @@ public abstract class BaseTemplate implements Writable {
         private Map attributes;
         private Object body;
 
-        public TagData(final Object args) {
+        TagData(final Object args) {
             this.array = (Object[])args;
         }
 

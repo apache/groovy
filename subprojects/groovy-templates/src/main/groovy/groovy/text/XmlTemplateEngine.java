@@ -124,11 +124,11 @@ public class XmlTemplateEngine extends TemplateEngine {
 
     private static class GspPrinter extends XmlNodePrinter {
 
-        public GspPrinter(PrintWriter out, String indent) {
+        GspPrinter(PrintWriter out, String indent) {
             this(new IndentPrinter(out, indent));
         }
 
-        public GspPrinter(IndentPrinter out) {
+        GspPrinter(IndentPrinter out) {
             super(out, "\\\"");
             setQuote("'");
         }
@@ -259,7 +259,7 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         private final Script script;
 
-        public XmlTemplate(Script script) {
+        XmlTemplate(Script script) {
             this.script = script;
         }
 
@@ -283,7 +283,7 @@ public class XmlTemplateEngine extends TemplateEngine {
         private final Script script;
         private WeakReference result;
 
-        public XmlWritable(Script script, Binding binding) {
+        XmlWritable(Script script, Binding binding) {
             this.script = script;
             this.binding = binding;
             this.result = new WeakReference<>(null);

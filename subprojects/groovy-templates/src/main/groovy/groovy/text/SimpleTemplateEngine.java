@@ -146,11 +146,11 @@ public class SimpleTemplateEngine extends TemplateEngine {
         protected Script script;
         private boolean escapeBackslash;
 
-        public SimpleTemplate() {
+        SimpleTemplate() {
             this(false);
         }
 
-        public SimpleTemplate(boolean escapeBackslash) {
+        SimpleTemplate(boolean escapeBackslash) {
             this.escapeBackslash = escapeBackslash;
         }
 
