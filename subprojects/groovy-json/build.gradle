@@ -34,7 +34,7 @@ dependencies {
         }
     }
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
-    testRuntimeOnly 'com.google.code.gson:gson:2.10.1' // json-unit requires gson, jackson1 or jackson2
+    testRuntimeOnly 'com.google.code.gson:gson:2.11.0' // json-unit requires gson, jackson1 or jackson2
 }
 
 plugins.withId('eclipse') {
