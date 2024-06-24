@@ -290,7 +290,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         private boolean secondPass = false;
         private boolean methodCalls = false;
 
-        public ClosureExpressionValidator(ClassNode classNode, MethodNode methodNode, AnnotationNode annotationNode, SourceUnit sourceUnit) {
+        ClosureExpressionValidator(ClassNode classNode, MethodNode methodNode, AnnotationNode annotationNode, SourceUnit sourceUnit) {
             this.classNode = classNode;
             this.methodNode = methodNode;
             this.annotationNode = annotationNode;
@@ -469,7 +469,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         private final MethodNode methodNode;
         private CastExpression currentCast;
 
-        public OldPropertyExpressionTransformer(MethodNode methodNode) {
+        OldPropertyExpressionTransformer(MethodNode methodNode) {
             this.methodNode = methodNode;
         }
 

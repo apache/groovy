@@ -62,7 +62,7 @@ public class ContractClosureWriter {
         String name = outerClass.getName() + "$" + getClosureInnerName(outerClass, classNode);
 
         // fetch all method parameters, and possibly add 'old' and 'result'
-        ArrayList<Parameter> parametersTemp = new ArrayList<Parameter>(Arrays.asList(expression.getParameters()));
+        List<Parameter> parametersTemp = new ArrayList<>(Arrays.asList(expression.getParameters()));
         removeParameter("old", parametersTemp);
         removeParameter("result", parametersTemp);
 

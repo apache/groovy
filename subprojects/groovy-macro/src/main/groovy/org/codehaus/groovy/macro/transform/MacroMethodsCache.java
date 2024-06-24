@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 /**
  * @since 2.5.0
  */
-class MacroMethodsCache extends AbstractExtensionMethodCache {
+final class MacroMethodsCache extends AbstractExtensionMethodCache {
     private static final ClassNode MACRO_ANNOTATION_CLASS_NODE = ClassHelper.make(Macro.class);
 
     public static final MacroMethodsCache INSTANCE = new MacroMethodsCache();

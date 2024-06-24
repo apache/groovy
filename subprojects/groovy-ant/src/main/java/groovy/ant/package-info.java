@@ -16,32 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.ginq.provider.collection.runtime;
-
-import org.apache.groovy.internal.util.Supplier;
 
 /**
- * Hold an object thread-safely
- *
- * @param <T> the type of object
- * @since 4.0.0
+ * Classes for working with <a href="https://ant.apache.org/">Apache Ant™</a>.
  */
-class ConcurrentObjectHolder<T> {
-    private volatile T object;
-    private final Supplier<T> supplier;
-
-    ConcurrentObjectHolder(Supplier<T> supplier) {
-        this.supplier = supplier;
-    }
-
-    public T getObject() {
-        if (null != object) return object;
-
-        synchronized(this) {
-            if (null == object) {
-                object = supplier.get();
-            }
-            return object;
-        }
-    }
-}
+package groovy.ant;

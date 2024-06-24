@@ -119,7 +119,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         long length;
         final Template template;
 
-        public TemplateCacheEntry(File file, Template template, boolean timestamp) {
+        TemplateCacheEntry(File file, Template template, boolean timestamp) {
             if (template == null) {
                 throw new NullPointerException("template");
             }

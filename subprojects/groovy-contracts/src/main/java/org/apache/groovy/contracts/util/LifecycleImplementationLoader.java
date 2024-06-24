@@ -40,9 +40,9 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
 
     private static final String PREFIX = "META-INF/services/";
 
-    private Class<S> service;
-    private ClassLoader loader;
-    private LinkedHashMap<String, S> providers = new LinkedHashMap<String, S>();
+    private final Class<S> service;
+    private final ClassLoader loader;
+    private final Map<String, S> providers = new LinkedHashMap<>();
     private LazyIterator lookupIterator;
 
     public void reload() {
@@ -97,7 +97,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
     private Iterator<String> parse(Class service, URL u) throws ServiceConfigurationError {
         InputStream in = null;
         BufferedReader r = null;
-        ArrayList<String> names = new ArrayList<String>();
+        List<String> names = new ArrayList<>();
         try {
             in = u.openStream();
             r = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
@@ -116,7 +116,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
         return names.iterator();
     }
 
-    private class LazyIterator implements Iterator<S> {
+    private final class LazyIterator implements Iterator<S> {
 
         Class<S> service;
         ClassLoader loader;
@@ -185,7 +185,7 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
     public Iterator<S> iterator() {
         return new Iterator<S>() {
 
-            Iterator<Map.Entry<String, S>> knownProviders = providers.entrySet().iterator();
+            final Iterator<Map.Entry<String, S>> knownProviders = providers.entrySet().iterator();
 
             @Override
             public boolean hasNext() {

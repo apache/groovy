@@ -20,6 +20,7 @@ package org.apache.groovy.contracts;
 
 import org.apache.groovy.contracts.util.Validate;
 
+import java.util.NavigableMap;
 import java.util.TreeMap;
 
 /**
@@ -53,7 +54,7 @@ public class ViolationTracker {
         throw INSTANCE.get().last();
     }
 
-    private TreeMap<Long, AssertionViolation> violations = new TreeMap<Long, AssertionViolation>();
+    private final NavigableMap<Long, AssertionViolation> violations = new TreeMap<>();
 
     public void track(final AssertionViolation assertionViolation) {
         Validate.notNull(assertionViolation);
@@ -62,7 +63,7 @@ public class ViolationTracker {
     }
 
     public boolean hasViolations() {
-        return violations.size() > 0;
+        return !violations.isEmpty();
     }
 
     public AssertionViolation first() {

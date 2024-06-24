@@ -389,7 +389,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             final Writer sw = new StringBuilderWriter(2);
             // use BufferedWriter rather than System.getProperty because it has
             // the security manager rigamarole to deal with the possible exception
-            try (final BufferedWriter bw = new BufferedWriter(sw)) {
+            try (BufferedWriter bw = new BufferedWriter(sw)) {
                 bw.newLine();
                 bw.flush();
                 lineSeparator = sw.toString();

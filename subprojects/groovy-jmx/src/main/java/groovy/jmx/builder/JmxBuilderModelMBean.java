@@ -161,7 +161,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
     }
 
 
-    private static class NumberSequencer {
+    private static final class NumberSequencer {
         private static final AtomicLong NUM = new AtomicLong(0);
 
         public static long getNextSequence() {

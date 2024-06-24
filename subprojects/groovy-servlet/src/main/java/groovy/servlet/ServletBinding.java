@@ -100,7 +100,7 @@ public class ServletBinding extends Binding {
      * A OutputStream dummy that will throw a GroovyBugError for any
      * write method call to it.
      */
-    private static class InvalidOutputStream extends OutputStream {
+    private static final class InvalidOutputStream extends OutputStream {
         /**
          * Will always throw a GroovyBugError
          * @see java.io.OutputStream#write(int)
@@ -123,7 +123,7 @@ public class ServletBinding extends Binding {
         private ServletOutputStream outputStream;
         private PrintWriter writer;
 
-        public ServletOutput(HttpServletResponse response) {
+        ServletOutput(HttpServletResponse response) {
             this.response = response;
         }
         private ServletOutputStream getResponseStream() throws IOException {

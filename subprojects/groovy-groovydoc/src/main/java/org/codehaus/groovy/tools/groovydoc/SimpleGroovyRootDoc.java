@@ -173,7 +173,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
     }
 
-    private static class ClassNamedCache {
+    private static final class ClassNamedCache {
         private final Map<String, GroovyClassDoc> classDocs;
         private final Map<Entry, GroovyClassDoc> store = new HashMap<>();
 
@@ -215,7 +215,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             return null;
         }
 
-        private static class Entry {
+        private static final class Entry {
             private final GroovyClassDoc groovyClass;
             private final String name;
             private final int hashCode;

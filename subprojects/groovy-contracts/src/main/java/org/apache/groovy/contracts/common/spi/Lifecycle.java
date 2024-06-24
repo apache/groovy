@@ -63,15 +63,15 @@ import org.codehaus.groovy.ast.MethodNode;
  */
 public interface Lifecycle {
 
-    public void beforeProcessingClassNode(final ProcessingContextInformation processingContextInformation, final ClassNode classNode);
+    void beforeProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode);
 
-    public void afterProcessingClassNode(final ProcessingContextInformation processingContextInformation, final ClassNode classNode);
+    void afterProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode);
 
-    public void beforeProcessingMethodNode(final ProcessingContextInformation processingContextInformation, final ClassNode classNode, final MethodNode methodNode);
+    void beforeProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode);
 
-    public void afterProcessingMethodNode(final ProcessingContextInformation processingContextInformation, final ClassNode classNode, final MethodNode methodNode);
+    void afterProcessingMethodNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode methodNode);
 
-    public void beforeProcessingConstructorNode(final ProcessingContextInformation processingContextInformation, final ClassNode classNode, final MethodNode constructorNode);
+    void beforeProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode);
 
-    public void afterProcessingConstructorNode(final ProcessingContextInformation processingContextInformation, final ClassNode classNode, final MethodNode constructorNode);
+    void afterProcessingConstructorNode(ProcessingContextInformation processingContextInformation, ClassNode classNode, MethodNode constructorNode);
 }

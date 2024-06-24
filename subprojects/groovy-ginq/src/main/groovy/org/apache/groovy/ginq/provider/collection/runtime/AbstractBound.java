@@ -39,7 +39,7 @@ abstract class AbstractBound<T1, T2> implements Serializable {
      * @param upper the upper frame bound
      * @since 4.0.0
      */
-    public AbstractBound(T1 lower, T2 upper) {
+    AbstractBound(T1 lower, T2 upper) {
         this.lower = lower;
         this.upper = upper;
     }

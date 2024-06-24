@@ -146,7 +146,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         }
     }
 
-    private static class Candidate<U> {
+    private static final class Candidate<U> {
         private final U original;
         private final Object extracted;
 
@@ -653,7 +653,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         private final Object partitionKey;
         private final String partitionId;
 
-        public PartitionCacheKey(Object partitionKey, String partitionId) {
+        PartitionCacheKey(Object partitionKey, String partitionId) {
             this.partitionKey = partitionKey;
             this.partitionId = partitionId;
         }
@@ -676,7 +676,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         private final Partition<Tuple2<T, Long>> partition;
         private final String orderId;
 
-        public SortedPartitionCacheKey(Partition<Tuple2<T, Long>> partition, String orderId) {
+        SortedPartitionCacheKey(Partition<Tuple2<T, Long>> partition, String orderId) {
             this.partition = partition;
             this.orderId = orderId;
         }

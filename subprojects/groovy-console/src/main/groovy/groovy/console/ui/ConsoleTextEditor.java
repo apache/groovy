@@ -74,7 +74,7 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class LineNumbersPanel extends JPanel {
 
-        public LineNumbersPanel() {
+        LineNumbersPanel() {
             int initialSize = 3 * PREFERENCES.getInt(PREFERENCE_FONT_SIZE, DEFAULT_FONT_SIZE);
             setMinimumSize(new Dimension(initialSize, initialSize));
             setPreferredSize(new Dimension(initialSize, initialSize));
@@ -258,7 +258,7 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class PrintAction extends AbstractAction {
 
-        public PrintAction() {
+        PrintAction() {
             setEnabled(true);
         }
 
@@ -279,7 +279,7 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class RedoAction extends UpdateCaretListener implements PropertyChangeListener {
 
-        public RedoAction() {
+        RedoAction() {
             setEnabled(false);
         }
 
@@ -323,7 +323,7 @@ public class ConsoleTextEditor extends JScrollPane {
 
     private class UndoAction extends UpdateCaretListener implements PropertyChangeListener {
 
-        public UndoAction() {
+        UndoAction() {
             setEnabled(false);
         }
 

@@ -39,7 +39,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 
-public class MacroLibGroovyMethods {
+public final class MacroLibGroovyMethods {
     private MacroLibGroovyMethods() {}
 
     private static final ClassNode NAMED_VALUE = ClassHelper.make(NamedValue.class);

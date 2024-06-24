@@ -115,7 +115,7 @@ public class DgmConverter {
             File targetFile = new File(targetDirectory + className + ".class").getCanonicalFile();
             targetFile.getParentFile().mkdirs();
 
-            try (final FileOutputStream fileOutputStream = new FileOutputStream(targetFile)) {
+            try (FileOutputStream fileOutputStream = new FileOutputStream(targetFile)) {
                 fileOutputStream.write(bytes);
                 fileOutputStream.flush();
             }

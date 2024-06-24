@@ -98,7 +98,7 @@ public class VerifyClass extends MatchingTask {
 
     private boolean readClass(String clazz) throws IOException {
         ClassNode ca;
-        try (final InputStream inputStream =
+        try (InputStream inputStream =
                      new BufferedInputStream(
                              new FileInputStream(clazz))) {
             ClassReader cr = new ClassReader(inputStream);

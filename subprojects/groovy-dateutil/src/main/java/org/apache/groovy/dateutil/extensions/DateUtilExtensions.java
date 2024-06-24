@@ -38,7 +38,7 @@ import java.util.TimeZone;
  * This class defines new groovy methods which appear on normal JDK
  * Date and Calendar classes inside the Groovy environment.
  */
-public class DateUtilExtensions {
+public final class DateUtilExtensions {
     private DateUtilExtensions() {}
 
     /**

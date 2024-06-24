@@ -82,7 +82,7 @@ public final class DateTimeExtensions {
      * For any Temporal subtype that does not use {@link java.time.temporal.ChronoUnit#SECONDS} as the unit for
      * the upto/downto methods, should have an entry.
      */
-    private static Map<Class<? extends Temporal>, TemporalUnit> DEFAULT_UNITS = new HashMap<>();
+    private static final Map<Class<? extends Temporal>, TemporalUnit> DEFAULT_UNITS = new HashMap<>();
 
     static {
         DEFAULT_UNITS.put(ChronoLocalDate.class, DAYS);
