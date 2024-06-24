@@ -97,7 +97,7 @@ class PerformanceTestsExtension {
             conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-templates']) : (v.startsWith('4') ? "org.apache.groovy:groovy-templates:$v" : "org.codehaus.groovy:groovy-templates:$v")))
             [
                 'org.cyberneko:html:1.9.8',
-                'commons-net:commons-net:3.10.0',
+                'commons-net:commons-net:3.11.1',
                 'net.sourceforge.htmlunit:htmlunit:2.70.0',
                 'com.sleepycat:je:18.3.12',
                 'commons-httpclient:commons-httpclient:3.1',
