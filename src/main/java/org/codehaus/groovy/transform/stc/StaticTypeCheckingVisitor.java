@@ -279,7 +279,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.filter
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsForClassNode;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findSetters;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findTargetVariable;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolve;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.fullyResolveType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCombinedBoundType;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.getCombinedGenericsType;
@@ -2945,10 +2944,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     if (i > 0 || !(selectedMethod instanceof ExtensionMethodNode)) {
                         inferClosureParameterTypes(receiver, arguments, source, target, selectedMethod);
                     }
-                    if (isFunctionalInterface(targetType)) {
-                        storeInferredReturnType(source, GenericsUtils.parameterizeSAM(targetType).getV2());
-                    } else if (isClosureWithType(targetType)) {
-                        storeInferredReturnType(source, getCombinedBoundType(targetType.getGenericsTypes()[0]));
+                    if (isClosureWithType(targetType)) {
+                        ClassNode returnType = getCombinedBoundType(targetType.getGenericsTypes()[0]);
+                        storeInferredReturnType(source, returnType);
                     }
                 }
                 expression.visit(this);
@@ -3132,10 +3130,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         });
                     }
 
-                    for (GenericsType tp : typeParameters) {
-                        GenericsTypeName name = new GenericsTypeName(tp.getName());
-                        context.computeIfAbsent(name, x -> fullyResolve(tp, context));
-                    }
+                    // GROOVY-8917, GROOVY-10049, GROOVY-11414, et al.
+                    stubMissingTypeVariables(typeParameters, context);
                 }
             }
 
