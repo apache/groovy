@@ -53,13 +53,47 @@ final class LambdaTest {
     }
 
     @Test
-    void testFunctionWithTypeArgument() {
+    void testFunction3() {
         assertScript imports + '''
             @CompileStatic f() {
                 [1, 2, 3].stream().<String>map(i -> null).collect(Collectors.toList())
             }
             assert f() == [null, null, null]
         '''
+    }
+
+    // GROOVY-11364
+    @Test
+    void testFunction4() {
+        assertScript imports + '''
+            abstract class A<N extends Number> {
+                protected N process(N n) { n }
+            }
+            class C extends A<Integer> {
+                static void consume(Optional<Integer> option) {
+                    def result = option.orElse(null)
+                    assert result instanceof Integer
+                    assert result == 42
+                }
+                @CompileStatic m() {
+                    consume(Optional.of(42).map(i -> process(i)))
+                }
+            }
+            new C().m()
+        '''
+    }
+
+    // GROOVY-11414
+    @Test
+    void testFunction5() {
+        def err = shouldFail imports + '''
+            @CompileStatic f() {
+                def map = (Map<String, Long>) [:]
+                map.computeIfAbsent('key', (k) -> 1)
+            }
+            assert f() instanceof Long
+        '''
+        assert err =~ /Cannot call java.util.Map#computeIfAbsent.* with arguments \[java.lang.String, groovy.lang.Closure <java.lang.Integer>\]/
     }
 
     @Test
@@ -72,7 +106,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-8917
+    // GROOVY-8917
+    @Test
     void testBinaryOperatorWithoutExplicitTypes() {
         assertScript imports + '''
             @CompileStatic f() {
@@ -93,7 +128,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-10282
+    // GROOVY-10282
+    @Test
     void testBiFunctionAndBinaryOperatorWithSharedTypeParameter() {
         assertScript imports + '''
             @CompileStatic f() {
@@ -163,7 +199,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-10372
+    // GROOVY-10372
+    @Test
     void testComparator2() {
         def err = shouldFail imports + '''
             @CompileStatic class T {
@@ -173,7 +210,8 @@ final class LambdaTest {
         assert err =~ /Cannot assign java.util.Comparator <java.lang.String> to: java.util.Comparator <Integer>/
     }
 
-    @Test // GROOVY-9977
+    // GROOVY-9977
+    @Test
     void testComparator3() {
         assertScript imports + '''
             @CompileStatic class T {
@@ -191,7 +229,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9997
+    // GROOVY-9997
+    @Test
     void testComparator4() {
         assertScript '''
             @groovy.transform.TypeChecked
@@ -232,7 +271,8 @@ final class LambdaTest {
         }
     }
 
-    @Test // GROOVY-11304
+    // GROOVY-11304
+    @Test
     void testCollectors3() {
         assertScript imports + '''
             @CompileStatic f() {
@@ -633,7 +673,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9347
+    // GROOVY-9347
+    @Test
     void testConsumer7() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -648,7 +689,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9340
+    // GROOVY-9340
+    @Test
     void testConsumer8() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -673,7 +715,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-10056
+    // GROOVY-10056
+    @Test
     void testConsumer10() {
         ['CompileStatic', 'TypeChecked'].each { xform ->
             assertScript """
@@ -692,7 +735,8 @@ final class LambdaTest {
         }
     }
 
-    @Test // GROOVY-10813
+    // GROOVY-10813
+    @Test
     void testConsumer11() {
         ['CompileStatic', 'TypeChecked'].each { xform ->
             assertScript """
@@ -780,8 +824,8 @@ final class LambdaTest {
         '''
     }
 
-    @NotYetImplemented
-    @Test // GROOVY-9881
+    // GROOVY-9881
+    @NotYetImplemented @Test
     void testFunctionalInterface4() {
         assertScript '''
             class Value<V> {
@@ -808,8 +852,8 @@ final class LambdaTest {
         '''
     }
 
-    @NotYetImplemented
-    @Test // GROOVY-10372
+    // GROOVY-10372
+    @NotYetImplemented @Test
     void testFunctionalInterface5() {
         def err = shouldFail '''
             interface I {
@@ -823,7 +867,8 @@ final class LambdaTest {
         assert err =~ /Expected type java.util.List<java.lang.String> for lambda parameter: list/
     }
 
-    @Test // GROOVY-11013
+    // GROOVY-11013
+    @Test
     void testFunctionalInterface6() {
         assertScript '''
             interface I<T> {
@@ -837,7 +882,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-11072
+    // GROOVY-11072
+    @Test
     void testFunctionalInterface7() {
         assertScript '''
             class Model {
@@ -1100,7 +1146,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9332
+    // GROOVY-9332
+    @Test
     void testStaticInitializeBlocks1() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1114,7 +1161,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9347
+    // GROOVY-9347
+    @Test
     void testStaticInitializeBlocks2() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1126,7 +1174,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9342
+    // GROOVY-9342
+    @Test
     void testStaticInitializeBlocks3() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1867,7 +1916,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9146
+    // GROOVY-9146
+    @Test
     void testScriptWithExistingMainCS() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -1878,7 +1928,8 @@ final class LambdaTest {
         '''
     }
 
-    @Test // GROOVY-9770
+    // GROOVY-9770
+    @Test
     void testLambdaClassIsntSynthetic() {
         assertScript imports + '''
             class Foo {
