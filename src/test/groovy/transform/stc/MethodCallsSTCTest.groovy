@@ -1876,12 +1876,12 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Double.isFiniteMissing(2.0d)
         ''',
-        'Cannot find matching method java.lang.Double#isFiniteMissing(double)'
+        'Cannot find ',' static method java.lang.Double#isFiniteMissing(double)'
 
         shouldFailWithMessages '''
             String.doSomething()
         ''',
-        'Cannot find matching method java.lang.String#doSomething()'
+        'Cannot find ',' static method java.lang.String#doSomething()'
     }
 
     // GROOVY-6776

@@ -5074,6 +5074,7 @@ trying: for (ClassNode[] signature : signatures) {
 
         if (isClassClassNodeWrappingConcreteType(receiver)) { // GROOVY-6802, GROOVY-6803, GROOVY-9415
             List<MethodNode> result = findMethod(receiver.getGenericsTypes()[0].getType(), name, args);
+            result = allowStaticAccessToMember(result, true); // GROOVY-11427
             if (!result.isEmpty()) return result;
         }
 
@@ -5923,16 +5924,21 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     protected void addNoMatchingMethodError(final ClassNode receiver, final String name, ClassNode[] args, final ASTNode origin) {
-        String error;
+        String classifier;
+        String descriptor;
         if ("<init>".equals(name)) {
+            classifier = "constructor";
             // remove implicit agruments [String, int] from enum constant construction
             if (receiver.isEnum() && args.length >= 2) args = Arrays.copyOfRange(args, 2, args.length);
-            error = "Cannot find matching constructor " + prettyPrintTypeName(receiver) + toMethodParametersString("", args);
+            descriptor = prettyPrintTypeName(receiver) + toMethodParametersString("", args); // type is name
         } else {
-            ClassNode type = isClassClassNodeWrappingConcreteType(receiver) ? receiver.getGenericsTypes()[0].getType() : wrapTypeIfNecessary(receiver);
-            error = "Cannot find matching method " + prettyPrintTypeName(type) + "#" + toMethodParametersString(name, args) + ". Please check if the declared type is correct and if the method exists.";
+            classifier = "method";
+            descriptor = prettyPrintTypeName(wrapTypeIfNecessary(receiver)) + "#" + toMethodParametersString(name, args);
+            if (isClassClassNodeWrappingConcreteType(receiver)) { ClassNode t = receiver.getGenericsTypes()[0].getType();
+                descriptor += " or static method " + prettyPrintTypeName(t) + "#" + toMethodParametersString(name, args);
+            }
         }
-        addStaticTypeError(error, origin);
+        addStaticTypeError("Cannot find matching " + classifier + " " + descriptor + ". Please check if the declared type is correct and if the method exists.", origin);
     }
 
     protected void addAmbiguousErrorMessage(final List<MethodNode> foundMethods, final String name, final ClassNode[] args, final Expression expr) {

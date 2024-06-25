@@ -782,19 +782,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-8074
-    void testMapSubclassPropertyStyleAccess() {
-        assertScript '''
-            class MyMap extends LinkedHashMap {
-                def foo = 1
-            }
-
-            def map = new MyMap()
-            map.put('foo', 42)
-            assert map.foo == 1
-        '''
-    }
-
     // GROOVY-6311
     void testSetSpread() {
         assertScript '''

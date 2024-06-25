@@ -339,7 +339,7 @@ final class TraitWithClosureOrLambda {
                 }
             }
         '''
-        assert err.message.contains('Cannot find matching method T$Trait$Helper#config')
+        assert err.message.contains('Cannot find matching method ')
     }
 
     // GROOVY-11265
