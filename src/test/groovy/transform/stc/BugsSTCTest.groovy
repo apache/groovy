@@ -1008,4 +1008,13 @@ assert o.bar() == 2*o.x
             new Outer().test()
         '''
     }
+
+    // GROOVY-11427
+    void testClassSubscript() {
+        shouldFailWithMessages '''
+            Class<String> c = String.class
+            def x = c[0]
+        ''',
+        'Cannot find matching method java.lang.Class#getAt(int)'
+    }
 }
