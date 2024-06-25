@@ -408,7 +408,8 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
                     Foo.newInstance2(new CustomNumber())
                 }
             }
-        ''', 'Cannot find matching method Foo#newInstance2(CustomNumber)'
+        ''',
+        'Cannot find ',' static method Foo#newInstance2(CustomNumber)'
     }
 
     // GROOVY-8380

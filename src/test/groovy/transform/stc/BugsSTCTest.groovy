@@ -1092,13 +1092,21 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11427
+    void testClassSubscript() {
+        shouldFailWithMessages '''
+            Class<String> c = String.class
+            def x = c[0]
+        ''',
+        'Cannot find matching method java.lang.Class#getAt(int) or static method java.lang.String#getAt(int)'
+    }
+
     // GROOVY-9999
     void testMathSqrt() {
         assertScript '''
             def test() {
                Math.sqrt(Math.PI*2)
             }
-
             double result = (double) test() // 2.5066282746310002
             assert result > 2.5066
         '''

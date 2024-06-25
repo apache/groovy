@@ -343,7 +343,7 @@ final class TraitWithClosureOrLambda {
                 }
             }
         '''
-        assert err =~ /Cannot find matching method [\w\$]+#config/
+        assert err =~ /Cannot find matching method .+#config/
     }
 
     // GROOVY-11265
