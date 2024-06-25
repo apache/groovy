@@ -87,6 +87,16 @@ final class LambdaTest {
         '''
     }
 
+    // GROOVY-11414
+    @Test
+    void testFunction5() {
+        def err = shouldFail shell, '''
+            def map = (Map<String, Long>) [:]
+            map.computeIfAbsent('key', (k) -> 1)
+        '''
+        assert err =~ /Cannot return value of type int for lambda expecting java.lang.Long/
+    }
+
     @Test
     void testBinaryOperator() {
         assertScript shell, '''
