@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.runtime.typehandling;
 
+import java.util.Optional;
+
 public class GroovyCastException extends ClassCastException {
 
     private static final long serialVersionUID = 6859089155641797356L;
@@ -27,49 +29,37 @@ public class GroovyCastException extends ClassCastException {
      * @param classToCastTo class we tried to cast to
      * @param cause not kept but we pass on message from this Exception if any
      */
-    public GroovyCastException(Object objectToCast, Class classToCastTo, Exception cause) {
-        super(makeMessage(objectToCast,classToCastTo) + " due to: " +
-                cause.getClass().getName() + (cause.getMessage() == null ? "" : ": " + cause.getMessage()));
+    public GroovyCastException(final Object objectToCast, final Class classToCastTo, final Exception cause) {
+        super(makeMessage(objectToCast, classToCastTo) +
+            " due to: " + cause.getClass().getName() + Optional.ofNullable(cause.getMessage()).map(msg -> ": " + msg).orElse(""));
     }
 
     /**
      * @param objectToCast object we tried to cast
      * @param classToCastTo class we tried to cast to
      */
-    public GroovyCastException(Object objectToCast, Class classToCastTo) {
-        super(makeMessage(objectToCast,classToCastTo));
+    public GroovyCastException(final Object objectToCast, final Class classToCastTo) {
+        super(makeMessage(objectToCast, classToCastTo));
     }
 
     /**
-     * @param message custom Exception message
+     * @param message custom problem message
      */
-    public GroovyCastException(String message) {
+    public GroovyCastException(final String message) {
         super(message);
     }
 
-    private static String makeMessage(Object objectToCast, Class classToCastTo) {
-       String classToCastFrom;
-       Object msgObject = objectToCast;
-       if (objectToCast!=null) {
-           classToCastFrom = objectToCast.getClass().getName();
-       } else {
-           msgObject = "null";
-           classToCastFrom = "null";
-       }
-       String msg = 
-               "Cannot cast object '" + msgObject + "' " +
-               "with class '" + classToCastFrom + "' " +
-               "to class '" + classToCastTo.getName() + "'";
+    //--------------------------------------------------------------------------
 
-       if (objectToCast==null){
-           msg += getWrapper(classToCastTo);
-       }
-
-       return msg;
+    private static String makeMessage(final Object object, final Class<?> target) {
+        if (object == null) {
+            return "Cannot cast 'null' to class '" + target.getName() + "'" + getWrapper(target);
+        }
+        return "Cannot cast object '" + object + "' with class '" + object.getClass().getName() + "' to class '" + target.getName() + "'";
     }
 
-    private static String getWrapper(Class cls) {
-        Class ncls = cls;
+    private static String getWrapper(final Class<?> cls) {
+        Class<?> ncls = cls;
         if (cls==byte.class)        {ncls=Byte.class;}
         else if (cls==short.class)  {ncls=Short.class;}
         else if (cls==char.class)   {ncls=Character.class;}
@@ -83,5 +73,4 @@ public class GroovyCastException extends ClassCastException {
         }
         return "";
     }
-
 }

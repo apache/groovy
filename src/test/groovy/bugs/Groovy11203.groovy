@@ -30,6 +30,6 @@ final class Groovy11203 {
             void setX(int i) { }
             this.x = null
         '''
-        assert err.message.startsWith('Cannot call method with null')
+        assert err.message.startsWith("Cannot cast 'null' to class 'int'")
     }
 }

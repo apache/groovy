@@ -25,19 +25,46 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class DefaultTypeTransformationTest {
 
+    // GROOVY-9916, GROOVY-11371
     @Test
     void testCastToType1() {
-        def input = null, result
+        Object result
 
-        result = DefaultTypeTransformation.castToType(input, int)
-        assert result === null
+        result = DefaultTypeTransformation.castToType(null, boolean)
+        assert result instanceof Boolean && result == false
 
-        result = DefaultTypeTransformation.castToType(input, long)
-        assert result === null
+        result = DefaultTypeTransformation.castToType(null, double)
+        assert result instanceof Double && result.isNaN()
 
-        result = DefaultTypeTransformation.castToType(input, boolean)
-        assert result === false // GROOVY-9916
+        result = DefaultTypeTransformation.castToType(null, float)
+        assert result instanceof Float && result.isNaN()
 
+        result = DefaultTypeTransformation.castToType(null, char)
+        assert result == Character.MIN_VALUE // 'NULL'
+    }
+
+    // GROOVY-11203, GROOVY-11371
+    @Test
+    void testCastToType2() {
+        shouldFail(ClassCastException) {
+            DefaultTypeTransformation.castToType(null, int)
+        }
+        shouldFail(ClassCastException) {
+            DefaultTypeTransformation.castToType(null, byte)
+        }
+        shouldFail(ClassCastException) {
+            DefaultTypeTransformation.castToType(null, long)
+        }
+        shouldFail(ClassCastException) {
+            DefaultTypeTransformation.castToType(null, short)
+        }
+    }
+
+    @Test
+    void testCastToType3() {
+        Object input, result
+
+        input = null
         result = DefaultTypeTransformation.castToType(input, Object)
         assert result === null
 
@@ -55,8 +82,8 @@ final class DefaultTypeTransformationTest {
     }
 
     @Test
-    void testCastToType2() {
-        def input = new int[] {0,1}, result
+    void testCastToType4() {
+        Object input = new int[] {0,1}, result
 
         result = DefaultTypeTransformation.castToType(input, Number[])
         assert result instanceof Number[]
@@ -75,8 +102,8 @@ final class DefaultTypeTransformationTest {
     }
 
     @Test
-    void testCastToType3() {
-        def input = Arrays.asList(0,1), result
+    void testCastToType5() {
+        Object input = Arrays.asList(0,1), result
 
         result = DefaultTypeTransformation.castToType(input, Number[])
         assert result instanceof Number[]
@@ -94,9 +121,10 @@ final class DefaultTypeTransformationTest {
         assert result[1] == 1
     }
 
-    @Test // GROOVY-10028
-    void testCastToType4() {
-        def result
+    // GROOVY-10028
+    @Test
+    void testCastToType6() {
+        Object result
 
         result = DefaultTypeTransformation.castToType(Arrays.stream(0,1), Number[])
         assert result instanceof Number[]
@@ -119,9 +147,10 @@ final class DefaultTypeTransformationTest {
         assert result[1] == 1
     }
 
-    @Test // GROOVY-11378
-    void testCastToType5() {
-        def input = new org.codehaus.groovy.util.ArrayIterable<Integer>(0,1), result
+    // GROOVY-11378
+    @Test
+    void testCastToType7() {
+        Object input = new org.codehaus.groovy.util.ArrayIterable<Integer>(0,1), result
 
         result = DefaultTypeTransformation.castToType(input, Number[])
         assert result instanceof Number[]
@@ -144,9 +173,10 @@ final class DefaultTypeTransformationTest {
         assert result[1] == 1
     }
 
-    @Test // GROOVY-10223
-    void testCastToType6() {
-        def err = shouldFail GroovyCastException, {
+    // GROOVY-10223
+    @Test
+    void testCastToType8() {
+        def err = shouldFail(ClassCastException) {
             DefaultTypeTransformation.castToType(Optional.of('123'), Number[])
         }
         assert err =~ /Cannot cast object '123' with class 'java.lang.String' to class 'java.lang.Number'/
@@ -187,7 +217,8 @@ final class DefaultTypeTransformationTest {
         assert result.isEmpty()
     }
 
-    @Test // GROOVY-10223: interesting emergent properties
+    // GROOVY-10223: interesting emergent properties
+    @Test
     void testAsCollection() {
         assertScript '''
             def nothing = Optional.empty(), something = Optional.of('foo')

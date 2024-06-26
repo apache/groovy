@@ -56,48 +56,53 @@ import java.util.stream.LongStream;
  */
 public class DefaultTypeTransformation {
 
+    @Deprecated(forRemoval = true, since = "5.0.0")
     protected static final Object[] EMPTY_ARGUMENTS = {};
+    @Deprecated(forRemoval = true, since = "5.0.0")
     protected static final BigInteger ONE_NEG = new BigInteger("-1");
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
     //  --------------------------------------------------------
     //                  unboxing methods
     //  --------------------------------------------------------
 
-    public static byte byteUnbox(Object value) {
+    public static byte byteUnbox(final Object value) {
         Number n = castToNumber(value, byte.class);
         return n.byteValue();
     }
 
-    public static char charUnbox(Object value) {
-        return ShortTypeHandling.castToChar(value);
+    public static char charUnbox(final Object value) {
+        if (value == null) return '\u0000'; // GROOVY-11371
+        var ch = ShortTypeHandling.castToChar(value);
+        return ch.charValue();
     }
 
-    public static short shortUnbox(Object value) {
+    public static short shortUnbox(final Object value) {
         Number n = castToNumber(value, short.class);
         return n.shortValue();
     }
 
-    public static int intUnbox(Object value) {
+    public static int intUnbox(final Object value) {
         Number n = castToNumber(value, int.class);
         return n.intValue();
     }
 
-    public static boolean booleanUnbox(Object value) {
+    public static boolean booleanUnbox(final Object value) {
         return castToBoolean(value);
     }
 
-    public static long longUnbox(Object value) {
+    public static long longUnbox(final Object value) {
         Number n = castToNumber(value, long.class);
         return n.longValue();
     }
 
-    public static float floatUnbox(Object value) {
+    public static float floatUnbox(final Object value) {
+        if (value == null) return Float.NaN; // GROOVY-11371
         Number n = castToNumber(value, float.class);
         return n.floatValue();
     }
 
-    public static double doubleUnbox(Object value) {
+    public static double doubleUnbox(final Object value) {
+        if (value == null) return Double.NaN; // GROOVY-11371
         Number n = castToNumber(value, double.class);
         return n.doubleValue();
     }
@@ -106,71 +111,67 @@ public class DefaultTypeTransformation {
     //                  boxing methods
     //  --------------------------------------------------------
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(boolean value) {
         return value ? Boolean.TRUE : Boolean.FALSE;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(byte value) {
         return value;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(char value) {
         return value;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(short value) {
         return value;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(int value) {
         return value;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(long value) {
         return value;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(float value) {
         return value;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object box(double value) {
         return value;
     }
 
     public static Number castToNumber(Object object) {
-        // default to Number class in exception details, else use the specified Number subtype.
+        // default to Number class in exception detail
         return castToNumber(object, Number.class);
     }
 
     public static Number castToNumber(Object object, Class type) {
-        if (object instanceof Number)
+        if (object instanceof Number) {
             return (Number) object;
+        }
         if (object instanceof Character) {
-            return (int) (Character) object;
+            char c = (Character) object;
+            return (int) c;
         }
         if (object instanceof GString) {
-            String c = ((GString) object).toString();
-            if (c.length() == 1) {
-                return (int) c.charAt(0);
-            } else {
-                throw new GroovyCastException(c, type);
-            }
+            object = object.toString();
         }
         if (object instanceof String) {
-            String c = (String) object;
-            if (c.length() == 1) {
-                return (int) c.charAt(0);
-            } else {
-                throw new GroovyCastException(c, type);
+            String s = (String) object;
+            if (s.length() == 1) {
+                char c = s.charAt(0);
+                return (int) c;
             }
         }
         throw new GroovyCastException(object, type);
@@ -184,7 +185,7 @@ public class DefaultTypeTransformation {
      * @return a boolean value
      */
     public static boolean castToBoolean(Object object) {
-        // null is always false
+        // GROOVY-6467, GROOVY-9916: null is false
         if (object == null) {
             return false;
         }
@@ -194,11 +195,11 @@ public class DefaultTypeTransformation {
             return (Boolean) object;
         }
 
-        // if the object is not null and no Boolean, try to call an asBoolean() method on the object
+        // if the object isn't null and no Boolean, try to call an asBoolean() method on the object
         return (Boolean) InvokerHelper.invokeMethod(object, "asBoolean", InvokerHelper.EMPTY_ARGS);
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static char castToChar(Object object) {
         if (object instanceof Character) {
             return (Character) object;
@@ -216,8 +217,12 @@ public class DefaultTypeTransformation {
     }
 
     public static Object castToType(final Object object, final Class type) {
-        if (object == null) return type == boolean.class ? Boolean.FALSE : null;
-        if (type == Object.class) return object;
+        if (type.isPrimitive()) { // GROOVY-9916, GROOVY-11371
+            return castToPrimitive(object, type);
+        }
+        if (object == null || type == Object.class) {
+            return object;
+        }
 
         final Class aClass = object.getClass();
         if (type == aClass || type.isAssignableFrom(aClass)) {
@@ -232,14 +237,12 @@ public class DefaultTypeTransformation {
             return continueCastOnCollection(object, type);
         } else if (type == String.class) {
             return FormatHelper.toString(object);
-        } else if (type == Character.class) {
-            return ShortTypeHandling.castToChar(object);
         } else if (type == Boolean.class) {
             return castToBoolean(object);
+        } else if (type == Character.class) {
+            return ShortTypeHandling.castToChar(object);
         } else if (type == Class.class) {
             return ShortTypeHandling.castToClass(object);
-        } else if (type.isPrimitive()) {
-            return castToPrimitive(object, type);
         }
 
         return continueCastOnNumber(object, type);
@@ -308,14 +311,12 @@ public class DefaultTypeTransformation {
                 return n.floatValue();
             }
             if (type == Double.class) {
-                double answer = n.doubleValue();
-                //throw a runtime exception if conversion would be out-of-range for the type.
-                if (!(n instanceof Double) && (answer == Double.NEGATIVE_INFINITY
-                        || answer == Double.POSITIVE_INFINITY)) {
-                    throw new GroovyRuntimeException("Automatic coercion of " + n.getClass().getName()
-                            + " value " + n + " to double failed. Value is out of range.");
+                double value = n.doubleValue();
+                // throw a runtime exception if conversion would be out-of-range for the type
+                if ((value == Double.NEGATIVE_INFINITY || value == Double.POSITIVE_INFINITY) && !(n instanceof Double)) {
+                    throw new GroovyRuntimeException("Automatic coercion of " + n.getClass().getName() + " value " + n + " to double failed. Value is out of range.");
                 }
-                return answer;
+                return value;
             }
             if (type == BigDecimal.class) {
                 return NumberMath.toBigDecimal(n);
@@ -330,7 +331,7 @@ public class DefaultTypeTransformation {
 
     private static Object castToPrimitive(Object object, Class type) {
         if (type == boolean.class) {
-            return booleanUnbox(object);
+            return castToBoolean(object);
         } else if (type == byte.class) {
             return byteUnbox(object);
         } else if (type == char.class) {
@@ -344,16 +345,14 @@ public class DefaultTypeTransformation {
         } else if (type == float.class) {
             return floatUnbox(object);
         } else if (type == double.class) {
-            double answer = doubleUnbox(object);
-            //throw a runtime exception if conversion would be out-of-range for the type.
-            if (!(object instanceof Double) && (answer == Double.NEGATIVE_INFINITY
-                    || answer == Double.POSITIVE_INFINITY)) {
-                throw new GroovyRuntimeException("Automatic coercion of " + object.getClass().getName()
-                        + " value " + object + " to double failed. Value is out of range.");
+            double value = doubleUnbox(object);
+            // throw a runtime exception if conversion would be out-of-range for the type
+            if ((value == Double.NEGATIVE_INFINITY || value == Double.POSITIVE_INFINITY) && !(object instanceof Double)) {
+                throw new GroovyRuntimeException("Automatic coercion of " + object.getClass().getName() + " value " + object + " to double failed. Value is out of range.");
             }
-            return answer;
-        } //nothing else possible
-        throw new GroovyCastException(object, type);
+            return value;
+        }
+        throw new GroovyCastException(object, type); // nothing else is possible
     }
 
     private static Object continueCastOnSAM(Object object, Class type) {
@@ -487,7 +486,7 @@ public class DefaultTypeTransformation {
         } else if (value instanceof Optional) { // GROOVY-10223
             return ((Optional<?>) value).map(Collections::singleton).orElseGet(Collections::emptySet);
         } else if (value instanceof Class && ((Class) value).isEnum()) {
-            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", EMPTY_OBJECT_ARRAY);
+            Object[] values = (Object[]) InvokerHelper.invokeMethod(value, "values", InvokerHelper.EMPTY_ARGS);
             return Arrays.asList(values);
         } else if (value instanceof File) {
             try {
@@ -525,7 +524,7 @@ public class DefaultTypeTransformation {
      * @param value an object
      * @return true if the object is an Enum
      */
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static boolean isEnumSubclass(Object value) {
         if (value instanceof Class) {
             Class superclass = ((Class) value).getSuperclass();
@@ -885,7 +884,7 @@ public class DefaultTypeTransformation {
         return (value instanceof String || value instanceof GString) && value.toString().length() == 1;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static int[] convertToIntArray(Object a) {
         int[] ans = null;
 
@@ -905,7 +904,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static boolean[] convertToBooleanArray(Object a) {
         boolean[] ans = null;
 
@@ -923,7 +922,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static byte[] convertToByteArray(Object a) {
         byte[] ans = null;
 
@@ -942,7 +941,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static short[] convertToShortArray(Object a) {
         short[] ans = null;
 
@@ -959,7 +958,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static char[] convertToCharArray(Object a) {
         char[] ans = null;
 
@@ -979,7 +978,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static long[] convertToLongArray(Object a) {
         long[] ans = null;
 
@@ -999,7 +998,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static float[] convertToFloatArray(Object a) {
         float[] ans = null;
 
@@ -1019,7 +1018,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static double[] convertToDoubleArray(Object a) {
         double[] ans = null;
 
@@ -1039,7 +1038,7 @@ public class DefaultTypeTransformation {
         return ans;
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Object convertToPrimitiveArray(Object a, Class type) {
         if (type == Byte.TYPE) {
             return convertToByteArray(a);
@@ -1069,7 +1068,7 @@ public class DefaultTypeTransformation {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "2.3.0")
     public static Character getCharFromSizeOneString(Object value) {
         if (value instanceof GString) value = value.toString();
         if (value instanceof String) {
@@ -1093,5 +1092,4 @@ public class DefaultTypeTransformation {
         }
         return newArray;
     }
-
 }
