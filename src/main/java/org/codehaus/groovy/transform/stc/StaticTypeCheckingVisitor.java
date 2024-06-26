@@ -4764,32 +4764,37 @@ trying: for (ClassNode[] signature : signatures) {
             }
         }
 
-        // try to find a method for the operation
-        if (isShiftOperation(operationName) && isNumberCategory(leftRedirect) && (isIntCategory(rightRedirect) || isLongCategory(rightRedirect))) {
+        if (isShiftOperation(operationName) && isNumberCategory(leftRedirect) && isLongCategory(getUnwrapper(rightRedirect))) {
             return leftRedirect;
         }
 
-        // Divisions may produce different results depending on operand types
-        if (isNumberCategory(getWrapper(rightRedirect)) && (isNumberCategory(getWrapper(leftRedirect)) && (DIVIDE == op || DIVIDE_EQUAL == op))) {
-            if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
-                if (!isPrimitiveType(leftRedirect) || !isPrimitiveType(rightRedirect)) {
-                    return Double_TYPE;
+        if (isNumberCategory(getWrapper(leftRedirect)) && isNumberCategory(getWrapper(rightRedirect))) {
+            switch (op) {
+              case DIVIDE:
+              case DIVIDE_EQUAL:
+                // divisions may produce different results depending on operand types
+                if (isFloatingCategory(leftRedirect) || isFloatingCategory(rightRedirect)) {
+                    if (!isPrimitiveType(leftRedirect) || !isPrimitiveType(rightRedirect)) {
+                        return Double_TYPE;
+                    }
+                    return double_TYPE;
                 }
-                return double_TYPE;
+                if (DIVIDE == op) {
+                    return BigDecimal_TYPE;
+                }
+                // falls through
+              case MOD:
+              case MOD_EQUAL:
+              case REMAINDER:
+              case REMAINDER_EQUAL:
+                return leftRedirect;
             }
-            if (DIVIDE == op) {
-                return BigDecimal_TYPE;
-            }
-            return leftRedirect;
-        } else if (isOperationInGroup(op)) {
-            if (isNumberCategory(getWrapper(leftRedirect)) && isNumberCategory(getWrapper(rightRedirect))) {
+
+            if (isOperationInGroup(op)) {
                 return getGroupOperationResultType(leftRedirect, rightRedirect);
             }
         }
-        if (isNumberCategory(getWrapper(rightRedirect)) && isNumberCategory(getWrapper(leftRedirect)) &&
-            (REMAINDER == op || REMAINDER_EQUAL == op || MOD == op || MOD_EQUAL == op)) {
-            return leftRedirect;
-        }
+
         return null;
     }
 
