@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -41,7 +40,6 @@ import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
-import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -568,77 +566,65 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
     }
 
     @Override
-    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression arguments, final boolean safe) {
-        ClassNode classNode = controller.getClassNode();
-        TypeChooser typeChooser = controller.getTypeChooser();
-        ClassNode rType = typeChooser.resolveType(receiver, classNode);
-        ClassNode aType = typeChooser.resolveType(arguments, classNode);
-        if (trySubscript(receiver, message, arguments, rType, aType, safe)) {
-            return;
-        }
-        // now try with flow type instead of declaration type
-        rType = receiver.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        if (receiver instanceof VariableExpression && rType == null) {
-            // TODO: can STCV be made smarter to avoid this check?
-            ASTNode node = (ASTNode) ((VariableExpression) receiver).getAccessedVariable();
-            rType = node.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-        }
-        if (rType!=null && trySubscript(receiver, message, arguments, rType, aType, safe)) {
-            return;
-        }
-        // TODO: more cases
-        throw new GroovyBugError(
-                "at line " + receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
-                "On receiver: " + receiver.getText() + " with message: " + message + " and arguments: " + arguments.getText() + "\n" +
-                "This method should not have been called. Please try to create a simple example reproducing " +
-                "this error and file a bug report at https://issues.apache.org/jira/browse/GROOVY");
-    }
-
-    private boolean trySubscript(final Expression receiver, final String message, final Expression arguments, final ClassNode rType, final ClassNode aType, final boolean safe) {
-        if (getWrapper(rType).isDerivedFrom(Number_TYPE)
-                && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
-            if ("plus".equals(message) || "minus".equals(message) || "multiply".equals(message) || "div".equals(message)) {
-                writeNumberNumberCall(receiver, message, arguments);
-                return true;
-            } else if ("power".equals(message)) {
-                writePowerCall(receiver, arguments, rType, aType);
-                return true;
-            } else if ("remainder".equals(message) || "leftShift".equals(message)
-                    || "rightShift".equals(message) || "rightShiftUnsigned".equals(message)
-                    || "and".equals(message) || "or".equals(message) || "xor".equals(message) || "implies".equals(message)) {
-                writeOperatorCall(receiver, arguments, message);
-                return true;
+    public void makeSingleArgumentCall(final Expression receiver, final String message, final Expression argument, final boolean safe) {
+        ClassNode rType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+        ClassNode aType = controller.getTypeChooser().resolveType(argument, controller.getClassNode());
+        if (getWrapper(rType).isDerivedFrom(Number_TYPE) && getWrapper(aType).isDerivedFrom(Number_TYPE)) {
+            switch (message) {
+              case "plus":
+              case "minus":
+              case "multiply":
+              case "div"/*ide*/:
+                writeNumberNumberCall(receiver, message, argument);
+                return;
+              case "power":
+                writePowerCall(receiver, argument, rType, aType);
+                return;
+              case "and":
+              case  "or":
+              case "xor":
+              case "implies":
+              case "remainder":
+              case "leftShift":
+              case "rightShift":
+              case "rightShiftUnsigned":
+                writeOperatorCall(receiver, argument, message);
+                return;
             }
-        } else if (isStringType(rType) && "plus".equals(message)) {
-            writeStringPlusCall(receiver, message, arguments);
-            return true;
+        } else if ("plus".equals(message) && isStringType(rType)) {
+            writeStringPlusCall(receiver, message, argument);
+            return;
         } else if ("getAt".equals(message)) {
             if (rType.isArray() && getWrapper(aType).isDerivedFrom(Number_TYPE) && !safe) {
-                writeArrayGet(receiver, arguments, rType, aType);
-                return true;
-            } else { // check the receiver for a getAt method
-                MethodNode getAtNode = findGetAt(rType, aType);
-                if (getAtNode != null) {
-                    MethodCallExpression call = callX(receiver, "getAt", arguments);
-                    call.setImplicitThis(false);
-                    call.setMethodTarget(getAtNode);
-                    call.setSafe(safe);
-                    call.setSourcePosition(arguments);
-                    call.visit(controller.getAcg());
-                    return true;
-                }
-                if (isOrImplements(rType, MAP_TYPE)) { // fallback to Map#get
-                    MethodCallExpression call = callX(receiver, "get", arguments);
-                    call.setImplicitThis(false);
-                    call.setMethodTarget(MAP_GET_METHOD);
-                    call.setSafe(safe);
-                    call.setSourcePosition(arguments);
-                    call.visit(controller.getAcg());
-                    return true;
-                }
+                writeArrayGet(receiver, argument, rType, aType);
+                return;
+            }
+            MethodNode getAt = findGetAt(rType, aType);
+            if (getAt != null) {
+                MethodCallExpression call = callX(receiver, "getAt", argument);
+                call.setImplicitThis(false);
+                call.setMethodTarget(getAt);
+                call.setSafe(safe);
+                call.setSourcePosition(argument);
+                call.visit(controller.getAcg());
+                return;
+            }
+            if (isOrImplements(rType, MAP_TYPE)) { // Map#get accepts Object
+                MethodCallExpression call = callX(receiver, "get", argument);
+                call.setImplicitThis(false);
+                call.setMethodTarget(MAP_GET_METHOD);
+                call.setSafe(safe);
+                call.setSourcePosition(argument);
+                call.visit(controller.getAcg());
+                return;
             }
         }
-        return false;
+
+        throw new GroovyBugError(
+                "at line " + receiver.getLineNumber() + " column " + receiver.getColumnNumber() + "\n" +
+                "On receiver: " + receiver.getText() + " with message: " + message + " and arguments: " + argument.getText() + "\n" +
+                "This method should not have been called. Please try to create a simple example reproducing " +
+                "this error and file a bug report at https://issues.apache.org/jira/browse/GROOVY");
     }
 
     private MethodNode findGetAt(final ClassNode rType, final ClassNode aType) {

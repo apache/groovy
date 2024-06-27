@@ -914,8 +914,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // check for implicit conversion like "String a = 123", "int[] b = [1,2,3]", "List c = [].stream()", etc.
                 if (!implementsInterfaceOrIsSubclassOf(wrapTypeIfNecessary(resultType), wrapTypeIfNecessary(originType))) {
                     resultType = originType;
-                } else if (isPrimitiveType(originType) && resultType.equals(getWrapper(originType))) {
-                    resultType = originType; // retain primitive semantics
                 } else {
                     // GROOVY-7549: RHS type may not be accessible to enclosing class
                     int modifiers = resultType.getModifiers();
@@ -4604,12 +4602,16 @@ trying: for (ClassNode[] signature : signatures) {
         if (op == EQUAL || op == ELVIS_EQUAL) {
             if (leftExpression instanceof VariableExpression) {
                 ClassNode initialType = getOriginalDeclarationType(leftExpression);
+                if (isDynamicTyped(initialType)) { // GROOVY-11375
+                    ClassNode inferredType = leftExpression.getNodeMetaData(INFERRED_TYPE);
+                    if (inferredType != null && !isPrimitiveType(inferredType)) initialType = OBJECT_TYPE;
+                }
 
-                if (isPrimitiveType(rightRedirect) && initialType.isDerivedFrom(Number_TYPE)) {
+                if (isPrimitiveType(rightRedirect) && (initialType.isDerivedFrom(Number_TYPE) || (isObjectType(initialType) && !isDynamicTyped(initialType)))) {
                     return getWrapper(right);
                 }
 
-                if (isPrimitiveType(initialType) && rightRedirect.isDerivedFrom(Number_TYPE)) {
+                if (isPrimitiveType(initialType) && (rightRedirect.isDerivedFrom(Number_TYPE) || rightRedirect == getWrapper(initialType))) { // GROOVY-6574
                     return getUnwrapper(right);
                 }
 

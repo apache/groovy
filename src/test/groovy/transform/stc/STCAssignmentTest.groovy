@@ -358,7 +358,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             s = 1
             ((Set) s)
         ''',
-        'Inconvertible types: cannot cast int to java.util.Set'
+        'Inconvertible types: cannot cast java.lang.Integer to java.util.Set'
     }
 
     void testArrayLength() {
