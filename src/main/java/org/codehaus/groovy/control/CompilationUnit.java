@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.ClassCompletionVerifier;
+import org.codehaus.groovy.classgen.DeadCodeAnalyzer;
 import org.codehaus.groovy.classgen.EnumCompletionVisitor;
 import org.codehaus.groovy.classgen.EnumVisitor;
 import org.codehaus.groovy.classgen.ExtendedVerifier;
@@ -750,11 +751,17 @@ public class CompilationUnit extends ProcessingUnit {
         public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
             new OptimizerVisitor(CompilationUnit.this).visitClass(classNode, source); // GROOVY-4272: repositioned from static import visitor
 
-            GroovyClassVisitor visitor = new Verifier();
+            GroovyClassVisitor visitor;
             try {
+                visitor = new Verifier();
                 visitor.visitClass(classNode);
             } catch (RuntimeParserException rpe) {
                 getErrorCollector().addError(new SyntaxException(rpe.getMessage(), rpe.getNode()), source);
+            }
+
+            if (Boolean.TRUE.equals(configuration.getOptimizationOptions().get(CompilerConfiguration.ANALYZE_DEAD_CODE))) {
+                visitor = new DeadCodeAnalyzer(source);
+                visitor.visitClass(classNode);
             }
 
             visitor = new LabelVerifier(source);
