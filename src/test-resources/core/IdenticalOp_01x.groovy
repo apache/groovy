@@ -40,6 +40,18 @@ def c() {
     assert 0 === 0
     assert 0 !== null
     assert null !== 0
+
+    int e = 1
+    int f = 1
+    assert e === f
+
+    int g = 1
+    Integer h = 1
+    assert g === h
+
+    Integer j = 1
+    int k = 1
+    assert j === k
 }
 c()
 
@@ -65,5 +77,17 @@ def c_cs() {
     assert 0 === 0
     assert 0 !== null
     assert null !== 0
+
+    int e = 1
+    int f = 1
+    assert e === f
+
+    int g = 1
+    Integer h = 1
+    assert g === h
+
+    Integer j = 1
+    int k = 1
+    assert j === k
 }
 c_cs()
