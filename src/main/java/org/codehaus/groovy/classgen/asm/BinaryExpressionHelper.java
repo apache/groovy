@@ -367,14 +367,17 @@ public class BinaryExpressionHelper {
         AsmClassGenerator acg = controller.getAcg();
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
+        TypeChooser typeChooser = controller.getTypeChooser();
 
         Expression lhs = expression.getLeftExpression();
         lhs.visit(acg);
-        if (ClassHelper.isPrimitiveType(lhs.getType())) operandStack.box();
+        ClassNode leftType = typeChooser.resolveType(lhs, controller.getClassNode());
+        if (ClassHelper.isPrimitiveType(leftType)) operandStack.box();
 
         Expression rhs = expression.getRightExpression();
         rhs.visit(acg);
-        if (ClassHelper.isPrimitiveType(rhs.getType())) operandStack.box();
+        ClassNode rightType = typeChooser.resolveType(rhs, controller.getClassNode());
+        if (ClassHelper.isPrimitiveType(rightType)) operandStack.box();
 
         Label trueCase = operandStack.jump(identical ? IF_ACMPEQ : IF_ACMPNE);
         ConstantExpression.PRIM_FALSE.visit(acg);
