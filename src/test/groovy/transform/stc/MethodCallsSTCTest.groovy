@@ -770,6 +770,17 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11371
+    void testShouldNotConvertIntegerArrayToIntArray() {
+        shouldFailWithMessages '''
+            def test(int[] ints) {
+                Arrays.toString(ints)
+            }
+            test(new Integer[1]) // cannot convert null
+        ''',
+        'Cannot find matching method','test(java.lang.Integer[])'
+    }
+
     void testInstanceOfOnExplicitParameter() {
         assertScript '''
             1.with { obj ->

@@ -28,8 +28,16 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testArrayAccess() {
         assertScript '''
             String[] strings = ['a','b','c']
-            String str = strings[0]
-            assert str == 'a'
+            String s = strings[0]
+            assert s == 'a'
+        '''
+    }
+
+    void testArrayLength() {
+        assertScript '''
+            String[] strings = ['a','b','c']
+            int size = strings.length
+            assert size == 3
         '''
     }
 
@@ -39,13 +47,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             int i = strings[0]
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
-    }
-
-    void testWrongComponentTypeInArray() {
-        shouldFailWithMessages '''
-            int[] intArray = ['a']
-        ''',
-        'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
     // GROOVY-9985, GROOVY-9994
@@ -59,6 +60,11 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             new int[]{'a'}
         ''',
         'Cannot convert from java.lang.String to int'
+
+        shouldFailWithMessages '''
+            new int[]{null}
+        ''',
+        'Cannot convert from java.lang.Object to int'
 
         shouldFailWithMessages '''
             new Integer[]{new Object(),1}
@@ -98,23 +104,40 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             array[1] = "One"
         ''',
         'Cannot assign value of type java.lang.String to variable of type int'
+
+        shouldFailWithMessages '''
+            int[] array = [1, 2, 3]
+            array[1] = null
+        ''',
+        'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
-    void testBidimensionalArray() {
+    void testMultiDimensionalArray1() {
         assertScript '''
             int[][] array = new int[1][]
             array[0] = [1,2]
         '''
     }
 
-    void testBidimensionalArrayWithInitializer() {
+    void testMultiDimensionalArray2() {
         shouldFailWithMessages '''
             int[][] array = new Object[1][]
         ''',
         'Cannot assign value of type java.lang.Object[][] to variable of type int[][]'
     }
 
-    void testBidimensionalArrayWithWrongSubArrayType() {
+    void testMultiDimensionalArray3() {
+        assertScript '''
+            int[][] array = new int[1][]
+            array[0] = null
+        '''
+
+        shouldFailWithMessages '''
+            int[][] array = new int[1][]
+            array[0] = ['1']
+        ''',
+        'Cannot assign value of type java.lang.String into array of type int[]'
+
         shouldFailWithMessages '''
             int[][] array = new int[1][]
             array[0] = ['1']
@@ -384,8 +407,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5177
+    // GROOVY-6575
     void testShouldNotAllowArrayAssignment1() {
+        shouldFailWithMessages '''
+            Object o
+            int[] array = o
+        ''',
+        'Cannot assign value of type java.lang.Object to variable of type int[]'
+    }
+
+    // GROOVY-5177
+    void testShouldNotAllowArrayAssignment2() {
         shouldFailWithMessages '''
             class Foo {
                 def say() {
@@ -399,7 +431,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8984
-    void testShouldNotAllowArrayAssignment2() {
+    void testShouldNotAllowArrayAssignment3() {
         shouldFailWithMessages '''
             List<String> m() { }
             Number[] array = m()
@@ -440,8 +472,59 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.util.List<? super java.lang.Runnable> to variable of type java.lang.Runnable[]'
     }
 
-    // GROOVY-8983
+    // GROOVY-11371
+    void testShouldNotAllowArrayAssignment4() {
+        shouldFailWithMessages '''
+            int[] array = new Integer[]{1}
+        ''',
+        'Cannot assign value of type java.lang.Integer[] to variable of type int[]'
+
+        shouldFailWithMessages '''
+            double[] array = new Double[]{1d}
+        ''',
+        'Cannot assign value of type java.lang.Double[] to variable of type double[]'
+
+        for (type in ['byte','char','double','float','long','short']) {
+            shouldFailWithMessages """
+                $type[] a = new Integer[1]
+            """,
+            "Cannot assign value of type java.lang.Integer[] to variable of type $type[]"
+        }
+    }
+
     void testShouldAllowArrayAssignment1() {
+        assertScript '''
+            Object[] a = new String[]{'a','b','c'}
+            assert a.length == 3
+        '''
+        assertScript '''
+            Object[] a = new Double[]{1d}
+            assert a[0] instanceof Double
+        '''
+        assertScript '''
+            int i = 1
+            Integer[] a = [i]
+            assert a.length == 1
+        '''
+        assertScript '''
+            int[][] a = [new int[5]]
+            assert a.length == 1
+            assert a[0].length == 5
+        '''
+        assertScript '''
+            boolean[] a = new Integer[1]
+            assert a.length == 1
+            assert a[0] == false
+        '''
+        assertScript '''
+            int[] array = new long[1]
+            assert array.length == 1
+            assert array[0] == 0
+        '''
+    }
+
+    // GROOVY-8983
+    void testShouldAllowArrayAssignment2() {
         assertScript '''
             List<String> m() { ['foo'] }
             void test(Set<String> set) {
@@ -494,7 +577,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8983
-    void testShouldAllowArrayAssignment2() {
+    void testShouldAllowArrayAssignment3() {
         assertScript '''
             List<String> m() { ['foo'] }
             void test(Set<String> set) {
@@ -508,7 +591,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9517
-    void testShouldAllowArrayAssignment3() {
+    void testShouldAllowArrayAssignment4() {
         assertScript '''
             void test(File directory) {
                 File[] files = directory.listFiles()
@@ -522,7 +605,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8983
-    void testShouldAllowArrayAssignment4() {
+    void testShouldAllowArrayAssignment5() {
         assertScript '''
             class C {
                 List<String> list = []
@@ -538,31 +621,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
                 assert c.list == ['foo','bar']
             }
             test(['bar'].toSet())
-        '''
-    }
-
-    void testShouldAllowArrayAssignment5() {
-        assertScript '''
-            Object[] array = new Double[]{1d}
-            assert array[0] instanceof Double
-        '''
-
-        assertScript '''
-            double[] array = new Double[]{1d}
-            assert array.length == 1
-            assert array[0] == 1.0
-        '''
-
-        assertScript '''
-            int[] array = new Integer[]{1}
-            assert array.length == 1
-            assert array[0] == 1
-        '''
-
-        assertScript '''
-            int[] array = new long[1]
-            assert array.length == 1
-            assert array[0] == 0
         '''
     }
 

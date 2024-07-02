@@ -652,8 +652,11 @@ public abstract class StaticTypeCheckingSupport {
 
         if (left.isArray()) {
             if (right.isArray()) {
-                ClassNode leftComponent = left.getComponentType(), rightComponent = right.getComponentType();
-                return checkCompatibleAssignmentTypes(leftComponent, rightComponent, rightExpression, false);
+                ClassNode leftComponent = left.getComponentType();
+                ClassNode rightComponent = right.getComponentType();
+                return (isPrimitiveType(leftComponent) && !isPrimitiveBoolean(leftComponent))
+                        ? isPrimitiveType(rightComponent) // GROOVY-11371: primitive array only
+                        : checkCompatibleAssignmentTypes(leftComponent, rightComponent, rightExpression, false);
             }
             if (GeneralUtils.isOrImplements(right, Collection_TYPE) && !(rightExpression instanceof ListExpression)) {
                 GenericsType elementType = GenericsUtils.parameterizeType(right, Collection_TYPE).getGenericsTypes()[0];

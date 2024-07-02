@@ -138,10 +138,30 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Inconvertible types: cannot cast java.lang.String to java.lang.Character'
     }
 
-    void testCastArray() {
+    void testCastArray1() {
         assertScript '''
-            List<String> src = ['a','b','c']
-            (String[]) src.toArray(src as String[])
+            (String[]) ['a','b','c'].toArray(new String[0])
+        '''
+        assertScript '''
+            (String[]) new String[0]
+        '''
+    }
+
+    void testCastArray2() {
+        assertScript '''
+            (Object[]) new String[0]
+        '''
+        assertScript '''
+            (Object) new String[0]
+        '''
+    }
+
+    void testCastArray3() {
+        assertScript '''
+            (Object[][]) new String[0][]
+        '''
+        assertScript '''
+            (Object[]) new String[0][]
         '''
     }
 
@@ -165,6 +185,23 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             (Set[]) ['a','b','c'].toArray(String[]::new)
         ''',
         'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
+    }
+
+    void testCastArrayIncompatible4() {
+        shouldFailWithMessages '''
+            (String[]) new String[0][]
+        ''',
+        'Inconvertible types: cannot cast java.lang.String[][] to java.lang.String[]'
+    }
+
+    // GROOVY-11371
+    void testCastArrayIncompatible5() {
+        for (type in ['byte','char','double','float','int','long','short']) {
+            shouldFailWithMessages """
+                ($type[]) new Integer[1] // null values unsafe
+            """,
+            "Inconvertible types: cannot cast java.lang.Integer[] to $type[]"
+        }
     }
 
     void testCastObjectToSubclass() {

@@ -4321,7 +4321,11 @@ trying: for (ClassNode[] signature : signatures) {
         }
         ClassNode sourceType = getType(source);
         if (targetType.isArray() && sourceType.isArray()) {
-            return checkCast(targetType.getComponentType(), varX("_", sourceType.getComponentType()));
+            ClassNode targetItemType = targetType.getComponentType();
+            ClassNode sourceItemType = sourceType.getComponentType();
+            return (isPrimitiveType(targetItemType) && !isPrimitiveBoolean(targetItemType))
+                    ? isPrimitiveType(sourceItemType) // GROOVY-11371: primitive array only
+                    : checkCast(targetItemType, varX("_", sourceItemType));
         } else if (isPrimitiveChar(targetType) && isStringType(sourceType)
                 && source instanceof ConstantExpression && source.getText().length() == 1) {
             // ex: (char) 'c'
