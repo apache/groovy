@@ -97,7 +97,6 @@ import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Short_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.byte_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
@@ -647,8 +646,8 @@ public abstract class StaticTypeCheckingSupport {
      * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToType(Object,Class)
      */
     public static boolean checkCompatibleAssignmentTypes(final ClassNode left, final ClassNode right, final Expression rightExpression, final boolean allowConstructorCoercion) {
-        if (!isPrimitiveType(left) && isNullConstant(rightExpression)) {
-            return true;
+        if (isNullConstant(rightExpression)) { // TODO: left is @NonNull
+            return (!isPrimitiveType(left) || isPrimitiveBoolean(left)); // GROOVY-6577
         }
 
         if (left.isArray()) {
@@ -712,8 +711,8 @@ public abstract class StaticTypeCheckingSupport {
                 return true;
             }
         } else if (isWildcardLeftHandSide(leftRedirect)) {
-            // Object, String, [Bb]oolean or Class can be assigned anything (except null to boolean)
-            return !(leftRedirect == boolean_TYPE && isNullConstant(rightExpression));
+            // Object, String, [Bb]oolean or Class can be assigned any non-null value
+            return true;
         }
 
         // if right is array, map or collection we try invoking the constructor

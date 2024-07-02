@@ -848,8 +848,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 rightExpression.visit(this);
             }
 
-            ClassNode rType = isNullConstant(rightExpression) && !isPrimitiveType(lType)
-                    ? UNKNOWN_PARAMETER_TYPE // null to primitive type is handled elsewhere
+            ClassNode rType = isNullConstant(rightExpression)
+                    ? isPrimitiveType(lType) ? OBJECT_TYPE : UNKNOWN_PARAMETER_TYPE
                     : getInferredTypeFromTempInfo(rightExpression, getType(rightExpression));
             ClassNode resultType;
 
@@ -4316,29 +4316,27 @@ trying: for (ClassNode[] signature : signatures) {
     }
 
     protected boolean checkCast(final ClassNode targetType, final Expression source) {
-        boolean sourceIsNull = isNullConstant(source);
-        ClassNode expressionType = getType(source);
-        if (targetType.isArray() && expressionType.isArray()) {
-            return checkCast(targetType.getComponentType(), varX("foo", expressionType.getComponentType()));
-        } else if (isPrimitiveChar(targetType) && isStringType(expressionType)
+        if (isNullConstant(source)) {
+            return !isPrimitiveType(targetType) || isPrimitiveBoolean(targetType); // GROOVY-6577
+        }
+        ClassNode sourceType = getType(source);
+        if (targetType.isArray() && sourceType.isArray()) {
+            return checkCast(targetType.getComponentType(), varX("_", sourceType.getComponentType()));
+        } else if (isPrimitiveChar(targetType) && isStringType(sourceType)
                 && source instanceof ConstantExpression && source.getText().length() == 1) {
             // ex: (char) 'c'
-        } else if (isWrapperCharacter(targetType) && (isStringType(expressionType) || sourceIsNull)
-                && (sourceIsNull || source instanceof ConstantExpression && source.getText().length() == 1)) {
-            // ex : (Character) 'c'
-        } else if (isNumberCategory(getWrapper(targetType)) && (isNumberCategory(getWrapper(expressionType)) || isPrimitiveChar(expressionType))) {
-            // ex: short s = (short) 0
-        } else if (sourceIsNull && !isPrimitiveType(targetType)) {
-            // ex: (Date)null
-        } else if (isPrimitiveChar(targetType) && isPrimitiveType(expressionType) && isNumberType(expressionType)) {
-            // char c = (char) ...
-        } else if (sourceIsNull && isPrimitiveType(targetType) && !isPrimitiveBoolean(targetType)) {
-            return false;
-        } else if (!Modifier.isFinal(expressionType.getModifiers()) && targetType.isInterface()) {
-            return true;
-        } else if (!Modifier.isFinal(targetType.getModifiers()) && expressionType.isInterface()) {
-            return true;
-        } else if (!isAssignableTo(targetType, expressionType) && !implementsInterfaceOrIsSubclassOf(expressionType, targetType)) {
+        } else if (isWrapperCharacter(targetType) && isStringType(sourceType)
+                && source instanceof ConstantExpression && source.getText().length() == 1) {
+            // ex: (Character) 'c'
+        } else if (isNumberCategory(getWrapper(targetType)) && (isNumberCategory(getWrapper(sourceType)) || isPrimitiveChar(sourceType))) {
+            // ex: (long) 0
+        } else if (isPrimitiveChar(targetType) && isPrimitiveType(sourceType) && isNumberType(sourceType)) {
+            // ex: (char) 0
+        } else if (!Modifier.isFinal(sourceType.getModifiers()) && targetType.isInterface()) {
+            // ex: TODO
+        } else if (!Modifier.isFinal(targetType.getModifiers()) && sourceType.isInterface()) {
+            // ex: TODO
+        } else if (!isAssignableTo(targetType, sourceType) && !implementsInterfaceOrIsSubclassOf(sourceType, targetType)) {
             return false;
         }
         return true;

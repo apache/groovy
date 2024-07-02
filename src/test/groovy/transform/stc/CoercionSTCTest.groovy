@@ -32,6 +32,179 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         )
     }
 
+    void testCastIntToShort() {
+        assertScript '''
+            short s = (short) 0
+        '''
+    }
+
+    void testCastIntToFloat() {
+        assertScript '''
+            float f = (float) 1
+        '''
+    }
+
+    void testCastCompatibleType() {
+        assertScript '''
+            String s = 'Hello'
+            ((CharSequence) s)
+        '''
+    }
+
+    void testCastIncompatibleType() {
+        shouldFailWithMessages '''
+            String s = 'Hello'
+            ((Set) s)
+        ''',
+        'Inconvertible types: cannot cast java.lang.String to java.util.Set'
+    }
+
+    void testCastIncompatibleTypeWithFlowType() {
+        shouldFailWithMessages '''
+            def s = 'Hello'
+            s = 1
+            ((Set) s)
+        ''',
+        'Inconvertible types: cannot cast java.lang.Integer to java.util.Set'
+    }
+
+    void testCastStringToChar() {
+        assertScript '''
+            def c = (char) 'a'
+            assert c === "a".charAt(0)
+        '''
+    }
+
+    void testCastCharToByte() {
+        assertScript '''
+            void foo(char c) {
+                byte b = (byte) c
+            }
+        '''
+    }
+
+    void testCastCharToInt() {
+        assertScript '''
+            void foo(char c) {
+                int b = (int) c
+            }
+        '''
+    }
+
+    void testCastStringLongerThan1ToChar() {
+        shouldFailWithMessages '''
+            def c = (char) 'aa'
+        ''',
+        'Inconvertible types: cannot cast java.lang.String to char'
+    }
+
+    // GROOVY-6577
+    void testCastNullToBoolean() {
+        assertScript '''
+            boolean b = (boolean) null
+            assert b === false
+        '''
+    }
+
+    void testCastNullToPrimitive() {
+        // boolean tested above and void cannot appear in cast expression
+        for (type in ['byte','char','double','float','int','long','short']) {
+            shouldFailWithMessages """
+                def v = ($type) null
+            """,
+            "Inconvertible types: cannot cast java.lang.Object to $type"
+        }
+    }
+
+    void testCastNullToCharacter() {
+        assertScript '''
+            def c = (Character) null
+            assert c === null
+        '''
+    }
+
+    void testCastStringToCharacter() {
+        assertScript '''
+            def c = (Character) 'a'
+            assert c instanceof Character
+            assert c.charValue() == "a".charAt(0)
+        '''
+    }
+
+    void testCastStringLongerThan1ToCharacter() {
+        shouldFailWithMessages '''
+            def c = (Character) 'aa'
+        ''',
+        'Inconvertible types: cannot cast java.lang.String to java.lang.Character'
+    }
+
+    void testCastArray() {
+        assertScript '''
+            List<String> src = ['a','b','c']
+            (String[]) src.toArray(src as String[])
+        '''
+    }
+
+    void testCastArrayIncompatible1() {
+        shouldFailWithMessages '''
+            String[] src = ['a','b','c']
+            (Set[]) src
+        ''',
+        'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
+    }
+
+    void testCastArrayIncompatible2() {
+        shouldFailWithMessages '''
+            (Set[]) ['a','b','c'].toArray(new String[3])
+        ''',
+        'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
+    }
+
+    void testCastArrayIncompatible3() {
+        shouldFailWithMessages '''
+            (Set[]) ['a','b','c'].toArray(String[]::new)
+        ''',
+        'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
+    }
+
+    void testCastObjectToSubclass() {
+        assertScript '''
+            Object o = null
+            ((Integer) o)?.intValue()
+        '''
+    }
+
+    void testCastInterfaceToSubclass() {
+        assertScript '''
+            interface A {
+            }
+            interface B extends A {
+            }
+            class C implements B {
+            }
+            def m(B b) {
+                C c = (C) b
+            }
+        '''
+    }
+
+    void testCastInterfaceToSubclass2() {
+        shouldFailWithMessages '''
+            interface I {
+            }
+            interface B extends I {
+            }
+            final class C implements I {
+            }
+            def m(B b) {
+                C c = (C) b
+            }
+        ''',
+        'Inconvertible types: cannot cast B to C'
+    }
+
+    //--------------------------------------------------------------------------
+
     void testCoerceToArray() {
         assertScript '''
             try {
@@ -134,6 +307,14 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String s = []
             assert s == '[]'
+        '''
+    }
+
+    void testCoerceIncompatibleType() {
+        // If the user uses explicit type coercion, there's nothing we can do
+        assertScript '''
+            String s = 'Hello'
+            s as Set
         '''
     }
 

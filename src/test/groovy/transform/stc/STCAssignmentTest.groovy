@@ -25,21 +25,21 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     void testAssignmentFailure1() {
         shouldFailWithMessages '''
-            int x = new Object()
+            int i = new Object()
         ''',
         'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
     void testAssignmentFailure2() {
         shouldFailWithMessages '''
-            Set set = new Object()
+            Set s = new Object()
         ''',
         'Cannot assign value of type java.lang.Object to variable of type java.util.Set'
     }
 
     void testAssignmentFailure3() {
         shouldFailWithMessages '''
-            Set set = new Integer(2)
+            Set s = new Integer(2)
         ''',
         'Cannot assign value of type java.lang.Integer to variable of type java.util.Set'
     }
@@ -47,7 +47,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testAssignmentFailure4() {
         shouldFailWithMessages '''
             def o = new Object()
-            int x = o
+            int i = o
         ''',
         'Cannot assign value of type java.lang.Object to variable of type int'
     }
@@ -55,15 +55,15 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     void testAssignmentFailure5() {
         shouldFailWithMessages '''
             def o = new Object()
-            Set set = o
+            Set s = o
         ''',
         'Cannot assign value of type java.lang.Object to variable of type java.util.Set'
     }
 
     void testAssignmentFailure6() {
         shouldFailWithMessages '''
-            int x = 2
-            Set set = x
+            int i = 2
+            Set s = i
         ''',
         'Cannot assign value of type int to variable of type java.util.Set'
     }
@@ -95,28 +95,56 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type int to variable of type MyEnum'
     }
 
+    void testAssignmentToArray() {
+        assertScript '''
+            String[] src = ['a','b','c']
+            Object[] arr = src
+        '''
+        assertScript '''
+            def a  = 1
+            Integer[] b = [a]
+        '''
+        assertScript '''
+            def a = new int[5]
+            int[][] b = [a]
+        '''
+    }
+
     void testAssignmentToClass() {
         assertScript '''
-            Class test = 'java.lang.String'
+            Class c = 'java.lang.String'
         '''
     }
 
     void testAssignmentToString() {
         assertScript '''
-            String str = new Object()
+            String s = new Object()
         '''
     }
 
     void testAssignmentToBoolean() {
         assertScript '''
-            boolean test = new Object()
+            boolean b = new Object()
+            assert b === true
         '''
     }
 
-    void testAssignmentToBooleanClass() {
+    void testAssignmentToBoolean2() {
         assertScript '''
-            Boolean test = new Object()
+            Boolean b = new Object()
+            assert b == Boolean.TRUE
         '''
+    }
+
+    void testAssignmentToInterface() {
+        assertScript '''
+            Comparable<String> x = 'x'
+            CharSequence y = 'y'
+        '''
+        shouldFailWithMessages '''
+            Collection z = 'z'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.util.Collection'
     }
 
     // GROOVY-10744
@@ -136,6 +164,135 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             Comparable<Boolean> y = false
             assert x.class.name == 'java.lang.Boolean'
             assert y.class.name == 'java.lang.Boolean'
+        '''
+    }
+
+    // GROOVY-6577
+    void testAssignNullToBoolean() {
+        assertScript '''
+            boolean b = null
+            assert b === false
+        '''
+    }
+
+    // GROOVY-11371
+    void testAssignNullToPrimitive() {
+        for (type in ['byte','char','double','float','int','long','short']) {
+            shouldFailWithMessages """
+                $type v = null
+            """,
+            "Cannot assign value of type java.lang.Object to variable of type $type"
+        }
+    }
+
+    void testAssignNullToCharacter() {
+        assertScript '''
+            Character c = null
+            assert  c === null
+        '''
+    }
+
+    void testAssignStringToChar() {
+        assertScript '''
+            char c = 'a'
+            assert c === "a".charAt(0)
+        '''
+    }
+
+    void testAssignStringToCharacter() {
+        assertScript '''
+            Character c = 'a'
+            assert c instanceof Character
+            assert c == Character.valueOf("a".charAt(0))
+        '''
+    }
+
+    void testAssignStringLongerThan1CharToChar() {
+        shouldFailWithMessages '''
+            char c = 'aa'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type char'
+    }
+
+    void testAssignStringLongerThan1CharToCharacter() {
+        shouldFailWithMessages '''
+            Character c = 'aa'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Character'
+    }
+
+    void testPossibleLossOfPrecision1() {
+        shouldFailWithMessages '''
+            long a = Long.MAX_VALUE
+            int b = a
+        ''',
+        'Possible loss of precision from long to int'
+    }
+
+    void testPossibleLossOfPrecision2() {
+        assertScript '''
+            int b = 0L
+        '''
+    }
+
+    void testPossibleLossOfPrecision3() {
+        assertScript '''
+            byte b = 127
+        '''
+    }
+
+    void testPossibleLossOfPrecision4() {
+        shouldFailWithMessages '''
+            byte b = 128 // will not fit in a byte
+        ''',
+        'Possible loss of precision from int to byte'
+    }
+
+    void testPossibleLossOfPrecision5() {
+        assertScript '''
+            short b = 128
+        '''
+    }
+
+    void testPossibleLossOfPrecision6() {
+        shouldFailWithMessages '''
+            short b = 32768 // will not fit in a short
+        ''',
+        'Possible loss of precision from int to short'
+    }
+
+    void testPossibleLossOfPrecision7() {
+        assertScript '''
+            int b = 32768L // mark it as a long, but it fits into an int
+        '''
+    }
+
+    void testPossibleLossOfPrecision8() {
+        assertScript '''
+            int b = 32768.0f // mark it as a float, but it fits into an int
+        '''
+    }
+
+    void testPossibleLossOfPrecision9() {
+        assertScript '''
+            int b = 32768.0d // mark it as a double, but it fits into an int
+        '''
+    }
+
+    void testPossibleLossOfPrecision10() {
+        shouldFailWithMessages '''
+            int b = 32768.1d
+        ''',
+        'Possible loss of precision from double to int'
+    }
+
+    //--------------------------------------------------------------------------
+
+    void testArrayLength() {
+        assertScript '''
+            String[] arr = [1,2,3]
+            int len = arr.length
+            assert len == 3
         '''
     }
 
@@ -252,409 +409,11 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testPossibleLossOfPrecision1() {
-        shouldFailWithMessages '''
-            long a = Long.MAX_VALUE
-            int b = a
-        ''',
-        'Possible loss of precision from long to int'
-    }
-
-    void testPossibleLossOfPrecision2() {
-        assertScript '''
-            int b = 0L
-        '''
-    }
-
-    void testPossibleLossOfPrecision3() {
-        assertScript '''
-            byte b = 127
-        '''
-    }
-
-    void testPossibleLossOfPrecision4() {
-        shouldFailWithMessages '''
-            byte b = 128 // will not fit in a byte
-        ''',
-        'Possible loss of precision from int to byte'
-    }
-
-    void testPossibleLossOfPrecision5() {
-        assertScript '''
-            short b = 128
-        '''
-    }
-
-    void testPossibleLossOfPrecision6() {
-        shouldFailWithMessages '''
-            short b = 32768 // will not fit in a short
-        ''',
-        'Possible loss of precision from int to short'
-    }
-
-    void testPossibleLossOfPrecision7() {
-        assertScript '''
-            int b = 32768L // mark it as a long, but it fits into an int
-        '''
-    }
-
-    void testPossibleLossOfPrecision8() {
-        assertScript '''
-            int b = 32768.0f // mark it as a float, but it fits into an int
-        '''
-    }
-
-    void testPossibleLossOfPrecision9() {
-        assertScript '''
-            int b = 32768.0d // mark it as a double, but it fits into an int
-        '''
-    }
-
-    void testPossibleLossOfPrecision10() {
-        shouldFailWithMessages '''
-            int b = 32768.1d
-        ''',
-        'Possible loss of precision from double to int'
-    }
-
-    void testCastIntToShort() {
-        assertScript '''
-            short s = (short) 0
-        '''
-    }
-
-    void testCastIntToFloat() {
-        assertScript '''
-            float f = (float) 1
-        '''
-    }
-
-    void testCompatibleTypeCast() {
-        assertScript '''
-            String s = 'Hello'
-            ((CharSequence) s)
-        '''
-    }
-
-    void testIncompatibleTypeCast() {
-        shouldFailWithMessages '''
-            String s = 'Hello'
-            ((Set) s)
-        ''',
-        'Inconvertible types: cannot cast java.lang.String to java.util.Set'
-    }
-
-    void testIncompatibleTypeCastWithAsType() {
-        // If the user uses explicit type coercion, there's nothing we can do
-        assertScript '''
-            String s = 'Hello'
-            s as Set
-        '''
-    }
-
-    void testIncompatibleTypeCastWithTypeInference() {
-        shouldFailWithMessages '''
-            def s = 'Hello'
-            s = 1
-            ((Set) s)
-        ''',
-        'Inconvertible types: cannot cast java.lang.Integer to java.util.Set'
-    }
-
-    void testArrayLength() {
-        assertScript '''
-            String[] arr = [1,2,3]
-            int len = arr.length
-        '''
-    }
-
-    void testMultipleAssignment1() {
-        assertScript '''
-            def (x,y) = [1,2]
-            assert x == 1
-            assert y == 2
-        '''
-    }
-
-    void testMultipleAssignmentWithExplicitTypes() {
-        assertScript '''
-            int x
-            int y
-            (x,y) = [1,2]
-            assert x == 1
-            assert y == 2
-        '''
-    }
-
-    void testMultipleAssignmentWithIncompatibleTypes() {
-        shouldFailWithMessages '''
-            List x
-            List y
-            (x,y) = [1,2]
-        ''',
-        'Cannot assign value of type int to variable of type java.util.List'
-    }
-
-    void testMultipleAssignmentWithoutEnoughArgs() {
-        shouldFailWithMessages '''
-            int x
-            int y
-            (x,y) = [1]
-        ''',
-        'Incorrect number of values. Expected:2 Was:1'
-    }
-
-    void testMultipleAssignmentTooManyArgs() {
-        assertScript '''
-            int x
-            int y
-            (x,y) = [1,2,3]
-            assert x == 1
-            assert y == 2
-        '''
-    }
-
-    void testMultipleAssignmentFromVariable() {
-        shouldFailWithMessages '''
-            def list = [1,2,3]
-            def (x,y) = list
-        ''',
-        'Multiple assignments without list or tuple on the right-hand side are unsupported in static type checking mode'
-    }
-
-    // GROOVY-8223, GROOVY-8887, GROOVY-10063
-    void testMultipleAssignmentFromTupleTypes() {
-        assertScript '''
-            def (String string) = Tuple.tuple('answer')
-            assert string == 'answer'
-        '''
-
-        assertScript '''
-            def (String string, Integer number) = Tuple.tuple('answer', 42)
-            assert string == 'answer'
-            assert number == 42
-        '''
-
-        shouldFailWithMessages '''
-            def (String string, Integer number) = Tuple.tuple('answer', '42')
-        ''',
-        'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
-
-        assertScript '''
-            def (int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l, int m, int n, int o, int p) = Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
-            assert a == 1
-            assert b == 2
-            assert c == 3
-            assert d == 4
-            assert e == 5
-            assert f == 6
-            assert g == 7
-            assert h == 8
-            assert i == 9
-            assert j == 10
-            assert k == 11
-            assert l == 12
-            assert m == 13
-            assert n == 14
-            assert o == 15
-            assert p == 16
-        '''
-
-        assertScript '''
-            def (String string, Integer number) = new Tuple2<String, Integer>('answer', 42)
-            assert string == 'answer'
-            assert number == 42
-        '''
-
-        assertScript '''
-            Tuple2<String, Integer> m() {
-                new Tuple2<>('answer', 42)
-            }
-
-            def (String string, Integer number) = m()
-            assert string == 'answer'
-            assert number == 42
-        '''
-
-        assertScript '''
-            Tuple2<String, Integer> m() {
-                new Tuple2<>('answer', 42)
-            }
-
-            def tuple = m()
-            def (String string, Integer number) = tuple
-            assert string == 'answer'
-            assert number == 42
-        '''
-
-        assertScript '''
-            static Tuple2<String, Integer> m() {
-                new Tuple2<>('answer', 42)
-            }
-
-            def (String string, Integer number) = m()
-            assert string == 'answer'
-            assert number == 42
-        '''
-
-        assertScript '''
-            class C {
-                static Tuple2<String, Integer> m() {
-                    new Tuple2<>('answer', 42)
-                }
-            }
-
-            def (String string, Integer number) = C.m()
-            assert string == 'answer'
-            assert number == 42
-        '''
-
-        assertScript '''
-            class C {
-                Tuple2<String, Integer> getM() {
-                    new Tuple2<>('answer', 42)
-                }
-            }
-
-            def (String string, Integer number) = new C().m
-            assert string == 'answer'
-            assert number == 42
-        '''
-    }
-
-    void testAssignmentToInterface() {
-        assertScript '''
-            Comparable<String> x = 'x'
-            CharSequence y = 'y'
-        '''
-        shouldFailWithMessages '''
-            Collection z = 'z'
-        ''',
-        'Cannot assign value of type java.lang.String to variable of type java.util.Collection'
-    }
-
     void testTernaryOperatorAssignmentShouldFailBecauseOfIncompatibleGenericTypes() {
         shouldFailWithMessages '''
             List<Integer> foo = true ? new LinkedList<String>() : new LinkedList<Integer>()
         ''',
         'Incompatible generic argument types. Cannot assign java.util.LinkedList<? extends java.io.Serializable & java.lang.Comparable','> to: java.util.List<java.lang.Integer>'
-    }
-
-    void testCastStringToChar() {
-        assertScript '''
-            char c = 'a'
-        '''
-    }
-
-    void testCastStringLongerThan1CharToChar() {
-        shouldFailWithMessages '''
-            char c = 'aa'
-        ''',
-        'Cannot assign value of type java.lang.String to variable of type char'
-    }
-
-    void testCastNullToChar() {
-        shouldFailWithMessages '''
-            char c = null
-        ''',
-        'Cannot assign value of type java.lang.Object to variable of type char'
-    }
-
-    // GROOVY-6577
-    void testCastNullToBoolean() {
-        assertScript '''
-            boolean c = null
-            assert c == false
-        '''
-    }
-
-    // GROOVY-6577
-    void testCastNullToBooleanWithExplicitCast() {
-        assertScript '''
-            boolean c = (boolean) null
-            assert c == false
-        '''
-    }
-
-    void testCastStringToCharacter() {
-        assertScript '''
-            Character c = 'a'
-        '''
-    }
-
-    void testCastStringLongerThan1CharToCharacter() {
-        shouldFailWithMessages '''
-            Character c = 'aa'
-        ''',
-        'Cannot assign value of type java.lang.String to variable of type java.lang.Character'
-    }
-
-    void testAssignNullToCharacter() {
-        assertScript '''
-            Character c = null
-        '''
-    }
-
-    void testCastStringToCharWithCast() {
-        assertScript '''
-            def c = (char) 'a'
-        '''
-    }
-
-    void testCastCharToByte() {
-        assertScript '''
-            void foo(char c) {
-                byte b = (byte) c
-            }
-        '''
-    }
-
-    void testCastCharToInt() {
-        assertScript '''
-            void foo(char c) {
-                int b = (int) c
-            }
-        '''
-    }
-
-    void testCastStringLongerThan1ToCharWithCast() {
-        shouldFailWithMessages '''
-            def c = (char) 'aa'
-        ''',
-        'Inconvertible types: cannot cast java.lang.String to char'
-    }
-
-    void testCastNullToCharWithCast() {
-        shouldFailWithMessages '''
-            def c = (char) null
-        ''',
-        'Inconvertible types: cannot cast java.lang.Object to char'
-    }
-
-    void testCastStringToCharacterWithCast() {
-        assertScript '''
-            def c = (Character) 'a'
-        '''
-    }
-
-    void testCastStringLongerThan1ToCharacterWithCast() {
-        shouldFailWithMessages '''
-            def c = (Character) 'aa'
-        ''',
-        'Inconvertible types: cannot cast java.lang.String to java.lang.Character'
-    }
-
-    void testCastNullToCharacterWithCast() {
-        assertScript '''
-            def c = (Character) null
-        '''
-    }
-
-    void testCastObjectToSubclass() {
-        assertScript '''
-            Object o = null
-            ((Integer) o)?.intValue()
-        '''
     }
 
     void testIfElseBranch() {
@@ -989,7 +748,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    //GROOVY-6435
+    // GROOVY-6435
     void testBigDecAndBigIntSubclass() {
         assertScript '''
             class MyDecimal extends BigDecimal {
@@ -1095,35 +854,6 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#previous()'
     }
 
-    void testAssignArray() {
-        assertScript '''
-            String[] src = ['a','b','c']
-            Object[] arr = src
-        '''
-    }
-
-    void testCastArray() {
-        assertScript '''
-            List<String> src = ['a','b','c']
-            (String[]) src.toArray(src as String[])
-        '''
-    }
-
-    void testIncompatibleCastArray() {
-        shouldFailWithMessages '''
-            String[] src = ['a','b','c']
-            (Set[]) src
-        ''',
-        'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
-    }
-
-    void testIncompatibleToArray() {
-        shouldFailWithMessages '''
-            (Set[]) ['a','b','c'].toArray(new String[3])
-        ''',
-        'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
-    }
-
     // GROOVY-5535, GROOVY-10623
     void testAssignToNullInsideIf() {
         ['Date', 'def', 'var'].each {
@@ -1222,7 +952,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    //GROOVY-8157
+    // GROOVY-8157
     void testFlowTypingAfterParameterAssignment() {
         assertScript '''
             class A {}
@@ -1233,49 +963,6 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
                 a.bbb()
             }
             assert fooParameterAssignment(null) == 42
-        '''
-    }
-
-    void testIntegerArraySmartType() {
-        assertScript '''
-            def m() {
-                def a  = 1
-                Integer[] b = [a]
-            }
-        '''
-    }
-
-    void testIntegerSecondDimArraySmartType() {
-        assertScript '''
-            def m() {
-                def a = new int[5]
-                int[][] b = [a]
-            }
-        '''
-    }
-
-    void testMultiAssign() {
-        assertScript '''
-            def m() {
-                def row = ['', '', '']
-                def (left, right) = [row[0], row[1]]
-                left.toUpperCase()
-            }
-        '''
-    }
-
-    // GROOVY-10953
-    void testMultiAssign2() {
-        assertScript '''
-            def m() {
-                def (x, y, z) = 1..4
-                assert "$x $y $z" == '1 2 3'
-                (x, y, z) = -5..-6
-                assert "$x ${y.intValue()} $z" == '-5 -6 null'
-                def (a, _, c) = 'a'..'c'
-                assert "${a.toUpperCase()} ${c.endsWith('c')}" == 'A true'
-            }
-            m()
         '''
     }
 
@@ -1295,54 +982,6 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             }
             assert new Foo().makeEnv('X=1') == 'export X=1;'
         '''
-    }
-
-    // GROOVY-10943
-    void testMultiAssignUnderscorePlaceholder1() {
-        assertScript '''
-            def m() {
-                def (x, _, y, _, z) = [1, 2, 3, 4, 5]
-                assert "$x $y $z" == '1 3 5'
-            }
-            m()
-        '''
-    }
-
-    // GROOVY-10943
-    void testMultiAssignUnderscorePlaceholder2() {
-        shouldFailWithMessages '''
-            def m() {
-                def (x, _, y, _, z) = [1, 2, 3, 4, 5]
-                assert _
-            }
-
-            m()
-        ''',
-            'The variable [_] is undeclared'
-    }
-
-    // GROOVY-10943
-    void testClosureUnderscorePlaceholder() {
-        shouldFailWithMessages '''
-            def m() {
-                def g = { String a, _, _ -> a + _ }
-            }
-
-            m()
-        ''',
-            'The variable [_] is undeclared'
-    }
-
-    // GROOVY-10943
-    void testLambdaUnderscorePlaceholder() {
-        shouldFailWithMessages '''
-            def m() {
-                def h = (String a, _, _) -> a + _
-            }
-
-            m()
-        ''',
-            'The variable [_] is undeclared'
     }
 
     // GROOVY-8237
@@ -1381,34 +1020,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testNarrowingConversion() {
-        assertScript '''
-            interface A {
-            }
-            interface B extends A {
-            }
-            class C implements B {
-            }
-            def m(B b) {
-                C c = (C) b
-            }
-        '''
-    }
-
-    void testFinalNarrowingConversion() {
-        shouldFailWithMessages '''
-            interface I {
-            }
-            interface B extends I {
-            }
-            final class C implements I {
-            }
-            def m(B b) {
-                C c = (C) b
-            }
-        ''',
-        'Inconvertible types: cannot cast B to C'
-    }
+    //--------------------------------------------------------------------------
 
     // GROOVY-10419
     void testElvisAssignmentAndSetter1() {
@@ -1450,5 +1062,232 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
             new C().foo ?= 'bar'
         ''',
         'Cannot assign value of type java.io.Serializable to variable of type java.lang.Number'
+    }
+
+    void testMultipleAssignment1() {
+        assertScript '''
+            def (x,y) = [1,2]
+            assert x == 1
+            assert y == 2
+        '''
+    }
+
+    void testMultipleAssignmentWithExplicitTypes() {
+        assertScript '''
+            int x
+            int y
+            (x,y) = [1,2]
+            assert x == 1
+            assert y == 2
+        '''
+    }
+
+    void testMultipleAssignmentWithIncompatibleTypes() {
+        shouldFailWithMessages '''
+            List x
+            List y
+            (x,y) = [1,2]
+        ''',
+        'Cannot assign value of type int to variable of type java.util.List'
+    }
+
+    void testMultipleAssignmentWithoutEnoughArgs() {
+        shouldFailWithMessages '''
+            int x
+            int y
+            (x,y) = [1]
+        ''',
+        'Incorrect number of values. Expected:2 Was:1'
+    }
+
+    void testMultipleAssignmentTooManyArgs() {
+        assertScript '''
+            int x
+            int y
+            (x,y) = [1,2,3]
+            assert x == 1
+            assert y == 2
+        '''
+    }
+
+    void testMultipleAssignmentFromVariable() {
+        shouldFailWithMessages '''
+            def list = [1,2,3]
+            def (x,y) = list
+        ''',
+        'Multiple assignments without list or tuple on the right-hand side are unsupported in static type checking mode'
+    }
+
+    // GROOVY-8223, GROOVY-8887, GROOVY-10063
+    void testMultipleAssignmentFromTupleTypes() {
+        assertScript '''
+            def (String string) = Tuple.tuple('answer')
+            assert string == 'answer'
+        '''
+
+        assertScript '''
+            def (String string, Integer number) = Tuple.tuple('answer', 42)
+            assert string == 'answer'
+            assert number == 42
+        '''
+
+        shouldFailWithMessages '''
+            def (String string, Integer number) = Tuple.tuple('answer', '42')
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Integer'
+
+        assertScript '''
+            def (int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l, int m, int n, int o, int p) = Tuple.tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
+            assert a == 1
+            assert b == 2
+            assert c == 3
+            assert d == 4
+            assert e == 5
+            assert f == 6
+            assert g == 7
+            assert h == 8
+            assert i == 9
+            assert j == 10
+            assert k == 11
+            assert l == 12
+            assert m == 13
+            assert n == 14
+            assert o == 15
+            assert p == 16
+        '''
+
+        assertScript '''
+            def (String string, Integer number) = new Tuple2<String, Integer>('answer', 42)
+            assert string == 'answer'
+            assert number == 42
+        '''
+
+        assertScript '''
+            Tuple2<String, Integer> m() {
+                new Tuple2<>('answer', 42)
+            }
+
+            def (String string, Integer number) = m()
+            assert string == 'answer'
+            assert number == 42
+        '''
+
+        assertScript '''
+            Tuple2<String, Integer> m() {
+                new Tuple2<>('answer', 42)
+            }
+
+            def tuple = m()
+            def (String string, Integer number) = tuple
+            assert string == 'answer'
+            assert number == 42
+        '''
+
+        assertScript '''
+            static Tuple2<String, Integer> m() {
+                new Tuple2<>('answer', 42)
+            }
+
+            def (String string, Integer number) = m()
+            assert string == 'answer'
+            assert number == 42
+        '''
+
+        assertScript '''
+            class C {
+                static Tuple2<String, Integer> m() {
+                    new Tuple2<>('answer', 42)
+                }
+            }
+
+            def (String string, Integer number) = C.m()
+            assert string == 'answer'
+            assert number == 42
+        '''
+
+        assertScript '''
+            class C {
+                Tuple2<String, Integer> getM() {
+                    new Tuple2<>('answer', 42)
+                }
+            }
+
+            def (String string, Integer number) = new C().m
+            assert string == 'answer'
+            assert number == 42
+        '''
+    }
+
+    void testMultiAssign() {
+        assertScript '''
+            def m() {
+                def row = ['', '', '']
+                def (left, right) = [row[0], row[1]]
+                left.toUpperCase()
+            }
+        '''
+    }
+
+    // GROOVY-10953
+    void testMultiAssign2() {
+        assertScript '''
+            def m() {
+                def (x, y, z) = 1..4
+                assert "$x $y $z" == '1 2 3'
+                (x, y, z) = -5..-6
+                assert "$x ${y.intValue()} $z" == '-5 -6 null'
+                def (a, _, c) = 'a'..'c'
+                assert "${a.toUpperCase()} ${c.endsWith('c')}" == 'A true'
+            }
+            m()
+        '''
+    }
+
+    // GROOVY-10943
+    void testMultiAssignUnderscorePlaceholder1() {
+        assertScript '''
+            def m() {
+                def (x, _, y, _, z) = [1, 2, 3, 4, 5]
+                assert "$x $y $z" == '1 3 5'
+            }
+            m()
+        '''
+    }
+
+    // GROOVY-10943
+    void testMultiAssignUnderscorePlaceholder2() {
+        shouldFailWithMessages '''
+            def m() {
+                def (x, _, y, _, z) = [1, 2, 3, 4, 5]
+                assert _
+            }
+
+            m()
+        ''',
+        'The variable [_] is undeclared'
+    }
+
+    // GROOVY-10943
+    void testClosureUnderscorePlaceholder() {
+        shouldFailWithMessages '''
+            def m() {
+                def g = { String a, _, _ -> a + _ }
+            }
+
+            m()
+        ''',
+        'The variable [_] is undeclared'
+    }
+
+    // GROOVY-10943
+    void testLambdaUnderscorePlaceholder() {
+        shouldFailWithMessages '''
+            def m() {
+                def h = (String a, _, _) -> a + _
+            }
+
+            m()
+        ''',
+        'The variable [_] is undeclared'
     }
 }
