@@ -70,7 +70,8 @@ public class ReflectionUtils {
 
     private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
-    private static final ClassContextHelper HELPER = new ClassContextHelper();
+    private static final StackWalker STACK_WALKER =
+        StackWalker.getInstance(Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE)); // StackWalker is thread-safe
 
     /**
      * Determines whether the getCallingClass methods will return
@@ -119,16 +120,12 @@ public class ReflectionUtils {
      *         enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(final int matchLevel, final Collection<String> extraIgnoredPackages) {
-        Class[] classContext = HELPER.getClassContext();
-        int depth = 0, level = matchLevel;
         try {
-            Class c;
-            do {
-                do {
-                    c = classContext[depth++];
-                } while (classShouldBeIgnored(c, extraIgnoredPackages));
-            } while (c != null && level-- > 0 && depth < classContext.length);
-            return c;
+            Class result = STACK_WALKER
+                            .walk(s -> s.map(StackWalker.StackFrame::getDeclaringClass)
+                                        .filter(c -> !classShouldBeIgnored(c, extraIgnoredPackages))
+                                        .skip(Math.max(0, matchLevel)).limit(1).findFirst().orElse(null));
+            return result;
         } catch (Throwable ignore) {
             return null;
         }
@@ -267,14 +264,6 @@ public class ReflectionUtils {
                     || (c.getPackage() != null
                         && (IGNORED_PACKAGES.contains(c.getPackage().getName())
                           || extraIgnoredPackages.contains(c.getPackage().getName())))));
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should deprecate this class
-    private static class ClassContextHelper extends SecurityManager {
-        @Override
-        public Class[] getClassContext() {
-            return super.getClassContext();
-        }
     }
 
     private static final MethodHandle IS_SEALED_METHODHANDLE;
