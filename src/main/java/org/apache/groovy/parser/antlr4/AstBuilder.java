@@ -156,6 +156,8 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.*;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureAST;
 import static org.apache.groovy.parser.antlr4.util.PositionConfigureUtils.configureEndPosition;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
@@ -4229,7 +4231,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         AnnotationNode annotationNode = new AnnotationNode(makeClassNode(annotationName));
         List<Tuple2<String, Expression>> annotationElementValues = this.visitElementValues(ctx.elementValues());
 
-        annotationElementValues.forEach(e -> annotationNode.addMember(e.getV1(), e.getV2()));
+        annotationElementValues.forEach(e -> {
+            Expression v2 = e.getV2();
+            if (v2 instanceof MethodPointerExpression) {
+                v2 = closureX(Parameter.EMPTY_ARRAY, block(stmt(callThisX("withMethodClosure", v2))));
+            }
+            annotationNode.addMember(e.getV1(), v2);
+        });
         configureAST(annotationNode.getClassNode(), ctx.annotationName());
         return configureAST(annotationNode, ctx);
     }

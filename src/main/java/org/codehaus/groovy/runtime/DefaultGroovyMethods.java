@@ -15448,6 +15448,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return response.getV1();
     }
 
+    /**
+     * A utility method for calling a method closure on an object.
+     *
+     * @param self the object
+     * @param mc the method closure
+     * @return the result of calling the method closure
+     */
+    public static Object withMethodClosure(Object self, MethodClosure mc) {
+        return mc.call(self);
+    }
+
     //--------------------------------------------------------------------------
     // withCollectedKeys
 

@@ -182,7 +182,7 @@ public class InspectorTest implements Serializable {
             "inspect", "invokeMethod", "is", "isCase", "isNotCase", "iterator", "metaClass", "print", "print",
             "printf", "printf", "println", "println", "println", "putAt", "respondsTo", "respondsTo",
             "setMetaClass", "split", "sprintf", "sprintf", "tap", "toString", "use", "use", "use", "with",
-            "with", "withTraits", "stream", "sleep", "sleep", "macro", "macro", "macro", "macro"
+            "with", "withMethodClosure", "withTraits", "stream", "sleep", "sleep", "macro", "macro", "macro", "macro"
         };
         assertEquals("Incorrect number of methods found examining: " + Arrays.stream(metaMethods)
                 .map(mm -> ((String[])mm)[Inspector.MEMBER_NAME_IDX]).collect(Collectors.toList()), names.length, metaMethods.length);

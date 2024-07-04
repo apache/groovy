@@ -622,4 +622,76 @@ final class TupleConstructorTransformTest {
             assert string == 'Foo(x:3, y:3, z:3)'
         '''
     }
+
+    // GROOVY-11432
+    @Test
+    void testMethodPointerInAnnotation() {
+        assertScript shell, '''
+        @TupleConstructor(post=Person.&validate)
+        class Person {
+            final String first, last
+            void validate() { assert first && last }
+        }
+
+        new Person('John', 'Smith')
+        '''
+
+        assertScript shell, '''
+        @TupleConstructor(post=Person.&validate)
+        @CompileStatic
+        class Person {
+            final String first, last
+            void validate() { assert first && last }
+        }
+
+        new Person('John', 'Smith')
+        '''
+
+        def err = shouldFail shell, '''
+        @TupleConstructor(post=Person.&validate)
+        class Person {
+            final String first, last
+            void validate() { assert first && last }
+        }
+
+        new Person('John', null)
+        '''
+        assert err instanceof AssertionError
+    }
+
+    // GROOVY-11432
+    @Test
+    void testMethodReferenceInAnnotation() {
+        assertScript shell, '''
+        @TupleConstructor(post=Person::validate)
+        class Person {
+            final String first, last
+            void validate() { assert first && last }
+        }
+
+        new Person('John', 'Smith')
+        '''
+
+        assertScript shell, '''
+        @TupleConstructor(post=Person::validate)
+        @CompileStatic
+        class Person {
+            final String first, last
+            void validate() { assert first && last }
+        }
+
+        new Person('John', 'Smith')
+        '''
+
+        def err = shouldFail shell, '''
+        @TupleConstructor(post=Person::validate)
+        class Person {
+            final String first, last
+            void validate() { assert first && last }
+        }
+
+        new Person('', 'Smith')
+        '''
+        assert err instanceof AssertionError
+    }
 }
