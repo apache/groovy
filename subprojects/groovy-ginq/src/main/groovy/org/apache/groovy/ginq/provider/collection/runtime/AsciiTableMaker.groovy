@@ -28,7 +28,6 @@ import groovy.transform.PackageScope
 @CompileStatic
 class AsciiTableMaker {
     private static final String[] EMPTY_STRING_ARRAY = new String[0]
-    private static final String[][] EMPTY_DIM2_STRING_ARRAY = new String[0][0]
     private static final int PADDING = 1 // Padding space for each cell
 
     /**
@@ -44,16 +43,15 @@ class AsciiTableMaker {
             def firstRecord = tableData.get(0)
             if (firstRecord instanceof NamedRecord) {
 
-                List<String[]> list = new ArrayList<>(tableData.size())
+                List<String[]> data = new ArrayList<>(tableData.size())
                 for (e in tableData) {
                     if (e instanceof NamedRecord) {
                         String[] record = ((NamedRecord) e)*.toString()
-                        list.add(record)
+                        data.add(record)
                     }
                 }
 
                 String[] headers = ((NamedRecord) firstRecord).nameList.toArray(EMPTY_STRING_ARRAY)
-                String[][] data = list.toArray(EMPTY_DIM2_STRING_ARRAY)
                 boolean[] alignLeft = new boolean[headers.length]
                 Arrays.fill(alignLeft, true)
 
@@ -64,7 +62,7 @@ class AsciiTableMaker {
         return tableData.toString()
     }
 
-    private static String buildTable(String[] headers, String[][] data, boolean[] alignLeft) throws UnsupportedEncodingException {
+    private static String buildTable(String[] headers, List<String[]> data, boolean[] alignLeft) throws UnsupportedEncodingException {
         int[] columnWidths = calculateColumnWidths(headers, data)
 
         def headerCnt = headers ? headers.length : 0
@@ -87,13 +85,13 @@ class AsciiTableMaker {
         return tableBuilder.toString()
     }
 
-    private static int countElements(String[][] data) {
+    private static int countElements(List<String[]> data) {
         if (!data) return 0
 
-        return data.length * data[0].length
+        return data.size() * data[0].length
     }
 
-    private static int[] calculateColumnWidths(String[] headers, String[][] data) throws UnsupportedEncodingException {
+    private static int[] calculateColumnWidths(String[] headers, List<String[]> data) throws UnsupportedEncodingException {
         int[] columnWidths = new int[headers.length]
 
         for (int i = 0; i < headers.length; i++) {
