@@ -71,16 +71,17 @@ class AsciiTableMaker {
                                             + headerCnt * 3 // 3 lines of separator
 
         StringBuilder tableBuilder = new StringBuilder(allElementCnt * 10)
+        String separator = buildSeparator(columnWidths)
         if (headers) {
-            tableBuilder.append(buildSeparator(columnWidths))
+            tableBuilder.append(separator)
             tableBuilder.append(buildRow(headers, columnWidths, alignLeft))
         }
-        tableBuilder.append(buildSeparator(columnWidths))
+        tableBuilder.append(separator)
 
         for (String[] row : data) {
             tableBuilder.append(buildRow(row, columnWidths, alignLeft))
         }
-        tableBuilder.append(buildSeparator(columnWidths))
+        tableBuilder.append(separator)
 
         return tableBuilder.toString()
     }
