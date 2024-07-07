@@ -28,18 +28,20 @@ class AsciiTableMakerTest {
             from r in [
                 [name: 'Daniel', age: 39, location: 'Shanghai'],
                 [name: '山风小子', age: 40, location: '上海'],
-                [name: 'Candy', age: 36, location: 'Shanghai']
+                [name: 'Candy', age: 36, location: 'Shanghai'],
+                [name: '中文，English, 123, ａｂｃ，ひらがな，カタカナ', age: 1, location: '未知']
             ]
             select  r.name, r.age, r.location
         }
         def tableStr = AsciiTableMaker.makeAsciiTable(result)
         assert tableStr == '\n' +
-            '+----------+-----+----------+\n' +
-            '| name     | age | location |\n' +
-            '+----------+-----+----------+\n' +
-            '| Daniel   | 39  | Shanghai |\n' +
-            '| 山风小子 | 40  | 上海     |\n' +
-            '| Candy    | 36  | Shanghai |\n' +
-            '+----------+-----+----------+\n'
+            '+------------------------------------------------+-----+----------+\n' +
+            '| name                                           | age | location |\n' +
+            '+------------------------------------------------+-----+----------+\n' +
+            '| Daniel                                         | 39  | Shanghai |\n' +
+            '| 山风小子                                       | 40  | 上海     |\n' +
+            '| Candy                                          | 36  | Shanghai |\n' +
+            '| 中文，English, 123, ａｂｃ，ひらがな，カタカナ | 1   | 未知     |\n' +
+            '+------------------------------------------------+-----+----------+\n'
     }
 }

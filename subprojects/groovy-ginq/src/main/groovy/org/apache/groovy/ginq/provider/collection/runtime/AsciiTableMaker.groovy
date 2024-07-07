@@ -28,7 +28,9 @@ import groovy.transform.PackageScope
 @CompileStatic
 class AsciiTableMaker {
     private static final String[] EMPTY_STRING_ARRAY = new String[0]
-    private static final int PADDING = 1 // Padding space for each cell
+    private static final int PADDING = 1
+    private static final String SPACE = " "
+    // Padding space for each cell
 
     /**
      * Makes ASCII table for list whose elements are of type {@link NamedRecord}.
@@ -62,7 +64,7 @@ class AsciiTableMaker {
         return tableData.toString()
     }
 
-    private static String buildTable(String[] headers, List<String[]> data, boolean[] alignLeft) throws UnsupportedEncodingException {
+    private static String buildTable(String[] headers, List<String[]> data, boolean[] alignLeft) {
         int[] columnWidths = calculateColumnWidths(headers, data)
 
         def headerCnt = headers ? headers.length : 0
@@ -92,7 +94,7 @@ class AsciiTableMaker {
         return data.size() * data[0].length
     }
 
-    private static int[] calculateColumnWidths(String[] headers, List<String[]> data) throws UnsupportedEncodingException {
+    private static int[] calculateColumnWidths(String[] headers, List<String[]> data) {
         int[] columnWidths = new int[headers.length]
 
         for (int i = 0; i < headers.length; i++) {
@@ -100,7 +102,7 @@ class AsciiTableMaker {
         }
 
         for (String[] row : data) {
-            for (int i = 0; i < row.length; i++) {
+            for (int i = 0, n = row.length; i < n; i++) {
                 int displayWidth = getDisplayWidth(row[i])
                 if (displayWidth > columnWidths[i]) {
                     columnWidths[i] = displayWidth
@@ -108,7 +110,7 @@ class AsciiTableMaker {
             }
         }
 
-        for (int i = 0; i < columnWidths.length; i++) {
+        for (int i = 0, n = columnWidths.length; i < n; i++) {
             columnWidths[i] += PADDING * 2 // Add padding
         }
 
@@ -145,13 +147,13 @@ class AsciiTableMaker {
         int paddingRight = width - displayWidth - PADDING
 
         if (alignLeft) {
-            padded.append(" " * PADDING) // Left padding
+            padded.append(SPACE * PADDING) // Left padding
             padded.append(str ?: '')
-            padded.append(" " * paddingRight) // Right padding
+            padded.append(SPACE * paddingRight) // Right padding
         } else {
-            padded.append(" " * paddingRight) // Left padding
+            padded.append(SPACE * paddingRight) // Left padding
             padded.append(str ?: '')
-            padded.append(" " * PADDING) // Right padding
+            padded.append(SPACE * PADDING) // Right padding
         }
 
         return padded.toString()
@@ -159,30 +161,32 @@ class AsciiTableMaker {
 
     private static int getDisplayWidth(String str) {
         if (!str) return 0
-
         int width = 0
         for (char c : str.toCharArray()) {
-            if (isFullWidth(c)) {
-                width += 2
-            } else {
-                width += 1
-            }
+            width += isFullWidth(c) ? 2 : 1
         }
         return width
     }
 
     private static boolean isFullWidth(char c) {
+        Character.UnicodeBlock block
+
+        try {
+            block = Character.UnicodeBlock.of(c)
+        } catch (IllegalArgumentException ignored) {
+            return false
+        }
+
         // Unicode block check for full-width characters
-        Character.UnicodeBlock block = Character.UnicodeBlock.of(c)
-        return block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS ||
-                block == Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS ||
-                block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A ||
-                block == Character.UnicodeBlock.GENERAL_PUNCTUATION ||
-                block == Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION ||
-                block == Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS ||
-                block == Character.UnicodeBlock.HIRAGANA ||
-                block == Character.UnicodeBlock.KATAKANA ||
-                block == Character.UnicodeBlock.HANGUL_SYLLABLES
+        return block === Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS ||
+                block === Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS ||
+                block === Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A ||
+                block === Character.UnicodeBlock.GENERAL_PUNCTUATION ||
+                block === Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION ||
+                block === Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS ||
+                block === Character.UnicodeBlock.HIRAGANA ||
+                block === Character.UnicodeBlock.KATAKANA ||
+                block === Character.UnicodeBlock.HANGUL_SYLLABLES
     }
 
     private AsciiTableMaker() {}
