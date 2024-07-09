@@ -678,15 +678,18 @@ public abstract class StaticTypeCheckingSupport {
         if (leftRedirect == VOID_TYPE) return rightRedirect == void_WRAPPER_TYPE;
         if (leftRedirect == void_WRAPPER_TYPE) return rightRedirect == VOID_TYPE;
 
-        if (isLongCategory(getUnwrapper(leftRedirect))) {
-            // byte, char, int, long or short can be assigned any base number
-            if (isNumberType(rightRedirect) /*|| rightRedirect == char_TYPE*/) {
+        if (leftRedirect == char_TYPE || leftRedirect == Character_TYPE) {
+            // GROOVY-10079, GROOVY-10095, GROOVY-10359: assign Character, char or int to char or Character
+            if (rightRedirect == Character_TYPE || rightRedirect == char_TYPE || rightRedirect == int_TYPE) {
                 return true;
             }
-            if (leftRedirect == char_TYPE && rightRedirect == Character_TYPE) return true;
-            if (leftRedirect == Character_TYPE && rightRedirect == char_TYPE) return true;
-            if ((leftRedirect == char_TYPE || leftRedirect == Character_TYPE) && rightRedirect == STRING_TYPE) {
+            if (rightRedirect == STRING_TYPE) {
                 return rightExpression instanceof ConstantExpression && rightExpression.getText().length() == 1;
+            }
+        } else if (isLongCategory(getUnwrapper(leftRedirect))) {
+            // byte, int, long or short can be assigned any base number type
+            if (isNumberType(rightRedirect)) {
+                return true;
             }
         } else if (isFloatingCategory(getUnwrapper(leftRedirect))) {
             // float or double can be assigned any base number type or BigDecimal

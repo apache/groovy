@@ -177,6 +177,18 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-10359
+    void testAssignNumberToChar() {
+        assertScript '''
+            char c = 0
+            assert c == Character.MIN_VALUE
+        '''
+        shouldFailWithMessages '''
+            char c = (Integer) null
+        ''',
+        'Cannot assign value of type java.lang.Integer to variable of type char'
+    }
+
     void testAssignStringToChar() {
         assertScript '''
             char c = 'a'

@@ -4613,7 +4613,7 @@ trying: for (ClassNode[] signature : signatures) {
                     return getWrapper(right);
                 }
 
-                if (isPrimitiveType(initialType) && (rightRedirect.isDerivedFrom(Number_TYPE) || rightRedirect == getWrapper(initialType))) { // GROOVY-6574
+                if (isPrimitiveType(initialType) && (isNumberType(initialType) ? rightRedirect.isDerivedFrom(Number_TYPE) : rightRedirect == getWrapper(initialType))) { // GROOVY-10359, GROOVY-6574
                     return getUnwrapper(right);
                 }
 
