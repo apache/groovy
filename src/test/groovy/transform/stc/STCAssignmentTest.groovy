@@ -107,6 +107,30 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testAssignmentToNumbers() {
+        for (type in ['byte','short','int','long','float','double',
+            'java.lang.Byte','java.lang.Short','java.lang.Integer',
+            'java.lang.Long','java.lang.Float','java.lang.Double']) {
+            boolean primitive = !type.contains('.')
+            shouldFailWithMessages """
+                $type x = 0
+                x = (byte)1
+                x = (char)2 // cannot assign
+                x =(short)3 // possible loss -- GROOVY-11348
+                x = 4
+                x = 5L
+                x = 6f
+                x = 7d
+                x = 8g      // cannot assign
+              //x = 9.0g    // okay for float and double
+                x = (Number)10
+            """,
+            "Cannot assign value of type ${primitive ? 'char' : 'java.lang.Character'} to variable of type $type",
+            "Cannot assign value of type java.math.BigInteger to variable of type $type",
+            "Cannot assign value of type java.lang.Number to variable of type $type"
+        }
+    }
+
     void testAssignmentToBoolean() {
         assertScript '''
             boolean b = new Object()
@@ -219,68 +243,70 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     void testPossibleLossOfPrecision1() {
-        shouldFailWithMessages '''
-            long a = Long.MAX_VALUE
-            int b = a
-        ''',
-        'Possible loss of precision from long to int'
-    }
-
-    void testPossibleLossOfPrecision2() {
-        assertScript '''
-            int b = 0L
-        '''
-    }
-
-    void testPossibleLossOfPrecision3() {
         assertScript '''
             byte b = 127
         '''
     }
 
-    void testPossibleLossOfPrecision4() {
+    void testPossibleLossOfPrecision2() {
         shouldFailWithMessages '''
             byte b = 128 // will not fit in a byte
         ''',
         'Possible loss of precision from int to byte'
     }
 
-    void testPossibleLossOfPrecision5() {
+    void testPossibleLossOfPrecision3() {
         assertScript '''
-            short b = 128
+            short s = 128
         '''
     }
 
-    void testPossibleLossOfPrecision6() {
+    void testPossibleLossOfPrecision4() {
         shouldFailWithMessages '''
-            short b = 32768 // will not fit in a short
+            short s = 32768 // will not fit in a short
         ''',
         'Possible loss of precision from int to short'
     }
 
+    void testPossibleLossOfPrecision5() {
+        assertScript '''
+            int i = 32768L // mark it as a long, but it fits into an int
+        '''
+    }
+
+    void testPossibleLossOfPrecision6() {
+        assertScript '''
+            int i = 32768f // mark it as a float, but it fits into an int
+        '''
+    }
+
     void testPossibleLossOfPrecision7() {
         assertScript '''
-            int b = 32768L // mark it as a long, but it fits into an int
+            int i = 32768d // mark it as a double, but it fits into an int
         '''
     }
 
     void testPossibleLossOfPrecision8() {
-        assertScript '''
-            int b = 32768.0f // mark it as a float, but it fits into an int
-        '''
+        shouldFailWithMessages '''
+            int i = 32768.1d
+        ''',
+        'Possible loss of precision from double to int'
     }
 
     void testPossibleLossOfPrecision9() {
-        assertScript '''
-            int b = 32768.0d // mark it as a double, but it fits into an int
-        '''
+        shouldFailWithMessages '''
+            int i = Long.MAX_VALUE
+        ''',
+        'Possible loss of precision from long to int'
     }
 
     void testPossibleLossOfPrecision10() {
-        shouldFailWithMessages '''
-            int b = 32768.1d
-        ''',
-        'Possible loss of precision from double to int'
+        assertScript '''
+            byte  b = 0L
+            short s = 0L
+            int   i = 0L
+            float f = 0L
+        '''
     }
 
     //--------------------------------------------------------------------------

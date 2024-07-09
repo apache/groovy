@@ -767,74 +767,65 @@ public abstract class StaticTypeCheckingSupport {
         return (node.getCompileUnit() != null);
     }
 
-    @Deprecated(forRemoval = true, since = "3.0.0")
-    static boolean checkPossibleLooseOfPrecision(final ClassNode left, final ClassNode right, final Expression rightExpr) {
-        return checkPossibleLossOfPrecision(left, right, rightExpr);
-    }
-
     static boolean checkPossibleLossOfPrecision(final ClassNode left, final ClassNode right, final Expression rightExpr) {
         if (left == right || left.equals(right)) return false; // identical types
         int leftIndex = NUMBER_TYPES.get(left);
         int rightIndex = NUMBER_TYPES.get(right);
         if (leftIndex >= rightIndex) return false;
-        // here we must check if the right number is short enough to fit in the left type
-        if (rightExpr instanceof ConstantExpression) {
-            Object value = ((ConstantExpression) rightExpr).getValue();
-            if (!(value instanceof Number)) return true;
+
+        // check if the right number will fit in the left type
+        Expression valueExpr = rightExpr;
+        if (valueExpr instanceof CastExpression) // "(short) 1234"
+            valueExpr = ((CastExpression) valueExpr).getExpression();
+        if (valueExpr instanceof ConstantExpression) {
+            Object value = ((ConstantExpression) valueExpr).getValue();
+            if (!(value instanceof Number)) return true; // null or ...
             Number number = (Number) value;
             switch (leftIndex) {
-                case 0: { // byte
-                    byte val = number.byteValue();
-                    if (number instanceof Short) {
-                        return !Short.valueOf(val).equals(number);
-                    }
-                    if (number instanceof Integer) {
-                        return !Integer.valueOf(val).equals(number);
-                    }
-                    if (number instanceof Long) {
-                        return !Long.valueOf(val).equals(number);
-                    }
-                    if (number instanceof Float) {
-                        return !Float.valueOf(val).equals(number);
-                    }
-                    return !Double.valueOf(val).equals(number);
+              case 0: // byte
+                switch (rightIndex) {
+                  case 1:
+                    return Short  .compare(number.byteValue(), number. shortValue()) != 0;
+                  case 2:
+                    return Integer.compare(number.byteValue(), number.   intValue()) != 0;
+                  case 3:
+                    return Long   .compare(number.byteValue(), number.  longValue()) != 0;
+                  case 4:
+                    return Float  .compare(number.byteValue(), number. floatValue()) != 0;
+                  default:
+                    return Double .compare(number.byteValue(), number.doubleValue()) != 0;
                 }
-                case 1: { // short
-                    short val = number.shortValue();
-                    if (number instanceof Integer) {
-                        return !Integer.valueOf(val).equals(number);
-                    }
-                    if (number instanceof Long) {
-                        return !Long.valueOf(val).equals(number);
-                    }
-                    if (number instanceof Float) {
-                        return !Float.valueOf(val).equals(number);
-                    }
-                    return !Double.valueOf(val).equals(number);
+              case 1: // short
+                switch (rightIndex) {
+                  case 2:
+                    return Integer.compare(number.shortValue(), number.   intValue()) != 0;
+                  case 3:
+                    return Long   .compare(number.shortValue(), number.  longValue()) != 0;
+                  case 4:
+                    return Float  .compare(number.shortValue(), number. floatValue()) != 0;
+                  default:
+                    return Double .compare(number.shortValue(), number.doubleValue()) != 0;
                 }
-                case 2: { // integer
-                    int val = number.intValue();
-                    if (number instanceof Long) {
-                        return !Long.valueOf(val).equals(number);
-                    }
-                    if (number instanceof Float) {
-                        return !Float.valueOf(val).equals(number);
-                    }
-                    return !Double.valueOf(val).equals(number);
+              case 2: // int
+                switch (rightIndex) {
+                  case 3:
+                    return Long  .compare(number.intValue(), number.  longValue()) != 0;
+                  case 4:
+                    return Float .compare(number.intValue(), number. floatValue()) != 0;
+                  default:
+                    return Double.compare(number.intValue(), number.doubleValue()) != 0;
                 }
-                case 3: { // long
-                    long val = number.longValue();
-                    if (number instanceof Float) {
-                        return !Float.valueOf(val).equals(number);
-                    }
-                    return !Double.valueOf(val).equals(number);
+              case 3: // long
+                switch (rightIndex) {
+                  case 4:
+                    return Float .compare(number.longValue(), number. floatValue()) != 0;
+                  default:
+                    return Double.compare(number.longValue(), number.doubleValue()) != 0;
                 }
-                case 4: { // float
-                    float val = number.floatValue();
-                    return !Double.valueOf(val).equals(number);
-                }
-                default: // double
-                    return false; // no possible loss here
+              case 4: // float
+                return Double.compare(number.floatValue(), number.doubleValue()) != 0;
+              default: // double
+                return false; // no possible loss here
             }
         }
         return true; // possible loss of precision
