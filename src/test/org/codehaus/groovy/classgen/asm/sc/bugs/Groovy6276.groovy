@@ -21,29 +21,26 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
-final class Groovy6276Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testOuterClassMethodCall() {
         assertScript '''
             class Outer {
                 private int outerField = 1
-
-                private int outerMethod() { 2 }
-                int outerProperty = 3
+                private int outerMethod() {2}
+                        int outerProperty = 3
                 class Inner {
-                    void assertions() {
-                        assert outerField == 1            // #1
-                        assert outerMethod() == 2         // #2
-                        assert outerProperty == 3         // #3
-                        assert getOuterProperty() == 3    // #4
+                    void m() {
+                        assert outerField         == 1 // #1
+                        assert outerMethod()      == 2 // #2
+                        assert outerProperty      == 3 // #3
+                        assert getOuterProperty() == 3 // #4
                     }
                 }
-
                 void test() {
-                    new Inner().assertions()
+                    new Inner().m()
                 }
             }
-
             new Outer().test()
         '''
     }
@@ -51,17 +48,16 @@ final class Groovy6276Bug extends StaticTypeCheckingTestCase implements StaticCo
     void testAccessPrivateMethodFromClosure() {
         assertScript '''
             class Outer {
-                private int foo(int x) {
+                private int f(int x) {
                     2*x
                 }
-
-                int bar() {
-                    (Integer) [1,2,3].collect {
-                        foo(it)
+                int test() {
+                    (Integer) [1,2,3].collect { // closure is inner class
+                        f(it)
                     }.sum()
                 }
             }
-            new Outer().bar()
+            new Outer().test()
         '''
     }
 }

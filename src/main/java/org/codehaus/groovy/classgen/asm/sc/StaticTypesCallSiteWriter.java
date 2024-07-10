@@ -74,16 +74,13 @@ import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isBigDecimalType;
 import static org.codehaus.groovy.ast.ClassHelper.isBigIntegerType;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
-import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperInteger;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
@@ -124,7 +121,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
 
     private static final ClassNode  INVOKERHELPER_TYPE = ClassHelper.make(InvokerHelper.class);
     private static final MethodNode COLLECTION_SIZE_METHOD = COLLECTION_TYPE.getMethod("size", Parameter.EMPTY_ARRAY);
-    private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY);
     private static final MethodNode MAP_GET_METHOD = MAP_TYPE.getMethod("get", new Parameter[]{new Parameter(OBJECT_TYPE, "key")});
     private static final MethodNode GROOVYOBJECT_GETPROPERTY_METHOD = GROOVY_OBJECT_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(STRING_TYPE, "propertyName")});
     private static final MethodNode INVOKERHELPER_GETPROPERTY_METHOD = INVOKERHELPER_TYPE.getMethod("getProperty", new Parameter[]{new Parameter(OBJECT_TYPE, "object"), new Parameter(STRING_TYPE, "propertyName")});
@@ -350,31 +346,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     }
                 }
             }
-        } else if (implicitThis) {
-            ClassNode outerClass = receiverType.getOuterClass();
-            if (outerClass != null && (receiverType.getModifiers() & ACC_STATIC) == 0) {
-                Expression expr;
-                ClassNode thisType = outerClass;
-                if (controller.isInGeneratedFunction()) {
-                    while (isGeneratedFunction(thisType)) {
-                        thisType = thisType.getOuterClass();
-                        // TODO: stop if thisType is static?
-                    }
-
-                    MethodCallExpression call = callThisX("getThisObject");
-                    call.setImplicitThis(true);
-                    call.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
-                    call.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, thisType);
-
-                    expr = castX(thisType, call);
-                } else {
-                    expr = propX(classX(outerClass), "this");
-                }
-                expr.setSourcePosition(receiver);
-                expr.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, thisType);
-                // try again with "(Outer) getThisObject()" or "Outer.this" as receiver
-                return makeGetPrivateFieldWithBridgeMethod(expr, outerClass, fieldName, safe, true);
-            }
         }
         return false;
     }
@@ -434,6 +405,9 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (!isScriptVariable && controller.getClassNode().getOuterClass() == null) { // inner class still needs dynamic property sequence
             addPropertyAccessError(receiver, propertyName, receiverType);
         }
+
+        if (isThisExpression(receiver) && implicitThis) // GROOVY-11412
+            receiver.removeNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
 
         MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
@@ -768,11 +742,10 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                             int i = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
                             VariableSlotLoader rhsValue = new VariableSlotLoader(rhsType, i, operandStack);
 
-                            MethodCallExpression call = callX(objectExpression, methodNode.getName(), args(fieldNode.isStatic() ? nullX() : objectExpression, rhsValue));
-                            call.setImplicitThis(expression.isImplicitThis());
-                            call.setSpreadSafe(expression.isSpreadSafe());
-                            call.setSafe(expression.isSafe());
+                            MethodCallExpression call = callX(classX(receiverType), methodNode.getName(), args(fieldNode.isStatic() ? nullX() : objectExpression, rhsValue));
+                            call.setImplicitThis(false);
                             call.setMethodTarget(methodNode);
+                            // NOTE: safe and spreadSafe cannot be mapped to "FieldOwner.pfaccess$00(receiver, value)"
                             call.visit(controller.getAcg());
 
                             // GROOVY-9892: assuming that the mutator method has a return value, make sure the operand

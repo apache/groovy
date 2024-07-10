@@ -18,14 +18,13 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     void testShouldGoThroughPrivateBridgeMethod1() {
-        ['i', 'i++'].each {
+        for (it in ['i', 'i++']) {
             assertScript """
                 class Foo {
                     private int i = 1
@@ -36,8 +35,9 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
         }
     }
 
+    // GROOVY-7304
     void testShouldGoThroughPrivateBridgeMethod2() {
-        ['i', 'i++'].each { // GROOVY-7304
+        for (it in ['i', 'i++']) {
             assertScript """
                 class Foo {
                     private int i = 1
@@ -51,7 +51,7 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
     }
 
     void testShouldGoThroughPrivateBridgeMethod3() {
-        ['++i', 'i+=1', 'i=i+1'].each {
+        for (it in ['++i', 'i+=1', 'i=i+1']) {
             assertScript """
                 class Foo {
                     private int i = 1
@@ -64,7 +64,7 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
 
     // GROOVY-7304
     void testShouldGoThroughPrivateBridgeMethod4() {
-        ['++i', 'i+=1', 'i=i+1'].each {
+        for (it in ['++i', 'i+=1', 'i=i+1']) {
             assertScript """
                 class Foo {
                     private int i = 1

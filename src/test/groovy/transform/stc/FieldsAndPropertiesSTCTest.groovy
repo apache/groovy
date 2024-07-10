@@ -1472,7 +1472,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10981, GROOVY-10985
+    // GROOVY-10981, GROOVY-10985, GROOVY-11412
     void testOuterPropertyAccess12() {
         for (propertySource in [
                 'def get(String name){if(name=="VALUE")return 2}',
@@ -1484,11 +1484,32 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     static class Inner {
                         $propertySource
                         def test(int i) {
+                            print( Outer.VALUE )
                             return VALUE
                         }
                     }
+                    def test() {
+                        new Inner().test(0)
+                    }
                 }
-                Object value = new Outer.Inner().test(0)
+                Object value = new Outer().test()
+                assert value == 2
+            """
+            assertScript """
+                class Outer {
+                    private static int VALUE = 1
+                    /*non-static*/ class Inner {
+                        $propertySource
+                        def test(int i) {
+                            print( Outer.VALUE )
+                            return VALUE
+                        }
+                    }
+                    def test() {
+                        new Inner().test(0)
+                    }
+                }
+                Object value = new Outer().test()
                 assert value == 2
             """
         }

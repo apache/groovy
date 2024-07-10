@@ -1007,16 +1007,16 @@ final class LambdaTest {
                 private List<String> strList = ['a', 'e', 'f']
                 private Map<String, List<String>> strListHolder = ['strList': strList]
                 private String b = 'b'
-                def p() {
+                def f() {
                     ['abc', 'def', 'ghi'].stream().filter(e -> strList.stream().anyMatch(c -> e.contains(c + b))).toList()
                 }
-                def p2() {
+                def g() {
                     ['abc', 'def', 'ghi'].stream().filter(e -> strListHolder.strList.stream().anyMatch(c -> e.contains(c + b))).toList()
                 }
             }
 
-            assert ['abc'] == new Test1().p()
-            assert ['abc'] == new Test1().p2()
+            assert new Test1().f() == ['abc']
+            assert new Test1().g() == ['abc']
         '''
     }
 
