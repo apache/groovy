@@ -91,24 +91,24 @@ import java.util.function.Consumer;
 import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 
 /**
- * Handy methods when working with the Groovy AST
+ * Handy methods when working with the Groovy AST.
  */
 public class GeneralUtils {
-    public static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
-    public static final Token EQ = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
-    public static final Token NE = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
-    public static final Token NOT_IDENTICAL = Token.newSymbol(Types.COMPARE_NOT_IDENTICAL, -1, -1);
-    public static final Token GE = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
-    public static final Token GT = Token.newSymbol(Types.COMPARE_GREATER_THAN, -1, -1);
-    public static final Token LE = Token.newSymbol(Types.COMPARE_LESS_THAN_EQUAL, -1, -1);
-    public static final Token LT = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
-    public static final Token AND = Token.newSymbol(Types.LOGICAL_AND, -1, -1);
-    public static final Token OR = Token.newSymbol(Types.LOGICAL_OR, -1, -1);
-    public static final Token CMP = Token.newSymbol(Types.COMPARE_TO, -1, -1);
-    public static final Token INSTANCEOF = Token.newSymbol(Types.KEYWORD_INSTANCEOF, -1, -1);
-    public static final Token MINUS = Token.newSymbol(Types.MINUS, -1, -1);
-    public static final Token PLUS = Token.newSymbol(Types.PLUS, -1, -1);
-    private static final Token INDEX = Token.newSymbol("[", -1, -1);
+
+    public  static final Token ASSIGN        = Token.newSymbol(Types.ASSIGN                    , -1, -1);
+    public  static final Token CMP           = Token.newSymbol(Types.COMPARE_TO                , -1, -1);
+    public  static final Token EQ            = Token.newSymbol(Types.COMPARE_EQUAL             , -1, -1);
+    public  static final Token NE            = Token.newSymbol(Types.COMPARE_NOT_EQUAL         , -1, -1);
+    public  static final Token NOT_IDENTICAL = Token.newSymbol(Types.COMPARE_NOT_IDENTICAL     , -1, -1);
+    public  static final Token GE            = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
+    public  static final Token GT            = Token.newSymbol(Types.COMPARE_GREATER_THAN      , -1, -1);
+    public  static final Token LE            = Token.newSymbol(Types.COMPARE_LESS_THAN_EQUAL   , -1, -1);
+    public  static final Token LT            = Token.newSymbol(Types.COMPARE_LESS_THAN         , -1, -1);
+    public  static final Token AND           = Token.newSymbol(Types.LOGICAL_AND               , -1, -1);
+    public  static final Token OR            = Token.newSymbol(Types.LOGICAL_OR                , -1, -1);
+    public  static final Token INSTANCEOF    = Token.newSymbol(Types.KEYWORD_INSTANCEOF        , -1, -1);
+    public  static final Token MINUS         = Token.newSymbol(Types.MINUS                     , -1, -1);
+    public  static final Token PLUS          = Token.newSymbol(Types.PLUS                      , -1, -1);
 
     public static BinaryExpression andX(final Expression lhv, final Expression rhv) {
         return binX(lhv, AND, rhv);
@@ -144,20 +144,32 @@ public class GeneralUtils {
         return CastExpression.asExpression(type, expression);
     }
 
-    public static Statement assignS(final Expression target, final Expression value) {
-        return stmt(assignX(target, value));
-    }
-
     public static Statement assignNullS(final Expression target) {
         return assignS(target, ConstantExpression.EMPTY_EXPRESSION);
+    }
+
+    public static Statement assignS(final Expression target, final Expression value) {
+        return stmt(assignX(target, value));
     }
 
     public static Expression assignX(final Expression target, final Expression value) {
         return binX(target, ASSIGN, value);
     }
 
-    public static Expression attrX(final Expression oe, final Expression prop) {
-        return new AttributeExpression(oe, prop);
+    /**
+     * @since 5.0.0
+     */
+    public static AttributeExpression attrX(final Expression owner, final String attribute) {
+        return new AttributeExpression(owner, constX(attribute));
+    }
+
+    public static AttributeExpression attrX(final Expression owner, final Expression attribute) {
+        return new AttributeExpression(owner, attribute);
+    }
+
+    @Deprecated
+    public static Expression  attrX$$bridge(final Expression owner, final Expression attribute) {
+        return new AttributeExpression(owner, attribute);
     }
 
     public static BinaryExpression binX(final Expression left, final Token token, final Expression right) {
@@ -677,7 +689,7 @@ public class GeneralUtils {
     }
 
     public static Expression indexX(final Expression target, final Expression value) {
-        return binX(target, INDEX, value);
+        return binX(target, Token.newSymbol(Types.LEFT_SQUARE_BRACKET, -1, -1), value);
     }
 
     public static BooleanExpression isInstanceOfX(final Expression expr, final ClassNode type) {
