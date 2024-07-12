@@ -28,21 +28,19 @@ were renamed due to split package remediation ([GROOVY-10542](https://issues.apa
 
 The latest released version in the Groovy 2.5.x stream is recommended where JDK7 is required.
 
-| Version  | Supported          | Comment                                  |
-|----------| ------------------ |------------------------------------------|
-| <= 2.3.x | :x:                |                                          |
-| 2.4.x    | :grey_question:    | Only severe/critical vulnerabilities (*) |
-| 2.5.x    | :white_check_mark: | Reduced releases on this branch          |
-| 3.0.x    | :white_check_mark: |                                          |
-| 4.0.x    | :white_check_mark: |                                          |
-| 5.x      | :grey_question:    | Pre-release status (**)                  |
+| Version  | Supported          | Comment                              |
+|----------| ------------------ |--------------------------------------|
+| <= 2.4.x | :x:                |                                      |
+| 2.5.x    | :white_check_mark: | Reduced releases on this branch (\*) |
+| 3.0.x    | :white_check_mark: |                                      |
+| 4.0.x    | :white_check_mark: |                                      |
+| 5.x      | :grey_question:    | Pre-release status (**)              |
 
-(\*) The 2.4.x stream is no longer the focus of the core team
-but critical security fixes or community contributions may lead
-to additional releases.
+(\*) The 2.5.x stream is no longer the focus of the core team,
+but we are currently still doing critical security fixes if needed.
 
 (**) While in early stages of pre-release, security fixes are
-done on a best effort basis.
+done on a best-effort basis.
 
 ## List of Security Vulnerability Fixes
 
