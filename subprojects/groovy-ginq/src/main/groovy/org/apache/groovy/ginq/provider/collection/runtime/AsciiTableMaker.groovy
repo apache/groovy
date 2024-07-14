@@ -169,6 +169,9 @@ class AsciiTableMaker {
     }
 
     private static boolean isFullWidth(char c) {
+        // space and visible ASCII characters
+        if (32 <= c && c <= 126) return false
+
         Character.UnicodeBlock block
 
         try {
