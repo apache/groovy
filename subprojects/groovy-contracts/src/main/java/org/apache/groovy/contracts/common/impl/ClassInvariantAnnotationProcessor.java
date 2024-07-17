@@ -23,8 +23,14 @@ import org.apache.groovy.contracts.common.spi.ProcessingContextInformation;
 import org.apache.groovy.contracts.domain.ClassInvariant;
 import org.apache.groovy.contracts.domain.Contract;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 
 /**
  * Internal {@link AnnotationProcessor} implementation for class-invariants.
@@ -36,6 +42,10 @@ public class ClassInvariantAnnotationProcessor extends AnnotationProcessor {
         if (!processingContextInformation.isClassInvariantsEnabled()) return;
         if (booleanExpression == null) return;
 
+        Expression currentInvariant = contract.classInvariant().booleanExpression().getExpression();
+        if (currentInvariant instanceof MethodCallExpression || currentInvariant instanceof BinaryExpression) {
+            booleanExpression = boolX(andX(booleanExpression, currentInvariant));
+        }
         contract.setClassInvariant(new ClassInvariant(blockStatement, booleanExpression));
     }
 }

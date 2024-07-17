@@ -16,26 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.contracts.domain;
+package groovy.contracts;
 
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.apache.groovy.lang.annotation.Incubating;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * <p>A class-invariant assertion.</p>
+ * Represents multiple invariants
  */
-public class ClassInvariant extends Assertion<ClassInvariant> {
-
-    public static final ClassInvariant DEFAULT = new ClassInvariant(block(), boolX(constX(true)));
-
-    public ClassInvariant() {
-    }
-
-    public ClassInvariant(BlockStatement blockStatement, BooleanExpression booleanExpression) {
-        super(blockStatement, booleanExpression);
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+@Incubating
+public @interface Invariants {
+    Invariant[] value();
 }

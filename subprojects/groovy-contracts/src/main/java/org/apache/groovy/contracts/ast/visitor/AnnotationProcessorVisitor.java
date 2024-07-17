@@ -41,9 +41,13 @@ import org.codehaus.groovy.control.io.ReaderSource;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.groovy.contracts.ast.visitor.AnnotationClosureVisitor.META_DATA_ORIGINAL_TRY_CATCH_BLOCK;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
@@ -55,7 +59,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  */
 public class AnnotationProcessorVisitor extends BaseVisitor {
 
-    private ProcessingContextInformation pci;
+    private static final String CONTRACT_ELEMENT_CLASSNAME = ContractElement.class.getName();
+    private final ProcessingContextInformation pci;
 
     public AnnotationProcessorVisitor(final SourceUnit sourceUnit, final ReaderSource source, final ProcessingContextInformation pci) {
         super(sourceUnit, source);
@@ -73,11 +78,10 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
 
         for (MethodNode methodNode : methodNodes) {
             if (CandidateChecks.isClassInvariantCandidate(type, methodNode) || CandidateChecks.isPreOrPostconditionCandidate(type, methodNode)) {
-                handleMethodAnnotations(methodNode, AnnotationUtils.hasMetaAnnotations(methodNode, ContractElement.class.getName()));
+                handleMethodAnnotations(methodNode, AnnotationUtils.hasMetaAnnotations(methodNode, CONTRACT_ELEMENT_CLASSNAME));
             }
         }
 
-        // visit all interfaces of this class
         visitInterfaces(type, type.getInterfaces());
         visitAbstractBaseClassesForInterfaceMethodNodes(type, type.getSuperClass());
     }
@@ -87,7 +91,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         for (ClassNode interfaceNode : superClass.getInterfaces()) {
             List<MethodNode> interfaceMethods = new ArrayList<>(interfaceNode.getMethods());
             for (MethodNode interfaceMethod : interfaceMethods) {
-                List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(interfaceMethod, ContractElement.class.getName());
+                List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(interfaceMethod, CONTRACT_ELEMENT_CLASSNAME);
                 if (annotationNodes == null || annotationNodes.isEmpty()) continue;
 
                 MethodNode implementingMethod = superClass.getMethod(interfaceMethod.getName(), interfaceMethod.getParameters());
@@ -104,13 +108,15 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
 
     private void visitInterfaces(final ClassNode classNode, final ClassNode[] interfaces) {
         for (ClassNode interfaceNode : interfaces) {
+            List<AnnotationNode> interfaceNodes = AnnotationUtils.hasMetaAnnotations(interfaceNode, CONTRACT_ELEMENT_CLASSNAME);
+            processAnnotationNodes(classNode, interfaceNodes);
             List<MethodNode> interfaceMethods = new ArrayList<>(interfaceNode.getMethods());
             // @ContractElement annotations are by now only supported on method interfaces
             for (MethodNode interfaceMethod : interfaceMethods) {
                 MethodNode implementingMethod = classNode.getMethod(interfaceMethod.getName(), interfaceMethod.getParameters());
                 if (implementingMethod == null) continue;
 
-                List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(interfaceMethod, ContractElement.class.getName());
+                List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(interfaceMethod, CONTRACT_ELEMENT_CLASSNAME);
                 handleInterfaceMethodNode(classNode, implementingMethod, annotationNodes);
             }
 
@@ -119,13 +125,17 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
     }
 
     private void handleClassNode(final ClassNode classNode) {
-        List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(classNode, ContractElement.class.getName());
+        List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(classNode, CONTRACT_ELEMENT_CLASSNAME);
+        processAnnotationNodes(classNode, annotationNodes);
+    }
+
+    private void processAnnotationNodes(ClassNode classNode, List<AnnotationNode> annotationNodes) {
         for (AnnotationNode annotationNode : annotationNodes) {
-            AnnotationProcessor annotationProcessor = createAnnotationProcessor(annotationNode);
-            if (annotationProcessor != null) {
+            AnnotationProcessor processor = createAnnotationProcessor(annotationNode);
+            if (processor != null) {
                 Expression valueExpression = getReplacedCondition(annotationNode);
                 BlockStatement blockStatement = valueExpression.getNodeMetaData(META_DATA_ORIGINAL_TRY_CATCH_BLOCK);
-                annotationProcessor.process(pci, pci.contract(), classNode, blockStatement, asConditionExecution(annotationNode));
+                processor.process(pci, pci.contract(), classNode, blockStatement, asConditionExecution(annotationNode));
             }
         }
     }
@@ -136,15 +146,30 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
 
     private void handleMethodAnnotations(MethodNode methodNode, List<AnnotationNode> annotationNodes) {
         if (methodNode == null) return;
+        Map<String, List<BooleanExpression>> collectedPreconditions = new HashMap<>();
+        AnnotationProcessor annotationProcessor;
         for (AnnotationNode annotationNode : annotationNodes) {
-            AnnotationProcessor annotationProcessor = createAnnotationProcessor(annotationNode);
+            annotationProcessor = createAnnotationProcessor(annotationNode);
             if (annotationProcessor != null && getReplacedCondition(annotationNode) != null) {
-                handleMethodAnnotation(methodNode, annotationNode, annotationProcessor);
+                handleMethodAnnotation(methodNode, annotationNode, annotationProcessor, collectedPreconditions);
             }
+        }
+        // Manually and the expressions if multiple annotations are used
+        for (String processorName : collectedPreconditions.keySet()) {
+            AnnotationProcessor processor = getAnnotationProcessor(processorName);
+            BooleanExpression collectedExpression = null;
+            for (BooleanExpression boolExp : collectedPreconditions.get(processorName)) {
+                if (collectedExpression == null) {
+                    collectedExpression = boolExp;
+                } else {
+                    collectedExpression = boolX(andX(collectedExpression, boolExp));
+                }
+            }
+            processor.process(pci, pci.contract(), methodNode.getDeclaringClass(), methodNode, null, collectedExpression);
         }
     }
 
-    private void handleMethodAnnotation(MethodNode methodNode, AnnotationNode annotationNode, AnnotationProcessor annotationProcessor) {
+    private void handleMethodAnnotation(MethodNode methodNode, AnnotationNode annotationNode, AnnotationProcessor annotationProcessor, Map<String, List<BooleanExpression>> collected) {
         boolean isPostcondition = AnnotationUtils.hasAnnotationOfType(annotationNode.getClassNode(), Postcondition.class.getName());
 
         ArgumentListExpression argumentList = new ArgumentListExpression();
@@ -162,7 +187,13 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         BooleanExpression booleanExpression = asConditionExecution(annotationNode);
         ((MethodCallExpression) booleanExpression.getExpression()).setArguments(argumentList);
         BlockStatement blockStatement = valueExpression.getNodeMetaData(META_DATA_ORIGINAL_TRY_CATCH_BLOCK);
-        annotationProcessor.process(pci, pci.contract(), methodNode.getDeclaringClass(), methodNode, blockStatement, booleanExpression);
+        if (isPostcondition) {
+            annotationProcessor.process(pci, pci.contract(), methodNode.getDeclaringClass(), methodNode, blockStatement, booleanExpression);
+        } else {
+            String name = annotationProcessor.getClass().getName();
+            collected.putIfAbsent(name, new ArrayList<>());
+            collected.get(name).add(booleanExpression);
+        }
 
         // if the implementation method has no annotation, we need to set a dummy marker in order to find parent pre/postconditions
         if (!AnnotationUtils.hasAnnotationOfType(methodNode, annotationNode.getClassNode().getName())) {
@@ -186,13 +217,20 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         }
 
         if (annotationProcessor != null) {
-            try {
-                var apt = Class.forName(annotationProcessor.getType().getName());
-                return (AnnotationProcessor) apt.getDeclaredConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException ignore) {
-            }
+            String name = annotationProcessor.getType().getName();
+            AnnotationProcessor apt = getAnnotationProcessor(name);
+            if (apt != null) return apt;
         }
 
         throw new GroovyBugError("Annotation processing class could not be instantiated! This indicates a bug in groovy-contracts, please file an issue!");
+    }
+
+    public static AnnotationProcessor getAnnotationProcessor(String name) {
+        try {
+            var apt = Class.forName(name);
+            return (AnnotationProcessor) apt.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException ignore) {
+        }
+        return null;
     }
 }

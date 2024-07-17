@@ -39,6 +39,7 @@ import java.util.Map;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -112,7 +113,7 @@ public class ContractClosureWriter {
         call.setSynthetic(true);
 
         // let's make the constructor
-        BlockStatement block = new BlockStatement();
+        BlockStatement block = block();
         // this block does not get a source position, because we don't
         // want this synthetic constructor to show up in corbertura reports
         VariableExpression outer = varX("_outerInstance");

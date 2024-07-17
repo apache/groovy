@@ -35,11 +35,11 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.annotation.Annotation;
 import java.util.List;
 
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -50,6 +50,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
  * </p>
  */
 public class ClassInvariantGenerator extends BaseGenerator {
+
+    private static final ClassNode CLASS_INVARIANT_TYPE = ClassHelper.makeWithoutCaching(ClassInvariant.class);
 
     public ClassInvariantGenerator(final ReaderSource source) {
         super(source);
@@ -65,9 +67,9 @@ public class ClassInvariantGenerator extends BaseGenerator {
      */
     public void generateInvariantAssertionStatement(final ClassNode type, final org.apache.groovy.contracts.domain.ClassInvariant classInvariant) {
 
-        BooleanExpression classInvariantExpression = addCallsToSuperAnnotationClosure(type, ClassInvariant.class, classInvariant.booleanExpression());
+        BooleanExpression classInvariantExpression = addCallsToSuperAnnotationClosure(type, classInvariant.booleanExpression());
 
-        final BlockStatement blockStatement = new BlockStatement();
+        final BlockStatement blockStatement = block();
 
         // add a local protected method with the invariant closure - this is needed for invariant checks in inheritance lines
         MethodNode methodNode = type.addMethod(getInvariantMethodName(type), Opcodes.ACC_PROTECTED | Opcodes.ACC_SYNTHETIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, blockStatement);
@@ -76,8 +78,8 @@ public class ClassInvariantGenerator extends BaseGenerator {
         blockStatement.addStatements(wrapAssertionBooleanExpression(type, methodNode, classInvariantExpression, "invariant").getStatements());
     }
 
-    private BooleanExpression addCallsToSuperAnnotationClosure(final ClassNode type, final Class<? extends Annotation> annotationType, BooleanExpression booleanExpression) {
-        List<AnnotationNode> contractElementAnnotations = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), ClassHelper.makeWithoutCaching(annotationType));
+    private BooleanExpression addCallsToSuperAnnotationClosure(final ClassNode type, BooleanExpression booleanExpression) {
+        List<AnnotationNode> contractElementAnnotations = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), CLASS_INVARIANT_TYPE);
         for (AnnotationNode contractElementAnnotation : contractElementAnnotations) {
             booleanExpression = boolX(andX(booleanExpression, BaseVisitor.asConditionExecution(contractElementAnnotation)));
         }
@@ -113,9 +115,7 @@ public class ClassInvariantGenerator extends BaseGenerator {
             final BlockStatement blockStatement = (BlockStatement) statement;
             blockStatement.addStatement(invariantMethodCall);
         } else {
-            final BlockStatement assertionBlock = new BlockStatement();
-            assertionBlock.addStatement(statement);
-            assertionBlock.addStatement(invariantMethodCall);
+            final BlockStatement assertionBlock = block(statement, invariantMethodCall);
             method.setCode(assertionBlock);
         }
     }

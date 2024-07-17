@@ -58,7 +58,7 @@ public abstract class BaseVisitor extends ClassCodeVisitorSupport {
         this.sourceUnit = sourceUnit;
     }
 
-    public    static BooleanExpression asConditionExecution(final AnnotationNode annotation) {
+    public static BooleanExpression asConditionExecution(final AnnotationNode annotation) {
         var conditionClass = annotation.getMember("value").getType();
         var createInstance = ctorX(conditionClass, args(VariableExpression.THIS_EXPRESSION, VariableExpression.THIS_EXPRESSION));
         final MethodCallExpression doCall = callX(createInstance, "doCall");

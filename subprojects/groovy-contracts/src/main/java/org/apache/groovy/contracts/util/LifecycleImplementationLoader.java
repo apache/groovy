@@ -214,6 +214,6 @@ public final class LifecycleImplementationLoader<S> implements Iterable<S> {
      * loader.
      */
     public static <S> LifecycleImplementationLoader<S> load(Class<S> service, ClassLoader loader) {
-        return new LifecycleImplementationLoader<S>(service, loader);
+        return new LifecycleImplementationLoader<>(service, loader);
     }
 }

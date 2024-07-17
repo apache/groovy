@@ -24,6 +24,7 @@ import org.apache.groovy.contracts.common.impl.ClassInvariantAnnotationProcessor
 import org.apache.groovy.lang.annotation.Incubating;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -53,6 +54,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Incubating
 @ClassInvariant
+@Repeatable(Invariants.class)
 @AnnotationProcessorImplementation(ClassInvariantAnnotationProcessor.class)
 public @interface Invariant {
     Class value();

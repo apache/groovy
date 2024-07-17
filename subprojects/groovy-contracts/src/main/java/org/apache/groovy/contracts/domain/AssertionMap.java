@@ -30,7 +30,7 @@ public class AssertionMap<T extends Assertion<T>> implements Iterable<Map.Entry<
     private final Map<MethodNode, T> internalMap;
 
     public AssertionMap() {
-        this.internalMap = new HashMap<MethodNode, T>();
+        this.internalMap = new HashMap<>();
     }
 
     public void and(final MethodNode methodNode, final T assertion) {

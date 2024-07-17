@@ -19,12 +19,13 @@
 package org.apache.groovy.contracts.domain;
 
 import org.apache.groovy.contracts.util.Validate;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
+
+import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.orX;
 
 /**
  * <p>Base class for all assertion types.</p>
@@ -37,7 +38,7 @@ public abstract class Assertion<T extends Assertion> {
     private BooleanExpression booleanExpression;
 
     public Assertion() {
-        this.booleanExpression = new BooleanExpression(ConstantExpression.TRUE);
+        this.booleanExpression = boolX(ConstantExpression.TRUE);
     }
 
     public Assertion(final BlockStatement blockStatement, final BooleanExpression booleanExpression) {
@@ -66,33 +67,15 @@ public abstract class Assertion<T extends Assertion> {
 
     public void and(T other) {
         Validate.notNull(other);
-
-        BooleanExpression newBooleanExpression =
-                new BooleanExpression(
-                        new BinaryExpression(
-                                booleanExpression(),
-                                Token.newSymbol(Types.LOGICAL_AND, -1, -1),
-                                other.booleanExpression()
-                        )
-                );
+        BooleanExpression newBooleanExpression = boolX(andX(booleanExpression(), other.booleanExpression()));
         newBooleanExpression.setSourcePosition(booleanExpression());
-
         renew(newBooleanExpression);
     }
 
     public void or(T other) {
         Validate.notNull(other);
-
-        BooleanExpression newBooleanExpression =
-                new BooleanExpression(
-                        new BinaryExpression(
-                                booleanExpression(),
-                                Token.newSymbol(Types.LOGICAL_OR, -1, -1),
-                                other.booleanExpression()
-                        )
-                );
+        BooleanExpression newBooleanExpression = boolX(orX(booleanExpression(), other.booleanExpression()));
         newBooleanExpression.setSourcePosition(booleanExpression());
-
         renew(newBooleanExpression);
     }
 }

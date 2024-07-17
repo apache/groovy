@@ -22,14 +22,14 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.builder.AstBuilder
-import org.codehaus.groovy.ast.expr.BooleanExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.syntax.Types
 import org.junit.Before
 import org.junit.Test
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block
+import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
@@ -43,7 +43,6 @@ class ContractTests {
     public void setUp() {
         def source = '''
         class Tester {
-
            void some_method()  {}
         }
 '''
@@ -60,7 +59,7 @@ class ContractTests {
     void create_simple_contract() {
         Contract contract = new Contract(classNode)
 
-        Precondition precondition = new Precondition(new BlockStatement(), new BooleanExpression(new ConstantExpression(true)))
+        Precondition precondition = new Precondition(block(), boolX(constX(true)))
         contract.preconditions().or(classNode.getMethod("some_method", [] as Parameter[]), precondition)
 
         assertEquals(1, contract.preconditions().size())
@@ -71,8 +70,8 @@ class ContractTests {
 
         Contract contract = new Contract(classNode)
 
-        Precondition precondition1 = new Precondition(new BlockStatement(), new BooleanExpression(new ConstantExpression(true)))
-        Precondition precondition2 = new Precondition(new BlockStatement(), new BooleanExpression(new ConstantExpression(true)))
+        Precondition precondition1 = new Precondition(block(), boolX(constX(true)))
+        Precondition precondition2 = new Precondition(block(), boolX(constX(true)))
 
         contract.preconditions().or(methodNode, precondition1)
         contract.preconditions().or(methodNode, precondition2)
@@ -86,8 +85,8 @@ class ContractTests {
 
         Contract contract = new Contract(classNode)
 
-        Postcondition postcondition = new Postcondition(new BlockStatement(), new BooleanExpression(new ConstantExpression(true)), false)
-        Postcondition postcondition1 = new Postcondition(new BlockStatement(), new BooleanExpression(new ConstantExpression(true)), false)
+        Postcondition postcondition = new Postcondition(block(), boolX(constX(true)), false)
+        Postcondition postcondition1 = new Postcondition(block(), boolX(constX(true)), false)
 
         contract.postconditions().and(methodNode, postcondition)
         contract.postconditions().and(methodNode, postcondition1)
@@ -101,8 +100,8 @@ class ContractTests {
 
         Contract contract = new Contract(classNode)
 
-        Precondition precondition1 = new Precondition(new BlockStatement(), new BooleanExpression(new ConstantExpression(true)))
-        Precondition precondition2 = new Precondition(new BlockStatement(), new BooleanExpression(new ConstantExpression(true)))
+        Precondition precondition1 = new Precondition(block(), boolX(constX(true)))
+        Precondition precondition2 = new Precondition(block(), boolX(constX(true)))
 
         contract.preconditions().join(methodNode, precondition1)
         contract.preconditions().join(methodNode, precondition2)

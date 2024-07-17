@@ -34,6 +34,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.io.ReaderSource;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 
 /**
@@ -58,7 +59,7 @@ public class PreconditionGenerator extends BaseGenerator {
         BlockStatement blockStatement;
 
         final BlockStatement originalBlockStatement = precondition.originalBlockStatement();
-        // if use execution tracker flag is found in the meta-data the annotation closure visitor discovered
+        // if useExecutionTracker flag is found in the meta-data the annotation closure visitor discovered
         // method calls which might be subject to cycling boolean expressions -> no inline mode possible
         final boolean useExecutionTracker = originalBlockStatement == null || Boolean.TRUE.equals(originalBlockStatement.getNodeMetaData(AnnotationClosureVisitor.META_DATA_USE_EXECUTION_TRACKER));
 
@@ -79,12 +80,10 @@ public class PreconditionGenerator extends BaseGenerator {
      * @param methodNode the {@link org.codehaus.groovy.ast.MethodNode} with a {@link org.apache.groovy.contracts.annotations.meta.Precondition} annotation
      */
     public void generateDefaultPreconditionStatement(final ClassNode type, final MethodNode methodNode) {
+        boolean noPreconditionInHierarchy = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), methodNode, ClassHelper.makeWithoutCaching(Precondition.class)).isEmpty();
+        if (noPreconditionInHierarchy) return;
 
-        // if another precondition is available we'll evaluate to false
-        boolean isAnotherPreconditionAvailable = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), methodNode, ClassHelper.makeWithoutCaching(Precondition.class)).size() > 0;
-        if (!isAnotherPreconditionAvailable) return;
-
-        // if there is another preconditio up the inheritance path, we need a default precondition with FALSE
+        // if there is another precondition up the inheritance path, we need a default precondition with FALSE
         // e.g. C1 <no precondition> : C2 <item != null> == false || item != null
         BooleanExpression preconditionBooleanExpression = boolX(ConstantExpression.FALSE);
         preconditionBooleanExpression = addCallsToSuperMethodNodeAnnotationClosure(type, methodNode, Precondition.class, preconditionBooleanExpression, false);
@@ -98,7 +97,7 @@ public class PreconditionGenerator extends BaseGenerator {
     }
 
     private void addPrecondition(MethodNode method, BlockStatement blockStatement) {
-        final BlockStatement modifiedMethodCode = new BlockStatement();
+        final BlockStatement modifiedMethodCode = block();
         modifiedMethodCode.addStatements(blockStatement.getStatements());
 
         if (method.getCode() instanceof BlockStatement) {

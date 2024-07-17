@@ -107,11 +107,11 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
 
     @Override
     public void visitClass(ClassNode classNode) {
-        if (classNode == null || !(CandidateChecks.isInterfaceContractsCandidate(classNode) || CandidateChecks.isContractsCandidate(classNode))) return;
+        if (classNode == null || !(CandidateChecks.isContractsCandidate(classNode) || CandidateChecks.isInterfaceContractsCandidate(classNode))) return;
 
         this.classNode = classNode;
 
-        if (classNode.getNodeMetaData(PROCESSED) == null && CandidateChecks.isContractsCandidate(classNode)) {
+        if (classNode.getNodeMetaData(PROCESSED) == null) {
             List<AnnotationNode> annotationNodes = AnnotationUtils.hasMetaAnnotations(classNode, ContractElement.class.getName());
             for (AnnotationNode annotationNode : annotationNodes) {
                 ClosureExpression closureExpression = getOriginalCondition(annotationNode);

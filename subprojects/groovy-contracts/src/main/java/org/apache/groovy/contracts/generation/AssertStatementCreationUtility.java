@@ -218,11 +218,11 @@ public final class AssertStatementCreationUtility {
                 if (statement == returnStatement) {
                     block.getStatements().remove(statement);
 
-                    final VariableExpression $_gc_result = localVarX("$_gc_result", ClassHelper.OBJECT_TYPE);
-                    block.addStatement(declS($_gc_result, returnStatement.getExpression()));
+                    final VariableExpression gcResult = localVarX("$_gc_result", ClassHelper.OBJECT_TYPE);
+                    block.addStatement(declS(gcResult, returnStatement.getExpression()));
                     block.addStatement(assertionCallStatement);
 
-                    final Statement gcResultReturn = returnS($_gc_result);
+                    final Statement gcResultReturn = returnS(gcResult);
                     gcResultReturn.setSourcePosition(returnStatement);
                     block.addStatement(gcResultReturn);
                     return; // we found the return statement under target, let's cancel tree traversal
