@@ -26,8 +26,9 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * <p>Helper methods for reading/getting {@link org.codehaus.groovy.ast.AnnotationNode} instances.</p>
@@ -61,9 +62,9 @@ public class AnnotationUtils {
      * @return the next {@link org.codehaus.groovy.ast.AnnotationNode} in the inheritance line, or <tt>null</tt>
      */
     public static List<AnnotationNode> getAnnotationNodeInHierarchyWithMetaAnnotation(ClassNode type, ClassNode anno) {
-        List<AnnotationNode> result = new ArrayList<AnnotationNode>();
+        List<AnnotationNode> result = new ArrayList<>();
         for (AnnotationNode annotation : type.getAnnotations()) {
-            if (annotation.getClassNode().getAnnotations(anno).size() > 0) {
+            if (!annotation.getClassNode().getAnnotations(anno).isEmpty()) {
                 result.add(annotation);
             }
         }
@@ -85,18 +86,18 @@ public class AnnotationUtils {
      * @return a list of {@link AnnotationNode} all annotated with <tt>metaAnnotationClassNode</tt>
      */
     public static List<AnnotationNode> getAnnotationNodeInHierarchyWithMetaAnnotation(ClassNode type, MethodNode originMethodNode, ClassNode metaAnnotationClassNode) {
-        List<AnnotationNode> result = new ArrayList<AnnotationNode>();
+        List<AnnotationNode> result = new ArrayList<>();
 
         while (type != null) {
             MethodNode methodNode = type.getMethod(originMethodNode.getName(), originMethodNode.getParameters());
             if (methodNode != null) {
                 for (AnnotationNode annotation : methodNode.getAnnotations()) {
-                    if (annotation.getClassNode().getAnnotations(metaAnnotationClassNode).size() > 0) {
+                    if (!annotation.getClassNode().getAnnotations(metaAnnotationClassNode).isEmpty()) {
                         result.add(annotation);
                     }
                 }
 
-                if (result.size() > 0) return result;
+                if (!result.isEmpty()) return result;
             }
 
             type = type.getSuperClass();
@@ -115,7 +116,7 @@ public class AnnotationUtils {
      */
     public static List<AnnotationNode> hasMetaAnnotations(AnnotatedNode annotatedNode, String metaAnnotationClassName) {
         List<AnnotationNode> result = new ArrayList<>();
-        Set<ClassNode> seen = new java.util.HashSet<>();
+        Map<ClassNode, Boolean> seen = new HashMap<>();
         ClassNode type = ClassHelper.makeWithoutCaching(metaAnnotationClassName);
 
         for (AnnotationNode annotationNode : annotatedNode.getAnnotations()) {
@@ -126,17 +127,23 @@ public class AnnotationUtils {
         return result;
     }
 
-    private static boolean hasMetaAnnotation(ClassNode annotationType, ClassNode metaAnnotationType, Set<ClassNode> cycleCheck) {
-        if (!CandidateChecks.isRuntimeClass(annotationType) && cycleCheck.add(annotationType)) {
+    private static boolean hasMetaAnnotation(ClassNode annotationType, ClassNode metaAnnotationType, Map<ClassNode, Boolean> cache) {
+        if (CandidateChecks.isRuntimeClass(annotationType)) return false;
+        if (!cache.containsKey(annotationType)) {
+            boolean result = false;
             if (!annotationType.getAnnotations(metaAnnotationType).isEmpty()) {
-                return true;
-            }
-            for (AnnotationNode annotationNode : annotationType.getAnnotations()) {
-                if (hasMetaAnnotation(annotationNode.getClassNode(), metaAnnotationType, cycleCheck)) {
-                    return true;
+                result = true;
+            } else {
+                cache.put(annotationType, false); // preliminary value to avoid cycles
+                for (AnnotationNode annotationNode : annotationType.getAnnotations()) {
+                    if (hasMetaAnnotation(annotationNode.getClassNode(), metaAnnotationType, cache)) {
+                        result = true;
+                        break;
+                    }
                 }
             }
+            cache.put(annotationType, result);
         }
-        return false;
+        return cache.get(annotationType);
     }
 }

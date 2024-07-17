@@ -23,12 +23,9 @@ import org.apache.groovy.contracts.common.spi.ProcessingContextInformation;
 import org.apache.groovy.contracts.domain.Contract;
 import org.apache.groovy.contracts.domain.Postcondition;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-
-import java.util.List;
 
 /**
  * Internal {@link AnnotationProcessor} implementation for post-conditions.
@@ -40,8 +37,7 @@ public class EnsuresAnnotationProcessor extends AnnotationProcessor {
         if (!processingContextInformation.isPostconditionsEnabled()) return;
         if (booleanExpression == null) return;
 
-        final List<ConstructorNode> declaredConstructors = classNode.getDeclaredConstructors();
-
-        contract.postconditions().and(methodNode, new Postcondition(blockStatement, booleanExpression, declaredConstructors.contains(methodNode)));
+        boolean isConstructor = classNode.getDeclaredConstructors().contains(methodNode);
+        contract.postconditions().and(methodNode, new Postcondition(blockStatement, booleanExpression, isConstructor));
     }
 }

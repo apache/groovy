@@ -37,31 +37,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Evaluates {@link org.codehaus.groovy.ast.expr.ClosureExpression} instances in as actual annotation parameters and
+ * Evaluates {@link org.codehaus.groovy.ast.expr.ClosureExpression} instances in annotation parameters and
  * generates special contract closure classes from them.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class ClosureExpressionEvaluationASTTransformation extends BaseASTTransformation {
-
-    private void generateAnnotationClosureClasses(SourceUnit unit, ReaderSource source, List<ClassNode> classNodes) {
-        final AnnotationClosureVisitor annotationClosureVisitor = new AnnotationClosureVisitor(unit, source);
-
-        for (final ClassNode classNode : classNodes) {
-            annotationClosureVisitor.visitClass(classNode);
-
-            if (!CandidateChecks.isContractsCandidate(classNode)) continue;
-
-            final ContractElementVisitor contractElementVisitor = new ContractElementVisitor(unit, source);
-            contractElementVisitor.visitClass(classNode);
-
-            if (!contractElementVisitor.isFoundContractElement()) continue;
-
-            annotationClosureVisitor.visitClass(classNode);
-            markClassNodeAsContracted(classNode);
-
-            new ConfigurationSetup().init(classNode);
-        }
-    }
 
     /**
      * {@link org.codehaus.groovy.transform.ASTTransformation#visit(org.codehaus.groovy.ast.ASTNode[], org.codehaus.groovy.control.SourceUnit)}
@@ -71,9 +51,30 @@ public class ClosureExpressionEvaluationASTTransformation extends BaseASTTransfo
         final ModuleNode moduleNode = unit.getAST();
 
         ReaderSource source = getReaderSource(unit);
-        final List<ClassNode> classNodes = new ArrayList<ClassNode>(moduleNode.getClasses());
+        final List<ClassNode> classNodes = new ArrayList<>(moduleNode.getClasses());
 
         generateAnnotationClosureClasses(unit, source, classNodes);
+    }
+
+    private void generateAnnotationClosureClasses(SourceUnit unit, ReaderSource source, List<ClassNode> classNodes) {
+        final AnnotationClosureVisitor annotationClosureVisitor = new AnnotationClosureVisitor(unit, source);
+
+        for (final ClassNode classNode : classNodes) {
+            annotationClosureVisitor.visitClass(classNode);
+
+            if (!CandidateChecks.isContractsCandidate(classNode) && !CandidateChecks.isInterfaceContractsCandidate(classNode))
+                continue;
+
+            final ContractElementVisitor contractElementVisitor = new ContractElementVisitor(unit, source);
+            contractElementVisitor.visitClass(classNode);
+            if (!contractElementVisitor.isFoundContractElement()) continue;
+
+            annotationClosureVisitor.visitClass(classNode);
+            markClassNodeAsContracted(classNode);
+            if (classNode.isInterface()) continue;
+
+            new ConfigurationSetup().init(classNode);
+        }
     }
 
     private void markClassNodeAsContracted(final ClassNode classNode) {

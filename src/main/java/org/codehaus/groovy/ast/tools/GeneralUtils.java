@@ -770,6 +770,10 @@ public class GeneralUtils {
         return new MapEntryExpression(constX(key), valueExpr);
     }
 
+    public static MapExpression mapX() {
+        return new MapExpression();
+    }
+
     public static MapExpression mapX(final List<MapEntryExpression> expressions) {
         return new MapExpression(expressions);
     }

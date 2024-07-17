@@ -96,15 +96,15 @@ public abstract class BaseGenerator {
 
     protected BlockStatement wrapAssertionBooleanExpression(ClassNode type, MethodNode methodNode, BooleanExpression classInvariantExpression, String assertionType) {
         ClassNode violationTrackerClassNode = ClassHelper.makeWithoutCaching(ViolationTracker.class);
-        VariableExpression $_gc_result = varX("$_gc_result", ClassHelper.boolean_TYPE);
-        $_gc_result.setAccessedVariable($_gc_result);
+        VariableExpression gcResult = varX("$_gc_result", ClassHelper.boolean_TYPE);
+        gcResult.setAccessedVariable(gcResult);
 
         BlockStatement ifBlockStatement = block(
-                declS($_gc_result, ConstantExpression.FALSE),
+                declS(gcResult, ConstantExpression.FALSE),
                 stmt(callX(classX(violationTrackerClassNode), "init")),
-                assignS($_gc_result, classInvariantExpression),
+                assignS(gcResult, classInvariantExpression),
                 ifS(
-                        boolX(notX(callX($_gc_result, "booleanValue"))),
+                        boolX(notX(callX(gcResult, "booleanValue"))),
                         ifS(
                                 boolX(callX(classX(violationTrackerClassNode), "violationsOccurred")),
                                 tryCatchS(
@@ -115,9 +115,9 @@ public abstract class BaseGenerator {
         );
 
         TryCatchStatement lockTryCatchStatement = tryCatchS(
-                block(ifS(
+                ifS(
                         boolX(callX(classX(ClassHelper.make(ContractExecutionTracker.class)), "track", args(constX(type.getName()), constX(methodNode.getTypeDescriptor()), constX(assertionType), methodNode.isStatic() ? ConstantExpression.TRUE : ConstantExpression.FALSE))),
-                        ifBlockStatement)),
+                        ifBlockStatement),
                 block(new VariableScope(), stmt(callX(
                         classX(ClassHelper.make(ContractExecutionTracker.class)),
                         "clear",
@@ -133,6 +133,7 @@ public abstract class BaseGenerator {
         if (contractElementAnnotations.isEmpty()) {
             methodNode.putNodeMetaData(META_DATA_USE_INLINE_MODE, Boolean.TRUE);
         } else {
+            BooleanExpression collectedPre = null;
             for (AnnotationNode contractElementAnnotation : contractElementAnnotations) {
                 ArgumentListExpression argumentList = new ArgumentListExpression();
                 for (Parameter parameter : methodNode.getParameters()) {
@@ -151,8 +152,15 @@ public abstract class BaseGenerator {
                 if (isPostcondition) {
                     booleanExpression = boolX(andX(booleanExpression, predicate));
                 } else {
-                    booleanExpression = boolX(orX(booleanExpression, predicate));
+                    if (collectedPre == null) {
+                        collectedPre = predicate;
+                    } else {
+                        collectedPre = boolX(andX(collectedPre, predicate));
+                    }
                 }
+            }
+            if (collectedPre != null) {
+                booleanExpression = boolX(orX(booleanExpression, collectedPre));
             }
         }
         return booleanExpression;

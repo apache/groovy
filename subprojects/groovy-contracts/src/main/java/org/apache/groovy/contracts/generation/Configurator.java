@@ -45,7 +45,7 @@ public final class Configurator {
 
     private static void initAssertionConfiguration() {
 
-        assertionConfiguration = new HashMap<String, Boolean>();
+        assertionConfiguration = new HashMap<>();
         // per default assertion are enabled (Groovy like)
         assertionConfiguration.put(null, Boolean.TRUE);
 
@@ -85,7 +85,7 @@ public final class Configurator {
     }
 
     private static boolean internalMethod(String className) {
-        if (className == null || className.length() == 0) return false;
+        if (className == null || className.isEmpty()) return false;
 
         if (assertionConfiguration.containsKey(className)) return assertionConfiguration.get(className);
         if (className.lastIndexOf('.') < 0) return assertionConfiguration.get(null);

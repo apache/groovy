@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.contracts.tests.pre
 
+import org.apache.groovy.contracts.ClassInvariantViolation
 import org.apache.groovy.contracts.PreconditionViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
 import org.junit.Test
@@ -431,6 +432,52 @@ class Account
                      """
 
         create_instance_of(source, ['test', 'test'])
+    }
+
+    @Test
+    void requires_on_constructor_with_params_instance_vars_same_name_and_this_expression_multiple_annotations() {
+
+        def source = """
+            import groovy.contracts.*
+
+            @Invariant({ a == b })
+            @Invariant({ a != 'foo' })
+            class A {
+                private final String a
+                private final String b
+
+                @Requires({ a != null })
+                @Requires({ b != null })
+                @Requires({ this.a == null })
+                @Requires({ this.b == null })
+                @Ensures({ this.a == a })
+                @Ensures({ this.b == b })
+                A(String a, String b) {
+                    this.a = a
+                    this.b = b
+                }
+            }
+        """
+
+        create_instance_of(source, ['test', 'test'])
+
+        shouldFail PreconditionViolation, {
+            create_instance_of(source, [null, null])
+        }
+        shouldFail PreconditionViolation, {
+            create_instance_of(source, ['a', null])
+        }
+        shouldFail PreconditionViolation, {
+            create_instance_of(source, [null, 'b'])
+        }
+
+        shouldFail ClassInvariantViolation, {
+            create_instance_of(source, ['foo', 'foo'])
+        }
+        shouldFail ClassInvariantViolation, {
+            create_instance_of(source, ['a', 'b'])
+        }
+
     }
 
     @Test

@@ -33,8 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.codehaus.groovy.ast.tools.GeneralUtils.AND;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.andX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
 
 /**
@@ -43,7 +42,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.boolX;
  * @see ClosureExpression
  * @see BooleanExpression
  */
-public class ExpressionUtils {
+public final class ExpressionUtils {
     private ExpressionUtils() { }
 
     /**
@@ -115,7 +114,7 @@ public class ExpressionUtils {
             if (result == null) {
                 result = booleanExpression;
             } else {
-                result = boolX(binX(result, AND, booleanExpression));
+                result = boolX(andX(result, booleanExpression));
             }
         }
 

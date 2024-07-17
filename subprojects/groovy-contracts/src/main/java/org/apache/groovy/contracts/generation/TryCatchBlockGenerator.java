@@ -88,8 +88,7 @@ public class TryCatchBlockGenerator {
         final VariableExpression variableExpression = localVarX($_gc_closure_result, ClassHelper.Boolean_TYPE);
 
         // if the assert statement is successful the return variable will be true else false
-        final BlockStatement overallBlock = new BlockStatement();
-        overallBlock.addStatement(declS(variableExpression, ConstantExpression.FALSE));
+        final BlockStatement overallBlock = block(declS(variableExpression, ConstantExpression.FALSE));
 
         final BlockStatement assertBlockStatement = block(
                 assertStatement,

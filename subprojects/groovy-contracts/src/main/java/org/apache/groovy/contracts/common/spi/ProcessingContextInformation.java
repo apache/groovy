@@ -36,16 +36,16 @@ import java.util.Map;
  */
 public class ProcessingContextInformation {
 
-    private Contract contract;
-    private SourceUnit sourceUnit;
-    private ReaderSource source;
+    private final Contract contract;
+    private final SourceUnit sourceUnit;
+    private final ReaderSource source;
 
     private boolean constructorAssertionsEnabled = true;
     private boolean preconditionsEnabled = true;
     private boolean postconditionsEnabled = true;
     private boolean classInvariantsEnabled = true;
 
-    private Map<String, Object> extra = new HashMap<String, Object>();
+    private final Map<String, Object> extra = new HashMap<>();
 
     public ProcessingContextInformation(ClassNode classNode, SourceUnit sourceUnit, ReaderSource source) {
         Validate.notNull(classNode);

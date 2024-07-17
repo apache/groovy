@@ -24,6 +24,7 @@ import org.apache.groovy.contracts.common.impl.EnsuresAnnotationProcessor;
 import org.apache.groovy.lang.annotation.Incubating;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -80,6 +81,7 @@ import java.lang.annotation.Target;
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
 @Incubating
 @Postcondition
+@Repeatable(EnsuresConditions.class)
 @AnnotationProcessorImplementation(EnsuresAnnotationProcessor.class)
 public @interface Ensures {
     Class value();

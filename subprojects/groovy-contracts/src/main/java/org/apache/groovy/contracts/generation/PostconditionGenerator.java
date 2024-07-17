@@ -53,6 +53,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
  * </p>
  */
 public class PostconditionGenerator extends BaseGenerator {
+    private static final String METHOD_PROCESSED = "org.apache.groovy.contracts.POSTCONDITION_PROCESSED";
 
     public PostconditionGenerator(final ReaderSource source) {
         super(source);
@@ -82,7 +83,7 @@ public class PostconditionGenerator extends BaseGenerator {
 
         BlockStatement blockStatement;
         final BlockStatement originalBlockStatement = postcondition.originalBlockStatement();
-        // if use execution tracker flag is found in the meta-data the annotation closure visitor discovered
+        // if useExecutionTracker flag is found in the meta-data the annotation closure visitor discovered
         // method calls which might be subject to cycling boolean expressions -> no inline mode possible
         final boolean useExecutionTracker = originalBlockStatement == null || Boolean.TRUE.equals(originalBlockStatement.getNodeMetaData(AnnotationClosureVisitor.META_DATA_USE_EXECUTION_TRACKER));
 
@@ -103,14 +104,12 @@ public class PostconditionGenerator extends BaseGenerator {
      * @param method the {@link org.codehaus.groovy.ast.MethodNode} to create the default postcondition for
      */
     public void generateDefaultPostconditionStatement(final ClassNode type, final MethodNode method) {
-
-        // if another precondition is available we'll evaluate to false
-        boolean isAnotherPostconditionAvailable = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), method, ClassHelper.makeWithoutCaching(Postcondition.class)).size() > 0;
-        if (!isAnotherPostconditionAvailable) return;
+        boolean noPostconditionInHierarchy = AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(type.getSuperClass(), method, ClassHelper.makeWithoutCaching(Postcondition.class)).isEmpty();
+        if (noPostconditionInHierarchy) return;
 
         // if another post-condition is available we need to add a default expression of TRUE
         // since post-conditions are usually connected with a logical AND
-        final BooleanExpression postconditionBooleanExpression = addCallsToSuperMethodNodeAnnotationClosure(method.getDeclaringClass(), method, Postcondition.class, new BooleanExpression(ConstantExpression.TRUE), true);
+        final BooleanExpression postconditionBooleanExpression = addCallsToSuperMethodNodeAnnotationClosure(method.getDeclaringClass(), method, Postcondition.class, boolX(ConstantExpression.TRUE), true);
         if (postconditionBooleanExpression.getExpression() == ConstantExpression.TRUE) return;
 
         final BlockStatement blockStatement = wrapAssertionBooleanExpression(type, method, postconditionBooleanExpression, "postcondition");
@@ -118,14 +117,15 @@ public class PostconditionGenerator extends BaseGenerator {
     }
 
     private void addPostcondition(MethodNode method, BlockStatement postconditionBlockStatement) {
+        if (Boolean.TRUE.equals(method.getNodeMetaData(METHOD_PROCESSED))) return;
         final BlockStatement block = (BlockStatement) method.getCode();
 
-        // if return type is not void, than a "result" variable is provided in the postcondition expression
         final List<Statement> statements = block.getStatements();
-        if (statements.size() > 0) {
+        if (!statements.isEmpty()) {
             Expression contractsEnabled = localVarX(BaseVisitor.GCONTRACTS_ENABLED_VAR, ClassHelper.boolean_TYPE);
 
             if (!isPrimitiveVoid(method.getReturnType())) {
+                // if return type is not void, then a "result" variable is provided in the postcondition expression
                 List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
 
                 for (ReturnStatement returnStatement : returnStatements) {
@@ -143,6 +143,7 @@ public class PostconditionGenerator extends BaseGenerator {
                 setOldVariablesIfEnabled(block, contractsEnabled);
                 block.addStatements(postconditionBlockStatement.getStatements());
             }
+            method.putNodeMetaData(METHOD_PROCESSED, true);
         }
     }
 

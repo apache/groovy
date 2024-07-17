@@ -20,6 +20,7 @@ package org.apache.groovy.contracts.generation;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Keeps track of contract executions to avoid cyclic contract checks.
@@ -71,19 +72,19 @@ public class ContractExecutionTracker {
     }
 
 
-    static class ContractExecutionThreadLocal extends ThreadLocal<HashSet<ContractExecution>> {
+    static class ContractExecutionThreadLocal extends ThreadLocal<Set<ContractExecution>> {
 
         @Override
-        protected HashSet<ContractExecution> initialValue() {
-            return new HashSet<ContractExecution>();
+        protected Set<ContractExecution> initialValue() {
+            return new HashSet<>();
         }
     }
 
-    private static ThreadLocal<HashSet<ContractExecution>> executions = new ContractExecutionThreadLocal();
+    private static final ThreadLocal<Set<ContractExecution>> executions = new ContractExecutionThreadLocal();
 
     public static boolean track(String className, String methodIdentifier, String assertionType, boolean isStatic) {
         final ContractExecution ce = new ContractExecution(className, methodIdentifier, assertionType, isStatic);
-        final HashSet<ContractExecution> contractExecutions = executions.get();
+        final Set<ContractExecution> contractExecutions = executions.get();
 
         if (!contractExecutions.contains(ce)) {
             contractExecutions.add(ce);
@@ -94,7 +95,7 @@ public class ContractExecutionTracker {
     }
 
     public static void clear(String className, String methodIdentifier, String assertionType, boolean isStatic) {
-        final HashSet<ContractExecution> contractExecutions = executions.get();
+        final Set<ContractExecution> contractExecutions = executions.get();
 
         contractExecutions.remove(new ContractExecution(className, methodIdentifier, assertionType, isStatic));
     }

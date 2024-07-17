@@ -18,15 +18,11 @@
  */
 package org.apache.groovy.contracts.common.impl.lc;
 
-import org.apache.groovy.contracts.annotations.meta.Postcondition;
 import org.apache.groovy.contracts.common.base.BaseLifecycle;
 import org.apache.groovy.contracts.common.spi.ProcessingContextInformation;
 import org.apache.groovy.contracts.generation.CandidateChecks;
 import org.apache.groovy.contracts.generation.PostconditionGenerator;
-import org.apache.groovy.contracts.util.AnnotationUtils;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 
 /**
@@ -36,6 +32,7 @@ public class PostconditionLifecycle extends BaseLifecycle {
 
     @Override
     public void beforeProcessingClassNode(ProcessingContextInformation processingContextInformation, ClassNode classNode) {
+        if (classNode.isInterface()) return;
         final PostconditionGenerator postconditionGenerator = new PostconditionGenerator(processingContextInformation.readerSource());
         postconditionGenerator.addOldVariablesMethod(classNode);
     }
@@ -55,11 +52,6 @@ public class PostconditionLifecycle extends BaseLifecycle {
         if (!CandidateChecks.isPostconditionCandidate(classNode, methodNode)) return;
 
         final PostconditionGenerator postconditionGenerator = new PostconditionGenerator(processingContextInformation.readerSource());
-
-        if (!(methodNode instanceof ConstructorNode) && AnnotationUtils.getAnnotationNodeInHierarchyWithMetaAnnotation(classNode, methodNode, ClassHelper.makeWithoutCaching(Postcondition.class)).size() > 0) {
-            postconditionGenerator.generateDefaultPostconditionStatement(classNode, methodNode);
-        } else {
-            postconditionGenerator.generateDefaultPostconditionStatement(classNode, methodNode);
-        }
+        postconditionGenerator.generateDefaultPostconditionStatement(classNode, methodNode);
     }
 }

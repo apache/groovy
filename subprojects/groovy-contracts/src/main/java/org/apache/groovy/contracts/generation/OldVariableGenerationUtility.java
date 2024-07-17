@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -34,12 +33,15 @@ import org.objectweb.asm.Opcodes;
 import java.util.Map;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapEntryX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.mapX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 
 /**
@@ -59,9 +61,9 @@ public class OldVariableGenerationUtility {
     public static void addOldVariableMethodNode(final ClassNode classNode) {
         if (classNode.getDeclaredMethod(OLD_VARIABLES_METHOD, Parameter.EMPTY_ARRAY) != null) return;
 
-        final BlockStatement methodBlockStatement = new BlockStatement();
+        final BlockStatement methodBlockStatement = block();
 
-        final MapExpression oldVariablesMap = new MapExpression();
+        final MapExpression oldVariablesMap = mapX();
 
         // create variable assignments for old variables
         for (final FieldNode fieldNode : classNode.getFields()) {
@@ -87,7 +89,7 @@ public class OldVariableGenerationUtility {
                     Statement oldVariableAssignment = declS(oldVariable, cloneField);
 
                     methodBlockStatement.addStatement(oldVariableAssignment);
-                    oldVariablesMap.addMapEntryExpression(new MapEntryExpression(constX(oldVariable.getName().substring("$old$".length())), oldVariable));
+                    oldVariablesMap.addMapEntryExpression(mapEntryX(constX(oldVariable.getName().substring("$old$".length())), oldVariable));
 
                 } else if (ClassHelper.isPrimitiveType(fieldType)
                         || ClassHelper.isNumberType(fieldType)
@@ -99,7 +101,7 @@ public class OldVariableGenerationUtility {
                     Statement oldVariableAssignment = declS(oldVariable, fieldX(fieldNode));
 
                     methodBlockStatement.addStatement(oldVariableAssignment);
-                    oldVariablesMap.addMapEntryExpression(new MapEntryExpression(constX(oldVariable.getName().substring("$old$".length())), oldVariable));
+                    oldVariablesMap.addMapEntryExpression(mapEntryX(constX(oldVariable.getName().substring("$old$".length())), oldVariable));
                 }
             }
         }
