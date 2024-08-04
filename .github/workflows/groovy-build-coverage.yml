@@ -36,7 +36,7 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
       - name: Test with Gradle
         run: ./gradlew -Pcoverage=true jacocoAllReport
         timeout-minutes: 60
