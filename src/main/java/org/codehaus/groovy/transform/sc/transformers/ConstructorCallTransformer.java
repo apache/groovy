@@ -153,14 +153,17 @@ public class ConstructorCallTransformer {
 
             // process property initializers
             for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
-                Expression keyExpression = staticCompilationTransformer.transform(entryExpression.getKeyExpression());
-                Expression valExpression = staticCompilationTransformer.transform(entryExpression.getValueExpression());
-                Expression setExpression = assignX(
-                        propX(
-                                bytecodeX(ctorType, v -> v.visitVarInsn(ALOAD, tmpObj)),
-                                keyExpression
-                        ),
-                        valExpression
+                Expression keyExpression = entryExpression.getKeyExpression();
+                Expression valExpression = entryExpression.getValueExpression();
+                Expression varExpression = propX(
+                        bytecodeX(ctorType, v -> v.visitVarInsn(ALOAD, tmpObj)),
+                        keyExpression
+                );
+                varExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
+                        keyExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
+
+                Expression setExpression = staticCompilationTransformer.transform(
+                        assignX(varExpression, valExpression) // tmp.key = value
                 );
                 setExpression.setSourcePosition(entryExpression);
                 setExpression.visit(acg);

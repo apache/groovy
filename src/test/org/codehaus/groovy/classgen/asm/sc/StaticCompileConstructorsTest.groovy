@@ -61,7 +61,7 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
         '''
     }
 
-    void testPrivateConstructorFromNestedClass() {
+    void testPrivateConstructorFromStaticInnerClass() {
         assertScript '''
             class Foo {
                 String s
@@ -77,7 +77,7 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
         '''
     }
 
-    void testPrivateConstructorFromAIC() {
+    void testPrivateConstructorFromAnonymousInnerClass() {
         assertScript '''
             class Foo {
                 String s
@@ -94,5 +94,16 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
             }
             assert Foo.makeFoo('pls').s == 'pls'
         '''
+    }
+
+    // GROOVY-11119, GROOVY-11451
+    @Override
+    void testMapStyleConstructorWithOverloadedSetterName() {
+        super.testMapStyleConstructorWithOverloadedSetterName()
+
+        String  bytecode = astTrees.values()[1][1]
+        assert  bytecode.contains('INVOKEVIRTUAL C.setP (Ljava/lang/String;)V')
+        assert  bytecode.contains('INVOKEVIRTUAL C.setP (Ljava/util/regex/Pattern;)V')
+        assert !bytecode.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setGroovyObjectProperty')
     }
 }

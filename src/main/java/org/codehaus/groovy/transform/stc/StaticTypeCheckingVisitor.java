@@ -1461,6 +1461,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     typeCheckingContext.popEnclosingBinaryExpression();
                     addStaticTypeError("No such property: " + propName + " for class: " + prettyPrintTypeName(receiverType), receiver);
                 } else {
+                    SetterInfo setterInfo = removeSetterInfo(keyExpression);
+                    if (setterInfo != null) { // GROOVY-11451: select setter
+                        ensureValidSetter(entryExpression, keyExpression, valueExpression, setterInfo);
+                    }
                     ClassNode valueType = getType(valueExpression);
                     BinaryExpression kv = typeCheckingContext.popEnclosingBinaryExpression();
                     if (propertyTypes.stream().noneMatch(targetType -> checkCompatibleAssignmentTypes(targetType, getResultType(targetType, ASSIGN, valueType, kv), valueExpression))) {
