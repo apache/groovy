@@ -38,6 +38,7 @@ def c() {
     assert true === true
     assert false === false
     assert 0 === 0
+    assert 100000 === 100000
     assert 0 !== null
     assert null !== 0
 
@@ -75,6 +76,7 @@ def c_cs() {
     assert true === true
     assert false === false
     assert 0 === 0
+    assert 100000 === 100000
     assert 0 !== null
     assert null !== 0
 

@@ -348,14 +348,24 @@ public class BinaryExpressionHelper {
         TypeChooser typeChooser = controller.getTypeChooser();
 
         Expression lhs = expression.getLeftExpression();
-        lhs.visit(acg);
         ClassNode leftType = typeChooser.resolveType(lhs, controller.getClassNode());
-        if (ClassHelper.isPrimitiveType(leftType)) operandStack.box();
 
         Expression rhs = expression.getRightExpression();
-        rhs.visit(acg);
         ClassNode rightType = typeChooser.resolveType(rhs, controller.getClassNode());
-        if (ClassHelper.isPrimitiveType(rightType)) operandStack.box();
+
+        boolean leftPrimitive = ClassHelper.isPrimitiveType(leftType);
+        boolean rightPrimitive = ClassHelper.isPrimitiveType(rightType);
+        if (leftPrimitive && rightPrimitive) {
+            BinaryExpressionMultiTypeDispatcher helper = new BinaryExpressionMultiTypeDispatcher(controller);
+            boolean done = helper.doPrimitiveCompare(leftType, rightType, expression);
+            if (done) return;
+        }
+
+        lhs.visit(acg);
+        if (leftPrimitive) operandStack.box();
+
+        rhs.visit(acg);
+        if (rightPrimitive) operandStack.box();
 
         Label trueCase = operandStack.jump(identical ? IF_ACMPEQ : IF_ACMPNE);
         ConstantExpression.PRIM_FALSE.visit(acg);
