@@ -4797,9 +4797,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <E, T, U extends T, V extends T> T inject(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
         T value = initialValue;
         Object[] params = new Object[2];
-        for (int i = 0; i < self.length; i += 1) {
+        for (E e : self) {
             params[0] = value;
-            params[1] = self[i];
+            params[1] = e;
             value = closure.call(params);
         }
         return value;

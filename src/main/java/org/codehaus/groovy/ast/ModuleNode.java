@@ -504,8 +504,7 @@ public class ModuleNode extends ASTNode {
         boolean foundInstance = false;
         boolean foundStatic = false;
         MethodNode result = null;
-        for (Iterator<MethodNode> iter = methods.iterator(); iter.hasNext(); ) {
-            MethodNode node = iter.next();
+        for (MethodNode node : methods) {
             if (node.getName().equals("main") && !node.isPrivate()) {
                 int numParams = node.getParameters().length;
                 if (numParams < 2) {

@@ -456,8 +456,8 @@ public class ClassNode extends AnnotatedNode {
             this.interfaces = interfaces;
             // GROOVY-10763: update generics indicator
             if (interfaces != null && !usesGenerics && isPrimaryNode) {
-                for (int i = 0, n = interfaces.length; i < n; i += 1) {
-                    usesGenerics |= interfaces[i].isUsingGenerics();
+                for (ClassNode anInterface : interfaces) {
+                    usesGenerics |= anInterface.isUsingGenerics();
                 }
             }
         }
