@@ -52,7 +52,6 @@ public class AnnotatedNodeUtils {
     }
 
     public static boolean isGenerated(final AnnotatedNode node) {
-        List<?> annots = node.getAnnotations(GENERATED_TYPE);
-        return (annots != null && !annots.isEmpty());
+        return hasAnnotation(node, GENERATED_TYPE);
     }
 }
