@@ -2622,13 +2622,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
 
-                void test() {
-                    def c = C.of(42)
-                    def d = c.map($toSet)
-                    def e = d.map(x -> x.first().intValue())
-                }
-
-                test()
+                def c = C.of(42)
+                def d = c.map($toSet)
+                def e = d.map(x -> x.first().intValue())
             """
         }
     }
