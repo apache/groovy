@@ -141,10 +141,10 @@ public class TypeTransformers {
     }
 
     /**
-     * creates a method handle able to transform the given Closure into a SAM type
-     * if the given parameter is a SAM type
+     * Creates a method handle that transforms the given Closure into the given
+     * parameter type, if it is a SAM type.
      */
-    private static MethodHandle createSAMTransform(Object arg, Class<?> parameter) {
+    private static MethodHandle createSAMTransform(Object closure, Class<?> parameter) {
         Method method = CachedSAMClass.getSAMMethod(parameter);
         if (method == null) return null;
         // TODO: have to think about how to optimize this!
@@ -164,17 +164,14 @@ public class TypeTransformers {
             }
             // the following code will basically do this:
             // return Proxy.newProxyInstance(
-            //        arg.getClass().getClassLoader(),
+            //        parameter.getClassLoader(),
             //        new Class[]{parameter},
-            //        new ConvertedClosure((Closure) arg));
+            //        new ConvertedClosure((Closure)closure, method.getName()));
             // TO_REFLECTIVE_PROXY will do that for us, though
             // input is the closure, the method name, the class loader and the
-            // class[]. All of that but the closure must be provided here
+            // class array. All of that but the closure must be provided here.
             MethodHandle ret = TO_REFLECTIVE_PROXY;
-            ret = MethodHandles.insertArguments(ret, 1,
-                    method.getName(),
-                    arg.getClass().getClassLoader(),
-                    new Class[]{parameter});
+            ret = MethodHandles.insertArguments(ret, 1, method.getName(), parameter.getClassLoader(), new Class[]{parameter});
             return ret;
         } else {
             // the following code will basically do this:
@@ -207,8 +204,8 @@ public class TypeTransformers {
     }
 
     /**
-     * returns a transformer later applied as filter to transform one
-     * number into another
+     * Returns a transformer later applied as filter to transform one
+     * number into another.
      */
     private static MethodHandle selectNumberTransformer(Class<?> param, Object arg) {
         param = TypeHelper.getWrapperClass(param);

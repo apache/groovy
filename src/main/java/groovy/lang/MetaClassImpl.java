@@ -2676,11 +2676,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * <p>Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
-     * The MetaClass will attempt to establish the method to invoke based on the name and arguments provided.
-     *
-     * <p>The useSuper and fromInsideClass help the Groovy runtime perform optimisations on the call to go directly
-     * to the super class if necessary
+     * Writes a property on the given receiver for the specified arguments. The
+     * sender is the class that is requesting the property from the object. The
+     * MetaClass will attempt to establish the method to invoke based on the name
+     * and arguments provided.
+     * <p>
+     * The useSuper and fromInsideClass help the runtime perform optimisations
+     * on the call to go directly to the super class if necessary
      *
      * @param sender          The java.lang.Class instance that is mutating the property
      * @param object          The Object which the property is being set on
@@ -2751,10 +2753,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             method = listeners.get(name);
             ambiguousListener = (method == AMBIGUOUS_LISTENER_METHOD);
             if (method != null && !ambiguousListener && newValue instanceof Closure) {
+                // bean.name = { -> } is short for bean.addSomeListener({ -> });
+                // where "name" derives from the SomeListener interface's method
+                var listener = method.getParameterTypes()[0].getTheClass();
                 Object proxy = Proxy.newProxyInstance(
-                        theClass.getClassLoader(),
-                        new Class[]{method.getParameterTypes()[0].getTheClass()},
-                        new ConvertedClosure((Closure) newValue, name));
+                        listener.getClassLoader(),
+                        new Class[]{listener},
+                        new ConvertedClosure((Closure<?>) newValue, name));
                 arguments = new Object[]{proxy};
                 newValue = proxy;
             } else {
