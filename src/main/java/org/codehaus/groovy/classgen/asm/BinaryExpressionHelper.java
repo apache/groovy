@@ -109,11 +109,12 @@ import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
-import static org.objectweb.asm.Opcodes.IF_ACMPNE;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
 
 public class BinaryExpressionHelper {
     // compare
+    private static final MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
+    private static final MethodCaller compareNotIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotIdentical");
     private static final MethodCaller compareEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareEqual");
     private static final MethodCaller compareNotEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotEqual");
     private static final MethodCaller compareToMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareTo");
@@ -329,54 +330,16 @@ public class BinaryExpressionHelper {
             break;
 
         case COMPARE_IDENTICAL:
-            evaluateIdentity(expression, true);
+            evaluateCompareExpression(compareIdenticalMethod, expression);
             break;
 
         case COMPARE_NOT_IDENTICAL:
-            evaluateIdentity(expression, false);
+            evaluateCompareExpression(compareNotIdenticalMethod, expression);
             break;
 
         default:
             throw new GroovyBugError("Operation: " + expression.getOperation() + " not supported");
         }
-    }
-
-    private void evaluateIdentity(BinaryExpression expression, boolean identical) {
-        AsmClassGenerator acg = controller.getAcg();
-        MethodVisitor mv = controller.getMethodVisitor();
-        OperandStack operandStack = controller.getOperandStack();
-        TypeChooser typeChooser = controller.getTypeChooser();
-
-        Expression lhs = expression.getLeftExpression();
-        ClassNode leftType = typeChooser.resolveType(lhs, controller.getClassNode());
-
-        Expression rhs = expression.getRightExpression();
-        ClassNode rightType = typeChooser.resolveType(rhs, controller.getClassNode());
-
-        boolean leftPrimitive = ClassHelper.isPrimitiveType(leftType);
-        boolean rightPrimitive = ClassHelper.isPrimitiveType(rightType);
-        if (leftPrimitive && rightPrimitive) {
-            BinaryExpressionMultiTypeDispatcher helper = new BinaryExpressionMultiTypeDispatcher(controller);
-            boolean done = helper.doPrimitiveCompare(leftType, rightType, expression);
-            if (done) return;
-        }
-
-        lhs.visit(acg);
-        if (leftPrimitive) operandStack.box();
-
-        rhs.visit(acg);
-        if (rightPrimitive) operandStack.box();
-
-        Label trueCase = operandStack.jump(identical ? IF_ACMPEQ : IF_ACMPNE);
-        ConstantExpression.PRIM_FALSE.visit(acg);
-        Label end = new Label();
-        mv.visitJumpInsn(GOTO, end);
-
-        mv.visitLabel(trueCase);
-        ConstantExpression.PRIM_TRUE.visit(acg);
-
-        mv.visitLabel(end);
-        operandStack.replace(ClassHelper.boolean_TYPE, 3);
     }
 
     @Deprecated
