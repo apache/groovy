@@ -899,6 +899,7 @@ The table below lists all groovy operators in order of precedence.
 | 11 | `\|` | binary/bitwise or
 | 12 | `&&` | logical and
 | 13 | `\|\|` | logical or
+| 13.5 | `=\=>` | logical implication
 | 14 | `? :` | ternary conditional
 |    | `?:` | elvis operator
 | 15 | `=` {nbsp} `\**=` {nbsp} `*=` {nbsp} `/=` {nbsp} `%=` {nbsp} `+=` {nbsp} `-=` {nbsp} +
