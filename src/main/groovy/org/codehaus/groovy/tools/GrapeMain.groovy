@@ -33,7 +33,7 @@ import picocli.CommandLine.Unmatched
     subcommands = [Install, Uninstall, ListCommand, Resolve, CommandLine.HelpCommand])
 class GrapeMain implements Runnable {
     @Option(names = ['-D', '--define'], description = 'define a system property', paramLabel = '<name=value>')
-    private final Map<String, String> properties = new LinkedHashMap<String, String>()
+    private final Map<String, String> sysProperties = new LinkedHashMap<String, String>()
 
     @SuppressWarnings('UnusedPrivateField') // used in run()
     @Option(names = ['-r', '--resolver'], description = 'define a grab resolver (for install)', paramLabel = '<url>')
@@ -78,7 +78,7 @@ class GrapeMain implements Runnable {
 
     @SuppressWarnings('UnusedPrivateMethod') // used in run()
     private void init() {
-        properties.each { k, v ->
+        sysProperties.each { k, v ->
             System.setProperty(k, v)
         }
     }
