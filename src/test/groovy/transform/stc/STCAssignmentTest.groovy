@@ -602,13 +602,42 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
-    void testTernaryInitWithAssignment() {
+    void testTernaryWithNestedAssignment() {
         shouldFailWithMessages '''
             def x = '123'
             def y = (false ? (x = new HashSet()) : 42)
             x.toInteger()
         ''',
         'Cannot find matching method java.io.Serializable#toInteger()'
+    }
+
+    // GROOVY-11457
+    void testTryCatchFinallyWithAssignment() {
+        assertScript '''
+            def x = (Appendable) null
+            if (true)  {
+                x = 1
+            }
+            try {
+                ;
+            } finally {
+                x = (Appendable) null
+            }
+            Appendable y = x
+        '''
+        shouldFailWithMessages '''
+            def x = (Appendable) null
+            if (true)  {
+                x = 1
+            }
+            try {
+                ;
+            } catch (e) {
+                x = (Appendable) null
+            }
+            Appendable y = x // Cannot cast object '1' with class 'Integer' to class 'Appendable'
+        ''',
+        'Cannot assign value of type java.lang.Object to variable of type java.lang.Appendable'
     }
 
     void testFloatSub() {

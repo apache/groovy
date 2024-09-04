@@ -4532,18 +4532,25 @@ trying: for (ClassNode[] signature : signatures) {
 
     @Override
     public void visitTryCatchFinally(final TryCatchStatement statement) {
-        List<CatchStatement> catchStatements = statement.getCatchStatements();
-        for (CatchStatement catchStatement : catchStatements) {
-            ClassNode exceptionType = catchStatement.getExceptionType();
-            typeCheckingContext.controlStructureVariables.put(catchStatement.getVariable(), exceptionType);
-        }
+        Map<Parameter, ClassNode> vars = typeCheckingContext.controlStructureVariables;
+        Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
         try {
-            super.visitTryCatchFinally(statement);
-        } finally {
-            for (CatchStatement catchStatement : catchStatements) {
-                typeCheckingContext.controlStructureVariables.remove(catchStatement.getVariable());
+            visitStatement(statement);
+            statement.getResourceStatements().forEach(rsrc -> rsrc.visit(this));
+            statement.getTryStatement().visit(this);
+            for (CatchStatement catchStatement : statement.getCatchStatements()) {
+                vars.put(catchStatement.getVariable(), catchStatement.getExceptionType());
+                try {
+                    restoreTypeBeforeConditional();
+                    catchStatement.visit(this);
+                } finally {
+                    vars.remove(catchStatement.getVariable());
+                }
             }
+        } finally {
+            popAssignmentTracking(oldTracker);
         }
+        statement.getFinallyStatement().visit(this);
     }
 
     protected void storeType(final Expression exp, ClassNode cn) {
