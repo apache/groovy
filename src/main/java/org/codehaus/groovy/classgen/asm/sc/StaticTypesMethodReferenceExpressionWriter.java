@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.joining;
@@ -308,10 +309,14 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private List<MethodNode> findVisibleMethods(final String name, final ClassNode type) {
         List<MethodNode> methods = type.getMethods(name);
-        // GROOVY-10791: include interface default methods in search
-        for (ClassNode cn : getInterfacesAndSuperInterfaces(type)) {
+        // GROOVY-10791, GROOVY-11467: include non-static interface methods
+        Set<ClassNode> implemented = getInterfacesAndSuperInterfaces(type);
+        implemented.remove(type);
+        for (ClassNode cn : implemented) {
             for (MethodNode mn : cn.getDeclaredMethods(name)) {
-                if (mn.isDefault()) methods.add(mn);
+                if (mn.isDefault() || (mn.isPublic() && !mn.isStatic() && type.isAbstract())) {
+                    methods.add(mn);
+                }
             }
         }
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));

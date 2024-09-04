@@ -1531,4 +1531,24 @@ final class MethodReferenceTest {
             assert result == 'something'
         '''
     }
+
+    @Test // GROOVY-11467
+    void testSuperInterfaceMethodReference() {
+        assertScript imports + '''
+            interface A { int m() }
+            interface B extends A { }
+            class C implements B { int m() { 42 } }
+
+            @CompileStatic
+            class D {
+                B b = new C()
+                void test() {
+                    IntSupplier s = b::m
+                    assert s.getAsInt() == 42
+                }
+            }
+
+            new D().test()
+        '''
+    }
 }
