@@ -4068,15 +4068,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             restoreTypeBeforeConditional();
 
             ifElse.getElseBlock().visit(this);
-
-            // GROOVY-9786: if chaining: "if (...) x=?; else if (...) x=?;"
-            Map<VariableExpression, ClassNode> updates =
-                ifElse.getElseBlock().getNodeMetaData("assignments");
-            if (updates != null) {
-                updates.forEach(this::recordAssignment);
-            }
         } finally {
-            ifElse.putNodeMetaData("assignments", popAssignmentTracking(oldTracker));
+            popAssignmentTracking(oldTracker);
         }
 
         if (!typeCheckingContext.enclosingBlocks.isEmpty()) {
@@ -4274,6 +4267,10 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             });
         });
         typeCheckingContext.ifElseForWhileAssignmentTracker = oldTracker;
+        // GROOVY-9786, GROOVY-11450: nested conditional assignments
+        if (oldTracker != null) {
+            assignments.forEach(this::recordAssignment);
+        }
         return assignments;
     }
 
