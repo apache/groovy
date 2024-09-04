@@ -4178,13 +4178,8 @@ trying: for (ClassNode[] signature : signatures) {
             if (elsePath.isEmpty() && !GeneralUtils.maybeFallsThrough(thenPath)) {
                 tti.forEach(this::putNotInstanceOfTypeInfo);
             }
-            // GROOVY-9786: if chaining: "if (...) x=?; else if (...) x=?;"
-            Map<VariableExpression, ClassNode> updates = elsePath.getNodeMetaData("assignments");
-            if (updates != null) {
-                updates.forEach(this::recordAssignment);
-            }
         } finally {
-            ifElse.putNodeMetaData("assignments", popAssignmentTracking(oldTracker));
+            popAssignmentTracking(oldTracker);
         }
     }
 
@@ -4288,6 +4283,10 @@ trying: for (ClassNode[] signature : signatures) {
             });
         });
         typeCheckingContext.ifElseForWhileAssignmentTracker = oldTracker;
+        // GROOVY-9786, GROOVY-11450: nested conditional assignments
+        if (oldTracker != null) {
+            assignments.forEach(this::recordAssignment);
+        }
         return assignments;
     }
 

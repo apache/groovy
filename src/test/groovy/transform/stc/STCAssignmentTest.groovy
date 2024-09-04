@@ -559,6 +559,27 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11450
+    void testIfElseIfInNestedBlock() {
+        shouldFailWithMessages '''
+            class C {
+                def m() { }
+            }
+
+            def x
+            x = new C()
+            if (false) {
+                x = new C()
+            } else {
+                if (true) {
+                    x = 1
+                }
+            }
+            x.m() // x should be LUB(C,int)
+        ''',
+        'Cannot find matching method java.lang.Object#m()'
+    }
+
     void testForLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
