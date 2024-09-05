@@ -4037,7 +4037,7 @@ out:                if (mn.size() != 1) {
             checkForbiddenSpreadArgument(arguments);
         } else { // GROOVY-10597: allow spread for the ... param
             List<Expression> list = arguments.getExpressions();
-            list = list.subList(0, parameters.length - 1);
+            list = list.subList(0, Math.min(parameters.length - 1, list.size())); // GROOVY-11448
             checkForbiddenSpreadArgument(args(list));
         }
     }

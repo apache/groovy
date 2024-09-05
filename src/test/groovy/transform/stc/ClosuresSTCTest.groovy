@@ -179,6 +179,15 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call closure that accepts [java.lang.Object, java.lang.Object] with [java.lang.String]'
     }
 
+    // GROOVY-11448
+    void testCallClosure18() {
+        assertScript '''
+            def c = { int x = 0, int[] y = new int[0] -> return x }
+            assert c( ) == 0
+            assert c(1) == 1
+        '''
+    }
+
     void testClosureReturnTypeInference1() {
         assertScript '''
             def c = { int a, int b -> return a + b }
