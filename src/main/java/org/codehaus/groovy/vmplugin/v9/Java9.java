@@ -52,7 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -100,26 +99,19 @@ public class Java9 extends Java8 {
 
         Map<String, Set<String>> result = new LinkedHashMap<>(2048);
         try (GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader())) {
-            CompletableFuture<Map<String, Set<String>>> javaDefaultImportsFuture =
-                    CompletableFuture.supplyAsync(() -> doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages));
             try {
                 // groovy-core (Java source)
                 URI gcjLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.lang.GroovySystem")).toURI();
-                CompletableFuture<Map<String, Set<String>>> groovyDefaultImportsFuture1 =
-                        CompletableFuture.supplyAsync(() -> doFindClasses(gcjLocation, "groovy", groovyPackages));
+                result.putAll(doFindClasses(gcjLocation, "groovy", groovyPackages));
 
                 // in production environment, groovy-core classes, e.g. `GroovySystem`(java class) and `ListenerLister`(groovy class) are all packaged in the groovy-core jar file,
                 // but in Groovy development environment, groovy-core classes are distributed in different directories
                 URI gcgLocation = DefaultGroovyMethods.getLocation(gcl.loadClass("groovy.beans.ListenerList")).toURI();
-                CompletableFuture<Map<String, Set<String>>> groovyDefaultImportsFuture2 =
-                        gcjLocation.equals(gcgLocation)
-                                ? CompletableFuture.completedFuture(Collections.emptyMap())
-                                : CompletableFuture.supplyAsync(() -> doFindClasses(gcgLocation, "groovy", groovyPackages));
-
-                result.putAll(groovyDefaultImportsFuture1.get());
-                result.putAll(groovyDefaultImportsFuture2.get());
+                if (!gcjLocation.equals(gcgLocation)) {
+                    result.putAll(doFindClasses(gcgLocation, "groovy", groovyPackages));
+                }
             } finally {
-                result.putAll(javaDefaultImportsFuture.get());
+                result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages));
             }
         } catch (Exception e) {
             Logger logger = Logger.getLogger(getClass().getName());
