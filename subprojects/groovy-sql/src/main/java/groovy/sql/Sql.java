@@ -2512,32 +2512,7 @@ public class Sql implements AutoCloseable {
      * @since 2.3.2
      */
     public void execute(String sql, List<Object> params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        try {
-            statement = getPreparedStatement(connection, sql, params);
-            boolean isResultSet = statement.execute();
-            int updateCount = statement.getUpdateCount();
-            while(isResultSet || updateCount != -1) {
-                if (resultClosure.getMaximumNumberOfParameters() != 2) {
-                    throw new SQLException("Incorrect number of parameters for resultClosure");
-                }
-                if (isResultSet) {
-                    ResultSet resultSet = statement.getResultSet();
-                    List<GroovyRowResult> rowResult = resultSet == null ? null : asList(sql, resultSet);
-                    resultClosure.call(isResultSet, rowResult);
-                } else {
-                    resultClosure.call(isResultSet, updateCount);
-                }
-                isResultSet = statement.getMoreResults();
-                updateCount = statement.getUpdateCount();
-            }
-        } catch (SQLException e) {
-            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
-            throw e;
-        } finally {
-            closeResources(connection, statement);
-        }
+        execute(sql, params, null, resultClosure);
     }
 
     /**
