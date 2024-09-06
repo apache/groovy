@@ -262,7 +262,7 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public Class parseClass(final String text) throws CompilationFailedException {
         try {
-            return parseClass(text, "Script_" + EncodingGroovyMethods.md5(text) + ".groovy");
+            return parseClass(text, "Script_" + EncodingGroovyMethods.sha256(text) + ".groovy");
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new GroovyRuntimeException(e);
         }
@@ -321,12 +321,12 @@ public class GroovyClassLoader extends URLClassLoader {
             // if the script text is null, i.e. the script content is invalid
             // use the name as cache key for the time being to trigger the validation by `groovy.lang.GroovyClassLoader.validate`
             // note: the script will not be cached due to the invalid script content,
-            //       so it does not matter even if cache key is not the md5 value of script content
+            //       so it does not matter even if cache key is not the sha256 value of script content
             strToDigest.append("name:").append(codeSource.getName());
         }
 
         try {
-            return EncodingGroovyMethods.md5(strToDigest);
+            return EncodingGroovyMethods.sha256(strToDigest);
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new GroovyRuntimeException(e);
         }
