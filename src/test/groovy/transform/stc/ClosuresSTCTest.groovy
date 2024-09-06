@@ -510,8 +510,21 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10052
+    // GROOVY-11471
     void testClosureSharedVariable6() {
+        assertScript '''
+            def x = 1
+            Closure c = null
+            if (true) {
+              c = { x = "" }
+            }
+            x = 1
+            c()
+        '''
+    }
+
+    // GROOVY-10052
+    void testClosureSharedVariable7() {
         assertScript '''
             String x
             def f = { ->
@@ -523,7 +536,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10052
-    void testClosureSharedVariable7() {
+    void testClosureSharedVariable8() {
         assertScript '''
             def x
             def f = { ->

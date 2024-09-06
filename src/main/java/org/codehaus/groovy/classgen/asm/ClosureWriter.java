@@ -407,8 +407,10 @@ public class ClosureWriter {
         Parameter[] refs = new Parameter[variableScope.getReferencedLocalVariablesCount()]; int index = 0;
         for (Iterator<Variable> iter = variableScope.getReferencedLocalVariablesIterator(); iter.hasNext(); ) {
             Variable variable = iter.next();
+            Expression varExp = variable instanceof VariableExpression
+                                ? (VariableExpression) variable : varX(variable); // GROOVY-11471
 
-            ClassNode inferenceType = typeChooser.resolveType(varX(variable), classNode); // GROOVY-11068
+            ClassNode inferenceType = typeChooser.resolveType(varExp, classNode); // GROOVY-11068
             Parameter p = new Parameter(inferenceType, variable.getName());
             p.setClosureSharedVariable(variable.isClosureSharedVariable());
 
