@@ -591,6 +591,17 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
+    // GROOVY-11353
+    void testForLoopWithAssignment2() {
+        assertScript '''
+            def x = null // Cannot cast object 'null' to class 'int'
+            for (int i = 0; i < 1; i += 1) {
+                x = i
+            }
+            assert x == 0
+        '''
+    }
+
     void testWhileLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'

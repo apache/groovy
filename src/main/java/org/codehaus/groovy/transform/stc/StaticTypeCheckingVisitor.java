@@ -903,7 +903,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             boolean isEmptyDeclaration = (expression instanceof DeclarationExpression
                     && (rightExpression instanceof EmptyExpression || rType == UNKNOWN_PARAMETER_TYPE));
-            if (!isEmptyDeclaration && isAssignment(op)) {
+            if (isEmptyDeclaration) {
+                // GROOVY-11353: "def var = null" cannot be a primitive type
+                if (isDynamicTyped(lType) && rType == UNKNOWN_PARAMETER_TYPE)
+                    lType.putNodeMetaData("non-primitive type", Boolean.TRUE);
+            } else if (isAssignment(op)) {
                 if (rightExpression instanceof ConstructorCallExpression)
                     inferDiamondType((ConstructorCallExpression) rightExpression, lType);
 
@@ -965,9 +969,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (!isEmptyDeclaration) {
                 storeType(expression, resultType);
+                validateResourceInARM(expression, resultType);
             }
-
-            validateResourceInARM(expression, resultType);
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
             if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
@@ -4618,9 +4621,11 @@ trying: for (ClassNode[] signature : signatures) {
         if (op == EQUAL || op == ELVIS_EQUAL) {
             if (leftExpression instanceof VariableExpression) {
                 ClassNode initialType = getOriginalDeclarationType(leftExpression);
-                if (isDynamicTyped(initialType)) { // GROOVY-11375
+                if (isDynamicTyped(initialType)) { // GROOVY-11353, GROOVY-11375
                     ClassNode inferredType = leftExpression.getNodeMetaData(INFERRED_TYPE);
-                    if (inferredType != null && !isPrimitiveType(inferredType)) initialType = OBJECT_TYPE;
+                    if (inferredType != null ? !isPrimitiveType(inferredType) : Boolean.TRUE.equals(initialType.getNodeMetaData("non-primitive type"))) {
+                        initialType = OBJECT_TYPE;
+                    }
                 }
 
                 if (isPrimitiveType(rightRedirect) && (initialType.isDerivedFrom(Number_TYPE) || (isObjectType(initialType) && !isDynamicTyped(initialType)))) {
