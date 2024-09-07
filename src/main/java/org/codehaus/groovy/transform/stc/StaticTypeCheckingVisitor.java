@@ -861,7 +861,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
             boolean isEmptyDeclaration = (expression instanceof DeclarationExpression
                     && (rightExpression instanceof EmptyExpression || rType == UNKNOWN_PARAMETER_TYPE));
-            if (!isEmptyDeclaration && isAssignment(op)) {
+            if (isEmptyDeclaration) {
+                // GROOVY-11353: "def var = null" cannot be a primitive type
+                if (isDynamicTyped(lType) && rType == UNKNOWN_PARAMETER_TYPE)
+                    lType.putNodeMetaData("non-primitive type", Boolean.TRUE);
+            } else if (isAssignment(op)) {
                 if (rightExpression instanceof ConstructorCallExpression)
                     inferDiamondType((ConstructorCallExpression) rightExpression, lType);
 
@@ -921,9 +925,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (!isEmptyDeclaration) {
                 storeType(expression, resultType);
+                validateResourceInARM(expression, resultType);
             }
-
-            validateResourceInARM(expression, resultType);
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
             if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
@@ -4620,7 +4623,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             if (leftExpression instanceof VariableExpression) {
                 ClassNode initialType = getOriginalDeclarationType(leftExpression);
 
-                if (isPrimitiveType(rightRedirect) && initialType.isDerivedFrom(Number_TYPE)) {
+                if (isPrimitiveType(rightRedirect) && (initialType.isDerivedFrom(Number_TYPE)
+                        || Boolean.TRUE.equals(initialType.getNodeMetaData("non-primitive type")))) { // GROOVY-11353
                     return getWrapper(right);
                 }
 
