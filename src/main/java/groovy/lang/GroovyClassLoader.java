@@ -264,11 +264,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text) throws CompilationFailedException {
-        try {
-            return parseClass(text, "Script_" + genEncodingString(text) + ".groovy");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new GroovyRuntimeException(e);
-        }
+        return parseClass(text, "Script_" + genEncodingString(text) + ".groovy");
     }
 
     public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
@@ -328,11 +324,7 @@ public class GroovyClassLoader extends URLClassLoader {
             strToDigest.append("name:").append(codeSource.getName());
         }
 
-        try {
-            return genEncodingString(strToDigest.toString());
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new GroovyRuntimeException(e);
-        }
+        return genEncodingString(strToDigest.toString());
     }
 
     private Class<?> doParseClass(final GroovyCodeSource codeSource) {
