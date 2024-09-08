@@ -1223,19 +1223,14 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return The encoded string.
      */
     public String genEncodingString(String text) {
-        String algorithms = getAlgorithms(); // Assumes getAlgorithms() is defined and returns the configured algorithm.
+        String algorithms = getAlgorithms();
 
         // Check if the configured algorithm is MD5.
         if (algorithms.equals(MD5)) {
-            // Assuming EncodingGroovyMethods.md5() is available and returns the MD5 hash of the text.
-            // If this is a Groovy method, ensure you're in a Groovy environment or have the necessary imports/dependencies.
-            // For Java, replace this with your own MD5 hashing logic.
             return EncodingGroovyMethods.md5(text);
         }
         // Check if the configured algorithm is SHA-256.
         else if (algorithms.equals(SHA_256)) {
-            // Assuming EncodingGroovyMethods.sha256() is available and returns the SHA-256 hash of the text.
-            // For Java, replace this with your own SHA-256 hashing logic.
             return EncodingGroovyMethods.sha256(text);
         }
         // If an unrecognized algorithm is configured, default to MD5.
