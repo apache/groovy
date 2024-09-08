@@ -66,6 +66,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.System;
 
 /*
  * TODO: multi-threaded compiling of the same class but with different roots for
@@ -86,6 +87,8 @@ public class GroovyClassLoader extends URLClassLoader {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
     private static final AtomicInteger scriptNameCounter = new AtomicInteger(1_000_000); // 1,000,000 avoids conflicts with names from the GroovyShell
+    private static final String MD5 = "MD5";
+    private static final String SHA_256 = "SHA-256";
 
     /**
      * This cache contains the loaded classes or PARSING, if the class is currently parsed.
@@ -262,7 +265,7 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public Class parseClass(final String text) throws CompilationFailedException {
         try {
-            return parseClass(text, "Script_" + EncodingGroovyMethods.sha256(text) + ".groovy");
+            return parseClass(text, "Script_" + genEncodingString(text) + ".groovy");
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new GroovyRuntimeException(e);
         }
@@ -321,12 +324,12 @@ public class GroovyClassLoader extends URLClassLoader {
             // if the script text is null, i.e. the script content is invalid
             // use the name as cache key for the time being to trigger the validation by `groovy.lang.GroovyClassLoader.validate`
             // note: the script will not be cached due to the invalid script content,
-            //       so it does not matter even if cache key is not the sha256 value of script content
+            //       so it does not matter even if cache key is not the md5 value of script content
             strToDigest.append("name:").append(codeSource.getName());
         }
 
         try {
-            return EncodingGroovyMethods.sha256(strToDigest);
+            return genEncodingString(strToDigest);
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new GroovyRuntimeException(e);
         }
@@ -1186,6 +1189,59 @@ public class GroovyClassLoader extends URLClassLoader {
             if (!classNode.isInterface() && classNode.getOuterClass() == null) {
                 addTimeStamp(classNode);
             }
+        }
+    }
+
+    /**
+     * Retrieves the configured algorithms from a system property.
+     * If the system property is not set, a default algorithm is returned.
+     *
+     * @return The configured algorithms or a default value if not set.
+     */
+    public String getAlgorithms() {
+        // Attempt to retrieve the algorithms from a system property.
+        // Note: "CACHED_KEY_ALGORITHMS" is a placeholder and should be replaced with the actual property name.
+        String algorithms = System.getProperty("GROOVY_CACHED_KEY_ALGORITHMS");
+
+        // If the system property is set (i.e., not null), return its value.
+        if (algorithms != null) {
+            return algorithms;
+        }
+
+        // If the system property is not set, return a default algorithm.
+        // Note: MD5 is used here as a default, but it's generally not recommended for security-sensitive applications due to its weaknesses.
+        return "MD5";
+    }
+
+    /**
+     * Generates an encoded string based on the specified text and the algorithm configured.
+     * If the configured algorithm is MD5, an MD5 hash of the text is returned.
+     * If the configured algorithm is SHA-256, an SHA-256 hash of the text is returned.
+     * If an unrecognized algorithm is configured, defaults to returning an MD5 hash of the text.
+     *
+     * @param text The text to encode.
+     * @return The encoded string.
+     */
+    public String genEncodingString(String text) {
+        String algorithms = getAlgorithms(); // Assumes getAlgorithms() is defined and returns the configured algorithm.
+
+        // Check if the configured algorithm is MD5.
+        if (algorithms.equals(MD5)) {
+            // Assuming EncodingGroovyMethods.md5() is available and returns the MD5 hash of the text.
+            // If this is a Groovy method, ensure you're in a Groovy environment or have the necessary imports/dependencies.
+            // For Java, replace this with your own MD5 hashing logic.
+            return EncodingGroovyMethods.md5(text);
+        }
+        // Check if the configured algorithm is SHA-256.
+        else if (algorithms.equals(SHA_256)) {
+            // Assuming EncodingGroovyMethods.sha256() is available and returns the SHA-256 hash of the text.
+            // For Java, replace this with your own SHA-256 hashing logic.
+            return EncodingGroovyMethods.sha256(text);
+        }
+        // If an unrecognized algorithm is configured, default to MD5.
+        else {
+            // Fallback to MD5 hashing.
+            return EncodingGroovyMethods.md5(text);
         }
     }
 }
