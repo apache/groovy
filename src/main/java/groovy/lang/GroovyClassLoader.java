@@ -329,7 +329,7 @@ public class GroovyClassLoader extends URLClassLoader {
         }
 
         try {
-            return genEncodingString(strToDigest);
+            return genEncodingString(strToDigest.toString());
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new GroovyRuntimeException(e);
         }
