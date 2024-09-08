@@ -21,7 +21,6 @@ package groovy.console.ui.view
 import javax.swing.SwingConstants
 import java.awt.BorderLayout
 
-
 toolbar = toolBar(rollover: true, visible: controller.showToolbar, constraints: BorderLayout.NORTH) {
     button(newFileAction, text: null)
     button(openAction, text: null)
