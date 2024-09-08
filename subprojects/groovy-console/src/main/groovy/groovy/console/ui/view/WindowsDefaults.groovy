@@ -18,13 +18,15 @@
  */
 package groovy.console.ui.view
 
+import groovy.console.ui.Console
+
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import java.util.prefs.Preferences
 
 build(Defaults)
 
-def prefs = Preferences.userNodeForPackage(groovy.console.ui.Console)
+def prefs = Preferences.userNodeForPackage(Console)
 def fontFamily = prefs.get("fontName", "Consolas")
 
 // change fonts for vista
