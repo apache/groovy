@@ -2192,9 +2192,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
     @Override
     public void visitWhileLoop(final WhileStatement loop) {
+        Map<VariableExpression, ClassNode> startTypes = new HashMap<>();
+        loop.getLoopBlock().visit(new VariableExpressionTypeMemoizer(startTypes));
         Map<VariableExpression, List<ClassNode>> oldTracker = pushAssignmentTracking();
+
         super.visitWhileLoop(loop);
-        popAssignmentTracking(oldTracker);
+
+        if (isSecondPassNeededForControlStructure(startTypes, oldTracker)) { // GROOVY-11474
+            visitWhileLoop(loop);
+        }
     }
 
     @Override

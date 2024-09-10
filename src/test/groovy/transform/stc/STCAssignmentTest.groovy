@@ -613,6 +613,19 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
+    // GROOVY-11474
+    void testWhileLoopWithAssignment2() {
+        shouldFailWithMessages '''
+            def i = 0
+            def x = 1
+            while (i++ < 1) {
+                Integer y = x
+                x = " "
+            }
+        ''',
+        'Cannot assign value of type (java.io.Serializable & java.lang.Comparable',') to variable of type java.lang.Integer'
+    }
+
     void testTernaryWithNestedAssignment() {
         shouldFailWithMessages '''
             def x = '123'
