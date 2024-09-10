@@ -188,6 +188,47 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5705
+    void testCallClosure19() {
+        assertScript '''
+            class Foo {
+                Closure c = { it }
+                def test() {
+                    c("123")
+                }
+            }
+
+            String result = new Foo().test()
+            assert result == '123'
+        '''
+        shouldFailWithMessages '''
+            class Foo {
+                Closure c = { -> }
+                static test() {
+                    c()
+                }
+            }
+        ''',
+        'Cannot find matching method java.lang.Class#c() or static method Foo#c()'
+    }
+
+    // GROOVY-11366
+    void testCallClosure20() {
+        assertScript '''
+            class Bar {
+                Closure c = { it }
+            }
+            class Foo extends Bar {
+                def test() {
+                    c("123")
+                }
+            }
+
+            String result = new Foo().test()
+            assert result == '123'
+        '''
+    }
+
     void testClosureReturnTypeInference1() {
         assertScript '''
             def c = { int a, int b -> return a + b }
@@ -690,20 +731,6 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 }
             }
             new C<Number,Integer>().test()
-        '''
-    }
-
-    // GROOVY-5705
-    void testNPEWhenCallingClosureFromAField() {
-        assertScript '''
-            class Test {
-                Closure c = { it }
-                void test() {
-                    c("123")
-                }
-            }
-
-            new Test().test()
         '''
     }
 

@@ -145,6 +145,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
@@ -3650,14 +3651,18 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
           case "doCall":
             if (!isThisObjectExpression) {
                 isCallOnClosure = receiver.equals(CLOSURE_TYPE);
-                break;
             }
           default:
             if (isThisObjectExpression) {
-                ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
-                fieldNode = enclosingType.getDeclaredField(name);
-                if (fieldNode != null && getType(fieldNode).equals(CLOSURE_TYPE)
-                        && !enclosingType.hasPossibleMethod(name, callArguments)) {
+                // GROOVY-5705, GROOVY-11366: "this.x(...)" could refer to field
+                if (!typeCheckingContext.isInStaticContext) {
+                    fieldNode = getField(receiver, name);
+                } else {
+                    fieldNode = getField(receiver, name, FieldNode::isStatic);
+                }
+                if (fieldNode != null
+                        && getType(fieldNode).equals(CLOSURE_TYPE)
+                        && !receiver.hasPossibleMethod(name, callArguments)) {
                     isCallOnClosure = true;
                 }
             }
