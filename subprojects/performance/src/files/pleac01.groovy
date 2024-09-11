@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 /**
  * Refer to pleac.sourceforge.net if wanting accurate comparisons with PERL.
  * Original author has included tweaked examples here solely for the purposes
@@ -23,6 +24,8 @@
  * In some instances, examples have been modified to avoid additional
  * dependencies or for dependencies not in common repos.
  */
+
+import groovy.ant.AntBuilder
 
 // @@PLEAC@@_1.0
 //----------------------------------------------------------------------------------
@@ -419,7 +422,7 @@ assert sanitized == expected
 // SendMail.groovy: Send email
 // Usage: groovy SendEmail <msgfile>
 // script:
-class AntBuilder{}
+
 ant = new AntBuilder()
 ant.mail(from:'manager@grumpybank.com', tolist:'innocent@poorhouse.com',
     encoding:'plain', mailhost:'mail.someserver.com',

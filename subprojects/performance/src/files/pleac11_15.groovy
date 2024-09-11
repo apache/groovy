@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 /**
  * Refer to pleac.sourceforge.net if wanting accurate comparisons with PERL.
  * Original author has included tweaked examples here solely for the purposes
@@ -23,6 +24,9 @@
  * In some instances, examples have been modified to avoid additional
  * dependencies or for dependencies not in common repos.
  */
+
+import org.hsqldb.jdbc.jdbcDataSource
+import groovy.swing.SwingBuilder
 
 // @@PLEAC@@_11.0
 //----------------------------------------------------------------------------------
@@ -2014,7 +2018,6 @@ def addUsers(store) {
     }
 }
 
-//def ds = new org.hsqldb.jdbc.jdbcDataSource()
 def ds = new jdbcDataSource()
 ds.database = 'jdbc:hsqldb:hsql://localhost/mydb'
 ds.user = 'sa'
@@ -2064,11 +2067,9 @@ myEnv.close()
 // Here is a more realistic example, copying pbeans -> jdbc
 // Creation of pbeans database not strictly needed but shown for completion
 
-class jdbcDataSource {}
 //import net.sourceforge.pbeans.*
 import groovy.sql.Sql
 
-//ds = new org.hsqldb.jdbc.jdbcDataSource()
 ds = new jdbcDataSource()
 ds.database = 'jdbc:hsqldb:hsql://localhost/mydb'
 ds.user = 'sa'
@@ -2224,7 +2225,6 @@ myEnv.close()
 //----------------------------------------------------------------------------------
 // example using pbeans
 //import net.sourceforge.pbeans.*
-//ds = new org.hsqldb.jdbc.jdbcDataSource()
 ds = new jdbcDataSource()
 ds.database = 'jdbc:hsqldb:hsql://localhost/mydb'
 ds.user = 'sa'
@@ -2275,7 +2275,6 @@ import groovy.sql.Sql
 
 users = ['20':'Joe Bloggs', '40':'Bill Clinton', '60':'Ben Franklin']
 
-//def source = new org.hsqldb.jdbc.jdbcDataSource()
 def source = new jdbcDataSource()
 source.database = 'jdbc:hsqldb:mem:PLEAC'
 source.user = 'sa'
@@ -2667,8 +2666,7 @@ command.stop()
 //----------------------------------------------------------------------------------
 // Methods not shown for the edit menu items, they would be the same as for the
 // file menu items.
-//import groovy.swing.SwingBuilder
-class SwingBuilder{}
+
 def print() {}
 def save() {}
 frame = new SwingBuilder().frame(title:'Demo') {

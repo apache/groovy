@@ -86,15 +86,10 @@ class PerformanceTestsExtension {
                 it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
                 it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
             }
-            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':']) : (v.startsWith('4') ? "org.apache.groovy:groovy:$v" : "org.codehaus.groovy:groovy:$v")))
-            if (!v.startsWith('2.4')) {
-                conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-dateutil']) : (v.startsWith('4') ? "org.apache.groovy:groovy-dateutil:$v" : "org.codehaus.groovy:groovy-dateutil:$v")))
-                conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-datetime']) : (v.startsWith('4') ? "org.apache.groovy:groovy-datetime:$v" : "org.codehaus.groovy:groovy-datetime:$v")))
+            conf.dependencies.add(dependencies.create(v.startsWith('current') ? dependencies.project([path: ':']) : "org.apache.groovy:groovy:$v"))
+            ['groovy-dateutil', 'groovy-datetime', 'groovy-ant', 'groovy-swing', 'groovy-sql', 'groovy-xml', 'groovy-templates'].each { m ->
+                conf.dependencies.add(dependencies.create(v.startsWith('current') ? dependencies.project([path: ":$m"]) : "org.apache.groovy:$m:$v"))
             }
-            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-swing']) : (v.startsWith('4') ? "org.apache.groovy:groovy-swing:$v" : "org.codehaus.groovy:groovy-swing:$v")))
-            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-sql']) : (v.startsWith('4') ? "org.apache.groovy:groovy-sql:$v" : "org.codehaus.groovy:groovy-sql:$v")))
-            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-xml']) : (v.startsWith('4') ? "org.apache.groovy:groovy-xml:$v" : "org.codehaus.groovy:groovy-xml:$v")))
-            conf.dependencies.add(dependencies.create(v == 'current' ? dependencies.project([path: ':groovy-templates']) : (v.startsWith('4') ? "org.apache.groovy:groovy-templates:$v" : "org.codehaus.groovy:groovy-templates:$v")))
             [
                 'org.cyberneko:html:1.9.8',
                 'commons-net:commons-net:3.11.1',
@@ -109,8 +104,9 @@ class PerformanceTestsExtension {
                 'net.sourceforge.expectj:expectj:2.0.7',
                 'jline:jline:2.14.6',
                 'prevayler:prevayler:2.02.005',
-                'xerces:xercesImpl:2.12.2'
-            ].each {conf.dependencies.add(dependencies.create(it)) }
+                'xerces:xercesImpl:2.12.2',
+                'hsqldb:hsqldb:1.8.0.10'
+            ].each { conf.dependencies.add(dependencies.create(it)) }
         }
         def outputFile = layout.buildDirectory.file("compilation-stats-${version}.csv")
         def perfTest = tasks.register("performanceTestGroovy${version}", JavaExec) { je ->

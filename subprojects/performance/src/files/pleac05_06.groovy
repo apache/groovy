@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 /**
  * Refer to pleac.sourceforge.net if wanting accurate comparisons with PERL.
  * Original author has included tweaked examples here solely for the purposes
@@ -23,6 +24,8 @@
  * In some instances, examples have been modified to avoid additional
  * dependencies or for dependencies not in common repos.
  */
+
+import groovy.ant.AntBuilder
 
 // @@PLEAC@@_5.0
 //----------------------------------------------------------------------------------
@@ -1400,7 +1403,7 @@ println 'Book Publishing <marketing@books.com> (We will spam you)'.replaceAll(si
 // inspired by the fact that domain names can contain any foreign character these days
 modern = /^.+@[^\.].*\.[a-z]{2,}>?$/
 
-// .Net 
+// .Net
 lenient = /\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/
 
 // a little more checking

@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 /**
  * Refer to pleac.sourceforge.net if wanting accurate comparisons with PERL.
  * Original author has included tweaked examples here solely for the purposes
@@ -23,6 +24,9 @@
  * In some instances, examples have been modified to avoid additional
  * dependencies or for dependencies not in common repos.
  */
+
+import org.hsqldb.jdbc.jdbcDataSource
+import groovy.ant.AntBuilder
 
 // @@PLEAC@@_16.1
 //----------------------------------------------------------------------------------
@@ -832,6 +836,7 @@ ftp.disconnect()
 
 // Using AntBuilder; for more details, see:
 // http://ant.apache.org/manual/OptionalTasks/ftp.html
+
 ant = new AntBuilder()
 ant.ftp(action:'send', server:'ftp.hypothetical.india.org', port:'2121',
         remotedir:'/pub/incoming', userid:'coder', password:'java1',
@@ -893,7 +898,7 @@ writer.write( header.toString() )
 // Write the body of the message
 writer.write( "This is a test..." )
 
-// Close the writer 
+// Close the writer
 writer.close()
 if ( !client.completePendingCommand() ) // failure
     System.exit( 1 )
@@ -1872,7 +1877,7 @@ println URLEncoder.encode(/"this isn't <EASY>&<FUN>"/, 'utf-8')
 // @@PLEAC@@_20.3
 //----------------------------------------------------------------------------------
 // using HtmlUnit (htmlunit.sf.net)
-import com.gargoylesoftware.htmlunit.WebClient
+//import com.gargoylesoftware.htmlunit.WebClient
 
 client = new WebClient()
 html = client.getPage('http://www.perl.com/CPAN/')
@@ -1945,7 +1950,6 @@ println html.titleText
 // @@PLEAC@@_20.7
 //----------------------------------------------------------------------------------
 //import com.gargoylesoftware.htmlunit.WebClient
-class WebClient{}
 
 client = new WebClient()
 page = client.getPage('http://www.perl.com/CPAN/')
