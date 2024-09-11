@@ -48,11 +48,12 @@ class PerformanceTestSummary extends DefaultTask {
 
         versions = versions.sort { ((List) it)[1] }
         def fastest = ((List) versions[0])[1]
+        def df = new DecimalFormat("#.##")
         versions.each { version, mean, stdDev ->
-            print "Groovy $version Average ${mean}ms ± ${new DecimalFormat("#.##").format(stdDev)}ms "
+            print "Groovy ${sprintf '%-20s', version} Average ${df.format(mean)}ms ± ${df.format(stdDev)}ms "
             if (mean > fastest) {
                 def diff = 100 * (mean - fastest) / fastest
-                print "(${new DecimalFormat("#.##").format(diff)}% slower)"
+                print "(${df.format(diff)}% slower)"
             }
             println()
         }
