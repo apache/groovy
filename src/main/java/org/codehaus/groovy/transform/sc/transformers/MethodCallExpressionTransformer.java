@@ -18,12 +18,11 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.asm.MopWriter;
@@ -32,73 +31,65 @@ import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import java.util.List;
 import java.util.Optional;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.argumentSize;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
-public class MethodCallExpressionTransformer {
-    private static final ClassNode DGM_CLASSNODE = ClassHelper.make(DefaultGroovyMethods.class);
+class MethodCallExpressionTransformer {
 
-    private final StaticCompilationTransformer staticCompilationTransformer;
+    private final StaticCompilationTransformer scTransformer;
 
-    public MethodCallExpressionTransformer(StaticCompilationTransformer staticCompilationTransformer) {
-        this.staticCompilationTransformer = staticCompilationTransformer;
+    MethodCallExpressionTransformer(final StaticCompilationTransformer scTransformer) {
+        this.scTransformer = scTransformer;
     }
 
-    Expression transformMethodCallExpression(final MethodCallExpression expr) {
-        Expression trn = tryTransformIsToCompareIdentity(expr);
-        if (trn!=null) {
-            return trn;
+    Expression transformMethodCallExpression(final MethodCallExpression mce) {
+        Expression arguments = mce.getArguments();
+
+        // replace call to DefaultGroovyMethods#is(Object,Object) with a CompareIdentityExpression
+        if (!mce.isSafe() && !mce.isSpreadSafe() && isIsExtension(mce.getMethodTarget()) && argumentSize(arguments) == 1) {
+            Expression lhs = scTransformer.transform(mce.getObjectExpression());
+            Expression rhs = scTransformer.transform(arguments instanceof TupleExpression ? ((TupleExpression) arguments).getExpression(0) : arguments);
+            Expression cmp = new CompareIdentityExpression(lhs, rhs);
+            cmp.setSourcePosition(mce);
+            return cmp;
         }
-        var superCallReceiver = expr.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
+
+        var superCallReceiver = mce.getNodeMetaData(StaticTypesMarker.SUPER_MOP_METHOD_REQUIRED);
         if (superCallReceiver instanceof ClassNode) {
-            return transformMethodCallExpression(transformToMopSuperCall((ClassNode) superCallReceiver, expr));
+            return transformMethodCallExpression(transformToMopSuperCall((ClassNode) superCallReceiver, mce));
         }
-        if (isCallOnClosure(expr)) {
-            var field = Optional.ofNullable(staticCompilationTransformer.getClassNode()).map(cn -> cn.getField(expr.getMethodAsString()));
+
+        if (isCallOnClosure(mce)) {
+            var field = Optional.ofNullable(scTransformer.getClassNode()).map(cn -> getField(cn, mce.getMethodAsString()));
             if (field.isPresent()) {
-                MethodCallExpression result = new MethodCallExpression(
+                var closureFieldCall = new MethodCallExpression(
                         new VariableExpression(field.get()),
                         "call",
-                        staticCompilationTransformer.transform(expr.getArguments())
-                );
-                result.setImplicitThis(false);
-                result.setSourcePosition(expr);
-                result.setSafe(expr.isSafe());
-                result.setSpreadSafe(expr.isSpreadSafe());
-                result.setMethodTarget(StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS);
-                result.copyNodeMetaData(expr);
-                return result;
+                        scTransformer.transform(arguments));
+                // implicit-this "field(args)" expression has no place for safe, spread-safe, or type arguments
+                closureFieldCall.setImplicitThis(false);
+                closureFieldCall.setMethodTarget(mce.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+                closureFieldCall.setSourcePosition(mce);
+                closureFieldCall.copyNodeMetaData(mce);
+                return closureFieldCall;
             }
         }
-        return staticCompilationTransformer.superTransform(expr);
+
+        return scTransformer.superTransform(mce);
     }
 
-    private static MethodCallExpression transformToMopSuperCall(final ClassNode superCallReceiver, final MethodCallExpression expr) {
-        MethodNode mn = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        String mopName = MopWriter.getMopMethodName(mn, false);
-        MethodNode direct = new MethodNode(
-                mopName,
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                mn.getReturnType(),
-                mn.getParameters(),
-                mn.getExceptions(),
-                EmptyStatement.INSTANCE
-        );
-        direct.setDeclaringClass(superCallReceiver);
-        MethodCallExpression result = new MethodCallExpression(
-                new VariableExpression("this"),
-                mopName,
-                expr.getArguments()
-        );
-        result.setImplicitThis(true);
-        result.setSpreadSafe(false);
-        result.setSafe(false);
-        result.setSourcePosition(expr);
-        result.setMethodTarget(direct);
-        return result;
+    //--------------------------------------------------------------------------
+
+    private static boolean isIsExtension(final MethodNode node) {
+        return node instanceof ExtensionMethodNode // guards null
+                && "is".equals(node.getName())
+                && node.getParameters().length == 1
+                && DefaultGroovyMethods.class.getName().equals(
+                    ((ExtensionMethodNode) node).getExtensionMethodNode().getDeclaringClass().getName());
     }
 
     private static boolean isCallOnClosure(final MethodCallExpression expr) {
@@ -110,30 +101,29 @@ public class MethodCallExpressionTransformer {
                     || target == StaticTypeCheckingVisitor.CLOSURE_CALL_ONE_ARG);
     }
 
-    /**
-     * Identifies a method call expression on {@link DefaultGroovyMethods#is(Object, Object)} and if recognized, transforms it into a {@link CompareIdentityExpression}.
-     * @param call a method call to be transformed
-     * @return null if the method call is not DGM#is, or {@link CompareIdentityExpression}
-     */
-    private static Expression tryTransformIsToCompareIdentity(MethodCallExpression call) {
-        if (call.isSafe()) return null;
-        MethodNode methodTarget = call.getMethodTarget();
-        if (methodTarget instanceof ExtensionMethodNode && "is".equals(methodTarget.getName()) && methodTarget.getParameters().length==1) {
-            methodTarget = ((ExtensionMethodNode) methodTarget).getExtensionMethodNode();
-            ClassNode owner = methodTarget.getDeclaringClass();
-            if (DGM_CLASSNODE.equals(owner)) {
-                Expression args = call.getArguments();
-                if (args instanceof ArgumentListExpression) {
-                    ArgumentListExpression arguments = (ArgumentListExpression) args;
-                    List<Expression> exprs = arguments.getExpressions();
-                    if (exprs.size() == 1) {
-                        CompareIdentityExpression cid = new CompareIdentityExpression(call.getObjectExpression(), exprs.get(0));
-                        cid.setSourcePosition(call);
-                        return cid;
-                    }
-                }
-            }
-        }
-        return null;
+    private static MethodCallExpression transformToMopSuperCall(final ClassNode superType, final MethodCallExpression expr) {
+        MethodNode mn = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        String mopName = MopWriter.getMopMethodName(mn, false);
+        MethodNode direct = new MethodNode(
+                mopName,
+                ACC_PUBLIC | ACC_SYNTHETIC,
+                mn.getReturnType(),
+                mn.getParameters(),
+                mn.getExceptions(),
+                EmptyStatement.INSTANCE
+        );
+        direct.setDeclaringClass(superType);
+
+        MethodCallExpression result = new MethodCallExpression(
+                new VariableExpression("this"),
+                mopName,
+                expr.getArguments()
+        );
+        result.setImplicitThis(true);
+        result.setSpreadSafe(false);
+        result.setSafe(false);
+        result.setSourcePosition(expr);
+        result.setMethodTarget(direct);
+        return result;
     }
 }

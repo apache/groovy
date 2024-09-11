@@ -28,10 +28,10 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
 
 class StaticMethodCallExpressionTransformer {
 
-    private final StaticCompilationTransformer transformer;
+    private final StaticCompilationTransformer scTransformer;
 
-    StaticMethodCallExpressionTransformer(final StaticCompilationTransformer sct) {
-        transformer = sct;
+    StaticMethodCallExpressionTransformer(final StaticCompilationTransformer scTransformer) {
+        this.scTransformer = scTransformer;
     }
 
     Expression transformStaticMethodCallExpression(final StaticMethodCallExpression smce) {
@@ -43,9 +43,9 @@ class StaticMethodCallExpressionTransformer {
             mce.setSourcePosition(smce);
             mce.copyNodeMetaData(smce);
 
-            return transformer.transform(mce);
+            return scTransformer.transform(mce);
         }
 
-        return transformer.superTransform(smce);
+        return scTransformer.superTransform(smce);
     }
 }
