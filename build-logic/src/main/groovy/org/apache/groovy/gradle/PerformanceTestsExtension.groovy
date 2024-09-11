@@ -86,9 +86,9 @@ class PerformanceTestsExtension {
                 it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
                 it.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
             }
-            conf.dependencies.add(dependencies.create(v.startsWith('current') ? dependencies.project([path: ':']) : "org.apache.groovy:groovy:$v"))
+            conf.dependencies.add(dependencies.create(v.startsWith('current') ? dependencies.project([path: ':']) : v.startsWith('3') ? "org.codehaus.groovy:groovy:$v" : "org.apache.groovy:groovy:$v"))
             ['groovy-dateutil', 'groovy-datetime', 'groovy-ant', 'groovy-swing', 'groovy-sql', 'groovy-xml', 'groovy-templates'].each { m ->
-                conf.dependencies.add(dependencies.create(v.startsWith('current') ? dependencies.project([path: ":$m"]) : "org.apache.groovy:$m:$v"))
+                conf.dependencies.add(dependencies.create(v.startsWith('current') ? dependencies.project([path: ":$m"]) : v.startsWith('3') ? "org.codehaus.groovy:$m:$v" : "org.apache.groovy:$m:$v"))
             }
             [
                 'org.cyberneko:html:1.9.8',
