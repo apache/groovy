@@ -66,6 +66,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.lang.System;
 
 /*
  * TODO: multi-threaded compiling of the same class but with different roots for
@@ -86,6 +87,8 @@ public class GroovyClassLoader extends URLClassLoader {
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
     private static final AtomicInteger scriptNameCounter = new AtomicInteger(1_000_000); // 1,000,000 avoids conflicts with names from the GroovyShell
+    private static final String MD5 = "MD5";
+    private static final String SHA_256 = "SHA-256";
 
     /**
      * This cache contains the loaded classes or PARSING, if the class is currently parsed.
@@ -261,11 +264,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text) throws CompilationFailedException {
-        try {
-            return parseClass(text, "Script_" + EncodingGroovyMethods.md5(text) + ".groovy");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new GroovyRuntimeException(e);
-        }
+        return parseClass(text, "Script_" + genEncodingString(text) + ".groovy");
     }
 
     public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
@@ -325,11 +324,7 @@ public class GroovyClassLoader extends URLClassLoader {
             strToDigest.append("name:").append(codeSource.getName());
         }
 
-        try {
-            return EncodingGroovyMethods.md5(strToDigest);
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new GroovyRuntimeException(e);
-        }
+        return genEncodingString(strToDigest.toString());
     }
 
     private Class<?> doParseClass(final GroovyCodeSource codeSource) {
@@ -1186,6 +1181,58 @@ public class GroovyClassLoader extends URLClassLoader {
             if (!classNode.isInterface() && classNode.getOuterClass() == null) {
                 addTimeStamp(classNode);
             }
+        }
+    }
+
+    /**
+     * Retrieves the configured algorithms from a system property.
+     * If the system property is not set, a default algorithm is returned.
+     *
+     * @return The configured algorithms or a default value if not set.
+     */
+    public String getAlgorithms() {
+        // Attempt to retrieve the algorithms from a system property.
+        // Note: "CACHED_KEY_ALGORITHMS" is a placeholder and should be replaced with the actual property name.
+        String algorithms = System.getProperty("GROOVY_CACHED_KEY_ALGORITHMS");
+
+        // If the system property is set (i.e., not null), return its value.
+        if (algorithms != null) {
+            return algorithms;
+        }
+
+        // If the system property is not set, return a default algorithm.
+        // Note: MD5 is used here as a default, but it's generally not recommended for security-sensitive applications due to its weaknesses.
+        return "MD5";
+    }
+
+    /**
+     * Generates an encoded string based on the specified text and the algorithm configured.
+     * If the configured algorithm is MD5, an MD5 hash of the text is returned.
+     * If the configured algorithm is SHA-256, an SHA-256 hash of the text is returned.
+     * If an unrecognized algorithm is configured, defaults to returning an MD5 hash of the text.
+     *
+     * @param text The text to encode.
+     * @return The encoded string.
+     */
+    public String genEncodingString(String text) {
+        try {
+            String algorithms = getAlgorithms();
+
+            // Check if the configured algorithm is MD5.
+            if (algorithms.equals(MD5)) {
+                return EncodingGroovyMethods.md5(text);
+            }
+            // Check if the configured algorithm is SHA-256.
+            else if (algorithms.equals(SHA_256)) {
+                return EncodingGroovyMethods.sha256(text);
+            }
+            // If an unrecognized algorithm is configured, default to MD5.
+            else {
+                // Fallback to MD5 hashing.
+                return EncodingGroovyMethods.md5(text);
+            }
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new GroovyRuntimeException(e);
         }
     }
 }
