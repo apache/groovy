@@ -229,6 +229,30 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5881
+    void testCallClosure21() {
+        assertScript '''
+            Map<Integer, Closure<Integer>> m = [1: { int i -> i }, 2: Closure.IDENTITY]
+            int result = 0
+            for (e in m) {
+                def c = e.value
+                def x = c(e.key)
+                assert x == e.key
+                result += e.value(e.key)
+            }
+            assert result == 3
+        '''
+    }
+
+    // GROOVY-6324
+    void testCallClosure22() {
+        assertScript '''
+            class Car { Closure<String> model }
+            def c = new Car(model: {->'Tesla'})
+            assert c.model() == 'Tesla'
+        '''
+    }
+
     void testClosureReturnTypeInference1() {
         assertScript '''
             def c = { int a, int b -> return a + b }

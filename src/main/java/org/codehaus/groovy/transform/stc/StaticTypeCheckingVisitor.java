@@ -145,7 +145,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
@@ -3649,46 +3648,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         // visit functional arguments *after* target method selection
         visitMethodCallArguments(receiver, argumentList, false, null);
 
-        boolean isThisObjectExpression = isThisExpression(objectExpression);
-        boolean isCallOnClosure = false;
-        FieldNode fieldNode = null;
-        switch (name) {
-          case "call":
-          case "doCall":
-            if (!isThisObjectExpression) {
-                isCallOnClosure = receiver.equals(CLOSURE_TYPE);
-            }
-          default:
-            if (isThisObjectExpression) {
-                // GROOVY-5705, GROOVY-11366: "this.x(...)" could refer to field
-                if (!typeCheckingContext.isInStaticContext) {
-                    fieldNode = getField(receiver, name);
-                } else {
-                    fieldNode = getField(receiver, name, FieldNode::isStatic);
-                }
-                if (fieldNode != null
-                        && getType(fieldNode).equals(CLOSURE_TYPE)
-                        && !receiver.hasPossibleMethod(name, callArguments)) {
-                    isCallOnClosure = true;
-                }
-            }
-        }
-
         try {
+            boolean isThisObjectExpression = isThisExpression(objectExpression);
             ClassNode[] args = getArgumentTypes(argumentList);
             boolean functorsVisited = false;
-            if (isCallOnClosure) {
-                if (fieldNode != null) {
-                    GenericsType[] genericsTypes = getType(fieldNode).getGenericsTypes();
-                    if (genericsTypes != null) {
-                        Parameter[] parameters = fieldNode.getNodeMetaData(CLOSURE_ARGUMENTS);
-                        if (parameters != null) {
-                            typeCheckClosureCall(callArguments, args, parameters);
-                        }
-                        ClassNode closureReturnType = genericsTypes[0].getType();
-                        storeType(call, closureReturnType);
-                    }
-                } else if (objectExpression instanceof VariableExpression) {
+            if (!isThisObjectExpression && receiver.equals(CLOSURE_TYPE)
+                    && (name.equals("call") || name.equals("doCall"))) {
+                if (objectExpression instanceof VariableExpression) {
                     Variable variable = findTargetVariable((VariableExpression) objectExpression);
                     if (variable instanceof ASTNode) {
                         Parameter[] parameters = ((ASTNode) variable).getNodeMetaData(CLOSURE_ARGUMENTS);
@@ -3759,6 +3725,19 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             if (!mn.isEmpty()) {
                                 break;
                             }
+                        }
+                    }
+                    if (mn.isEmpty() && !name.equals("call")) {
+                        // GROOVY-5705, GROOVY-5881, GROOVY-6324, GROOVY-11366: closure property
+                        var property = propX(objectExpression, call.getMethod(), call.isSafe());
+                        property.setImplicitThis(call.isImplicitThis());
+                        if (existsProperty(property, true)
+                                && getType(property).equals(CLOSURE_TYPE)) {
+                            chosenReceiver = Receiver.make(getType(property));
+                            call.putNodeMetaData("callable property", property);
+                            List<Expression> list = argumentList.getExpressions();
+                            int nArgs = list.stream().noneMatch(e -> e instanceof SpreadExpression) ? list.size() : -1;
+                            mn = List.of(nArgs == 0 ? CLOSURE_CALL_NO_ARG : nArgs == 1 ? CLOSURE_CALL_ONE_ARG : CLOSURE_CALL_VARGS);
                         }
                     }
                     if (mn.isEmpty()) {

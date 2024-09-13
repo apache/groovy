@@ -28,10 +28,8 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.classgen.asm.MopWriter;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
-import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.argumentSize;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -61,20 +59,15 @@ class MethodCallExpressionTransformer {
             return transformMethodCallExpression(transformToMopSuperCall((ClassNode) superCallReceiver, mce));
         }
 
-        if (isCallOnClosure(mce)) {
-            var field = getField(scTransformer.getClassNode(), mce.getMethodAsString());
-            if (field != null) {
-                var closureFieldCall = new MethodCallExpression(
-                        new VariableExpression(field),
-                        "call",
-                        scTransformer.transform(arguments));
-                // implicit-this "field(args)" expression has no place for safe, spread-safe, or type arguments
-                closureFieldCall.setImplicitThis(false);
-                closureFieldCall.setMethodTarget(mce.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
-                closureFieldCall.setSourcePosition(mce);
-                closureFieldCall.copyNodeMetaData(mce);
-                return closureFieldCall;
-            }
+        Expression callable = mce.getNodeMetaData("callable property");
+        if (callable != null) {
+            var callableCall = new MethodCallExpression(callable, "call", scTransformer.transform(arguments));
+            // "callable(args)" expression has no place for safe, spread-safe or type arguments
+            callableCall.setImplicitThis(false);
+            callableCall.setMethodTarget(mce.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
+            callableCall.setSourcePosition(mce);
+            callableCall.copyNodeMetaData(mce);
+            return callableCall;
         }
 
         return scTransformer.superTransform(mce);
@@ -88,15 +81,6 @@ class MethodCallExpressionTransformer {
                 && node.getParameters().length == 1
                 && DefaultGroovyMethods.class.getName().equals(
                     ((ExtensionMethodNode) node).getExtensionMethodNode().getDeclaringClass().getName());
-    }
-
-    private static boolean isCallOnClosure(final MethodCallExpression expr) {
-        MethodNode target = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        return expr.isImplicitThis()
-                && !"call".equals(expr.getMethodAsString())
-                && (target == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS
-                    || target == StaticTypeCheckingVisitor.CLOSURE_CALL_NO_ARG
-                    || target == StaticTypeCheckingVisitor.CLOSURE_CALL_ONE_ARG);
     }
 
     private static MethodCallExpression transformToMopSuperCall(final ClassNode superType, final MethodCallExpression expr) {
