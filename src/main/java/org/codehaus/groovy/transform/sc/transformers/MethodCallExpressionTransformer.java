@@ -31,8 +31,6 @@ import org.codehaus.groovy.transform.stc.ExtensionMethodNode;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import java.util.Optional;
-
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.argumentSize;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -64,10 +62,10 @@ class MethodCallExpressionTransformer {
         }
 
         if (isCallOnClosure(mce)) {
-            var field = Optional.ofNullable(scTransformer.getClassNode()).map(cn -> getField(cn, mce.getMethodAsString()));
-            if (field.isPresent()) {
+            var field = getField(scTransformer.getClassNode(), mce.getMethodAsString());
+            if (field != null) {
                 var closureFieldCall = new MethodCallExpression(
-                        new VariableExpression(field.get()),
+                        new VariableExpression(field),
                         "call",
                         scTransformer.transform(arguments));
                 // implicit-this "field(args)" expression has no place for safe, spread-safe, or type arguments

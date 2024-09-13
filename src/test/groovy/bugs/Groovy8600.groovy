@@ -18,22 +18,22 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy8600Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy8600 {
+    @Test
     void testClosureFieldUseWithinMethod() {
         assertScript '''
-            import groovy.transform.CompileStatic
-
-            class TestCompileStatic {
+            class C {
                 private Closure<String> func = { it.toUpperCase() }
-                @CompileStatic
-                def testCallFunc () {
+                @groovy.transform.CompileStatic m() {
                     func('foo') + func.call('bar')
                 }
             }
 
-            assert new TestCompileStatic().testCallFunc() == 'FOOBAR'
+            assert new C().m() == 'FOOBAR'
         '''
     }
 }

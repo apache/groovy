@@ -22,7 +22,6 @@ import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -43,7 +42,6 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -64,7 +62,6 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         Types.COMPARE_TO, BYTECODE_ADAPTER_CLASS.getMethods("compareTo").get(0)
     );
 
-    private ClassNode classNode;
     private final SourceUnit unit;
 
     private final StaticTypesTypeChooser typeChooser = new StaticTypesTypeChooser();
@@ -98,7 +95,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     }
 
     public ClassNode getClassNode() {
-        return classNode;
+        return staticCompilationVisitor.getTypeCheckingContext().getEnclosingClassNode();
     }
 
     @Override
@@ -153,13 +150,8 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
 
     @Override
     public void visitClass(final ClassNode node) {
-        ClassNode prev = classNode;
-        classNode = node;
         super.visitClass(node);
-        for (Iterator<InnerClassNode> innerClasses = classNode.getInnerClasses(); innerClasses.hasNext();) {
-            visitClass(innerClasses.next());
-        }
-        classNode = prev;
+        node.getInnerClasses().forEachRemaining(this::visitClass);
     }
 
     @Override
