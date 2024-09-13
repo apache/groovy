@@ -21,7 +21,6 @@ package org.codehaus.groovy.classgen.asm;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -94,6 +93,7 @@ public class InvocationWriter {
     public static final MethodCallerMultiAdapter invokeMethodOnSuper = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethodOnSuper", true, false);
     public static final MethodCallerMultiAdapter invokeMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethod", true, false);
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
+    @Deprecated(since = "5.0.0")
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
     public static final MethodCaller castToVargsArray = MethodCaller.newStatic(DefaultTypeTransformation.class, "castToVargsArray");
     private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")});
@@ -457,78 +457,38 @@ public class InvocationWriter {
     }
 
     public void writeInvokeMethod(MethodCallExpression call) {
-        if (isClosureCall(call)) {
-            invokeClosure(call.getArguments(), call.getMethodAsString());
-        } else {
-            if (isFunctionInterfaceCall(call)) {
-                call = transformToRealMethodCall(call);
-            }
-            Expression receiver = call.getObjectExpression();
-            MethodCallerMultiAdapter adapter = invokeMethod;
-            if (isSuperExpression(receiver)) {
-                adapter = invokeMethodOnSuper;
-            } else if (isThisExpression(receiver)) {
-                adapter = invokeMethodOnCurrent;
-            }
-            if (isStaticInvocation(call)) {
-                adapter = invokeStaticMethod;
-            }
-            Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
-            makeCall(call, receiver, messageName, call.getArguments(), adapter, call.isSafe(), call.isSpreadSafe(), call.isImplicitThis());
+        Expression receiver = call.getObjectExpression();
+        // GROOVY-8466: replace "rcvr.call(args)" with "rcvr.abstractMethod(args)"
+        if (!isThisExpression(receiver) && "call".equals(call.getMethodAsString())) {
+            ClassNode type = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+            if (isFunctionalInterface(type)) call = transformToRealMethodCall(call, type);
         }
+        MethodCallerMultiAdapter adapter = invokeMethod;
+        if (isSuperExpression(receiver)) {
+            adapter = invokeMethodOnSuper;
+        } else if (isThisExpression(receiver)) {
+            adapter = invokeMethodOnCurrent;
+        }
+        if (isStaticInvocation(call)) {
+            adapter = invokeStaticMethod;
+        }
+        Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
+        makeCall(call, receiver, messageName, call.getArguments(), adapter, call.isSafe(), call.isSpreadSafe(), call.isImplicitThis());
     }
 
-    private static boolean isFunctionInterfaceCall(final MethodCallExpression call) {
-        if ("call".equals(call.getMethodAsString())) {
-            Expression objectExpression = call.getObjectExpression();
-            if (!isThisExpression(objectExpression)) {
-                return isFunctionalInterface(objectExpression.getType());
-            }
-        }
-        return false;
-    }
-
-    private static MethodCallExpression transformToRealMethodCall(MethodCallExpression call) {
-        ClassNode type = call.getObjectExpression().getType();
+    private static MethodCallExpression transformToRealMethodCall(final MethodCallExpression call, final ClassNode type) {
         MethodNode methodNode = ClassHelper.findSAM(type);
 
-        call = (MethodCallExpression) call.transformExpression(expression -> {
-            if (!(expression instanceof ConstantExpression)) {
-                return expression;
+        var rewrite = (MethodCallExpression) call.transformExpression(expression -> {
+            if (expression == call.getMethod()) {
+                var methodName = new ConstantExpression(methodNode.getName());
+                methodName.setSourcePosition(call.getMethod());
+                return methodName;
             }
-            return new ConstantExpression(methodNode.getName());
+            return expression;
         });
-        call.setMethodTarget(methodNode);
-        return call;
-    }
-
-    private boolean isClosureCall(final MethodCallExpression call) {
-        // are we a local variable?
-        // it should not be an explicitly "this" qualified method call
-        // and the current class should have a possible method
-        ClassNode classNode = controller.getClassNode();
-        String methodName = call.getMethodAsString();
-        if (methodName == null) return false;
-        if (!call.isImplicitThis()) return false;
-        if (!isThisExpression(call.getObjectExpression())) return false;
-        FieldNode field = classNode.getDeclaredField(methodName);
-        if (field == null) return false;
-        if (isStaticInvocation(call) && !field.isStatic()) return false;
-        Expression arguments = call.getArguments();
-        return !classNode.hasPossibleMethod(methodName, arguments);
-    }
-
-    private void invokeClosure(final Expression arguments, final String methodName) {
-        AsmClassGenerator acg = controller.getAcg();
-        acg.visitVariableExpression(new VariableExpression(methodName));
-        controller.getOperandStack().box();
-        if (arguments instanceof TupleExpression) {
-            arguments.visit(acg);
-        } else {
-            new TupleExpression(arguments).visit(acg);
-        }
-        invokeClosureMethod.call(controller.getMethodVisitor());
-        controller.getOperandStack().replace(ClassHelper.OBJECT_TYPE);
+        rewrite.setMethodTarget(methodNode);
+        return rewrite;
     }
 
     private boolean isStaticInvocation(final MethodCallExpression call) {

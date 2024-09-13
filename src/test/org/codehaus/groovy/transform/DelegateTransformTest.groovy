@@ -23,6 +23,7 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
+import java.util.concurrent.Callable
 import java.util.concurrent.locks.Lock
 
 import static groovy.test.GroovyAssert.assertScript
@@ -1090,11 +1091,11 @@ interface DelegateBar extends DelegateFoo {
 }
 
 class DelegateBarImpl implements DelegateBar {
-    @Delegate DelegateFoo foo;
+    @Delegate DelegateFoo foo
 
-    DelegateBarImpl(DelegateFoo f) { this.foo = f}
+    DelegateBarImpl(DelegateFoo foo) { this.foo = foo }
 
-    def bar() { 'bar impl'}
+    @Override bar() { 'bar impl' }
 }
 
 class BazWithDeprecatedFoo {
@@ -1114,20 +1115,16 @@ class Foo4244 {
     @Delegate Bar4244 bar = new Bar4244()
 }
 
+@groovy.transform.TupleConstructor(includeFields=true)
 class FooToMethod {
-    private final Closure<DelegateFoo> strategy
+    private final Callable<DelegateFoo> supplier
 
-    FooToMethod(Closure<DelegateFoo> strategy) {
-        this.strategy = strategy
-    }
-
-    @Delegate
-    DelegateFoo getStrategy() { strategy() }
+    @Delegate DelegateFoo getStrategy() { supplier() }
 }
 
 class Bar4244 {
-    String nonFinalBaz = "Initial value - nonFinalBaz"
-    final String finalBaz = "Initial value - finalBaz"
+    String nonFinalBaz = 'Initial value - nonFinalBaz'
+    final String finalBaz = 'Initial value - finalBaz'
 }
 
 interface SomeInterface4619 {
@@ -1137,8 +1134,7 @@ interface SomeInterface4619 {
 interface SomeOtherInterface4619 extends SomeInterface4619 {}
 
 class SomeClass4619 {
-    @Delegate
-    SomeOtherInterface4619 delegate
+    @Delegate SomeOtherInterface4619 delegate
 }
 
 interface BarInt {
