@@ -59,9 +59,9 @@ class MethodCallExpressionTransformer {
             return transformMethodCallExpression(transformToMopSuperCall((ClassNode) superCallReceiver, mce));
         }
 
-        Expression callable = mce.getNodeMetaData("callable property");
+        var callable = (Expression) mce.putNodeMetaData("callable property", null);
         if (callable != null) {
-            var callableCall = new MethodCallExpression(callable, "call", scTransformer.transform(arguments));
+            var callableCall = new MethodCallExpression(scTransformer.transform(callable), "call", scTransformer.transform(arguments));
             // "callable(args)" expression has no place for safe, spread-safe or type arguments
             callableCall.setImplicitThis(false);
             callableCall.setMethodTarget(mce.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET));
