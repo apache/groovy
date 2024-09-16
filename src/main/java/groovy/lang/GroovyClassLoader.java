@@ -104,6 +104,10 @@ public class GroovyClassLoader extends URLClassLoader {
     private final String sourceEncoding;
     private Boolean recompile;
 
+    static {
+        registerAsParallelCapable();
+    }
+
     /**
      * Creates a GroovyClassLoader using the current Thread's context ClassLoader as parent.
      */
