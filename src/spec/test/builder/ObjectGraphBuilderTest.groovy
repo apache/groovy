@@ -22,11 +22,11 @@ import asciidoctor.Utils
 import groovy.test.GroovyTestCase
 
 /**
-* Tests for ObjectGraphBuilder. The tests directly in this file are specific
-* to ObjectGraphBuilder. Functionality in common with other Builders
-* is tested in the parent class.
-*/
-class ObjectGraphBuilderTest  extends GroovyTestCase {
+ * Tests for ObjectGraphBuilder. The tests directly in this file are specific
+ * to ObjectGraphBuilder. Functionality in common with other Builders
+ * is tested in the parent class.
+ */
+final class ObjectGraphBuilderTest extends GroovyTestCase {
 
     void testBuilder() {
         assertScript '''// tag::domain_classes[]
@@ -77,7 +77,6 @@ assert employee.address instanceof Address
 // end::builder_example[]
 '''
     }
-
 
     void testBuildImmutableFailure() {
         def err = shouldFail '''
@@ -133,12 +132,12 @@ builder.newInstanceResolver = { Class klazz, Map attributes ->
 }
 // end::newinstanceresolver[]
 def person = builder.person(name:'Jon', age:17)
-
         '''
     }
 
     void testId() {
-        assertScript '''package com.acme
+        assertScript '''
+package com.acme
 
 class Company {
     String name
@@ -179,6 +178,6 @@ assert e1.name == 'Duke'
 assert e2.name == 'John'
 assert e1.address.line1 == '123 Groovy Rd'
 assert e2.address.line1 == '123 Groovy Rd'
-'''
+        '''
     }
 }

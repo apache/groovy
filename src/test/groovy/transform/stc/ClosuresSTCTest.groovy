@@ -628,30 +628,28 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     void testRecurseClosureCallAsMethod() {
         assertScript '''
             Closure<Integer> cl
-            cl = { int x -> x == 0 ? x : 1+cl(x-1) }
+            cl = { int x -> x == 0 ? x : 1 + cl(x-1) }
         '''
     }
 
     void testFibClosureCallAsMethod() {
         assertScript '''
             Closure<Integer> fib
-            fib = { int x-> x<1?x:fib(x-1)+fib(x-2) }
-            fib(2)
+            fib = { int x -> x<2 ? x : fib(x-1) + fib(x-2) }
+            assert fib(2) == 1
         '''
     }
 
     void testFibClosureCallAsMethodFromWithinClass() {
         assertScript '''
-            class FibUtil {
-                private Closure<Integer> fibo
-                FibUtil() {
-                    fibo = { int x-> x<1?x:fibo(x-1)+fibo(x-2) }
+            class Fibonacci {
+                private static final Closure<Integer> f
+                static {
+                    f = { int x -> x<2 ? x : f(x-1) + f(x-2) }
                 }
-
-                int fib(int n) { fibo(n) }
+                static int of(int n) { f(n) }
             }
-            FibUtil fib = new FibUtil()
-            fib.fib(2)
+            assert Fibonacci.of(2) == 1
         '''
     }
 

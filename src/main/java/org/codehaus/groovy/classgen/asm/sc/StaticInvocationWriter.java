@@ -79,10 +79,12 @@ import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
+import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.isStringType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
@@ -91,6 +93,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -213,6 +216,33 @@ public class StaticInvocationWriter extends InvocationWriter {
         controller.getCompileStack().pop();
     }
 
+    private Expression thisObjectExpression(final ClassNode source, final ClassNode target) {
+        ClassNode thisType = source;
+        while (isGeneratedFunction(thisType)) {
+            thisType = thisType.getOuterClass();
+        }
+        Expression thisExpr;
+        if (isTrait(thisType.getOuterClass())) {
+            thisExpr = varX("thisObject"); // GROOVY-7242, GROOVY-8127
+        } else if (controller.isStaticContext()) {
+            thisExpr = varX("thisObject", makeClassSafe0(ClassHelper.CLASS_Type, thisType.asGenericsType()));
+        } else {
+            thisExpr = varX("thisObject", thisType);
+            // adjust for multiple levels of nesting
+            while (!thisType.isDerivedFrom(target) && !thisType.implementsInterface(target)) {
+                FieldNode thisZero = thisType.getDeclaredField("this$0");
+                if (thisZero != null) {
+                    thisExpr = attrX(thisExpr, "this$0");
+                    thisExpr.setType(thisZero.getType());
+                    thisType = thisType.getOuterClass();
+                    if (thisType != null) continue;
+                }
+                break;
+            }
+        }
+        return thisExpr;
+    }
+
     /**
      * Attempts to make a direct method call on a bridge method, if it exists.
      */
@@ -238,32 +268,22 @@ public class StaticInvocationWriter extends InvocationWriter {
             lookupClassNode = target.getDeclaringClass().redirect();
         }
         Map<MethodNode, MethodNode> bridges = lookupClassNode.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
-        MethodNode bridge = bridges == null ? null : bridges.get(target);
+        MethodNode bridge = (bridges == null ? null : bridges.get(target));
         if (bridge != null) {
-            Expression fixedReceiver = receiver;
+            Expression newReceiver = receiver;
             if (implicitThis) {
                 if (!controller.isInGeneratedFunction()) {
                     if (!thisClass.isDerivedFrom(lookupClassNode))
-                        fixedReceiver = propX(classX(lookupClassNode), "this");
+                        newReceiver = propX(classX(lookupClassNode), "this");
                 } else if (thisClass != null) {
-                    ClassNode current = thisClass.getOuterClass();
-                    fixedReceiver = varX("thisObject", current);
-                    // adjust for multiple levels of nesting if needed
-                    while (current.getOuterClass() != null && !lookupClassNode.equals(current)) {
-                        FieldNode thisField = current.getField("this$0");
-                        current = current.getOuterClass();
-                        if (thisField != null) {
-                            fixedReceiver = propX(fixedReceiver, "this$0");
-                            fixedReceiver.setType(current);
-                        }
-                    }
+                    newReceiver = thisObjectExpression(thisClass, lookupClassNode);
                 }
             }
-            ArgumentListExpression newArgs = args(target.isStatic() ? nullX() : fixedReceiver);
+            ArgumentListExpression newArguments = args(target.isStatic() ? nullX() : newReceiver);
             for (Expression expression : args.getExpressions()) {
-                newArgs.addExpression(expression);
+                newArguments.addExpression(expression);
             }
-            return writeDirectMethodCall(bridge, implicitThis, fixedReceiver, newArgs);
+            return writeDirectMethodCall(bridge, implicitThis, newReceiver, newArguments);
         }
         return false;
     }
@@ -284,22 +304,10 @@ public class StaticInvocationWriter extends InvocationWriter {
             List<Expression> argumentList = new ArrayList<>();
             if (emn.isStaticExtension()) {
                 argumentList.add(nullX());
+            } else if (!isThisOrSuper(receiver) || !controller.isInGeneratedFunction()) {
+                argumentList.add(receiver);
             } else {
-                Expression fixedReceiver = null;
-                if (isThisOrSuper(receiver) && classNode.getOuterClass() != null && controller.isInGeneratedFunction()) {
-                    ClassNode current = classNode.getOuterClass();
-                    fixedReceiver = varX("thisObject", current);
-                    // adjust for multiple levels of nesting if needed
-                    while (current.getOuterClass() != null && !classNode.equals(current)) {
-                        FieldNode thisField = current.getField("this$0");
-                        current = current.getOuterClass();
-                        if (thisField != null) {
-                            fixedReceiver = propX(fixedReceiver, "this$0");
-                            fixedReceiver.setType(current);
-                        }
-                    }
-                }
-                argumentList.add(fixedReceiver != null ? fixedReceiver : receiver);
+                argumentList.add(thisObjectExpression(classNode, target.getDeclaringClass()));
             }
             argumentList.addAll(args.getExpressions());
             loadArguments(argumentList, parameters);
@@ -367,20 +375,8 @@ public class StaticInvocationWriter extends InvocationWriter {
                     && controller.isInGeneratedFunction()
                     && !classNode.isDerivedFrom(target.getDeclaringClass())
                     && !classNode.implementsInterface(target.getDeclaringClass())) {
-                ClassNode thisType = controller.getThisType();
-                if (isTrait(thisType.getOuterClass())) thisType = ClassHelper.dynamicType(); // GROOVY-7242
-
-                fixedReceiver = varX("thisObject", thisType);
-                // account for multiple levels of inner types
-                while (thisType.getOuterClass() != null && !target.getDeclaringClass().equals(thisType)) {
-                    FieldNode thisField = thisType.getField("this$0");
-                    thisType = thisType.getOuterClass();
-                    if (thisField != null) {
-                        fixedReceiver = propX(fixedReceiver, "this$0");
-                        fixedReceiver.setType(thisType);
-                        fixedImplicitThis = false;
-                    }
-                }
+                fixedReceiver = thisObjectExpression(classNode, target.getDeclaringClass());
+                if (!(fixedReceiver instanceof VariableExpression)) fixedImplicitThis = false;
             }
         }
         if (receiver != null && !isSuperExpression(receiver) && !isClassWithSuper(receiver)) {

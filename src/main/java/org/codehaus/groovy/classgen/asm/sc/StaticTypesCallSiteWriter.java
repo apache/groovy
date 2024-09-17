@@ -476,7 +476,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
         // check outer class
         if (implicitThis && receiverType instanceof InnerClassNode && !receiverType.isStaticClass()) {
-            if (makeGetPropertyWithGetter(receiver,  receiverType.getOuterClass(), propertyName,  safe, implicitThis)) {
+            if (makeGetPropertyWithGetter(receiver, receiverType.getOuterClass(), propertyName, safe, implicitThis)) {
                 return true;
             }
         }
@@ -524,8 +524,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
                     }
                     mv.visitLabel(skip);
                 }
+                operandStack.replace(resultType);
             }
-            operandStack.replace(resultType);
             return true;
         }
         return false;

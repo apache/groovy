@@ -897,18 +897,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * Loads either this object or if we're inside a closure then load the top level owner
-     */
-    protected void loadThisOrOwner() {
-        ClassNode classNode = controller.getClassNode();
-        if (classNode.getOuterClass() == null) {
-            loadThis(VariableExpression.THIS_EXPRESSION);
-        } else {
-            fieldX(classNode.getDeclaredField("owner")).visit(this);
-        }
-    }
-
-    /**
      * Generates byte code for constants.
      *
      * @see <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#14152">Class field types</a>
@@ -1417,11 +1405,17 @@ public class AsmClassGenerator extends ClassGenerator {
         if (variable != null) {
             controller.getOperandStack().loadOrStoreVariable(variable, expression.isUseReferenceDirectly());
         } else {
-            PropertyExpression pexp = thisPropX(true, expression.getName());
+            PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
             pexp.getProperty().setSourcePosition(expression);
             pexp.setType(expression.getType());
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
+
+            if (!compileStack.isLHS() && !expression.isDynamicTyped()) {
+                ClassNode variableType = controller.getTypeChooser()
+                    .resolveType(expression, controller.getClassNode());
+                controller.getOperandStack().doGroovyCast(variableType);
+            }
         }
 
         if (!compileStack.isLHS()) {
@@ -2375,7 +2369,7 @@ public class AsmClassGenerator extends ClassGenerator {
         OperandStack operandStack = controller.getOperandStack();
         if (controller.isInGeneratedFunction() && !controller.getCompileStack().isImplicitThis()) {
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Closure", "getThisObject", "()Ljava/lang/Object;", false);
-            ClassNode expectedType = controller.getTypeChooser().resolveType(thisOrSuper, controller.getOutermostClass());
+            ClassNode expectedType = controller.getTypeChooser().resolveType(thisOrSuper, controller.getThisType() );
             if (!isObjectType(expectedType) && !isPrimitiveType(expectedType)) {
                 BytecodeHelper.doCast(mv, expectedType);
                 operandStack.push(expectedType);

@@ -18,19 +18,16 @@
  */
 package groovy.bugs
 
-import groovy.transform.CompileStatic
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class Groovy8446 {
-
-    private GroovyShell shell = new GroovyShell()
 
     @Test
     void testVoidArray0() {
-        shell.evaluate '''
+        assertScript '''
             class C {
                 Void[] m() {}
             }
@@ -40,25 +37,21 @@ final class Groovy8446 {
 
     @Test
     void testVoidArray1() {
-        def err = shouldFail {
-            shell.evaluate '''
-                class C {
-                    void[] m() {}
-                }
-            '''
-        }
-        assert err =~ /void\[\] is an invalid type/ || err =~ /Unexpected input: '\('/
+        def err = shouldFail '''
+            class C {
+                void[] m() {}
+            }
+        '''
+        assert err =~ /void\[\] is an invalid type|Unexpected input: '\('/
     }
 
     @Test
     void testVoidArray2() {
-        def err = shouldFail {
-            shell.evaluate '''
-                class C {
-                    def meth(void... args) {}
-                }
-            '''
-        }
+        def err = shouldFail '''
+            class C {
+                def meth(void... args) {}
+            }
+        '''
         assert err =~ /void\[\] is an invalid type|void is not allowed here/
     }
 }
