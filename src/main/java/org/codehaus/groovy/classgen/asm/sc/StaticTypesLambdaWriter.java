@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.builder.AstStringCompiler;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -141,13 +142,22 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     private static boolean isAccessingInstanceMembersOfEnclosingClass(final MethodNode lambdaMethod) {
         boolean[] result = new boolean[1];
 
-        ClassNode enclosingClass = lambdaMethod.getDeclaringClass().getOuterClass();
-
         lambdaMethod.getCode().visit(new CodeVisitorSupport() {
             @Override
-            public void visitVariableExpression(final VariableExpression expression) {
-                if (expression.isThisExpression() || enclosingClass.equals(expression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER))) {
+            public void visitConstantExpression(final ConstantExpression expression) {
+                if ("this".equals(expression.getValue())) { // as in Type.this.name
                     result[0] = true;
+                }
+            }
+            @Override
+            public void visitVariableExpression(final VariableExpression expression) {
+                if ("this".equals(expression.getName()) || "thisObject".equals(expression.getName())) {
+                    result[0] = true;
+                } else {
+                    var owner = expression.getNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER);
+                    if (owner != null && lambdaMethod.getDeclaringClass().getOuterClasses().contains(owner)) {
+                        result[0] = true;
+                    }
                 }
             }
         });

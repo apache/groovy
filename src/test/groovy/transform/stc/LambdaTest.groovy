@@ -1021,6 +1021,41 @@ final class LambdaTest {
     }
 
     @Test
+    void testNestedLambdaAccessingInstanceFields2() {
+        for (qual in ['','this.','thisObject.','getThisObject().']) {
+            assertScript shell, """
+                class Test1 {
+                    def m() {
+                        Optional.empty().orElseGet(() -> Optional.empty().orElseGet(() -> ${qual}n))
+                    }
+                    private n = 123
+                }
+
+                assert new Test1().m() == 123
+            """
+        }
+    }
+
+    // GROOVY-11480
+    @Test
+    void testNestedLambdaAccessingInstanceFields3() {
+        for (qual in ['','Test1.this.']) {
+            assertScript shell, """
+                class Test1 {
+                    class Test2 {
+                        def m() {
+                            Optional.empty().orElseGet(() -> Optional.empty().orElseGet(() -> ${qual}n))
+                        }
+                    }
+                    private n = 123
+                }
+
+                assert new Test1.Test2(new Test1()).m() == 123
+            """
+        }
+    }
+
+    @Test
     void testInitializeBlocks() {
         assertScript shell, '''
             class Test1 {

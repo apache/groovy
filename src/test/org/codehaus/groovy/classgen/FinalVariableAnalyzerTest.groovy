@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen
 
 import groovy.test.GroovyTestCase
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.InnerClassNode
@@ -29,9 +30,10 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder
 
-class FinalVariableAnalyzerTest extends GroovyTestCase {
+@AutoFinal
+final class FinalVariableAnalyzerTest extends GroovyTestCase {
 
-    protected void assertFinals(final Map<String, Boolean> expectations, final String script) throws Exception {
+    protected void assertFinals(Map<String, Boolean> expectations, String script) throws Exception {
         def cc = new CompilerConfiguration()
         CompilerCustomizationBuilder.withConfig(cc) {
             inline(phase: 'SEMANTIC_ANALYSIS') { source, context, classNode ->
@@ -43,7 +45,7 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         shell.parse(script)
     }
 
-    protected void assertFinalCompilationErrors(List<String> vars, final String script, boolean unInitialized = false) {
+    protected void assertFinalCompilationErrors(List<String> vars, String script, boolean unInitialized = false) {
         Set<String> checked = []
         try {
             assertFinals [:], script
@@ -58,7 +60,7 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
                 checked << var
             }
         }
-        assert (vars - checked).empty
+        assert (vars - checked).isEmpty()
     }
 
     void testVariableShouldBeEffectivelyFinal() {
@@ -292,7 +294,6 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
             x=1
         ''')
     }
-
 
     void testDirectlyAssignedAICSharedVariableShouldBeConsideredFinal() {
         assertFinals x: true, '''
@@ -574,19 +575,19 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
-    @CompileStatic
+    @AutoFinal @CompileStatic
     private static class AssertionFinalVariableAnalyzer extends FinalVariableAnalyzer {
 
+        private final Map<String, Boolean> assertionsToCheck
         private Set<Variable> variablesToCheck
-        private Map<String, Boolean> assertionsToCheck
 
-        AssertionFinalVariableAnalyzer(final SourceUnit sourceUnit, final Map<String, Boolean> assertions) {
+        AssertionFinalVariableAnalyzer(SourceUnit sourceUnit, Map<String, Boolean> assertions) {
             super(sourceUnit)
             assertionsToCheck = assertions
         }
 
         @Override
-        void visitVariableExpression(final VariableExpression expression) {
+        void visitVariableExpression(VariableExpression expression) {
             super.visitVariableExpression(expression)
             if (assertionsToCheck.containsKey(expression.name)) {
                 variablesToCheck << expression
@@ -595,21 +596,24 @@ class FinalVariableAnalyzerTest extends GroovyTestCase {
         }
 
         @Override
-        void visitClass(final ClassNode node) {
-            def old = variablesToCheck
-            variablesToCheck = []
-            super.visitClass(node)
-            if (!(node instanceof InnerClassNode)) {
-                checkAssertions()
+        void visitClass(ClassNode node) {
+            def vars = variablesToCheck
+            try {
+                variablesToCheck = []
+                super.visitClass(node)
+                if (node !instanceof InnerClassNode) {
+                    checkAssertions()
+                }
+            } finally {
+                variablesToCheck = vars
             }
-            variablesToCheck = old
         }
 
         private void checkAssertions() {
-            assertionsToCheck.each { name, shouldBeFinal ->
+            for (entry in assertionsToCheck) {
+                def name = entry.key, shouldBeFinal = entry.value
                 def candidates = variablesToCheck.findAll { it.name == name }
                 assert candidates.any { isEffectivelyFinal(it) == shouldBeFinal }
-
             }
         }
     }
