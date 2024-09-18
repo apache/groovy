@@ -591,14 +591,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Checks for private field access from inner or outer class.
+     * Checks for private field access from closure or nestmate.
      */
     private void checkOrMarkPrivateAccess(final Expression source, final FieldNode fn, final boolean lhsOfAssignment) {
         if (fn != null && fn.isPrivate() && !fn.isSynthetic()) {
             ClassNode declaringClass = fn.getDeclaringClass();
             ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
-            if (declaringClass == enclosingClass && typeCheckingContext.getEnclosingClosure() == null) return;
-            if (declaringClass == enclosingClass || getOutermost(declaringClass) == getOutermost(enclosingClass)) {
+            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : getOutermost(declaringClass) == getOutermost(enclosingClass)) {
                 StaticTypesMarker accessKind = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
                 addPrivateFieldOrMethodAccess(source, declaringClass, accessKind, fn);
             }
@@ -606,29 +605,26 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Checks for private method call from inner or outer class.
+     * Checks for private or protected method access from closure or nestmate.
      */
     private void checkOrMarkPrivateAccess(final Expression source, final MethodNode mn) {
         ClassNode declaringClass = mn.getDeclaringClass();
-        ClassNode enclosingClassNode = typeCheckingContext.getEnclosingClassNode();
-        if (declaringClass != enclosingClassNode || typeCheckingContext.getEnclosingClosure() != null) {
-            int mods = mn.getModifiers();
-            boolean sameModule = declaringClass.getModule() == enclosingClassNode.getModule();
-            String packageName = declaringClass.getPackageName();
-            if (packageName == null) {
-                packageName = "";
-            }
-            if (Modifier.isPrivate(mods) && sameModule) {
+        ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
+        if (declaringClass != enclosingClass || typeCheckingContext.getEnclosingClosure() != null) {
+            if (mn.isPrivate()
+                    && declaringClass.getModule() == enclosingClass.getModule()) {
                 addPrivateFieldOrMethodAccess(source, declaringClass, PV_METHODS_ACCESS, mn);
-            } else if (Modifier.isProtected(mods) && !packageName.equals(enclosingClassNode.getPackageName())
-                    && !implementsInterfaceOrIsSubclassOf(enclosingClassNode, declaringClass)) {
-                ClassNode cn = enclosingClassNode;
-                while ((cn = cn.getOuterClass()) != null) {
+            } else if (mn.isProtected()
+                    && !inSamePackage(enclosingClass, declaringClass)
+                    && (!implementsInterfaceOrIsSubclassOf(enclosingClass, declaringClass)
+                                    || typeCheckingContext.getEnclosingClosure() != null)) {
+                ClassNode cn = enclosingClass;
+                do {
                     if (implementsInterfaceOrIsSubclassOf(cn, declaringClass)) {
                         addPrivateFieldOrMethodAccess(source, cn, PV_METHODS_ACCESS, mn);
                         break;
                     }
-                }
+                } while ((cn = cn.getOuterClass()) != null);
             }
         }
     }
@@ -2651,7 +2647,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 ClassNode ownerType = receiverType;
                 candidates.stream()
-                        .map(candidate -> {
+                        .peek(candidate -> checkOrMarkPrivateAccess(expression, candidate)) // GROOVY-11365
+                        .map (candidate -> {
                             ClassNode returnType = candidate.getReturnType();
                             if (!candidate.isStatic() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
                                 Map<GenericsTypeName, GenericsType> spec = new HashMap<>(); // GROOVY-11364

@@ -1526,22 +1526,44 @@ final class MethodReferenceTest {
 
     @Test // GROOVY-11301
     void testInnerClassPrivateMethodReference() {
-        def script = '''
+        assertScript shell, '''
+            @CompileStatic
             class C {
                 static class D {
                     private static String m() { 'D' }
                 }
-                @CompileStatic
                 static main(args) {
                     Supplier<String> str = D::m
                     assert str.get() == 'D'
                 }
             }
         '''
-        if (Runtime.version().feature() < 15) {
-            shouldFail(shell, IllegalAccessError, script)
-        } else {
-            assertScript(shell, script)
-        }
+    }
+
+    @Test // GROOVY-11365
+    void testInnerClassProtectedMethodReference() {
+        assertScript shell, '''package p
+            abstract class A<E> {
+                protected E op(E e) { result = e }
+                protected E result
+            }
+
+            true
+        '''
+        assertScript shell, '''
+            @CompileStatic
+            class C extends p.A<Integer> {
+                void test() {
+                    def runnable = { ->
+                        Consumer<Integer> consumer = this::op
+                        consumer.accept(42) // IllegalAccessError
+                    }
+                    runnable.run()
+                    assert result == Integer.valueOf(42)
+                }
+            }
+
+            new C().test()
+        '''
     }
 }

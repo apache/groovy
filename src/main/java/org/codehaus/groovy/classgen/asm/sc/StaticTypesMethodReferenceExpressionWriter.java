@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.MethodReferenceExpression;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.MethodReferenceExpressionWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
@@ -111,12 +112,21 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         } else {
             // TODO: move the findMethodRefMethod and checking to StaticTypeCheckingVisitor
             methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, typeOrTargetRef, typeOrTargetRefType);
+            if (methodReferenceExpression.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS) != null) { // GROOVY-11301, GROOVY-11365: access bridge indicated
+                Map<MethodNode,MethodNode> bridgeMethods = typeOrTargetRefType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
+                if (bridgeMethods != null) methodRefMethod = bridgeMethods.getOrDefault(methodRefMethod, methodRefMethod); // bridge may not have been generated
+            }
         }
 
         validate(methodReferenceExpression, typeOrTargetRefType, methodRefName, methodRefMethod, parametersWithExactType,
                 resolveClassNodeGenerics(extractPlaceholders(functionalType), null, abstractMethod.getReturnType()));
 
-        if (isExtensionMethod(methodRefMethod)) {
+        if (isBridgeMethod(methodRefMethod)) {
+            targetIsArgument = true; // GROOVY-11301, GROOVY-11365
+            if (isClassExpression) { // method expects an instance argument
+                methodRefMethod = addSyntheticMethodForDGSM(methodRefMethod);
+            }
+        } else if (isExtensionMethod(methodRefMethod)) {
             ExtensionMethodNode extensionMethodNode = (ExtensionMethodNode) methodRefMethod;
             methodRefMethod  = extensionMethodNode.getExtensionMethodNode();
             boolean isStatic = extensionMethodNode.isStaticExtension();
@@ -208,6 +218,8 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
             addFatalError(error, methodReference);
         } else if (methodNode.isVoidMethod() && !ClassHelper.isPrimitiveVoid(samReturnType)) {
             addFatalError("Invalid return type: void is not convertible to " + samReturnType.getText(), methodReference);
+        } else if (!AsmClassGenerator.isMemberDirectlyAccessible(methodNode.getModifiers(), methodNode.getDeclaringClass(), controller.getClassNode())) {
+            addFatalError("Cannot access method: " + methodName + " of class: " + methodNode.getDeclaringClass().getText(), methodReference); // GROOVY-11365
         } else if (samParameters.length > 0 && isTypeReferringInstanceMethod(methodReference.getExpression(), methodNode) && !isAssignableTo(samParameters[0].getType(), targetType)) {
             throw new RuntimeParserException("Invalid receiver type: " + samParameters[0].getType().getText() + " is not compatible with " + targetType.getText(), methodReference.getExpression());
         }
@@ -421,6 +433,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
     }
 
     //--------------------------------------------------------------------------
+
+    private static boolean isBridgeMethod(final MethodNode mn) {
+        int staticSynthetic = Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC;
+        return ((mn.getModifiers() & staticSynthetic) == staticSynthetic) && mn.getName().startsWith("access$");
+    }
 
     private static boolean isConstructorReference(final String name) {
         return "new".equals(name);
