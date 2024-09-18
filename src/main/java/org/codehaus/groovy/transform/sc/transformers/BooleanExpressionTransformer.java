@@ -119,8 +119,8 @@ class BooleanExpressionTransformer {
                 int mark = os.getStackLength();
                 getExpression().visit(visitor);
 
-                if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveVoid(type)) { // GROOVY-10920
-                    BytecodeHelper.convertPrimitiveToBoolean(mv, type);
+                if (ClassHelper.isPrimitiveType(os.getTopOperand())) { // GROOVY-10920
+                    BytecodeHelper.convertPrimitiveToBoolean(mv, os.getTopOperand());
                     os.replace(ClassHelper.boolean_TYPE);
                     return;
                 }
