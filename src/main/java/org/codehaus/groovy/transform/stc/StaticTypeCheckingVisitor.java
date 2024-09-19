@@ -145,6 +145,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.apache.groovy.util.BeanUtils.decapitalize;
@@ -578,13 +579,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static ClassNode getOutermost(ClassNode cn) {
-        while (cn.getOuterClass() != null) {
-            cn = cn.getOuterClass();
-        }
-        return cn;
-    }
-
     private static void addPrivateFieldOrMethodAccess(final Expression source, final ClassNode cn, final StaticTypesMarker key, final ASTNode accessedMember) {
         cn.getNodeMetaData(key, x -> new LinkedHashSet<>()).add(accessedMember);
         source.putNodeMetaData(key, accessedMember);
@@ -597,7 +591,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         if (fn != null && fn.isPrivate() && !fn.isSynthetic()) {
             ClassNode declaringClass = fn.getDeclaringClass();
             ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
-            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : getOutermost(declaringClass) == getOutermost(enclosingClass)) {
+            if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : getNestHost(declaringClass) == getNestHost(enclosingClass)) {
                 StaticTypesMarker accessKind = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
                 addPrivateFieldOrMethodAccess(source, declaringClass, accessKind, fn);
             }
@@ -920,7 +914,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     int modifiers = resultType.getModifiers();
                     ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
                     if (!Modifier.isPublic(modifiers) && !enclosingType.equals(resultType)
-                            && !getOutermost(enclosingType).equals(getOutermost(resultType))
+                            && !getNestHost(enclosingType).equals(getNestHost(resultType))
                             && (Modifier.isPrivate(modifiers) || !inSamePackage(enclosingType, resultType))) {
                         resultType = originType; // TODO: Find accessible type in hierarchy of resultType?
                     } else if (GenericsUtils.hasUnresolvedGenerics(resultType)) { // GROOVY-9033, GROOVY-10089, et al.

@@ -74,6 +74,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
@@ -229,7 +230,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         } else {
             thisExpr = varX("thisObject", thisType);
             // adjust for multiple levels of nesting
-            while (!thisType.isDerivedFrom(target) && !thisType.implementsInterface(target)) {
+            while (!isSubtype(target, thisType)) {
                 FieldNode thisZero = thisType.getDeclaredField("this$0");
                 if (thisZero != null) {
                     thisExpr = attrX(thisExpr, "this$0");
@@ -258,7 +259,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         ClassNode lookupClassNode;
         if (target.isProtected()) {
             lookupClassNode = controller.getClassNode();
-            while (lookupClassNode != null && !lookupClassNode.isDerivedFrom(target.getDeclaringClass())) {
+            while (lookupClassNode != null && !isSubtype(target.getDeclaringClass(), lookupClassNode)) {
                 lookupClassNode = lookupClassNode.getOuterClass();
             }
             if (lookupClassNode == null) {
@@ -273,7 +274,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             Expression newReceiver = receiver;
             if (implicitThis) {
                 if (!controller.isInGeneratedFunction()) {
-                    if (!thisClass.isDerivedFrom(lookupClassNode))
+                    if (!isSubtype(lookupClassNode, thisClass))
                         newReceiver = propX(classX(lookupClassNode), "this");
                 } else if (thisClass != null) {
                     newReceiver = thisObjectExpression(thisClass, lookupClassNode);
@@ -367,14 +368,13 @@ public class StaticInvocationWriter extends InvocationWriter {
             if (!implicitThis && !isThisOrSuper(receiver) && !samePackageName(node, classNode)
                     && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node, target.getDeclaringClass())) {
                 writeMethodAccessError(target, receiver != null ? receiver : args);
-            } else if (!node.isDerivedFrom(target.getDeclaringClass()) && tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
+            } else if (!isSubtype(target.getDeclaringClass(), node) && tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
                 return true;
             }
         } else if (target.isPublic() && receiver != null) {
             if (implicitThis
                     && controller.isInGeneratedFunction()
-                    && !classNode.isDerivedFrom(target.getDeclaringClass())
-                    && !classNode.implementsInterface(target.getDeclaringClass())) {
+                    && !isSubtype(target.getDeclaringClass(), classNode)) {
                 fixedReceiver = thisObjectExpression(classNode, target.getDeclaringClass());
                 if (!(fixedReceiver instanceof VariableExpression)) fixedImplicitThis = false;
             }

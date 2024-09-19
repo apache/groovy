@@ -352,8 +352,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                 MethodCallExpression mce = callThisX("getThisObject");
                 mce.setImplicitThis(true);
                 mce.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
-                mce.putNodeMetaData(INFERRED_TYPE, controller.getOutermostClass());
-                pexp = castX(controller.getOutermostClass(), mce);
+                mce.putNodeMetaData(INFERRED_TYPE, controller.getThisType());
+                pexp = castX(controller.getThisType(), mce);
             } else {
                 pexp = propX(classX(outerClass), "this");
                 ((PropertyExpression) pexp).setImplicitThis(true);

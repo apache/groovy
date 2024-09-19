@@ -34,11 +34,11 @@ public class GeneratorContext {
     private int syntheticMethodIdx = 0;
     private final CompileUnit compileUnit;
 
-    public GeneratorContext(CompileUnit compileUnit) {
+    public GeneratorContext(final CompileUnit compileUnit) {
         this.compileUnit = compileUnit;
     }
 
-    public GeneratorContext(CompileUnit compileUnit, int innerClassOffset) {
+    public GeneratorContext(final CompileUnit compileUnit, final int innerClassOffset) {
         this.compileUnit = compileUnit;
         this.innerClassIdx = innerClassOffset;
     }
@@ -51,30 +51,23 @@ public class GeneratorContext {
         return compileUnit;
     }
 
-    public String getNextClosureInnerName(ClassNode owner, ClassNode enclosingClass, MethodNode enclosingMethod) {
-        return getNextInnerName(owner, enclosingClass, enclosingMethod, "closure");
+    public String getNextClosureInnerName(final ClassNode owner, final ClassNode enclosingClass, final MethodNode enclosingMethod) {
+        return getNextInnerName(enclosingClass, enclosingMethod, "closure");
     }
 
-    public String getNextLambdaInnerName(ClassNode owner, ClassNode enclosingClass, MethodNode enclosingMethod) {
-        return getNextInnerName(owner, enclosingClass, enclosingMethod, "lambda");
+    public String getNextLambdaInnerName(final ClassNode owner, final ClassNode enclosingClass, final MethodNode enclosingMethod) {
+        return getNextInnerName(enclosingClass, enclosingMethod, "lambda");
     }
 
-    private String getNextInnerName(ClassNode owner, ClassNode enclosingClass, MethodNode enclosingMethod, String classifier) {
-        String methodName = "";
-        if (enclosingMethod != null) {
-            methodName = enclosingMethod.getName();
-
-            if (enclosingClass.isDerivedFrom(ClassHelper.CLOSURE_TYPE)) {
-                methodName = "";
-            } else {
-                methodName = "_" + encodeAsValidClassName(methodName);
-            }
+    private String getNextInnerName(final ClassNode enclosingClass, final MethodNode enclosingMethod, final String classifier) {
+        String typeName = "_" + classifier + closureClassIdx++;
+        if (enclosingMethod != null && !ClassHelper.isGeneratedFunction(enclosingClass)) {
+            typeName = "_" + encodeAsValidClassName(enclosingMethod.getName()) + typeName;
         }
-
-        return methodName + "_" + classifier + closureClassIdx++;
+        return typeName;
     }
 
-    public String getNextConstructorReferenceSyntheticMethodName(MethodNode enclosingMethodNode) {
+    public String getNextConstructorReferenceSyntheticMethodName(final MethodNode enclosingMethodNode) {
         return "ctorRef$"
                 + (null == enclosingMethodNode
                         ? ""

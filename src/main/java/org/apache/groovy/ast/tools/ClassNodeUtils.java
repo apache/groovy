@@ -71,6 +71,8 @@ public class ClassNodeUtils {
      *
      * @param cNode the type to format
      * @return a human-readable version of the type name (java.lang.String[] for example)
+     *
+     * @since 2.5.0
      */
     public static String formatTypeName(final ClassNode cNode) {
         if (cNode.isArray()) {
@@ -94,6 +96,8 @@ public class ClassNodeUtils {
      * Returns an existing method if one exists or else create a new method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(String, int, ClassNode, Parameter[], ClassNode[], Statement)
+     *
+     * @since 2.5.3
      */
     public static MethodNode addGeneratedMethod(final ClassNode cNode, final String name, final int modifiers,
             final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
@@ -109,6 +113,8 @@ public class ClassNodeUtils {
      * Adds a method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(MethodNode)
+     *
+     * @since 2.5.3
      */
     public static void addGeneratedMethod(final ClassNode cNode, final MethodNode mNode) {
         cNode.addMethod(mNode);
@@ -119,6 +125,8 @@ public class ClassNodeUtils {
      * Adds a method and mark it as {@code @Generated}.
      *
      * @see ClassNode#addMethod(MethodNode)
+     *
+     * @since 3.0.8
      */
     public static void addGeneratedMethod(final ClassNode cNode, final MethodNode mNode, final boolean skipChecks) {
         cNode.addMethod(mNode);
@@ -129,6 +137,8 @@ public class ClassNodeUtils {
      * Adds an inner class that is marked as {@code @Generated}.
      *
      * @see org.codehaus.groovy.ast.ModuleNode#addClass(ClassNode)
+     *
+     * @since 2.5.7
      */
     public static void addGeneratedInnerClass(final ClassNode cNode, final ClassNode inner) {
         cNode.getModule().addClass(inner);
@@ -139,6 +149,8 @@ public class ClassNodeUtils {
      * Adds a method that is marked as {@code @Generated}.
      *
      * @see ClassNode#addConstructor(int, Parameter[], ClassNode[], Statement)
+     *
+     * @since 2.5.3
      */
     public static ConstructorNode addGeneratedConstructor(final ClassNode classNode, final int modifiers, final Parameter[] parameters, final ClassNode[] exceptions, final Statement code) {
         ConstructorNode ctorNode = new ConstructorNode(modifiers, parameters, exceptions, code);
@@ -150,6 +162,8 @@ public class ClassNodeUtils {
      * Adds a method that is marked as {@code @Generated}.
      *
      * @see ClassNode#addConstructor(ConstructorNode)
+     *
+     * @since 2.5.3
      */
     public static void addGeneratedConstructor(final ClassNode classNode, final ConstructorNode ctorNode) {
         classNode.addConstructor(ctorNode);
@@ -157,10 +171,9 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Adds methods from the super class.
+     * Gets methods from the super class.
      *
-     * @param cNode The ClassNode
-     * @return A map of methods
+     * @since 2.5.0
      */
     public static Map<String, MethodNode> getDeclaredMethodsFromSuper(final ClassNode cNode) {
         ClassNode parent = cNode.getSuperClass();
@@ -177,6 +190,8 @@ public class ClassNodeUtils {
      *
      * @param cNode The ClassNode
      * @param methodsMap A map of existing methods to alter
+     *
+     * @since 2.5.0
      */
     public static void addDeclaredMethodsFromInterfaces(final ClassNode cNode, final Map<String, MethodNode> methodsMap) {
         for (ClassNode iface : cNode.getInterfaces()) {
@@ -195,6 +210,8 @@ public class ClassNodeUtils {
      *
      * @param cNode The ClassNode
      * @return A map of methods
+     *
+     * @since 2.5.0
      */
     public static Map<String, MethodNode> getDeclaredMethodsFromInterfaces(final ClassNode cNode) {
         Map<String, MethodNode> methodsMap = new LinkedHashMap<>();
@@ -208,6 +225,8 @@ public class ClassNodeUtils {
      *
      * @param cNode The ClassNode
      * @param methodsMap A map of existing methods to alter
+     *
+     * @since 2.5.0
      */
     public static void addDeclaredMethodsFromAllInterfaces(final ClassNode cNode, final Map<String, MethodNode> methodsMap) {
         List<ClassNode> cnInterfaces = Arrays.asList(cNode.getInterfaces());
@@ -221,14 +240,17 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Returns true if the given method has a possibly matching static method with the given name and arguments.
-     * Handles default arguments and optionally spread expressions.
+     * Determines if the given method has a possibly matching static method with
+     * the given name and arguments. Handles default arguments and (optionally)
+     * spread expressions.
      *
      * @param cNode     the ClassNode of interest
      * @param name      the name of the method of interest
      * @param arguments the arguments to match against
      * @param trySpread whether to try to account for SpreadExpressions within the arguments
      * @return {@code true} if a matching method was found.
+     *
+     * @since 2.5.0
      */
     public static boolean hasPossibleStaticMethod(final ClassNode cNode, final String name, final Expression arguments, final boolean trySpread) {
         int count = 0; boolean foundSpread = false;
@@ -290,7 +312,9 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Returns true if we have a static accessor
+     * Determines if the given class has the named static property.
+     *
+     * @since 2.5.0
      */
     public static boolean hasPossibleStaticProperty(final ClassNode cNode, final String methodName) {
         // assume explicit static method call checked first so we can assume a simple check here
@@ -308,6 +332,8 @@ public class ClassNodeUtils {
      *
      * @param accessorName the accessor name of interest, e.g. getAge
      * @return the property name, e.g. age, or original if not a valid property accessor name
+     *
+     * @since 2.5.0
      */
     public static String getPropNameForAccessor(final String accessorName) {
         if (!isValidAccessorName(accessorName)) return accessorName;
@@ -316,10 +342,13 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detects whether the given accessor name starts with "get", "set" or "is" followed by at least one character.
+     * Determines if the given accessor name starts with "get", "set" or "is"
+     * followed by at least one character.
      *
      * @param accessorName the accessor name of interest, e.g. getAge
      * @return true if a valid prefix is found
+     *
+     * @since 2.5.0
      */
     public static boolean isValidAccessorName(final String accessorName) {
         if (accessorName.startsWith("get") || accessorName.startsWith("is") || accessorName.startsWith("set")) {
@@ -330,10 +359,9 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Check if the type is declared {@code non-sealed}
+     * Determines if the type is declared {@code non-sealed}.
      *
-     * @param cn the type
-     * @return the check result
+     * @since 5.0.0
      */
     public static boolean isNonSealed(final ClassNode cn) {
         if (cn instanceof DecompiledClassNode) {
@@ -355,6 +383,11 @@ public class ClassNodeUtils {
         return superClass.isSealed() && !(isFinal(cn.getModifiers()) || cn.isSealed());
     }
 
+    /**
+     * Determines if the given class has the named static property.
+     *
+     * @since 2.5.0
+     */
     public static boolean hasStaticProperty(final ClassNode cNode, final String propName) {
         PropertyNode found = getStaticProperty(cNode, propName);
         if (found == null) {
@@ -366,12 +399,13 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detects whether a static property with the given name is within the class
-     * or a super class.
+     * Finds static property within the class or super class.
      *
      * @param cNode the ClassNode of interest
      * @param propName the property name
      * @return the static property if found or else null
+     *
+     * @since 2.5.0
      */
     public static PropertyNode getStaticProperty(final ClassNode cNode, final String propName) {
         ClassNode classNode = cNode;
@@ -387,17 +421,33 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Detects whether a given ClassNode is an inner class (non-static).
+     * Returns the nest host of the given class, which may be the class itself.
+     *
+     * @since 5.0.0
+     */
+    public static ClassNode getNestHost(ClassNode cNode) {
+        while (cNode.getOuterClass() != null) {
+            cNode = cNode.getOuterClass();
+        }
+        return cNode;
+    }
+
+    /**
+     * Determines if the given ClassNode is a non-static inner class.
      *
      * @param cNode the ClassNode of interest
      * @return true if the given node is a (non-static) inner class, else false
+     *
+     * @since 2.5.0
      */
     public static boolean isInnerClass(final ClassNode cNode) {
         return cNode.getOuterClass() != null && !Modifier.isStatic(cNode.getModifiers());
     }
 
     /**
-     * Checks if the source ClassNode is compatible with the target ClassNode
+     * Determines if the source ClassNode is compatible with the target ClassNode.
+     *
+     * @since 4.0.0
      */
     public static boolean isCompatibleWith(ClassNode source, ClassNode target) {
         if (source.equals(target)) return true;
@@ -411,6 +461,11 @@ public class ClassNodeUtils {
                 && (source.isDerivedFrom(target) || source.implementsInterface(target));
     }
 
+    /**
+     * Determines if the given ClassNode declares a zero argument constructor.
+     *
+     * @since 2.5.0
+     */
     public static boolean hasNoArgConstructor(final ClassNode cNode) {
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
         for (ConstructorNode next : constructors) {
@@ -422,11 +477,13 @@ public class ClassNodeUtils {
     }
 
     /**
-     * Determines if an explicit (non-generated) constructor is in the class.
+     * Determines if the given ClassNode declares an explicit (non-generated) constructor.
      *
      * @param xform if non-null, add an error if an explicit constructor is found
      * @param cNode the type of the containing class
      * @return true if an explicit (non-generated) constructor was found
+     *
+     * @since 2.5.0
      */
     public static boolean hasExplicitConstructor(final AbstractASTTransformation xform, final ClassNode cNode) {
         List<ConstructorNode> declaredConstructors = cNode.getDeclaredConstructors();
@@ -451,7 +508,8 @@ public class ClassNodeUtils {
      * @param first a ClassNode
      * @param second a ClassNode
      * @return true if both given nodes have the same package name
-     * @throws NullPointerException if either of the given nodes are null
+     *
+     * @since 2.5.0
      */
     public static boolean samePackageName(final ClassNode first, final ClassNode second) {
         return Objects.equals(first.getPackageName(), second.getPackageName());
@@ -524,10 +582,15 @@ public class ClassNodeUtils {
         return null;
     }
 
-    public static boolean isSubtype(final ClassNode maybeSuperclassOrInterface, final ClassNode candidateChild) {
-        return maybeSuperclassOrInterface.isInterface() || candidateChild.isInterface()
-                ? isOrImplements(candidateChild, maybeSuperclassOrInterface)
-                : candidateChild.isDerivedFrom(maybeSuperclassOrInterface);
+    /**
+     * Determines if given class is, extends or implements a class or interface.
+     *
+     * @since 4.0.16
+     */
+    public static boolean isSubtype(final ClassNode maybeExtendedOrImplemented, final ClassNode cNode) {
+        return maybeExtendedOrImplemented.isInterface() || cNode.isInterface()
+                ? isOrImplements(cNode, maybeExtendedOrImplemented)
+                : cNode.isDerivedFrom(maybeExtendedOrImplemented);
     }
 
     //--------------------------------------------------------------------------

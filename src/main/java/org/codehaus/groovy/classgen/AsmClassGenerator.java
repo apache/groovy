@@ -134,6 +134,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
@@ -329,7 +330,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (classNode instanceof InnerClassNode && !(classNode instanceof InterfaceHelperClassNode)) {
                 makeInnerClassEntry(classNode); // GROOVY-4649, et al.
 
-                ClassNode nestHost = controller.getOutermostClass(); // GROOVY-10687
+                ClassNode nestHost = getNestHost(classNode); // GROOVY-10687
                 classVisitor.visitNestHost(BytecodeHelper.getClassInternalName(nestHost));
 
                 MethodNode enclosingMethod = classNode.getEnclosingMethod();
@@ -379,7 +380,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             // GROOVY-10687
             if (classNode.getOuterClass() == null && classNode.getInnerClasses().hasNext()) {
-                makeNestMatesEntries(classNode);
+                makeNestmateEntries(classNode);
             }
             // GROOVY-4649, GROOVY-6750, GROOVY-6808
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
@@ -451,11 +452,11 @@ public class AsmClassGenerator extends ClassGenerator {
         classVisitor.visitInnerClass(innerClassInternalName, outerClassInternalName, innerClassName, modifiers);
     }
 
-    private void makeNestMatesEntries(final ClassNode classNode) {
+    private void makeNestmateEntries(final ClassNode classNode) {
         for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
             ClassNode innerClass = it.next();
             classVisitor.visitNestMember(BytecodeHelper.getClassInternalName(innerClass));
-            makeNestMatesEntries(innerClass);
+            makeNestmateEntries(innerClass);
         }
     }
 
@@ -1048,8 +1049,8 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * Determines if the given class can directly access the given field (via
-     * {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
+     * Determines if the given field can be directly accessed by the given class
+     * (via {@code GETFIELD}, {@code GETSTATIC}, etc. bytecode instructions).
      */
     public static boolean isFieldDirectlyAccessible(final FieldNode field, final ClassNode accessingClass) {
         return field != null && isMemberDirectlyAccessible(field.getModifiers(), field.getDeclaringClass(), accessingClass);
