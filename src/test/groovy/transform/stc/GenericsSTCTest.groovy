@@ -419,6 +419,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             test({k->c} as Input, {k->c} as State)
         '''
 
+        tearDown(); setUp()
         File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
@@ -2036,6 +2037,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             test { Class clazz -> clazz.newInstance() }
         '''
 
+        tearDown(); setUp()
         File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
@@ -4149,6 +4151,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         // GROOVY-9822
+        tearDown(); setUp()
         File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()
@@ -5151,6 +5154,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
 
         // GROOVY-9821
+        tearDown(); setUp()
         for (op in ['.', '?.', '*.']) {
             File parentDir = File.createTempDir()
             config.with {
@@ -5216,8 +5220,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             assert n == 1
         '''
 
-        //
-
+        tearDown(); setUp()
         File parentDir = File.createTempDir()
         config.with {
             targetDirectory = File.createTempDir()

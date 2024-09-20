@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.asm.BinaryExpressionMultiTypeDispatcher;
-import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
@@ -46,7 +45,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -91,8 +89,6 @@ import static org.objectweb.asm.Opcodes.ISUB;
 import static org.objectweb.asm.Opcodes.LADD;
 import static org.objectweb.asm.Opcodes.LCONST_1;
 import static org.objectweb.asm.Opcodes.LSUB;
-import static org.objectweb.asm.Opcodes.PUTFIELD;
-import static org.objectweb.asm.Opcodes.PUTSTATIC;
 
 /**
  * A specialized version of the multi type binary expression dispatcher which is aware of static compilation.
@@ -149,7 +145,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     @Override
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        if (leftExpression instanceof PropertyExpression) {
+        if (leftExpression instanceof PropertyExpression
+                && !(leftExpression instanceof AttributeExpression)) {
             PropertyExpression pexp = (PropertyExpression) leftExpression;
 
             BinaryExpression expressionWithoutAssignment = binX(
@@ -171,8 +168,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     expressionWithoutAssignment,
                     pexp.isSafe(),
                     pexp.isSpreadSafe(),
-                    pexp.isImplicitThis(),
-                    pexp instanceof AttributeExpression)) {
+                    pexp.isImplicitThis())) {
                 return;
             }
         }
@@ -182,7 +178,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     @Override
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
         Expression leftExpression = expression.getLeftExpression();
-        if (leftExpression instanceof PropertyExpression) {
+        if (leftExpression instanceof PropertyExpression
+                && !(leftExpression instanceof AttributeExpression)) {
             PropertyExpression pexp = (PropertyExpression) leftExpression;
             if (!defineVariable && makeSetProperty(
                     pexp.getObjectExpression(),
@@ -190,8 +187,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     expression.getRightExpression(),
                     pexp.isSafe(),
                     pexp.isSpreadSafe(),
-                    pexp.isImplicitThis(),
-                    pexp instanceof AttributeExpression)) {
+                    pexp.isImplicitThis())) {
                 return;
             }
             // GROOVY-5620: spread-safe operator on LHS is not supported
@@ -251,93 +247,56 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         result.visit(controller.getAcg());
     }
 
-    private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean isAttribute) {
+    private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
         var receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
         var thisReceiver = isThisExpression(receiver);
         var propertyName = message.getText();
 
-        if (isAttribute || (thisReceiver && receiverType.getDeclaredField(propertyName) != null)) {
-            ClassNode current = receiverType;
-            FieldNode fn = null;
-            while (fn == null && current != null) {
-                fn = current.getDeclaredField(propertyName);
-                if (fn == null) {
-                    current = current.getSuperClass();
-                }
+        String setterName = getSetterName(propertyName);
+        MethodNode setterMethod = receiverType.getSetterMethod(setterName, false);
+        if (setterMethod != null) {
+            if ((thisReceiver && setterMethod.getDeclaringClass().equals(controller.getClassNode()))
+                || (!setterMethod.isPublic() && isOrImplements(receiverType, ClassHelper.MAP_TYPE))) {
+                // this.x = ... should not use same-class setter
+                // that.x = ... should not use non-public setter for map
+                setterMethod = null;
+            } else { // GROOVY-11119
+                java.util.List<MethodNode> setters = receiverType.getMethods(setterName);
+                setters.removeIf(s -> s.isAbstract() || s.getParameters().length != 1);
+                if (setters.size() > 1) setterMethod = null;
             }
-            if (fn != null && receiverType != current && !fn.isPublic()) {
-                // check that direct access is allowed
-                if (!fn.isProtected()) {
-                    return false;
-                }
-                if (!Objects.equals(receiverType.getPackageName(), current.getPackageName())) {
-                    return false;
-                }
-                if (!fn.isStatic()) {
-                    receiver.visit(controller.getAcg());
-                }
-                arguments.visit(controller.getAcg());
-                OperandStack operandStack = controller.getOperandStack();
-                operandStack.doGroovyCast(fn.getOriginType());
-                MethodVisitor mv = controller.getMethodVisitor();
-                mv.visitFieldInsn(fn.isStatic() ? PUTSTATIC : PUTFIELD,
-                        BytecodeHelper.getClassInternalName(fn.getOwner()),
-                        propertyName,
-                        BytecodeHelper.getTypeDescription(fn.getOriginType()));
-                operandStack.remove(fn.isStatic() ? 1 : 2);
-                return true;
+        } else {
+            PropertyNode propertyNode = receiverType.getProperty(propertyName);
+            if (propertyNode != null && !propertyNode.isFinal()) {
+                setterMethod = new MethodNode(
+                        setterName,
+                        ACC_PUBLIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(propertyNode.getOriginType(), "value")},
+                        ClassNode.EMPTY_ARRAY,
+                        EmptyStatement.INSTANCE
+                );
+                setterMethod.setDeclaringClass(receiverType);
+                setterMethod.setSynthetic(true);
             }
         }
+        if (setterMethod != null) {
+            Expression call = StaticPropertyAccessHelper.transformToSetterCall(
+                    receiver,
+                    setterMethod,
+                    arguments,
+                    implicitThis,
+                    safe,
+                    spreadSafe,
+                    true, // to be replaced with a proper test whether a return value should be used or not
+                    message
+            );
+            call.visit(controller.getAcg());
+            return true;
+        }
 
-        if (!isAttribute) {
-            String setterName = getSetterName(propertyName);
-            MethodNode setterMethod = receiverType.getSetterMethod(setterName, false);
-            if (setterMethod != null) {
-                if ((thisReceiver && setterMethod.getDeclaringClass().equals(controller.getClassNode()))
-                    || (!setterMethod.isPublic() && isOrImplements(receiverType, ClassHelper.MAP_TYPE))) {
-                    // this.x = ... should not use same-class setter
-                    // that.x = ... should not use non-public setter for map
-                    setterMethod = null;
-                } else { // GROOVY-11119
-                    java.util.List<MethodNode> setters = receiverType.getMethods(setterName);
-                    setters.removeIf(s -> s.isAbstract() || s.getParameters().length != 1);
-                    if (setters.size() > 1) setterMethod = null;
-                }
-            } else {
-                PropertyNode propertyNode = receiverType.getProperty(propertyName);
-                if (propertyNode != null && !propertyNode.isFinal()) {
-                    setterMethod = new MethodNode(
-                            setterName,
-                            ACC_PUBLIC,
-                            ClassHelper.VOID_TYPE,
-                            new Parameter[]{new Parameter(propertyNode.getOriginType(), "value")},
-                            ClassNode.EMPTY_ARRAY,
-                            EmptyStatement.INSTANCE
-                    );
-                    setterMethod.setDeclaringClass(receiverType);
-                    setterMethod.setSynthetic(true);
-                }
-            }
-            if (setterMethod != null) {
-                Expression call = StaticPropertyAccessHelper.transformToSetterCall(
-                        receiver,
-                        setterMethod,
-                        arguments,
-                        implicitThis,
-                        safe,
-                        spreadSafe,
-                        true, // to be replaced with a proper test whether a return value should be used or not
-                        message
-                );
-                call.visit(controller.getAcg());
-                return true;
-            }
-            if (thisReceiver && !controller.isInGeneratedFunction()) {
-                receiverType = controller.getClassNode();
-            }
-            if (makeSetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, arguments, safe, spreadSafe, implicitThis)) {
-                return true;
-            }
+        if (makeSetPrivateFieldWithBridgeMethod(receiver, (thisReceiver && !controller.isInGeneratedFunction()) ? controller.getClassNode() : receiverType, propertyName, arguments, safe, spreadSafe, implicitThis)) {
+            return true;
         }
 
         return false;
@@ -365,7 +324,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         ClassNode classNode = controller.getClassNode();
         if (field != null && field.isPrivate() && !receiverType.equals(classNode)
                 && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
-                    || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode,receiverType))) {
+                    || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
             Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
             if (mutators != null) {
                 MethodNode methodNode = mutators.get(fieldName);
