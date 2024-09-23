@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -138,6 +139,7 @@ import static org.apache.groovy.ast.tools.ClassNodeUtils.getNestHost;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
 import static org.codehaus.groovy.ast.ClassHelper.isClassType;
+import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
@@ -381,6 +383,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // GROOVY-10687
             if (classNode.getOuterClass() == null && classNode.getInnerClasses().hasNext()) {
                 makeNestmateEntries(classNode);
+                moreNestmateEntries(classNode);
             }
             // GROOVY-4649, GROOVY-6750, GROOVY-6808
             for (Iterator<InnerClassNode> it = classNode.getInnerClasses(); it.hasNext(); ) {
@@ -457,6 +460,38 @@ public class AsmClassGenerator extends ClassGenerator {
             ClassNode innerClass = it.next();
             classVisitor.visitNestMember(BytecodeHelper.getClassInternalName(innerClass));
             makeNestmateEntries(innerClass);
+        }
+    }
+
+    private void moreNestmateEntries(final ClassNode classNode) {
+        // edge case: nest host closures-within-closures
+        int[] n = {this.context.getClosureClassIndex()};
+        for (ClassNode innerClass : getInnerClasses()) {
+            if (innerClass instanceof InterfaceHelperClassNode) continue;
+            var doCall = innerClass.getMethods().get(0);
+            doCall.getCode().visit(new CodeVisitorSupport() {
+                private String name = BytecodeHelper.getClassInternalName(innerClass);
+                private void visitNested(final String kind, final ClosureExpression expr) {
+                    String save = name;
+                    name += "$_" + kind + n[0]++;
+                    classVisitor.visitNestMember(name);
+                    super.visitClosureExpression(expr);
+                    name = save;
+                }
+                @Override
+                public  void visitClosureExpression(final ClosureExpression expression) {
+                    visitNested("closure", expression);
+                }
+                @Override
+                public  void visitLambdaExpression(final LambdaExpression expression) {
+                    if (Boolean.TRUE.equals(innerClass.getNodeMetaData(org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE))
+                            && isFunctionalInterface(expression.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE))) {
+                        visitNested("lambda", expression);
+                    } else {
+                        super.visitLambdaExpression(expression);
+                    }
+                }
+            });
         }
     }
 
@@ -1063,8 +1098,9 @@ public class AsmClassGenerator extends ClassGenerator {
         // any member is accessible from the declaring class
         if (accessingClass.equals(declaringClass)) return true;
 
-        // a private member isn't accessible beyond the declaring class
-        if (Modifier.isPrivate(modifiers)) return false;
+        // a private member is accessible from any nestmates
+        if (Modifier.isPrivate(modifiers))
+            return getNestHost(accessingClass).equals(getNestHost(declaringClass));
 
         // a protected member is accessible from any subclass of the declaring class
         if (Modifier.isProtected(modifiers) && accessingClass.isDerivedFrom(declaringClass)) return true;

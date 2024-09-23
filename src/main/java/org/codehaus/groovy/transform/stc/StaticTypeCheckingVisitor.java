@@ -592,8 +592,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             ClassNode declaringClass = fn.getDeclaringClass();
             ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
             if (declaringClass == enclosingClass ? typeCheckingContext.getEnclosingClosure() != null : getNestHost(declaringClass) == getNestHost(enclosingClass)) {
-                StaticTypesMarker accessKind = lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS;
-                addPrivateFieldOrMethodAccess(source, declaringClass, accessKind, fn);
+                source.putNodeMetaData(lhsOfAssignment ? PV_FIELDS_MUTATION : PV_FIELDS_ACCESS, fn);
             }
         }
     }

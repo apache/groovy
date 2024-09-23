@@ -827,28 +827,30 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         return receiverType;
     }
 
-    // this is just a simple set field handling static and non-static, but not Closure and inner classes
     private boolean setField(final PropertyExpression expression, final Expression objectExpression, final ClassNode receiverType, final String name) {
-        if (expression.isSafe()) return false;
+        if (expression.isSafe() || expression.isSpreadSafe()) return false;
+
         FieldNode fn = AsmClassGenerator.getDeclaredFieldOfCurrentClassOrAccessibleFieldOfSuper(controller.getClassNode(), receiverType, name, false);
         if (fn == null) return false;
-        OperandStack stack = controller.getOperandStack();
-        stack.doGroovyCast(fn.getType());
+
+        OperandStack os = controller.getOperandStack();
+        os.doGroovyCast(fn.getType());
 
         MethodVisitor mv = controller.getMethodVisitor();
         if (!fn.isStatic()) {
             controller.getCompileStack().pushLHS(false);
             objectExpression.visit(controller.getAcg());
             controller.getCompileStack().popLHS();
-            if (!receiverType.equals(stack.getTopOperand())) {
+            if (!receiverType.equals(os.getTopOperand())) {
                 BytecodeHelper.doCast(mv, receiverType);
-                stack.replace(receiverType);
+                os.replace(receiverType);
             }
-            stack.swap();
+            os.swap(); // stack: operand, receiver, ...
             mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(fn.getOwner()), name, BytecodeHelper.getTypeDescription(fn.getType()));
-            stack.remove(1);
-        } else {
+            os.remove(2);
+        } else { // stack: operand, ...
             mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(receiverType), name, BytecodeHelper.getTypeDescription(fn.getType()));
+            os.remove(1);
         }
 
         return true;

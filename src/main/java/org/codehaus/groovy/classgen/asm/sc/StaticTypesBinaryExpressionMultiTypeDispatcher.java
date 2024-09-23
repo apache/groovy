@@ -48,23 +48,20 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
-import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isNumberType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.binX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS;
@@ -96,8 +93,6 @@ import static org.objectweb.asm.Opcodes.LSUB;
  */
 public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpressionMultiTypeDispatcher {
 
-    private static final MethodNode CLOSURE_GETTHISOBJECT_METHOD = CLOSURE_TYPE.getMethod("getThisObject", Parameter.EMPTY_ARRAY);
-
     private final AtomicInteger labelCounter = new AtomicInteger();
 
     public StaticTypesBinaryExpressionMultiTypeDispatcher(final WriterController wc) {
@@ -116,7 +111,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         }
 
         ClassNode top = controller.getOperandStack().getTopOperand();
-        if (ClassHelper.isPrimitiveType(top) && (ClassHelper.isNumberType(top) || isPrimitiveChar(top))) {
+        if (isPrimitiveType(top) && (isNumberType(top) || isPrimitiveChar(top))) {
             MethodVisitor mv = controller.getMethodVisitor();
             visitInsnByType(top, mv, ICONST_1, LCONST_1, FCONST_1, DCONST_1);
             if ("next".equals(method)) {
@@ -303,39 +298,24 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     }
 
     private boolean makeSetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
-        FieldNode field = receiverType.getField(fieldName);
-        ClassNode outerClass = receiverType.getOuterClass();
-        if (field == null && implicitThis && outerClass != null && !receiverType.isStaticClass()) {
-            Expression pexp;
-            if (controller.isInGeneratedFunction()) {
-                MethodCallExpression mce = callThisX("getThisObject");
-                mce.setImplicitThis(true);
-                mce.setMethodTarget(CLOSURE_GETTHISOBJECT_METHOD);
-                mce.putNodeMetaData(INFERRED_TYPE, controller.getThisType());
-                pexp = castX(controller.getThisType(), mce);
-            } else {
-                pexp = propX(classX(outerClass), "this");
-                ((PropertyExpression) pexp).setImplicitThis(true);
-            }
-            pexp.putNodeMetaData(INFERRED_TYPE, outerClass);
-            pexp.setSourcePosition(receiver);
-            return makeSetPrivateFieldWithBridgeMethod(pexp, outerClass, fieldName, arguments, safe, spreadSafe, true);
-        }
-        ClassNode classNode = controller.getClassNode();
-        if (field != null && field.isPrivate() && !receiverType.equals(classNode)
-                && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
-                    || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
-            Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
-            if (mutators != null) {
-                MethodNode methodNode = mutators.get(fieldName);
-                if (methodNode != null) {
-                    MethodCallExpression call = callX(receiver, methodNode.getName(), args(field.isStatic() ? nullX() : receiver, arguments));
-                    call.setImplicitThis(implicitThis);
-                    call.setMethodTarget(methodNode);
-                    call.setSafe(safe);
-                    call.setSpreadSafe(spreadSafe);
-                    call.visit(controller.getAcg());
-                    return true;
+        FieldNode fieldNode = receiverType.getField(fieldName);
+        if (fieldNode != null) {
+            ClassNode classNode = controller.getClassNode();
+            if (fieldNode.isPrivate() && !receiverType.equals(classNode)
+                    && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
+                        || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
+                Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
+                if (mutators != null) {
+                    MethodNode methodNode = mutators.get(fieldName);
+                    if (methodNode != null) {
+                        MethodCallExpression call = callX(receiver, methodNode.getName(), args(fieldNode.isStatic() ? nullX() : receiver, arguments));
+                        call.setImplicitThis(implicitThis);
+                        call.setMethodTarget(methodNode);
+                        call.setSafe(safe);
+                        call.setSpreadSafe(spreadSafe);
+                        call.visit(controller.getAcg());
+                        return true;
+                    }
                 }
             }
         }

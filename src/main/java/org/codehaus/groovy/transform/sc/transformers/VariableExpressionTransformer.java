@@ -28,10 +28,10 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 
 class VariableExpressionTransformer {
 
@@ -86,9 +86,9 @@ class VariableExpressionTransformer {
             return null;
         }
 
-        // access to a private field from a section of code that normally doesn't have access to it, like a closure block or an inner class
-        PropertyExpression pe = !field.isStatic() ? thisPropX(true, ve.getName()) : propX(classX(field.getDeclaringClass()), ve.getName());
-        // store the declaring class so that the class writer knows that it will have to call a bridge method
+        // access to a private field from a section of code that normally doesn't have access to it, like a closure block or inner class
+        Expression fieldOwner = field.isStatic() ? classX(field.getDeclaringClass()) : propX(classX(field.getDeclaringClass()), "this");
+        PropertyExpression pe = attrX(fieldOwner, ve.getName()); // GROOVY-10687, GROOVY-11412: direct access
         pe.getObjectExpression().putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
         pe.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, field.getOriginType());
         pe.getProperty().setSourcePosition(ve);

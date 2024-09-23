@@ -119,4 +119,19 @@ final class NestHostTests {
             assert type.nestMembers*.name.sort() == ['C', 'C$D', 'C$D$_m_lambda1', 'C$D$_m_lambda1$_lambda2']
         }
     }
+
+    @Test
+    void testNestHost6() {
+        def types = compileScript '''
+            @groovy.transform.CompileStatic
+            class C {
+                def closure = { -> { -> Optional.empty().orElseGet(() -> 42) } }
+            }
+        '''
+
+        types.each { type ->
+            assert type.nestHost.name == 'C'
+            assert type.nestMembers*.name.sort() == ['C', 'C$_closure1', 'C$_closure1$_closure2', 'C$_closure1$_closure2$_lambda3']
+        }
+    }
 }

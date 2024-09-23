@@ -18,13 +18,18 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.AttributeExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 
 class PropertyExpressionTransformer {
 
@@ -46,6 +51,28 @@ class PropertyExpressionTransformer {
             mce.setSafe(pe.isSafe());
             mce.copyNodeMetaData(pe);
             return mce;
+        }
+
+        FieldNode field = pe.getNodeMetaData(StaticTypesMarker.PV_FIELDS_ACCESS);
+        if (field == null) {
+            field = pe.getNodeMetaData(StaticTypesMarker.PV_FIELDS_MUTATION);
+        }
+        if (field != null) {
+            AttributeExpression ae;
+            if (field.isStatic()) {
+                ae = new AttributeExpression(classX(field.getDeclaringClass()), pe.getProperty());
+            } else if (!isThisExpression(pe.getObjectExpression())) {
+                ae = new AttributeExpression(scTransformer.transform(pe.getObjectExpression()), pe.getProperty(), pe.isSafe());
+            } else {
+                ae = new AttributeExpression(new PropertyExpression(classX(field.getDeclaringClass()), "this"), pe.getProperty(), pe.isSafe());
+
+                ae.getObjectExpression().putNodeMetaData(StaticCompilationMetadataKeys.PROPERTY_OWNER, field.getDeclaringClass());
+                ae.getObjectExpression().putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
+            }
+            ae.setSpreadSafe(pe.isSpreadSafe());
+            ae.setSourcePosition(pe);
+            ae.copyNodeMetaData(pe);
+            return ae;
         }
 
         return scTransformer.superTransform(pe);

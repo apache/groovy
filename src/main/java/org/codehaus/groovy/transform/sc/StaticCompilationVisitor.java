@@ -429,6 +429,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     /**
      * Adds special accessors and mutators for private fields so that inner classes can get/set them.
      */
+    @Deprecated(since = "5.0.0")
     private static void addPrivateFieldsAccessors(final ClassNode node) {
         Map<String, MethodNode> privateFieldAccessors = node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
         Map<String, MethodNode> privateFieldMutators = node.getNodeMetaData(PRIVATE_FIELDS_MUTATORS);

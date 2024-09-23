@@ -22,13 +22,24 @@ package org.codehaus.groovy.transform.sc;
  * Static compilation AST node metadata keys.
  */
 public enum StaticCompilationMetadataKeys {
-    STATIC_COMPILE_NODE, // used to mark a section of code as to be statically compiled
-    BINARY_EXP_TARGET, // use to tell which method should be used in a binary expression
-    PRIVATE_BRIDGE_METHODS, // private bridge methods are methods used by an outer class to access an inner class method
-    PRIVATE_FIELDS_ACCESSORS, // private fields accessors are methods used by an inner class to access an outer class field
-    PRIVATE_FIELDS_MUTATORS, // private fields mutators are methods used by an inner class to set an outer class field
-    DYNAMIC_OUTER_NODE_CALLBACK, // callback for dynamic classes that contain statically compiled inner classes or methods
-    PROPERTY_OWNER, // the type of the class which owns the property
-    COMPONENT_TYPE, // for list.property expressions, we need the inferred component type
-    RECEIVER_OF_DYNAMIC_PROPERTY // if a receiver is the receiver of a dynamic property (for mixed mode compilation)
+    /** Marks a section of code for static compilation. */
+    STATIC_COMPILE_NODE,
+    /** Tells which method should be used in a binary expression. */
+    BINARY_EXP_TARGET,
+    /** Private bridge methods are methods used to access a nestmate's method. */
+    PRIVATE_BRIDGE_METHODS,
+    /** Private fields accessors are methods used to read a nestmate's field. */
+    @Deprecated(since = "5.0.0")
+    PRIVATE_FIELDS_ACCESSORS,
+    /** Private fields mutators are methods used to write a nestmate's field. */
+    @Deprecated(since = "5.0.0")
+    PRIVATE_FIELDS_MUTATORS,
+    /** Callback for dynamic classes that contain statically compiled inner classes or methods. */
+    DYNAMIC_OUTER_NODE_CALLBACK,
+    /** The type of the class which owns the property. */
+    PROPERTY_OWNER,
+    /** For list.property expressions, we need the inferred component type. */
+    COMPONENT_TYPE,
+    /** If a receiver is the receiver of a dynamic property (for mixed-mode compilation). */
+    RECEIVER_OF_DYNAMIC_PROPERTY
 }

@@ -43,6 +43,11 @@ public class GeneratorContext {
         this.innerClassIdx = innerClassOffset;
     }
 
+    // for ACG nestmate determination !
+           int getClosureClassIndex() {
+        return closureClassIdx;
+    }
+
     public int getNextInnerClassIdx() {
         return innerClassIdx++;
     }
