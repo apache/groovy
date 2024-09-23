@@ -552,18 +552,22 @@ class EnumTest extends CompilableTestSupport {
     // GROOVY-5756
     void testInnerClosureDefinitions() {
         assertScript '''
-            enum MyEnum {
+            enum E {
+                CONTROL,
                 INSTANCE {
+                    @Override
                     String foo() {
-                        def clos1 = { "foo1" }; clos1.call()
+                        def c1 = { -> 'foo1' }
+                        c1.call()
                     }
-                }, CONTROL
+                };
                 String foo() {
-                    def clos2 = { "foo2" }; clos2.call()
+                    def c2 = { -> 'foo2' }
+                    c2.call()
                 }
             }
-            assert "foo2" == MyEnum.CONTROL.foo()
-            assert "foo1" == MyEnum.INSTANCE.foo()
+            assert E.CONTROL .foo() == 'foo2'
+            assert E.INSTANCE.foo() == 'foo1'
         '''
     }
 

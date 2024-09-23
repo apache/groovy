@@ -64,10 +64,11 @@ import java.security.Permissions;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.lang.System;
 
 /*
  * TODO: multi-threaded compiling of the same class but with different roots for
@@ -215,11 +216,13 @@ public class GroovyClassLoader extends URLClassLoader {
         }
 
         CompilationUnit unit = createCompilationUnit(config, codeSource);
+        var generatedClasses = new LinkedHashMap<ClassNode, ClassVisitor>();
         ClassCollector collector = createCollector(unit, classNode.getModule().getContext());
         try {
             unit.addClassNode(classNode);
-            unit.setClassgenCallback(collector);
+            unit.setClassgenCallback((cv, cn) -> generatedClasses.put(cn, cv));
             unit.compile(Phases.CLASS_GENERATION);
+            collect(collector, generatedClasses);
             definePackageInternal(collector.generatedClass.getName());
             return collector.generatedClass;
         } catch (CompilationFailedException e) {
@@ -227,8 +230,33 @@ public class GroovyClassLoader extends URLClassLoader {
         }
     }
 
+    private static void collect(final ClassCollector collector, final LinkedHashMap<ClassNode, ClassVisitor> generatedClasses) {
+        // GROOVY-10687: drive ClassCollector after classgen -- interfaces first
+        var classes = new ArrayList<ClassNode>(generatedClasses.keySet());
+        classes.sort(Comparator.comparingInt(cn -> {
+            int n;
+            if (cn.isInterface()) {
+                var interfaces = cn.getInterfaces();
+                n = interfaces.length;
+                for (var in : interfaces) {
+                    n += in.getInterfaces().length;
+                }
+            } else {
+                n = 999;
+                while (cn != null) { n += 1;
+                    cn = cn.getSuperClass();
+                }
+            }
+            return n;
+        }));
+
+        for (ClassNode cn : classes) {
+            collector.call(generatedClasses.get(cn), cn);
+        }
+    }
+
     /**
-     * Check if this class loader has compatible {@link CompilerConfiguration}
+     * Checks if this class loader has compatible {@link CompilerConfiguration}
      * with the provided one.
      * @param config the compiler configuration to test for compatibility
      * @return {@code true} if the provided config is exactly the same instance
@@ -333,7 +361,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
     private Class<?> doParseClass(final GroovyCodeSource codeSource) {
         validate(codeSource);
-        Class<?> answer;  // Was neither already loaded nor compiling, so compile and add to cache.
+        // Was neither already loaded nor compiling, so compile and add to cache.
         CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
         if (recompile != null ? recompile : config.getRecompileGroovySource()) {
             unit.addFirstPhaseOperation(TimestampAdder.INSTANCE, CompilePhase.CLASS_GENERATION.getPhaseNumber());
@@ -352,19 +380,19 @@ public class GroovyClassLoader extends URLClassLoader {
         }
 
         ClassCollector collector = createCollector(unit, su);
-        unit.setClassgenCallback(collector);
-        int goalPhase = Phases.CLASS_GENERATION;
-        if (config != null && config.getTargetDirectory() != null) goalPhase = Phases.OUTPUT;
-        unit.compile(goalPhase);
+        var generatedClasses = new LinkedHashMap<ClassNode,ClassVisitor>();
+        unit.setClassgenCallback((cv, cn) -> generatedClasses.put(cn, cv));
+        unit.compile(config == null || config.getTargetDirectory() == null ? Phases.CLASS_GENERATION : Phases.OUTPUT);
 
-        answer = collector.generatedClass;
-        String mainClass = su.getAST().getMainClassName();
+        collect(collector, generatedClasses);
+
+        Class<?> answer = collector.generatedClass;
+        String mainName = su.getAST().getMainClassName();
         for (Object o : collector.getLoadedClasses()) {
-            Class<?> clazz = (Class<?>) o;
-            String clazzName = clazz.getName();
-            definePackageInternal(clazzName);
-            setClassCacheEntry(clazz);
-            if (clazzName.equals(mainClass)) answer = clazz;
+            var c = (Class<?>) o;
+            setClassCacheEntry(c);
+            definePackageInternal(c.getName());
+            if (c.getName().equals(mainName)) answer = c;
         }
         return answer;
     }

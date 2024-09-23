@@ -60,7 +60,8 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         } finally {
             if (unit != null) {
                 try {
-                    sequence = extractSequence(unit.classes[0].bytes, extractionOptions)
+                    def firstClass = unit.classes.find { it.name == unit.firstClassNode.name }
+                    sequence = extractSequence(firstClass.bytes, extractionOptions)
                     if (extractionOptions.print) println(sequence)
                 } catch (e) {
                     // probably an error in the script
@@ -93,7 +94,8 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
             }
         }
         if (sequence == null && cu.classes) {
-            sequence = extractSequence(cu.classes[0].bytes, options)
+            def gc = cu.classes.find { it.name == cu.firstClassNode.name }
+            sequence = extractSequence(gc.bytes, options)
         }
         for (gc in cu.classes) {
             try {

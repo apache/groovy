@@ -62,6 +62,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.security.CodeSource;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -73,7 +74,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 
-import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
@@ -1036,58 +1036,33 @@ public class CompilationUnit extends ProcessingUnit {
         return count;
     }
 
-    private static int getSuperInterfaceCount(final ClassNode classNode) {
+    private static int getInterfacesCount(final ClassNode classNode) {
         int count = 1;
         for (ClassNode face : classNode.getInterfaces()) {
-            count = Math.max(count, getSuperInterfaceCount(face) + 1);
+            count = Math.max(count, getInterfacesCount(face) + 1);
         }
         return count;
     }
 
     private List<ClassNode> getPrimaryClassNodes(final boolean sort) {
-        List<ClassNode> unsorted = getAST().getModules().stream()
-            .flatMap(module -> module.getClasses().stream()).collect(toList());
+        List<ClassNode> classes = getAST().getClasses();
 
-        if (!sort) return unsorted;
-
-        int n = unsorted.size();
-        int[] indexClass = new int[n];
-        int[] indexInterface = new int[n];
-        {
-            int i = 0;
-            for (ClassNode element : unsorted) {
-                if (element.isInterface()) {
-                    indexInterface[i] = getSuperInterfaceCount(element);
-                    indexClass[i] = -1;
+        if (sort && classes.size() > 1) {
+            classes.sort(Comparator.comparingInt(cn -> {
+                int count;
+                if (cn.isInterface()) {
+                    count = getInterfacesCount(cn);
                 } else {
-                    indexClass[i] = getSuperClassCount(element);
-                    indexInterface[i] = -1;
+                    count = getSuperClassCount(cn) + 1000;
                 }
-                i += 1;
-            }
+                if (cn.getOuterClass() == null && cn.getInnerClasses().hasNext()) {
+                    count += 2000; // GROOVY-10687: nest host must follow members (with closures)
+                }
+                return count;
+            }));
         }
 
-        List<ClassNode> sorted = getSorted(indexInterface, unsorted);
-        sorted.addAll(getSorted(indexClass, unsorted));
-        return sorted;
-    }
-
-    private static List<ClassNode> getSorted(final int[] index, final List<ClassNode> unsorted) {
-        int unsortedSize = unsorted.size();
-        List<ClassNode> sorted = new ArrayList<>(unsortedSize);
-        for (int i = 0; i < unsortedSize; i += 1) {
-            int min = -1;
-            for (int j = 0; j < unsortedSize; j += 1) {
-                if (index[j] == -1) continue;
-                if (min == -1 || index[j] < index[min]) {
-                    min = j;
-                }
-            }
-            if (min == -1) break;
-            sorted.add(unsorted.get(min));
-            index[min] = -1;
-        }
-        return sorted;
+        return classes;
     }
 
     private void changeBugText(final GroovyBugError e, final SourceUnit context) {

@@ -88,21 +88,35 @@ final class NestHostTests {
     void testNestHost4() {
         def types = compileScript '''
             class C {
-                def closure = { -> }
                 static class D {
                     def closure = { -> }
+                }
+                def another_closure = { -> }
+            }
+        '''
+
+        types.each { type ->
+            assert type.nestHost.name == 'C'
+            assert type.nestMembers*.name.sort() == ['C', 'C$D', 'C$D$_closure1', 'C$_closure1']
+        }
+    }
+
+    @Test
+    void testNestHost5() {
+        def types = compileScript '''
+            class C {
+                class D {
+                    @groovy.transform.CompileStatic
+                    void m() {
+                        [].forEach(item -> Optional.of(item).orElseGet(() -> 2))
+                    }
                 }
             }
         '''
 
-        types.init().each { type ->
+        types.each { type ->
             assert type.nestHost.name == 'C'
-            if (Runtime.version().feature() >= 15)
-            assert type.nestMembers*.name.sort() == ['C', 'C$D', 'C$_closure1', /* TODO: 'C$D$_closure1'*/]
-        }
-        types.last().with { type -> // TODO
-            assert type.nestHost.name == 'C$D$_closure1'
-            if (Runtime.version().feature() >= 15) assert type.nestMembers*.name.sort() == ['C$D$_closure1']
+            assert type.nestMembers*.name.sort() == ['C', 'C$D', 'C$D$_m_lambda1', 'C$D$_m_lambda1$_lambda2']
         }
     }
 }
