@@ -71,10 +71,12 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
                 static class Bar {
                     static Foo makeFoo(String s) { new Foo(s) }
                 }
-
             }
             assert Foo.Bar.makeFoo('pls').s == 'pls'
         '''
+        String bar = astTrees['Foo$Bar'][1]
+        assert bar.contains('NEW Foo')
+        assert bar.contains('INVOKESPECIAL Foo.<init> (Ljava/lang/String;)V')
     }
 
     void testPrivateConstructorFromAnonymousInnerClass() {

@@ -600,7 +600,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
         if (declaringClass != enclosingClass || typeCheckingContext.getEnclosingClosure() != null) {
             if (mn.isPrivate() && getNestHost(declaringClass) == getNestHost(enclosingClass)) {
-                if (mn.isConstructor()) declaringClass.getNodeMetaData(PV_METHODS_ACCESS, k -> new LinkedHashSet<MethodNode>()).add(mn);
+                if (source instanceof MethodReferenceExpression // GROOVY-11301: access bridge for lambda
+                        && Float.parseFloat(getSourceUnit().getConfiguration().getTargetBytecode()) < 15)
+                    declaringClass.getNodeMetaData(PV_METHODS_ACCESS, k -> new LinkedHashSet<MethodNode>()).add(mn);
                 source.putNodeMetaData(PV_METHODS_ACCESS, mn);
             } else if (mn.isProtected() && !inSamePackage(enclosingClass, declaringClass)
                     && (!implementsInterfaceOrIsSubclassOf(enclosingClass, declaringClass)

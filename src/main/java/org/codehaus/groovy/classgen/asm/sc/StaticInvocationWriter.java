@@ -139,35 +139,31 @@ public class StaticInvocationWriter extends InvocationWriter {
             cn = new ConstructorNode(mn.getModifiers(), mn.getParameters(), mn.getExceptions(), mn.getCode());
             cn.setDeclaringClass(mn.getDeclaringClass());
         }
-        TupleExpression args = makeArgumentList(call.getArguments());
-        if (cn.isPrivate()) {
-            ClassNode classNode = controller.getClassNode();
-            ClassNode declaringClass = cn.getDeclaringClass();
-            if (declaringClass != classNode) {
-                MethodNode bridge = null;
-                if (call.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS) != null) {
-                    Map<MethodNode, MethodNode> bridgeMethods = declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
-                    if (bridgeMethods != null) bridge = bridgeMethods.get(cn);
-                }
-                if (bridge instanceof ConstructorNode) {
-                    ArgumentListExpression newArgs = args(nullX());
-                    for (Expression arg: args) {
-                        newArgs.addExpression(arg);
-                    }
-                    cn = (ConstructorNode) bridge;
-                    args = newArgs;
-                } else {
-                    controller.getSourceUnit().addError(new SyntaxException(
-                            "Cannot call private constructor for " + declaringClass.toString(false) + " from class " + classNode.toString(false),
-                            call
-                    ));
-                }
+        ClassNode declaringClass = cn.getDeclaringClass();
+        ClassNode enclosingClass = controller.getClassNode();
+        List<Expression> argList = call.getArguments() instanceof TupleExpression
+                ? ((TupleExpression) call.getArguments()).getExpressions() : List.of(call.getArguments());
+        if (!AsmClassGenerator.isMemberDirectlyAccessible(cn.getModifiers(), declaringClass, enclosingClass)) {
+            MethodNode bridge = null;
+            if (call.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS) != null) {
+                Map<MethodNode, MethodNode> bridgeMethods = declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
+                if (bridgeMethods != null) bridge = bridgeMethods.get(cn);
+            }
+            if (bridge instanceof ConstructorNode) {
+                cn = (ConstructorNode) bridge;
+                argList = new ArrayList<>(argList);
+                argList.add(0, nullX());
+            } else {
+                controller.getSourceUnit().addError(new SyntaxException(
+                        "Cannot call private constructor for " + declaringClass.toString(false) + " from class " + enclosingClass.toString(false),
+                        call
+                ));
             }
         }
 
         String ownerDescriptor = prepareConstructorCall(cn);
         int before = controller.getOperandStack().getStackLength();
-        loadArguments(args.getExpressions(), cn.getParameters());
+        loadArguments(argList, cn.getParameters());
         finnishConstructorCall(cn, ownerDescriptor, controller.getOperandStack().getStackLength() - before);
     }
 
