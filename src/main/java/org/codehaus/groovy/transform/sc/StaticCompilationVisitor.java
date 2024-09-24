@@ -483,11 +483,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     }
 
     /**
-     * Adds "bridge" methods for private methods of an inner/outer class so that
-     * the outer class is capable of calling them.  It does basically the same
-     * job as access$000 like methods in Java.
-     *
-     * @param node an inner/outer class node for which to generate bridge methods
+     * Adds bridge methods for private or protected methods of a class so that
+     * any nestmate is capable of calling them. It does basically the same job
+     * as access$000 like methods in Java.
      */
     private static void addPrivateBridgeMethods(final ClassNode node) {
         Set<ASTNode> accessedMethods = node.getNodeMetaData(PV_METHODS_ACCESS);
@@ -496,20 +494,19 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         methods.addAll(node.getDeclaredConstructors());
         Map<MethodNode, MethodNode> privateBridgeMethods = node.getNodeMetaData(PRIVATE_BRIDGE_METHODS);
         if (privateBridgeMethods != null) {
-            // private bridge methods already added
+            // bridge methods already added
             return;
         }
         privateBridgeMethods = new HashMap<>();
         int i = -1;
-        final int access = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
         for (MethodNode method : methods) {
             if (accessedMethods.contains(method)) {
-                List<String> methodSpecificGenerics = methodSpecificGenerics(method);
                 i += 1;
                 ClassNode declaringClass = method.getDeclaringClass();
                 Map<String, ClassNode> genericsSpec = createGenericsSpec(node);
                 genericsSpec = addMethodGenerics(method, genericsSpec);
                 extractSuperClassGenerics(node, declaringClass, genericsSpec);
+                List<String> methodSpecificGenerics = methodSpecificGenerics(method);
                 Parameter[] methodParameters = method.getParameters();
                 Parameter[] newParams = new Parameter[methodParameters.length + 1];
                 for (int j = 1; j < newParams.length; j += 1) {
@@ -520,7 +517,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                     );
                 }
                 Expression arguments;
-                if (method.getParameters() == null || method.getParameters().length == 0) {
+                if (methodParameters.length == 0) {
                     arguments = ArgumentListExpression.EMPTY_ARGUMENTS;
                 } else {
                     List<Expression> args = new ArrayList<>();
@@ -553,7 +550,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                     ExpressionStatement body = new ExpressionStatement(call);
 
                     bridge = node.addMethod(
-                            "access$" + i, access,
+                            "access$" + i,
+                            ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
                             correctToGenericsSpecRecurse(genericsSpec, method.getReturnType(), methodSpecificGenerics),
                             newParams,
                             method.getExceptions(),

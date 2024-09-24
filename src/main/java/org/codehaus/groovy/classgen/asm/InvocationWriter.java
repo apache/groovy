@@ -331,11 +331,8 @@ public class InvocationWriter {
                 }
             }
         }
-        if (containsSpreadExpression) return false;
-        if (origin instanceof MethodCallExpression) {
-            MethodCallExpression mce = (MethodCallExpression) origin;
-            if (mce.getMethodTarget() != null)
-                return writeDirectMethodCall(mce.getMethodTarget(), implicitThis, receiver, makeArgumentList(arguments));
+        if (!containsSpreadExpression && origin instanceof MethodCallExpression) {
+            return writeDirectMethodCall(((MethodCallExpression) origin).getMethodTarget(), implicitThis, receiver, makeArgumentList(arguments));
         }
         return false;
     }

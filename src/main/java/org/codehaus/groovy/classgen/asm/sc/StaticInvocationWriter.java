@@ -54,7 +54,6 @@ import org.codehaus.groovy.classgen.asm.OperandStack;
 import org.codehaus.groovy.classgen.asm.TypeChooser;
 import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.classgen.asm.WriterController;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
@@ -75,9 +74,9 @@ import java.util.stream.Collectors;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.samePackageName;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isNullConstant;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isSuperExpression;
+import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisOrSuper;
 import static org.codehaus.groovy.ast.ClassHelper.isGStringType;
 import static org.codehaus.groovy.ast.ClassHelper.isGeneratedFunction;
@@ -88,8 +87,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -104,24 +103,6 @@ import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
 public class StaticInvocationWriter extends InvocationWriter {
-
-    private static final ClassNode INVOKERHELPER_CLASSNODE = ClassHelper.make(InvokerHelper.class);
-    private static final MethodNode INVOKERHELPER_INVOKEMETHOD = INVOKERHELPER_CLASSNODE.getMethod(
-            "invokeMethodSafe",
-            new Parameter[]{
-                    new Parameter(ClassHelper.OBJECT_TYPE, "object"),
-                    new Parameter(ClassHelper.STRING_TYPE, "name"),
-                    new Parameter(ClassHelper.OBJECT_TYPE, "args")
-            }
-    );
-    private static final MethodNode INVOKERHELPER_INVOKESTATICMETHOD = INVOKERHELPER_CLASSNODE.getMethod(
-            "invokeStaticMethod",
-            new Parameter[]{
-                    new Parameter(ClassHelper.CLASS_Type, "clazz"),
-                    new Parameter(ClassHelper.STRING_TYPE, "name"),
-                    new Parameter(ClassHelper.OBJECT_TYPE, "args")
-            }
-    );
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
@@ -166,7 +147,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                 MethodNode bridge = null;
                 if (call.getNodeMetaData(StaticTypesMarker.PV_METHODS_ACCESS) != null) {
                     Map<MethodNode, MethodNode> bridgeMethods = declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
-                    bridge = bridgeMethods != null ? bridgeMethods.get(cn) : null;
+                    if (bridgeMethods != null) bridge = bridgeMethods.get(cn);
                 }
                 if (bridge instanceof ConstructorNode) {
                     ArgumentListExpression newArgs = args(nullX());
@@ -293,14 +274,15 @@ public class StaticInvocationWriter extends InvocationWriter {
     protected boolean writeDirectMethodCall(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args) {
         if (target == null) return false;
 
-        ClassNode classNode = controller.getClassNode();
+        ClassNode enclosingClass = controller.getClassNode();
+        ClassNode declaringClass = target.getDeclaringClass();
 
         if (target instanceof ExtensionMethodNode) {
             ExtensionMethodNode emn = (ExtensionMethodNode) target;
             MethodVisitor mv = controller.getMethodVisitor();
-            MethodNode node = emn.getExtensionMethodNode();
-            Parameter[] parameters = node.getParameters();
-            ClassNode returnType = node.getReturnType();
+            MethodNode mn = emn.getExtensionMethodNode();
+            Parameter[] parameters = mn.getParameters();
+            ClassNode returnType = mn.getReturnType();
 
             List<Expression> argumentList = new ArrayList<>();
             if (emn.isStaticExtension()) {
@@ -308,12 +290,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             } else if (!isThisOrSuper(receiver) || !controller.isInGeneratedFunction()) {
                 argumentList.add(receiver);
             } else {
-                argumentList.add(thisObjectExpression(classNode, target.getDeclaringClass()));
+                argumentList.add(thisObjectExpression(enclosingClass, declaringClass));
             }
             argumentList.addAll(args.getExpressions());
             loadArguments(argumentList, parameters);
 
-            String owner = BytecodeHelper.getClassInternalName(node.getDeclaringClass());
+            String owner = BytecodeHelper.getClassInternalName(mn.getDeclaringClass());
             String desc = BytecodeHelper.getMethodDescriptor(returnType, parameters);
             mv.visitMethodInsn(INVOKESTATIC, owner, target.getName(), desc, false);
             controller.getOperandStack().remove(argumentList.size());
@@ -326,65 +308,42 @@ public class StaticInvocationWriter extends InvocationWriter {
             return true;
         }
 
-        if (target == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS) {
-            // wrap arguments into an array
-            Expression arr = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
-            return super.writeDirectMethodCall(target, implicitThis, receiver, args(arr));
+        if (target == StaticTypeCheckingVisitor.CLOSURE_CALL_VARGS) { // wrap arguments in an array
+            Expression array = new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions());
+            return super.writeDirectMethodCall(target, implicitThis, receiver, args(array));
         }
 
-        if (!target.isPublic()
-                && controller.isInGeneratedFunction()
-                && target.getDeclaringClass() != classNode) {
-            if (!tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
-                // replace call with an invoker helper call
-                MethodNode methodNode = target.isStatic() ? INVOKERHELPER_INVOKESTATICMETHOD : INVOKERHELPER_INVOKEMETHOD;
-                MethodCallExpression mce = callX(
-                        classX(INVOKERHELPER_CLASSNODE),
-                        methodNode.getName(),
-                        args(
-                                target.isStatic() ? classX(target.getDeclaringClass()) : receiver,
-                                constX(target.getName()),
-                                new ArrayExpression(ClassHelper.OBJECT_TYPE, args.getExpressions())
-                        )
-                );
-                mce.setMethodTarget(methodNode);
-                mce.visit(controller.getAcg());
+        ClassNode receiverType = receiver == null ? ClassHelper.OBJECT_TYPE : controller.getTypeChooser().resolveType(receiver, controller.getThisType());
+
+        if (AsmClassGenerator.isMemberDirectlyAccessible(target.getModifiers(), declaringClass, enclosingClass)
+                && !(target.isProtected() && !inSamePackage(declaringClass, enclosingClass) && !isSubtype(receiverType, enclosingClass))) { // GROOVY-7325
+            boolean isThisImplicit = implicitThis;
+            Expression theReceiver = receiver;
+            if (implicitThis && isThisExpression(receiver)
+                    && !isSubtype(declaringClass, enclosingClass)) {
+                if (target.isStatic()) {
+                    theReceiver = classX(declaringClass);
+                } else if (!controller.isInGeneratedFunction()) {
+                    theReceiver = propX(classX(declaringClass), "this");
+                } else {
+                    theReceiver = thisObjectExpression(enclosingClass, declaringClass);
+                }
+                if (!(theReceiver instanceof VariableExpression)) isThisImplicit = false;
+                theReceiver.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, declaringClass);
             }
+            if (theReceiver != null && !isSuperExpression(receiver) && !isClassWithSuper(receiver)
+                    && currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) {
+                // call CHECKCAST in order to avoid calls to castToType (aka dynamic behaviour)
+                theReceiver = new CheckcastReceiverExpression(theReceiver, target);
+            }
+            return super.writeDirectMethodCall(target, isThisImplicit, theReceiver, args);
+
+        } else if (tryBridgeMethod(target, receiver, implicitThis, args, enclosingClass)) {
             return true;
+        } else {
+            writeMethodAccessError(target, receiver != null ? receiver : args);
+            return false;
         }
-
-        if (target.isPrivate() && tryPrivateMethod(target, implicitThis, receiver, args, classNode)) {
-            return true;
-        }
-
-        Expression fixedReceiver = receiver;
-        boolean    fixedImplicitThis = implicitThis;
-        if (target.isPackageScope()) { // GROOVY-11373
-            if (!samePackageName(target.getDeclaringClass(), classNode)) {
-                writeMethodAccessError(target, receiver != null ? receiver : args);
-            }
-        } else if (target.isProtected()) {
-            ClassNode node = receiver == null ? ClassHelper.OBJECT_TYPE : controller.getTypeChooser().resolveType(receiver, classNode);
-            if (!implicitThis && !isThisOrSuper(receiver) && !samePackageName(node, classNode)
-                    && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(node, target.getDeclaringClass())) {
-                writeMethodAccessError(target, receiver != null ? receiver : args);
-            } else if (!isSubtype(target.getDeclaringClass(), node) && tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
-                return true;
-            }
-        } else if (target.isPublic() && receiver != null) {
-            if (implicitThis
-                    && controller.isInGeneratedFunction()
-                    && !isSubtype(target.getDeclaringClass(), classNode)) {
-                fixedReceiver = thisObjectExpression(classNode, target.getDeclaringClass());
-                if (!(fixedReceiver instanceof VariableExpression)) fixedImplicitThis = false;
-            }
-        }
-        if (receiver != null && !isSuperExpression(receiver) && !isClassWithSuper(receiver)) {
-            // in order to avoid calls to castToType, which is the dynamic behaviour, make sure that we call CHECKCAST instead then replace the top operand type
-            if (currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER) == null) fixedReceiver = new CheckcastReceiverExpression(fixedReceiver, target);
-            return super.writeDirectMethodCall(target, fixedImplicitThis, fixedReceiver, args);
-        }
-        return super.writeDirectMethodCall(target, implicitThis, receiver, args);
     }
 
     private void writeMethodAccessError(final MethodNode target, final Expression origin) {
@@ -401,21 +360,6 @@ public class StaticInvocationWriter extends InvocationWriter {
         if (receiver instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) receiver;
             return pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString());
-        }
-        return false;
-    }
-
-    private boolean tryPrivateMethod(final MethodNode target, final boolean implicitThis, final Expression receiver, final TupleExpression args, final ClassNode classNode) {
-        ClassNode declaringClass = target.getDeclaringClass();
-        if ((isPrivateBridgeMethodsCallAllowed(declaringClass, classNode) || isPrivateBridgeMethodsCallAllowed(classNode, declaringClass))
-                && declaringClass.getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS) != null
-                && !declaringClass.equals(classNode)) {
-            if (tryBridgeMethod(target, receiver, implicitThis, args, classNode)) {
-                return true;
-            }
-        }
-        if (declaringClass != classNode) {
-            writeMethodAccessError(target, receiver);
         }
         return false;
     }

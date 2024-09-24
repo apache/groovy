@@ -53,5 +53,6 @@ public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest impleme
             }
             assert new Foo().a() == 123
         '''
+        assert astTrees['Foo$Bar$Baz'][1].contains('INVOKEVIRTUAL Foo.d ()I')
     }
 }

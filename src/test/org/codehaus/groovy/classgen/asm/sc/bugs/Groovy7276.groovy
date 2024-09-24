@@ -23,7 +23,7 @@ import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
-    void testShouldGoThroughPrivateBridgeMethod1() {
+    void testNoPrivateAccessMethod1() {
         for (it in ['i', 'i++']) {
             assertScript """
                 class Foo {
@@ -32,11 +32,14 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
                 }
                 assert new Foo().m() == 1
             """
+            String  closure = astTrees['Foo$_m_closure1'][1]
+            assert  closure.contains('GETFIELD Foo.i')
+            assert !closure.contains('pfaccess$')
         }
     }
 
     // GROOVY-7304
-    void testShouldGoThroughPrivateBridgeMethod2() {
+    void testNoPrivateAccessMethod2() {
         for (it in ['i', 'i++']) {
             assertScript """
                 class Foo {
@@ -47,10 +50,13 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
                 }
                 assert new Bar().m() == 1
             """
+            String  closure = astTrees['Foo$_m_closure1'][1]
+            assert  closure.contains('GETFIELD Foo.i')
+            assert !closure.contains('pfaccess$')
         }
     }
 
-    void testShouldGoThroughPrivateBridgeMethod3() {
+    void testNoPrivateAccessMethod3() {
         for (it in ['++i', 'i+=1', 'i=i+1']) {
             assertScript """
                 class Foo {
@@ -59,11 +65,14 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
                 }
                 assert new Foo().m() == 2
             """
+            String  closure = astTrees['Foo$_m_closure1'][1]
+            assert  closure.contains('GETFIELD Foo.i')
+            assert !closure.contains('pfaccess$')
         }
     }
 
     // GROOVY-7304
-    void testShouldGoThroughPrivateBridgeMethod4() {
+    void testNoPrivateAccessMethod4() {
         for (it in ['++i', 'i+=1', 'i=i+1']) {
             assertScript """
                 class Foo {
@@ -74,10 +83,14 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
                 }
                 assert new Bar().m() == 2
             """
+            String  closure = astTrees['Foo$_m_closure1'][1]
+            assert  closure.contains('GETFIELD Foo.i')
+            assert !closure.contains('pfaccess$')
         }
     }
 
-    void testShouldGoThroughPrivateBridgeMethod5() {
+    // GROOVY-10687
+    void testNoPrivateAccessMethod5() {
         assertScript '''
             class Foo {
                 private int i = 1
@@ -86,9 +99,13 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
             }
             assert new Foo().m() == 1
         '''
+        String  closure = astTrees['Foo$_m_closure1'][1]
+        assert  closure.contains('INVOKEVIRTUAL Foo.pvI ()I')
+        assert !closure.contains('access$')
     }
 
-    void testShouldGoThroughPrivateBridgeMethod6() {
+    // GROOVY-10687
+    void testNoPrivateAccessMethod6() {
         assertScript '''
             class Foo {
                 private int i = 1
@@ -99,15 +116,19 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
             }
             assert new Bar().m() == 1
         '''
+        String  closure = astTrees['Foo$_m_closure1'][1]
+        assert  closure.contains('INVOKEVIRTUAL Foo.pvI ()I')
+        assert !closure.contains('access$')
     }
 
+    // GROOVY-10687
     void testPrivateAccessInInnerClass() {
         assertScript '''
             class Outer {
                 private static class Inner {
                     private Set<String> variablesToCheck = []
                     private void checkAssertions(String name) {
-                        Runnable r = {
+                        Runnable r = { ->
                             def candidates = variablesToCheck.findAll { it == name }
                         }
                         r.run()
@@ -119,5 +140,7 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
             }
             Outer.test()
         '''
+        assert astTrees['Outer'][1].contains('INVOKEVIRTUAL Outer$Inner.checkAssertions (Ljava/lang/String;)V')
+        assert astTrees['Outer$Inner$_checkAssertions_closure1'][1].contains('GETFIELD Outer$Inner.variablesToCheck')
     }
 }

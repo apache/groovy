@@ -680,7 +680,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
             class Bottom extends Top {
                 private int bar = 666
                 private class InnerBottom {
-                    int bar() { bar } // name clash for fpaccess$0
+                    int bar() { bar }
                 }
             }
             new Bottom()

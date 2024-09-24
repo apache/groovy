@@ -579,11 +579,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private static void addPrivateFieldOrMethodAccess(final Expression source, final ClassNode cn, final StaticTypesMarker key, final ASTNode accessedMember) {
-        cn.getNodeMetaData(key, x -> new LinkedHashSet<>()).add(accessedMember);
-        source.putNodeMetaData(key, accessedMember);
-    }
-
     /**
      * Checks for private field access from closure or nestmate.
      */
@@ -604,17 +599,17 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         ClassNode declaringClass = mn.getDeclaringClass();
         ClassNode enclosingClass = typeCheckingContext.getEnclosingClassNode();
         if (declaringClass != enclosingClass || typeCheckingContext.getEnclosingClosure() != null) {
-            if (mn.isPrivate()
-                    && declaringClass.getModule() == enclosingClass.getModule()) {
-                addPrivateFieldOrMethodAccess(source, declaringClass, PV_METHODS_ACCESS, mn);
-            } else if (mn.isProtected()
-                    && !inSamePackage(enclosingClass, declaringClass)
+            if (mn.isPrivate() && getNestHost(declaringClass) == getNestHost(enclosingClass)) {
+                if (mn.isConstructor()) declaringClass.getNodeMetaData(PV_METHODS_ACCESS, k -> new LinkedHashSet<MethodNode>()).add(mn);
+                source.putNodeMetaData(PV_METHODS_ACCESS, mn);
+            } else if (mn.isProtected() && !inSamePackage(enclosingClass, declaringClass)
                     && (!implementsInterfaceOrIsSubclassOf(enclosingClass, declaringClass)
                                     || typeCheckingContext.getEnclosingClosure() != null)) {
                 ClassNode cn = enclosingClass;
                 do {
                     if (implementsInterfaceOrIsSubclassOf(cn, declaringClass)) {
-                        addPrivateFieldOrMethodAccess(source, cn, PV_METHODS_ACCESS, mn);
+                        cn.getNodeMetaData(PV_METHODS_ACCESS, k -> new LinkedHashSet<MethodNode>()).add(mn);
+                        source.putNodeMetaData(PV_METHODS_ACCESS, mn);
                         break;
                     }
                 } while ((cn = cn.getOuterClass()) != null);
