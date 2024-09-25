@@ -77,6 +77,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
@@ -104,8 +105,7 @@ public class GroovyClassLoader extends URLClassLoader {
     private final CompilerConfiguration config;
     private String sourceEncoding;
     private Boolean recompile;
-    // use 1000000 as offset to avoid conflicts with names from the GroovyShell
-    private static int scriptNameCounter = 1000000;
+    private static final AtomicInteger scriptNameCounter = new AtomicInteger(1_000_000); // 1,000,000 avoids conflicts with names from the GroovyShell
 
     static {
         registerAsParallelCapable();
@@ -282,8 +282,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     public synchronized String generateScriptName() {
-        scriptNameCounter++;
-        return "script" + scriptNameCounter + ".groovy";
+        return "script" + scriptNameCounter.getAndIncrement() + ".groovy";
     }
 
     public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
