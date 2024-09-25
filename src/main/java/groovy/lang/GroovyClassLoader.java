@@ -165,6 +165,10 @@ public class GroovyClassLoader extends URLClassLoader {
         return java.security.AccessController.doPrivileged(action);
     }
 
+    static {
+        registerAsParallelCapable();
+    }
+
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         @Override
         public URL loadGroovySource(final String filename) {
