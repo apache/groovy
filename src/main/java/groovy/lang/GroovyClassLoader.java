@@ -107,6 +107,10 @@ public class GroovyClassLoader extends URLClassLoader {
     // use 1000000 as offset to avoid conflicts with names from the GroovyShell
     private static int scriptNameCounter = 1000000;
 
+    static {
+        registerAsParallelCapable();
+    }
+
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         @Override
         @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
