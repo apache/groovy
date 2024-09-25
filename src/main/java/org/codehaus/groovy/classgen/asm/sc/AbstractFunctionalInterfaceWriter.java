@@ -33,6 +33,7 @@ import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.isDynamicTyped;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.hasUnresolvedGenerics;
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getClassInternalName;
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.getMethodDescriptor;
 
@@ -113,12 +114,14 @@ public interface AbstractFunctionalInterfaceWriter {
             throw new RuntimeParserException("The inferred type[" + inferredType.redirect() + "] is not compatible with the parameter type[" + parameterType.redirect() + "]", parameterType);
         }
 
-        ClassNode type = inferredType;
+        ClassNode type;
         if (isPrimitiveType(parameterType)) {
             if (!isPrimitiveType(inferredType)) {
                 // The non-primitive type and primitive type are not allowed to mix since Java 9+
                 // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: class java.lang.Integer is not a subtype of int
-                type = getUnwrapper(inferredType);
+                type = getUnwrapper(inferredType).getPlainNodeReference(false);
+            } else {
+                type = inferredType.getPlainNodeReference(false);
             }
         } else if (isPrimitiveType(inferredType)) {
             // GROOVY-9790: bootstrap method initialization exception raised when lambda parameter type is wrong
@@ -128,11 +131,21 @@ public interface AbstractFunctionalInterfaceWriter {
                     && (parameterType.equals(getUnwrapper(parameterType)) || inferredType.equals(getWrapper(inferredType)))) { // (2)
                 // The non-primitive type and primitive type are not allowed to mix since Java 9+
                 // java.lang.invoke.LambdaConversionException: Type mismatch for instantiated parameter 0: int is not a subtype of class java.lang.Object
-                type = getWrapper(inferredType);
+                type = getWrapper(inferredType).getPlainNodeReference();
+            } else {
+                type = inferredType.getPlainNodeReference(false);
             }
-        }
-        if (type.isGenericsPlaceHolder()) {
-            type = type.redirect();
+        } else {
+            type = inferredType;
+            // GROOVY-11304: no placeholders
+            if (hasUnresolvedGenerics(type)) type = type.redirect();
+            // GROOVY-11479: mutable for node metadata or type annotations
+            if (type.toString(false).equals(parameterType.toString(false))) {
+                type = parameterType;
+            } else {
+                // TODO: deep copy if type args set
+                type = type.getPlainNodeReference();
+            }
         }
         return type;
     }

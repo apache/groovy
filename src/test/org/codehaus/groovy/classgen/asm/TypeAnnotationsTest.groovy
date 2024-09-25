@@ -257,6 +257,42 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    // GROOVY-11479
+    void testTypeAnnotationsForClosure() {
+        def bytecode = compile(classNamePattern: 'Foo\\$_closure1', method: 'doCall', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+
+            @groovy.transform.CompileStatic
+            class Foo {
+                @TypeAnno0 java.util.function.IntUnaryOperator bar = { @TypeAnno1 def i -> 1 }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'public doCall(I)Ljava/lang/Integer;',
+                '@LTypeAnno1;() : METHOD_FORMAL_PARAMETER 0, null',
+                'L0'
+        ])
+    }
+
+    // GROOVY-11479
+    void testTypeAnnotationsForLambda() {
+        def bytecode = compile(classNamePattern: 'Foo\\$_lambda1', method: 'doCall', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+
+            @groovy.transform.CompileStatic
+            class Foo {
+                @TypeAnno0 java.util.function.IntUnaryOperator bar = (@TypeAnno1 int i) -> 1
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'public doCall(I)I',
+                '@LTypeAnno1;() : METHOD_FORMAL_PARAMETER 0, null',
+                'L0'
+        ])
+    }
+
     void testTypeAnnotationsForField1() {
         def bytecode = compile(classNamePattern: 'Foo', field: 'foo', imports + '''
             @Retention(RUNTIME) @Target(FIELD) @interface FieldAnno { String value() }

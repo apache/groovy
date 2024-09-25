@@ -1035,7 +1035,10 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             for (int i = 0; i < n; i += 1) {
                 Parameter parameter = closureParameters[i];
                 if (parameter.isDynamicTyped()) {
-                    parameter.setType(expectedTypes[i]); // GROOVY-11083, GROOVY-11085, et al.
+                    ClassNode type = expectedTypes[i].getPlainNodeReference(false); // GROOVY-11479
+                    if (!expectedTypes[i].isGenericsPlaceHolder())
+                        type.setGenericsTypes(expectedTypes[i].getGenericsTypes());
+                    parameter.setType(type); // GROOVY-11083, GROOVY-11085, et al.
                 } else {
                     checkParamType(parameter, expectedTypes[i], i == n-1, rhsExpression instanceof LambdaExpression);
                 }
