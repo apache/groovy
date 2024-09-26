@@ -41,7 +41,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -65,10 +64,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
-import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.isFunctionalInterface;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
@@ -101,7 +96,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCE
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_MUTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_METHODS_ACCESS;
 import static org.codehaus.groovy.transform.trait.TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
@@ -119,12 +113,9 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public static final ClassNode TYPECHECKED_CLASSNODE = ClassHelper.make(TypeChecked.class);
     public static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
 
-    public static final ClassNode  ARRAYLIST_CLASSNODE = ClassHelper.make(ArrayList.class);
-    public static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getMethod("add", new Parameter[]{new Parameter(OBJECT_TYPE, "o")});
-    public static final MethodNode ARRAYLIST_CONSTRUCTOR = new ConstructorNode(ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
-    static {
-        ARRAYLIST_CONSTRUCTOR.setDeclaringClass(StaticCompilationVisitor.ARRAYLIST_CLASSNODE);
-    }
+    public static final ClassNode  ARRAYLIST_CLASSNODE = ClassHelper.makeWithoutCaching(ArrayList.class);
+    public static final MethodNode ARRAYLIST_ADD_METHOD = ARRAYLIST_CLASSNODE.getDeclaredMethod("add", new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "o")});
+    public static final MethodNode ARRAYLIST_CONSTRUCTOR = ARRAYLIST_CLASSNODE.getDeclaredConstructor(Parameter.EMPTY_ARRAY);
 
     public StaticCompilationVisitor(final SourceUnit unit, final ClassNode node) {
         super(unit, node);
@@ -283,7 +274,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     public void visitLambdaExpression(final LambdaExpression expression) {
         super.visitLambdaExpression(expression);
         // GROOVY-11256: static compiler uses lambda factory not proxy generator
-        if (isFunctionalInterface(expression.getNodeMetaData(PARAMETER_TYPE))) {
+        if (ClassHelper.isFunctionalInterface(expression.getNodeMetaData(PARAMETER_TYPE))) {
             expression.removeNodeMetaData(POST_TYPECHECKING_REPLACEMENT); // for trait: lambda.rehydrate($self,$self,$self)
         }
     }
@@ -313,7 +304,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 if (visitor != null) visitor.visitField(node);
                 ClassNode declaringClass = node.getDeclaringClass();
                 if (declaringClass != null) {
-                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
                         boolean spread = declaringClass.getDeclaredField(node.getName()) != node;
                         pexp.setSpreadSafe(spread);
                     }
@@ -326,7 +317,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 if (visitor != null) visitor.visitMethod(node);
                 ClassNode declaringClass = node.getDeclaringClass();
                 if (declaringClass != null) {
-                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
                         List<MethodNode> properties = declaringClass.getDeclaredMethods(node.getName());
                         boolean spread = true;
                         for (MethodNode mn : properties) {
@@ -347,7 +338,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 if (visitor != null) visitor.visitProperty(node);
                 ClassNode declaringClass = node.getDeclaringClass();
                 if (declaringClass != null) {
-                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, LIST_TYPE)) {
+                    if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(declaringClass, ClassHelper.LIST_TYPE)) {
                         List<PropertyNode> properties = declaringClass.getProperties();
                         boolean spread = true;
                         for (PropertyNode propertyNode : properties) {
@@ -370,8 +361,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
             if (objectExpression.getNodeMetaData(PROPERTY_OWNER) == null) {
                 objectExpression.putNodeMetaData(PROPERTY_OWNER, objectExpressionType);
             }
-            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, LIST_TYPE)) {
-                objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, int_TYPE));
+            if (StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(objectExpressionType, ClassHelper.LIST_TYPE)) {
+                objectExpression.putNodeMetaData(COMPONENT_TYPE, inferComponentType(objectExpressionType, ClassHelper.int_TYPE));
             }
         }
         return exists;
@@ -449,7 +440,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         int acc = -1;
         privateFieldAccessors = (accessedFields != null ? new HashMap<>() : null);
         privateFieldMutators = (mutatedFields != null ? new HashMap<>() : null);
-        final int modifiers = ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC;
         for (FieldNode fieldNode : node.getFields()) {
             boolean generateAccessor = accessedFields != null && accessedFields.contains(fieldNode);
             boolean generateMutator = mutatedFields != null && mutatedFields.contains(fieldNode);
@@ -458,7 +448,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
                 Expression receiver = fieldNode.isStatic() ? classX(node) : varX(param);
                 Statement body = returnS(attrX(receiver, constX(fieldNode.getName())));
-                MethodNode accessor = node.addMethod("pfaccess$" + acc, modifiers, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, body);
+                MethodNode accessor = node.addMethod("pfaccess$" + acc, ACC_STATIC | ACC_SYNTHETIC, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, body);
                 accessor.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
                 privateFieldAccessors.put(fieldNode.getName(), accessor);
             }
@@ -469,7 +459,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 Expression receiver = fieldNode.isStatic() ? classX(node) : varX(param);
                 Parameter value = new Parameter(fieldNode.getOriginType(), "$value");
                 Statement body = assignS(attrX(receiver, constX(fieldNode.getName())), varX(value));
-                MethodNode mutator = node.addMethod("pfaccess$0" + acc, modifiers, fieldNode.getOriginType(), new Parameter[]{param, value}, ClassNode.EMPTY_ARRAY, body);
+                MethodNode mutator = node.addMethod("pfaccess$0" + acc, ACC_STATIC | ACC_SYNTHETIC, fieldNode.getOriginType(), new Parameter[]{param, value}, ClassNode.EMPTY_ARRAY, body);
                 mutator.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
                 privateFieldMutators.put(fieldNode.getName(), mutator);
             }
@@ -535,7 +525,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                     if (innerClasses.hasNext()) {
                         thatType = innerClasses.next();
                     } else {
-                        thatType = new InnerClassNode(node.redirect(), node.getName() + "$1", ACC_STATIC | ACC_SYNTHETIC, OBJECT_TYPE);
+                        thatType = new InnerClassNode(node.redirect(), node.getName() + "$1", ACC_STATIC | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE);
                         node.getModule().addClass(thatType);
                     }
                     newParams[0] = new Parameter(thatType.getPlainNodeReference(), "$that");
@@ -551,7 +541,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
                     bridge = node.addMethod(
                             "access$" + i,
-                            ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
+                            ACC_STATIC | ACC_SYNTHETIC,
                             correctToGenericsSpecRecurse(genericsSpec, method.getReturnType(), methodSpecificGenerics),
                             newParams,
                             method.getExceptions(),
