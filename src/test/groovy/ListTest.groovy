@@ -336,13 +336,13 @@ class ListTest extends GroovyTestCase {
         assert list[-1..-2] == [3, 2]     , 'negative index range reversed'
         assert list[-1..<-2] == [3]       , 'negative index range reversed right exclusive'
         assert list[-1<..-2] == [2]       , 'negative index range reversed left exclusive'
-        assert list[-1<..<-2] == []       , 'negative index range reversed full exclusive'  // aaaaaaahhhhh !
+        assert list[-1<..<-2] == []       , 'negative index range reversed full exclusive'
         assert list[0..-1] == list        , 'pos - neg value'
         assert list[0..<-1] == [0, 1, 2]  , 'pos - neg value right exclusive'
         assert list[0<..-1] == [1, 2, 3]  , 'pos - neg value left exclusive'
         assert list[0<..<-1] == [1, 2]    , 'pos - neg value full exclusive'
         assert list[0..<-2] == [0, 1]     , 'pos - neg value exclusive'
-        shouldFail(GroovyRuntimeException) { list[null] }
+        shouldFail(NullPointerException) { list[null] }
         shouldFail(IndexOutOfBoundsException) { list[5..6] }
     }
 

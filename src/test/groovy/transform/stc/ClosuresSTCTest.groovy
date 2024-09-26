@@ -867,8 +867,25 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-11397
+    // GROOVY-11258
     void testSAMsInMethodSelection7() {
+        assertScript '''import java.util.function.Function
+        // org.assertj.core.api.iterable.ThrowingExtractor
+            interface F<In,Out> extends Function<In,Out> {
+                default Out apply(In it) { redir(it) }
+                Out redir(In it) throws Exception
+            }
+            class C {
+                Number m(Function<Number, Number> f) { f.apply(1) }
+                Number m(F       <Number, Number> f) { f.redir(2) }
+            }
+            Number which = new C().m { it }
+            assert which == 2
+        '''
+    }
+
+    // GROOVY-11397
+    void testSAMsInMethodSelection8() {
         assertScript '''
             interface Action<T> { void run(T t) }
             interface Proc { void doSomething() }

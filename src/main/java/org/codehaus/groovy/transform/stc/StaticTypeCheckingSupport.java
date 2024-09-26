@@ -1068,6 +1068,19 @@ public abstract class StaticTypeCheckingSupport {
                 bestMethods.add(method);
             }
         }
+        if (bestMethods.size() > 1) { // GROOVY-11258
+            for (var iter = bestMethods.iterator(); iter.hasNext(); ) {
+                MethodNode outer = iter.next(); // if redundant, remove
+                for (MethodNode inner : bestMethods) {
+                    if (inner != outer
+                            && !ParameterUtils.parametersEqual(inner.getParameters(), outer.getParameters())
+                            &&  ParameterUtils.parametersCompatible(inner.getParameters(), outer.getParameters())) {
+                        iter.remove(); // for the given argument type(s), inner can accept everything that outer can
+                        break;
+                    }
+                }
+            }
+        }
 
         // phase 2: receiver-provider distance classifier
         if (bestMethods.size() > 1 && receiver != null) {

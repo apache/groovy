@@ -3264,26 +3264,40 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return doChooseMostSpecificParams(theClass.getName(), methodName, matchingMethods, arguments, false);
     }
 
-    protected static Object doChooseMostSpecificParams(String theClassName, String name, List matchingMethods, Class[] arguments, boolean checkParametersCompatible) {
-        long matchesDistance = -1;
-        LinkedList matches = new LinkedList();
+    protected static Object doChooseMostSpecificParams(final String theClassName, final String name, final List matchingMethods, final Class[] arguments, final boolean checkParameterCompatibility) {
+        var matchesDistance = -1L;
+        var matches = new LinkedList<>();
         for (Object method : matchingMethods) {
-            final ParameterTypes parameterTypes = (ParameterTypes) method;
-            if (checkParametersCompatible && !MetaClassHelper.parametersAreCompatible(arguments, parameterTypes.getNativeParameterTypes()))
-                continue;
-            long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
-            if (dist == 0) return method;
-            matchesDistance = handleMatches(matchesDistance, matches, method, dist);
+            var parameterTypes = (ParameterTypes) method;
+            if (!checkParameterCompatibility || MetaClassHelper.parametersAreCompatible(arguments, parameterTypes.getNativeParameterTypes())) {
+                long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
+                matchesDistance = handleMatches(matchesDistance, matches, method, dist);
+            }
         }
 
         int size = matches.size();
-        if (size == 1) {
-            return matches.getFirst();
+        if (size > 1) { // GROOVY-11258
+            for (var iter = matches.iterator(); iter.hasNext(); ) {
+                Object outer = iter.next(); // if redundant, remove
+                for (Object inner : matches) {
+                    if (inner == outer) continue;
+                    Class<?>[] innerTypes = ((ParameterTypes) inner).getNativeParameterTypes();
+                    Class<?>[] outerTypes = ((ParameterTypes) outer).getNativeParameterTypes();
+                    if (!Arrays.equals(innerTypes, outerTypes) && MetaClassHelper.parametersAreCompatible(innerTypes, outerTypes)) {
+                        iter.remove(); // for the given argument type(s), inner can accept everything that outer can
+                        size -= 1;
+                        break;
+                    }
+                }
+            }
         }
+
         if (size == 0) {
             return null;
         }
-        // more than one matching method found --> ambiguous!
+        if (size == 1) {
+            return matches.getFirst();
+        }
         throw new GroovyRuntimeException(createErrorMessageForAmbiguity(theClassName, name, arguments, matches));
     }
 
