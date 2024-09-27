@@ -96,7 +96,6 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.unw
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOG_ENABLED;
-import static org.codehaus.groovy.vmplugin.v8.IndyInterface.LOOKUP;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.switchPoint;
 
 public abstract class Selector {
@@ -436,7 +435,7 @@ public abstract class Selector {
                 isVargs = mc.isVargsMethod();
                 Constructor<?> con = mc.getCachedConstrcutor().getCachedConstructor();
                 try {
-                    handle = LOOKUP.unreflectConstructor(con);
+                    handle = this.callSite.getLookup().unreflectConstructor(con);
                     if (LOG_ENABLED) LOG.info("successfully unreflected constructor");
                 } catch (IllegalAccessException e) {
                     throw new GroovyBugError(e);

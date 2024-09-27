@@ -19,8 +19,6 @@
 package gls.innerClass
 
 import groovy.test.NotYetImplemented
-import groovy.transform.CompileDynamic
-import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
@@ -29,7 +27,6 @@ import org.junit.Test
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class InnerClassTest {
 
     @Test
@@ -45,7 +42,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8254
+    // GROOVY-8254
+    @Test
     void testAliasAIC() {
         assertScript '''import Foo as Bar
             class Foo {}
@@ -68,7 +66,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-10840
+    // GROOVY-10840
+    @Test
     void testArrayAIC() {
         assertScript '''
             class BAIS extends ByteArrayInputStream {
@@ -81,7 +80,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-7370, GROOVY-10722
+    // GROOVY-7370, GROOVY-10722
+    @Test
     void testVargsAIC() {
         String pogo = '''
             class C {
@@ -139,7 +139,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8448
+    // GROOVY-8448
+    @Test
     void testAccessLocalVariableVsGetterInAIC() {
         assertScript '''
             def x = 'local' // shared variable written as field in AIC
@@ -194,7 +195,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9825
+    // GROOVY-9825
+    @Test
     void testAccessSuperInterfaceConstantWithInnerClass() {
         assertScript '''
             class Baz {
@@ -218,7 +220,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9499
+    // GROOVY-9499
+    @Test
     void testAccessStaticMethodFromAICInSuperCtorCall() {
         assertScript '''
             class One {
@@ -293,7 +296,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8423
+    // GROOVY-8423
+    @Test
     void testPrivateInnerClassHasPrivateModifier() {
         assertScript '''
             import static java.lang.reflect.Modifier.*
@@ -307,7 +311,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8423
+    // GROOVY-8423
+    @Test
     void testProtectedInnerClassHasProtectedModifier() {
         assertScript '''
             import static java.lang.reflect.Modifier.*
@@ -321,7 +326,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8423
+    // GROOVY-8423
+    @Test
     void testPackagePrivateInnerClassHasProtectedModifier() {
         assertScript '''
             import static java.lang.reflect.Modifier.*
@@ -394,7 +400,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-7944
+    // GROOVY-7944
+    @Test
     void testNonStaticInnerClass2() {
         assertScript '''
             class A {
@@ -435,7 +442,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test @NotYetImplemented // GROOVY-9781
+    // GROOVY-9781
+    @Test @NotYetImplemented
     void testNonStaticInnerClass4() {
         assertScript '''
             class A {
@@ -454,7 +462,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8104
+    // GROOVY-8104
+    @Test
     void testNonStaticInnerClass5() {
         assertScript '''
             class A {
@@ -487,6 +496,28 @@ final class InnerClassTest {
             A a = new A()
             a.foo()
         '''
+    }
+
+    // GROOVY-11485
+    @Test
+    void testNonStaticInnerClass6() {
+        def err = shouldFail '''
+            abstract class A {
+                A(x) {
+                }
+            }
+            class B {
+                class C extends A {
+                    // default ctor
+                }
+                static m() {
+                    def b = new B()
+                    def c = new C(b)
+                }
+            }
+            B.m()
+        '''
+        assert err =~ /An explicit constructor is required because the implicit super constructor A\(\) is undefined/
     }
 
     @Test
@@ -585,7 +616,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-6141
+    // GROOVY-6141
+    @Test
     void testUsageOfOuterField4() {
         assertScript '''
             class A {
@@ -615,7 +647,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9189
+    // GROOVY-9189
+    @Test
     void testUsageOfOuterField5() {
         assertScript '''
             interface Run {
@@ -638,7 +671,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9168
+    // GROOVY-9168
+    @Test
     void testUsageOfOuterField6() {
         assertScript '''
             class A {
@@ -656,7 +690,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9501
+    // GROOVY-9501
+    @Test
     void testUsageOfOuterField7() {
         assertScript '''
             class Main extends Outer {
@@ -728,7 +763,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9569
+    // GROOVY-9569
+    @Test
     void testUsageOfOuterField9() {
         assertScript '''
             class Main extends Outer {
@@ -788,7 +824,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5259
+    // GROOVY-5259
+    @Test
     void testUsageOfOuterField11() {
         assertScript '''
             class Base {
@@ -840,7 +877,8 @@ final class InnerClassTest {
         assert err =~ /Apparent variable 'count' was found in a static scope but doesn't refer to a local variable, static field or class./
     }
 
-    @Test // GROOVY-8050
+    // GROOVY-8050
+    @Test
     void testUsageOfOuterField13() {
         assertScript '''
             class Outer {
@@ -906,7 +944,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9905
+    // GROOVY-9905
+    @Test
     void testUsageOfOuterSuperField3() {
         assertScript '''
             abstract class A {
@@ -1047,7 +1086,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9189
+    // GROOVY-9189
+    @Test
     void testUsageOfOuterMethod4() {
         assertScript '''
             interface Run {
@@ -1067,7 +1107,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9168
+    // GROOVY-9168
+    @Test
     void testUsageOfOuterMethod5() {
         assertScript '''
             class A {
@@ -1085,7 +1126,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-10558
+    // GROOVY-10558
+    @Test
     void testUsageOfOuterMethod6() {
         assertScript '''
             class Outer {
@@ -1106,7 +1148,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-11352
+    // GROOVY-11352
+    @Test
     void testUsageOfOuterMethod7() {
         assertScript '''
             class Super {
@@ -1224,7 +1267,8 @@ final class InnerClassTest {
         assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
     }
 
-    @Test // GROOVY-10289
+    // GROOVY-10289
+    @Test
     void testUsageOfOuterType4() {
         def err = shouldFail '''
             class Foo {
@@ -1322,7 +1366,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-4028
+    // GROOVY-4028
+    @Test
     void testImplicitThisPassingWithNamedArguments() {
         assertScript '''
             class Outer {
@@ -1408,7 +1453,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-7686
+    // GROOVY-7686
+    @Test
     void testReferencedVariableInAIC3() {
         assertScript '''
             abstract class A {
@@ -1432,7 +1478,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5754
+    // GROOVY-5754
+    @Test
     void testResolveInnerOfSuperType() {
         assertScript '''
             interface I { class C { } }
@@ -1445,7 +1492,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5989
+    // GROOVY-5989
+    @Test
     void testResolveInnerOfSuperType2() {
         assertScript '''
             interface I { class C { } }
@@ -1459,7 +1507,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8364
+    // GROOVY-8364
+    @Test
     void testResolveInnerOfSuperType3() {
         assertScript '''
             abstract class A { static class C { } }
@@ -1474,7 +1523,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8364
+    // GROOVY-8364
+    @Test
     void testResolveInnerOfSuperType4() {
         assertScript '''
             abstract class A { interface I { } }
@@ -1489,7 +1539,8 @@ final class InnerClassTest {
         '''
     }
 
-    @CompileDynamic @Test // GROOVY-8364
+    // GROOVY-8364
+    @Test
     void testResolveInnerOfSuperType5() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
@@ -1530,7 +1581,8 @@ final class InnerClassTest {
         }
     }
 
-    @CompileDynamic @Test // GROOVY-8359
+    // GROOVY-8359
+    @Test
     void testResolveInnerOfSuperType6() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
@@ -1576,7 +1628,8 @@ final class InnerClassTest {
         }
     }
 
-    @Test // GROOVY-8358
+    // GROOVY-8358
+    @Test
     void testResolveInnerOfSuperType7() {
         assertScript '''
             class Outer implements I {
@@ -1601,7 +1654,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8358
+    // GROOVY-8358
+    @Test
     void testResolveInnerOfSuperType8() {
         assertScript '''
             class C implements H { } // moved ahead of Outer
@@ -1626,7 +1680,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9642
+    // GROOVY-9642
+    @Test
     void testResolveInnerOfSuperType9() {
         assertScript '''
             class C {
@@ -1676,7 +1731,8 @@ final class InnerClassTest {
         '''
     }
 
-    @CompileDynamic @Test // GROOVY-8715
+    // GROOVY-8715
+    @Test
     void testResolveInnerOfSuperType10b() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
@@ -1714,7 +1770,8 @@ final class InnerClassTest {
         }
     }
 
-    @Test // GROOVY-7762
+    // GROOVY-7762
+    @Test
     void testResolveInnerOfSuperType12() {
         assertScript '''
             class C extends gls.innerClass.Parent8914 {
@@ -1726,7 +1783,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9866
+    // GROOVY-9866
+    @Test
     void testResolveInnerOfSuperType13() {
         assertScript '''
             class X {                   // System
@@ -1747,7 +1805,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5679, GROOVY-5681
+    // GROOVY-5679, GROOVY-5681
+    @Test
     void testEnclosingMethodIsSet() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -1775,7 +1834,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5681, GROOVY-9151
+    // GROOVY-5681, GROOVY-9151
+    @Test
     void testEnclosingMethodIsSet2() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -1800,7 +1860,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5681, GROOVY-9151
+    // GROOVY-5681, GROOVY-9151
+    @Test
     void testEnclosingMethodIsSet3() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -1839,7 +1900,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-6810
+    // GROOVY-6810
+    @Test
     void testThisReferenceForAICInOpenBlock() {
         assertScript '''
             import java.security.AccessController
@@ -1873,7 +1935,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-4896
+    // GROOVY-4896
+    @Test
     void testThisReferenceForAICInOpenBlock2() {
         assertScript '''
             def doSomethingUsingLocal(){
@@ -1938,7 +2001,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-5582
+    // GROOVY-5582
+    @Test
     void testAICExtendingAbstractInnerClass() {
         assertScript '''
             class Outer {
@@ -1957,7 +2021,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-10141
+    // GROOVY-10141
+    @Test
     void testInnerClassIn2xAIC() {
         assertScript '''
             class Outer {
@@ -1977,7 +2042,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8274
+    // GROOVY-8274
+    @Test
     void testMissingMethodHandling() {
         assertScript '''
             class Outer {
@@ -2001,7 +2067,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-6831
+    // GROOVY-6831
+    @Test
     void testNestedPropertyHandling() {
         assertScript '''
             class Outer {
@@ -2024,7 +2091,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-10935
+    // GROOVY-10935
+    @Test
     void testNestedPropertyHandling2() {
         def err = shouldFail '''
             class Outer {
@@ -2035,7 +2103,8 @@ final class InnerClassTest {
         assert err =~ /No such property: missing for class: Outer.Inner/
     }
 
-    @Test // GROOVY-7312
+    // GROOVY-7312
+    @Test
     void testInnerClassOfInterfaceIsStatic() {
         assertScript '''
             import java.lang.reflect.Modifier
@@ -2047,7 +2116,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-7312
+    // GROOVY-7312
+    @Test
     void testInnerClassOfInterfaceIsStatic2() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -2063,7 +2133,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-8914
+    // GROOVY-8914
+    @Test
     void testNestedClassInheritingFromNestedClass() {
         // control
         assert new Outer8914.Nested()
@@ -2076,7 +2147,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-6809
+    // GROOVY-6809
+    @Test
     void testReferenceToUninitializedThis() {
         def err = shouldFail '''
             class Test {
@@ -2101,7 +2173,8 @@ final class InnerClassTest {
         assert err =~ / Could not find matching constructor for: Test.A\(Test.A\)/
     }
 
-    @Test // GROOVY-6809
+    // GROOVY-6809
+    @Test
     void testReferenceToUninitializedThis2() {
         assertScript '''
             class A {
@@ -2121,7 +2194,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-6809
+    // GROOVY-6809
+    @Test
     void testReferenceToUninitializedThis3() {
         assertScript '''
             class A {
@@ -2138,7 +2212,8 @@ final class InnerClassTest {
         '''
     }
 
-    @Test // GROOVY-9168
+    // GROOVY-9168
+    @Test
     void testReferenceToUninitializedThis4() {
         def err = shouldFail '''
             class Outer {
@@ -2156,7 +2231,8 @@ final class InnerClassTest {
         assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
-    @Test // GROOVY-9168
+    // GROOVY-9168
+    @Test
     void testReferenceToUninitializedThis5() {
         def err = shouldFail '''
             class Outer {
@@ -2171,7 +2247,8 @@ final class InnerClassTest {
         assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
-    @Test // GROOVY-9168
+    // GROOVY-9168
+    @Test
     void testReferenceToUninitializedThis6() {
         assertScript '''
             import groovy.transform.ASTTest

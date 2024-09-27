@@ -41,6 +41,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
@@ -394,6 +395,15 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         addFieldInit(thisZero, thisField, newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
+            ClassNode superClass = classNode.getSuperClass();
+            Parameter[] implicit = Parameter.EMPTY_ARRAY; // signature of the super class constuctor
+            if (superClass.getOuterClass() != null && (superClass.getModifiers() & ACC_STATIC) == 0)
+                implicit = new Parameter[]{new Parameter(superClass.getOuterClass(), "outerClass")};
+            if (superClass.getDeclaredConstructor(implicit) == null && !superClass.getDeclaredConstructors().isEmpty()) { // GROOVY-11485
+                var joiner = new StringJoiner(", ", superClass.getNameWithoutPackage() + "(", ")");
+                for (var parameter : implicit) joiner.add(parameter.getType().getNameWithoutPackage());
+                addError("An explicit constructor is required because the implicit super constructor " + joiner.toString() + " is undefined", classNode);
+            }
             cce = ctorSuperX(new TupleExpression());
             block.getStatements().add(0, stmt(cce));
         }
@@ -414,17 +424,18 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
     private boolean shouldImplicitlyPassThisZero(ConstructorCallExpression cce) {
         boolean pass = false;
-        ClassNode superCN = classNode.getSuperClass();
         if (cce.isThisCall()) {
             pass = true;
         } else if (cce.isSuperCall()) {
-            // if the super class is another non-static inner class in the same outer class hierarchy, implicit this
-            // needs to be passed
-            if (!superCN.isEnum() && !superCN.isInterface() && superCN instanceof InnerClassNode) {
-                InnerClassNode superInnerCN = (InnerClassNode) superCN;
-                if (!isStatic(superInnerCN) && classNode.getOuterClass().isDerivedFrom(superCN.getOuterClass())) {
-                    pass = true;
-                }
+            // if the super class is another non-static inner class in the same
+            // outer class hierarchy, implicit this needs to be passed
+            ClassNode superClass = classNode.getSuperClass();
+            if (!superClass.isEnum()
+                    && !superClass.isInterface()
+                    && superClass instanceof InnerClassNode
+                    && !isStatic((InnerClassNode) superClass)
+                    && classNode.getOuterClass().isDerivedFrom(superClass.getOuterClass())) {
+                pass = true;
             }
         }
         return pass;
