@@ -313,12 +313,13 @@ public class WriterController {
     //
 
     public boolean isStaticContext() {
-        if (compileStack != null && compileStack.getScope() != null) {
+        if (isConstructor()) { // GROOVY-11483
+            return compileStack.isInSpecialConstructorCall();
+        }
+        if (compileStack.getScope() != null) {
             return compileStack.getScope().isInStaticContext();
         }
-        if (!isInGeneratedFunction()) return false;
-        if (isConstructor()) return false;
-        return classNode.isStaticClass() || isStaticMethod();
+        throw new IllegalStateException("out-of-scope static check");
     }
 
     public boolean isStaticMethod() {

@@ -81,6 +81,7 @@ import static org.codehaus.groovy.ast.ClassHelper.isWrapperLong;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
@@ -406,10 +407,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             addPropertyAccessError(receiver, propertyName, receiverType);
         }
 
-        if (isThisExpression(receiver) && implicitThis) // GROOVY-11412
-            receiver.removeNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
-
-        MethodCallExpression call = callX(receiver, "getProperty", args(constX(propertyName)));
+        MethodCallExpression call = callX(castX(GROOVY_OBJECT_TYPE, receiver), "getProperty", args(constX(propertyName)));
         call.setImplicitThis(implicitThis);
         call.setMethodTarget(GROOVYOBJECT_GETPROPERTY_METHOD);
         call.setSafe(safe);

@@ -1484,7 +1484,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     static class Inner {
                         $propertySource
                         def test(int i) {
-                            print( Outer.VALUE )
+                            if (i > Outer.VALUE) {
+                                // do something
+                            }
                             return VALUE
                         }
                     }
@@ -1501,7 +1503,9 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
                     /*non-static*/ class Inner {
                         $propertySource
                         def test(int i) {
-                            print( Outer.VALUE )
+                            if (i > Outer.VALUE) {
+                                // do something
+                            }
                             return VALUE
                         }
                     }
@@ -1892,25 +1896,27 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-6610
-    void testPrivateStaticFieldAccessBeforeThis() {
-        assertScript '''
-            class Outer {
-                static class Inner {
-                    public final String value
-                    Inner(String string) {
-                        value = string
+    // GROOVY-6610, GROOVY-11483
+    void testUnqualifiedStaticFieldAccessBeforeThis() {
+        for (mode in ['public', 'protected', '@PackageScope', 'private']) {
+            assertScript """
+                class Outer {
+                    static class Inner {
+                        public final String value
+                        Inner(String string) {
+                            value = string
+                        }
+                        Inner() {
+                            this(VALUE.toString())
+                        }
                     }
-                    Inner() {
-                        this(VALUE.toString())
+                    $mode static Integer VALUE = 42
+                    static main(args) {
+                        assert new Inner().value == '42'
                     }
                 }
-                private static Integer VALUE = 42
-                static main(args) {
-                    assert new Inner().value == '42'
-                }
-            }
-        '''
+            """
+        }
     }
 
     // GROOVY-7890
