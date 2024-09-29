@@ -48,7 +48,6 @@ import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
@@ -88,8 +87,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.findDGMMethodsByNameAndArguments;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.isClassClassNodeWrappingConcreteType;
+import static org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor.inferLoopElementType;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -249,76 +250,79 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         //   result
         ClassNode componentType = receiver.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
         if (componentType == null) {
-            componentType = OBJECT_TYPE;
+            componentType = inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
         }
         CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        Label exit = new Label();
+        Label allDone = new Label();
         if (safe) {
+            Label nonNull = new Label();
             receiver.visit(controller.getAcg());
-            Label doGet = new Label();
-            mv.visitJumpInsn(IFNONNULL, doGet);
-            controller.getOperandStack().remove(1);
+            mv.visitJumpInsn(IFNONNULL, nonNull);
+            operandStack.remove(1);
+
             mv.visitInsn(ACONST_NULL);
-            mv.visitJumpInsn(GOTO, exit);
-            mv.visitLabel(doGet);
+            mv.visitJumpInsn(GOTO, allDone);
+            mv.visitLabel(nonNull);
         }
 
-        Variable tmpList = varX("tmpList", ClassHelper.make(ArrayList.class));
-        int var = compileStack.defineTemporaryVariable(tmpList, false);
+        Variable tmpList = varX("tmpList", ARRAYLIST_CLASSNODE);
+        int list = compileStack.defineTemporaryVariable(tmpList, false);
         Variable iterator = varX("iterator", Iterator_TYPE);
-        int it = compileStack.defineTemporaryVariable(iterator, false);
+        int iter = compileStack.defineTemporaryVariable(iterator, false);
         Variable nextVar = varX("next", componentType);
-        final int next = compileStack.defineTemporaryVariable(nextVar, false);
+        int next = compileStack.defineTemporaryVariable(nextVar, false);
 
         mv.visitTypeInsn(NEW, "java/util/ArrayList");
         mv.visitInsn(DUP);
         receiver.visit(controller.getAcg());
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "size", "()I", true);
-        controller.getOperandStack().remove(1);
+        operandStack.remove(1);
         mv.visitMethodInsn(INVOKESPECIAL, "java/util/ArrayList", "<init>", "(I)V", false);
-        mv.visitVarInsn(ASTORE, var);
+        mv.visitVarInsn(ASTORE, list);
         Label l1 = new Label();
         mv.visitLabel(l1);
         receiver.visit(controller.getAcg());
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "iterator", "()Ljava/util/Iterator;", true);
-        controller.getOperandStack().remove(1);
-        mv.visitVarInsn(ASTORE, it);
+        operandStack.remove(1);
+        mv.visitVarInsn(ASTORE, iter);
         Label l2 = new Label();
         mv.visitLabel(l2);
-        mv.visitVarInsn(ALOAD, it);
+        mv.visitVarInsn(ALOAD, iter);
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "hasNext", "()Z", true);
         Label l3 = new Label();
         mv.visitJumpInsn(IFEQ, l3);
-        mv.visitVarInsn(ALOAD, it);
+        mv.visitVarInsn(ALOAD, iter);
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Iterator", "next", "()Ljava/lang/Object;", true);
         mv.visitTypeInsn(CHECKCAST, BytecodeHelper.getClassInternalName(componentType));
         mv.visitVarInsn(ASTORE, next);
         Label l4 = new Label();
         mv.visitLabel(l4);
-        mv.visitVarInsn(ALOAD, var);
-        PropertyExpression pexp = propX(
+        mv.visitVarInsn(ALOAD, list);
+        Expression pexp = propX(
                 bytecodeX(componentType, v -> v.visitVarInsn(ALOAD, next)),
                 propertyName
         );
         pexp.visit(controller.getAcg());
-        controller.getOperandStack().box();
-        controller.getOperandStack().remove(1);
+        operandStack.box();
+        operandStack.remove(1);
         mv.visitMethodInsn(INVOKEINTERFACE, "java/util/List", "add", "(Ljava/lang/Object;)Z", true);
         mv.visitInsn(POP);
         Label l5 = new Label();
         mv.visitLabel(l5);
         mv.visitJumpInsn(GOTO, l2);
         mv.visitLabel(l3);
-        mv.visitVarInsn(ALOAD, var);
+        mv.visitVarInsn(ALOAD, list);
         if (safe) {
-            mv.visitLabel(exit);
+            mv.visitLabel(allDone);
         }
-        controller.getOperandStack().push(ClassHelper.make(ArrayList.class));
-        controller.getCompileStack().removeVar(next);
-        controller.getCompileStack().removeVar(it);
-        controller.getCompileStack().removeVar(var);
+        operandStack.push(ARRAYLIST_CLASSNODE);
+
+        compileStack.removeVar(next);
+        compileStack.removeVar(iter);
+        compileStack.removeVar(list);
     }
 
     private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {

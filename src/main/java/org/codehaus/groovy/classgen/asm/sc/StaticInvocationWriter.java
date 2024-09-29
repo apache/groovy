@@ -99,6 +99,7 @@ import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.IFNONNULL;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
@@ -485,70 +486,89 @@ public class StaticInvocationWriter extends InvocationWriter {
             return;
         }
         // if call is spread safe, replace it with a for in loop
-        if (spreadSafe && origin instanceof MethodCallExpression) {
-            // receiver expressions with side effects should not be visited twice, avoid by using a temporary variable
+        if (spreadSafe && (origin instanceof MethodCallExpression || (origin instanceof PropertyExpression && !controller.getCompileStack().isLHS()))) {
+            // receiver expressions with side-effects should not be re-visited; avoid by using a temporary variable
             Expression tmpReceiver = receiver;
-            if (!(receiver instanceof VariableExpression) && !(receiver instanceof ConstantExpression)) {
+            if (!(receiver instanceof VariableExpression || receiver instanceof ConstantExpression)) {
                 tmpReceiver = new TemporaryVariableExpression(receiver);
             }
-            MethodVisitor mv = controller.getMethodVisitor();
-            CompileStack compileStack = controller.getCompileStack();
-            TypeChooser typeChooser = controller.getTypeChooser();
-            OperandStack operandStack = controller.getOperandStack();
-            ClassNode classNode = controller.getClassNode();
-            int counter = labelCounter.incrementAndGet();
 
-            // use a temporary variable for the arraylist in which the results of the spread call will be stored
-            ConstructorCallExpression cce = ctorX(StaticCompilationVisitor.ARRAYLIST_CLASSNODE);
-            cce.setNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
-            TemporaryVariableExpression result = new TemporaryVariableExpression(cce);
-            result.visit(controller.getAcg());
-            operandStack.pop();
-            // if (receiver != null)
+            Label nonNull = new Label();
+            Label allDone = new Label();
+            MethodVisitor mv = controller.getMethodVisitor();
+            OperandStack operandStack = controller.getOperandStack();
+
+            // if (receiver == null)
             tmpReceiver.visit(controller.getAcg());
-            Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
-            mv.visitJumpInsn(IFNULL, ifnull);
-            operandStack.remove(1); // receiver consumed by if()
-            Label nonull = compileStack.createLocalLabel("nonull_" + counter);
-            mv.visitLabel(nonull);
-            ClassNode componentType = StaticTypeCheckingVisitor.inferLoopElementType(typeChooser.resolveType(tmpReceiver, classNode));
-            Parameter iterator = new Parameter(componentType, "for$it$" + counter);
-            VariableExpression iteratorAsVar = varX(iterator);
-            MethodCallExpression origMCE = (MethodCallExpression) origin;
-            MethodCallExpression newMCE = callX(
-                    iteratorAsVar,
-                    origMCE.getMethodAsString(),
-                    origMCE.getArguments()
-            );
-            newMCE.setImplicitThis(false);
-            newMCE.setMethodTarget(origMCE.getMethodTarget());
-            newMCE.setSafe(true);
-            MethodCallExpression add = callX(
-                    result,
-                    "add",
-                    newMCE
-            );
-            add.setImplicitThis(false);
-            add.setMethodTarget(StaticCompilationVisitor.ARRAYLIST_ADD_METHOD);
-            // for (e in receiver) { result.add(e?.method(arguments) }
-            ForStatement stmt = new ForStatement(
-                    iterator,
+            mv.visitJumpInsn(IFNONNULL, nonNull);
+            operandStack.remove(1);
+
+            // result is null
+            mv.visitInsn(ACONST_NULL);
+            mv.visitJumpInsn(GOTO, allDone);
+
+            // else
+            mv.visitLabel(nonNull);
+
+            ClassNode resultType = origin.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
+            ClassNode valuesType = origin.getNodeMetaData(StaticCompilationMetadataKeys.COMPONENT_TYPE);
+            if (valuesType == null) valuesType = StaticTypeCheckingVisitor.inferLoopElementType(resultType);
+
+            // def result = new ArrayList()
+            ConstructorCallExpression cce = ctorX(StaticCompilationVisitor.ARRAYLIST_CLASSNODE);
+            cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET,
+                    StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
+            var result = new TemporaryVariableExpression(cce);
+            result.visit(controller.getAcg());
+
+            ClassNode elementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
+            Parameter element = new Parameter(elementType, "for$it$" + labelCounter.incrementAndGet());
+
+            Expression nextValue;
+            if (origin instanceof MethodCallExpression) {
+                MethodCallExpression oldMCE = (MethodCallExpression) origin;
+                MethodCallExpression newMCE = callX(
+                        varX(element),
+                        oldMCE.getMethod(),
+                        oldMCE.getArguments()
+                );
+                newMCE.setImplicitThis(false);
+                MethodNode target = oldMCE.getMethodTarget();
+                newMCE.setMethodTarget(target);
+                if (target == null || !target.isVoidMethod())
+                    newMCE.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, valuesType);
+                newMCE.setSafe(true);
+                nextValue = newMCE;
+            } else {
+                PropertyExpression oldPE = (PropertyExpression) origin;
+                PropertyExpression newPE = origin instanceof AttributeExpression
+                    ? new AttributeExpression(varX(element), oldPE.getProperty(), true)
+                    : new  PropertyExpression(varX(element), oldPE.getProperty(), true);
+                newPE.setImplicitThis(false);
+                newPE.setNodeMetaData(StaticTypesMarker.INFERRED_TYPE, valuesType);
+                nextValue = newPE;
+            }
+
+            MethodCallExpression addNextValue = callX(result, "add", /*castX(valuesType, */nextValue/*)*/);
+            addNextValue.setImplicitThis(false);
+            addNextValue.setMethodTarget(StaticCompilationVisitor.ARRAYLIST_ADD_METHOD);
+
+            // for (element in receiver) result.add(element?.method(arguments));
+            var stmt = new ForStatement(
+                    element,
                     tmpReceiver,
-                    stmt(add)
+                    stmt(addNextValue)
             );
             stmt.visit(controller.getAcg());
-            // else { empty list }
-            mv.visitLabel(ifnull);
+
+            result.remove(controller);
 
             // end of if/else
-            // return result list
-            result.visit(controller.getAcg());
+            mv.visitLabel(allDone);
 
-            // cleanup temporary variables
             if (tmpReceiver instanceof TemporaryVariableExpression) {
                 ((TemporaryVariableExpression) tmpReceiver).remove(controller);
             }
-            result.remove(controller);
         } else if (safe && origin instanceof MethodCallExpression) {
             // wrap call in an IFNULL check
             MethodVisitor mv = controller.getMethodVisitor();

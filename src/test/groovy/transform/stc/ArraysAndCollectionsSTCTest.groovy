@@ -286,6 +286,43 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11453
+    void testListStarWithNull() {
+        assertScript '''
+            List<String> strings = null
+            List<byte[]> bArrays = strings*.bytes
+            assert bArrays == null
+        '''
+    }
+
+    void testListStarWithMethodReturningVoid() {
+        assertScript '''
+            class C { void m() {} }
+            List<C> objects = [new C(),new C(),new C()]
+            List<?> returns = objects*.m()
+            assert  returns == [null,null,null]
+        '''
+    }
+
+    void testListStarWithMethodWithNullInList() {
+        assertScript '''
+            List<String> strings = ['a',(String)null,'C']
+            List<String> returns = strings*.toUpperCase()
+            assert returns == ['A',null,'C']
+        '''
+    }
+
+    // GROOVY-7442
+    void testSpreadSafeMethodCallWithinAssert() {
+        assertScript '''
+            def myMethod(String a, String b) {
+                assert [a, b]*.size() == [5, 5]
+            }
+
+            myMethod('hello', 'world')
+        '''
+    }
+
     void testInlineMap() {
         assertScript '''
             Map map = [a:1, b:2]

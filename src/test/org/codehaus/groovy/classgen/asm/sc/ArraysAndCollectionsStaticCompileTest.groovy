@@ -25,23 +25,6 @@ import groovy.transform.stc.ArraysAndCollectionsSTCTest
  */
 final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest implements StaticCompilationTestSupport {
 
-    void testListStarWithMethodReturningVoid() {
-        assertScript '''
-            class A { void m() {} }
-            List<A> elems = [new A(), new A(), new A()]
-            List result = elems*.m()
-            assert result == [null,null,null]
-        '''
-    }
-
-    void testListStarWithMethodWithNullInList() {
-        assertScript '''
-            List<String> elems = ['a',(String)null,'C']
-            List<String> result = elems*.toUpperCase()
-            assert result == ['A',null,'C']
-        '''
-    }
-
     void testShouldNotThrowVerifyError() {
         assertScript '''
             def al = new ArrayList<Double>()
@@ -92,17 +75,6 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
             Foo.test()
         '''
         assert astTrees['Foo'][1].count('ScriptBytecodeAdapter.createList') == 4
-    }
-
-    // GROOVY-7442
-    void testSpreadDotOperatorWithinAssert() {
-        assertScript '''
-            def myMethod(String a, String b) {
-                assert [a, b]*.size() == [5, 5]
-            }
-
-            myMethod('hello', 'world')
-        '''
     }
 
     // GROOVY-7688

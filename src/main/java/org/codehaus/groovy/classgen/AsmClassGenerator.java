@@ -1221,7 +1221,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (isThisExpression(objectExpression)) {
                     if (controller.isInGeneratedFunction()) { // params/variables are stored as fields
                         if (expression.isImplicitThis()) fieldNode = classNode.getDeclaredField(name);
-                    } else {
+                    } else if (!expression.isSpreadSafe()) {
                         fieldNode = classNode.getDeclaredField(name);
                         // GROOVY-8448: "this.name" from anon. inner class
                         if (fieldNode != null && !expression.isImplicitThis()

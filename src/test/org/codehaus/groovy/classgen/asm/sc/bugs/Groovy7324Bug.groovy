@@ -16,61 +16,51 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
 
 class Groovy7324Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
     void testInferenceOfListDotOperator() {
-        assertScript '''class Account {
-    String id
-}
+        assertScript '''
+            class Account {
+                String id
+            }
+            class Accounts {
+                List<Account> accountList
+            }
+            class User {
+                List<Accounts> accountsList
+            }
 
-class GCAccount {
-    List<Account> sfAccounts
-}
-
-class User {
-    List<GCAccount> gcAccounts
-}
-
-void foo() {
-    def accounts = (1..10).collect { new Account(id: "Id $it") }
-    def user1 = new User(gcAccounts: [new GCAccount(sfAccounts: accounts[0..2]), new GCAccount(sfAccounts: accounts[3..4])])
-    def user2 = new User(gcAccounts: [new GCAccount(sfAccounts: accounts[5..7]), new GCAccount(sfAccounts: accounts[8..9])])
-    def users = [user1,user2]
-    def ids = users.gcAccounts.sfAccounts.id.flatten()
-    println ids
-}
-
-foo()
+            def accounts = (1..10).collect { new Account(id: "Id $it") }
+            def user1 = new User(accountsList: [new Accounts(accountList: accounts[0..2]), new Accounts(accountList: accounts[3..4])])
+            def user2 = new User(accountsList: [new Accounts(accountList: accounts[5..7]), new Accounts(accountList: accounts[8..9])])
+            def users = [user1, user2]
+            def ids = (List<String>) users.accountsList.accountList.id.flatten()
+            assert ids.size() == 10
         '''
     }
 
     void testInferenceOfSpreadDotOperator() {
-        assertScript '''class Account {
-    String id
-}
+        assertScript '''
+            class Account {
+                String id
+            }
+            class Accounts {
+                List<Account> accountList
+            }
+            class User {
+                List<Accounts> accountsList
+            }
 
-class GCAccount {
-    List<Account> sfAccounts
-}
-
-class User {
-    List<GCAccount> gcAccounts
-}
-
-void foo() {
-    def accounts = (1..10).collect { new Account(id: "Id $it") }
-    def user = new User(gcAccounts: [new GCAccount(sfAccounts: accounts[0..2]), new GCAccount(sfAccounts: accounts[3..4])])
-    def ids = user.gcAccounts*.sfAccounts*.id.flatten()
-    println ids
-}
-
-foo()
+            def accounts = (1..5).collect { new Account(id: "Id $it") }
+            def user = new User(accountsList: [new Accounts(accountList: accounts[0..2]), new Accounts(accountList: accounts[3..4])])
+            // "user.accountsList*.accountList" produces List<List<Account>> so "that*.id" includes spread-dot and list-dot operation
+            def ids = (List<String>) user.accountsList*.accountList*.id.flatten()
+            assert ids.size() == 5
         '''
     }
 }
