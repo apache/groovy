@@ -245,7 +245,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = [x:100, y:200, z: 300]
-        ''', 'No such property: z for class: A'
+        ''',
+        'No such property: z for class: A'
     }
 
     void testConstructWithNamedParamsAndMissingProperty() {
@@ -255,7 +256,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = new A(x:100, y:200, z: 300)
-        ''', 'No such property: z for class: A'
+        ''',
+        'No such property: z for class: A'
     }
 
     void testConstructFromValuedMapAndIncorrectTypes() {
@@ -265,7 +267,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = [x:'100', y:200]
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testConstructFromValuedMapAndDynamicKey() {
@@ -275,7 +278,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 int y
             }
             A a = ["${'x'}":'100']
-        ''', 'Dynamic keys in map-style constructors are unsupported'
+        ''',
+        'Dynamic keys in map-style constructors are unsupported'
     }
 
     void testConstructWithMapAndInheritance() {
@@ -434,7 +438,8 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
                 ByteArrayOutputStream out
             }
             void m(OutputStream o) { new Foo(out:o) }
-        ''', 'Cannot assign value of type java.io.OutputStream to variable of type java.io.ByteArrayOutputStream'
+        ''',
+        'Cannot assign value of type java.io.OutputStream to variable of type java.io.ByteArrayOutputStream'
     }
 
     void testTypeCheckingInfoShouldNotBeAddedToConstructor() {
@@ -589,5 +594,23 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
 
             assert new A().test() == ['value']
         '''
+    }
+
+    // GROOVY-11274
+    void testPrivateDefaultConstructor() {
+        shouldFailWithMessages '''
+            class C {
+                private C() {
+                }
+                C(String s) {
+                }
+            }
+            class D extends C {
+                D() {
+                    //super()
+                }
+            }
+        ''',
+        'Cannot find matching constructor C()'
     }
 }

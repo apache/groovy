@@ -222,6 +222,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.defaultValueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.elvisX;
@@ -2840,6 +2841,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         if (!isConstructor) {
             returnAdder.visitMethod(node); // GROOVY-7753: we cannot count these auto-generated return statements, see `typeCheckingContext.pushEnclosingReturnStatement`
+        } else if (!((ConstructorNode) node).firstStatementIsSpecialConstructorCall()) {
+            ClassNode superClass = node.getDeclaringClass().getSuperClass(); // GROOVY-11274: check implicit "super()"
+            boolean isInnerClass = superClass.getOuterClass() != null && !Modifier.isStatic(superClass.getModifiers());
+            Expression superCall = ctorSuperX(args(isInnerClass ? List.of(castX(superClass.getOuterClass(), nullX())) : List.of()));
+            if (node.getCode() != null) superCall.setSourcePosition(node.getCode());
+            superCall.visit(this);
         }
         typeCheckingContext.popEnclosingMethod();
     }
