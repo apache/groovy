@@ -160,6 +160,7 @@ public class TypeCheckingContext {
      * }
      * // Here var1 instance of Runnable
      */
+    @Deprecated
     protected final IdentityHashMap<BlockStatement, Map<VariableExpression, List<ClassNode>>> blockStatements2Types = new IdentityHashMap<>();
 
     protected Set<MethodNode> alreadyVisitedMethods = new HashSet<>();
@@ -188,6 +189,7 @@ public class TypeCheckingContext {
     protected final LinkedList<ClassNode> enclosingClassNodes = new LinkedList<>();
     protected final LinkedList<MethodNode> enclosingMethods = new LinkedList<>();
     protected final LinkedList<Expression> enclosingMethodCalls = new LinkedList<>();
+    @Deprecated
     protected final LinkedList<BlockStatement> enclosingBlocks = new LinkedList<>();
     protected final LinkedList<SwitchStatement> switchStatements = new LinkedList<>();
     protected final LinkedList<EnclosingClosure> enclosingClosures = new LinkedList<>();
