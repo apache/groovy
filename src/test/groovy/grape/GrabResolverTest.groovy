@@ -80,7 +80,7 @@ final class GrabResolverTest {
     @Test
     void testResolverDefinitionResolvesDependency() {
         assertScript '''
-            @GrabResolver(name='restlet.org', root='http://maven.restlet.org')
+            @GrabResolver(name='restlet.org', root='https://maven.restlet.talend.com')
             @Grab(group='org.restlet', module='org.restlet', version='1.1.6')
             import org.restlet.Application
 
@@ -91,7 +91,7 @@ final class GrabResolverTest {
     @Test
     void testResolverDefinitionResolvesDependencyWithShorthand() {
         assertScript '''
-            @GrabResolver('http://maven.restlet.org')
+            @GrabResolver('https://maven.restlet.talend.com')
             @Grab('org.restlet:org.restlet:1.1.6')
             import org.restlet.Application
 
