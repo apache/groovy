@@ -614,6 +614,21 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    // GROOVY-11488
+    void testNotInstanceOf7() {
+        assertScript '''
+            def test(object) {
+                if (false) {
+                    return 'not possible'
+                } else if (object !instanceof Object[]) {
+                    return 'not array'
+                }
+            }
+            assert test(null) == 'not array'
+            assert test(new Object[0]) == null
+        '''
+    }
+
     // GROOVY-10217
     void testInstanceOfThenSubscriptOperator() {
         assertScript '''
@@ -1401,7 +1416,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-
+    // GROOVY-6207
     void testGetAnnotationFails() {
         assertScript '''
             import groovy.transform.*
