@@ -559,6 +559,13 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11451
+    void testMapStyleConstructorWithOverloadedSetterName2() {
+        assertScript """import ${Pojo11451.canonicalName}
+            new Pojo11451(id:'xyz')
+        """
+    }
+
     // GROOVY-11122
     void testMapStyleInnerClassConstructorWithinClosure() {
         assertScript '''
