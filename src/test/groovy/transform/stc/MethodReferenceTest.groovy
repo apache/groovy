@@ -1494,7 +1494,7 @@ final class MethodReferenceTest {
                 baz(this::foo) // not yet supported!
             }
         '''
-        assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
+        assert err =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
     @Test // GROOVY-10336
@@ -1511,7 +1511,27 @@ final class MethodReferenceTest {
                 }
             }
         '''
-        assert err =~ /The argument is a method reference, but the parameter type is not a functional interface/
+        assert err =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
+    }
+
+    @Test // GROOVY-10979
+    void testNotFunctionalInterface3() {
+        def err = shouldFail imports + '''
+            Integer m(String x) {
+                return 1
+            }
+            @CompileStatic
+            void test() {
+                java.util.stream.Stream<Number>                                          x = null
+                BiFunction<Function<String, Integer>, Number, Function<String, Integer>> y = null
+                BinaryOperator<Function<String, Integer>>                                z = null
+                // reduce number(s) to string-to-integer functions
+                x.<Function<String, Integer>>reduce(this::m, y, z)
+                x.reduce(this::m, y, z)
+                x.reduce((s) -> 1, y, z)
+            }
+        '''
+        assert err =~ /Argument is a method reference, but parameter type 'U' is not a functional interface/
     }
 
     @Test // GROOVY-11254

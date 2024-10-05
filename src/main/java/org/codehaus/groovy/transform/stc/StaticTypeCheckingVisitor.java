@@ -3747,12 +3747,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (i >= nthParameter && paramType.isArray())
                     paramType = paramType.getComponentType();
 
-                if (!isFunctionalInterface(paramType.redirect())) {
-                    addError("The argument is a method reference, but the parameter type is not a functional interface", argumentExpression);
-                    newArgumentExpressions.add(argumentExpression);
-                } else {
+                if (isFunctionalInterface(paramType)) {
                     methodReferencePositions.add(i);
                     newArgumentExpressions.add(constructLambdaExpressionForMethodReference(paramType, (MethodReferenceExpression) argumentExpression));
+                } else {
+                    newArgumentExpressions.add(argumentExpression);
+                    addStaticTypeError("Argument is a method reference, but parameter type '" + prettyPrintTypeName(paramType) + "' is not a functional interface", argumentExpression);
                 }
             }
         }
