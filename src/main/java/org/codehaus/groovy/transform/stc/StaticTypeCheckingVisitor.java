@@ -3069,7 +3069,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             expression.putNodeMetaData(PARAMETER_TYPE, lambda.getNodeMetaData(PARAMETER_TYPE));
                             expression.putNodeMetaData(CLOSURE_ARGUMENTS, lambda.getNodeMetaData(CLOSURE_ARGUMENTS));
                         } else {
-                            addError("The argument is a method reference, but the parameter type is not a functional interface", expression);
+                            addStaticTypeError("Argument is a method reference, but parameter type '" + prettyPrintTypeName(targetType) + "' is not a functional interface", expression);
                         }
                     }
                 }
@@ -3500,7 +3500,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             resolveGenericsFromTypeHint(receiver, arguments, mn, resolved);
                             expression.putNodeMetaData(DELEGATION_METADATA, newDelegationMetadata(resolved[0], stInt));
                         } else {
-                            addStaticTypeError("Incorrect type hint found in method " + (mn), type);
+                            addStaticTypeError("Incorrect type hint found in method " + mn, type);
                         }
                     }
                 } else {
@@ -5925,12 +5925,8 @@ trying: for (ClassNode[] signature : signatures) {
     protected void addStaticTypeError(final String msg, final ASTNode node) {
         if (node.getColumnNumber() > 0 && node.getLineNumber() > 0) {
             addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + msg, node);
-        } else {
-            if (DEBUG_GENERATED_CODE) {
-                addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + "Error in generated code [" + node.getText() + "] - " + msg, node);
-            }
-            // ignore errors which are related to unknown source locations
-            // because they are likely related to generated code
+        } else if (DEBUG_GENERATED_CODE) { // if not debug, ignore errors which are related to unknown source locations (generated code)
+            addError(StaticTypesTransformation.STATIC_ERROR_PREFIX + "Error in generated code [" + node.getText() + "] - " + msg, node);
         }
     }
 
