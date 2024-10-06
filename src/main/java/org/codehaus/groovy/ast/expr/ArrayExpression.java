@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.apache.groovy.ast.tools.ClassNodeUtils.formatTypeName;
+
 /**
  * Represents an array object construction.
  * One of:
@@ -34,12 +36,12 @@ import java.util.stream.Collectors;
  * </ul>
  */
 public class ArrayExpression extends Expression {
+
+    private final ClassNode elementType;
     private final List<Expression> initExpressions;
     private final List<Expression> sizeExpressions;
 
-    private final ClassNode elementType;
-
-    private static ClassNode makeArray(ClassNode base, List<Expression> sizeExpressions) {
+    private static ClassNode makeArray(final ClassNode base, final List<Expression> sizeExpressions) {
         ClassNode ret = base.makeArray();
         if (sizeExpressions == null) return ret;
         int size = sizeExpressions.size();
@@ -49,7 +51,7 @@ public class ArrayExpression extends Expression {
         return ret;
     }
 
-    public ArrayExpression(ClassNode elementType, List<Expression> initExpressions, List<Expression> sizeExpressions) {
+    public ArrayExpression(final ClassNode elementType, final List<Expression> initExpressions, final List<Expression> sizeExpressions) {
         super.setType(makeArray(elementType, sizeExpressions));
         this.elementType = elementType;
         this.sizeExpressions = sizeExpressions;
@@ -78,37 +80,14 @@ public class ArrayExpression extends Expression {
     }
 
     /**
-     * Creates an array using an initializer (list of expressions corresponding to array elements)
+     * Creates an array using an initializer (list of expressions corresponding to array elements).
      */
-    public ArrayExpression(ClassNode elementType, List<Expression> initExpressions) {
+    public ArrayExpression(final ClassNode elementType, final List<Expression> initExpressions) {
         this(elementType, initExpressions, null);
     }
 
-    /**
-     * Add another element to the initializer expressions
-     */
-    public void addExpression(Expression initExpression) {
-        initExpressions.add(initExpression);
-    }
-
-    /**
-     * Get the initializer expressions
-     */
-    public List<Expression> getExpressions() {
-        return initExpressions;
-    }
-
     @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitArrayExpression(this);
-    }
-
-    public boolean isDynamic() {
-        return false;
-    }
-
-    @Override
-    public Expression transformExpression(ExpressionTransformer transformer) {
+    public Expression transformExpression(final ExpressionTransformer transformer) {
         List<Expression> exprList = transformExpressions(initExpressions, transformer);
         List<Expression> sizes = null;
         if (!hasInitializer()) {
@@ -120,35 +99,36 @@ public class ArrayExpression extends Expression {
         return ret;
     }
 
-    /**
-     * Get a particular initializer expression
-     */
-    public Expression getExpression(int i) {
-        return initExpressions.get(i);
+    @Override
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitArrayExpression(this);
     }
+
+    //--------------------------------------------------------------------------
 
     public ClassNode getElementType() {
         return elementType;
     }
 
-    @Override
-    public String getText() {
-        return "[" + formatInitExpressions() + "]";
-    }
-
-    private String formatInitExpressions() {
-        return "{" + initExpressions.stream().map(Expression::getText).collect(Collectors.joining(", ")) + "}";
-    }
-
-    private String formatSizeExpressions() {
-        return sizeExpressions.stream().map(e -> "[" + e.getText() + "]").collect(Collectors.joining());
+    /**
+     * Gets the initializer expressions.
+     */
+    public List<Expression> getExpressions() {
+        return initExpressions;
     }
 
     /**
-     * @return true if the array expression is defined by an explicit initializer
+     * Gets a specific initializer expression.
      */
-    public boolean hasInitializer() {
-        return sizeExpressions == null;
+    public Expression getExpression(final int i) {
+        return initExpressions.get(i);
+    }
+
+    /**
+     * Adds another element to the initializer expressions.
+     */
+    public void addExpression(final Expression initExpression) {
+        initExpressions.add(initExpression);
     }
 
     /**
@@ -159,10 +139,41 @@ public class ArrayExpression extends Expression {
     }
 
     @Override
+    public String getText() {
+        if (hasInitializer()) {
+            return "new " + formatTypeName(getType()) + formatInitExpressions();
+        } else {
+            ClassNode basicType = getElementType();
+            while (basicType.isArray()) basicType= basicType.getComponentType();
+            return "new " + formatTypeName(basicType) + formatSizeExpressions();
+        }
+    }
+
+    @Override
     public String toString() {
         if (hasInitializer()) {
-            return super.toString() + "[elementType: " + getElementType() + ", init: {" + formatInitExpressions() + "}]";
+            return super.toString() + "[type: " + formatTypeName(getType()) + ", init: " + formatInitExpressions() + "]";
+        } else {
+            return super.toString() + "[type: " + formatTypeName(getType()) + ", size: " + formatSizeExpressions() + "]";
         }
-        return super.toString() + "[elementType: " + getElementType() + ", size: " + formatSizeExpressions() + "]";
+    }
+
+    public boolean isDynamic() {
+        return false;
+    }
+
+    /**
+     * @return true if the array expression is defined by an explicit initializer
+     */
+    public boolean hasInitializer() {
+        return (sizeExpressions == null);
+    }
+
+    private String formatInitExpressions() {
+        return initExpressions.stream().map(e -> e.getText()).collect(Collectors.joining(", ", "{", "}"));
+    }
+
+    private String formatSizeExpressions() {
+        return sizeExpressions.stream().map(e -> "[" + e.getText() + "]").collect(Collectors.joining());
     }
 }

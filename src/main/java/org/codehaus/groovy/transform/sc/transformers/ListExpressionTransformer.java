@@ -27,55 +27,35 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 
-import java.util.LinkedList;
 import java.util.List;
 
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
+import static java.util.stream.Collectors.toList;
 
-public class ListExpressionTransformer {
-    private final StaticCompilationTransformer transformer;
+class ListExpressionTransformer {
 
-    public ListExpressionTransformer(StaticCompilationTransformer staticCompilationTransformer) {
-        transformer = staticCompilationTransformer;
+    private final StaticCompilationTransformer scTransformer;
+
+    ListExpressionTransformer(final StaticCompilationTransformer scTransformer) {
+        this.scTransformer = scTransformer;
     }
 
-    Expression transformListExpression(final ListExpression expr) {
-        MethodNode target = expr.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
-        if (target instanceof ConstructorNode) {
-            if (target.getDeclaringClass().isArray()) {
-                return transformArrayConstructor(expr, target);
+    Expression transformListExpression(final ListExpression le) {
+        MethodNode mn = le.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
+        if (mn instanceof ConstructorNode) {
+            List<Expression> elements = le.getExpressions().stream().map(scTransformer::transform).collect(toList());
+
+            if (mn.getDeclaringClass().isArray()) {
+                var ae = new ArrayExpression(mn.getDeclaringClass().getComponentType(), elements);
+                ae.setSourcePosition(le);
+                return ae;
             }
-            return transformRegularConstructor(expr, target);
 
-        } else {
-            return transformer.superTransform(expr);
+            var cce = new ConstructorCallExpression(mn.getDeclaringClass(), new ArgumentListExpression(elements));
+            cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, mn);
+            cce.setSourcePosition(le);
+            return cce;
         }
-    }
 
-    private Expression transformArrayConstructor(final ListExpression expr, final MethodNode target) {
-        ArrayExpression aex = new ArrayExpression(target.getDeclaringClass().getComponentType(), transformArguments(expr));
-        aex.setSourcePosition(expr);
-        return aex;
-    }
-
-    private Expression transformRegularConstructor(final ListExpression expr, final MethodNode target) {
-        // can be replaced with a direct constructor call
-        List<Expression> transformedArgs = transformArguments(expr);
-        ConstructorCallExpression cce = new ConstructorCallExpression(
-                target.getDeclaringClass(),
-                new ArgumentListExpression(transformedArgs)
-        );
-        cce.setSourcePosition(expr);
-        cce.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, target);
-        return cce;
-    }
-
-    private List<Expression> transformArguments(final ListExpression expr) {
-        List<Expression> expressions = expr.getExpressions();
-        List<Expression> transformedArgs = new LinkedList<Expression>();
-        for (Expression expression : expressions) {
-            transformedArgs.add(transformer.transform(expression));
-        }
-        return transformedArgs;
+        return scTransformer.superTransform(le);
     }
 }

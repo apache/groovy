@@ -1331,19 +1331,22 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         if (!leftRedirect.isArray()) return;
         // left type is an array, check the right component types
-        if (rightExpression instanceof ListExpression) {
-            ClassNode leftComponentType = leftRedirect.getComponentType();
-            for (Expression expression : ((ListExpression) rightExpression).getExpressions()) {
-                ClassNode rightComponentType = getType(expression);
-                if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType) && !(isNullConstant(expression) && !isPrimitiveType(leftComponentType))) {
-                    addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightComponentType) + " into array of type " + prettyPrintType(lhsType), rightExpression);
-                }
+        ClassNode leftItemType = leftRedirect.getComponentType();
+        if (rhsType.redirect().isArray()) {
+            ClassNode rightItemType = rhsType.redirect().getComponentType();
+            if (!checkCompatibleAssignmentTypes(leftItemType, rightItemType)) {
+                addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightItemType) + " into array of type " + prettyPrintType(lhsType), rightExpression);
             }
-        } else if (rhsType.redirect().isArray()) {
-            ClassNode leftComponentType = leftRedirect.getComponentType();
-            ClassNode rightComponentType = rhsType.redirect().getComponentType();
-            if (!checkCompatibleAssignmentTypes(leftComponentType, rightComponentType)) {
-                addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightComponentType) + " into array of type " + prettyPrintType(lhsType), rightExpression);
+        } else if (rightExpression instanceof ListExpression) {
+            for (Expression expression : ((ListExpression) rightExpression).getExpressions()) {
+                ClassNode rightItemType = getType(expression);
+                if (leftItemType.isArray() && expression instanceof ListExpression) { // GROOVY-8566
+                    addPrecisionErrors(leftItemType.redirect(), leftItemType, rightItemType, expression);
+                    addListAssignmentConstructorErrors(leftItemType.redirect(), leftItemType, rightItemType, expression, expression);
+                } else if (!checkCompatibleAssignmentTypes(leftItemType, rightItemType)
+                        && !(isNullConstant(expression) && !isPrimitiveType(leftItemType))) {
+                    addStaticTypeError("Cannot assign value of type " + prettyPrintType(rightItemType) + " into array of type " + prettyPrintType(lhsType), rightExpression);
+                }
             }
         }
     }
@@ -1357,9 +1360,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 && (!leftRedirect.isAbstract() || leftRedirect.isArray())
                 && !ArrayList_TYPE.isDerivedFrom(leftRedirect) && !LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) {
             ClassNode[] types = getArgumentTypes(args(((ListExpression) rightExpression).getExpressions()));
-            MethodNode methodNode = checkGroovyStyleConstructor(leftRedirect, types, assignmentExpression);
-            if (methodNode != null) {
-                rightExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, methodNode);
+            MethodNode constructor = checkGroovyStyleConstructor(leftRedirect, types, assignmentExpression);
+            if (constructor != null) {
+                rightExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, constructor);
             }
         } else if (implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
                 && !implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)) {
@@ -1432,7 +1435,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (rightExpression instanceof ListExpression) {
                 addListAssignmentConstructorErrors(lTypeRedirect, leftExpressionType, rightExpressionType, rightExpression, assignmentExpression);
             } else if (rightExpression instanceof MapExpression) {
-                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, (MapExpression)rightExpression);
+                addMapAssignmentConstructorErrors(lTypeRedirect, leftExpression, (MapExpression) rightExpression);
             }
             if (!hasGStringStringError(leftExpressionType, rType, rightExpression) && !isConstructorAbbreviation(leftExpressionType, rightExpression)) {
                 checkTypeGenerics(leftExpressionType, rType, rightExpression);
@@ -1494,19 +1497,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      * @param arguments the constructor arguments
      */
     protected MethodNode checkGroovyStyleConstructor(final ClassNode node, final ClassNode[] arguments, final ASTNode origin) {
-        if (isObjectType(node) || isDynamicTyped(node)) {
-            // in that case, we are facing a list constructor assigned to a def or object
+        if (isObjectType(node)) {
+            // we are facing a list expression assigned to a def, var, final or Object
             return null;
         }
-        List<? extends MethodNode> constructors = node.getDeclaredConstructors();
-        if (constructors.isEmpty() && arguments.length == 0) {
-            return null;
-        }
-        constructors = findMethod(node, "<init>", arguments);
+        var constructors = findMethod(node, "<init>", node.isArray() ? new ClassNode[]{int_TYPE} : arguments);
         if (constructors.isEmpty()) {
             if (isBeingCompiled(node) && !node.isAbstract() && arguments.length == 1 && arguments[0].equals(LinkedHashMap_TYPE)) {
                 // there will be a default hash map constructor added later
-                return new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, EmptyStatement.INSTANCE);
+                return new ConstructorNode(Opcodes.ACC_PUBLIC, new Parameter[]{new Parameter(LinkedHashMap_TYPE, "args")}, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
             } else {
                 addNoMatchingMethodError(node, "<init>", arguments, origin);
                 return null;
@@ -1998,7 +1997,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         } else {
             methodName = property.getSetterNameOrDefault();
             returnType = VOID_TYPE;
-            parameters = new Parameter[] {new Parameter(propertyType, "value")};
+            parameters = new Parameter[]{new Parameter(propertyType, "value")};
         }
         MethodNode accessMethod = new MethodNode(methodName, Opcodes.ACC_PUBLIC | (property.isStatic() ? Opcodes.ACC_STATIC : 0), returnType, parameters, ClassNode.EMPTY_ARRAY, null);
         accessMethod.setDeclaringClass(property.getDeclaringClass());
@@ -4994,17 +4993,16 @@ trying: for (ClassNode[] signature : signatures) {
         if (isPrimitiveType(receiver)) receiver = getWrapper(receiver);
 
         List<MethodNode> methods;
-        if ("<init>".equals(name) && !receiver.isInterface()) {
-            methods = withDefaultArgumentMethods(receiver.getDeclaredConstructors());
-            if (methods.isEmpty()) {
-                MethodNode node = new ConstructorNode(Opcodes.ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
-                node.setDeclaringClass(receiver);
-                methods.add(node);
-                if (receiver.isArray()) {
-                    // No need to check the arguments against an array constructor: it just needs to exist. The array is
-                    // created through coercion or by specifying its dimension(s), anyway, and would not match an
-                    // arbitrary number of parameters.
-                    return methods;
+        if ("<init>".equals(name)) {
+            if (receiver.isInterface()) {
+                methods = EMPTY_METHODNODE_LIST;
+            } else {
+                methods = withDefaultArgumentMethods(receiver.getDeclaredConstructors());
+                if (methods.isEmpty()) {
+                    Parameter[] parameters = receiver.isArray() ? new Parameter[]{new Parameter(int_TYPE, "array_length")} : Parameter.EMPTY_ARRAY;
+                    var defaultConstructor = new ConstructorNode(Opcodes.ACC_PUBLIC, parameters, ClassNode.EMPTY_ARRAY, GENERATED_EMPTY_STATEMENT);
+                    defaultConstructor.setDeclaringClass(receiver);
+                    methods.add(defaultConstructor);
                 }
             }
         } else {

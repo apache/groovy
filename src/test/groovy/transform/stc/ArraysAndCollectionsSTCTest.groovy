@@ -145,6 +145,47 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
+    // GROOVY-8566
+    void testMultiDimensionalArray4() {
+        assertScript '''
+            int[][] arrays = [ [], [1], [2,3] ]
+            assert  arrays   .length == 3
+            assert  arrays[0].length == 0
+            assert  arrays[1].length == 1
+            assert  arrays[2].length == 2
+            assert  arrays[1][0] == 1
+            assert  arrays[2][0] == 2
+            assert  arrays[2][1] == 3
+        '''
+    }
+
+    // GROOVY-8566
+    void testMultiDimensionalArray5() {
+        assertScript '''
+            int[]     a   = [1,2,3]
+            int[][]   aa  = [[1,2,3],[4,5,6]]
+            int[][][] aaa = [[[1],[2],[3]],[[4],[5],[6]]]
+
+            assert a instanceof int[]
+            assert a.length == 3
+
+            assert aa instanceof int[][]
+            assert aa   .length == 2
+            assert aa[0].length == 3
+            assert aa[1].length == 3
+
+            assert aaa instanceof int[][][]
+            assert aaa   .length == 2
+            assert aaa[0].length == 3
+            assert aaa[1].length == 3
+        '''
+
+        shouldFailWithMessages '''
+            int[][] a = [[1],['two']]
+        ''',
+        'Cannot assign value of type java.lang.String into array of type int[]'
+    }
+
     void testForLoopWithArrayAndUntypedVariable() {
         assertScript '''
             String[] array = ['1','2','3']

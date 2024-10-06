@@ -92,6 +92,15 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
         assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
     }
 
+    @Override
+    void testMultiDimensionalArray4() {
+        super.testMultiDimensionalArray4()
+        String script = astTrees.values()[0][1]
+        assert script.count('ANEWARRAY') == 1
+        assert script.count(' NEWARRAY') == 3
+        assert !script.contains('createList')
+    }
+
     // GROOVY-10029
     void testCollectionToArrayAssignmentSC() {
         assertScript '''
