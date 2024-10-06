@@ -145,7 +145,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
-    // GROOVY-8566
+    // GROOVY-5683, GROOVY-8566
     void testMultiDimensionalArray4() {
         assertScript '''
             int[][] arrays = [ [], [1], [2,3] ]
@@ -846,17 +846,6 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-5683
-    void testArrayLengthOnMultidimensionalArray() {
-        assertScript '''
-            @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                assert node.getNodeMetaData(INFERRED_TYPE) == int_TYPE.makeArray().makeArray()
-            })
-            int[][] array = [[1]] as int[][]
-            assert array[0].length == 1
-        '''
-    }
-
     // GROOVY-10319
     void testArrayClone() {
         assertScript '''
@@ -1048,15 +1037,35 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     void testAbstractTypeInitializedByListLiteral() {
         shouldFailWithMessages '''
             abstract class A {
-                A(int n) {}
+                A(int n) {
+                }
             }
             A a = [1]
         ''',
         'Cannot assign value of type java.util.ArrayList<java.lang.Integer> to variable of type A'
     }
 
+    void testConcreteTypeInitializedByListLiteral() {
+        assertScript '''
+            class C {
+                int i
+                C(int i) {
+                    this.i = i
+                }
+            }
+            C c = [42]
+            assert c.i == 42
+        '''
+    }
+
     // GROOVY-6912
     void testArrayListTypeInitializedByListLiteral() {
+        assertScript '''
+            ArrayList list = []
+            assert list.isEmpty()
+            assert list.size() == 0
+        '''
+
         assertScript '''
             ArrayList list = [1,2,3]
             assert list.size() == 3
@@ -1066,6 +1075,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             ArrayList list = [[1,2,3]]
             assert list.size() == 1
+            assert list.last() instanceof List
         '''
 
         assertScript '''

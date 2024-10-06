@@ -101,6 +101,51 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
         assert !script.contains('createList')
     }
 
+    // GROOVY-11309
+    void testListLiteralToSetAssignmentSC() {
+        for (t in ['LinkedHashSet','HashSet','Set']) {
+            astTrees.clear()
+            assertScript """
+                $t <String> set = []
+                assert set.isEmpty()
+                assert set.size() == 0
+                assert set instanceof LinkedHashSet
+            """
+            String script = astTrees.values()[0][1]
+            assert script.contains('LinkedHashSet.<init> ()V')
+            assert !script.contains('ScriptBytecodeAdapter.createList')
+        }
+    }
+
+    // GROOVY-11309
+    void testListLiteralToListAssignmentSC() {
+        for (t in ['ArrayList','List','Collection','Iterable']) {
+            astTrees.clear()
+            assertScript """
+                $t <String> list = []
+                assert list.isEmpty()
+                assert list.size() == 0
+                assert list instanceof ArrayList
+            """
+            String script = astTrees.values()[0][1]
+            assert script.contains('ArrayList.<init> ()V')
+            assert !script.contains('ScriptBytecodeAdapter.createList')
+        }
+
+        for (t in ['Object','Cloneable','Serializable','RandomAccess']) {
+            astTrees.clear()
+            assertScript """
+                $t list = []
+                assert list.isEmpty()
+                assert list.size() == 0
+                assert list instanceof ArrayList
+            """
+            String script = astTrees.values()[0][1]
+            assert script.contains('ArrayList.<init> ()V')
+            assert !script.contains('ScriptBytecodeAdapter.createList')
+        }
+    }
+
     // GROOVY-10029
     void testCollectionToArrayAssignmentSC() {
         assertScript '''

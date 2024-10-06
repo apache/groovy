@@ -366,10 +366,10 @@ final class GenericsUtilsTest {
         def classNodeList = compile '''
             @groovy.transform.CompileStatic
             void test() {
-                def list = []
+                def list = Collections.emptyList()
             }
         '''
-        // get the intermediate type of the list literal (ArrayList<#E>)
+        // get the intermediate type of the list (List<#T>)
         def node = classNodeList[0].getDeclaredMethod('test').code.statements[0]
         def type = new StaticTypeCheckingVisitor(classNodeList[0].module.context,
                         classNodeList[0]).getType(node.expression.rightExpression)
@@ -378,8 +378,8 @@ final class GenericsUtilsTest {
 
         assert listType == ClassHelper.LIST_TYPE
         assert listType.genericsTypes.length == 1
-        assert listType.genericsTypes[0].name == '#E'
-        assert listType.genericsTypes[0].type.unresolvedName == '#E'
+        assert listType.genericsTypes[0].name == '#T'
+        assert listType.genericsTypes[0].type.unresolvedName == '#T'
         assert listType.genericsTypes[0].type.name == 'java.lang.Object'
     }
 }

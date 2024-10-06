@@ -1352,23 +1352,30 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void addListAssignmentConstructorErrors(final ClassNode leftRedirect, final ClassNode leftExpressionType, final ClassNode inferredRightExpressionType, final Expression rightExpression, final Expression assignmentExpression) {
-        if (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) return; // GROOVY-6802, GROOVY-6803
-        // if left type is not a list but right type is a list, then we're in the case of a groovy
-        // constructor type : Dimension d = [100,200]
-        // In that case, more checks can be performed
-        if (!implementsInterfaceOrIsSubclassOf(LIST_TYPE, leftRedirect)
-                && (!leftRedirect.isAbstract() || leftRedirect.isArray())
-                && !ArrayList_TYPE.isDerivedFrom(leftRedirect) && !LinkedHashSet_TYPE.isDerivedFrom(leftRedirect)) {
-            ClassNode[] types = getArgumentTypes(args(((ListExpression) rightExpression).getExpressions()));
+        ClassNode concreteType;
+        List<Expression> expressions = ((ListExpression) rightExpression).getExpressions();
+        if (implementsInterfaceOrIsSubclassOf((concreteType = ArrayList_TYPE), leftRedirect)
+                || implementsInterfaceOrIsSubclassOf((concreteType = LinkedHashSet_TYPE), leftRedirect)) {
+            // GROOVY-11309: (? super ArrayList or LinkedHashSet) x = [ ]
+            if (expressions.isEmpty()) { // skip SBA.createList for empty
+                rightExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
+                    concreteType.getDeclaredConstructor(Parameter.EMPTY_ARRAY));
+            }
+        } else if (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) {
+            // GROOVY-6802, GROOVY-6803: ([Bb]oolean or String) x = [ ]
+        } else if (leftRedirect.isArray() || !leftRedirect.isAbstract()) {
+            // if left type is not a list but right type is a list, then we're in the case of a groovy
+            // constructor type : Dimension d = [100,200]
+            // In that case, more checks can be performed
+            ClassNode[] types = getArgumentTypes(args(expressions));
             MethodNode constructor = checkGroovyStyleConstructor(leftRedirect, types, assignmentExpression);
             if (constructor != null) {
                 rightExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, constructor);
             }
         } else if (implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, LIST_TYPE)
-                && !implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)) {
-            if (!extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
-                addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
-            }
+                && !implementsInterfaceOrIsSubclassOf(inferredRightExpressionType, leftRedirect)
+                && !extension.handleIncompatibleAssignment(leftExpressionType, inferredRightExpressionType, assignmentExpression)) {
+            addAssignmentError(leftExpressionType, inferredRightExpressionType, assignmentExpression);
         }
     }
 
