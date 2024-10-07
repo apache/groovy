@@ -1380,17 +1380,17 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     }
 
     private void addMapAssignmentConstructorErrors(final ClassNode leftRedirect, final Expression leftExpression, final MapExpression rightExpression) {
-        if (!isConstructorAbbreviation(leftRedirect, rightExpression)
-                // GROOVY-6802, GROOVY-6803: Object, String or [Bb]oolean target
-                || (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect))) {
-            return;
+        if (implementsInterfaceOrIsSubclassOf(LinkedHashMap_TYPE, leftRedirect)) {
+            // GROOVY-11309: (? super LinkedHashMap) x = map literal
+        } else if (isWildcardLeftHandSide(leftRedirect) && !isClassType(leftRedirect)) {
+            // GROOVY-6802, GROOVY-6803: [Bb]oolean or String target
+        } else {
+            // groovy constructor shorthand: T t = [x:1, y:2]
+            ClassNode[] argTypes = {getType(rightExpression)};
+            checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
+            // perform additional type checking on arguments
+            checkGroovyConstructorMap(leftExpression, leftRedirect, rightExpression);
         }
-
-        // groovy constructor shorthand: A a = [x:2, y:3]
-        ClassNode[] argTypes = {getType(rightExpression)};
-        checkGroovyStyleConstructor(leftRedirect, argTypes, rightExpression);
-        // perform additional type checking on arguments
-        checkGroovyConstructorMap(leftExpression, leftRedirect, rightExpression);
     }
 
     private void checkTypeGenerics(final ClassNode leftExpressionType, final ClassNode rightExpressionType, final Expression rightExpression) {

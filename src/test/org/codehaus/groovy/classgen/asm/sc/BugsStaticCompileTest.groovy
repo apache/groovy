@@ -735,6 +735,9 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
             assert m?.a?.b?.c == null
             assert m?.a?.b?.c?.intValue() == null
         '''
+        String script = astTrees.values()[0][1]
+        assert script.contains('LinkedHashMap.<init> ()V')
+        assert !script.contains('ScriptBytecodeAdapter.createMap')
     }
 
     void testNullSafePropertyOnList() {

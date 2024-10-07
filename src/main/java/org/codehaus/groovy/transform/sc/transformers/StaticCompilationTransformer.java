@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
@@ -78,6 +79,7 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     private final BinaryExpressionTransformer binaryExpressionTransformer = new BinaryExpressionTransformer(this);
     private final RangeExpressionTransformer rangeExpressionTransformer = new RangeExpressionTransformer(this);
     private final ListExpressionTransformer listExpressionTransformer = new ListExpressionTransformer(this);
+    private final MapExpressionTransformer mapExpressionTransformer = new MapExpressionTransformer(this);
     private final CastExpressionOptimizer castExpressionTransformer = new CastExpressionOptimizer(this);
 
     public StaticCompilationTransformer(final SourceUnit unit, final StaticTypeCheckingVisitor visitor) {
@@ -132,11 +134,14 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
         if (expr instanceof RangeExpression) {
             return rangeExpressionTransformer.transformRangeExpression((RangeExpression) expr);
         }
+        if (expr instanceof CastExpression) {
+            return castExpressionTransformer.transformCastExpression((CastExpression) expr);
+        }
         if (expr instanceof ListExpression) {
             return listExpressionTransformer.transformListExpression((ListExpression) expr);
         }
-        if (expr instanceof CastExpression) {
-            return castExpressionTransformer.transformCastExpression((CastExpression) expr);
+        if (expr instanceof MapExpression) {
+            return mapExpressionTransformer.transformMapExpression((MapExpression) expr);
         }
         return super.transform(expr);
     }
