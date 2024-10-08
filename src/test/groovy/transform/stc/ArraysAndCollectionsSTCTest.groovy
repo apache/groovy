@@ -186,6 +186,53 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String into array of type int[]'
     }
 
+    // GROOVY-8551
+    void testMultiDimensionalArray6() {
+        assertScript '''
+            def a   = new int[]    {1,2,3}
+            def aa  = new int[][]  {{1,2,3},{4,5,6}}
+            def aaa = new int[][][]{{{1},{2},{3}},null,{{4},{5},{6}},}
+
+            assert a instanceof int[]
+            assert a.length == 3
+            assert a[0] == 1
+            assert a[1] == 2
+            assert a[2] == 3
+
+            assert aa instanceof int[][]
+            assert aa   .length == 2
+            assert aa[0].length == 3
+            assert aa[1].length == 3
+            assert aa[0][0] == 1
+            assert aa[0][1] == 2
+            assert aa[0][2] == 3
+            assert aa[1][0] == 4
+            assert aa[1][1] == 5
+            assert aa[1][2] == 6
+
+            assert aaa instanceof int[][][]
+            assert aaa   .length == 3
+            assert aaa[0].length == 3
+            assert aaa[1] == null
+            assert aaa[2].length == 3
+
+            assert aaa[0][0].length == 1
+            assert aaa[0][1].length == 1
+            assert aaa[0][2].length == 1
+
+            assert aaa[2][0].length == 1
+            assert aaa[2][1].length == 1
+            assert aaa[2][2].length == 1
+
+            assert aaa[0][0][0] == 1
+            assert aaa[0][1][0] == 2
+            assert aaa[0][2][0] == 3
+            assert aaa[2][0][0] == 4
+            assert aaa[2][1][0] == 5
+            assert aaa[2][2][0] == 6
+        '''
+    }
+
     void testForLoopWithArrayAndUntypedVariable() {
         assertScript '''
             String[] array = ['1','2','3']

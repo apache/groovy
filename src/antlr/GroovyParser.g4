@@ -320,10 +320,6 @@ variableInitializer
     :   enhancedStatementExpression
     ;
 
-variableInitializers
-    :   variableInitializer (nls COMMA nls variableInitializer)* nls COMMA?
-    ;
-
 emptyDims
     :   (annotationsOpt LBRACK RBRACK)+
     ;
@@ -1140,16 +1136,26 @@ options { baseContext = mapEntryLabel; }
 creator[int t]
     :   createdName
         (   nls arguments anonymousInnerClassDeclaration[0]?
-        |   dim+ (nls arrayInitializer)?
+        |   dim0+ nls arrayInitializer
+        |   dim1+ dim0*
         )
     ;
 
-dim
-    :   annotationsOpt LBRACK expression? RBRACK
+dim0
+    :   annotationsOpt LBRACK RBRACK
+    ;
+
+dim1
+    :   annotationsOpt LBRACK expression RBRACK
     ;
 
 arrayInitializer
-    :   LBRACE nls (variableInitializers nls)? RBRACE
+    :   LBRACE nls (
+            (arrayInitializer | variableInitializer) nls
+          (COMMA nls
+            (arrayInitializer | variableInitializer) nls
+          )*
+        )? COMMA? nls RBRACE
     ;
 
 /**

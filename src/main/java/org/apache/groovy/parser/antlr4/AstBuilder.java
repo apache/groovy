@@ -149,7 +149,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static groovy.lang.Tuple.tuple;
 import static org.apache.groovy.parser.antlr4.GroovyParser.*;
@@ -2192,31 +2191,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public List<Expression> visitVariableInitializers(final VariableInitializersContext ctx) {
-        if (!asBoolean(ctx)) {
-            return Collections.emptyList();
-        }
-
-        return ctx.variableInitializer().stream()
-                        .map(this::visitVariableInitializer)
-                        .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<Expression> visitArrayInitializer(final ArrayInitializerContext ctx) {
-        if (!asBoolean(ctx)) {
-            return Collections.emptyList();
-        }
-
-        try {
-            visitingArrayInitializerCount += 1;
-            return this.visitVariableInitializers(ctx.variableInitializers());
-        } finally {
-            visitingArrayInitializerCount -= 1;
-        }
-    }
-
-    @Override
     public Statement visitBlock(final BlockContext ctx) {
         if (!asBoolean(ctx)) {
             return this.createBlockStatement();
@@ -3293,7 +3267,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
                 ConstructorCallExpression constructorCallExpression = new ConstructorCallExpression(anonymousInnerClassNode, arguments);
                 constructorCallExpression.setUsingAnonymousInnerClass(true);
-
                 return configureAST(constructorCallExpression, ctx);
             }
 
@@ -3301,84 +3274,44 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(constructorCallExpression, ctx);
         }
 
-        if (asBoolean(ctx.dim())) { // create array
-            ArrayExpression arrayExpression;
-
-            List<Tuple3<Expression, List<AnnotationNode>, TerminalNode>> dimList =
-                    ctx.dim().stream()
-                            .map(this::visitDim)
-                            .collect(Collectors.toList());
-
-            TerminalNode invalidDimLBrack = null;
-            Boolean exprEmpty = null;
-            List<Tuple3<Expression, List<AnnotationNode>, TerminalNode>> emptyDimList = new LinkedList<>();
-            List<Tuple3<Expression, List<AnnotationNode>, TerminalNode>> dimWithExprList = new LinkedList<>();
-            Tuple3<Expression, List<AnnotationNode>, TerminalNode> latestDim = null;
-            for (Tuple3<Expression, List<AnnotationNode>, TerminalNode> dim : dimList) {
-                if (null == dim.getV1()) {
-                    emptyDimList.add(dim);
-                    exprEmpty = Boolean.TRUE;
-                } else {
-                    if (Boolean.TRUE.equals(exprEmpty)) {
-                        invalidDimLBrack = latestDim.getV3();
-                    }
-
-                    dimWithExprList.add(dim);
-                    exprEmpty = Boolean.FALSE;
-                }
-
-                latestDim = dim;
+        if (asBoolean(ctx.dim1())) { // create array: new Type[n][]
+            final int nDim = ctx.dim1().size() + ctx.dim0().size();
+            List<Expression> sizeExpressions = new ArrayList<>(nDim);
+            List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
+            for (var dim : ctx.dim1()) {
+                sizeExpressions.add((Expression) this.visit(dim.expression()));
+                typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
+            }
+            for (var dim : ctx.dim0()) {
+                sizeExpressions.add(ConstantExpression.EMPTY_EXPRESSION);
+                typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
             }
 
-            if (asBoolean(ctx.arrayInitializer())) {
-                if (!dimWithExprList.isEmpty()) {
-                    throw createParsingFailedException("dimension should be empty", dimWithExprList.get(0).getV3());
-                }
+            ArrayExpression arrayExpression = new ArrayExpression(classNode, null, sizeExpressions);
+            ClassNode arrayType = arrayExpression.getType();
+            int i = 0; // annotations apply to array then component(s)
+            do { arrayType.addTypeAnnotations(typeAnnotations.get(i++));
+            } while ((arrayType = arrayType.getComponentType()).isArray());
+            return configureAST(arrayExpression, ctx);
+        }
 
-                ClassNode elementType = classNode;
-                for (int i = 0, n = emptyDimList.size() - 1; i < n; i += 1) {
-                    elementType = this.createArrayType(elementType);
-                }
+        if (asBoolean(ctx.dim0())) { // create array: new Type[][]{ ... }
+            final int nDim = ctx.dim0().size();
+            List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
+            for (var dim : ctx.dim0()) typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
 
-                arrayExpression =
-                        new ArrayExpression(
-                                elementType,
-                                this.visitArrayInitializer(ctx.arrayInitializer()));
-
-            } else {
-                if (null != invalidDimLBrack) {
-                    throw createParsingFailedException("dimension cannot be empty", invalidDimLBrack);
-                }
-
-                if (dimWithExprList.isEmpty() && !emptyDimList.isEmpty()) {
-                    throw createParsingFailedException("dimensions cannot be all empty", emptyDimList.get(0).getV3());
-                }
-
-                Expression[] empties;
-                if (asBoolean(emptyDimList)) {
-                    empties = new Expression[emptyDimList.size()];
-                    Arrays.fill(empties, ConstantExpression.EMPTY_EXPRESSION);
-                } else {
-                    empties = Expression.EMPTY_ARRAY;
-                }
-
-                arrayExpression =
-                        new ArrayExpression(
-                                classNode,
-                                null,
-                                Stream.concat(
-                                        dimWithExprList.stream().map(Tuple3::getV1),
-                                        Arrays.stream(empties)
-                                ).collect(Collectors.toList()));
+            ClassNode elementType = classNode;
+            for (int i = nDim - 1; i > 0; i -= 1) {
+                elementType = this.createArrayType(elementType);
+                elementType.addTypeAnnotations(typeAnnotations.get(i));
             }
 
-            arrayExpression.setType(
-                    this.createArrayType(
-                            classNode,
-                            dimList.stream().map(Tuple3::getV2).collect(Collectors.toList())
-                    )
-            );
+            var initializer = ctx.arrayInitializer();
+            initializer.putNodeMetaData("elementType", elementType);
+            List<Expression> initExpressions = this.visitArrayInitializer(initializer);
 
+            ArrayExpression arrayExpression = new ArrayExpression(elementType, initExpressions);
+            arrayExpression.getType().addTypeAnnotations(typeAnnotations.get(0));
             return configureAST(arrayExpression, ctx);
         }
 
@@ -3386,8 +3319,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public Tuple3<Expression, List<AnnotationNode>, TerminalNode> visitDim(final DimContext ctx) {
-        return tuple((Expression) this.visit(ctx.expression()), this.visitAnnotationsOpt(ctx.annotationsOpt()), ctx.LBRACK());
+    public ClassNode visitCreatedName(final CreatedNameContext ctx) {
+        ClassNode classNode = null;
+        if (asBoolean(ctx.qualifiedClassName())) {
+            classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
+            if (asBoolean(ctx.typeArgumentsOrDiamond())) {
+                classNode.setGenericsTypes(
+                        this.visitTypeArgumentsOrDiamond(ctx.typeArgumentsOrDiamond()));
+                configureAST(classNode, ctx);
+            }
+        } else if (asBoolean(ctx.primitiveType())) {
+            classNode = configureAST(this.visitPrimitiveType(ctx.primitiveType()), ctx);
+        }
+        if (classNode == null) {
+            throw createParsingFailedException("Unsupported created name: " + ctx.getText(), ctx);
+        }
+        classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt())); // GROOVY-11178
+
+        return classNode;
     }
 
     private static String nextAnonymousClassName(final ClassNode outerClass) {
@@ -3434,24 +3383,34 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public ClassNode visitCreatedName(final CreatedNameContext ctx) {
-        ClassNode classNode = null;
-        if (asBoolean(ctx.qualifiedClassName())) {
-            classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
-            if (asBoolean(ctx.typeArgumentsOrDiamond())) {
-                classNode.setGenericsTypes(
-                        this.visitTypeArgumentsOrDiamond(ctx.typeArgumentsOrDiamond()));
-                configureAST(classNode, ctx);
-            }
-        } else if (asBoolean(ctx.primitiveType())) {
-            classNode = configureAST(this.visitPrimitiveType(ctx.primitiveType()), ctx);
+    public List<Expression> visitArrayInitializer(final ArrayInitializerContext ctx) {
+        if (!asBoolean(ctx)) {
+            return Collections.emptyList();
         }
-        if (classNode == null) {
-            throw createParsingFailedException("Unsupported created name: " + ctx.getText(), ctx);
-        }
-        classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt())); // GROOVY-11178
 
-        return classNode;
+        ClassNode elementType = ctx.getNodeMetaData("elementType");
+        try {
+            visitingArrayInitializerCount += 1;
+            var initExpressions = new ArrayList<Expression>();
+            for (int i = 0; i < ctx.getChildCount(); i += 1) {
+                var c = ctx.getChild(i);
+                if (c instanceof ArrayInitializerContext) {
+                    var arrayInitializer = (ArrayInitializerContext) c;
+                    ClassNode subType = elementType.getComponentType();
+                    //if (subType == null) produce closure or throw exception
+                    arrayInitializer.putNodeMetaData("elementType", subType);
+                    var arrayExpression = configureAST(new ArrayExpression(subType,
+                            this.visitArrayInitializer(arrayInitializer)), arrayInitializer);
+                    arrayExpression.setType(elementType);
+                    initExpressions.add(arrayExpression);
+                } else if (c instanceof VariableInitializerContext) {
+                    initExpressions.add(this.visitVariableInitializer((VariableInitializerContext) c));
+                }
+            }
+            return initExpressions;
+        } finally {
+            visitingArrayInitializerCount -= 1;
+        }
     }
 
     @Override

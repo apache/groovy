@@ -25,13 +25,17 @@ def testArrayInitializer() {
     def y = new double[][] {}
     assert y.length == 0
 
+    def z = new double[0][]
+    assert z.length == 0
+
     def a = new int[] {1, 2}
     assert a[0] == 1
     assert a[1] == 2
-    assert a as List == [1, 2]
+    assert a.toList() == [1, 2]
 
     def b = new int[][] {
-        new int[] {1, 1.plus(1)},
+        // GROOVY-8551:
+        {1, 1.plus(1)},
         new int[] {2.plus(1), 4}
     }
     assert b[0][0] == 1
@@ -58,7 +62,7 @@ def testArrayInitializer() {
     ==
             ['a', 'b'] as String[]
 }
-testArrayInitializer();
+testArrayInitializer()
 
 @CompileStatic
 def testArrayInitializerCS() {
@@ -68,13 +72,16 @@ def testArrayInitializerCS() {
     def y = new double[][] {}
     assert y.length == 0
 
+    def z = new double[0][]
+    assert z.length == 0
+
     def a = new int[] {1, 2}
     assert a[0] == 1
     assert a[1] == 2
-    assert a as List == [1, 2]
+    assert a.toList() == [1, 2]
 
     def b = new int[][] {
-        new int[] {1, 1.plus(1)},
+        {1, 1.plus(1)},
         new int[] {2.plus(1), 4}
     }
     assert b[0][0] == 1
@@ -101,4 +108,4 @@ def testArrayInitializerCS() {
     ==
     ['a', 'b'] as String[]
 }
-testArrayInitializerCS();
+testArrayInitializerCS()

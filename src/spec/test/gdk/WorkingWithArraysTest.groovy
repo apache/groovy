@@ -18,38 +18,52 @@
  */
 package gdk
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class WorkingWithArraysTest extends GroovyTestCase {
+final class WorkingWithArraysTest {
+
+    @Test
     void testArrayLiterals() {
         // tag::array_literals[]
-        Integer[] nums = [5, 6, 7, 8]
+        Number[] nums = [5, 6, 7, 8]
         assert nums[1] == 6
         assert nums.getAt(2) == 7                // alternative syntax
         assert nums[-1] == 8                     // negative indices
-        assert nums instanceof Integer[]
+        assert nums instanceof Number[]
 
         int[] primes = [2, 3, 5, 7]              // primitives
         assert primes instanceof int[]
 
-        def evens = new int[]{2, 4, 6}           // alt syntax 1
-        assert evens instanceof int[]
-
-        def odds = [1, 3, 5] as int[]            // alt syntax 2
+        def odds = [1, 3, 5] as int[]            // alt syntax 1
         assert odds instanceof int[]
 
-        // empty array examples
-        Integer[] emptyNums = []
-        assert emptyNums instanceof Integer[] && emptyNums.size() == 0
+        def evens = new int[]{2, 4, 6}           // alt syntax 2
+        assert evens instanceof int[]
 
-        def emptyStrings = new String[]{}        // alternative syntax 1
+        // empty array examples
+        Number[] emptyNums = []
+        assert emptyNums instanceof Number[] && emptyNums.size() == 0
+
+        var emptyObjects = new Object[0]         // alternative syntax 1
+        assert emptyObjects instanceof Object[] && emptyObjects.size() == 0
+
+        def emptyStrings = new String[]{}        // alternative syntax 2
         assert emptyStrings instanceof String[] && emptyStrings.size() == 0
 
-        var emptyObjects = new Object[0]         // alternative syntax 2
-        assert emptyObjects instanceof Object[] && emptyObjects.size() == 0
+        // multi-dimension examples
+        int[][] manyInts = [ [1,2], [3,4] ]
+        assert manyInts instanceof int[][] && manyInts.size() == 2
+        assert manyInts[0].size() == 2 && manyInts[1].size() == 2
+
+        def manyStrings = new String[][] { {'one','two'}, {'three','four'}, }
+        assert manyStrings instanceof String[][] && manyStrings.size() == 2
+        assert manyStrings[0].size() == 2 && manyStrings[1].size() == 2
+        assert manyStrings[0][0] == 'one'
+        assert manyStrings[-1][-1] == 'four'
         // end::array_literals[]
     }
 
+    @Test
     void testArrayIteration() {
         // tag::array_each[]
         String[] vowels = ['a', 'e', 'i', 'o', 'u']
@@ -73,6 +87,7 @@ class WorkingWithArraysTest extends GroovyTestCase {
         // end::array_each[]
     }
 
+    @Test
     void testListCollect() {
         // tag::array_gdk[]
         int[] nums = [1, 2, 3]

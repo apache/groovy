@@ -174,6 +174,6 @@ public class ArrayExpression extends Expression {
     }
 
     private String formatSizeExpressions() {
-        return sizeExpressions.stream().map(e -> "[" + e.getText() + "]").collect(Collectors.joining());
+        return sizeExpressions.stream().map(e -> "[" + (e == ConstantExpression.EMPTY_EXPRESSION ? "" : e.getText()) + "]").collect(Collectors.joining());
     }
 }
