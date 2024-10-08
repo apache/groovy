@@ -120,7 +120,7 @@ class Account {
      if (true)  {
          try {
             throw new Exception ('test')
-            return 1
+            // return 1 // GROOVY-11263
          } finally {
             return 3
          }
@@ -148,7 +148,7 @@ class Account {
      if (true)  {
          try {
             throw new Exception ('test')
-            return 1
+            // return 1 // GROOVY-11263
          } finally {
             return 3
          }
