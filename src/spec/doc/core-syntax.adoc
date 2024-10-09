@@ -604,7 +604,7 @@ that in fact escaping is not supported. The slashy string `/\t/` won't contain a
 a backslash followed by the character 't'. Escaping is only allowed for the slash character, i.e. `/\/folder/`
 will be a slashy string containing `'/folder'`. A consequence of slash escaping is that a slashy string
 can't end with a backslash. Otherwise that will escape the slashy string terminator.
-You can instead use a special trick, `/ends with slash ${'\'}/`. But best just avoid using a slashy string in such a case.
+You can instead use a special trick, `/ends with slash ${'\\'}/`. But best just avoid using a slashy string in such a case.
 
 === Dollar slashy string
 
