@@ -37,14 +37,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveFloat;
-import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveLong;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DUP_X1;
 import static org.objectweb.asm.Opcodes.FCONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.NEW;
@@ -641,16 +639,14 @@ public class CompileStack {
     }
 
     private static void pushInitValue(final ClassNode type, final MethodVisitor mv) {
-        if (ClassHelper.isPrimitiveType(type)) {
-            if (isPrimitiveLong(type)) {
-                mv.visitInsn(LCONST_0);
-            } else if (isPrimitiveDouble(type)) {
-                mv.visitInsn(DCONST_0);
-            } else if (isPrimitiveFloat(type)) {
-                mv.visitInsn(FCONST_0);
-            } else {
-                mv.visitLdcInsn(0);
-            }
+        /*  */ if (ClassHelper.isPrimitiveDouble(type)) {
+            mv.visitInsn(DCONST_0);
+        } else if (ClassHelper.isPrimitiveFloat(type)) {
+            mv.visitInsn(FCONST_0);
+        } else if (ClassHelper.isPrimitiveLong(type)) {
+            mv.visitInsn(LCONST_0);
+        } else if (ClassHelper.isPrimitiveType(type)) {
+            mv.visitInsn(ICONST_0);
         } else {
             mv.visitInsn(ACONST_NULL);
         }
@@ -718,7 +714,7 @@ public class CompileStack {
      */
     private void makeNextVariableID(final ClassNode type, final boolean useReferenceDirectly) {
         currentVariableIndex = nextVariableIndex;
-        if ((isPrimitiveLong(type) || isPrimitiveDouble(type)) && !useReferenceDirectly) {
+        if (!useReferenceDirectly && (ClassHelper.isPrimitiveLong(type) || ClassHelper.isPrimitiveDouble(type))) {
             nextVariableIndex += 1;
         }
         nextVariableIndex += 1;

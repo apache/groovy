@@ -113,12 +113,16 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.FCONST_0;
 import static org.objectweb.asm.Opcodes.GOTO;
+import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
+import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.POP;
 
 public class BinaryExpressionHelper {
@@ -401,40 +405,41 @@ public class BinaryExpressionHelper {
         Expression rightExpression = expression.getRightExpression();
         boolean singleAssignment = !(leftExpression instanceof TupleExpression);
         boolean directAssignment = defineVariable && singleAssignment; //def x=y
+        boolean returnRightValue = !Boolean.TRUE.equals(expression.getNodeMetaData("GROOVY-11288"));
 
-        // TODO: LHS has not been visited, it could be a variable in a closure and type chooser is not aware.
+        // TODO: LHS has not been visited -- it could be a variable in a closure and type chooser is not aware.
         ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());
 
         if (directAssignment && rightExpression instanceof EmptyExpression) {
             BytecodeVariable v = compileStack.defineVariable((Variable) leftExpression, lhsType, false);
-            operandStack.loadOrStoreVariable(v, false);
+            if (returnRightValue) operandStack.loadOrStoreVariable(v, false);
             return;
         }
 
-        // evaluate RHS and store the value
+        // evaluate RHS and store its value
 
-        if (rightExpression instanceof ListExpression && lhsType.isArray()) {
+        if (lhsType.isArray() && rightExpression instanceof ListExpression) { // array = [ ... ]
             Expression array = new ArrayExpression(lhsType.getComponentType(), ((ListExpression) rightExpression).getExpressions());
             array.setSourcePosition(rightExpression);
             array.visit(acg);
-        } else if (rightExpression instanceof EmptyExpression) {
-            loadInitValue(lhsType); // null or zero (or false)
+        } else if (rightExpression instanceof EmptyExpression) { // define field
+            /*  */ if (ClassHelper.isPrimitiveDouble(lhsType)) {
+                mv.visitInsn(DCONST_0);
+            } else if (ClassHelper.isPrimitiveFloat(lhsType)) {
+                mv.visitInsn(FCONST_0);
+            } else if (ClassHelper.isPrimitiveLong(lhsType)) {
+                mv.visitInsn(LCONST_0);
+            } else if (ClassHelper.isPrimitiveType(lhsType)) {
+                mv.visitInsn(ICONST_0);
+            } else {
+                mv.visitInsn(ACONST_NULL);
+            }
+            operandStack.push(lhsType);
         } else {
             rightExpression.visit(acg);
         }
 
-        // GROOVY-10918: direct store to local variable or parameter (no temp)
-        if (!defineVariable && leftExpression instanceof VariableExpression) {
-            BytecodeVariable v = compileStack.getVariable(leftExpression.getText(), false);
-            if (v != null) {
-                operandStack.dup(); // return value of the assignment expression
-                operandStack.storeVar(v);
-                return;
-            }
-        }
-
         ClassNode rhsType = operandStack.getTopOperand();
-        int rhsValueId;
 
         if (directAssignment) {
             VariableExpression var = (VariableExpression) leftExpression;
@@ -460,17 +465,33 @@ public class BinaryExpressionHelper {
             } else {
                 operandStack.doGroovyCast(lhsType);
             }
-            rhsType = lhsType;
-            rhsValueId = compileStack.defineVariable(var, lhsType, true).getIndex();
-        } else {
-            rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
+
+            // store value
+            BytecodeVariable v = compileStack.defineVariable(var, lhsType, true);
+            operandStack.remove(1);
+            if (returnRightValue) {
+                new VariableSlotLoader(lhsType, v.getIndex(), operandStack).visit(acg);
+            }
+            return;
         }
-        // TODO: if RHS is VariableSlotLoader already, then skip creating a new one
+
+        // GROOVY-10918: direct store to local variable or parameter (no temp)
+        if (!defineVariable && leftExpression instanceof VariableExpression) {
+            BytecodeVariable v = compileStack.getVariable(leftExpression.getText(), false);
+            if (v != null) {
+                if (returnRightValue) operandStack.dup();
+                operandStack.storeVar(v);
+                return;
+            }
+        }
+
+        int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
+        // TODO: if RHS is already a VariableSlotLoader, then skip creating a new one
         Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
 
-        // assignment for subscript
+        // subscript assignment
         if (leftExpression instanceof BinaryExpression) {
-            BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
+            var leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET) {
                 assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader, leftBinExpr.isSafe());
             }
@@ -479,13 +500,6 @@ public class BinaryExpressionHelper {
         }
 
         compileStack.pushLHS(true);
-
-        if (directAssignment) {
-            rhsValueLoader.visit(acg);
-            operandStack.remove(1);
-            compileStack.popLHS();
-            return;
-        }
 
         if (singleAssignment) {
             int mark = operandStack.getStackLength();
@@ -567,19 +581,10 @@ public class BinaryExpressionHelper {
 
         compileStack.popLHS();
 
-        // return value of assignment
-        rhsValueLoader.visit(acg);
-        compileStack.removeVar(rhsValueId);
-    }
+        if (returnRightValue)
+            rhsValueLoader.visit(acg);
 
-    private void loadInitValue(final ClassNode type) {
-        MethodVisitor mv = controller.getMethodVisitor();
-        if (ClassHelper.isPrimitiveType(type)) {
-            mv.visitLdcInsn(0);
-        } else {
-            mv.visitInsn(ACONST_NULL);
-        }
-        controller.getOperandStack().push(type);
+        compileStack.removeVar(rhsValueId);
     }
 
     protected void evaluateCompareExpression(final MethodCaller compareMethod, final BinaryExpression expression) {

@@ -356,34 +356,32 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
 
     @Override
     protected void assignToArray(final Expression orig, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
-        ClassNode current = controller.getClassNode();
-        ClassNode arrayType = controller.getTypeChooser().resolveType(receiver, current);
-        ClassNode arrayComponentType = arrayType.getComponentType();
-        int operationType = getOperandType(arrayComponentType);
-        BinaryExpressionWriter bew = binExpWriter[operationType];
-        AsmClassGenerator acg = controller.getAcg();
-
+        ClassNode arrayType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+        BinaryExpressionWriter bew = binExpWriter[getOperandType(arrayType.getComponentType())];
         if (bew.arraySet(true) && arrayType.isArray() && !safe) {
-            OperandStack operandStack   =   controller.getOperandStack();
+            var asmGenerator = controller.getAcg();
+            var operandStack = controller.getOperandStack();
 
             // load the array
-            receiver.visit(acg);
+            receiver.visit(asmGenerator);
             operandStack.doGroovyCast(arrayType);
 
             // load index
-            index.visit(acg);
+            index.visit(asmGenerator);
             operandStack.doGroovyCast(int_TYPE);
 
             // load rhs
-            rhsValueLoader.visit(acg);
-            operandStack.doGroovyCast(arrayComponentType);
+            rhsValueLoader.visit(asmGenerator);
+            operandStack.doGroovyCast(arrayType.getComponentType());
 
             // store value in array
             bew.arraySet(false);
 
-            // load return value && correct operand stack
+            // update operand stack
             operandStack.remove(3);
-            rhsValueLoader.visit(acg);
+
+            if (!Boolean.TRUE.equals(orig.getNodeMetaData("GROOVY-11288")))
+                rhsValueLoader.visit(asmGenerator); // re-load result value
         } else {
             super.assignToArray(orig, receiver, index, rhsValueLoader, safe);
         }

@@ -891,6 +891,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             boolean isEmptyDeclaration = (expression instanceof DeclarationExpression
                     && (rightExpression instanceof EmptyExpression || rType == UNKNOWN_PARAMETER_TYPE));
             if (isEmptyDeclaration) {
+                expression.putNodeMetaData(INFERRED_TYPE, lType);
                 // GROOVY-11353: "def var = null" cannot be a primitive type
                 if (isDynamicTyped(lType) && rType == UNKNOWN_PARAMETER_TYPE)
                     lType.putNodeMetaData("non-primitive type", Boolean.TRUE);

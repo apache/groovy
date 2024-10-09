@@ -139,7 +139,7 @@ public class DeclarationExpression extends BinaryExpression {
             if (v.isDynamicTyped()) {
                 text.append("def");
             } else {
-                text.append(formatTypeName(v.getType()));
+                text.append(formatTypeName(v.getOriginType()));
             }
             text.append(' ').append(v.getText());
         } else {
@@ -149,7 +149,7 @@ public class DeclarationExpression extends BinaryExpression {
                 if (e instanceof VariableExpression) {
                     VariableExpression v = (VariableExpression) e;
                     if (!v.isDynamicTyped()) {
-                        text.append(formatTypeName(v.getType())).append(' ');
+                        text.append(formatTypeName(v.getOriginType())).append(' ');
                     }
                 }
                 text.append(e.getText()).append(", ");
@@ -157,8 +157,13 @@ public class DeclarationExpression extends BinaryExpression {
             text.setLength(text.length() - 2);
             text.append(')');
         }
-        text.append(' ').append(getOperation().getText());
-        text.append(' ').append(getRightExpression().getText());
+
+        if (getRightExpression() instanceof EmptyExpression) {
+            text.append(';');
+        } else {
+            text.append(' ').append(getOperation().getText());
+            text.append(' ').append(getRightExpression().getText());
+        }
 
         return text.toString();
     }

@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -602,12 +603,17 @@ public class StatementWriter {
     }
 
     public void writeExpressionStatement(final ExpressionStatement statement) {
-        controller.getAcg().onLineNumber(statement, "visitExpressionStatement: " + statement.getExpression().getClass().getName());
+        Expression expression = statement.getExpression();
+
+        controller.getAcg().onLineNumber(statement, "visitExpressionStatement: " + expression.getClass().getName());
         writeStatementLabel(statement);
 
-        int mark = controller.getOperandStack().getStackLength();
-        Expression expression = statement.getExpression();
+        if (expression instanceof BinaryExpression)
+            expression.putNodeMetaData("GROOVY-11288", Boolean.TRUE);
+
+        var operandStack = controller.getOperandStack();
+        int mark = operandStack.getStackLength();
         expression.visit(controller.getAcg());
-        controller.getOperandStack().popDownTo(mark);
+        operandStack.popDownTo(mark);
     }
 }

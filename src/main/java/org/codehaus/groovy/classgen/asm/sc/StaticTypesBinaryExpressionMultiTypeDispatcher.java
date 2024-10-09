@@ -326,10 +326,9 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     protected void assignToArray(final Expression enclosing, final Expression receiver, final Expression subscript, final Expression rhsValueLoader, final boolean safe) {
         ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
 
-        if (receiverType.isArray() && !safe && binExpWriter[getOperandType(receiverType.getComponentType())].arraySet(true)) {
-            super.assignToArray(enclosing, receiver, subscript, rhsValueLoader, safe);
-
-        } else { // this code path is needed because ACG creates array access expressions
+        if (!safe && receiverType.isArray() && binExpWriter[getOperandType(receiverType.getComponentType())].arraySet(true)) {
+            super.assignToArray(enclosing, receiver, subscript, rhsValueLoader, false);
+        } else { // handle safe subscript and other cases by calling the "putAt" method
             if (rhsValueLoader instanceof VariableSlotLoader && enclosing instanceof BinaryExpression) { // GROOVY-6061
                 rhsValueLoader.putNodeMetaData(INFERRED_TYPE, controller.getTypeChooser().resolveType(enclosing, controller.getClassNode()));
             }
@@ -346,8 +345,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             operandStack.pop();
             operandStack.remove(operandStack.getStackLength() - height);
 
-            // return value of assignment
-            rhsValueLoader.visit(controller.getAcg());
+            if (!Boolean.TRUE.equals(enclosing.getNodeMetaData("GROOVY-11288")))
+                rhsValueLoader.visit(controller.getAcg()); // re-load result value
         }
     }
 }
