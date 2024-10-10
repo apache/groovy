@@ -22,7 +22,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Variable;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -368,21 +367,14 @@ public class BinaryExpressionHelper {
         }
     }
 
-    @Deprecated
-    protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader) {
-        assignToArray(parent, receiver, index, rhsValueLoader, false);
-    }
-
     protected void assignToArray(final Expression parent, final Expression receiver, final Expression index, final Expression rhsValueLoader, final boolean safe) {
         // let's replace this assignment to a subscript operator with a method call
-        // e.g. x[5] = 10
-        // -> (x, [], 5), =, 10
-        // -> methodCall(x, "putAt", [5, 10])
-        ArgumentListExpression ae = new ArgumentListExpression(index, rhsValueLoader);
-        controller.getInvocationWriter().makeCall(parent, receiver, constX("putAt"), ae, InvocationWriter.invokeMethod, safe, false, false);
-        controller.getOperandStack().pop();
-        // return value of assignment
-        rhsValueLoader.visit(controller.getAcg());
+        // e.g. x[5] = 10 --> ScriptBytecodeAdapter.invokeMethod(senderClass, x, "putAt", [5, 10])
+        controller.getInvocationWriter().makeCall(parent, receiver, constX("putAt"), args(index, rhsValueLoader), InvocationWriter.invokeMethod, safe, false, false);
+        controller.getOperandStack().pop(); // method return value
+
+        if (!Boolean.TRUE.equals(parent.getNodeMetaData("GROOVY-11288")))
+            rhsValueLoader.visit(controller.getAcg()); // assignment expression value
     }
 
     public void evaluateElvisEqual(final BinaryExpression expression) {
@@ -393,6 +385,7 @@ public class BinaryExpressionHelper {
                 Token.newSymbol(ASSIGN, expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()),
                 rhs
         );
+        assignment.copyNodeMetaData(expression);
         evaluateEqual(assignment, false);
     }
 
@@ -483,6 +476,15 @@ public class BinaryExpressionHelper {
                 operandStack.storeVar(v);
                 return;
             }
+        }
+
+        // GROOVY-11288: get value from the stack
+        if (singleAssignment && !returnRightValue
+                && !(leftExpression instanceof BinaryExpression)) {
+            compileStack.pushLHS(true);
+            leftExpression.visit(acg);
+            compileStack.popLHS();
+            return;
         }
 
         int rhsValueId = compileStack.defineTemporaryVariable("$rhs", rhsType, true);

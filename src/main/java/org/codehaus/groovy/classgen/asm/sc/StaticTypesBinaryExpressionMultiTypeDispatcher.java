@@ -334,19 +334,16 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             }
 
             // replace assignment to a subscript operator with a method call
-            // e.g. x[5] = 10 -> methodCall(x, "putAt", [5, 10])
+            // e.g. x[5] = 10 --> x.putAt(5, 10)
             MethodCallExpression call = callX(receiver, "putAt", args(subscript, rhsValueLoader));
             call.setSafe(safe);
             call.setSourcePosition(enclosing);
 
-            OperandStack operandStack = controller.getOperandStack();
-            int height = operandStack.getStackLength();
             call.visit(controller.getAcg());
-            operandStack.pop();
-            operandStack.remove(operandStack.getStackLength() - height);
+            controller.getOperandStack().pop(); // method return value
 
             if (!Boolean.TRUE.equals(enclosing.getNodeMetaData("GROOVY-11288")))
-                rhsValueLoader.visit(controller.getAcg()); // re-load result value
+                rhsValueLoader.visit(controller.getAcg()); // assignment expression value
         }
     }
 }

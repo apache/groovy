@@ -172,7 +172,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
-    void testSimpleAssignment0() {
+    void testSingleAssignment2() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             class C {
                 int i
@@ -184,12 +184,52 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'L0',
                 'LINENUMBER 5',
                 'ICONST_1',
-                'ISTORE 1',
-                'ILOAD 1',
                 'ALOAD 0',
                 'SWAP',
                 'PUTFIELD C.i',
                 'L1',
+                'LINENUMBER 6',
+                'RETURN'
+            ])
+    }
+
+    // GROOVY-11288
+    void testSingleAssignment3() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            class C {
+                int i
+                void m() {
+                    i ?= 1
+                }
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 5',
+                'ALOAD 0',
+                'GETFIELD C.i',
+                'DUP',
+                'IFEQ L1',
+                'ICONST_1',
+                'GOTO L2',
+                'L1',
+                'FRAME SAME1 I',
+                'ICONST_0',
+                'L2',
+                'FRAME FULL [C] [I I]',
+                'IFEQ L3',
+                'GOTO L4',
+                'L3',
+                'FRAME SAME1 I',
+                'POP',
+                'ICONST_1',
+                'L4',
+                'FRAME SAME1 I',
+                // store and load temp var 1 gone
+                'ALOAD 0',
+                'SWAP',
+                'PUTFIELD C.i',
+                // load temp var 1 and pop gone
+                'L5',
                 'LINENUMBER 6',
                 'RETURN'
             ])
