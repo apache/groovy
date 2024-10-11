@@ -608,8 +608,11 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitExpressionStatement: " + expression.getClass().getName());
         writeStatementLabel(statement);
 
+        // TODO: replace with better meta data key
         if (expression instanceof BinaryExpression)
             expression.putNodeMetaData("GROOVY-11288", Boolean.TRUE);
+        if (expression instanceof MethodCallExpression)
+            expression.putNodeMetaData("GROOVY-11286", Boolean.TRUE);
 
         var operandStack = controller.getOperandStack();
         int mark = operandStack.getStackLength();

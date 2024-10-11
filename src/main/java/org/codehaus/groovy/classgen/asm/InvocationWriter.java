@@ -110,6 +110,8 @@ public class InvocationWriter {
 
     protected final WriterController controller;
 
+    protected MethodCallExpression currentCall;
+
     public InvocationWriter(final WriterController controller) {
         this.controller = controller;
     }
@@ -226,13 +228,16 @@ public class InvocationWriter {
         String ownerName = BytecodeHelper.getClassInternalName(ownerClass);
         String signature = BytecodeHelper.getMethodDescriptor(returnType, parameters);
         mv.visitMethodInsn(opcode, ownerName, target.getName(), signature, ownerClass.isInterface());
+        operandStack.remove(operandStack.getStackLength() - startDepth); // receiver plus argument(s)
 
         if (isPrimitiveVoid(returnType)) {
+            if (currentCall != null && currentCall.getNodeMetaData("GROOVY-11286") != null) {
+                return true; // do not load value
+            }
             returnType = ClassHelper.OBJECT_TYPE;
             mv.visitInsn(ACONST_NULL);
         }
-        // replace the method call's receiver and argument types with the return type
-        operandStack.replace(returnType, operandStack.getStackLength() - startDepth);
+        operandStack.push(returnType);
         return true;
     }
 
@@ -454,6 +459,9 @@ public class InvocationWriter {
     }
 
     public void writeInvokeMethod(MethodCallExpression call) {
+        var oldCall = currentCall;
+        currentCall = call;
+
         Expression receiver = call.getObjectExpression();
         // GROOVY-8466: replace "rcvr.call(args)" with "rcvr.abstractMethod(args)"
         if (!isThisExpression(receiver) && "call".equals(call.getMethodAsString())) {
@@ -471,6 +479,8 @@ public class InvocationWriter {
         }
         Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
         makeCall(call, receiver, messageName, call.getArguments(), adapter, call.isSafe(), call.isSpreadSafe(), call.isImplicitThis());
+
+        currentCall = oldCall;
     }
 
     private static MethodCallExpression transformToRealMethodCall(final MethodCallExpression call, final ClassNode type) {

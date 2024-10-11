@@ -79,7 +79,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
-    void testIdentityReturns() {
+    void testParameterReturns() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             int m(int i) { i }
         ''').hasStrictSequence(['ILOAD','IRETURN'])
@@ -273,6 +273,25 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 'POP',
                 // load temp var 2 and pop gone
                 'L3',
+                'LINENUMBER 4',
+                'RETURN'
+            ])
+    }
+
+    // GROOVY-11286
+    void testVoidMethod() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            void m() {
+                print ""
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 3',
+                'ALOAD 0',
+                'LDC ""',
+                'INVOKEVIRTUAL script.print (Ljava/lang/Object;)V',
+                // drop: ACONST_NULL, POP
+                'L1',
                 'LINENUMBER 4',
                 'RETURN'
             ])

@@ -107,22 +107,12 @@ public class StaticInvocationWriter extends InvocationWriter {
 
     private final AtomicInteger labelCounter = new AtomicInteger();
 
-    private MethodCallExpression currentCall;
-
-    public MethodCallExpression getCurrentCall() {
-        return currentCall;
-    }
-
     public StaticInvocationWriter(final WriterController wc) {
         super(wc);
     }
 
-    @Override
-    public void writeInvokeMethod(final MethodCallExpression call) {
-        MethodCallExpression old = currentCall;
-        currentCall = call;
-        super.writeInvokeMethod(call);
-        currentCall = old;
+    MethodCallExpression getCurrentCall() {
+        return currentCall;
     }
 
     @Override
