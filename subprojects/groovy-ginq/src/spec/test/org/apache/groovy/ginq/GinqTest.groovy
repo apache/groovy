@@ -6614,6 +6614,75 @@ class GinqTest {
         '''
     }
 
+    @Test
+    void "test GROOVY-11491"() {
+        assertGinqScript '''
+            import groovy.ginq.transform.GQ
+            import java.time.LocalDate
+
+            class Warehouse {
+                int id
+                String name
+                Double price
+                int stock
+
+                Warehouse(int id, String name, Double price, int stock) {
+                    this.id = id
+                    this.name = name
+                    this.price = price
+                    this.stock = stock
+                }
+            }
+
+            class Sales {
+                LocalDate date
+                int item
+
+                Sales(LocalDate date, int item) {
+                    this.date = date
+                    this.item = item
+                }
+            }
+
+            List<Warehouse> warehouses = [
+                new Warehouse(1, 'Orange', 11, 2),
+                new Warehouse(2, 'Apple', 6, 3),
+                new Warehouse(3, 'Banana', 4, 1),
+                new Warehouse(4, 'Mango', 29, 10)
+            ]
+            List<Sales> sales = [
+                new Sales(LocalDate.of(2024, 5, 1), 1),
+                new Sales(LocalDate.of(2024, 5, 2), 1),
+                new Sales(LocalDate.of(2024, 5, 3), 3)
+            ]
+
+            def result = GQ {
+                from s in sales
+                join w in warehouses on w.id == s.item
+                groupby w.name
+                select w.name, sum(w.price)
+            }
+            assert [['Banana', 4.0], ['Orange', 22.0]] == result.toList()
+
+            def result2 = GQ {
+                from w in warehouses
+                join s in sales on s.item == w.id
+                groupby w.name
+                select w.name, sum(w.price)
+            }
+            assert [['Banana', 4.0], ['Orange', 22.0]] == result2.toList()
+
+            def result3 = GQ {
+                from w in warehouses
+                join s in sales on s.item == w.id
+                groupby w.name
+                orderby w.name in desc
+                select w.name, sum(w.price)
+            }
+            assert [['Orange', 22.0], ['Banana', 4.0]] == result3.toList()
+        '''
+    }
+
     @AfterClass
     static void "testGinq - shutdown - 0"() {
         assertScript '''

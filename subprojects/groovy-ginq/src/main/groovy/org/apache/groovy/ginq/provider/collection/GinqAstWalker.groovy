@@ -1259,6 +1259,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                                     )
                         } else {
                             transformedExpression = varX(lambdaParamName)
+                            boolean isJoin = dataSourceExpression instanceof JoinExpression
+                            if (isJoin) {
+                                // GROOVY-11491: Add support for join and group by in ginq
+                                Map<String, Expression> aliasAccessPathMap = findAliasAccessPath(dataSourceExpression, transformedExpression)
+                                transformedExpression = aliasAccessPathMap.get(expression.text)
+                            }
                         }
                     } else {
                         if (groupNameListExpression.getExpressions().stream().map(e -> e.text).anyMatch(e -> e == expression.text)
