@@ -17,10 +17,10 @@ name: "Micronaut Joint Validation Build"
 on:
   push:
     branches:
-      - GROOVY_4_0_X
+      - disableForNowDueToFreakyDependency
   pull_request:
     branches:
-      - GROOVY_4_0_X
+      - disableForNowDueToFreakyDependency
 jobs:
   build:
     strategy:
