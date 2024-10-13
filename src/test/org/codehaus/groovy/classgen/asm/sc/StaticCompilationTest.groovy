@@ -279,7 +279,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11286
-    void testVoidMethod() {
+    void testVoidMethod1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
                 print ""
@@ -293,6 +293,24 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 // drop: ACONST_NULL, POP
                 'L1',
                 'LINENUMBER 4',
+                'RETURN'
+            ])
+    }
+
+    // GROOVY-11286
+    void testVoidMethod2() {
+        assert compile(method: 'm', '''import static java.lang.System.gc
+            @groovy.transform.CompileStatic
+            void m() {
+                gc()
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 4',
+                'INVOKESTATIC java/lang/System.gc ()V',
+                // drop: ACONST_NULL, POP
+                'L1',
+                'LINENUMBER 5',
                 'RETURN'
             ])
     }

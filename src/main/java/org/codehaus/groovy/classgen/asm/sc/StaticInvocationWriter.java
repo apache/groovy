@@ -111,7 +111,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         super(wc);
     }
 
-    MethodCallExpression getCurrentCall() {
+    Expression getCurrentCall() {
         return currentCall;
     }
 
@@ -420,9 +420,12 @@ public class StaticInvocationWriter extends InvocationWriter {
                     arguments[i] = a;
                     j += 1;
                 } else {
-                    controller.getSourceUnit().addFatalError("Binding failed" +
-                            " for arguments [" + argumentList.stream().map(arg -> typeChooser.resolveType(arg, classNode).toString(false)).collect(Collectors.joining(", ")) + "]" +
-                            " and parameters [" + Arrays.stream(parameters).map(prm -> prm.getType().toString(false)).collect(Collectors.joining(", ")) + "]", getCurrentCall());
+                    String errorMessage = "Binding failed for arguments [" +
+                            argumentList.stream().map(arg -> typeChooser.resolveType(arg, classNode).toString(false)).collect(Collectors.joining(", ")) +
+                            "] and parameters [" +
+                            Arrays.stream(parameters).map(prm -> prm.getType().toString(false)).collect(Collectors.joining(", ")) +
+                            "]";
+                    controller.getSourceUnit().addFatalError(errorMessage, currentCall);
                 }
             }
             for (int i = 0; i < nArgs; i += 1) {

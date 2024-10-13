@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
@@ -95,28 +96,32 @@ public class InvocationWriter {
     public static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
     @Deprecated(since = "5.0.0")
     public static final MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
-    public static final MethodCaller castToVargsArray = MethodCaller.newStatic(DefaultTypeTransformation.class, "castToVargsArray");
-    private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")});
+    public static final MethodCaller castToVargsArray    = MethodCaller.newStatic(DefaultTypeTransformation.class, "castToVargsArray");
 
-    // type conversions
-    private static final MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
-    private static final MethodCaller castToTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
-    private static final MethodCaller castToClassMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToClass");
+    // type conversion
+    private static final MethodCaller asTypeMethod       = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
+    private static final MethodCaller castToTypeMethod   = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "castToType");
+    private static final MethodCaller castToClassMethod  = MethodCaller.newStatic(ShortTypeHandling.class, "castToClass");
     private static final MethodCaller castToStringMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToString");
-    private static final MethodCaller castToEnumMethod = MethodCaller.newStatic(ShortTypeHandling.class, "castToEnum");
+    private static final MethodCaller castToEnumMethod   = MethodCaller.newStatic(ShortTypeHandling.class, "castToEnum");
 
     // constructor calls with this() and super()
     private static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
 
+    private static final MethodNode CLASS_FOR_NAME_STRING = ClassHelper.CLASS_Type.getDeclaredMethod("forName", new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "")});
+
     protected final WriterController controller;
 
-    protected MethodCallExpression currentCall;
+    protected Expression currentCall;
 
     public InvocationWriter(final WriterController controller) {
         this.controller = controller;
     }
 
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, boolean safe, final boolean spreadSafe, boolean implicitThis) {
+        var oldCall = currentCall;
+        currentCall = origin instanceof MethodCall ? origin : null;
+
         ClassNode sender;
         if (isSuperExpression(receiver) || (isThisExpression(receiver) && !implicitThis)) {
             // GROOVY-6045, GROOVY-8693, et al.
@@ -127,6 +132,8 @@ public class InvocationWriter {
             sender = controller.getClassNode();
         }
         makeCall(origin, new ClassExpression(sender), receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
+
+        currentCall = oldCall;
     }
 
     protected void makeCall(final Expression origin, final ClassExpression sender, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
@@ -425,6 +432,14 @@ public class InvocationWriter {
         return writeDirectMethodCall(CLASS_FOR_NAME_STRING, false, receiver, ae);
     }
 
+    /**
+     * Converts an expression to an argument list.
+     *
+     * @return {@code arguments} if already an argument list or an argument list
+     *         of the expression or expressions (in case of a tuple expression).
+     *
+     * @since 2.0.0
+     */
     public static ArgumentListExpression makeArgumentList(final Expression arguments) {
         ArgumentListExpression ae;
         if (arguments instanceof ArgumentListExpression) {
@@ -459,9 +474,6 @@ public class InvocationWriter {
     }
 
     public void writeInvokeMethod(MethodCallExpression call) {
-        var oldCall = currentCall;
-        currentCall = call;
-
         Expression receiver = call.getObjectExpression();
         // GROOVY-8466: replace "rcvr.call(args)" with "rcvr.abstractMethod(args)"
         if (!isThisExpression(receiver) && "call".equals(call.getMethodAsString())) {
@@ -479,8 +491,6 @@ public class InvocationWriter {
         }
         Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
         makeCall(call, receiver, messageName, call.getArguments(), adapter, call.isSafe(), call.isSpreadSafe(), call.isImplicitThis());
-
-        currentCall = oldCall;
     }
 
     private static MethodCallExpression transformToRealMethodCall(final MethodCallExpression call, final ClassNode type) {

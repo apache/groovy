@@ -365,7 +365,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         if (implicitThis && controller.getInvocationWriter() instanceof StaticInvocationWriter) {
-            Expression currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
+            var currentCall = ((StaticInvocationWriter) controller.getInvocationWriter()).getCurrentCall();
             if (currentCall != null) {
                 String implicitReceiver = currentCall.getNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
                 if (implicitReceiver != null) {

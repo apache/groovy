@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -608,11 +609,11 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitExpressionStatement: " + expression.getClass().getName());
         writeStatementLabel(statement);
 
-        // TODO: replace with better meta data key
+        // TODO: replace with better metadata
+        if (expression instanceof MethodCall)
+            expression.putNodeMetaData("GROOVY-11286", Boolean.TRUE);
         if (expression instanceof BinaryExpression)
             expression.putNodeMetaData("GROOVY-11288", Boolean.TRUE);
-        if (expression instanceof MethodCallExpression)
-            expression.putNodeMetaData("GROOVY-11286", Boolean.TRUE);
 
         var operandStack = controller.getOperandStack();
         int mark = operandStack.getStackLength();
