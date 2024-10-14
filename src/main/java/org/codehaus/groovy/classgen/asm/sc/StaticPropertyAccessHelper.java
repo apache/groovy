@@ -110,15 +110,19 @@ public abstract class StaticPropertyAccessHelper {
             call.setSafe(isSafe());
             call.setSpreadSafe(isSpreadSafe());
             call.setImplicitThis(isImplicitThis());
+            call.setGenericsTypes(getGenericsTypes());
             return call;
         }
 
         @Override
         public void visit(final GroovyCodeVisitor visitor) {
-            super.visit(visitor);
             if (visitor instanceof AsmClassGenerator) {
-                // ignore the return of the call
-                ((AsmClassGenerator) visitor).getController().getOperandStack().pop();
+                var os = ((AsmClassGenerator) visitor).getController().getOperandStack();
+                int sl = os.getStackLength();
+                super.visit(visitor);
+                os.popDownTo(sl);
+            } else {
+                super.visit(visitor);
             }
         }
     }

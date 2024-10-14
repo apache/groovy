@@ -315,6 +315,39 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    // GROOVY-11286
+    void testVoidMethod3() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            void m() {
+                System.out?.print("")
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 3',
+                'GETSTATIC java/lang/System.out : Ljava/io/PrintStream;',
+                'DUP',
+                'ASTORE 1',
+                'IFNULL L1',
+                'ALOAD 1',
+                'LDC ""',
+                'INVOKEVIRTUAL java/io/PrintStream.print (Ljava/lang/String;)V',
+                /* replaced all this with 'L1'
+                'ACONST_NULL',
+                'GOTO L2',
+                'L1',
+                'FRAME APPEND [java/io/PrintStream]',
+                'ACONST_NULL',
+                'L2',
+                'FRAME SAME',
+                'POP',
+                */
+                'L1',
+                'LINENUMBER 4',
+                'FRAME APPEND [java/io/PrintStream]',
+                'RETURN'
+            ])
+    }
+
     void testIntLeftShift() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {

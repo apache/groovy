@@ -563,44 +563,36 @@ public class StaticInvocationWriter extends InvocationWriter {
                 ((TemporaryVariableExpression) tmpReceiver).remove(controller);
             }
         } else if (safe && origin instanceof MethodCallExpression) {
-            // wrap call in an IFNULL check
-            MethodVisitor mv = controller.getMethodVisitor();
             CompileStack compileStack = controller.getCompileStack();
             OperandStack operandStack = controller.getOperandStack();
+            MethodVisitor mv = controller.getMethodVisitor();
             int counter = labelCounter.incrementAndGet();
-            // if (receiver != null)
-            ExpressionAsVariableSlot slot = new ExpressionAsVariableSlot(controller, receiver);
+            // (receiver != null) ? receiver.name(args) : null
+            Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
+            Label nonull = compileStack.createLocalLabel("nonull_" + counter);
+            Label theEnd = compileStack.createLocalLabel("ending_" + counter);
+            var slot = new ExpressionAsVariableSlot(controller, receiver);
             slot.visit(controller.getAcg());
             operandStack.box();
-            Label ifnull = compileStack.createLocalLabel("ifnull_" + counter);
             mv.visitJumpInsn(IFNULL, ifnull);
-            operandStack.remove(1); // receiver consumed by if()
-            Label nonull = compileStack.createLocalLabel("nonull_" + counter);
+            operandStack.remove(1); // receiver consumed
             mv.visitLabel(nonull);
-            MethodCallExpression origMCE = (MethodCallExpression) origin;
-            MethodCallExpression newMCE = callX(
-                    new VariableSlotLoader(slot.getType(), slot.getIndex(), controller.getOperandStack()),
-                    origMCE.getMethodAsString(),
-                    origMCE.getArguments()
-            );
-            MethodNode methodTarget = origMCE.getMethodTarget();
-            newMCE.setImplicitThis(origMCE.isImplicitThis());
-            newMCE.setMethodTarget(methodTarget);
+            var newMCE = (MethodCallExpression) origin.transformExpression((expression) -> expression);
+            newMCE.setObjectExpression(new VariableSlotLoader(slot.getType(), slot.getIndex(), operandStack));
+            newMCE.getObjectExpression().setSourcePosition(((MethodCallExpression) origin).getObjectExpression());
             newMCE.setSafe(false);
-            newMCE.setSourcePosition(origMCE);
-            newMCE.getObjectExpression().setSourcePosition(origMCE.getObjectExpression());
+            int osl = operandStack.getStackLength();
             newMCE.visit(controller.getAcg());
             compileStack.removeVar(slot.getIndex());
-            ClassNode returnType = operandStack.getTopOperand();
-            if (ClassHelper.isPrimitiveType(returnType) && !isPrimitiveVoid(returnType)) {
-                operandStack.box();
+            if (operandStack.getStackLength() > osl) {
+                operandStack.box(); // non-void method
+                mv.visitJumpInsn(GOTO, theEnd);
+                mv.visitLabel(ifnull);
+                mv.visitInsn(ACONST_NULL);
+                mv.visitLabel(theEnd);
+            } else {
+                mv.visitLabel(ifnull);
             }
-            Label endof = compileStack.createLocalLabel("endof_" + counter);
-            mv.visitJumpInsn(GOTO, endof);
-            mv.visitLabel(ifnull);
-            // else { null }
-            mv.visitInsn(ACONST_NULL);
-            mv.visitLabel(endof);
         } else {
             if (origin instanceof AttributeExpression && (adapter == AsmClassGenerator.getField || adapter == AsmClassGenerator.getGroovyObjectField)) {
                 CallSiteWriter callSiteWriter = controller.getCallSiteWriter();
