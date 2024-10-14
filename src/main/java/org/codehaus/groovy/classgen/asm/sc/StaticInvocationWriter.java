@@ -490,6 +490,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             Label allDone = new Label();
             MethodVisitor mv = controller.getMethodVisitor();
             OperandStack operandStack = controller.getOperandStack();
+            boolean produceResultList = origin.getNodeMetaData("GROOVY-11286") == null;
 
             // if (receiver == null)
             tmpReceiver.visit(controller.getAcg());
@@ -497,7 +498,8 @@ public class StaticInvocationWriter extends InvocationWriter {
             operandStack.remove(1);
 
             // result is null
-            mv.visitInsn(ACONST_NULL);
+            if (produceResultList)
+                mv.visitInsn(ACONST_NULL);
             mv.visitJumpInsn(GOTO, allDone);
 
             // else
@@ -512,7 +514,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             cce.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET,
                     StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR);
             var result = new TemporaryVariableExpression(cce);
-            result.visit(controller.getAcg());
+            if (produceResultList) result.visit(controller.getAcg());
 
             ClassNode elementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
             Parameter element = new Parameter(elementType, "for$it$" + labelCounter.incrementAndGet());
@@ -525,6 +527,7 @@ public class StaticInvocationWriter extends InvocationWriter {
                         oldMCE.getMethod(),
                         oldMCE.getArguments()
                 );
+                newMCE.setGenericsTypes(oldMCE.getGenericsTypes());
                 newMCE.setImplicitThis(false);
                 MethodNode target = oldMCE.getMethodTarget();
                 newMCE.setMethodTarget(target);
@@ -550,12 +553,12 @@ public class StaticInvocationWriter extends InvocationWriter {
             var stmt = new ForStatement(
                     element,
                     tmpReceiver,
-                    stmt(addNextValue)
+                    stmt(produceResultList ? addNextValue : nextValue)
             );
             stmt.visit(controller.getAcg());
-
-            result.remove(controller);
-
+            if (produceResultList) {
+                result.remove(controller);
+            }
             // end of if/else
             mv.visitLabel(allDone);
 

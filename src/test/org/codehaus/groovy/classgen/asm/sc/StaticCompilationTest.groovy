@@ -348,6 +348,88 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    // GROOVY-11286, GROOVY-11453
+    void testVoidMethod4() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            void m(List<C> list) {
+                list*.proc()
+            }
+            class C {
+                void proc() {
+                }
+            }
+        ''').hasStrictSequence([
+                'L0',
+                'LINENUMBER 3',
+                'ALOAD 1',
+                'IFNONNULL L1',
+              //'ACONST_NULL',
+                'GOTO L2',
+                'L1',
+                'FRAME SAME',
+              //'NEW java/util/ArrayList',
+              //'DUP',
+              //'INVOKESPECIAL java/util/ArrayList.<init> ()V',
+              //'DUP',
+              //'ASTORE 2',
+                'ALOAD 1',
+                'DUP',
+                'ASTORE 2',
+                'IFNULL L3',
+                'ALOAD 2',
+                'INVOKEINTERFACE java/util/List.iterator ()Ljava/util/Iterator; (itf)',
+                'GOTO L4',
+                'L3',
+                'FRAME',
+                'ACONST_NULL',
+                'L4',
+                'FRAME',
+                'ACONST_NULL',
+                'ASTORE 3',
+                'L5',
+                'ASTORE 4',
+                'ALOAD 4',
+                'IFNULL L2',
+                'L6',
+                'FRAME',
+                'ALOAD 4',
+                'INVOKEINTERFACE java/util/Iterator.hasNext ()Z',
+                'IFEQ L2',
+                'ALOAD 4',
+                'INVOKEINTERFACE java/util/Iterator.next ()Ljava/lang/Object;',
+                'INVOKEDYNAMIC cast(Ljava/lang/Object;)LC; [',
+                '// handle kind 0x6 : INVOKESTATIC',
+                'org/codehaus/groovy/vmplugin/v8/IndyInterface.bootstrap(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;I)Ljava/lang/invoke/CallSite;',
+                '// arguments:',
+                '"()",',
+                '0',
+                ']',
+                'ASTORE 3',
+              //'ALOAD 2',
+                'ALOAD 3',
+                'DUP',
+                'ASTORE 5',
+                'IFNULL L7',
+                'ALOAD 5',
+                'INVOKEVIRTUAL C.proc ()V',
+              //'ACONST_NULL',
+              //'GOTO L8',
+                'L7',
+                'FRAME',
+              //'ACONST_NULL',
+              //'L8',
+              //'FRAME',
+              //'INVOKEVIRTUAL java/util/ArrayList.add (Ljava/lang/Object;)Z',
+              //'POP',
+                'GOTO L6',
+                'L2',
+                'LINENUMBER 4',
+                'FRAME FULL [script java/util/List] []',
+              //'POP',
+                'RETURN'
+            ])
+    }
+
     void testIntLeftShift() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
