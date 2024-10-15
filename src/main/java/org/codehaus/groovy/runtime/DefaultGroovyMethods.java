@@ -8271,38 +8271,49 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // iterator
 
     /**
-     * Attempts to create an Iterator for the given object by first
-     * converting it to a Collection.
+     * Creates an Iterator for the given Object by converting it to a Collection.
      *
-     * @param o an object
-     * @return an Iterator for the given Object.
+     * @param self an object
+     * @return an Iterator for the given Object
      * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
      * @since 1.0
      */
-    public static Iterator iterator(final Object o) {
-        if (o instanceof Iterator) return (Iterator)o;
-        return DefaultTypeTransformation.asCollection(o).iterator();
+    public static Iterator iterator(final Object self) {
+        if (self instanceof Iterator) return (Iterator) self;
+        return DefaultTypeTransformation.asCollection(self).iterator();
     }
 
     /**
-     * Allows an Enumeration to behave like an Iterator.  Note that the
-     * {@link java.util.Iterator#remove() remove()} method is unsupported since the
-     * underlying Enumeration does not provide a mechanism for removing items.
+     * Supports 'duck-typing' when trying to get an Iterator for each element of
+     * a Collection, some of which may already be an Iterator.
      *
-     * @param enumeration an Enumeration object
+     * @param self an Iterator object
+     * @return the Iterator itself
+     * @since 1.5.0
+     */
+    public static <T> Iterator<T> iterator(final Iterator<T> self) {
+        return self;
+    }
+
+    /**
+     * Allows an Enumeration to behave like an Iterable.  Note that the
+     * {@link java.util.Iterator#remove() remove()} method is unsupported since
+     * the underlying Enumeration doesn't provide a mechanism for removing items.
+     *
+     * @param self an Enumeration object
      * @return an Iterator for the given Enumeration
      * @since 1.0
      */
-    public static <T> Iterator<T> iterator(final Enumeration<T> enumeration) {
+    public static <T> Iterator<T> iterator(final Enumeration<T> self) {
         return new Iterator<T>() {
             @Override
             public boolean hasNext() {
-                return enumeration.hasMoreElements();
+                return self.hasMoreElements();
             }
 
             @Override
             public T next() {
-                return enumeration.nextElement();
+                return self.nextElement();
             }
 
             @Override
@@ -8313,15 +8324,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * An identity function for iterators, supporting 'duck-typing' when trying to get an
-     * iterator for each object within a collection, some of which may already be iterators.
+     * Returns an Iterator for the given Map's entry set.
      *
-     * @param self an iterator object
-     * @return itself
-     * @since 1.5.0
+     * @since 5.0.0
      */
-    public static <T> Iterator<T> iterator(Iterator<T> self) {
-        return self;
+    public static <K,V> Iterator<Map.Entry<K,V>> iterator(final Map<K,V> self) {
+        return self.entrySet().iterator();
     }
 
     //--------------------------------------------------------------------------

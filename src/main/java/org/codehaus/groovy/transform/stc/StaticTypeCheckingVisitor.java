@@ -2105,21 +2105,25 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             ClassNode collectionType = getType(collectionExpression);
             ClassNode forLoopVariableType = forLoop.getVariableType();
             ClassNode componentType;
-            if (isWrapperCharacter(getWrapper(forLoopVariableType)) && isStringType(collectionType)) {
-                // we allow auto-coercion here
-                componentType = forLoopVariableType;
+            if (isStringType(collectionType)) {
+                if (isWrapperCharacter(getWrapper(forLoopVariableType))) {
+                    // we support auto-coercion for char
+                    componentType = forLoopVariableType;
+                } else {
+                    componentType = STRING_TYPE;
+                }
             } else {
-                componentType = inferLoopElementType(collectionType);
-            }
-            if (getUnwrapper(componentType) == forLoopVariableType) {
-                // prefer primitive type over boxed type
-                componentType = forLoopVariableType;
+                componentType = inferComponentType(collectionType, null);
+                if (componentType == null) {
+                    componentType = OBJECT_TYPE;
+                } else if (getUnwrapper(componentType).equals(forLoopVariableType)) {
+                    componentType = forLoopVariableType; // prefer the primitive type
+                }
             }
             if (!checkCompatibleAssignmentTypes(forLoopVariableType, componentType)) {
                 addStaticTypeError("Cannot loop with element of type " + prettyPrintType(forLoopVariableType) + " with collection of type " + prettyPrintType(collectionType), forLoop);
             }
-            if (!isDynamicTyped(forLoopVariableType)) {
-                // user has specified a type, prefer it over the inferred type
+            if (!isDynamicTyped(forLoopVariableType)) { // user-supplied type
                 componentType = forLoopVariableType;
             }
             typeCheckingContext.controlStructureVariables.put(forLoop.getVariable(), componentType);
@@ -5785,11 +5789,11 @@ trying: for (ClassNode[] signature : signatures) {
         Map<GenericsTypeName, GenericsType> result = null;
         ClassNode[] todo;
         if (receiver instanceof UnionTypeClassNode) {
-            todo = ((UnionTypeClassNode) receiver).getDelegates();
+            todo = ((UnionTypeClassNode) receiver).getDelegates(); // GROOVY-7275
         } else {
             todo = new ClassNode[] {!isPrimitiveType(declaringClass) ? wrapTypeIfNecessary(receiver) : receiver};
         }
-        for (ClassNode type : todo) {
+out:    for (ClassNode type : todo) {
             for (ClassNode current = type; current != null; ) {
                 Map<GenericsTypeName, GenericsType> placeHolders = new HashMap<>();
                 if (current.isGenericsPlaceHolder())
@@ -5824,7 +5828,7 @@ trying: for (ClassNode[] signature : signatures) {
                 result = placeHolders;
 
                 // we are done if we are now in the declaring class
-                if (currentIsDeclaring) break;
+                if (currentIsDeclaring) break out;
 
                 current = getNextSuperClass(current, declaringClass);
                 if (current == null && isClassType(declaringClass)) {

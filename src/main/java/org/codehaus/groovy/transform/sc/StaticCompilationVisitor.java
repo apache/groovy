@@ -255,18 +255,12 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
     @Override
     public void visitForLoop(final ForStatement statement) {
         super.visitForLoop(statement);
-        Expression collectionExpression = statement.getCollectionExpression();
+        var collectionExpression = statement.getCollectionExpression();
         if (!(collectionExpression instanceof ClosureListExpression)) {
-            ClassNode forLoopVariableType = statement.getVariableType();
-            ClassNode collectionType = getType(collectionExpression);
-            ClassNode componentType;
-            if (ClassHelper.isWrapperCharacter(ClassHelper.getWrapper(forLoopVariableType)) && ClassHelper.isStringType(collectionType)) {
-                // we allow auto-coercion here
-                componentType = forLoopVariableType;
-            } else {
-                componentType = inferLoopElementType(collectionType);
+            if (statement.getVariable().isDynamicTyped()) { // GROOVY-8169
+                ClassNode inferredType = getType(statement.getVariable());
+                statement.getVariable().setType(inferredType); // GROOVY-5640, GROOVY-5641
             }
-            statement.getVariable().setType(componentType);
         }
     }
 

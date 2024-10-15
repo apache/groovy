@@ -114,21 +114,19 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     void testForInLoopOnMap1() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                lookup('forLoop').each {
-                    assert it instanceof org.codehaus.groovy.ast.stmt.ForStatement
-                    def collection = it.collectionExpression // MethodCallExpression
-                    def inft = collection.getNodeMetaData(INFERRED_TYPE)
-                    assert inft == make(Set)
-                    def entryInft = inft.genericsTypes[0].type
-                    assert entryInft == make(Map.Entry)
-                    assert entryInft.genericsTypes[0].type == STRING_TYPE
-                    assert entryInft.genericsTypes[1].type == Integer_TYPE
-                }
+                def loop = lookup('loop')[0]
+                assert loop instanceof org.codehaus.groovy.ast.stmt.ForStatement
+                def collectionType = loop.collectionExpression.getNodeMetaData(INFERRED_TYPE)
+                assert collectionType == SET_TYPE
+                def elementType = collectionType.genericsTypes[0].type
+                assert elementType == make(Map.Entry)
+                assert elementType.genericsTypes[0].type == STRING_TYPE
+                assert elementType.genericsTypes[1].type == Integer_TYPE
             })
             void test() {
                 def result = ""
                 def sum = 0
-                forLoop:
+                loop:
                 for ( Map.Entry<String, Integer> it in [a:1, b:3].entrySet() ) {
                    result += it.getKey()
                    sum += it.getValue()
@@ -184,6 +182,23 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
             for (item in list) {
                 item.toUpperCase()
             }
+        '''
+    }
+
+    // GROOVY-8169
+    void testForInLoopOnList2() {
+        assertScript '''
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def loop = lookup('loop')[0]
+                assert loop.variable.type == OBJECT_TYPE
+                assert loop.variable.originType == OBJECT_TYPE
+            })
+            void test() {
+                List strings = ['one', 'two']
+                loop:
+                for (Object s in strings) { }
+            }
+            test()
         '''
     }
 
@@ -292,6 +307,23 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
             for (e in en) {
                 e.toUpperCase()
             }
+        '''
+    }
+
+    // GROOVY-11305
+    void testForInLoopOnNearlyIterable() {
+        assertScript '''
+            class C {
+                Iterator<String> iterator() {
+                    ['a','b','c'].iterator()
+                }
+            }
+            def list = []
+            def c = new C()
+            for (item in c) {
+                list.add(item.toUpperCase())
+            }
+            assert list == ['A','B','C']
         '''
     }
 
