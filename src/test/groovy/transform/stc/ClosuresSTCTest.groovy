@@ -358,7 +358,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.util.ArrayList<java.lang.Object> for closure expecting java.lang.Boolean'
     }
 
-    // GROOVY-8202
+    // GROOVY-7713, GROOVY-8202
     void testClosureReturnTypeInference9() {
         assertScript '''
             void proc() {
@@ -382,7 +382,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 c.call()
             }
             String test2(flag) {
-                Closure<String> c = { -> // Cannot assign Closure<Object> to Closure<String>
+                Closure<String> c = { ->
                     if (flag) {
                         'baz'
                     } else {

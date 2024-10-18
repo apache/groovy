@@ -5402,18 +5402,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-7713
-    void testClosureReturnNull() {
-        assertScript '''
-            Closure<String> cl = {
-                if (hashCode() > 0) {
-                    return null
-                }
-                'foo'
-            }
-        '''
-    }
-
     // GROOVY-10528
     void testRawTypeGuard() {
         assertScript '''

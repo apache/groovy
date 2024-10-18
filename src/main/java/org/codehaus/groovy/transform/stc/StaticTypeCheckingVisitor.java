@@ -376,8 +376,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     public static final Statement GENERATED_EMPTY_STATEMENT = EmptyStatement.INSTANCE;
 
-    protected final ReturnAdder.ReturnStatementListener returnListener = returnStatement -> {
-        if (returnStatement.isReturningNullOrVoid()) return;
+    protected final ReturnAdder.ReturnStatementListener returnListener = (returnStatement) -> {
         ClassNode returnType = checkReturnType(returnStatement);
         if (this.typeCheckingContext.getEnclosingClosure() != null) {
             addClosureReturnType(returnType);
@@ -2392,10 +2391,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     && !GenericsUtils.hasUnresolvedGenerics(inferredReturnType)) {
                 if (isStringType(inferredReturnType) && isGStringOrGStringStringLUB(type)) {
                     type = STRING_TYPE; // GROOVY-9971: convert GString to String at point of return
-                } else if (GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
+                } else if (statement.isReturningNullOrVoid() ? !isPrimitiveType(inferredReturnType) // GROOVY-7713, GROOVY-8202
+                     : GenericsUtils.buildWildcardType(wrapTypeIfNecessary(inferredReturnType)).isCompatibleWith(wrapTypeIfNecessary(type))) {
                     type = inferredReturnType; // GROOVY-8310, GROOVY-10082, GROOVY-10091, GROOVY-10128, GROOVY-10306: allow simple covariance
-                } else if (!isPrimitiveVoid(type) && !extension.handleIncompatibleReturnType(statement, type)) { // GROOVY-10277: incompatible return value
-                    addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for " + (enclosingClosure.getClosureExpression() instanceof LambdaExpression ? "lambda" : "closure") + " expecting " + prettyPrintType(inferredReturnType), expression);
+                } else if (!isPrimitiveVoid(type) && !extension.handleIncompatibleReturnType(statement, type)) { // GROOVY-10277: incompatible
+                    String value = (statement.isReturningNullOrVoid() ? "null" : "value of type " + prettyPrintType(type));
+                    String which = (enclosingClosure.getClosureExpression() instanceof LambdaExpression ? "lambda" : "closure");
+                    addStaticTypeError("Cannot return " + value + " for " + which + " expecting " + prettyPrintType(inferredReturnType), expression);
                 }
             }
             return type;
@@ -2404,7 +2406,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         MethodNode enclosingMethod = typeCheckingContext.getEnclosingMethod();
         if (enclosingMethod != null && !enclosingMethod.isVoidMethod() && !enclosingMethod.isDynamicReturnType()) {
             ClassNode returnType = enclosingMethod.getReturnType();
-            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, null, false)) {
+            if (!isPrimitiveVoid(getUnwrapper(type)) && !checkCompatibleAssignmentTypes(returnType, type, expression, false)) {
                 if (!extension.handleIncompatibleReturnType(statement, type)) {
                     addStaticTypeError("Cannot return value of type " + prettyPrintType(type) + " for method returning " + prettyPrintType(returnType), expression);
                 }

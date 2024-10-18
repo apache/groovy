@@ -198,6 +198,16 @@ final class LambdaTest {
         '''
     }
 
+    // GROOVY-11490
+    @Test
+    void testUnaryOperator2() {
+        def err = shouldFail shell, '''
+            IntUnaryOperator f = (i) -> null
+            int i = f.applyAsInt(42)
+        '''
+        assert err =~ /Cannot return null for lambda expecting int/
+    }
+
     @Test
     void testBiConsumer() {
         assertScript shell, '''
