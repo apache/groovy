@@ -106,6 +106,8 @@ public class CompilerConfiguration {
     public static final String JDK22 = "22";
     /** This (<code>"22"</code>) is the value for targetBytecode to compile for a JDK 23. */
     public static final String JDK23 = "23";
+    /** This (<code>"24"</code>) is the value for targetBytecode to compile for a JDK 24. */
+    public static final String JDK24 = "24";
 
     /**
      * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
@@ -144,7 +146,8 @@ public class CompilerConfiguration {
             JDK20, Opcodes.V20,
             JDK21, Opcodes.V21,
             JDK22, Opcodes.V22,
-            JDK23, Opcodes.V23
+            JDK23, Opcodes.V23,
+            JDK24, Opcodes.V24
     );
 
     public static final String DEFAULT_TARGET_BYTECODE = defaultTargetBytecode();
