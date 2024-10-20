@@ -669,12 +669,6 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             assert  map.containsKey('class')
             assert !map.containsKey('metaClass')
         '''
-        shouldFailWithMessages '''
-            def map = [:]
-            map.properties = null
-        ''',
-        'Cannot set read-only property: properties'
-
         assertScript '''
             Map<String,Number> map = [:]
 
@@ -714,6 +708,16 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
             }
             test( [:].withDefault{ 'entry' } )
         '''
+        assertScript '''
+            def map = [:]
+            def set = map.properties.keySet()
+            assert set.intersect(['class','empty','metaClass','properties']).isEmpty()
+        '''
+        shouldFailWithMessages '''
+            def map = [:]
+            map.properties = null
+        ''',
+        'Cannot set read-only property: properties'
     }
 
     // GROOVY-8074

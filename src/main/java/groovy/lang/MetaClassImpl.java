@@ -2219,6 +2219,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
                 if (!getter && !setter) continue;
 
+                if (isMap && isSpecialProperty(mp.getName())) continue;
+
                 if (!permissivePropertyAccess) { // GROOVY-5169, GROOVY-9081, GROOVY-9103
                     boolean getterAccessible = canAccessLegally(getterMetaMethod);
                     boolean setterAccessible = canAccessLegally(setterMetaMethod);
@@ -2330,7 +2332,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      *
      * @param propertyDescriptors the property descriptors
      */
-    private void setupProperties(final PropertyDescriptor[] propertyDescriptors) {
+    private void setUpProperties(final PropertyDescriptor[] propertyDescriptors) {
         if (theCachedClass.isInterface) {
             CachedClass superClass = ReflectionCache.OBJECT_CLASS;
             List<CachedClass> superInterfaces = new ArrayList<>(theCachedClass.getInterfaces());
@@ -3382,7 +3384,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
         // build up the metaproperties based on the public fields, property descriptors,
         // and the getters and setters
-        setupProperties(descriptors);
+        setUpProperties(descriptors);
         addRecordProperties(info);
 
         EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
