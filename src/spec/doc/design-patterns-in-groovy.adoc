@@ -79,7 +79,7 @@ include::_design-pattern-visitor.adoc[leveloffset=+2]
 . Martin Fowler (1999). _Refactoring: Improving the Design of Existing Code_. Addison-Wesley. ISBN 0-201-48567-2.
 . Joshua Kerievsky (2004). _Refactoring To Patterns_. Addison-Wesley. ISBN 0-321-21335-1.
 . Eric Freeman, Elisabeth Freeman, Kathy Sierra, Bert Bates (2004). _Head First Design Patterns_. O’Reilly. ISBN 0-596-00712-4.
- *_A great book to read, informative as well as amusing._
+ * _A great book to read, informative as well as amusing._
 . Dierk Koenig with Andrew Glover, Paul King, Guillaume Laforge and Jon Skeet (2007). _Groovy in Action_. Manning. ISBN 1-932394-84-2.
  * _Discusses Visitor, Builder and other Patterns._
 . Brad Appleton (1999). http://www.bradapp.com/docs/pizza-inv.html[Pizza Inversion - a Pattern for Efficient Resource Consumption].
