@@ -367,7 +367,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 if (t.equals(in)) {
                                     String one = in.toString(false), two = t.toString(false);
                                     if (!one.equals(two))
-                                        LOG.warning("Warning: " + " on " + cn.getName() + " the interface " + in.getNameWithoutPackage() +
+                                        LOG.warning("Warning: " + "on " + cn.getName() + " the interface " + in.getNameWithoutPackage() +
                                             " was implemented more than once with different arguments: " + one + " and " + two + ",  " +
                                             cn.getName() + " will only implement the lowest level " + in.getNameWithoutPackage());
                                 }
