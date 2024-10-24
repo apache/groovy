@@ -86,6 +86,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
@@ -148,6 +149,8 @@ import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModi
  * </ul>
  */
 public class Verifier implements GroovyClassVisitor, Opcodes {
+
+    private static final Logger LOG = Logger.getLogger(Verifier.class.getName());
 
     public static final String SWAP_INIT = "__$swapInit";
     public static final String STATIC_METACLASS_BOOL = "__$stMC";
@@ -364,9 +367,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 if (t.equals(in)) {
                                     String one = in.toString(false), two = t.toString(false);
                                     if (!one.equals(two))
-                                        throw new RuntimeParserException("The interface " + in.getNameWithoutPackage() +
-                                            " cannot be implemented more than once with different arguments: " + one + " and " + two, cn);
-                                    break;
+                                        LOG.warning("Warning: " + " on " + cn.getName() + " the interface " + in.getNameWithoutPackage() +
+                                            " was implemented more than once with different arguments: " + one + " and " + two + ",  " +
+                                            cn.getName() + " will only implement the lowest level " + in.getNameWithoutPackage());
                                 }
                             }
                         }
