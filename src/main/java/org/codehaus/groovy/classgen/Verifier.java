@@ -363,9 +363,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             for (ClassNode t : set) { // find match and check generics
                                 if (t.equals(in)) {
                                     String one = in.toString(false), two = t.toString(false);
-                                    if (!one.equals(two))
-                                        throw new RuntimeParserException("The interface " + in.getNameWithoutPackage() +
-                                            " cannot be implemented more than once with different arguments: " + one + " and " + two, cn);
+                                    if (!one.equals(two)) {
+                                        if (Traits.isTrait(in)) { // GROOVY-11508
+                                            cn.getModule().getContext().addWarning("The trait " + in.getNameWithoutPackage() +
+                                                " is implemented more than once with different arguments: " + one + " and " + two, cn);
+                                        } else {
+                                            throw new RuntimeParserException("The interface " + in.getNameWithoutPackage() +
+                                                " cannot be implemented more than once with different arguments: " + one + " and " + two, cn);
+                                        }
+                                    }
                                     break;
                                 }
                             }
