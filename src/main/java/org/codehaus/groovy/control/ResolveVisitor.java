@@ -264,24 +264,60 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     @Override
+    public void visitField(final FieldNode node) {
+        Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
+        if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
+            genericParameterNames = Collections.emptyMap();
+        }
+
+        if (!fieldTypesChecked.contains(node)) {
+            resolveOrFail(node.getType(), node);
+        }
+        super.visitField(node);
+
+        genericParameterNames = oldNames;
+    }
+
+    @Override
+    public void visitProperty(final PropertyNode node) {
+        Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
+        if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
+            genericParameterNames = Collections.emptyMap();
+        }
+
+        resolveOrFail(node.getType(), node);
+        fieldTypesChecked.add(node.getField());
+
+        super.visitProperty(node);
+
+        genericParameterNames = oldNames;
+    }
+
+    private static boolean canSeeTypeVars(final int mods, final ClassNode node) {
+        return !Modifier.isStatic(mods) || Traits.isTrait(node); // GROOVY-8864, GROOVY-11508
+    }
+
+    @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
-        genericParameterNames = node.isStatic() && !Traits.isTrait(node.getDeclaringClass())
-                ? new HashMap<>() : new HashMap<>(genericParameterNames);
+        genericParameterNames =
+                canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())
+                    ? new HashMap<>(genericParameterNames) : new HashMap<>();
 
         resolveGenericsHeader(node.getGenericsTypes());
 
+        resolveOrFail(node.getReturnType(), node);
         for (Parameter p : node.getParameters()) {
             p.setInitialExpression(transform(p.getInitialExpression()));
-            resolveOrFail(p.getType(), p.getType());
+            ClassNode t = p.getType();
+            resolveOrFail(t, t);
             visitAnnotations(p);
         }
-        resolveOrFail(node.getReturnType(), node);
         if (node.getExceptions() != null) {
             for (ClassNode t : node.getExceptions()) {
-                resolveOrFail(t, node);
+                resolveOrFail(t, t);
             }
         }
 
@@ -289,35 +325,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         MethodNode oldCurrentMethod = currentMethod;
         currentMethod = node;
+
         super.visitConstructorOrMethod(node, isConstructor);
 
         currentMethod = oldCurrentMethod;
         genericParameterNames = oldNames;
         currentScope = oldScope;
-    }
-
-    @Override
-    public void visitField(final FieldNode node) {
-        ClassNode t = node.getType();
-        if (!fieldTypesChecked.contains(node)) {
-            resolveOrFail(t, node);
-        }
-        super.visitField(node);
-    }
-
-    @Override
-    public void visitProperty(final PropertyNode node) {
-        Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
-        if (node.isStatic() && !Traits.isTrait(node.getDeclaringClass())) {
-            genericParameterNames = new HashMap<>();
-        }
-
-        ClassNode t = node.getType();
-        resolveOrFail(t, node);
-        super.visitProperty(node);
-        fieldTypesChecked.add(node.getField());
-
-        genericParameterNames = oldPNames;
     }
 
     private void resolveOrFail(final ClassNode type, final ASTNode node) {
@@ -1098,14 +1111,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformClosureExpression(final ClosureExpression ce) {
         boolean oldInClosure = inClosure;
         inClosure = true;
-        for (Parameter para : getParametersSafe(ce)) {
-            ClassNode t = para.getType();
-            resolveOrFail(t, ce);
-            visitAnnotations(para);
-            if (para.hasInitialExpression()) {
-                para.setInitialExpression(transform(para.getInitialExpression()));
+        for (Parameter p : getParametersSafe(ce)) {
+            ClassNode t = p.getType();
+            resolveOrFail(t, t);
+            visitAnnotations(p);
+            if (p.hasInitialExpression()) {
+                p.setInitialExpression(transform(p.getInitialExpression()));
             }
-            visitAnnotations(para);
+            visitAnnotations(p);
         }
 
         Statement code = ce.getCode();
