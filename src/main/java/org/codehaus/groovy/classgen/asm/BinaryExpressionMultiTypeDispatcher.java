@@ -132,7 +132,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     protected int getOperandType(final ClassNode type) {
         Integer ret = typeMap.get(type);
         if (ret == null) return 0;
-        return ret.intValue();
+        return ret;
     }
 
     @Deprecated

@@ -174,7 +174,7 @@ public class ImmutablePropertyUtils {
                             "bootstrap",
                             MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class).toMethodDescriptorString(),
                             false);
-                    mv.visitInvokeDynamicInsn("invoke", "(Ljava/lang/Object;)Ljava/lang/Object;", bootstrap, new Object[]{"clone", Integer.valueOf(0)});
+                    mv.visitInvokeDynamicInsn("invoke", "(Ljava/lang/Object;)Ljava/lang/Object;", bootstrap, new Object[]{"clone", 0});
                 }
             };
         }

@@ -679,7 +679,7 @@ public class AsmClassGenerator extends ClassGenerator {
             } else {
                 ClassNode type = node.getReturnType();
                 if (isPrimitiveType(type)) {
-                    mv.visitLdcInsn(Integer.valueOf(0));
+                    mv.visitLdcInsn(0);
                     OperandStack operandStack = controller.getOperandStack();
                     operandStack.push(ClassHelper.int_TYPE);
                     operandStack.doGroovyCast(type);

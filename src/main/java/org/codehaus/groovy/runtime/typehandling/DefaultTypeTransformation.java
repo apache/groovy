@@ -23,7 +23,17 @@ import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.FormatHelper;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.IteratorClosureAdapter;
+import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.ResourceGroovyMethods;
+import org.codehaus.groovy.runtime.StreamGroovyMethods;
+import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,7 +83,7 @@ public class DefaultTypeTransformation {
     public static char charUnbox(final Object value) {
         if (value == null) return '\u0000'; // GROOVY-11371
         var ch = ShortTypeHandling.castToChar(value);
-        return ch.charValue();
+        return ch;
     }
 
     public static short shortUnbox(final Object value) {

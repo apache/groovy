@@ -1412,11 +1412,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
             Object maxDepthValue = options.remove("maxDepth");
             maxDepth = maxDepthValue == null ? -1 : DefaultGroovyMethods.asType(maxDepthValue, Number.class).intValue();
             Object preRootValue = options.get("preRoot");
-            preRoot = preRootValue == null ? false : DefaultGroovyMethods.asType(preRootValue, Boolean.class).booleanValue();
+            preRoot = preRootValue == null ? false : DefaultGroovyMethods.asType(preRootValue, Boolean.class);
             Object postRootValue = options.get("postRoot");
-            postRoot = postRootValue == null ? false : DefaultGroovyMethods.asType(postRootValue, Boolean.class).booleanValue();
+            postRoot = postRootValue == null ? false : DefaultGroovyMethods.asType(postRootValue, Boolean.class);
             Object visitRootValue = options.get("visitRoot");
-            visitRoot = visitRootValue == null ? false : DefaultGroovyMethods.asType(visitRootValue, Boolean.class).booleanValue();
+            visitRoot = visitRootValue == null ? false : DefaultGroovyMethods.asType(visitRootValue, Boolean.class);
         }
 
         final Closure pre = (Closure) options.get("preDir");

@@ -496,7 +496,7 @@ public class OperandStack {
             mv.visitInsn(ACONST_NULL);
             type = ClassHelper.OBJECT_TYPE;
         } else if (boxing && value instanceof Boolean) { // load static value
-            String text = ((Boolean) value).booleanValue() ? "TRUE" : "FALSE";
+            String text = (Boolean) value ? "TRUE" : "FALSE";
             mv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", text, "Ljava/lang/Boolean;");
             boxing = false;
             type = exprType;

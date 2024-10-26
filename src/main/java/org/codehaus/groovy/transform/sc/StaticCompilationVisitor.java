@@ -136,7 +136,7 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         node.getInnerClasses().forEachRemaining(innerClass -> {
             boolean isSC = !isSkipMode(innerClass) && (isStaticallyCompiled(node) || hasAnnotation(innerClass, COMPILESTATIC_CLASSNODE));
             // GROOVY-10238: @CompileDynamic outer class, @CompileStatic inner class ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            innerClass.putNodeMetaData(STATIC_COMPILE_NODE, Boolean.valueOf(isSC));
+            innerClass.putNodeMetaData(STATIC_COMPILE_NODE, isSC);
             if (isSC && !anyMethodSkip(innerClass)) {
                 innerClass.putNodeMetaData(MopWriter.Factory.class, StaticCompilationMopWriter.FACTORY);
             }

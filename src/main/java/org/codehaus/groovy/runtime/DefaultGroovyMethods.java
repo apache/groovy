@@ -685,7 +685,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Boolean bool) {
-        return bool != null && bool.booleanValue();
+        return bool != null && bool;
     }
 
     /**
@@ -9699,7 +9699,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Number next(Number self) {
-        return NumberNumberPlus.plus(self, Integer.valueOf(1));
+        return NumberNumberPlus.plus(self, 1);
     }
 
     //--------------------------------------------------------------------------
@@ -10446,7 +10446,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Number previous(Number self) {
-        return NumberNumberMinus.minus(self, Integer.valueOf(1));
+        return NumberNumberMinus.minus(self, 1);
     }
 
     //--------------------------------------------------------------------------
