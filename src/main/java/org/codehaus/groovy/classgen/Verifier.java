@@ -103,6 +103,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
@@ -272,6 +273,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         };
     }
 
+    private static Set<ClassNode> getAllInterfaces(final ClassNode cn) {
+        return getInterfacesAndSuperInterfaces(cn);
+    }
+
     private static void checkForDuplicateInterfaces(final ClassNode cn) {
         ClassNode[] interfaces = cn.getInterfaces();
         int nInterfaces = interfaces.length;
@@ -282,6 +287,38 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             for (ClassNode in : interfaces) interfaceNames.add(in.getName());
             if (interfaceNames.size() != new HashSet<>(interfaceNames).size()) {
                 throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaceNames, cn);
+            }
+        }
+
+        // GROOVY-5106: check for same interface with different type argument(s)
+        List< Set<ClassNode> > allInterfaces = new ArrayList<>(nInterfaces + 1);
+        for (ClassNode in : interfaces) allInterfaces.add(getAllInterfaces(in));
+        allInterfaces.add(getAllInterfaces(cn.getUnresolvedSuperClass()));
+        if (nInterfaces == 1 && allInterfaces.get(1).isEmpty())
+            return; // no peer interface(s) to verify
+
+        for (int i = 0; i < nInterfaces; i += 1) {
+            for (ClassNode in : allInterfaces.get(i)) {
+                if (in.redirect().getGenericsTypes() != null) {
+                    for (int j = i + 1; j < nInterfaces + 1; j += 1) {
+                        Set<ClassNode> set = allInterfaces.get(j);
+                        if (set.contains(in)) {
+                            for (ClassNode t : set) { // find match and check generics
+                                if (t.equals(in)) {
+                                    String one = in.toString(false), two = t.toString(false);
+                                    if (!one.equals(two)) {
+                                        String warning = String.format(
+                                                "The %s %s is implemented more than once with different arguments: %s and %s",
+                                                (Traits.isTrait(in) ? "trait" : "interface"), in.getNameWithoutPackage(), one, two);
+                                        Token token = new Token(0, "", cn.getLineNumber(), cn.getColumnNumber()); // ASTNode to CSTNode
+                                        cn.getModule().getContext().getErrorCollector().addWarning(1, warning, token, cn.getModule().getContext());
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -622,7 +659,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     @Override
     public void visitMethod(final MethodNode node) {
-        // GROOVY-3712: if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
+        // GROOVY-3712: if it's a MOP method, it's an error as they aren't supposed to exist before ACG is invoked
         if (MopWriter.isMopMethod(node.getName())) {
             throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() + "(" + node.getName() + ")", classNode);
         }

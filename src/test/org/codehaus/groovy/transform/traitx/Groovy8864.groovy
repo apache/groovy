@@ -16,24 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class Groovy8864Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy8864 {
+    @Test
     void testGenericsAppliedToStaticMethodsForTraits() {
         assertScript '''
             trait Foo<T> {
                 static T INSTANCE
-                static T get(T arg) { 
-                    null
-               }
+                static T get(T t) {
+                }
+            }
+            class Bar implements Foo<Bar> {
             }
 
-            class Bar implements Foo<Bar> {}
-            assert Bar.getMethod("get", [Bar] as Class[]).returnType == Bar
+            assert Bar.getMethod("get", new Class[]{Bar}).returnType == Bar
             assert Bar.getDeclaredField("Foo__INSTANCE").type == Bar
-            assert Bar.getMethod("setINSTANCE", [Bar] as Class[])
+            assert Bar.getMethod("setINSTANCE", new Class[]{Bar})
             assert Bar.getMethod("getINSTANCE").returnType == Bar
         '''
     }

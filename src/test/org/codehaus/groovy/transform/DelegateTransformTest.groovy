@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
+import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
@@ -61,6 +62,37 @@ final class DelegateTransformTest {
 
             new ZipWrapper()
         '''
+    }
+
+    @Test // GROOVY-10439
+    void testDelegateImplementingInterfaceWithDifferentTypeArgumentThanOwner1() {
+        new CompilationUnit(new GroovyClassLoader(this.class.classLoader)).with {
+            addSource 'C', '''
+                class C extends ArrayList<String> {
+                    @Delegate List<Number> numbers // List<String> takes precedence
+                }
+            '''
+            compile()
+
+            assert errorCollector.errorCount == 0
+            assert errorCollector.warningCount == 0
+        }
+    }
+
+    @Test // GROOVY-10439
+    void testDelegateImplementingInterfaceWithDifferentTypeArgumentThanOwner2() {
+        new CompilationUnit(new GroovyClassLoader(this.class.classLoader)).with {
+            addSource 'C', '''
+                class C extends ArrayList<String> {
+                    @Delegate HashSet<Number> numbers // Set<Number> added; Verifier checks
+                }
+            '''
+            compile()
+
+            assert errorCollector.errorCount == 0
+            assert errorCollector.warningCount > 0
+            assert errorCollector.warnings[0].message == 'The interface Collection is implemented more than once with different arguments: java.util.Collection <java.lang.Number> and java.util.Collection <java.lang.String>'
+        }
     }
 
     @Test // GROOVY-5974

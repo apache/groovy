@@ -268,57 +268,71 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     @Override
+    public void visitField(final FieldNode node) {
+        Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
+        if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
+            genericParameterNames = Collections.emptyMap();
+        }
+
+        if (!fieldTypesChecked.contains(node)) {
+            resolveOrFail(node.getType(), node);
+        }
+        super.visitField(node);
+
+        genericParameterNames = oldNames;
+    }
+
+    @Override
+    public void visitProperty(final PropertyNode node) {
+        Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
+        if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
+            genericParameterNames = Collections.emptyMap();
+        }
+
+        resolveOrFail(node.getType(), node);
+        fieldTypesChecked.add(node.getField());
+
+        super.visitProperty(node);
+
+        genericParameterNames = oldNames;
+    }
+
+    private static boolean canSeeTypeVars(final int mods, final ClassNode node) {
+        return !Modifier.isStatic(mods) || Traits.isTrait(node); // GROOVY-8864, GROOVY-11508
+    }
+
+    @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
-        genericParameterNames = node.isStatic() && !Traits.isTrait(node.getDeclaringClass())
-                ? new HashMap<>() : new HashMap<>(genericParameterNames);
+        genericParameterNames =
+                canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())
+                    ? new HashMap<>(genericParameterNames) : new HashMap<>();
 
         resolveGenericsHeader(node.getGenericsTypes());
 
+        resolveOrFail(node.getReturnType(), node);
         for (Parameter p : node.getParameters()) {
             p.setInitialExpression(transform(p.getInitialExpression()));
-            resolveOrFail(p.getType(), p.getType());
+            ClassNode t = p.getType();
+            resolveOrFail(t, t);
             visitAnnotations(p);
         }
-        ClassNode[] exceptions = node.getExceptions();
-        for (ClassNode t : exceptions) {
-            resolveOrFail(t, node);
+        if (node.getExceptions() != null) {
+            for (ClassNode t : node.getExceptions()) {
+                resolveOrFail(t, t);
+            }
         }
-        resolveOrFail(node.getReturnType(), node);
 
         MethodNode oldCurrentMethod = currentMethod;
         currentMethod = node;
+
         super.visitConstructorOrMethod(node, isConstructor);
 
         currentMethod = oldCurrentMethod;
         genericParameterNames = oldNames;
         currentScope = oldScope;
-    }
-
-    @Override
-    public void visitField(final FieldNode node) {
-        ClassNode t = node.getType();
-        if (!fieldTypesChecked.contains(node)) {
-            resolveOrFail(t, node);
-        }
-        super.visitField(node);
-    }
-
-    @Override
-    public void visitProperty(final PropertyNode node) {
-        Map<GenericsTypeName, GenericsType> oldPNames = genericParameterNames;
-        if (node.isStatic() && !Traits.isTrait(node.getDeclaringClass())) {
-            genericParameterNames = new HashMap<>();
-        }
-
-        ClassNode t = node.getType();
-        resolveOrFail(t, node);
-        super.visitProperty(node);
-        fieldTypesChecked.add(node.getField());
-
-        genericParameterNames = oldPNames;
     }
 
     private void resolveOrFail(final ClassNode type, final ASTNode node) {
@@ -731,7 +745,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (importNode != null && importNode != currImportNode) {
                     // static alias only for inner classes and must be at end of chain
                     ClassNode tmp = new ConstructedNestedClass(importNode.getType(), importNode.getFieldName());
-                    if (resolve(tmp, false, false, true) && (tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
                         type.setRedirect(tmp.redirect());
                         return true;
                     }
@@ -752,7 +766,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // At this point we know that we have a match for pname. This may
                     // mean, that name[pname.length()..<-1] is a static inner class.
                     // For this the rest of the name does not need any dots in its name.
-                    // It is either completely a inner static class or it is not.
+                    // It is either completely an inner static class or it is not.
                     // Since we do not want to have useless lookups we create the name
                     // completely and use a ConstructedClassWithPackage to prevent lookups against the package.
                     String className = aliasedNode.getNameWithoutPackage() + "$" + name.substring(pname.length() + 1).replace('.', '$');
@@ -813,7 +827,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 // check package this class is defined in. The usage of ConstructedClassWithPackage here
                 // means, that the module package will not be involved when the
                 // compiler tries to find an inner class.
-                ClassNode tmp =  new ConstructedClassWithPackage(module.getPackageName(), name);
+                ClassNode tmp = new ConstructedClassWithPackage(module.getPackageName(), name);
                 if (resolve(tmp, false, false, false)) {
                     ambiguousClass(type, tmp, name);
                     return true;
@@ -823,7 +837,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (ImportNode importNode : module.getStaticImports().values()) {
                 if (importNode.getFieldName().equals(name)) {
                     ClassNode tmp = new ConstructedNestedClass(importNode.getType(), name);
-                    if (resolve(tmp, false, false, true) && (tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
                         type.setRedirect(tmp.redirect());
                         return true;
                     }
@@ -831,7 +845,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
             for (ImportNode importNode : module.getStaticStarImports().values()) {
                 ClassNode tmp = new ConstructedNestedClass(importNode.getType(), name);
-                if (resolve(tmp, false, false, true) && (tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
                     ambiguousClass(type, tmp, name);
                     return true;
                 }
@@ -840,7 +854,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (ImportNode importNode : module.getStarImports()) {
                 if (importNode.getType() != null) {
                     ClassNode tmp = new ConstructedNestedClass(importNode.getType(), name);
-                    if (resolve(tmp, false, false, true) && (tmp.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                    if (resolve(tmp, false, false, true) && Modifier.isStatic(tmp.getModifiers())) {
                         ambiguousClass(type, tmp, name);
                         return true;
                     }
@@ -862,7 +876,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         // We do not need to check instances of LowerCaseClass
         // to be a Class, because unless there was an import for
-        // for this we do not lookup these cases. This was a decision
+        // this we do not look up these cases. This was a decision
         // made on the mailing list. To ensure we will not visit this
         // method again we set a NO_CLASS for this name
         if (type instanceof LowerCaseClass) {
@@ -951,7 +965,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             doInitialClassTest = classNameInfo.getV2();
         }
 
-        if (null == name || name.length() == 0) return null;
+        if (name == null || name.length() == 0) return null;
 
         return name.toString();
     }
@@ -1089,7 +1103,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 addError("The class '" + type.getName() + "' needs to be an outer class of '" +
                         currentClass.getName() + "' when using '.this' or '.super'.", expression);
             }
-            if ((currentClass.getModifiers() & Opcodes.ACC_STATIC) == 0) return;
+            if (!Modifier.isStatic(currentClass.getModifiers())) return;
             if (currentScope != null && !currentScope.isInStaticContext()) return;
             addError("The usage of 'Class.this' and 'Class.super' within static nested class '" +
                     currentClass.getName() + "' is not allowed in a static context.", expression);
@@ -1100,13 +1114,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         visitAnnotations(ve);
         Variable v = ve.getAccessedVariable();
 
-        if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
-            /*
-             *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to
-             *  resolve its type. Variable type resolve should proceed only if the variable is being declared.
-             */
-            return ve;
-        }
         if (v instanceof DynamicVariable) {
             String name = ve.getName();
             ClassNode t = ClassHelper.make(name);
@@ -1132,8 +1139,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 for (VariableScope scope = currentScope; scope != null && !scope.isRoot(); scope = scope.getParent()) {
                     if (scope.removeReferencedClassVariable(ve.getName()) == null) break;
                 }
-                return new ClassExpression(t);
+                ClassExpression ce = new ClassExpression(t);
+                ce.setSourcePosition(ve);
+                return ce;
             }
+        } else if (!checkingVariableTypeInDeclaration) {
+            // GROOVY-4009: When a normal variable is simply being used, there is no need to try to
+            // resolve its type. Variable type resolve should proceed only if the variable is being declared.
+            return ve;
         }
         resolveOrFail(ve.getType(), ve);
         ClassNode origin = ve.getOriginType();
@@ -1206,14 +1219,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformClosureExpression(final ClosureExpression ce) {
         boolean oldInClosure = inClosure;
         inClosure = true;
-        for (Parameter para : getParametersSafe(ce)) {
-            ClassNode t = para.getType();
-            resolveOrFail(t, ce);
-            visitAnnotations(para);
-            if (para.hasInitialExpression()) {
-                para.setInitialExpression(transform(para.getInitialExpression()));
+        for (Parameter p : getParametersSafe(ce)) {
+            ClassNode t = p.getType();
+            resolveOrFail(t, t);
+            visitAnnotations(p);
+            if (p.hasInitialExpression()) {
+                p.setInitialExpression(transform(p.getInitialExpression()));
             }
-            visitAnnotations(para);
+            visitAnnotations(p);
         }
 
         Statement code = ce.getCode();
