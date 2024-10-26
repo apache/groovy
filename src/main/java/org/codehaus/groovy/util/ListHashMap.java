@@ -39,7 +39,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
     private final K[] keys;
     private final V[] values;
     private Map<K,V> innerMap;
-    private volatile int size;
+    private int size;
 
     public ListHashMap() {
         this(3);
