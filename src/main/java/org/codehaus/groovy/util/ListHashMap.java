@@ -20,6 +20,7 @@ package org.codehaus.groovy.util;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -200,7 +201,7 @@ public class ListHashMap<K,V> implements Map<K,V> {
     }
 
     private Map<K,V> toMap() {
-        Map<K,V> m = new java.util.HashMap<>();
+        Map<K,V> m = new HashMap<>((int) (size / 0.75) + 1);
         for (int i = 0; i < size; i += 1) {
             m.put(keys[i], values[i]);
         }
