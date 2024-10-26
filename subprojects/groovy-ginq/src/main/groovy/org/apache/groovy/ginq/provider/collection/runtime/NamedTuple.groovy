@@ -32,17 +32,24 @@ import groovy.transform.stc.POJO
 @POJO
 class NamedTuple<E> extends Tuple<E> {
     private static final long serialVersionUID = -5067092453136522209L
-    private final Map<String, E> data = new LinkedHashMap<>()
+    private final Map<String, E> data
 
     NamedTuple(List<E> elementList, List<String> nameList) {
         super(elementList as E[])
 
-        int nameListSize = nameList.size()
+        final int nameListSize = nameList.size()
+        final int elementListSize = elementList.size()
+
+        if (nameListSize != elementListSize) {
+            throw new IllegalArgumentException("elements(size: $elementListSize) and names(size: $nameListSize) should have the same size")
+        }
         if (nameListSize != new HashSet<>(nameList).size()) {
             throw new IllegalArgumentException("names should be unique: $nameList")
         }
 
-        for (int i = 0, n = nameListSize; i < n; i += 1) {
+        data = new LinkedHashMap<>((int) (nameListSize / 0.75) + 1)
+
+        for (int i = 0; i < nameListSize; i += 1) {
             data.put(nameList.get(i), elementList.get(i))
         }
     }

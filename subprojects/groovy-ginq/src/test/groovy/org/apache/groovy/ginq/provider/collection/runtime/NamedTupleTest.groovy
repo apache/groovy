@@ -41,4 +41,15 @@ class NamedTupleTest {
 
         assert err.toString().contains('names should be unique')
     }
+
+    @Test
+    void testElementsAndNamesSizeMismatch() {
+        def err = shouldFail '''
+            import org.apache.groovy.ginq.provider.collection.runtime.NamedTuple
+
+            new NamedTuple([1, 2, 3], ['a', 'b'])
+        '''
+
+        assert err.toString().contains('elements(size: 3) and names(size: 2) should have the same size')
+    }
 }
