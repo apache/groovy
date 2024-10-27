@@ -5871,7 +5871,9 @@ out:    for (ClassNode type : todo) {
 
     protected boolean typeCheckMethodsWithGenericsOrFail(final ClassNode receiver, final ClassNode[] arguments, final MethodNode candidateMethod, final Expression location) {
         if (!typeCheckMethodsWithGenerics(receiver, arguments, candidateMethod)) {
-            ClassNode r = receiver, at[] = arguments; MethodNode m = candidateMethod;
+            ClassNode r = receiver;
+            ClassNode[] at = arguments;
+            MethodNode m = candidateMethod;
             if (candidateMethod instanceof ExtensionMethodNode) {
                 m = ((ExtensionMethodNode) candidateMethod).getExtensionMethodNode();
                 r = m.getDeclaringClass();
