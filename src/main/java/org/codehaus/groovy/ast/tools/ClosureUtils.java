@@ -53,7 +53,7 @@ public class ClosureUtils {
     public static boolean hasSingleCharacterArg(final Closure c) {
         if (c.getMaximumNumberOfParameters() != 1) return false;
         String typeName = c.getParameterTypes()[0].getName();
-        return typeName.equals("char") || typeName.equals("java.lang.Character");
+        return "char".equals(typeName) || "java.lang.Character".equals(typeName);
     }
 
     /**
@@ -64,7 +64,7 @@ public class ClosureUtils {
     public static boolean hasSingleStringArg(final Closure c) {
         if (c.getMaximumNumberOfParameters() != 1) return false;
         String typeName = c.getParameterTypes()[0].getName();
-        return typeName.equals("java.lang.String");
+        return "java.lang.String".equals(typeName);
     }
 
     /**

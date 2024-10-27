@@ -216,7 +216,7 @@ public class Java9 extends Java8 {
 
     private Optional<CachedMethod> transformDirectAccess(final Class<?> metaClass, final CachedMethod metaMethod, final Class<?> caller) {
         Class<?>[] paramTypes = metaMethod.getPT();
-        if (metaClass == BigInteger.class && paramTypes.length == 1 && metaMethod.getName().equals("multiply")) {
+        if (metaClass == BigInteger.class && paramTypes.length == 1 && "multiply".equals(metaMethod.getName())) {
             Class<?> type = paramTypes[0];
             if (type == Long.class || type == long.class
                     || type == Integer.class || type == int.class

@@ -501,7 +501,7 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
                 Expression oe = prop.getObjectExpression();
                 if (oe instanceof ClassExpression) {
                     ClassExpression ce = (ClassExpression) oe;
-                    if (ce.getType().getName().equals("groovy.transform.RecordTypeMode")) {
+                    if ("groovy.transform.RecordTypeMode".equals(ce.getType().getName())) {
                         return RecordTypeMode.valueOf(prop.getPropertyAsString());
                     }
                 }

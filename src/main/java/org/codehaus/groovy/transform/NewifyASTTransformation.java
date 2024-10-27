@@ -387,7 +387,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         final Expression obj = mce.getObjectExpression();
         final Expression meth = mce.getMethod();
         return (obj instanceof ClassExpression && meth instanceof ConstantExpression
-                && ((ConstantExpression) meth).getValue().equals("new"));
+                && "new".equals(((ConstantExpression) meth).getValue()));
     }
 
     private Expression transformMethodCall(MethodCallExpression mce, Expression argsExp) {

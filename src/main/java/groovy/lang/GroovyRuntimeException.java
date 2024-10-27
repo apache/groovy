@@ -85,7 +85,7 @@ public class GroovyRuntimeException extends RuntimeException {
         if (module != null) {
             answer += module.getDescription();
         }
-        if (answer.equals(". ")) {
+        if (". ".equals(answer)) {
             return "";
         }
         return answer;

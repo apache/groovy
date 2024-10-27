@@ -848,7 +848,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             String property = ((PropertyExpression) expr).getPropertyAsString();
             // the class property stops resolving, dynamic property names too
-            if (property == null || property.equals("class")) {
+            if (property == null || "class".equals(property)) {
                 return null;
             }
             Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, property);
@@ -898,7 +898,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         String propertyName = classProperty.getPropertyAsString();
 
         // if it's "Type.foo.bar" or something else return PropertyExpression
-        if (propertyName == null || !propertyName.equals("class")) return pe;
+        if (propertyName == null || !"class".equals(propertyName)) return pe;
         // if it's "Type.class" or "pack.Type.class" return ClassExpression
         ce.setSourcePosition(classProperty);
         if (stack.isEmpty()) return ce;
@@ -973,7 +973,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (expression.isImplicitThis()) return;
         String prop = expression.getPropertyAsString();
         if (prop == null) return;
-        if (!prop.equals("this") && !prop.equals("super")) return;
+        if (!"this".equals(prop) && !"super".equals(prop)) return;
 
         ClassNode type = expression.getObjectExpression().getType();
         if (expression.getObjectExpression() instanceof ClassExpression && !isSuperCallToDefaultMethod(expression) && !isThisCallToPrivateInterfaceMethod(expression)) {
@@ -1003,13 +1003,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean isSuperCallToDefaultMethod(PropertyExpression expression) {
         // a more sophisticated check might be required in the future
         ClassExpression clazzExpression = (ClassExpression) expression.getObjectExpression();
-        return clazzExpression.getType().isInterface() && expression.getPropertyAsString().equals("super");
+        return clazzExpression.getType().isInterface() && "super".equals(expression.getPropertyAsString());
     }
 
     private boolean isThisCallToPrivateInterfaceMethod(PropertyExpression expression) {
         // a more sophisticated check might be required in the future
         ClassExpression clazzExpression = (ClassExpression) expression.getObjectExpression();
-        return clazzExpression.getType().isInterface() && expression.getPropertyAsString().equals("this");
+        return clazzExpression.getType().isInterface() && "this".equals(expression.getPropertyAsString());
     }
 
     protected Expression transformVariableExpression(final VariableExpression ve) {

@@ -362,9 +362,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         Expression object = expression.getObjectExpression();
         if (!(object instanceof VariableExpression)) return;
         VariableExpression ve = (VariableExpression) object;
-        if (!ve.getName().equals("this")) return;
+        if (!"this".equals(ve.getName())) return;
         String name = expression.getPropertyAsString();
-        if (name == null || name.equals("class")) return;
+        if (name == null || "class".equals(name)) return;
         Variable member = findClassMember(currentClass, name);
         if (member == null) return;
         checkVariableContextAccess(member, expression);

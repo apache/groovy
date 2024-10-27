@@ -43,7 +43,7 @@ public class MixinASTTransformation extends AbstractASTTransformation {
         init(nodes, source);
         AnnotationNode node = (AnnotationNode) nodes[0];
         AnnotatedNode target = (AnnotatedNode) nodes[1];
-        if (!node.getClassNode().getName().equals("groovy.lang.Mixin"))
+        if (!"groovy.lang.Mixin".equals(node.getClassNode().getName()))
             return;
 
         Expression value = node.getMember("value");

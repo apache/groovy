@@ -619,7 +619,7 @@ public abstract class Selector {
             }
             else if (!mci.hasCustomInvokeMethod()) {
                 String name = this.name;
-                if (name.equals("call") && receiver instanceof GeneratedClosure) {
+                if ("call".equals(name) && receiver instanceof GeneratedClosure) {
                     name = "doCall";
                 }
                 method = mci.getMethodWithCaching(selectionBase, name, newArgs, false);
@@ -639,7 +639,7 @@ public abstract class Selector {
             isCategoryMethod = (method instanceof CategoryMethod);
 
             if (metaMethod instanceof NumberNumberMetaMethod
-                    || (method instanceof GeneratedMetaMethod && (name.equals("next") || name.equals("previous")))) {
+                    || (method instanceof GeneratedMetaMethod && ("next".equals(name) || "previous".equals(name)))) {
                 if (LOG_ENABLED) LOG.info("meta method is number method");
                 if (IndyMath.chooseMathMethod(this, metaMethod)) {
                     catchException = false;
@@ -666,7 +666,7 @@ public abstract class Selector {
                 try {
                     var declaringClass = cm.getDeclaringClass().getTheClass();
                     int parameterCount = cm.getParamsCount();
-                    if (parameterCount == 0 && name.equals("clone") && declaringClass == Object.class) {
+                    if (parameterCount == 0 && "clone".equals(name) && declaringClass == Object.class) {
                         var receiverClass = getCorrectedReceiver().getClass();
                         if (receiverClass.isArray()) { // GROOVY-10733, et al.
                             handle = MethodHandles.publicLookup().findVirtual(receiverClass, "clone", MethodType.methodType(Object.class));
@@ -675,7 +675,7 @@ public abstract class Selector {
                                                                     .bindTo(new CloneNotSupportedException());
                             handle = MethodHandles.dropArguments(handle, 0, Object.class); // discard receiver
                         }
-                    } else if (parameterCount == 1 && name.equals("forName") && declaringClass == Class.class) {
+                    } else if (parameterCount == 1 && "forName".equals(name) && declaringClass == Class.class) {
                         handle = MethodHandles.insertArguments(CLASS_FOR_NAME, 1, Boolean.TRUE, sender.getClassLoader());
                     } else {
                         handle = unreflect(cm.getCachedMethod());

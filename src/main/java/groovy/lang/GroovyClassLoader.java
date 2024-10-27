@@ -774,7 +774,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private static boolean isFile(final URL ret) {
-        return ret != null && ret.getProtocol().equals("file");
+        return ret != null && "file".equals(ret.getProtocol());
     }
 
     private static File getFileForUrl(final URL ret, final String filename) {

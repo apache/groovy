@@ -204,7 +204,7 @@ public class ImmutablePropertyUtils {
     }
 
     private static String prettyTypeName(final String name) {
-        return name.equals("java.lang.Object") ? name + " or def" : name;
+        return "java.lang.Object".equals(name) ? name + " or def" : name;
     }
 
     public static boolean isKnownImmutableType(final ClassNode fieldType, final List<String> knownImmutableClasses) {

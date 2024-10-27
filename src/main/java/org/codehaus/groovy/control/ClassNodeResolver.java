@@ -337,7 +337,7 @@ public class ClassNodeResolver {
             long lastMod;
             // Special handling for file:// protocol, as getLastModified() often reports
             // incorrect results (-1)
-            if (source.getProtocol().equals("file")) {
+            if ("file".equals(source.getProtocol())) {
                 // Coerce the file URL to a File
                 String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
                 File file = new File(path);

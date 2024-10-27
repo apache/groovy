@@ -200,7 +200,7 @@ public class Java8 implements VMPlugin {
         ClassNode[] lowers = configureTypes(wildcardType.getLowerBounds());
         ClassNode[] uppers = configureTypes(wildcardType.getUpperBounds());
         // beware of [Object] upper bounds; often it's <?> or <? super T>
-        if (lowers != null || wildcardType.getTypeName().equals("?")) {
+        if (lowers != null || "?".equals(wildcardType.getTypeName())) {
             uppers = null;
         }
 
@@ -257,7 +257,7 @@ public class Java8 implements VMPlugin {
         for (AnnotationNode an : annotations) {
             plugin.configureAnnotationNodeFromDefinition(an, node);
         }
-        if (!node.getClassNode().getName().equals("java.lang.annotation.Retention")) {
+        if (!"java.lang.annotation.Retention".equals(node.getClassNode().getName())) {
             plugin.configureAnnotationNodeFromDefinition(node, node);
         }
     }

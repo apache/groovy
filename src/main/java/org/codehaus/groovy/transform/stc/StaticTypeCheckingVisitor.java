@@ -1554,7 +1554,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         enclosingTypes.addAll(enclosingTypes.iterator().next().getOuterClasses());
 
         if (objectExpression instanceof ClassExpression) {
-            if (propertyName.equals("this")) {
+            if ("this".equals(propertyName)) {
                 // handle "Outer.this" for any level of nesting
                 ClassNode outer = getType(objectExpression).getGenericsTypes()[0].getType();
 
@@ -1569,7 +1569,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     storeType(pexp, outer);
                     return true;
                 }
-            } else if (propertyName.equals("super")) {
+            } else if ("super".equals(propertyName)) {
                 // GROOVY-8299: handle "Iface.super" for interface default methods
                 ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
                 ClassNode accessingType = getType(objectExpression).getGenericsTypes()[0].getType();
@@ -1593,7 +1593,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
 
-            if (receiverType.isArray() && propertyName.equals("length")) {
+            if (receiverType.isArray() && "length".equals(propertyName)) {
                 pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
                 storeType(pexp, int_TYPE);
                 if (visitor != null) {
@@ -1671,7 +1671,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     getter = current.getGetterMethod(getterName);
                     getter = allowStaticAccessToMember(getter, staticOnly);
                 }
-                if (getter != null && ((publicOnly && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty")))
+                if (getter != null && ((publicOnly && (!getter.isPublic() || "class".equals(propertyName) || "empty".equals(propertyName)))
                         // GROOVY-11319:
                         || !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers()))) {
                     getter = null;
@@ -2934,7 +2934,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             return;
         }
         ClassNode type = call.getOwnerType();
-        if (type.isEnum() && name.equals("$INIT")) { // GROOVY-10845: $INIT(Object[]) delegates to constructor
+        if (type.isEnum() && "$INIT".equals(name)) { // GROOVY-10845: $INIT(Object[]) delegates to constructor
             Expression target = typeCheckingContext.getEnclosingBinaryExpression().getLeftExpression();
             ConstructorCallExpression cce = new ConstructorCallExpression(type, call.getArguments());
             cce.setSourcePosition(((FieldExpression) target).getField());
@@ -3663,7 +3663,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             ClassNode[] args = getArgumentTypes(argumentList);
             boolean functorsVisited = false;
             if (!isThisObjectExpression && receiver.equals(CLOSURE_TYPE)
-                    && (name.equals("call") || name.equals("doCall"))) {
+                    && ("call".equals(name) || "doCall".equals(name))) {
                 if (objectExpression instanceof VariableExpression) {
                     Variable variable = findTargetVariable((VariableExpression) objectExpression);
                     if (variable instanceof ASTNode) {
@@ -3707,7 +3707,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 // GROOVY-11386:
                 if (isThisObjectExpression && call.isImplicitThis()
                     && typeCheckingContext.getEnclosingClosure() != null
-                    && !name.equals("call") && !name.equals("doCall")) { // GROOVY-9662
+                    && !"call".equals(name) && !"doCall".equals(name)) { // GROOVY-9662
                     mn = CLOSURE_TYPE.getMethods(name);
                     if (!mn.isEmpty()) {
                         receiver = CLOSURE_TYPE.getPlainNodeReference();
@@ -3737,7 +3737,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                         }
                     }
-                    if (mn.isEmpty() && !name.equals("call")) {
+                    if (mn.isEmpty() && !"call".equals(name)) {
                         // GROOVY-5705, GROOVY-5881, GROOVY-6324, GROOVY-11366: closure property
                         var property = propX(objectExpression, call.getMethod(), call.isSafe());
                         property.setImplicitThis(call.isImplicitThis());
@@ -3969,7 +3969,7 @@ out:                if (mn.size() != 1) {
         List<Receiver<String>> owners = new ArrayList<>();
         if (typeCheckingContext.delegationMetadata != null
                 && objectExpression instanceof VariableExpression
-                && ((Variable) objectExpression).getName().equals("owner")
+                && "owner".equals(((Variable) objectExpression).getName())
                 && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
             owners.add(new Receiver<>(receiver, "owner")); // if nested, Closure is the first owner
             List<Receiver<String>> thisType = new ArrayList<>(2); // and the enclosing class is the
@@ -4967,7 +4967,7 @@ trying: for (ClassNode[] signature : signatures) {
      */
     protected List<MethodNode> findMethodsWithGenerated(final ClassNode receiver, final String name) {
         if (receiver.isArray()) {
-            if (name.equals("clone")) { // GROOVY-10319: array clone -- <https://docs.oracle.com/javase/specs/jls/se8/html/jls-10.html#jls-10.7>
+            if ("clone".equals(name)) { // GROOVY-10319: array clone -- <https://docs.oracle.com/javase/specs/jls/se8/html/jls-10.html#jls-10.7>
                 MethodNode clone = new MethodNode("clone", Opcodes.ACC_PUBLIC, OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
                 clone.setDeclaringClass(OBJECT_TYPE); // retain Object for declaringClass and returnType
                 clone.setNodeMetaData(INFERRED_RETURN_TYPE, receiver);
@@ -5283,7 +5283,7 @@ trying: for (ClassNode[] signature : signatures) {
                 if (parameters != null) {
                     final int n = parameters.length;
                     String parameterName = parameter.getName();
-                    if (n == 0 && parameterName.equals("it")) {
+                    if (n == 0 && "it".equals(parameterName)) {
                         return closureParamTypes.length > 0 ? closureParamTypes[0] : null;
                     }
                     for (int i = 0; i < n; i += 1) {

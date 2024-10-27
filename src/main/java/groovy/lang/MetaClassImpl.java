@@ -1220,7 +1220,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            if (arguments.length == 0 && methodName.equals("clone") && method.getDeclaringClass() == ReflectionCache.OBJECT_CLASS) {
+            if (arguments.length == 0 && "clone".equals(methodName) && method.getDeclaringClass() == ReflectionCache.OBJECT_CLASS) {
                 throw method.processDoMethodInvokeException(new CloneNotSupportedException(), object, arguments);
             }
             MetaMethod transformedMetaMethod = VM_PLUGIN.transformMetaMethod(this, method);
@@ -3331,7 +3331,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private static boolean isGenericGetMethod(MetaMethod method) {
-        if (method.getName().equals("get")) {
+        if ("get".equals(method.getName())) {
             CachedClass[] parameterTypes = method.getParameterTypes();
             return parameterTypes.length == 1 && parameterTypes[0].getTheClass() == String.class;
         }

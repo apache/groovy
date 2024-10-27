@@ -539,7 +539,7 @@ public class DefaultTypeTransformation {
         if (value instanceof Class) {
             Class superclass = ((Class) value).getSuperclass();
             while (superclass != null) {
-                if (superclass.getName().equals("java.lang.Enum")) {
+                if ("java.lang.Enum".equals(superclass.getName())) {
                     return true;
                 }
                 superclass = superclass.getSuperclass();
@@ -899,7 +899,7 @@ public class DefaultTypeTransformation {
         int[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[I")) {
+        if ("[I".equals(a.getClass().getName())) {
             ans = (int[]) a;
         } else {
             Object[] ia = (Object[]) a;

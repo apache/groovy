@@ -263,9 +263,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         while (consideredClass!= null) {
             for (MethodNode method : consideredClass.getMethods()) {
                 // just check length, MOP will match it up
-                foundAdd = foundAdd || method.getName().equals("addPropertyChangeListener") && method.getParameters().length == 1;
-                foundRemove = foundRemove || method.getName().equals("removePropertyChangeListener") && method.getParameters().length == 1;
-                foundFire = foundFire || method.getName().equals("firePropertyChange") && method.getParameters().length == 3;
+                foundAdd = foundAdd || "addPropertyChangeListener".equals(method.getName()) && method.getParameters().length == 1;
+                foundRemove = foundRemove || "removePropertyChangeListener".equals(method.getName()) && method.getParameters().length == 1;
+                foundFire = foundFire || "firePropertyChange".equals(method.getName()) && method.getParameters().length == 3;
                 if (foundAdd && foundRemove && foundFire) {
                     return false;
                 }

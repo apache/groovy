@@ -259,7 +259,7 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         }
         // GROOVY-8433: Category transform implies static method
         isStatic = isStatic || innerClass.getOuterClass().getAnnotations().stream()
-            .anyMatch(a -> a.getClassNode().getName().equals("groovy.lang.Category"));
+            .anyMatch(a -> "groovy.lang.Category".equals(a.getClassNode().getName()));
         return isStatic;
     }
 

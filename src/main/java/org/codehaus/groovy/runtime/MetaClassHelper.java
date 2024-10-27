@@ -297,7 +297,7 @@ public class MetaClassHelper {
         if (GeneratedClosure.class.isAssignableFrom(closureOrLambdaClass)) {
             // determine parameter count from generated "doCall" method(s)
             for (Method m : closureOrLambdaClass.getDeclaredMethods()) {
-                if (m.getName().equals("doCall")) {
+                if ("doCall".equals(m.getName())) {
                     if (parameterCount != -2) {
                         parameterCount = -1; // 0 or 1
                     } else {
@@ -808,7 +808,7 @@ public class MetaClassHelper {
     }
 
     public static boolean isGenericSetMethod(MetaMethod method) {
-        return (method.getName().equals("set"))
+        return ("set".equals(method.getName()))
                 && method.getParameterTypes().length == 2;
     }
 

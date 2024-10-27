@@ -738,7 +738,7 @@ public class CompilerConfiguration {
             numeric = Integer.parseInt(text);
         } catch (NumberFormatException e) {
             text = text.toLowerCase();
-            if (text.equals("none")) {
+            if ("none".equals(text)) {
                 numeric = WarningMessage.NONE;
             } else if (text.startsWith("likely")) {
                 numeric = WarningMessage.LIKELY_ERRORS;
@@ -765,13 +765,13 @@ public class CompilerConfiguration {
         if (text != null) setTargetBytecode(text);
 
         text = configuration.getProperty("groovy.parameters");
-        if (text != null) setParameters(text.equalsIgnoreCase("true"));
+        if (text != null) setParameters("true".equalsIgnoreCase(text));
 
         text = configuration.getProperty("groovy.preview.features");
-        if (text != null) setPreviewFeatures(text.equalsIgnoreCase("true"));
+        if (text != null) setPreviewFeatures("true".equalsIgnoreCase(text));
 
         text = configuration.getProperty("groovy.log.classgen");
-        if (text != null) setLogClassgen(text.equalsIgnoreCase("true"));
+        if (text != null) setLogClassgen("true".equalsIgnoreCase(text));
 
         text = configuration.getProperty("groovy.log.classgen.stacktrace.max.depth");
         if (text != null) {
@@ -787,10 +787,10 @@ public class CompilerConfiguration {
         if (text != null) setClasspath(text);
 
         text = configuration.getProperty("groovy.output.verbose");
-        if (text != null) setVerbose(text.equalsIgnoreCase("true"));
+        if (text != null) setVerbose("true".equalsIgnoreCase(text));
 
         text = configuration.getProperty("groovy.output.debug");
-        if (text != null) setDebug(text.equalsIgnoreCase("true"));
+        if (text != null) setDebug("true".equalsIgnoreCase(text));
 
         numeric = 10;
         text = configuration.getProperty("groovy.errors.tolerance", "10");
@@ -808,7 +808,7 @@ public class CompilerConfiguration {
         if (text != null) setScriptBaseClass(text);
 
         text = configuration.getProperty("groovy.recompile");
-        if (text != null) setRecompileGroovySource(text.equalsIgnoreCase("true"));
+        if (text != null) setRecompileGroovySource("true".equalsIgnoreCase(text));
 
         numeric = 100;
         text = configuration.getProperty("groovy.recompile.minimumIntervall"); // legacy misspelling

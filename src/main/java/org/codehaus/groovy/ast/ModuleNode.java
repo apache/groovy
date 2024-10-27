@@ -488,7 +488,7 @@ public class ModuleNode extends ASTNode {
 
     private MethodNode findRun() {
         for (MethodNode node : methods) {
-            if (node.getName().equals("run") && node.getParameters().length == 0) {
+            if ("run".equals(node.getName()) && node.getParameters().length == 0) {
                 return node;
             }
         }
@@ -505,14 +505,14 @@ public class ModuleNode extends ASTNode {
         boolean foundStatic = false;
         MethodNode result = null;
         for (MethodNode node : methods) {
-            if (node.getName().equals("main") && !node.isPrivate()) {
+            if ("main".equals(node.getName()) && !node.isPrivate()) {
                 int numParams = node.getParameters().length;
                 if (numParams < 2) {
                     ClassNode argType = numParams > 0 ? node.getParameters()[0].getType() : null;
                     ClassNode retType = node.getReturnType();
 
-                    boolean argTypeMatches = argType == null || argType.getNameWithoutPackage().equals("Object") || (argType.isArray() && argType.getComponentType().getNameWithoutPackage().equals("String"));
-                    boolean retTypeMatches = ClassHelper.isPrimitiveVoid(retType) || retType.getNameWithoutPackage().equals("Object");
+                    boolean argTypeMatches = argType == null || "Object".equals(argType.getNameWithoutPackage()) || (argType.isArray() && "String".equals(argType.getComponentType().getNameWithoutPackage()));
+                    boolean retTypeMatches = ClassHelper.isPrimitiveVoid(retType) || "Object".equals(retType.getNameWithoutPackage());
                     if (retTypeMatches && argTypeMatches) {
                         if (node.isStatic() ? foundStatic : foundInstance) {
                             throw new RuntimeException("Repetitive main method found.");

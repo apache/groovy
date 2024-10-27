@@ -297,8 +297,8 @@ public class CompileStack {
      * @return the normal variable or null if not found (and <code>mustExist</code> not true)
      */
     public BytecodeVariable getVariable(final String variableName, final boolean mustExist) {
-        if (variableName.equals("this")) return BytecodeVariable.THIS_VARIABLE;
-        if (variableName.equals("super")) return BytecodeVariable.SUPER_VARIABLE;
+        if ("this".equals(variableName)) return BytecodeVariable.THIS_VARIABLE;
+        if ("super".equals(variableName)) return BytecodeVariable.SUPER_VARIABLE;
         BytecodeVariable v = stackVariables.get(variableName);
         if (v == null && mustExist)
             throw new GroovyBugError("tried to get a variable with the name " + variableName + " as stack variable, but a variable with this name was not created");

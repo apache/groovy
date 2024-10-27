@@ -131,7 +131,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
                 pojo = (boolean) pojoMember;
             }
             boolean useCanEqual = !memberHasValue(anno, "useCanEqual", false);
-            if (callSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
+            if (callSuper && "java.lang.Object".equals(cNode.getSuperClass().getName())) {
                 addError("Error during " + MY_TYPE_NAME + " processing: callSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
             boolean includeFields = memberHasValue(anno, "includeFields", true);

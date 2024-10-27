@@ -319,7 +319,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         String line;
         while (true) {
             System.out.print("groovy> ");
-            if ((line = br.readLine()) == null || line.equals("quit")) {
+            if ((line = br.readLine()) == null || "quit".equals(line)) {
                 break;
             }
             try {

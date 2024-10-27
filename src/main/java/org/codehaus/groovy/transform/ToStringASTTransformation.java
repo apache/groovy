@@ -113,7 +113,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
             if (includes != null && includes.contains("super")) {
                 includeSuper = true;
             }
-            if (includeSuper && cNode.getSuperClass().getName().equals("java.lang.Object")) {
+            if (includeSuper && "java.lang.Object".equals(cNode.getSuperClass().getName())) {
                 addError("Error during " + MY_TYPE_NAME + " processing: includeSuper=true but '" + cNode.getName() + "' has no super class.", anno);
             }
             boolean includeNames = memberHasValue(anno, "includeNames", true);

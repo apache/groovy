@@ -318,7 +318,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             Expression oe = prop.getObjectExpression();
             if (oe instanceof ClassExpression) {
                 ClassExpression ce = (ClassExpression) oe;
-                if (ce.getType().getName().equals("groovy.transform.AutoCloneStyle")) {
+                if ("groovy.transform.AutoCloneStyle".equals(ce.getType().getName())) {
                     return AutoCloneStyle.valueOf(prop.getPropertyAsString());
                 }
             }

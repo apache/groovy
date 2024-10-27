@@ -4014,7 +4014,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         boolean groovyObject = self instanceof GroovyObject;
         while (klass != null) {
             for (Field field : klass.getDeclaredFields()) {
-                if (Modifier.isStatic(field.getModifiers()) || (groovyObject && field.getName().equals("metaClass"))) {
+                if (Modifier.isStatic(field.getModifiers()) || (groovyObject && "metaClass".equals(field.getName()))) {
                     continue;
                 }
                 buffer.append(" ");

@@ -257,9 +257,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         while (consideredClass!= null) {
             for (MethodNode method : consideredClass.getMethods()) {
                 // just check length, MOP will match it up
-                foundAdd = foundAdd || method.getName().equals("addVetoableChangeListener") && method.getParameters().length == 1;
-                foundRemove = foundRemove || method.getName().equals("removeVetoableChangeListener") && method.getParameters().length == 1;
-                foundFire = foundFire || method.getName().equals("fireVetoableChange") && method.getParameters().length == 3;
+                foundAdd = foundAdd || "addVetoableChangeListener".equals(method.getName()) && method.getParameters().length == 1;
+                foundRemove = foundRemove || "removeVetoableChangeListener".equals(method.getName()) && method.getParameters().length == 1;
+                foundFire = foundFire || "fireVetoableChange".equals(method.getName()) && method.getParameters().length == 3;
                 if (foundAdd && foundRemove && foundFire) {
                     return false;
                 }

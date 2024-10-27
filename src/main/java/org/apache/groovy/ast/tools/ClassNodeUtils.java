@@ -596,8 +596,8 @@ public class ClassNodeUtils {
     //--------------------------------------------------------------------------
 
     private static boolean isPackagePrivate(final AnnotatedNode aNode) {
-        return aNode.getAnnotations().stream().anyMatch(anno -> anno.getClassNode().getName().equals("groovy.transform.PackageScope"))
-            || aNode.getDeclaringClass().getAnnotations().stream().anyMatch(anno -> anno.getClassNode().getName().equals("groovy.transform.PackageScope")
+        return aNode.getAnnotations().stream().anyMatch(anno -> "groovy.transform.PackageScope".equals(anno.getClassNode().getName()))
+            || aNode.getDeclaringClass().getAnnotations().stream().anyMatch(anno -> "groovy.transform.PackageScope".equals(anno.getClassNode().getName())
                                                                             && Optional.ofNullable(anno.getMember("value")).filter(expr -> expr.getText().contains("FIELDS")).isPresent());
     }
 

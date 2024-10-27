@@ -135,7 +135,7 @@ public class SealedASTTransformation extends AbstractASTTransformation {
                 Expression oe = prop.getObjectExpression();
                 if (oe instanceof ClassExpression) {
                     ClassExpression ce = (ClassExpression) oe;
-                    if (ce.getType().getName().equals("groovy.transform.SealedMode")) {
+                    if ("groovy.transform.SealedMode".equals(ce.getType().getName())) {
                         return SealedMode.valueOf(prop.getPropertyAsString());
                     }
                 }

@@ -714,7 +714,7 @@ public class ClassNode extends AnnotatedNode {
                     BinaryExpression bExp = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
                     if (bExp.getLeftExpression() instanceof FieldExpression) {
                         FieldExpression fExp = (FieldExpression) bExp.getLeftExpression();
-                        if (fExp.getFieldName().equals("$VALUES")) {
+                        if ("$VALUES".equals(fExp.getFieldName())) {
                             for (Statement initStmt : staticFieldInitializerStatements) {
                                 it.add(initStmt);
                             }

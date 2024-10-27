@@ -159,7 +159,7 @@ public class BaseScriptASTTransformation extends AbstractASTTransformation {
     }
 
     private static boolean isCustomScriptBodyMethod(final MethodNode mn) {
-        return mn != null && !(mn.getName().equals("run")
+        return mn != null && !("run".equals(mn.getName())
                             && mn.getParameters().length == 0
                             && mn.getDeclaringClass().equals(ClassHelper.SCRIPT_TYPE));
     }

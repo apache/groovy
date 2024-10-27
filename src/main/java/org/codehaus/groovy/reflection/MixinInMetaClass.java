@@ -140,7 +140,7 @@ public class MixinInMetaClass {
                 if (method.isStatic()) {
                     if (method instanceof CachedMethod)
                         staticMethod(self, arr, (CachedMethod) method);
-                } else if (method.getDeclaringClass().getTheClass() != Object.class || method.getName().equals("toString")) {
+                } else if (method.getDeclaringClass().getTheClass() != Object.class || "toString".equals(method.getName())) {
                   //if (self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
                         arr.add(new MixinInstanceMetaMethod(method, mixin));
                   //}

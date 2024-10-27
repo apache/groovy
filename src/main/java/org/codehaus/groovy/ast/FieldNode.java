@@ -137,7 +137,7 @@ public class FieldNode extends AnnotatedNode implements Variable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj != null && obj.getClass().getName().equals("org.codehaus.groovy.ast.decompiled.LazyFieldNode")) {
+        if (obj != null && "org.codehaus.groovy.ast.decompiled.LazyFieldNode".equals(obj.getClass().getName())) {
             return obj.equals(this);
         }
         return super.equals(obj);

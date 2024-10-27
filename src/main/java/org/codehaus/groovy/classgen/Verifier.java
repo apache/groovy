@@ -734,7 +734,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private static void adjustTypesIfMainMethod(final MethodNode node) {
-        if (node.isPublic() && node.isStatic() && node.getName().equals("main")) {
+        if (node.isPublic() && node.isStatic() && "main".equals(node.getName())) {
             Parameter[] params = node.getParameters();
             if (params.length == 1) {
                 Parameter param = params[0];

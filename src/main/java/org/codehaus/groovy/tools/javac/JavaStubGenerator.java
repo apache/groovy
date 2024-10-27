@@ -61,7 +61,6 @@ import org.objectweb.asm.Opcodes;
 
 import javax.tools.FileObject;
 import javax.tools.JavaFileObject;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -509,9 +508,9 @@ public class JavaStubGenerator {
                 // skip values() method and valueOf(String)
                 String name = method.getName();
                 Parameter[] params = method.getParameters();
-                if (params.length == 0 && name.equals("values")) continue;
+                if (params.length == 0 && "values".equals(name)) continue;
                 if (params.length == 1
-                        && name.equals("valueOf")
+                        && "valueOf".equals(name)
                         && isStringType(params[0].getType())) {
                     continue;
                 }
@@ -720,7 +719,7 @@ public class JavaStubGenerator {
     private void printMethod(final PrintWriter out, final ClassNode classNode, final MethodNode methodNode) {
         if (methodNode.isStaticConstructor()) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
-        if (methodNode.isSynthetic() && (methodNode.getName().equals("$getStaticMetaClass"))) return;
+        if (methodNode.isSynthetic() && ("$getStaticMetaClass".equals(methodNode.getName()))) return;
 
         printAnnotations(out, methodNode);
         if (!isInterfaceOrTrait(classNode)) {
@@ -768,7 +767,7 @@ public class JavaStubGenerator {
                     ClassNode rt = methodNode.getReturnType();
                     Consumer<Expression> valuePrinter = (value) -> {
                         if (isClassType(rt) || (rt.isArray() && isClassType(rt.getComponentType()))) {
-                            if (value.getType().getName().equals("groovy.lang.Closure")) {
+                            if ("groovy.lang.Closure".equals(value.getType().getName())) {
                                 out.print("groovy.lang.Closure.class");
                                 return;
                             }
@@ -1115,7 +1114,7 @@ public class JavaStubGenerator {
                 expr.visit(new CodeVisitorSupport() {
                     @Override
                     public void visitPropertyExpression(final PropertyExpression property) {
-                        if (property.getObjectExpression().getText().equals("groovy.transform.PackageScopeTarget")
+                        if ("groovy.transform.PackageScopeTarget".equals(property.getObjectExpression().getText())
                                 && property.getPropertyAsString().equals(type.name())) {
                             val[0] = true;
                         }
@@ -1124,7 +1123,7 @@ public class JavaStubGenerator {
                     public void visitVariableExpression(final VariableExpression variable) {
                         if (variable.getName().equals(type.name())) {
                             ImportNode imp = currentModule.getStaticImports().get(type.name());
-                            if (imp != null && imp.getType().getName().equals("groovy.transform.PackageScopeTarget")) {
+                            if (imp != null && "groovy.transform.PackageScopeTarget".equals(imp.getType().getName())) {
                                 val[0] = true;
                             } else if (imp == null && currentModule.getStaticStarImports().get("groovy.transform.PackageScopeTarget") != null) {
                                 val[0] = true;

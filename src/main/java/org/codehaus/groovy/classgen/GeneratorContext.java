@@ -95,7 +95,7 @@ public class GeneratorContext {
     }
 
     public static String encodeAsValidClassName(final String name) {
-        if (name.equals("module-info") || name.equals("package-info")) return name;
+        if ("module-info".equals(name) || "package-info".equals(name)) return name;
 
         int lastEscape = -1;
         StringBuilder b = null;

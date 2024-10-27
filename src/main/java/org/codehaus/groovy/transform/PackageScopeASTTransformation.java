@@ -205,7 +205,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         Expression oe = expr.getObjectExpression();
         if (oe instanceof ClassExpression) {
             ClassExpression ce = (ClassExpression) oe;
-            if (ce.getType().getName().equals("groovy.transform.PackageScopeTarget")) {
+            if ("groovy.transform.PackageScopeTarget".equals(ce.getType().getName())) {
                 Expression prop = expr.getProperty();
                 if (prop instanceof ConstantExpression) {
                     String propName = (String) ((ConstantExpression) prop).getValue();

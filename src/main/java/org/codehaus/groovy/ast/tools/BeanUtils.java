@@ -111,7 +111,7 @@ public class BeanUtils {
             if (!includeStatic && mNode.isStatic()) continue;
             if (hasAnnotation(mNode, INTERNAL_TYPE)) continue;
             String name = mNode.getName();
-            if ((name.length() <= 3 && !name.startsWith(IS_PREFIX)) || name.equals("getClass") || name.equals("getMetaClass") || name.equals("getDeclaringClass")) {
+            if ((name.length() <= 3 && !name.startsWith(IS_PREFIX)) || "getClass".equals(name) || "getMetaClass".equals(name) || "getDeclaringClass".equals(name)) {
                 // Optimization: skip invalid propertyNames
                 continue;
             }

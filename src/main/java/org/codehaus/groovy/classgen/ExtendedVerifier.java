@@ -312,7 +312,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
 
             // Check if the annotation target is correct, unless it's the target annotating an annotation definition
             // defining on which target elements the annotation applies
-            boolean isTargetAnnotation = name.equals("java.lang.annotation.Target");
+            boolean isTargetAnnotation = "java.lang.annotation.Target".equals(name);
             if (!isTargetAnnotation && !visited.isTargetAllowed(target) && !isTypeUseScenario(visited, target)) {
                 addError("Annotation @" + name + " is not allowed on element " + AnnotationNode.targetToName(target), visited);
             }
@@ -337,7 +337,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         if (!repeatableCache.containsKey(name)) {
             boolean result = false;
             for (AnnotationNode anno : annoClassNode.getAnnotations()) {
-                if (anno.getClassNode().getName().equals("java.lang.annotation.Repeatable")) {
+                if ("java.lang.annotation.Repeatable".equals(anno.getClassNode().getName())) {
                     result = true;
                     break;
                 }
@@ -358,7 +358,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                 ClassNode repeatable = null;
                 AnnotationNode repeatee = entry.getValue().get(0);
                 for (AnnotationNode anno : repeatee.getClassNode().getAnnotations()) {
-                    if (anno.getClassNode().getName().equals("java.lang.annotation.Repeatable")) {
+                    if ("java.lang.annotation.Repeatable".equals(anno.getClassNode().getName())) {
                         Expression value = anno.getMember("value");
                         if (value instanceof ClassExpression && value.getType().isAnnotationDefinition()) {
                             repeatable = value.getType();
@@ -418,7 +418,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     // TODO GROOVY-5011 handle case of @Override on a property
     private void visitOverride(final AnnotatedNode node, final AnnotationNode visited) {
         ClassNode annotationType = visited.getClassNode();
-        if (annotationType.isResolved() && annotationType.getName().equals("java.lang.Override")) {
+        if (annotationType.isResolved() && "java.lang.Override".equals(annotationType.getName())) {
             if (node instanceof MethodNode && !Boolean.TRUE.equals(node.getNodeMetaData(Verifier.DEFAULT_PARAMETER_GENERATED))) {
                 boolean override = false;
                 MethodNode origMethod = (MethodNode) node;

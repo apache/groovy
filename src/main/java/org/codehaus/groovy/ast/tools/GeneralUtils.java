@@ -960,7 +960,7 @@ public class GeneralUtils {
                 continue;
             }
 
-            if (!includeGenerated && annotation.getClassNode().getName().equals("groovy.transform.Generated")) {
+            if (!includeGenerated && "groovy.transform.Generated".equals(annotation.getClassNode().getName())) {
                 continue;
             }
 

@@ -58,8 +58,8 @@ public class DgmConverter {
 
     public static void main(String[] args) throws IOException {
         String targetDirectory = "build/classes/";
-        boolean info = (args.length == 1 && args[0].equals("--info"))
-                || (args.length==2 && args[0].equals("--info"));
+        boolean info = (args.length == 1 && "--info".equals(args[0]))
+                || (args.length==2 && "--info".equals(args[0]));
         if (info && args.length==2) {
             targetDirectory = args[1];
             if (!targetDirectory.endsWith("/")) targetDirectory += "/";

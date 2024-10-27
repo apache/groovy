@@ -300,7 +300,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                         return result;
                     }
                 }
-            } else if (inSpecialConstructorCall || (!inClosure && !foundInstanceMethod && !name.equals("call"))) {
+            } else if (inSpecialConstructorCall || (!inClosure && !foundInstanceMethod && !"call".equals(name))) {
                 // check for reference to static method in this(...) or super(...) or when call not resolved
                 if (hasPossibleStaticMember.test(currentClass)) {
                     Expression result = new StaticMethodCallExpression(currentClass, name, args);

@@ -566,7 +566,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             for (Map.Entry<String, Object> entry : parts.entrySet()) {
                 String key = entry.getKey();
                 String value = entry.getValue().toString();
-                if (!key.equals("version") || !value.equals("*") || !exclude) {
+                if (!"version".equals(key) || !"*".equals(value) || !exclude) {
                     node.addMember(key, constX(value));
                 }
             }

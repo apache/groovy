@@ -51,11 +51,11 @@ public class PlaceholderVisitor extends ClassCodeVisitorSupport {
         if (expression.isMultipleAssignmentDeclaration() && expression.getTupleExpression().getExpressions().size() > 1) {
             long underscoreCount = StreamSupport.stream(expression.getTupleExpression().spliterator(), false)
                 .map(e -> ((VariableExpression) e).getName())
-                .filter(s -> s.equals("_"))
+                .filter(s -> "_".equals(s))
                 .count();
             if (underscoreCount > 1) {
                 expression.getTupleExpression().getExpressions().forEach(e -> {
-                    if (((VariableExpression) e).getName().equals("_")) {
+                    if ("_".equals(((VariableExpression) e).getName())) {
                         markAsPlaceholder(e);
                     }
                 });
@@ -74,11 +74,11 @@ public class PlaceholderVisitor extends ClassCodeVisitorSupport {
         if (expression.getParameters() != null) {
             long underscoreCount = Arrays.stream(expression.getParameters())
                 .map(Parameter::getName)
-                .filter(s -> s.equals("_"))
+                .filter(s -> "_".equals(s))
                 .count();
             if (underscoreCount > 1) {
                 for (Parameter param : expression.getParameters()) {
-                    if (param.getName().equals("_")) {
+                    if ("_".equals(param.getName())) {
                         markAsPlaceholder(param);
                     }
                 }

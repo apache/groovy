@@ -211,7 +211,7 @@ public class GroovyShell extends GroovyObjectSupport {
         String scriptName = scriptFile.getName();
         int p = scriptName.lastIndexOf('.');
         if (p++ >= 0) {
-            if (scriptName.substring(p).equals("java")) {
+            if ("java".equals(scriptName.substring(p))) {
                 throw new CompilationFailedException(0, null);
             }
         }

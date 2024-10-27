@@ -111,7 +111,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
             }
         } else if (closure instanceof GeneratedClosure) {
             for (CachedMethod method : ReflectionCache.getCachedClass(closure.getClass()).getMethods()) {
-                if (method.getName().equals("doCall")) {
+                if ("doCall".equals(method.getName())) {
                     MetaMethod metaMethod = new ClosureMetaMethod(name, declaringClass, closure, method);
                     mms.add(adjustParamTypesForStdMethods(metaMethod, name));
                 }

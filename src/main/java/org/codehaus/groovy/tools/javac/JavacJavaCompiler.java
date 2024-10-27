@@ -164,7 +164,7 @@ public class JavacJavaCompiler implements JavaCompiler {
         if (namedValues != null) {
             for (int i = 0, n = namedValues.length; i < n; i += 2) {
                 String name = namedValues[i];
-                if (name.equals("classpath")) hadClasspath = true;
+                if ("classpath".equals(name)) hadClasspath = true;
                 params.add("-" + name);
                 params.add(namedValues[i + 1]);
             }

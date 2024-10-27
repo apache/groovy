@@ -92,7 +92,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object next(final Enum self) {
         for (Method method : self.getClass().getMethods()) {
-            if (method.getName().equals("next") && method.getParameterCount() == 0) {
+            if ("next".equals(method.getName()) && method.getParameterCount() == 0) {
                 return InvokerHelper.invokeMethod(self, "next", InvokerHelper.EMPTY_ARGS);
             }
         }
@@ -112,7 +112,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object previous(final Enum self) {
         for (Method method : self.getClass().getMethods()) {
-            if (method.getName().equals("previous") && method.getParameterCount() == 0) {
+            if ("previous".equals(method.getName()) && method.getParameterCount() == 0) {
                 return InvokerHelper.invokeMethod(self, "previous", InvokerHelper.EMPTY_ARGS);
             }
         }
