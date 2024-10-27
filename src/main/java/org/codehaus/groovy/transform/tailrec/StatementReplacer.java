@@ -48,6 +48,7 @@ public class StatementReplacer extends CodeVisitorSupport {
         root.visit(this);
     }
 
+    @Override
     public void visitClosureExpression(ClosureExpression expression) {
         closureLevel++;
         try {
@@ -57,6 +58,7 @@ public class StatementReplacer extends CodeVisitorSupport {
         }
     }
 
+    @Override
     public void visitBlockStatement(final BlockStatement block) {
         List<Statement> copyOfStatements = new ArrayList<>(block.getStatements());
         for (int i = 0, n = copyOfStatements.size(); i < n; i++) {
@@ -67,22 +69,26 @@ public class StatementReplacer extends CodeVisitorSupport {
         super.visitBlockStatement(block);
     }
 
+    @Override
     public void visitIfElse(final IfStatement ifElse) {
         replaceIfNecessary(ifElse.getIfBlock(), ifElse::setIfBlock);
         replaceIfNecessary(ifElse.getElseBlock(), ifElse::setElseBlock);
         super.visitIfElse(ifElse);
     }
 
+    @Override
     public void visitForLoop(final ForStatement forLoop) {
         replaceIfNecessary(forLoop.getLoopBlock(), forLoop::setLoopBlock);
         super.visitForLoop(forLoop);
     }
 
+    @Override
     public void visitWhileLoop(final WhileStatement loop) {
         replaceIfNecessary(loop.getLoopBlock(), loop::setLoopBlock);
         super.visitWhileLoop(loop);
     }
 
+    @Override
     public void visitDoWhileLoop(final DoWhileStatement loop) {
         replaceIfNecessary(loop.getLoopBlock(), loop::setLoopBlock);
         super.visitDoWhileLoop(loop);
