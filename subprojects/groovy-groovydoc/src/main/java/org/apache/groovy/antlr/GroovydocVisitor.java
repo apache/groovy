@@ -268,9 +268,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
         //find expected method name
         String expectedMethodName;
-        if ("set".equals(prefix) && (currentMethodDoc.parameters().length >= 1 && !currentMethodDoc.parameters()[0].typeName().equals("boolean"))) {
+        if ("set".equals(prefix) && (currentMethodDoc.parameters().length >= 1 && !"boolean".equals(currentMethodDoc.parameters()[0].typeName()))) {
             expectedMethodName = "get" + propName;
-        } else if ("get".equals(prefix) && !currentMethodDoc.returnType().typeName().equals("boolean")) {
+        } else if ("get".equals(prefix) && !"boolean".equals(currentMethodDoc.returnType().typeName())) {
             expectedMethodName = "set" + propName;
         } else if ("is".equals(prefix)) {
             expectedMethodName = "set" + propName;

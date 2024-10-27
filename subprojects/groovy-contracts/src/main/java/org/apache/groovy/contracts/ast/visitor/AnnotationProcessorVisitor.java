@@ -210,7 +210,7 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
 
         List<AnnotationNode> annotations = annotationNode.getClassNode().getAnnotations();
         for (AnnotationNode anno : annotations) {
-            if (anno.getClassNode().getName().equals("org.apache.groovy.contracts.annotations.meta.AnnotationProcessorImplementation")) {
+            if ("org.apache.groovy.contracts.annotations.meta.AnnotationProcessorImplementation".equals(anno.getClassNode().getName())) {
                 annotationProcessor = anno.getMember("value");
                 break;
             }

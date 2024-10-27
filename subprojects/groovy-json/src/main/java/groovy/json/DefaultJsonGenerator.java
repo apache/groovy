@@ -18,12 +18,12 @@
  */
 package groovy.json;
 
-import org.apache.groovy.json.internal.CharBuf;
-import org.apache.groovy.json.internal.Chr;
 import groovy.lang.Closure;
 import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaProperty;
 import groovy.util.Expando;
+import org.apache.groovy.json.internal.CharBuf;
+import org.apache.groovy.json.internal.Chr;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -252,7 +252,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
             }
 
             String name = mp.getName();
-            if (name.equals("class") || name.equals("metaClass") || name.equals("declaringClass")) continue;
+            if ("class".equals(name) || "metaClass".equals(name) || "declaringClass".equals(name)) continue;
 
             namesAndValues.put(name, mp.getProperty(object));
         }

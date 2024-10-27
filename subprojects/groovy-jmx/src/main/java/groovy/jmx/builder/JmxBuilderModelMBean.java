@@ -88,7 +88,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
                 String listenerType = (String) listener.get("type");
                 listener.put("managedObject", this.managedObject);
                 // register an attribute change notification listener with model mbean
-                if (listenerType.equals("attributeChangeListener")) {
+                if ("attributeChangeListener".equals(listenerType)) {
                     try {
                         this.addAttributeChangeNotificationListener(
                                 AttributeChangedListener.getListener(), (String) listener.get("attribute"), listener
@@ -97,7 +97,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
                         throw new JmxBuilderException(e);
                     }
                 }
-                if (listenerType.equals("operationCallListener")) {
+                if ("operationCallListener".equals(listenerType)) {
                     String eventType = "jmx.operation.call." + target;
                     NotificationFilterSupport filter = new NotificationFilterSupport();
                     filter.enableType(eventType);

@@ -4714,7 +4714,7 @@ public class Sql implements AutoCloseable {
             if (index < 0 || index >= params.size())
                 throw new IllegalArgumentException("Invalid index " + index + " should be in range 1.." + params.size());
             try {
-                updatedParams.add(prop.equals("<this>") ? params.get(index) : InvokerHelper.getProperty(params.get(index), prop));
+                updatedParams.add("<this>".equals(prop) ? params.get(index) : InvokerHelper.getProperty(params.get(index), prop));
             } catch(MissingPropertyException mpe) {
                 throw new IllegalArgumentException("Property '" + prop + "' not found for parameter " + index);
             }

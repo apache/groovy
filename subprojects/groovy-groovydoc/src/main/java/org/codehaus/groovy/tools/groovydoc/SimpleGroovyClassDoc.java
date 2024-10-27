@@ -281,7 +281,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             result.add(0, nextDoc);
             prev = nextDoc;
         }
-        if (!result.get(0).qualifiedTypeName().equals("java.lang.Object")) {
+        if (!"java.lang.Object".equals(result.get(0).qualifiedTypeName())) {
             result.add(0, new ExternalGroovyClassDoc(Object.class));
         }
         return result;
@@ -461,7 +461,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             return type;
         type = type.trim();
         if (isPrimitiveType(type) || type.length() == 1) return type;
-        if (type.equals("def")) type = "java.lang.Object def";
+        if ("def".equals(type)) type = "java.lang.Object def";
         // cater for explicit href in e.g. @see, TODO: push this earlier?
         if (type.startsWith("<a href=")) return type;
         if (type.startsWith("? extends ")) return "? extends " + getDocUrl(type.substring(10), full, links, relativePath, rootDoc, classDoc);

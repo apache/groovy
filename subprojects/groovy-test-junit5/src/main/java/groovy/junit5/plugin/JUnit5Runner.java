@@ -66,7 +66,7 @@ public class JUnit5Runner implements GroovyRunner {
                 return true;
             }
             // it might directly annotate a class, e.g. Specification in Spock 2
-            if (name.equals("org.junit.platform.commons.annotation.Testable") && tryLoadClass(name, loader)) {
+            if ("org.junit.platform.commons.annotation.Testable".equals(name) && tryLoadClass(name, loader)) {
                 return true;
             }
             if (isJUnit5TestableMetaAnnotationPresent(type, new HashSet<>()) && tryLoadClass(name, loader)) {

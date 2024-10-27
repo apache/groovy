@@ -1015,13 +1015,13 @@ public class Groovyc extends MatchingTask {
 
         for (Map.Entry<String, Object> e : rc.getAttributeMap().entrySet()) {
             String key = e.getKey();
-            if (key.equals("depend")
-                    || key.equals("encoding")
-                    || key.equals("extdirs")
-                    || key.equals("nativeheaderdir")
-                    || key.equals("release")
-                    || key.equals("source")
-                    || key.equals("target")) {
+            if ("depend".equals(key)
+                    || "encoding".equals(key)
+                    || "extdirs".equals(key)
+                    || "nativeheaderdir".equals(key)
+                    || "release".equals(key)
+                    || "source".equals(key)
+                    || "target".equals(key)) {
                 switch (key) {
                     case "nativeheaderdir":
                         key = "h";
@@ -1053,7 +1053,7 @@ public class Groovyc extends MatchingTask {
                     // map "modulepath" or "modulepathref" to "-J-module-path="
                     jointOptions.add("-J-module-path=" + javac.getModulepath());
                 }
-            } else if (!key.contains("debug") && !key.equals("deprecation") && !key.equals("nowarn") && !key.equals("verbose")) {
+            } else if (!key.contains("debug") && !"deprecation".equals(key) && !"nowarn".equals(key) && !"verbose".equals(key)) {
                 log.warn("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored.");
             }
             // TODO: defaultexcludes, excludes(file)?, includes(file)?, includeDestClasses, tempdir
@@ -1062,10 +1062,10 @@ public class Groovyc extends MatchingTask {
         // Ant's <javac> supports nested <compilerarg value=""> elements (there
         // can be multiple of them) for additional options to be passed to javac.
         for (RuntimeConfigurable childrc : Collections.list(rc.getChildren())) {
-            if (childrc.getElementTag().equals("compilerarg")) {
+            if ("compilerarg".equals(childrc.getElementTag())) {
                 for (Map.Entry<String, Object> e : childrc.getAttributeMap().entrySet()) {
                     String key = e.getKey();
-                    if (key.equals("value")) {
+                    if ("value".equals(key)) {
                         String value = getProject().replaceProperties(e.getValue().toString());
                         StringTokenizer st = new StringTokenizer(value, " ");
                         while (st.hasMoreTokens()) {

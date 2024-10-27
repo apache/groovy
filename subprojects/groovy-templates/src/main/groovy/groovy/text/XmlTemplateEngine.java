@@ -24,11 +24,11 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import groovy.lang.Writable;
+import groovy.namespace.QName;
 import groovy.util.IndentPrinter;
 import groovy.util.Node;
 import groovy.xml.XmlNodePrinter;
 import groovy.xml.XmlParser;
-import groovy.namespace.QName;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.FormatHelper;
@@ -134,12 +134,12 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
 
         protected void printGroovyTag(String tag, String text) {
-            if (tag.equals("scriptlet")) {
+            if ("scriptlet".equals(tag)) {
                 out.print(text);
                 out.print("\n");
                 return;
             }
-            if (tag.equals("expression")) {
+            if ("expression".equals(tag)) {
                 printLineBegin();
                 out.print("${");
                 out.print(text);
@@ -242,7 +242,7 @@ public class XmlTemplateEngine extends TemplateEngine {
             if (name instanceof QName) {
                 QName qn = (QName) name;
                 // check uri and for legacy cases just check prefix name (not recommended)
-                if (qn.getNamespaceURI().equals("http://groovy.codehaus.org/2005/gsp") || qn.getPrefix().equals("gsp")) {
+                if ("http://groovy.codehaus.org/2005/gsp".equals(qn.getNamespaceURI()) || "gsp".equals(qn.getPrefix())) {
                     String s = qn.getLocalPart();
                     if (s.length() == 0) {
                         throw new RuntimeException("No local part after 'gsp:' given in node " + node);

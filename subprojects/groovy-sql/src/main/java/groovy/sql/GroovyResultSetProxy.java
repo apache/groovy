@@ -81,9 +81,9 @@ public final class GroovyResultSetProxy implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String name = method.getName();
         if (method.getDeclaringClass() == GroovyObject.class) {
-            if (name.equals("getMetaClass")) {
+            if ("getMetaClass".equals(name)) {
                 return getMetaClass();
-            } else if (name.equals("setMetaClass")) {
+            } else if ("setMetaClass".equals(name)) {
                 return setMetaClass((MetaClass) args[0]);
             }
         }

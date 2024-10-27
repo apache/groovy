@@ -275,7 +275,7 @@ public class DomToGroovy {
 
     protected void defineNamespace(Map namespaces, String prefix, String uri) {
         namespaces.put(prefix, uri);
-        if (!prefix.equals("xmlns") && !prefix.equals("xml")) {
+        if (!"xmlns".equals(prefix) && !"xml".equals(prefix)) {
             printIndent();
             print("mkp.declareNamespace(");
             print(prefix);
@@ -310,7 +310,7 @@ public class DomToGroovy {
 
     protected void printAttributeWithPrefix(Attr attribute, StringBuffer buffer) {
         String prefix = attribute.getPrefix();
-        if (prefix != null && prefix.length() > 0 && !prefix.equals("xmlns")) {
+        if (prefix != null && prefix.length() > 0 && !"xmlns".equals(prefix)) {
             if (buffer.length() > 0) {
                 buffer.append(", ");
             }

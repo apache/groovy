@@ -390,7 +390,7 @@ public class Groovydoc extends Task {
                 File pd = new File(baseDir, dir);
                 String[] files = pd.list((dir1, name) -> {
                     if (!includeNoSourcePackages
-                            && name.equals("package.html")) return true;
+                            && "package.html".equals(name)) return true;
                     final StringTokenizer tokenizer = new StringTokenizer(extensions, ":");
                     while (tokenizer.hasMoreTokens()) {
                         String ext = tokenizer.nextToken();

@@ -74,8 +74,8 @@ public class OldVariableGenerationUtility {
             if (fieldType.getName().startsWith("java.lang") || ClassHelper.isPrimitiveType(fieldType) || fieldType.getName().startsWith("java.math") ||
                     fieldType.getName().startsWith("java.util") ||
                     fieldType.getName().startsWith("java.sql") ||
-                    fieldType.getName().equals("groovy.lang.GString") ||
-                    fieldType.getName().equals("java.lang.String")) {
+                    "groovy.lang.GString".equals(fieldType.getName()) ||
+                    "java.lang.String".equals(fieldType.getName())) {
 
                 MethodNode cloneMethod = fieldType.getMethod("clone", Parameter.EMPTY_ARRAY);
                 // if a clone classNode is available, the value is cloned
@@ -94,8 +94,8 @@ public class OldVariableGenerationUtility {
                 } else if (ClassHelper.isPrimitiveType(fieldType)
                         || ClassHelper.isNumberType(fieldType)
                         || fieldType.getName().startsWith("java.math")
-                        || fieldType.getName().equals("groovy.lang.GString")
-                        || fieldType.getName().equals("java.lang.String")) {
+                        || "groovy.lang.GString".equals(fieldType.getName())
+                        || "java.lang.String".equals(fieldType.getName())) {
 
                     VariableExpression oldVariable = localVarX("$old$" + fieldNode.getName(), fieldNode.getType());
                     Statement oldVariableAssignment = declS(oldVariable, fieldX(fieldNode));
