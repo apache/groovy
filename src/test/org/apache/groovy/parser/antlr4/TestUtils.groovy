@@ -49,6 +49,7 @@ import org.codehaus.groovy.syntax.Token
 
 import java.security.AccessController
 import java.security.PrivilegedAction
+import java.util.logging.Level
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
@@ -77,6 +78,8 @@ final class TestUtils {
 //        if (diffInMillis >= 500) {
 //            log.warning "${path}\t\t\t\t\tdiff:${diffInMillis / 1000}s,\tnew:${newElapsedTime / 1000}s,\told:${oldElapsedTime / 1000}s."
 //        }
+
+        assert !newAST.context.errorCollector.errors
 
         return [newAST, null]
     }
@@ -236,7 +239,7 @@ final class TestUtils {
                 return AST
             }
         } catch (e) {
-            log.info("Failed to parse ${sourceFile.path}")
+            log.log(Level.INFO, "Failed to parse ${sourceFile.path}", e)
             return null
         }
     }
@@ -249,7 +252,7 @@ final class TestUtils {
         try {
             ParserPlugin.buildAST(sourceText, config, loader, null)
         } catch (e) {
-            log.info("Failed to parse")
+            log.log(Level.INFO, "Failed to parse", e)
             return null
         }
     }
@@ -261,7 +264,7 @@ final class TestUtils {
             shell.evaluate(file.text)
             return true
         } catch (Throwable t) {
-            log.info("Failed $path: ${t.getMessage()}")
+            log.log(Level.INFO, "Failed $file.path", t)
             return false
         }
     }
@@ -273,7 +276,7 @@ final class TestUtils {
             def is = new BufferedInputStream(zf.getInputStream(new ZipEntry(entryName)))
             result = is.getText('UTF-8')
         } catch (e) {
-            log.severe(e.message)
+            log.log(Level.SEVERE, '', e)
         }
 
         return result

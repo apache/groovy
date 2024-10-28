@@ -16,7 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-enum ListEnum1 {
-    ONE([111, 222])
-    ListEnum1(Object listArg){}
+
+enum Mapped {
+    SOME_ENUM_CONSTANT0(a: "0"),
+    SOME_ENUM_CONSTANT1(a: "0") {},
+    SOME_ENUM_CONSTANT2(a: "1", b: "2"),
+    SOME_ENUM_CONSTANT3(c: "3", d: "4") {}
 }

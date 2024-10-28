@@ -18,13 +18,14 @@
  */
 package groovy.tree
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
 /**
- * This test uses the concise GroovyMarkup syntax to test the building of trees
+ * Tests the concise GroovyMarkup syntax for the building of trees.
  */
-class TreeTest extends GroovyTestCase {
+final class TreeTest {
 
+    @Test
     void testSmallTree() {
         def b = NodeBuilder.newInstance()
 
@@ -35,30 +36,30 @@ class TreeTest extends GroovyTestCase {
         }
 
         assert root != null
-
-        print(root)
+      //print( root )
     }
 
+    @Test
     void testTree() {
         def b = NodeBuilder.newInstance()
 
         def root = b.root2(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
+
             nestedElem(x:'abc', y:'def') {
                 child(z:'def')
-                child2()  
+                child2()
             }
 
             nestedElem2(z:'zzz') {
                 child(z:'def')
-                child2("hello")  
+                child2("hello")
             }
         }
 
         assert root != null
-
-        print(root)
+      //print( root )
 
         def e1 = root.elem1.get(0)
         assert e1.value() == 'hello1'
@@ -69,14 +70,14 @@ class TreeTest extends GroovyTestCase {
         assert root.elem1.get(0).value() == 'hello1'
         assert root.elem2.get(0).value() == 'hello2'
 
-        assert root.nestedElem.get(0).attributes() == ['x':'abc', 'y':'def']        
-        assert root.nestedElem.child.get(0).attributes() == ['z':'def']
+        assert root.nestedElem.get(0).attributes() == [x:'abc', y:'def']
+        assert root.nestedElem.child.get(0).attributes() == [z:'def']
 
         assert root.nestedElem.child2.get(0).value() == []
         assert root.nestedElem.child2.get(0).text() == ''
 
-        assert root.nestedElem2.get(0).attributes() == ['z':'zzz']      
-        assert root.nestedElem2.child.get(0).attributes() == ['z':'def']
+        assert root.nestedElem2.get(0).attributes() == [z:'zzz']
+        assert root.nestedElem2.child.get(0).attributes() == [z:'def']
         assert root.nestedElem2.child2.get(0).value() == 'hello'
         assert root.nestedElem2.child2.get(0).text() == 'hello'
 
@@ -86,14 +87,13 @@ class TreeTest extends GroovyTestCase {
         assert root.attributes().a == 5
         assert root.attributes().b == 7
 
-        assert root.nestedElem.get(0).attributes().x == 'abc'
-        assert root.nestedElem.get(0).attributes().y == 'def'
-        assert root.nestedElem2.get(0).attributes().z == 'zzz'
-        assert root.nestedElem2.child.get(0).attributes().z == 'def'
+        assert root.nestedElem.get(0).attribute('x') == 'abc'
+        assert root.nestedElem.get(0).attribute('y') == 'def'
+        assert root.nestedElem2.get(0).attribute('z') == 'zzz'
+        assert root.nestedElem2.child.get(0).attribute('z') == 'def'
 
-        /** @todo parser add .@ as an operation
-                assert root.@a == 5
-                assert root.@b == 7
-        */        
+        // TODO: add .@ as an operation
+      //assert root.@a == 5
+      //assert root.@b == 7
     }
 }

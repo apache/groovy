@@ -1,3 +1,5 @@
+import H.I
+
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -16,59 +18,53 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-enum AAAA {}
-public enum AAAA2 {}
-public enum AAAA3 implements A {}
+
+enum e1{}
+enum e2 { }
+public enum E3 {}
+public enum E4 implements A {}
 @Test2
-public enum AAAA4 implements A,B {}
-enum BBBB {A}
-enum CCCC {A, B}
-enum CCCC2 {A, B
+public enum E5 implements A,B {}
+enum E6 implements I<T> {}
+
+enum E10 {A}
+enum E11 {A, B}
+enum E12 {A, B
 }
-enum CCCC3 {
+enum E13 {
     A, B
 }
-enum DDDD {A, B,}
-enum EEEE {
+enum E14 {A, B,}
+enum E15 {
     A,
     B}
-enum FFFF {
+enum E16 {
     A,
     B,}
-enum GGGG
+enum E17
 {A,
 B,}
+enum E18
+{
+A
+,
+B
+,
+}
+enum E19
+{
+A
+,
+B
+,
+;
+}
 
-enum E1 {
+enum E20 {
+    @Test2
+    A
+}
+
+enum E21 {
     A(111,'aa'), B(222,'bb')
 }
-
-@Test2
-enum E2 {
-    A2,
-    B2,C2,
-    D2
-    private void a() {}
-    def c;
-}
-
-enum E3 {
-    A(1), B(2)
-
-    public static final String SOME_CONSTANT = '123';
-    private String name;
-    private int age = 2;
-    String title = "title"
-    public E9(int x) {}
-}
-
-
-
-enum e {}
-
-enum Enum1 {
-    A, B;
-}
-enum Enum2 {
-    A, B;}
-enum Enum3 {A, B;}

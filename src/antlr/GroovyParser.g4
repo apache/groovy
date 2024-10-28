@@ -219,12 +219,12 @@ typeList
  */
 classDeclaration
 locals[ int t ]
-    :   (   CLASS { $t = 0; }
-        |   INTERFACE { $t = 1; }
-        |   ENUM { $t = 2; }
+    :   (   CLASS        { $t = 0; }
+        |   INTERFACE    { $t = 1; }
+        |   ENUM         { $t = 2; }
         |   AT INTERFACE { $t = 3; }
-        |   TRAIT { $t = 4; }
-        |   RECORD { $t = 5; }
+        |   TRAIT        { $t = 4; }
+        |   RECORD       { $t = 5; }
         )
         identifier
         (nls typeParameters)?
@@ -235,16 +235,21 @@ locals[ int t ]
         nls classBody[$t]
     ;
 
-// t    see the comment of classDeclaration
 classBody[int t]
     :   LBRACE nls
         (
-            /* Only enum can have enum constants */
-            { 2 == $t }?
-            enumConstants (nls COMMA)? sep?
+            { $t == 2 }?
+            enumConstants (
+                (nls COMMA)?
+            |
+                // GROOVY-7773, GROOVY-9306:
+                ((nls COMMA)? nls SEMI)? nls
+                classBodyDeclaration[$t] (sep classBodyDeclaration[$t])*
+            )
         |
+            (classBodyDeclaration[$t] (sep classBodyDeclaration[$t])* )?
         )
-        (classBodyDeclaration[$t] (sep classBodyDeclaration[$t])*)? sep? RBRACE
+        sep? RBRACE
     ;
 
 enumConstants

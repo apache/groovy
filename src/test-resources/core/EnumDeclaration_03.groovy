@@ -16,9 +16,47 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-enum H {
-    SOME_ENUM_CONSTANT0(a: "0"),
-    SOME_ENUM_CONSTANT1(a: "0") {},
-    SOME_ENUM_CONSTANT2(a: "1", b: "2"),
-    SOME_ENUM_CONSTANT3(c: "3", d: "4") {}
+
+enum E {
+    A() {}, B(1) {{}},
+    C(1, 2) {
+        public void prt() {
+            println "$x, $y"
+        }
+
+        void prt2() {
+            println "$x, $y"
+        }
+
+        @Test2 prt3() {
+            println "$x, $y"
+        }
+
+        private void prt4() {
+            println "$x, $y"
+        }
+
+        private prt5() {
+            println "$x, $y"
+        }
+    },
+    D {
+        void hello() {}
+    }
+
+    protected int x;
+    protected int y;
+
+    E() {}
+    E(int x) {
+        this.x = x;
+    }
+    E(int x, y) {
+        this(x)
+        this.y = y;
+    }
+
+    void proc() {
+        println "123"
+    }
 }

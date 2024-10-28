@@ -842,11 +842,6 @@ enum GroovyColors3161 {
     static ALL_COLORS = [red, blue, green]
 }
 
-enum GroovyColors3161B {
-    red, blue, green,
-    static ALL_COLORS = [red, blue, green]
-}
-
 enum Foo3284 {
     A({ "A" })
     Foo3284(Closure c) {
@@ -871,5 +866,7 @@ enum Color3985 {
         {
             throw new RuntimeException('Color3985 RED instance initializer called successfully')
         }
-    },GREEN,BLUE
+    },
+    GREEN,
+    BLUE,
 }
