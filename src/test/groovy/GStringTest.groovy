@@ -597,6 +597,17 @@ class GStringTest extends GroovyTestCase {
         assert gstring.toString() == 'Green eggs and ham'
     }
 
+    // GROOVY-6360
+    void testGStringDelegatingMethods() {
+        def gstring = " Hello, ${'world'}! "
+        assert gstring.lines().toList() == [' Hello, world! ']
+        assert !gstring.isBlank()
+        assert gstring.repeat(2) == " Hello, world!  Hello, world! "
+        assert gstring.stripLeading() == "Hello, world! "
+        assert gstring.stripTrailing() == " Hello, world!"
+        assert gstring.strip() == "Hello, world!"
+    }
+
     // GROOVY-7494
     void testGStringCoercionForArrayPutAt() {
         String[] fubar = new String[1]

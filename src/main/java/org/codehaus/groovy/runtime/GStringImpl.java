@@ -28,6 +28,7 @@ import java.io.Writer;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.Locale;
+import java.util.stream.Stream;
 
 /**
  * Default implementation of a GString used by the compiler. A GString consists
@@ -149,6 +150,30 @@ public class GStringImpl extends GString {
 
     public boolean isEmpty() {
         return toString().isEmpty();
+    }
+
+    public Stream<String> lines() {
+        return toString().lines();
+    }
+
+    public boolean isBlank() {
+        return toString().isBlank();
+    }
+
+    public String repeat(int count) {
+        return toString().repeat(count);
+    }
+
+    public String stripLeading() {
+        return toString().stripLeading();
+    }
+
+    public String stripTrailing() {
+        return toString().stripTrailing();
+    }
+
+    public String strip() {
+        return toString().strip();
     }
 
     public int codePointAt(int index) {
