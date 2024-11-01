@@ -88,8 +88,8 @@ class VariableExpressionTransformer {
 
         // access to a private field from a section of code that normally doesn't have access to it, like a closure block or inner class
         Expression fieldOwner = field.isStatic() ? classX(field.getDeclaringClass()) : propX(classX(field.getDeclaringClass()), "this");
+        if (!field.isStatic()) fieldOwner.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
         PropertyExpression pe = attrX(fieldOwner, ve.getName()); // GROOVY-10687, GROOVY-11412: direct access
-        pe.getObjectExpression().putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, field.getDeclaringClass());
         pe.putNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE, field.getOriginType());
         pe.getProperty().setSourcePosition(ve);
         return pe;
