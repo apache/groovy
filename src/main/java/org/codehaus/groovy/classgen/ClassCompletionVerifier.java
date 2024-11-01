@@ -49,6 +49,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.trait.Traits;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -65,7 +66,6 @@ import static java.lang.reflect.Modifier.isTransient;
 import static java.lang.reflect.Modifier.isVolatile;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
-import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_NATIVE;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
@@ -118,7 +118,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 checkInterfaceMethodVisibility(node);
                 checkAbstractMethodVisibility(node);
                 checkClassForExtendingFinalOrSealed(node);
-                checkMethodsForIncorrectModifiers(node);
                 checkMethodsForIncorrectName(node);
                 checkMethodsForWeakerAccess(node);
                 checkMethodsForOverridingFinal(node);
@@ -251,38 +250,24 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkClassForIncorrectModifiers(final ClassNode node) {
-        checkClassForAbstractAndFinal(node);
-        checkClassForOtherModifiers(node);
-    }
-
-    private void checkClassForAbstractAndFinal(final ClassNode node) {
-        if (!node.isAbstract() || !isFinal(node.getModifiers())) return;
-        if (node.isInterface()) {
-            addError("The " + getDescription(node) + " must not be final. It is by definition abstract.", node);
-        } else {
-            addError("The " + getDescription(node) + " must not be both final and abstract.", node);
+        if (node.isAbstract() && isFinal(node.getModifiers())) {
+            addError("The " + getDescription(node) + " cannot be " + (node.isInterface() ? "final. It is by nature abstract" : "both abstract and final") + ".", node);
         }
-    }
 
-    private void checkClassForOtherModifiers(final ClassNode node) {
-        checkClassForModifier(node, isTransient(node.getModifiers()), "transient");
-        checkClassForModifier(node, isVolatile(node.getModifiers()), "volatile");
-        checkClassForModifier(node, isNative(node.getModifiers()), "native");
+        List<String> modifiers = new ArrayList<>();
+
         if (!(node instanceof InnerClassNode)) {
-            checkClassForModifier(node, isStatic(node.getModifiers()), "static");
-            checkClassForModifier(node, isPrivate(node.getModifiers()), "private");
+            if (isPrivate(node.getModifiers())) modifiers.add("private");
+            if (isStatic(node.getModifiers())) modifiers.add("static");
         }
-        // don't check synchronized here as it overlaps with ACC_SUPER
-    }
+        // do not check for synchronized here; it overlaps with ACC_SUPER
+        if (isTransient(node.getModifiers())) modifiers.add("transient");
+        if (isVolatile(node.getModifiers())) modifiers.add("volatile");
+        if (isNative(node.getModifiers())) modifiers.add("native");
 
-    private void checkMethodForModifier(final MethodNode node, final boolean condition, final String modifierName) {
-        if (!condition) return;
-        addError("The " + getDescription(node) + " has an incorrect modifier " + modifierName + ".", node);
-    }
-
-    private void checkClassForModifier(final ClassNode node, final boolean condition, final String modifierName) {
-        if (!condition) return;
-        addError("The " + getDescription(node) + " has an incorrect modifier " + modifierName + ".", node);
+        for (String modifier : modifiers) {
+            addError("The " + getDescription(node) + " has invalid modifier " + modifier + ".", node);
+        }
     }
 
     private static String getDescription(final ClassNode node) {
@@ -409,16 +394,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private void checkMethodsForIncorrectModifiers(final ClassNode cn) {
-        if (!cn.isInterface()) return;
-        for (MethodNode method : cn.getMethods()) {
-            if (method.isFinal()) {
-                addError("The " + getDescription(method) + " from " + getDescription(cn) +
-                        " must not be final. It is by definition abstract.", method);
-            }
-        }
-    }
-
     private void checkMethodsForWeakerAccess(final ClassNode cn) {
         for (MethodNode method : cn.getMethods()) {
             checkMethodForWeakerAccessPrivileges(method, cn);
@@ -483,7 +458,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkAbstractDeclaration(node);
         checkRepetitiveMethod(node);
         checkOverloadingPrivateAndPublic(node);
-        checkMethodModifiers(node);
+        checkMethodForIncorrectModifiers(node);
         checkGenericsUsage(node, node.getParameters());
         checkGenericsUsage(node, node.getReturnType());
         for (Parameter param : node.getParameters()) {
@@ -494,18 +469,27 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         super.visitMethod(node);
     }
 
-    private void checkMethodModifiers(final MethodNode node) {
-        // don't check volatile here as it overlaps with ACC_BRIDGE
-        // additional modifiers not allowed for interfaces
-        if ((this.currentClass.getModifiers() & ACC_INTERFACE) != 0) {
-            checkMethodForModifier(node, isStrict(node.getModifiers()), "strictfp");
-            checkMethodForModifier(node, isSynchronized(node.getModifiers()), "synchronized");
-            checkMethodForModifier(node, isNative(node.getModifiers()), "native");
+    private void checkMethodForIncorrectModifiers(final MethodNode node) {
+        if (node.isAbstract() && (node.isStatic() || (node.isFinal() && !currentClass.isInterface()))) { // GROOVY-11508
+            addError("The " + getDescription(node) + " can only be one of abstract, static, " + (currentClass.isInterface() ? "default" : "final") + ".", node);
         }
-        // transient overlaps with varargs but we don't add varargs until AsmClassGenerator
-        // but we might have varargs set from e.g. @Delegate of a varargs method so skip generated
+
+        List<String> modifiers = new ArrayList<>();
+
+        if (currentClass.isInterface()) {
+            if (isFinal(node.getModifiers())) modifiers.add("final");
+            if (isNative(node.getModifiers())) modifiers.add("native");
+            if (isStrict(node.getModifiers())) modifiers.add("strictfp");
+            if (isSynchronized(node.getModifiers())) modifiers.add("synchronized");
+        }
+        // transient overlaps with varargs but we do not add varargs until AsmClassGenerator
+        // but we might have varargs set from @Delegate of varargs method, so skip generated
         if (!AnnotatedNodeUtils.isGenerated(node)) {
-            checkMethodForModifier(node, isTransient(node.getModifiers()), "transient");
+            if (isTransient(node.getModifiers())) modifiers.add("transient");
+        }
+
+        for (String modifier : modifiers) {
+            addError("The " + getDescription(node) + " has invalid modifier " + modifier + ".", node);
         }
     }
 

@@ -51,9 +51,11 @@ public final class ClassCompletionVerifierTest {
 
     @Test
     public void shouldDetectAbstractPrivateMethod() {
-        ClassNode node = new ClassNode("X", ACC_ABSTRACT, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("y", ACC_PRIVATE | ACC_ABSTRACT, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        var node = new ClassNode("X", ACC_ABSTRACT, ClassHelper.OBJECT_TYPE);
+        node.addMethod("y", ACC_PRIVATE | ACC_ABSTRACT, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+
         verifier.visitClass(node);
+
         checkErrorMessage("The method 'y' must not be private as it is declared abstract in class 'X'.");
     }
 
@@ -62,7 +64,7 @@ public final class ClassCompletionVerifierTest {
         checkVisitErrors("FinalClass", ACC_FINAL, false);
         checkVisitErrors("AbstractClass", ACC_ABSTRACT, false);
         checkVisitErrors("AbstractFinalClass", ACC_ABSTRACT | ACC_FINAL, true);
-        checkErrorMessage("The class 'AbstractFinalClass' must not be both final and abstract.");
+        checkErrorMessage("The class 'AbstractFinalClass' cannot be both abstract and final.");
     }
 
     @Test
@@ -76,10 +78,12 @@ public final class ClassCompletionVerifierTest {
     }
 
     private void tryDetectDuplicateMethods(int modifiers, String expectedErrorMessage, Parameter... params) {
-        ClassNode node = new ClassNode("zzz", modifiers, ClassHelper.OBJECT_TYPE);
+        var node = new ClassNode("zzz", modifiers, ClassHelper.OBJECT_TYPE);
         node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, params, ClassNode.EMPTY_ARRAY, null));
         node.addMethod(new MethodNode("xxx", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, params, ClassNode.EMPTY_ARRAY, null));
+
         verifier.visitClass(node);
+
         checkErrorCount(2);
         checkErrorMessage(expectedErrorMessage);
     }
@@ -88,57 +92,69 @@ public final class ClassCompletionVerifierTest {
     public void shouldDetectIncorrectOtherModifier() {
         // can't check synchronized here as it doubles up with ACC_SUPER
         checkVisitErrors("DodgyClass", ACC_TRANSIENT | ACC_VOLATILE | ACC_NATIVE, true);
-        checkErrorMessage("The class 'DodgyClass' has an incorrect modifier transient.");
-        checkErrorMessage("The class 'DodgyClass' has an incorrect modifier volatile.");
-        checkErrorMessage("The class 'DodgyClass' has an incorrect modifier native.");
+        checkErrorMessage("The class 'DodgyClass' has invalid modifier transient.");
+        checkErrorMessage("The class 'DodgyClass' has invalid modifier volatile.");
+        checkErrorMessage("The class 'DodgyClass' has invalid modifier native.");
     }
 
     @Test
     public void shouldDetectFinalAbstractInterface() {
         checkVisitErrors("FinalInterface", ACC_ABSTRACT | ACC_FINAL | ACC_INTERFACE, true);
-        checkErrorMessage("The interface 'FinalInterface' must not be final. It is by definition abstract.");
+        checkErrorMessage("The interface 'FinalInterface' cannot be final. It is by nature abstract.");
     }
 
     @Test
     public void shouldDetectFinalMethodsInInterface() {
-        ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("xxx", ACC_PUBLIC | ACC_FINAL, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        var node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        node.addMethod("xxx", ACC_FINAL | ACC_PUBLIC             , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("yyy", ACC_FINAL | ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("zzz", ACC_FINAL | ACC_PRIVATE            , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
         addStaticConstructor(node);
+
         verifier.visitClass(node);
-        checkErrorCount(1);
-        checkErrorMessage("The method 'java.lang.Object xxx()' from interface 'zzz' must not be final. It is by definition abstract.");
+
+        checkErrorCount(3);
+        checkErrorMessage("The method 'java.lang.Object xxx()' has invalid modifier final.");
+        checkErrorMessage("The method 'java.lang.Object yyy()' has invalid modifier final.");
+        checkErrorMessage("The method 'java.lang.Object zzz()' has invalid modifier final.");
     }
 
     @Test
     public void shouldDetectIncorrectMethodModifiersInInterface() {
-        ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("st", ACC_PUBLIC | ACC_STRICT       , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("na", ACC_PUBLIC | ACC_NATIVE       , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("sy", ACC_PUBLIC | ACC_SYNCHRONIZED , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("tr", ACC_PUBLIC | ACC_TRANSIENT    , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        var node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        node.addMethod("na", ACC_PUBLIC | ACC_NATIVE               , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("st", ACC_PUBLIC | ACC_STRICT               , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("sy", ACC_PUBLIC | ACC_SYNCHRONIZED         , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("tr", ACC_PUBLIC | ACC_TRANSIENT            , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("xx", ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
         // can't check volatile here as it doubles up with bridge
         addStaticConstructor(node);
+
         verifier.visitClass(node);
-        checkErrorCount(4);
-        checkErrorMessage("The method 'java.lang.Object st()' has an incorrect modifier strictfp.");
-        checkErrorMessage("The method 'java.lang.Object na()' has an incorrect modifier native.");
-        checkErrorMessage("The method 'java.lang.Object sy()' has an incorrect modifier synchronized.");
-        checkErrorMessage("The method 'java.lang.Object tr()' has an incorrect modifier transient.");
+
+        checkErrorCount(5);
+        checkErrorMessage("The method 'java.lang.Object na()' has invalid modifier native.");
+        checkErrorMessage("The method 'java.lang.Object st()' has invalid modifier strictfp.");
+        checkErrorMessage("The method 'java.lang.Object sy()' has invalid modifier synchronized.");
+        checkErrorMessage("The method 'java.lang.Object tr()' has invalid modifier transient.");
+        checkErrorMessage("The method 'java.lang.Object xx()' can only be one of abstract, static, default.");
     }
 
     @Test
     public void shouldDetectIncorrectMemberVisibilityInInterface() {
-        ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("pro1", ACC_ABSTRACT | ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("pro2", ACC_STATIC   | ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("pro3",                ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block()));
-        node.addMethod(new MethodNode("pp_1", ACC_ABSTRACT                , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("pp_2", ACC_STATIC                  , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        var node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        node.addMethod("pro1", ACC_ABSTRACT | ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("pro2", ACC_STATIC   | ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("pro3",                ACC_PROTECTED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block());
+        node.addMethod("pp_1", ACC_ABSTRACT                , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("pp_2", ACC_STATIC                  , ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
         node.addField("prof", ACC_PROTECTED, ClassHelper.OBJECT_TYPE, null);
         node.addField("prif", ACC_PRIVATE  , ClassHelper.OBJECT_TYPE, null);
         node.addField("pp_f", 0            , ClassHelper.OBJECT_TYPE, null);
         addStaticConstructor(node);
+
         verifier.visitClass(node);
+
         checkErrorCount(8);
         checkErrorMessage("The field 'prof' is not 'public static final' but is defined in interface 'zzz'");
         checkErrorMessage("The field 'prif' is not 'public static final' but is defined in interface 'zzz'");
@@ -153,39 +169,53 @@ public final class ClassCompletionVerifierTest {
     @Test
     public void shouldDetectCorrectMethodModifiersInClass() {
         // can't check volatile here as it doubles up with bridge
-        ClassNode node = new ClassNode("zzz", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
-        node.addMethod(new MethodNode("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        var node = new ClassNode("zzz", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        node.addMethod("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
         addStaticConstructor(node);
+
         verifier.visitClass(node);
+
         checkErrorCount(0);
     }
 
     @Test
     public void shouldDetectIncorrectMethodModifiersInClass() {
+        var node = new ClassNode("zzz", ACC_ABSTRACT | ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        node.addMethod("tr", ACC_TRANSIENT            , ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("xx", ACC_ABSTRACT | ACC_FINAL , ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("yy", ACC_ABSTRACT | ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+        node.addMethod("zz", ACC_FINAL    | ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
         // can't check volatile here as it doubles up with bridge
-        ClassNode node = new ClassNode("zzz", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("tr", ACC_TRANSIENT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         addStaticConstructor(node);
+
         verifier.visitClass(node);
-        checkErrorCount(1);
-        checkErrorMessage("The method 'java.lang.Object tr()' has an incorrect modifier transient.");
+
+        checkErrorCount(3);
+        checkErrorMessage("The method 'void tr()' has invalid modifier transient.");
+        checkErrorMessage("The method 'void xx()' can only be one of abstract, static, final.");
+        checkErrorMessage("The method 'void yy()' can only be one of abstract, static, final.");
+      //checkErrorMessage("The method 'void zz()' can only be one of abstract, static, final.");
     }
 
     @Test
     public void shouldDetectInvalidFieldModifiers() {
-        ClassNode node = new ClassNode("foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        var node = new ClassNode("foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         node.addField("bar", ACC_FINAL | ACC_VOLATILE, ClassHelper.STRING_TYPE, null);
+
         verifier.visitClass(node);
+
         checkErrorCount(1);
         checkErrorMessage("Illegal combination of modifiers, final and volatile, for field 'bar'");
     }
 
     @Test
     public void shouldDetectClassExtendsInterface() {
-        ClassNode node = new ClassNode("C", ACC_PUBLIC, ClassHelper.SERIALIZABLE_TYPE);
+        var node = new ClassNode("C", ACC_PUBLIC, ClassHelper.SERIALIZABLE_TYPE);
+
         verifier.visitClass(node);
+
         checkErrorCount(1);
         checkErrorMessage("You are not allowed to extend the interface 'java.io.Serializable', use implements instead.");
     }
@@ -193,8 +223,10 @@ public final class ClassCompletionVerifierTest {
     @Test
     public void shouldDetectClassImplementsNonInterface() {
         ClassNode[] impl = {ClassHelper.OBJECT_TYPE, ClassHelper.SERIALIZABLE_TYPE, ClassHelper.ELEMENT_TYPE_TYPE};
-        ClassNode node = new ClassNode("C", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, impl, null);
+        var node = new ClassNode("C", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, impl, null);
+
         verifier.visitClass(node);
+
         checkErrorCount(2);
         checkErrorMessage("You are not allowed to implement the class 'java.lang.Object', use extends instead.");
         checkErrorMessage("You are not allowed to implement the enum 'java.lang.annotation.ElementType', use extends instead.");
@@ -202,8 +234,10 @@ public final class ClassCompletionVerifierTest {
 
     @Test
     public void shouldAcceptInterfaceExtendsInterface() {
-        ClassNode node = new ClassNode("I", ACC_PUBLIC | ACC_INTERFACE, ClassHelper.LIST_TYPE.getPlainNodeReference());
+        var node = new ClassNode("I", ACC_PUBLIC | ACC_INTERFACE, ClassHelper.LIST_TYPE.getPlainNodeReference());
+
         verifier.visitClass(node);
+
         checkErrorCount(0);
     }
 

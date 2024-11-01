@@ -65,21 +65,19 @@ class ModifierManager {
 
     private void validate(List<ModifierNode> modifierNodeList) {
         Map<ModifierNode, Integer> modifierNodeCounter = new LinkedHashMap<>(modifierNodeList.size());
-        int visibilityModifierCnt = 0;
+        int visibilityModifierCount = 0;
 
         for (ModifierNode modifierNode : modifierNodeList) {
-            Integer cnt = modifierNodeCounter.get(modifierNode);
-
-            if (null == cnt) {
+            var count = modifierNodeCounter.get(modifierNode);
+            if (count == null) {
                 modifierNodeCounter.put(modifierNode, 1);
-            } else if (1 == cnt && !modifierNode.isRepeatable()) {
+            } else if (count == 1 && !modifierNode.isRepeatable()) {
                 throw astBuilder.createParsingFailedException("Cannot repeat modifier[" + modifierNode.getText() + "]", modifierNode);
             }
 
             if (modifierNode.isVisibilityModifier()) {
-                visibilityModifierCnt++;
-
-                if (visibilityModifierCnt > 1) {
+                visibilityModifierCount += 1;
+                if (visibilityModifierCount > 1) {
                     throw astBuilder.createParsingFailedException("Cannot specify modifier[" + modifierNode.getText() + "] when access scope has already been defined", modifierNode);
                 }
             }
