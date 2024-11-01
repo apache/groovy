@@ -75,7 +75,6 @@ import static org.codehaus.groovy.ast.ClassHelper.SEALED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
-import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -94,6 +93,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -451,42 +451,44 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     private static void processProperty(final ClassNode cNode, final PropertyNode node) {
         String name = node.getName();
         FieldNode field = node.getField();
-        int propNodeModifiers = node.getModifiers() & 0x1F; // GROOVY-3726
 
-        String getterName = node.getGetterNameOrDefault();
+        String getterName = node.getGetterName();
+        if (getterName == null) { // GROOVY-11512
+            getterName = "get" + capitalize(name);
+        }
         String setterName = node.getSetterNameOrDefault();
 
         Statement getterBlock = node.getGetterBlock();
-        if (getterBlock == null) {
-            MethodNode getter = cNode.getGetterMethod(getterName);
+        if (getterBlock == null && !node.isPrivate()) {
+            MethodNode getter = cNode.getGetterMethod(getterName, !node.isStatic());
             if (getter == null && isPrimitiveBoolean(node.getType())) {
-                getter = cNode.getGetterMethod("is" + capitalize(name));
+                getter = cNode.getGetterMethod("is" + capitalize(name), !node.isStatic());
             }
-            if (!node.isPrivate() && methodNeedsReplacement(cNode, getter)) {
+            if (methodNeedsReplacement(cNode, getter)) {
                 getterBlock = stmt(fieldX(field));
             }
         }
         Statement setterBlock = node.getSetterBlock();
-        if (setterBlock == null) {
-            // 2nd arg false below: though not usual, allow setter with non-void return type
-            MethodNode setter = cNode.getSetterMethod(setterName, false);
-            if (!node.isPrivate() && (propNodeModifiers & ACC_FINAL) == 0
-                    && methodNeedsReplacement(cNode, setter)) {
+        if (setterBlock == null && !node.isPrivate() && !node.isFinal()) {
+            MethodNode setter = cNode.getSetterMethod(setterName, /*void-only:*/false);
+            if (methodNeedsReplacement(cNode, setter)) {
                 setterBlock = assignS(fieldX(field), varX(name));
             }
         }
 
+        int methodModifiers = adjustPropertyModifiersForMethod(node); // GROOVY-3726
+
         if (getterBlock != null) {
-            MethodNode getter = new MethodNode(getterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
+            MethodNode getter = new MethodNode(getterName, methodModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
+            // copyAnnotations(cNode, getter);
             addGeneratedMethod(cNode, getter);
 
-            if (node.getGetterName() == null && getterName.startsWith("get") && (isPrimitiveBoolean(node.getType()) || isWrapperBoolean(node.getType()))) {
-                MethodNode secondGetter = new MethodNode("is" + capitalize(name), propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
-                if (methodNeedsReplacement(cNode, secondGetter)) {
-                    secondGetter.setSynthetic(true);
-                    addGeneratedMethod(cNode, secondGetter);
-                }
+            if (node.getGetterName() == null && isPrimitiveBoolean(node.getType())) {
+                getter = new MethodNode("is" + capitalize(name), methodModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
+                getter.setSynthetic(true);
+                // copyAnnotations(cNode, getter);
+                addGeneratedMethod(cNode, getter);
             }
         }
         if (setterBlock != null) {
@@ -494,8 +496,9 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             Parameter setterParameter = new Parameter(node.getType(), name);
             var.setAccessedVariable(setterParameter);
 
-            MethodNode setter = new MethodNode(setterName, propNodeModifiers, VOID_TYPE, new Parameter[]{setterParameter}, ClassNode.EMPTY_ARRAY, setterBlock);
+            MethodNode setter = new MethodNode(setterName, methodModifiers, VOID_TYPE, new Parameter[]{setterParameter}, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
+            // copyAnnotations(cNode, setter);
             addGeneratedMethod(cNode, setter);
         }
     }

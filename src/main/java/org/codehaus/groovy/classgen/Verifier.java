@@ -116,6 +116,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
@@ -778,41 +779,35 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         String setterName = node.getSetterNameOrDefault();
 
-        int accessorModifiers = adjustPropertyModifiersForMethod(node);
-
         Statement getterBlock = node.getGetterBlock();
-        if (getterBlock == null) {
+        if (getterBlock == null && !node.isPrivate()) {
             MethodNode getter = classNode.getGetterMethod(getterName, !node.isStatic());
             if (getter == null && isPrimitiveBoolean(node.getType())) {
-                getter = classNode.getGetterMethod("is" + capitalize(name));
+                getter = classNode.getGetterMethod("is" + capitalize(name), !node.isStatic());
             }
-            if (!node.isPrivate() && methodNeedsReplacement(getter)) {
+            if (methodNeedsReplacement(getter)) {
                 getterBlock = createGetterBlock(node, field);
             }
         }
         Statement setterBlock = node.getSetterBlock();
-        if (setterBlock == null) {
+        if (setterBlock == null && !node.isPrivate() && !node.isFinal()) {
             MethodNode setter = classNode.getSetterMethod(setterName, false); // atypical: allow setter with non-void return type
-            if (!node.isFinal() && !node.isPrivate() && methodNeedsReplacement(setter)) {
+            if (methodNeedsReplacement(setter)) {
                 setterBlock = createSetterBlock(node, field);
             }
         }
 
+        int accessorModifiers = adjustPropertyModifiersForMethod(node);
+
         if (getterBlock != null) {
             visitGetter(node, field, getterBlock, accessorModifiers, getterName);
-
-            if (node.getGetterName() == null && getterName.startsWith("get") && isPrimitiveBoolean(node.getType())) {
-                String altGetterName = "is" + capitalize(name);
-                MethodNode altGetter = classNode.getGetterMethod(altGetterName, !node.isStatic());
-                if (methodNeedsReplacement(altGetter)) {
-                    visitGetter(node, field, getterBlock, accessorModifiers, altGetterName);
-                }
+            if (node.getGetterName() == null && isPrimitiveBoolean(node.getType())) {
+                visitGetter(node, field, getterBlock, accessorModifiers, "is" + capitalize(name));
             }
         }
 
         if (setterBlock != null) {
-            Parameter[] setterParameterTypes = {new Parameter(node.getType(), "value")};
-            MethodNode setter = new MethodNode(setterName, accessorModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
+            MethodNode setter = new MethodNode(setterName, accessorModifiers, ClassHelper.VOID_TYPE, params(param(node.getType(),"value")), ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
             addPropertyMethod(setter);
             if (!field.isSynthetic()) {

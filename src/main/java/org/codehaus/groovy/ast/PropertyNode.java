@@ -99,7 +99,7 @@ public class PropertyNode extends AnnotatedNode implements Variable {
     public String getGetterNameOrDefault() {
         if (getterName != null) return getterName;
         String defaultName = "get" + capitalize(getName());
-        if (ClassHelper.boolean_TYPE.equals(getOriginType())
+        if (ClassHelper.isPrimitiveBoolean(getOriginType())
                 && !getDeclaringClass().hasMethod(defaultName, Parameter.EMPTY_ARRAY)) {
             defaultName = "is" + capitalize(getName());
         }
