@@ -242,12 +242,85 @@ final class TraitASTTransformationTest {
             trait Named {
                 String name
             }
-
-            class Person implements Named {}
+            class Person implements Named {
+            }
 
             def p = new Person(name:'Stromae')
-
+            assert p.getName() == 'Stromae'
             assert p.name == 'Stromae'
+        '''
+    }
+
+    // GROOVY-11512
+    @Test
+    void testTraitWithProperty2() {
+        assertScript shell, '''
+            trait T {
+                boolean bee = true
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.bee == true
+            assert c.isBee() == true
+            assert c.getBee() == true
+        '''
+    }
+
+    @Test
+    void testTraitWithProperty3() {
+        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
+            trait T {
+                boolean bee = true
+                boolean isBee() { bee }
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.bee == true
+            assert c.isBee() == true
+            shouldFail(MissingMethodException) {
+                c.getBee()
+            }
+        '''
+    }
+
+    @Test
+    void testTraitWithProperty4() {
+        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
+            trait T {
+                boolean bee = true
+                boolean getBee() { bee }
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.bee == true
+            assert c.getBee() == true
+            shouldFail(MissingMethodException) {
+                c.isBee()
+            }
+        '''
+    }
+
+    @Test
+    void testTraitWithProperty5() {
+        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
+            trait T {
+                Boolean bee = true
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.bee != null
+            assert c.getBee() != null
+            shouldFail(MissingMethodException) {
+                c.isBee()
+            }
         '''
     }
 

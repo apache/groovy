@@ -57,6 +57,6 @@ final class Groovy11226 extends StringSourcesStubTestCase {
     void verifyStubs() {
         String stub = stubJavaSourceFor('Pogo')
         assert stub.contains('import foo.*;')
-        assert stub.contains('public final  Bar getBar() { return (Bar)null;}') // TODO: @Generated and non-final
+        assert stub.contains('public  Bar getBar() { return (Bar)null;}') // TODO: @Generated
     }
 }
