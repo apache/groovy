@@ -22,21 +22,24 @@ import java.io.Serializable;
 import java.io.Writer;
 
 /**
+ * <p>
  * Copied from https://github.com/apache/commons-io/blob/master/src/main/java/org/apache/commons/io/output/StringBuilderWriter.java
- *
+ * </p>
  * {@link Writer} implementation that outputs to a {@link StringBuilder}.
  * <p>
  * <strong>NOTE:</strong> This implementation, as an alternative to
- * <code>java.io.StringWriter</code>, provides an <i>un-synchronized</i>
+ * {@link java.io.StringWriter}, provides an <em>un-synchronized</em>
  * (i.e. for use in a single thread) implementation for better performance.
  * For safe usage with multiple {@link Thread}s then
- * <code>java.io.StringWriter</code> should be used.
- *
+ * {@link java.io.StringWriter} should be used.
+ * </p>
  * @since 2.0
  */
 public class StringBuilderWriter extends Writer implements Serializable {
 
     private static final long serialVersionUID = -146927496096066153L;
+
+    /** The append target. */
     private final StringBuilder builder;
 
     /**
@@ -120,17 +123,23 @@ public class StringBuilderWriter extends Writer implements Serializable {
         // no-op
     }
 
+    /**
+     * Gets the underlying builder.
+     *
+     * @return The underlying builder
+     */
+    public StringBuilder getBuilder() {
+        return builder;
+    }
 
     /**
-     * Writes a String to the {@link StringBuilder}.
+     * Returns {@link StringBuilder#toString()}.
      *
-     * @param value The value to write
+     * @return The contents of the String builder.
      */
     @Override
-    public void write(final String value) {
-        if (value != null) {
-            builder.append(value);
-        }
+    public String toString() {
+        return builder.toString();
     }
 
     /**
@@ -148,21 +157,14 @@ public class StringBuilderWriter extends Writer implements Serializable {
     }
 
     /**
-     * Returns the underlying builder.
+     * Writes a String to the {@link StringBuilder}.
      *
-     * @return The underlying builder
-     */
-    public StringBuilder getBuilder() {
-        return builder;
-    }
-
-    /**
-     * Returns {@link StringBuilder#toString()}.
-     *
-     * @return The contents of the String builder.
+     * @param value The value to write
      */
     @Override
-    public String toString() {
-        return builder.toString();
+    public void write(final String value) {
+        if (value != null) {
+            builder.append(value);
+        }
     }
 }
