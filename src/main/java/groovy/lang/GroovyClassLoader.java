@@ -106,6 +106,7 @@ public class GroovyClassLoader extends URLClassLoader {
     private String sourceEncoding;
     private Boolean recompile;
     private static final AtomicInteger scriptNameCounter = new AtomicInteger(1_000_000); // 1,000,000 avoids conflicts with names from the GroovyShell
+    private static final String HASH_ALGORITHM = System.getProperty("groovy.cache.hashing.algorithm", "md5");
 
     static {
         registerAsParallelCapable();
@@ -274,11 +275,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(String text) throws CompilationFailedException {
-        try {
-            return parseClass(text, "Script_" + EncodingGroovyMethods.md5(text) + ".groovy");
-        } catch (NoSuchAlgorithmException e) {
-            throw new GroovyBugError("Failed to generate md5", e); // should never happen
-        }
+        return parseClass(text, "Script_" + genEncodingString(text) + ".groovy");
     }
 
     public synchronized String generateScriptName() {
@@ -314,11 +311,7 @@ public class GroovyClassLoader extends URLClassLoader {
         // and avoid occupying Permanent Area/Metaspace repeatedly
         String cacheKey = genSourceCacheKey(codeSource);
 
-        return sourceCache.getAndPut(
-                cacheKey,
-                key -> doParseClass(codeSource),
-                shouldCacheSource
-        );
+        return sourceCache.getAndPut(cacheKey, key -> doParseClass(codeSource), shouldCacheSource);
     }
 
     private String genSourceCacheKey(GroovyCodeSource codeSource) {
@@ -342,11 +335,7 @@ public class GroovyClassLoader extends URLClassLoader {
             strToDigest.append("name:").append(codeSource.getName());
         }
 
-        try {
-            return EncodingGroovyMethods.md5(strToDigest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new GroovyRuntimeException(e); // should never reach here!
-        }
+        return genEncodingString(strToDigest);
     }
 
     private Class doParseClass(GroovyCodeSource codeSource) {
@@ -1231,6 +1220,29 @@ public class GroovyClassLoader extends URLClassLoader {
             if (!(classNode instanceof InnerClassNode)) {
                 addTimeStamp(classNode);
             }
+        }
+    }
+
+    /**
+     * Generates an encoded string based on the specified characters and the defined encoding algorithm.
+     * Supported algorithms currently are "md5" and sha256".
+     * An exception is throw for an unknown algorithm or if the JVM doesn't support the algorithm.
+     *
+     * @param chars The characters to encode.
+     * @return The encoded string.
+     */
+    public String genEncodingString(CharSequence chars) {
+        try {
+            switch(HASH_ALGORITHM) {
+                case "md5":
+                    return EncodingGroovyMethods.md5(chars);
+                case "sha256":
+                    return EncodingGroovyMethods.sha256(chars);
+                default:
+                    throw new IllegalStateException("Unknown hash algorithm");
+            }
+        } catch (NoSuchAlgorithmException e) {
+            throw new GroovyRuntimeException(e);
         }
     }
 }
