@@ -57,7 +57,7 @@ public class IndyStaticTypesMultiTypeDispatcher extends StaticTypesBinaryExpress
                     false);
     private static class GenericArrayAccess extends MethodCaller {
         private final String name, signature;
-        public GenericArrayAccess(String name, String signature) {
+        private GenericArrayAccess(String name, String signature) {
             this.name = name;
             this.signature = signature;
         }

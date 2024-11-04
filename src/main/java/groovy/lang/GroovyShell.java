@@ -223,7 +223,7 @@ public class GroovyShell extends GroovyObjectSupport {
         class DoSetContext implements PrivilegedAction {
             final ClassLoader classLoader;
 
-            public DoSetContext(ClassLoader loader) {
+            DoSetContext(ClassLoader loader) {
                 classLoader = loader;
             }
 

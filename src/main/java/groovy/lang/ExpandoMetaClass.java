@@ -1371,7 +1371,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private class SubClassDefiningClosure extends GroovyObjectSupport {
         private final Class klazz;
 
-        public SubClassDefiningClosure(Class klazz) {
+        private SubClassDefiningClosure(Class klazz) {
             this.klazz = klazz;
         }
 
@@ -1481,7 +1481,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         private final Object object;
         private final Set<MixinInMetaClass> mixinClasses;
 
-        public MixedInAccessor(Object object, Set<MixinInMetaClass> mixinClasses) {
+        private MixedInAccessor(Object object, Set<MixinInMetaClass> mixinClasses) {
             this.object = object;
             this.mixinClasses = mixinClasses;
         }

@@ -166,7 +166,7 @@ public class GroovyMain {
             description = "The Groovy command line processor.",
             sortOptions = false,
             versionProvider = VersionProvider.class)
-    private static class GroovyCommand {
+    private static final class GroovyCommand {
 
         // IMPLEMENTATION NOTE:
         // classpath must be the first argument, so that the `startGroovy(.bat)` script
@@ -515,7 +515,7 @@ public class GroovyMain {
         class DoSetContext implements PrivilegedAction<Object> {
             ClassLoader classLoader;
 
-            public DoSetContext(ClassLoader loader) {
+            DoSetContext(ClassLoader loader) {
                 classLoader = loader;
             }
 

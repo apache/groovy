@@ -60,7 +60,7 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper {
 
     private static class BinaryCharExpressionHelper extends BinaryIntExpressionHelper {
-        public BinaryCharExpressionHelper(final WriterController wc) {
+        private BinaryCharExpressionHelper(final WriterController wc) {
             super(wc, charArraySet, charArrayGet);
         }
         private static final MethodCaller
@@ -70,7 +70,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     }
 
     private static class BinaryByteExpressionHelper extends BinaryIntExpressionHelper {
-        public BinaryByteExpressionHelper(final WriterController wc) {
+        private BinaryByteExpressionHelper(final WriterController wc) {
             super(wc, byteArraySet, byteArrayGet);
         }
         private static final MethodCaller
@@ -80,7 +80,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
     }
 
     private static class BinaryShortExpressionHelper extends BinaryIntExpressionHelper {
-        public BinaryShortExpressionHelper(final WriterController wc) {
+        private BinaryShortExpressionHelper(final WriterController wc) {
             super(wc, shortArraySet, shortArrayGet);
         }
         private static final MethodCaller

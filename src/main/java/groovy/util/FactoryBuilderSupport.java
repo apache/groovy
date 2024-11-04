@@ -1304,7 +1304,7 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
 
     FactoryBuilderSupport builder;
 
-    public FactoryInterceptorMetaClass(MetaClass delegate, FactoryBuilderSupport builder) {
+    FactoryInterceptorMetaClass(MetaClass delegate, FactoryBuilderSupport builder) {
         super(delegate);
         this.builder = builder;
     }

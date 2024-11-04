@@ -933,7 +933,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private class WritableClosure extends Closure implements Writable {
         private static final long serialVersionUID = -5749205698681690370L;
 
-        public WritableClosure() {
+        private WritableClosure() {
             super(Closure.this);
         }
 

@@ -3912,15 +3912,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Deprecated
     static class MethodIndex extends Index {
-        public MethodIndex(boolean b) {
+        MethodIndex(boolean b) {
             super(false);
         }
 
-        public MethodIndex(int size) {
+        MethodIndex(int size) {
             super(size);
         }
 
-        public MethodIndex() {
+        MethodIndex() {
             super();
         }
 
