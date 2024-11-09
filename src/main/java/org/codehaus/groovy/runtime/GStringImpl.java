@@ -152,26 +152,161 @@ public class GStringImpl extends GString {
         return toString().isEmpty();
     }
 
+    /**
+     * Returns a stream of lines extracted from this string,
+     * separated by line terminators.
+     * <p>
+     * A <i>line terminator</i> is one of the following:
+     * a line feed character {@code "\n"} (U+000A),
+     * a carriage return character {@code "\r"} (U+000D),
+     * or a carriage return followed immediately by a line feed
+     * {@code "\r\n"} (U+000D U+000A).
+     * <p>
+     * A <i>line</i> is either a sequence of zero or more characters
+     * followed by a line terminator, or it is a sequence of one or
+     * more characters followed by the end of the string. A
+     * line does not include the line terminator.
+     * <p>
+     * The stream returned by this method contains the lines from
+     * this string in the order in which they occur.
+     *
+     * @apiNote This definition of <i>line</i> implies that an empty
+     *          string has zero lines and that there is no empty line
+     *          following a line terminator at the end of a string.
+     *
+     * @implNote This method provides better performance than
+     *           split("\R") by supplying elements lazily and
+     *           by faster search of new line terminators.
+     *
+     * @return  the stream of lines extracted from this string
+     *
+     * @since 5.0.0
+     */
     public Stream<String> lines() {
         return toString().lines();
     }
 
+    /**
+     * Returns {@code true} if the string is empty or contains only
+     * {@linkplain Character#isWhitespace(int) white space} codepoints,
+     * otherwise {@code false}.
+     *
+     * @return {@code true} if the string is empty or contains only
+     *         {@linkplain Character#isWhitespace(int) white space} codepoints,
+     *         otherwise {@code false}
+     *
+     * @see Character#isWhitespace(int)
+     *
+     * @since 5.0.0
+     */
     public boolean isBlank() {
         return toString().isBlank();
     }
 
+    /**
+     * Returns a string whose value is the concatenation of this
+     * string repeated {@code count} times.
+     * <p>
+     * If this string is empty or count is zero then the empty
+     * string is returned.
+     *
+     * @param   count number of times to repeat
+     *
+     * @return  A string composed of this string repeated
+     *          {@code count} times or the empty string if this
+     *          string is empty or count is zero
+     *
+     * @throws  IllegalArgumentException if the {@code count} is
+     *          negative.
+     *
+     * @since 5.0.0
+     */
     public String repeat(int count) {
         return toString().repeat(count);
     }
 
+    /**
+     * Returns a string whose value is this string, with all leading
+     * {@linkplain Character#isWhitespace(int) white space} removed.
+     * <p>
+     * If this {@code String} object represents an empty string,
+     * or if all code points in this string are
+     * {@linkplain Character#isWhitespace(int) white space}, then an empty string
+     * is returned.
+     * <p>
+     * Otherwise, returns a substring of this string beginning with the first
+     * code point that is not a {@linkplain Character#isWhitespace(int) white space}
+     * up to and including the last code point of this string.
+     * <p>
+     * This method may be used to trim
+     * {@linkplain Character#isWhitespace(int) white space} from
+     * the beginning of a string.
+     *
+     * @return  a string whose value is this string, with all leading white
+     *          space removed
+     *
+     * @see Character#isWhitespace(int)
+     *
+     * @since 5.0.0
+     */
     public String stripLeading() {
         return toString().stripLeading();
     }
 
+    /**
+     * Returns a string whose value is this string, with all trailing
+     * {@linkplain Character#isWhitespace(int) white space} removed.
+     * <p>
+     * If this {@code String} object represents an empty string,
+     * or if all characters in this string are
+     * {@linkplain Character#isWhitespace(int) white space}, then an empty string
+     * is returned.
+     * <p>
+     * Otherwise, returns a substring of this string beginning with the first
+     * code point of this string up to and including the last code point
+     * that is not a {@linkplain Character#isWhitespace(int) white space}.
+     * <p>
+     * This method may be used to trim
+     * {@linkplain Character#isWhitespace(int) white space} from
+     * the end of a string.
+     *
+     * @return  a string whose value is this string, with all trailing white
+     *          space removed
+     *
+     * @see Character#isWhitespace(int)
+     *
+     * @since 5.0.0
+     */
     public String stripTrailing() {
         return toString().stripTrailing();
     }
 
+    /**
+     * Returns a string whose value is this string, with all leading
+     * and trailing {@linkplain Character#isWhitespace(int) white space}
+     * removed.
+     * <p>
+     * If this {@code String} object represents an empty string,
+     * or if all code points in this string are
+     * {@linkplain Character#isWhitespace(int) white space}, then an empty string
+     * is returned.
+     * <p>
+     * Otherwise, returns a substring of this string beginning with the first
+     * code point that is not a {@linkplain Character#isWhitespace(int) white space}
+     * up to and including the last code point that is not a
+     * {@linkplain Character#isWhitespace(int) white space}.
+     * <p>
+     * This method may be used to strip
+     * {@linkplain Character#isWhitespace(int) white space} from
+     * the beginning and end of a string.
+     *
+     * @return  a string whose value is this string, with all leading
+     *          and trailing white space removed
+     *
+     * @see Character#isWhitespace(int)
+     *
+     * @since 5.0.0
+     */
     public String strip() {
         return toString().strip();
     }
@@ -331,32 +466,6 @@ public class GStringImpl extends GString {
     public String toUpperCase() {
         return toString().toUpperCase();
     }
-
-    /* comment out the Java 11 API for now:
-    public String strip() {
-        return toString().strip();
-    }
-
-    public String stripLeading() {
-        return toString().stripLeading();
-    }
-
-    public String stripTrailing() {
-        return toString().stripTrailing();
-    }
-
-    public boolean isBlank() {
-        return toString().isBlank();
-    }
-
-    public Stream<String> lines() {
-        return toString().lines();
-    }
-
-    public String repeat(int count) {
-        return toString().repeat(count);
-    }
-    */
 
     public char[] toCharArray() {
         return toString().toCharArray();
