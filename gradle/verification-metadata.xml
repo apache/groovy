@@ -423,6 +423,11 @@
             <pgp value="050A37A2E0577F4BAA095B52602EC18D20C4661C"/>
          </artifact>
       </component>
+      <component group="com.thoughtworks.xstream" name="xstream" version="1.4.21">
+         <artifact name="xstream-1.4.21.jar">
+            <pgp value="050A37A2E0577F4BAA095B52602EC18D20C4661C"/>
+         </artifact>
+      </component>
       <component group="commons-beanutils" name="commons-beanutils" version="1.9.4">
          <artifact name="commons-beanutils-1.9.4.jar">
             <pgp value="B6E73D84EA4FCC47166087253FAAD2CD5ECBB314"/>
