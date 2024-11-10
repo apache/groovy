@@ -75,9 +75,7 @@ import org.codehaus.groovy.runtime.metaclass.TransformMetaMethod;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.NumberMathModificationInfo;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
-import org.codehaus.groovy.util.ComplexKeyHashMap;
 import org.codehaus.groovy.util.FastArray;
-import org.codehaus.groovy.util.SingleKeyHashMap;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
@@ -3893,82 +3891,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     protected void clearInvocationCaches() {
         metaMethodIndex.clearCaches();
-    }
-
-    @Deprecated
-    private static final SingleKeyHashMap.Copier NAME_INDEX_COPIER = value -> {
-        if (value instanceof FastArray) {
-            return ((FastArray) value).copy();
-        } else {
-            return value;
-        }
-    };
-
-    @Deprecated
-    private static final SingleKeyHashMap.Copier METHOD_INDEX_COPIER = value -> SingleKeyHashMap.copy(new SingleKeyHashMap(false), (SingleKeyHashMap) value, NAME_INDEX_COPIER);
-
-    /**
-     * @deprecated use {@link LinkedHashMap} instead
-     */
-    @Deprecated
-    static class MethodIndex extends Index {
-        MethodIndex(boolean b) {
-            super(false);
-        }
-
-        MethodIndex(int size) {
-            super(size);
-        }
-
-        MethodIndex() {
-            super();
-        }
-
-        MethodIndex copy() {
-            return (MethodIndex) SingleKeyHashMap.copy(new MethodIndex(false), this, METHOD_INDEX_COPIER);
-        }
-
-        @Override
-        protected Object clone() throws CloneNotSupportedException {
-            return super.clone();
-        }
-    }
-
-    /**
-     * @deprecated use {@link LinkedHashMap} instead
-     */
-    @Deprecated
-    public static class Index extends SingleKeyHashMap {
-
-        public Index(int size) {
-        }
-
-        public Index() {
-        }
-
-        public Index(boolean size) {
-            super(false);
-        }
-
-        public SingleKeyHashMap getNotNull(CachedClass key) {
-            Entry res = getOrPut(key);
-            if (res.value == null) {
-                res.value = new SingleKeyHashMap();
-            }
-            return (SingleKeyHashMap) res.value;
-        }
-
-        public void put(CachedClass key, SingleKeyHashMap value) {
-            getOrPut(key).value = value;
-        }
-
-        public SingleKeyHashMap getNullable(CachedClass clazz) {
-            return (SingleKeyHashMap) get(clazz);
-        }
-
-        public boolean checkEquals(ComplexKeyHashMap.Entry e, Object key) {
-            return ((Entry) e).key.equals(key);
-        }
     }
 
     private static class DummyMetaMethod extends MetaMethod {
