@@ -1777,8 +1777,8 @@ can assign to the variable:
 ----
 include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints,indent=0]
 ----
-<1> `list` is declared as an unchecked `List` and assigned a list literal of `String`s
-<2> this line passes compilation because of flow typing: the type checker knows that `list` is at this point a `List<String>`
+<1> `list` is declared as an unchecked `List` and assigned a list literal of strings
+<2> this line passes compilation because of flow typing: the type checker knows that `list` is at this point an `ArrayList<String>`
 <3> but you can't assign a `String` to a `List` so this is a type checking error
 
 You can also note that even if the variable is declared *without* generics information, the type checker knows what is
@@ -1788,18 +1788,21 @@ the component type. Therefore, such code would fail compilation:
 ----
 include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_failure,indent=0]
 ----
-<1> `list` is inferred as `List<String>`
-<2> so adding an `int` to a `List<String>` is a compile-time error
+<1> `list` is inferred as `ArrayList<String>`
+<2> so adding an `int` to a `ArrayList<String>` is a compile-time error
+<3> `list` is declared as `List<?>`
+<4> the inferred type of `list` here is `List<capture-of ?>`, so calling `addAll` with a list of anything is a compile-time error
+<5> and calling `add` with an `int` is also a compile-time error for the same reason; only `add(null)` is allowed
 
-Fixing this requires adding an explicit generic type to the declaration:
+Fixing this requires adding an explicit, non-wildcard type argument:
 
 [source,groovy]
 ----
 include::../test/typing/TypeCheckingTest.groovy[tags=flowtyping_typeconstraints_fixed,indent=0]
 ----
-<1> `list` declared as `List<? extends Serializable>` and initialized with an empty list
+<1> `list` is declared as `List<Serializable>` and initialized with an empty list
 <2> elements added to the list conform to the declaration type of the list
-<3> so adding an `int` to a `List<? extends Serializable>` is allowed
+<3> and adding an integer is allowed
 
 Flow typing has been introduced to reduce the difference in semantics between classic and static Groovy. In particular,
 consider the behavior of this code in Java:

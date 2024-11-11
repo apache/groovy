@@ -53,7 +53,26 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible generic argument types. Cannot assign java.util.HashMap<java.lang.String, java.lang.Integer> to: java.util.Map<? extends java.lang.CharSequence, java.lang.String>'
     }
 
-    void testAddOnList() {
+    void testAddOnList1() {
+        assertScript '''
+            List<String> list = []
+            list.add('string')
+        '''
+
+        assertScript '''
+            List<Number> list = []
+            list.add(1)
+        '''
+    }
+
+    void testAddOnList2() {
+        assertScript '''
+            List<String> list = new LinkedList<>()
+            list.add('string')
+        '''
+    }
+
+    void testAddOnList3() {
         shouldFailWithMessages '''
             List<String> list = []
             list.add(1)
@@ -61,26 +80,34 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call java.util.ArrayList#add(java.lang.String) with arguments [int]'
     }
 
-    void testAddOnList2() {
+    // GROOVY-9074
+    void testAddOnList4() {
+        shouldFailWithMessages '''
+            List<?> list = []
+            list.add(1)
+        ''',
+        'Cannot call java.util.ArrayList#add(capture-of ?) with arguments [int]'
+
+        shouldFailWithMessages '''
+            List<? extends Number> list = []
+            list.add(1)
+        ''',
+        'Cannot call java.util.ArrayList#add(capture-of ? extends java.lang.Number) with arguments [int]'
+    }
+
+    void testAddOnListUsingLeftShift1() {
         assertScript '''
             List<String> list = []
-            list.add 'Hello'
+            list << 'string'
         '''
 
         assertScript '''
             List<Integer> list = []
-            list.add 1
+            list << 1
         '''
     }
 
-    void testAddOnListWithDiamond() {
-        assertScript '''
-            List<String> list = new LinkedList<>()
-            list.add 'Hello'
-        '''
-    }
-
-    void testAddOnListUsingLeftShift() {
+    void testAddOnListUsingLeftShift2() {
         shouldFailWithMessages '''
             List<String> list = []
             list << 1
@@ -88,15 +115,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call <T> org.codehaus.groovy.runtime.DefaultGroovyMethods#leftShift(java.util.List<T>, T) with arguments [java.util.ArrayList<java.lang.String>, int]'
     }
 
-    void testAddOnList2UsingLeftShift() {
-        assertScript '''
-            List<String> list = []
-            list << 'Hello'
-        '''
-
-        assertScript '''
-            List<Integer> list = []
+    void testAddOnListUsingLeftShift3() {
+        shouldFailWithMessages '''
+            def list = (List<? extends Number>) []
             list << 1
+        ''',
+        'Cannot call <T> org.codehaus.groovy.runtime.DefaultGroovyMethods#leftShift(java.util.List<T>, T) with arguments [java.util.List<? extends java.lang.Number>, int]'
+    }
+
+    void testAddOnListWithDiamondUsingLeftShift() {
+        assertScript '''
+            List<String> list = new LinkedList<>()
+            list << 'Hello'
         '''
     }
 
@@ -105,13 +135,6 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Trie<T> {}
             List<Trie<String>> list = []
             list << new Trie<String>()
-        '''
-    }
-
-    void testAddOnListWithDiamondUsingLeftShift() {
-        assertScript '''
-            List<String> list = new LinkedList<>()
-            list << 'Hello'
         '''
     }
 
@@ -1923,6 +1946,20 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign java.util.ArrayList<java.lang.String> to: java.util.List<? super java.lang.Number>'
     }
 
+    // GROOVY-10371
+    void testAssignmentShouldFailBecauseOfUpperBound() {
+        shouldFailWithMessages '''
+            class A<X> {
+            }
+            class B<Y> extends A<Y> {
+            }
+
+            B<? extends Number> x = new B<Double>()
+            A<Number> y = x
+        ''',
+        'Incompatible generic argument types. Cannot assign B<java.lang.Double> to: A<java.lang.Number>'
+    }
+
     // GROOVY-9914, GROOVY-10036
     void testAssignmentShouldWorkForParameterizedMap() {
         assertScript '''
@@ -2447,20 +2484,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Test {
                 static test2() {
                     if (new Random().nextBoolean()) {
-                        def a = new ArrayList<String>()
-                        a << "a" << "b" << "c"
-                        return a
+                        def list = new ArrayList<String>()
+                        list << "a" << "b" << "c"
+                        return list
                     } else {
-                        def b = new LinkedList<Number>()
-                        b << 1 << 2 << 3
-                        return b
+                        def list = new LinkedList<Integer>()
+                        list << 1 << 2 << 3
+                        return list
                     }
                 }
 
                 static test() {
                     def result = test2()
                     result[0].toInteger()
-                    //result[0].toString()
                 }
             }
             new Test()
@@ -2958,12 +2994,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             Map<Date, Integer> map = [:]
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def infType = node.getNodeMetaData(INFERRED_TYPE)
-                assert infType == make(Set)
-                def entryInfType = infType.genericsTypes[0].type
-                assert entryInfType == make(Map.Entry)
-                assert entryInfType.genericsTypes[0].type == make(Date)
-                assert entryInfType.genericsTypes[1].type == Integer_TYPE
+                Object type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == SET_TYPE
+                       type = type.genericsTypes[0].type
+                assert type == make(Map.Entry)
+                assert type.genericsTypes[0].type == make(Date)
+                assert type.genericsTypes[1].type == Integer_TYPE
             })
             def entries = map?.entrySet()
         '''
@@ -2974,12 +3010,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             List<Map<Date, Integer>> maps = []
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def listType = node.getNodeMetaData(INFERRED_TYPE)
-                assert listType == Iterator_TYPE
-                def infType = listType.genericsTypes[0].type
-                assert infType == make(Map)
-                assert infType.genericsTypes[0].type == make(Date)
-                assert infType.genericsTypes[1].type == Integer_TYPE
+                Object type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == Iterator_TYPE
+                       type = type.genericsTypes[0].type
+                assert type == MAP_TYPE
+                assert type.genericsTypes[0].type == make(Date)
+                assert type.genericsTypes[1].type == Integer_TYPE
             })
             def iter = maps?.iterator()
         '''
@@ -3304,12 +3340,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testUncheckedAssignment() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def ift = node.getNodeMetaData(INFERRED_TYPE)
-                assert ift == make(List)
-                assert ift.isUsingGenerics()
-                def gts = ift.genericsTypes
-                assert gts.length==1
-                assert gts[0].type == STRING_TYPE
+                Object type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == LIST_TYPE
+                assert type.isUsingGenerics()
+                Object args = type.genericsTypes
+                assert args.length == 1
+                assert args[0].type == STRING_TYPE
             })
             List<String> list = (List) null
         '''
@@ -3318,12 +3354,12 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     void testUncheckedAssignmentWithSuperInterface() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                def ift = node.getNodeMetaData(INFERRED_TYPE)
-                assert ift == LIST_TYPE
-                def gts = ift.genericsTypes
-                assert gts != null
-                assert gts.length == 1
-                assert gts[0].type == STRING_TYPE
+                Object type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type == LIST_TYPE
+                Object args = type.genericsTypes
+                assert args != null
+                assert args.length == 1
+                assert args[0].type == STRING_TYPE
             })
             Iterable<String> list = (List) null
         '''
@@ -3348,7 +3384,11 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-5692
     void testCompatibleArgumentsForPlaceholders2() {
         assertScript '''
-            def <T> boolean test(T one, List<T> many) { }
+            def <T> void test(T one, List<T> many) { }
+            test(1,[2,3])
+        '''
+        assertScript '''
+            def <T> void test(T one, List<? extends T> many) { }
             test(1,["II","III"])
         '''
     }
@@ -3852,7 +3892,18 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testOutOfBoundsByExtendsGenericParameterType() {
+    // GROOVY-10588
+    void testOutOfBoundsByUnboundedGenericParameterType() {
+        shouldFailWithMessages '''
+            Map<String,?> one = [:]
+            Map<String,?> getTwo() { [:] }
+            def one_plus_two = one + two // <K,V> Map<K,V> plus(Map<K,V> left, Map<K,V> right)
+        ''',
+        'Cannot call <K,V> org.codehaus.groovy.runtime.DefaultGroovyMethods#plus(java.util.Map<K, V>, java.util.Map<K, V>)' +
+        ' with arguments [java.util.LinkedHashMap<java.lang.String, ?>, java.util.Map<java.lang.String, ? extends java.lang.Object>]'
+    }
+
+    void testOutOfBoundsByExtendsGenericParameterType1() {
         shouldFailWithMessages '''
             class Foo {
                 static <T extends List<? extends CharSequence>> void bar(T a) {}
@@ -3862,17 +3913,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList<java.lang.Object>]'
     }
 
-    void testOutOfBoundsBySuperGenericParameterType() {
-        shouldFailWithMessages '''
-            class Foo {
-                static <T extends List<? super CharSequence>> void bar(T a) {}
-            }
-            Foo.bar(['abc'])
-        ''',
-        'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList<java.lang.String>]'
-    }
-
-    void testOutOfBoundsByExtendsPlaceholderParameterType() {
+    void testOutOfBoundsByExtendsGenericParameterType2() {
         shouldFailWithMessages '''
             class Foo {
                 static <T extends List<? extends CharSequence>> void bar(T list) {}
@@ -3884,7 +3925,81 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call <T extends java.util.List<? extends java.lang.CharSequence>> Foo#bar(T) with arguments [U]'
     }
 
-    void testOutOfBoundsBySuperPlaceholderParameterType() {
+    // GROOVY-8084
+    void testOutOfBoundsByExtendsGenericParameterType3() {
+        shouldFailWithMessages '''
+            class Foo {
+                static m(List<? extends Serializable> list) {
+                    list.add('string')
+                }
+            }
+            Foo.bar(new ArrayList<Integer>())
+        ''',
+        'Cannot call java.util.List#add(capture-of ? extends java.io.Serializable) with arguments [java.lang.String]',
+        'Cannot find matching method java.lang.Class#bar(java.util.ArrayList<java.lang.Integer>) or static method Foo#bar(java.util.ArrayList<java.lang.Integer>)'
+    }
+
+    // GROOVY-9074
+    void testOutOfBoundsByExtendsGenericParameterType4() {
+        shouldFailWithMessages '''
+            import java.awt.Canvas
+            abstract class Shape {
+                abstract void draw(Canvas c)
+            }
+            class Circle extends Shape {
+                private int x, y, radius
+                @Override void draw(Canvas c) {}
+            }
+            class Rectangle extends Shape {
+                private int x, y, width, height
+                @Override void draw(Canvas c) {}
+            }
+
+            void addRectangle(List<? extends Shape> shapes) {
+                shapes.add(0, new Rectangle())
+            }
+        ''',
+        'Cannot call java.util.List#add(int, capture-of ? extends Shape) with arguments [int, Rectangle]'
+    }
+
+    void testNotOutOfBoundsBySuperGenericParameterType() {
+        assertScript '''
+            import java.awt.Canvas
+            abstract class Shape {
+                abstract void draw(Canvas c)
+            }
+            class Circle extends Shape {
+                private int x, y, radius
+                @Override void draw(Canvas c) {}
+            }
+            class Rectangle extends Shape {
+                private int x, y, width, height
+                @Override void draw(Canvas c) {}
+            }
+
+            void addRectangle(List<? super Shape> shapes) {
+                shapes.add(0, new Rectangle())
+            }
+
+            List<Shape> list = []
+            addRectangle(list)
+
+            assert list.size() == 1
+            assert list.get(0) instanceof Rectangle
+        '''
+    }
+
+    void testOutOfBoundsBySuperGenericParameterType1() {
+        shouldFailWithMessages '''
+            class Foo {
+                static <T extends List<? super CharSequence>> void bar(T a) {}
+            }
+            Foo.bar(['abc'])
+        ''',
+        'Cannot call <T extends java.util.List<? super java.lang.CharSequence>> Foo#bar(T) with arguments [java.util.ArrayList<java.lang.String>]'
+    }
+
+    void testOutOfBoundsBySuperGenericParameterType2() {
         shouldFailWithMessages '''
             class Foo {
                 static <T extends List<? super CharSequence>> void bar(T list) {}
@@ -4238,9 +4353,9 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             class Foo extends Bar {
                 static public Date genericItem() {
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                        def inft = node.getNodeMetaData(INFERRED_TYPE)
-                        assert inft == make(List)
-                        assert inft.genericsTypes[0].type == make(Date)
+                        Object type = node.getNodeMetaData(INFERRED_TYPE)
+                        assert type == LIST_TYPE
+                        assert type.genericsTypes[0].type == make(Date)
                     })
                     def res = bar(null)
 
@@ -4261,7 +4376,7 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                         def cl = node.rightExpression.arguments[0]
                         assert cl instanceof ClosureExpression
                         def type = cl.getNodeMetaData(INFERRED_TYPE)
-                        assert type == make(Closure)
+                        assert type == CLOSURE_TYPE
                         assert type.isUsingGenerics()
                         assert type.genericsTypes
                         assert type.genericsTypes[0].type.name == 'CTypeTest'

@@ -1368,7 +1368,7 @@ final class MethodReferenceTest {
     // GROOVY-10813, GROOVY-10858, GROOVY-11363
     @Test
     void testMethodSelection() {
-        for (spec in ['', '<?>', '<Object>', '<? extends Object>', '<? super String>']) {
+        for (spec in ['', '<Object>', '<? super String>']) {
             assertScript shell, """
                 @CompileStatic
                 void test() {
@@ -1379,7 +1379,7 @@ final class MethodReferenceTest {
                 test()
             """
         }
-        for (spec in ['', '<?,?>', '<?,Object>', '<?,? extends Object>', '<?,? super String>']) {
+        for (spec in ['', '<Object,Object>', '<Object,? super String>']) {
             assertScript shell, """
                 @CompileStatic
                 void test() {
@@ -1393,7 +1393,7 @@ final class MethodReferenceTest {
         assertScript shell, '''
             @CompileStatic
             void test() {
-                BiConsumer<Script,?> c = Script::print
+                BiConsumer<Script,Object> c = Script::print
                 c.accept(this, 'hello world!')
             }
 
