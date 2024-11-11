@@ -1346,6 +1346,7 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isGenericsPlaceHolder()) {
             GenericsType gt = placeholders.get(new GenericsTypeName(type.getUnresolvedName()));
             if (gt != null) {
+                if (gt.isWildcard()) return new ClassNode("capture-of " + gt, 0, getCombinedBoundType(gt));
                 return gt.getType();
             }
             ClassNode cn = extractType(type.asGenericsType()); // GROOVY-10756
@@ -1524,9 +1525,9 @@ public abstract class StaticTypeCheckingSupport {
                         resolvedMethodGenerics.put(entry.getKey(), candidate);
                         continue;
                     } else if (!candidate.isPlaceholder() && !candidate.isWildcard()) {
-                        // combine "T=Integer" and "T=String" to produce "T=? extends Serializable & Comparable<...>"
+                        // combine "T=Integer" and "T=String" to produce "T=(Serializable & ... )"
                         ClassNode lub = lowestUpperBound(candidate.getType(), resolved.getType());
-                        resolvedMethodGenerics.put(entry.getKey(), lub.asGenericsType());
+                        resolvedMethodGenerics.put(entry.getKey(), new GenericsType(lub));
                         continue;
                     }
                 }
@@ -1559,6 +1560,11 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     private static boolean compatibleConnection(final GenericsType resolved, final GenericsType connection) {
+        if (resolved.isWildcard()
+                // TODO: figure out capture of super
+                && resolved.getLowerBound() == null) {
+            return false; // GROOVY-8084, GROOVY-9074, GROOVY-10588
+        }
         if (resolved.isPlaceholder()
                 &&  resolved.getUpperBounds() != null
                 &&  resolved.getUpperBounds().length == 1

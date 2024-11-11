@@ -1378,18 +1378,18 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6835
     void testFlowTypingWithInstanceofAndInterfaceTypes() {
         assertScript '''
-            class ShowUnionTypeBug {
-                Map<String, Object> instanceMap = (Map<String,Object>)['a': 'Hello World']
+            class ShowFlowTypeBug {
+                Map<String,Object> instanceMap = (Map<String,Object>)[a: 'Hello World']
                 def findInstance(String key) {
-                    Set<? extends CharSequence> allInstances = [] as Set
-                    def instance = instanceMap.get(key)
+                    Set<CharSequence> instanceSet = []
+                    Object instance = instanceMap.get(key)
                     if(instance instanceof CharSequence) {
-                       allInstances.add(instance)
+                       instanceSet.add(instance)
                     }
-                    allInstances
+                    instanceSet
                 }
             }
-            assert new ShowUnionTypeBug().findInstance('a') == ['Hello World'] as Set
+            assert new ShowFlowTypeBug().findInstance('a') == ['Hello World'] as Set
         '''
     }
 

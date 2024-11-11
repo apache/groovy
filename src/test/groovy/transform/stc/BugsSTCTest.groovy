@@ -279,14 +279,6 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testGroovyObjectInGenerics() {
-        assertScript '''
-            class A {}
-            List<? extends GroovyObject> list = new LinkedList<? extends GroovyObject>()
-            list.add(new A())
-        '''
-    }
-
     // GROOVY-5656
     void testShouldNotThrowAmbiguousMethodError() {
         assertScript '''import groovy.transform.*

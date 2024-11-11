@@ -18,84 +18,16 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
-import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationUnit
+import org.junit.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.codehaus.groovy.control.Phases.CLASS_GENERATION
 
-@CompileStatic
-final class Groovy9074 extends GroovyTestCase {
+final class Groovy9074 {
 
-    void _FIXME_testWildcardCapture() {
-        def err = shouldFail '''
-            @groovy.transform.TypeChecked
-            class Main {
-                private static Collection<?> c = new ArrayList<String>()
-                static main(args) {
-                    c.add(new Object())
-                }
-            }
-        '''
-
-        // TODO: This is just a sample message; Java produces this for the equivalent code.
-        assert err =~ / The method add\(capture#1-of \?\) in the type Collection<capture#1-of \?> is not applicable for the arguments \(Object\)/
-    }
-
-    void _FIXME_testWildcardExtends() {
-        def err = shouldFail '''
-            import java.awt.Canvas
-            abstract class Shape {
-                abstract void draw(Canvas c)
-            }
-            class Circle extends Shape {
-                private int x, y, radius
-                @Override void draw(Canvas c) {}
-            }
-            class Rectangle extends Shape {
-                private int x, y, width, height
-                @Override void draw(Canvas c) {}
-            }
-
-            @groovy.transform.TypeChecked
-            void addRectangle(List<? extends Shape> shapes) {
-                shapes.add(0, new Rectangle()) // TODO: compile-time error!
-            }
-        '''
-
-        // TODO: This is just a sample message; Java produces this for the equivalent code.
-        assert err =~ / The method add(capture#1-of \?) in the type List<capture#1-of \?> is not applicable for the arguments \(Rectangle\)/
-    }
-
-    void testWildcardSuper() {
-        assertScript '''
-            import java.awt.Canvas
-            abstract class Shape {
-                abstract void draw(Canvas c)
-            }
-            class Circle extends Shape {
-                private int x, y, radius
-                @Override void draw(Canvas c) {}
-            }
-            class Rectangle extends Shape {
-                private int x, y, width, height
-                @Override void draw(Canvas c) {}
-            }
-
-            @groovy.transform.TypeChecked
-            void addRectangle(List<? super Shape> shapes) {
-                shapes.add(0, new Rectangle())
-            }
-
-            List<Shape> list = []
-            addRectangle(list)
-
-            assert list.size() == 1
-            assert list.get(0) instanceof Rectangle
-        '''
-    }
-
-    void testWildcardExtends2() {
+    @Test
+    void testWildcardExtends() {
         new CompilationUnit().with {
             addSource 'Main.groovy', '''
                 class Factory {
@@ -124,7 +56,8 @@ final class Groovy9074 extends GroovyTestCase {
         }
     }
 
-    void testWildcardSuper2() {
+    @Test
+    void testWildcardSuper() {
         new CompilationUnit().with {
             addSource 'Main.groovy', '''
                 class Factory {

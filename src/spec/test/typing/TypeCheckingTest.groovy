@@ -688,32 +688,40 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             }
             // end::flowtyping_typeconstraints[]
             flowTypingWithExplicitType()
-        ''', 'Cannot assign value of type java.lang.String to variable of type java.util.List'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type java.util.List'
     }
 
-    void testFlowTypingTypeConstraintsFailure() {
+    void testFlowTypingTypeConstraints2() {
         shouldFailWithMessages '''
             // tag::flowtyping_typeconstraints_failure[]
             @groovy.transform.TypeChecked
-            void flowTypingWithExplicitType() {
-                List list = ['a','b','c']           // <1>
+            void flowTypingTypeConstraints1() {
+                def list = ['a','b','c']            // <1>
                 list.add(1)                         // <2>
             }
+            @groovy.transform.TypeChecked
+            void flowTypingTypeConstraints2() {
+                List<?> list = []                   // <3>
+                list.addAll(['a','b','c'])          // <4>
+                list.add(1)                         // <5>
+            }
             // end::flowtyping_typeconstraints_failure[]
-            flowTypingWithExplicitType()
         ''',
-        'Cannot call java.util.ArrayList#add(java.lang.String) with arguments [int]'
+        'Cannot call java.util.ArrayList#add(java.lang.String) with arguments [int]',
+        'Cannot call java.util.ArrayList#addAll(java.util.Collection<? extends capture-of ?>) with arguments [java.util.ArrayList<java.lang.String>]',
+        'Cannot call java.util.ArrayList#add(capture-of ?) with arguments [int]'
 
         assertScript '''
             // tag::flowtyping_typeconstraints_fixed[]
             @groovy.transform.TypeChecked
-            void flowTypingWithExplicitType() {
-                List<? extends Serializable> list = []                      // <1>
-                list.addAll(['a','b','c'])                                  // <2>
-                list.add(1)                                                 // <3>
+            void flowTypingTypeConstraints3() {
+                List<Serializable> list = []        // <1>
+                list.addAll(['a','b','c'])          // <2>
+                list.add(1)                         // <3>
             }
             // end::flowtyping_typeconstraints_fixed[]
-            flowTypingWithExplicitType()
+            flowTypingTypeConstraints3()
         '''
     }
 
