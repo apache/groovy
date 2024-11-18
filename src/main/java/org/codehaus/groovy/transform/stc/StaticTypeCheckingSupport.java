@@ -101,6 +101,7 @@ import static org.codehaus.groovy.ast.ClassHelper.char_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.double_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.findSAM;
 import static org.codehaus.groovy.ast.ClassHelper.float_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.getNextSuperClass;
 import static org.codehaus.groovy.ast.ClassHelper.getUnwrapper;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -1759,8 +1760,20 @@ public abstract class StaticTypeCheckingSupport {
             extractGenericsConnections(connections, type.getNodeMetaData("outer.class"), target.getOuterClass()); //GROOVY-10646
 
         } else if (implementsInterfaceOrIsSubclassOf(type, target)) {
-            ClassNode goal = GenericsUtils.parameterizeType(type, target);
-            extractGenericsConnections(connections, goal.getGenericsTypes(), target.getGenericsTypes());
+            ClassNode superClass = getNextSuperClass(type, target);
+            if (GenericsUtils.hasUnresolvedGenerics(superClass)) {
+                // propagate type arguments to the super class or interface
+                Map<GenericsTypeName, GenericsType> spec = new HashMap<>();
+                if (type.getGenericsTypes() != null) {
+                    extractGenericsConnections(spec, type, type.redirect());
+                } else if (type.redirect().getGenericsTypes() != null) {
+                    for (GenericsType tp : type.redirect().getGenericsTypes()) {
+                        spec.put(new GenericsTypeName(tp.getName()), new GenericsType(getCombinedBoundType(tp))); //GROOVY-10651
+                    }
+                }
+                superClass = applyGenericsContext(spec, superClass);
+            }
+            extractGenericsConnections(connections, superClass, target);
         }
     }
 
