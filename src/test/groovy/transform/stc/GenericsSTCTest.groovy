@@ -117,10 +117,10 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
 
     void testAddOnListUsingLeftShift3() {
         shouldFailWithMessages '''
-            def list = (List<? extends Number>) []
+            List<? extends Number> list = []
             list << 1
         ''',
-        'Cannot call <T> org.codehaus.groovy.runtime.DefaultGroovyMethods#leftShift(java.util.List<T>, T) with arguments [java.util.List<? extends java.lang.Number>, int]'
+        'Cannot call <T> org.codehaus.groovy.runtime.DefaultGroovyMethods#leftShift(java.util.List<T>, T) with arguments [java.util.ArrayList<? extends java.lang.Number>, int]'
     }
 
     void testAddOnListWithDiamondUsingLeftShift() {

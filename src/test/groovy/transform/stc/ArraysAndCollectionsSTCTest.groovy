@@ -946,11 +946,11 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6266
-    void testMapKeyGenerics() {
+    void testMapGenerics() {
         assertScript '''
-            Map<String, ? extends List<? extends List>> map = new HashMap<>()
-            map.get('key',[['val1'],['val2']])
-            assert map.'key'[0] == ['val1']
+            Map<String, List<List>> map = new HashMap<>()
+            map.get('key', [(List)['val1'],['val2']])
+            assert map.key[0] == ['val1']
         '''
     }
 

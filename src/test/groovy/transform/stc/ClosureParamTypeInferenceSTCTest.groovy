@@ -1264,7 +1264,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
     void testDGM_eachWithIndexOnRecursiveIterable() { // GROOVY-10651
-        ['', '<?>'].each { args ->
+        for (args in ['','<?>']) {
             assertScript """
                 void proc(groovy.transform.stc.TreeNode$args node) {
                     node.eachWithIndex { child, index ->
