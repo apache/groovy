@@ -56,6 +56,50 @@ final class Groovy8283 {
             new E().test()
             assert new E().foo.class == A // not the field from this perspective
         '''
+        assertScript shell, '''import p.*
+            class E extends D {
+                @groovy.transform.ASTTest(phase=org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION, value={
+                    def typeof = { label -> lookup(label)[0].getExpression().getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE).toString(false) }
+
+                    assert typeof('implicit'   ) == 'p.B'
+                    assert typeof('explicit'   ) == 'p.B'
+                    assert typeof('attribute'  ) == 'p.B'
+                    assert typeof('methodCall' ) == 'p.A'
+
+                    assert typeof('property'   ) == 'p.B'
+                    assert typeof('attribute2' ) == 'p.B'
+                    assert typeof('methodCall2') == 'p.A'
+                })
+                @groovy.transform.TypeChecked
+                void test() {
+                  implicit:
+                    def a = foo
+                  explicit:
+                    def b = this.foo
+                  attribute:
+                    def c = this.@foo
+                  methodCall:
+                    def d = this.getFoo()
+
+                    def that = new E()
+                  property:
+                    def x = that.foo
+                  attribute2:
+                    def y = that.@foo
+                  methodCall2:
+                    def z = that.getFoo()
+                }
+            }
+
+            @groovy.transform.TypeChecked
+            void test() {
+                @groovy.transform.ASTTest(phase=org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION, value={
+                    def type = node.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE)
+                    assert type.toString(false) == 'p.A'
+                })
+                def a = new E().foo
+            }
+        '''
     }
 
     @Test
