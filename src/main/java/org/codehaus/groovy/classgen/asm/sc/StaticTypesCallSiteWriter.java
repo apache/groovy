@@ -55,6 +55,7 @@ import java.util.function.Predicate;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isSubtype;
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
 import static org.apache.groovy.util.BeanUtils.capitalize;
 import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
@@ -453,6 +454,12 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             }
             if (!AsmClassGenerator.isMemberDirectlyAccessible(getterNode.getModifiers(), getterNode.getDeclaringClass(), controller.getClassNode())) {
                 return false; // GROOVY-6277
+            }
+            FieldNode fieldNode = getField(receiverType, propertyName);
+            if (fieldNode != null && !getterNode.getDeclaringClass().equals(fieldNode.getDeclaringClass())
+                    && isSubtype(getterNode.getDeclaringClass(), fieldNode.getDeclaringClass()) // field found before getter (starting from receiver type)
+                    && AsmClassGenerator.isMemberDirectlyAccessible(fieldNode.getModifiers(), fieldNode.getDeclaringClass(), controller.getClassNode())) {
+                return false; // GROOVY-8283
             }
             MethodCallExpression call = callX(receiver, getterName);
             call.setImplicitThis(implicitThis);

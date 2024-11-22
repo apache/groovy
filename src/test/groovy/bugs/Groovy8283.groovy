@@ -35,7 +35,7 @@ final class Groovy8283 {
                 A getFoo() { return foo }
             }
             class D extends C {
-                protected B foo = new B() // hides A#foo; should hide A#getFoo in subclasses
+                protected B foo = new B()
             }
         '''
         assertScript shell, '''import p.*
@@ -55,6 +55,22 @@ final class Groovy8283 {
 
             new E().test()
             assert new E().foo.class == A // not the field from this perspective
+        '''
+    }
+
+    @Test
+    void testReadFieldPropertyShadowing2() {
+        def shell = new GroovyShell()
+        shell.parse '''package p
+            class A {}
+            class B {}
+            class C {
+                protected A foo = new A()
+                A getFoo() { return foo }
+            }
+            class D extends C {
+                protected B foo = new B()
+            }
         '''
         assertScript shell, '''import p.*
             class E extends D {
@@ -99,6 +115,42 @@ final class Groovy8283 {
                 })
                 def a = new E().foo
             }
+        '''
+    }
+
+    @Test
+    void testReadFieldPropertyShadowing3() {
+        def shell = GroovyShell.withConfig {
+            ast(groovy.transform.CompileStatic)
+        }
+        shell.parse '''package p
+            class A {}
+            class B {}
+            class C {
+                protected A foo = new A()
+                A getFoo() { return foo }
+            }
+            class D extends C {
+                protected B foo = new B()
+            }
+        '''
+        assertScript shell, '''import p.*
+            class E extends D {
+                void test() {
+                    assert foo.class == B
+                    assert this.foo.class == B
+                    assert this.@foo.class == B
+                    assert this.getFoo().getClass() == A
+
+                    def that = new E()
+                    assert that.foo.class == B
+                    assert that.@foo.class == B
+                    assert that.getFoo().getClass() == A
+                }
+            }
+
+            new E().test()
+            assert new E().foo.class == A // not the field from this perspective
         '''
     }
 
