@@ -1124,7 +1124,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
                 list.add((String) iter.next());
             }
         }
-        return new ArrayList<>(list);
+        return list;
     }
 
     /**
