@@ -156,6 +156,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static final ClassNode GENERATED_ANNOTATION = ClassHelper.make(Generated.class);
     private static final ClassNode INTERNAL_ANNOTATION  = ClassHelper.make(Internal .class);
     private static final ClassNode TRANSIENT_ANNOTATION = ClassHelper.make(Transient.class);
+    private static final ClassNode POJO_ANNOTATION = ClassHelper.make(POJO.class);
+    private static final ClassNode COMPILESTATIC_ANNOTATION = ClassHelper.make(CompileStatic.class);
 
     // NOTE: timeStamp constants shouldn't belong to Verifier but kept here for binary compatibility
     public static final String __TIMESTAMP = "__timeStamp";
@@ -251,8 +253,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addDefaultParameterMethods(node);
         addDefaultParameterConstructors(node);
 
-        boolean skipGroovify = hasAnnotation(node, ClassHelper.make(POJO.class))
-                    && hasAnnotation(node, ClassHelper.make(CompileStatic.class));
+        boolean skipGroovify = hasAnnotation(node, POJO_ANNOTATION) && hasAnnotation(node, COMPILESTATIC_ANNOTATION);
         if (!skipGroovify) {
             String classInternalName = BytecodeHelper.getClassInternalName(node);
 
