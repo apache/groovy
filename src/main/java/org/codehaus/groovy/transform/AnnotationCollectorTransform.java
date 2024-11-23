@@ -70,6 +70,8 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * @see AnnotationCollectorTransform#visit(AnnotationNode, AnnotationNode, AnnotatedNode, SourceUnit)
  */
 public class AnnotationCollectorTransform {
+    private static final ClassNode ANNOTATIONCOLLECTOR_ANNOTATION = ClassHelper.make(AnnotationCollector.class);
+    private static final String ANNOTATIONCOLLECTOR_CLASS_NAME = AnnotationCollector.class.getName();
 
     private static List<AnnotationNode> getMeta(ClassNode cn) {
         List<AnnotationNode> meta = cn.getNodeMetaData(AnnotationCollector.class);
@@ -102,7 +104,7 @@ public class AnnotationCollectorTransform {
         public void transformClass(ClassNode cn) {
             AnnotationNode collector = null;
             for (AnnotationNode an : cn.getAnnotations()) {
-                if (an.getClassNode().getName().equals(AnnotationCollector.class.getName())) {
+                if (an.getClassNode().getName().equals(ANNOTATIONCOLLECTOR_CLASS_NAME)) {
                     collector = an;
                     break;
                 }
@@ -258,7 +260,7 @@ public class AnnotationCollectorTransform {
         List<AnnotationNode> ret = new ArrayList<>(annotations.size());
         for (AnnotationNode an : annotations) {
             ClassNode type = an.getClassNode();
-            if (type.getName().equals(AnnotationCollector.class.getName())
+            if (type.getName().equals(ANNOTATIONCOLLECTOR_CLASS_NAME)
                     || "java.lang.annotation".equals(type.getPackageName())
                     || "org.apache.groovy.lang.annotation.Incubating".equals(type.getName())) continue;
             AnnotationNode toAdd = new AnnotationNode(type);
@@ -300,14 +302,14 @@ public class AnnotationCollectorTransform {
 
     // 2.5.3 and above gets from annotation attribute otherwise self
     private static ClassNode getSerializeClass(final ClassNode alias) {
-        List<AnnotationNode> collectors = alias.getAnnotations(ClassHelper.make(AnnotationCollector.class));
+        List<AnnotationNode> collectors = alias.getAnnotations(ANNOTATIONCOLLECTOR_ANNOTATION);
         if (!collectors.isEmpty()) {
             assert collectors.size() == 1;
             AnnotationNode collectorNode = collectors.get(0);
             Expression serializeClass = collectorNode.getMember("serializeClass");
             if (serializeClass instanceof ClassExpression) {
                 ClassNode serializeClassType = serializeClass.getType();
-                if (!serializeClassType.getName().equals(AnnotationCollector.class.getName())) {
+                if (!serializeClassType.getName().equals(ANNOTATIONCOLLECTOR_CLASS_NAME)) {
                     return serializeClassType;
                 }
             }
