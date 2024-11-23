@@ -236,6 +236,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         checkForDuplicateInterfaces(node);
+        checkForDuplicateDefaultMethods(node);
 
         if (node.isInterface() || Traits.isTrait(node)) {
             // interfaces have no constructors but this expects one,
@@ -274,6 +275,35 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addCovariantMethods(node);
         detectNonSealedClasses(node);
         checkFinalVariables(node);
+    }
+
+    private static void checkForDuplicateDefaultMethods(ClassNode node) {
+        if (node.getInterfaces().length < 2) return;
+
+        Map<String, MethodNode> defaultMethods = new HashMap<>(8);
+        node.getAllInterfaces().stream()
+                .flatMap(i -> i.getAllDeclaredMethods().stream())
+                .filter(MethodNode::isDefault)
+                .forEach(m -> {
+                    String signature = methodDescriptorWithoutReturnType(m);
+                    MethodNode existing = defaultMethods.get(signature);
+                    if (existing == null) {
+                        defaultMethods.put(signature, m);
+                        return;
+                    }
+
+                    ClassNode existingDeclaringClass = existing.getDeclaringClass();
+                    ClassNode currentDeclaringClass = m.getDeclaringClass();
+                    if (!(existingDeclaringClass.equals(currentDeclaringClass)
+                            || existingDeclaringClass.implementsInterface(currentDeclaringClass)
+                            || currentDeclaringClass.implementsInterface(existingDeclaringClass))) {
+                        throw new RuntimeParserException(
+                                (node.isInterface() ? "interface" : "class") +  " " + node.getName()
+                                        + " inherits unrelated defaults for " + m.getTypeDescriptor()
+                                        + " from types " + existingDeclaringClass.getName()
+                                        + " and " + currentDeclaringClass.getName(), sourceOf(m));
+                    }
+                });
     }
 
     private static final String[] INVALID_COMPONENTS = {"clone", "finalize", "getClass", "hashCode", "notify", "notifyAll", "toString", "wait"};
