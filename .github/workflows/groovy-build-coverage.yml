@@ -42,3 +42,7 @@ jobs:
         timeout-minutes: 60
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+
