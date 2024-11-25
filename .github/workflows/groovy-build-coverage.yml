@@ -41,7 +41,7 @@ jobs:
         run: ./gradlew -Pcoverage=true jacocoAllReport
         timeout-minutes: 60
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3   # Use v3 for now because v5 fails to upload coverage report
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
