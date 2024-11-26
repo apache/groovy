@@ -106,7 +106,7 @@ public class Java9 extends Java8 {
             } finally {
                 result.putAll(doFindClasses(URI.create("jrt:/modules/java.base/"), "java", javaPackages));
             }
-        } catch (Exception ignore) {
+        } catch (Throwable ignore) {
             Logger logger = Logger.getLogger(getClass().getName());
             if (logger.isLoggable(Level.FINEST)) {
                 logger.finest("[WARNING] Failed to find default imported classes:\n" + DefaultGroovyMethods.asString(ignore));
