@@ -77,8 +77,9 @@ tasks.withType(AbstractCompile).configureEach {
 }
 
 tasks.withType(GroovyCompile).configureEach {
+    groovyOptions.fork = true
     groovyOptions.forkOptions.jvmArgs += ["-Dgroovy.antlr4.cache.threshold=0", "-Dgroovy.target.bytecode=${sharedConfiguration.groovyTargetBytecodeVersion.get()}" as String]
-    groovyOptions.fork(memoryMaximumSize: sharedConfiguration.groovycMaxMemory.get())
+    groovyOptions.forkOptions.memoryMaximumSize = sharedConfiguration.groovycMaxMemory.get()
     groovyClasspath = configurations.groovyCompilerClasspath
 
     // See also https://docs.gradle.org/current/userguide/groovy_plugin.html#sec:incremental_groovy_compilation

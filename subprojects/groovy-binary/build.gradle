@@ -97,10 +97,10 @@ distribution {
         into('bin') {
             from(rootProject.file('src/bin')) {
                 filter(ReplaceTokens, tokens: [GROOVYJAR: "groovy-${versions.groovy}.jar".toString()])
-                fileMode = 0755
+                filePermissions { unix('rwxr-xr-x') }
                 exclude 'groovy.icns'
             }
-            from projects.groovyDocgenerator.dependencyProject.file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
+            from project.project(projects.groovyDocgenerator.path).file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
         }
         into('licenses') {
             from rootProject.file('licenses')
