@@ -162,7 +162,8 @@ interface CoreServices {
 def execOperations = objects.newInstance(CoreServices).execOperations
 
 tasks.named('compileJava') {
-    options.fork(memoryMaximumSize: sharedConfiguration.javacMaxMemory.get())
+    options.fork = true
+    options.forkOptions.memoryMaximumSize = sharedConfiguration.javacMaxMemory.get()
     inputs.files(configurations.tools)
 
     doLast {
@@ -175,7 +176,8 @@ tasks.named('compileJava') {
 }
 
 tasks.named('compileTestGroovy') {
-    groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
+    groovyOptions.fork = true
+    groovyOptions.forkOptions.memoryMaximumSize = groovycTest_mx
 }
 
 tasks.register('checkCompatibility') {
