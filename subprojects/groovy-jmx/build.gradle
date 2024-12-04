@@ -23,8 +23,11 @@ plugins {
 dependencies {
     api rootProject // JmxBuilder extends FactoryBuilderSupport...
     testImplementation projects.groovyTest
-    testRuntimeOnly("org.apache.ivy:ivy:${versions.ivy}") {
-        transitive = false
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using Grapes'
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-grapes'
+        }
     }
     testRuntimeOnly projects.groovySwing
 }
