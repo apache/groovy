@@ -875,4 +875,5 @@ cyclonedxBom {
     outputName = "cyclonedx"
     outputFormat = 'json'
     includeLicenseText = false
+    includeMetadataResolution = false
 }
