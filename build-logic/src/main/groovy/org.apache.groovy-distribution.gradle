@@ -114,8 +114,8 @@ dependencies {
 def docGDK = tasks.register('docGDK', DocGDK) {
     classpath.from configurations.docgeneratorTool
     classes.set(distributionExtension.docgeneratorClasses)
-    resources.from projects.groovyDocgenerator.dependencyProject.file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
-    resources.from projects.groovyDocgenerator.dependencyProject.file('src/main/resources/org/apache/groovy/docgenerator/stylesheet.css')
+    resources.from project.project(projects.groovyDocgenerator.path).file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
+    resources.from project.project(projects.groovyDocgenerator.path).file('src/main/resources/org/apache/groovy/docgenerator/stylesheet.css')
 }
 
 def distBin = tasks.register('distBin', Zip) {
