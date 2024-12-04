@@ -152,8 +152,11 @@ class GroovyLibraryExtension {
     }
 
     void registerOptionalFeature(String name) {
+        def sourceSet = javaPluginExtension.sourceSets.create(name)
+        def main = javaPluginExtension.sourceSets.getByName('main')
+        main.compileClasspath += sourceSet.compileClasspath
         javaPluginExtension.registerFeature(name) {
-            it.usingSourceSet(javaPluginExtension.sourceSets.getByName("main"))
+            it.usingSourceSet(sourceSet)
         }
         AdhocComponentWithVariants component = findComponent()
         def apiElements = configurations.getByName("${name}ApiElements")

@@ -154,6 +154,12 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using GPars'
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-gpars'
+        }
+    }
 }
 
 configurations {
@@ -164,7 +170,7 @@ configurations {
             grapesImplementation
     )
     groovyCompilerClasspath {
-        extendsFrom(implementation, compileOnly, grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
+        extendsFrom(implementation, compileOnly, gparsImplementation, grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
     }
 }
 
