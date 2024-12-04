@@ -135,7 +135,7 @@ dependencies {
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
     tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
-    tools "org.apache.ant:ant:1.10.11" // updated jarjar dependency to remove vulnerability
+    tools "org.apache.ant:ant:1.10.15" // updated jarjar dependency to remove vulnerability
     tools "org.jboss.bridger:bridger:${versions.bridger}"
     tools "org.codehaus.plexus:plexus-utils:3.0.24" // updated bridger dependency to remove vulnerability
     tools "org.apache.maven:maven-core:3.9.9" // updated bridger dependency to remove vulnerability
