@@ -92,7 +92,7 @@ import static org.objectweb.asm.Opcodes.SIPUSH;
  */
 public class BytecodeHelper {
 
-    private static String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class);
+    private static final String DTT_CLASSNAME = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class);
 
     /**
      * @return the ASM internal name of the type
