@@ -254,7 +254,7 @@ tasks.register("checkstyle") {
     dependsOn tasks.withType(Checkstyle)
 }
 
-tasks.withType(Checkstyle).configureEach {
+tasks.withType(Checkstyle).configureEach {chk ->
     showViolations = false
     ignoreFailures = true
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
@@ -263,10 +263,9 @@ tasks.withType(Checkstyle).configureEach {
     reports {
         include('**/*.java')
         xml {
-            destination reportFile.get().asFile
+            outputLocation = reportFile
         }
     }
-    def chk = it
     finalizedBy {
         // we use a closure here as a workaround, to preserve task configuration laziness
         tasks.register("${name}Report", CheckstyleHtmlReport) {
