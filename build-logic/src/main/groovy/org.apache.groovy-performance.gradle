@@ -44,9 +44,7 @@ repositories {
 dependencies {
     jmh project(":")
     testImplementation project(":")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:${versions.junit5Platform}") {
-        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
-    }
+    testImplementation "junit:junit:${versions.junit}"
     stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
 }
 
