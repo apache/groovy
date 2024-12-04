@@ -137,7 +137,7 @@ dependencies {
     tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
     tools "org.apache.ant:ant:1.10.15" // updated jarjar dependency to remove vulnerability
     tools "org.jboss.bridger:bridger:${versions.bridger}"
-    tools "org.codehaus.plexus:plexus-utils:3.0.24" // updated bridger dependency to remove vulnerability
+    tools "org.codehaus.plexus:plexus-utils:4.0.2" // updated bridger dependency to remove vulnerability
     tools "org.apache.maven:maven-core:3.9.9" // updated bridger dependency to remove vulnerability
     tools "com.jcraft:jsch:0.1.55" // updated bridger dependency to remove vulnerability
     tools "commons-io:commons-io:2.16.1" // updated bridger dependency to remove vulnerability
