@@ -25,6 +25,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 import static org.codehaus.groovy.reflection.ReflectionCache.OBJECT_ARRAY_CLASS;
 
@@ -51,12 +52,12 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 adjustedNewVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
             }
         } else if (Character.class.isAssignableFrom(arrayComponentClass)) {
-            adjustedNewVal = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+            adjustedNewVal = ShortTypeHandling.castToChar(newValue);
         } else if (String.class.equals(arrayComponentClass) && newValue instanceof GString) {
             adjustedNewVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
         } else if (Number.class.isAssignableFrom(arrayComponentClass)) {
             if (newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
-                Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+                Character ch = ShortTypeHandling.castToChar(newValue);
                 adjustedNewVal = DefaultTypeTransformation.castToType(ch, arrayComponentClass);
             }
         } else if (arrayComponentClass.isArray()) {

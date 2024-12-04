@@ -26,6 +26,7 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 public class LongArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(long[].class);
@@ -42,7 +43,7 @@ public class LongArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         Object newValue = args[1];
         if (!(newValue instanceof Long)) {
             if (newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
-                Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+                Character ch = ShortTypeHandling.castToChar(newValue);
                 objects[index] = (Long) DefaultTypeTransformation.castToType(ch, Long.class);
             } else {
                 objects[index] = ((Number) newValue).longValue();

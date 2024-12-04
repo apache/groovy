@@ -1668,7 +1668,7 @@ public abstract class StaticTypeCheckingSupport {
 
             if (gt.getLowerBound() != null) {
                 cn = gt.getLowerBound();
-            } else if (asBoolean(gt.getUpperBounds())) {
+            } else if (ArrayGroovyMethods.asBoolean(gt.getUpperBounds())) {
                 cn = gt.getUpperBounds()[0];
             }
         }

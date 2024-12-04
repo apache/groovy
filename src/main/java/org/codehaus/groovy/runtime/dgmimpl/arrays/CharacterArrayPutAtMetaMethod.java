@@ -24,7 +24,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.ShortTypeHandling;
 
 public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     private static final CachedClass ARRAY_CLASS = ReflectionCache.getCachedClass(char[].class);
@@ -38,7 +38,7 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     public Object invoke(Object object, Object[] args) {
         final char[] objects = (char[]) object;
         final int index = normaliseIndex((Integer) args[0], objects.length);
-        objects[index] = DefaultTypeTransformation.getCharFromSizeOneString(args[1]);
+        objects[index] = ShortTypeHandling.castToChar(args[1]);
         return null;
     }
 
