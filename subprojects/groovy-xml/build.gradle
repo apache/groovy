@@ -30,12 +30,17 @@ dependencies {
     }
 
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
-    testRuntimeOnly("org.apache.ivy:ivy:${versions.ivy}") {
-        transitive = false
-        because 'JavadocAssertionTests use @Grab'
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using Grapes'
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-grapes'
+        }
     }
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${versions.junit5}") {
         because 'for JUnit 3/4 tests as well as JUnit 5'
+    }
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:${versions.junit5Platform}") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
     }
 }
 

@@ -27,6 +27,9 @@ dependencies {
     testImplementation("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.codehaus.groovy'
     }
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:${versions.junit5Platform}") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
+    }
 }
 
 groovyLibrary {
