@@ -96,6 +96,7 @@ public class ImmutablePropertyUtils {
             "java.awt.Color",
             "java.net.URI",
             "java.util.UUID",
+            "java.util.regex.Pattern",
             "java.time.DayOfWeek",
             "java.time.Duration",
             "java.time.Instant",
