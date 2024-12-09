@@ -389,7 +389,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * If a value is present in the {@code OptionalInt}, returns an {@code OptionalInt}
+     * If a value is present in the {@code Optional}, returns an {@code OptionalInt}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
      * assert !Optional.empty().mapToInt(x -&gt; 42).isPresent()
@@ -403,7 +403,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * If a value is present in the {@code OptionalLong}, returns an {@code OptionalLong}
+     * If a value is present in the {@code Optional}, returns an {@code OptionalLong}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
      * assert !Optional.empty().mapToLong(x -&gt; 42L).isPresent()
@@ -417,7 +417,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * If a value is present in the {@code OptionalDouble}, returns an {@code OptionalDouble}
+     * If a value is present in the {@code Optional}, returns an {@code OptionalDouble}
      * consisting of the result of applying the given function to the value or else empty.
      * <pre class="groovyTestCase">
      * assert !Optional.empty().mapToDouble(x -&gt; Math.PI).isPresent()
