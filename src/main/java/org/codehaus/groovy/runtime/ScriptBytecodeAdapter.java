@@ -468,7 +468,8 @@ public class ScriptBytecodeAdapter {
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject) {
+            if (receiver instanceof GroovyObject && !receiver.getClass().getMethod("getProperty", String.class).isDefault()) {
+                // TODO: instead of checking for no getProperty specialization, pass senderClass in ThreadLocal or something
                 var groovyObject = (GroovyObject) receiver;
                 return groovyObject.getProperty(messageName);
             } else {
@@ -500,7 +501,7 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject) {
+            if (receiver instanceof GroovyObject && !receiver.getClass().getMethod("setProperty", String.class, Object.class).isDefault()) {
                 var groovyObject = (GroovyObject) receiver;
                 groovyObject.setProperty(messageName, messageArgument);
             } else {

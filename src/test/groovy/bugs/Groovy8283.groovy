@@ -223,6 +223,12 @@ final class Groovy8283 {
             new E().test3()
             new E().test4()
             new E().test5()
+
+            def e = new E()
+            e.foo = null // not the field from this perspective
+            assert e.setter
+            assert e.fooA == null
+            assert e.fooB != null
         '''
     }
 }
