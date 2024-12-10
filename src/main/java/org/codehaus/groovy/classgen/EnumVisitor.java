@@ -73,6 +73,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.spreadX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.runtime.StreamGroovyMethods.stream;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -119,21 +120,23 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
+            // GROOVY-10811: final and abstract are implicit modifiers
+            boolean isInnerClass = (enumClass.getOuterClass() != null);
+            if ((enumClass.getModifiers() & (ACC_ABSTRACT | ACC_FINAL)) != 0) {
+                String name = enumClass.getNameWithoutPackage(); // TODO: substring after the $
+                String permitted = (!isInnerClass ? "public is" : "public, private, protected & static are");
+                addError(enumClass, "Illegal modifier for the enum " + name + "; only " + permitted + " permitted.");
+            }
+
             addMethods(enumClass, values, minValue, maxValue);
-            checkForAbstractMethods(enumClass);
+
+            // for now, inner enum is always static
+            if (isInnerClass) enumClass.setModifiers(enumClass.getModifiers() | ACC_STATIC);
+            if (isAnyAbstract(enumClass)) enumClass.setModifiers(enumClass.getModifiers() | ACC_ABSTRACT);
+            else if (isNotExtended(enumClass)) enumClass.setModifiers(enumClass.getModifiers() | ACC_FINAL);
         }
 
         addInit(enumClass, minValue, maxValue, values, isAIC);
-    }
-
-    private static void checkForAbstractMethods(final ClassNode enumClass) {
-        for (MethodNode method : enumClass.getMethods()) {
-            if (method.isAbstract()) {
-                // make the class abstract also; see Effective Java p.152
-                enumClass.setModifiers(enumClass.getModifiers() | ACC_ABSTRACT);
-                break;
-            }
-        }
     }
 
     private static void addMethods(final ClassNode enumClass, final FieldNode values, FieldNode minValue, FieldNode maxValue) {
@@ -327,5 +330,13 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
     static boolean isAnonymousInnerClass(final ClassNode enumClass) {
         return enumClass instanceof EnumConstantClassNode
             && ((EnumConstantClassNode) enumClass).getVariableScope() == null;
+    }
+
+    private static boolean isAnyAbstract(final ClassNode enumClass) {
+        return enumClass.getMethods().stream().anyMatch(MethodNode::isAbstract);
+    }
+
+    private static boolean isNotExtended(final ClassNode enumClass) {
+        return stream(enumClass.getInnerClasses()).noneMatch(it -> it instanceof EnumConstantClassNode);
     }
 }

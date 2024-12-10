@@ -826,6 +826,39 @@ class EnumTest extends CompilableTestSupport {
             assert Outer.props == [bar: 10, baz: 20, foo: 30]
         '''
     }
+
+    // GROOVY-10811
+    void testIllegalModifiers() {
+        for (mod in ['','public','@groovy.transform.PackageScope']) {
+            shouldCompile """
+                $mod enum E {
+                }
+            """
+        }
+        for (mod in ['abstract','final','static','private','protected']) {
+            def err = shouldNotCompile """
+                $mod enum E {
+                }
+            """
+        }
+
+        for (mod in ['','public','private','protected','@groovy.transform.PackageScope','static']) {
+            shouldCompile """
+                class C {
+                    $mod enum E {
+                    }
+                }
+            """
+        }
+        for (mod in ['abstract','final']) {
+            shouldNotCompile """
+                class C {
+                    $mod enum E {
+                    }
+                }
+            """
+        }
+    }
 }
 
 enum UsCoin {

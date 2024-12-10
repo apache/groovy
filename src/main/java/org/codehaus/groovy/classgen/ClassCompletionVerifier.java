@@ -59,6 +59,7 @@ import java.util.Map;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isNative;
 import static java.lang.reflect.Modifier.isPrivate;
+import static java.lang.reflect.Modifier.isProtected;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.lang.reflect.Modifier.isStrict;
 import static java.lang.reflect.Modifier.isSynchronized;
@@ -257,6 +258,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         List<String> modifiers = new ArrayList<>();
 
         if (!(node instanceof InnerClassNode)) {
+            if (isProtected(node.getModifiers())) modifiers.add("protected");
             if (isPrivate(node.getModifiers())) modifiers.add("private");
             if (isStatic(node.getModifiers())) modifiers.add("static");
         }

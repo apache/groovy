@@ -29,38 +29,30 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.objectweb.asm.Opcodes;
 
 public class EnumHelper {
-    private static final int FS = Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
-    private static final int PUBLIC_FS = Opcodes.ACC_PUBLIC | FS; 
 
-    public static ClassNode makeEnumNode(String name, int modifiers, ClassNode[] interfaces, ClassNode outerClass) {
-        modifiers = modifiers | Opcodes.ACC_FINAL | Opcodes.ACC_ENUM;
+    public static ClassNode makeEnumNode(final String name, final int modifiers, final ClassNode[] interfaces, final ClassNode outerClass) {
         ClassNode enumClass;
-        if (outerClass==null) {
-            enumClass = new ClassNode(name,modifiers,null,interfaces,MixinNode.EMPTY_ARRAY);
+        if (outerClass == null) {
+            enumClass = new ClassNode(name, modifiers | Opcodes.ACC_ENUM, null, interfaces, MixinNode.EMPTY_ARRAY);
         } else {
-            name = outerClass.getName() + "$" + name;
-            modifiers |= Opcodes.ACC_STATIC;
-            enumClass = new InnerClassNode(outerClass,name,modifiers,null,interfaces,MixinNode.EMPTY_ARRAY);
+            enumClass = new InnerClassNode(outerClass, outerClass.getName() + "$" + name, modifiers | Opcodes.ACC_ENUM, null, interfaces, MixinNode.EMPTY_ARRAY);
         }
 
-        // set super class and generics info
-        // "enum X" -> class X extends Enum<X>
-        GenericsType gt = new GenericsType(enumClass);
-        ClassNode superClass = ClassHelper.makeWithoutCaching("java.lang.Enum");
-        superClass.setGenericsTypes(new GenericsType[]{gt});
+        // enum E extends java.lang.Enum<E>
+        ClassNode superClass = ClassHelper.Enum_Type.getPlainNodeReference();
+        superClass.setGenericsTypes(new GenericsType[]{new GenericsType(enumClass)});
         enumClass.setSuperClass(superClass);
-        superClass.setRedirect(ClassHelper.Enum_Type);
 
         return enumClass;
     }
 
-    public static FieldNode addEnumConstant(ClassNode enumClass, String name, Expression init) {
-        int modifiers = PUBLIC_FS | Opcodes.ACC_ENUM;
+    public static FieldNode addEnumConstant(final ClassNode enumClass, final String name, Expression init) {
         if (init != null && !(init instanceof ListExpression)) {
             ListExpression list = new ListExpression();
             list.addExpression(init);
             init = list;
         }
+        final int modifiers = Opcodes.ACC_ENUM | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
         FieldNode fn = new FieldNode(name, modifiers, enumClass.getPlainNodeReference(), enumClass, init);
         enumClass.addField(fn);
         return fn;

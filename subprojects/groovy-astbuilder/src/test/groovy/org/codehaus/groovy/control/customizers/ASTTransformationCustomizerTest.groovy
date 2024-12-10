@@ -108,12 +108,12 @@ class ASTTransformationCustomizerTest extends GroovyTestCase {
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.TYPE])
 @GroovyASTTransformationClass("org.codehaus.groovy.control.customizers.ContractAnnotation")
-protected @interface Contract {
+@interface Contract {
     Class value();
 }
 
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
-protected class ContractAnnotation implements ASTTransformation, Opcodes {
+class ContractAnnotation implements ASTTransformation, Opcodes {
     void visit(ASTNode[] nodes, SourceUnit source) {
         def node = nodes[0]
         def member = node.getMember("value")
@@ -123,6 +123,6 @@ protected class ContractAnnotation implements ASTTransformation, Opcodes {
 
 @Retention(RetentionPolicy.SOURCE)
 @Target([ElementType.TYPE])
-protected @interface Contract2 {
+@interface Contract2 {
     Class value();
 }
