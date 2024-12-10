@@ -859,6 +859,18 @@ class EnumTest extends CompilableTestSupport {
             """
         }
     }
+
+    // GROOVY-10811
+    void testSuperCtorCall() {
+        shouldNotCompile '''
+            enum E {
+                FOO;
+                E() {
+                    super()
+                }
+            }
+        '''
+    }
 }
 
 enum UsCoin {

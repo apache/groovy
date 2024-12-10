@@ -36,6 +36,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
@@ -44,6 +45,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
@@ -117,6 +119,14 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                     ctor.setModifiers((ctor.getModifiers() | ACC_PRIVATE) & ~ACC_PUBLIC);
                 } else if (!ctor.isPrivate()) {
                     addError(ctor, "Illegal modifier for the enum constructor; only private is permitted.");
+                }
+                if (ctor.firstStatementIsSpecialConstructorCall()) {
+                    var ctorCall = (ConstructorCallExpression) ((ExpressionStatement) ctor.getFirstStatement()).getExpression();
+                    if (ctorCall.isSuperCall()) {
+                        var spec = new StringJoiner(",", enumClass.getNameWithoutPackage() + "(", ")");
+                        for (Parameter p : ctor.getParameters()) spec.add(p.getType().getUnresolvedName());
+                        addError(ctorCall, "Cannot invoke super constructor from enum constructor " + spec);
+                    }
                 }
             }
 
