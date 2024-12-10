@@ -468,8 +468,9 @@ public class ClassNodeUtils {
      */
     public static boolean hasNoArgConstructor(final ClassNode cNode) {
         List<ConstructorNode> constructors = cNode.getDeclaredConstructors();
-        for (ConstructorNode next : constructors) {
-            if (next.getParameters().length == 0) {
+        for (ConstructorNode ctor : constructors) {
+            if (ctor.getParameters().length == 0 || (ctor.hasDefaultValue()
+                    && Arrays.stream(ctor.getParameters()).allMatch(Parameter::hasInitialExpression))) {
                 return true;
             }
         }

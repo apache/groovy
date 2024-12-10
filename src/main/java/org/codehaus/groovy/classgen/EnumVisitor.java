@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.StringJoiner;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.hasNoArgConstructor;
 import static org.codehaus.groovy.ast.ClassHelper.int_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.arrayX;
@@ -249,43 +250,38 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
         // static init
         List<FieldNode> fields = enumClass.getFields();
         List<Expression> arrayInit = new ArrayList<>();
-        int value = -1;
         List<Statement> block = new ArrayList<>();
+        int index = -1;
         FieldNode tempMin = null;
         FieldNode tempMax = null;
         for (FieldNode field : fields) {
             if (!field.isEnum()) continue;
-            value += 1;
+            index += 1; // the next ordinal
             if (tempMin == null) tempMin = field;
             tempMax = field;
 
-            ClassNode enumBase = enumClass;
-            ArgumentListExpression args = args(constX(field.getName()), constX(value));
+            ClassNode enumType = enumClass;
+            ArgumentListExpression args = args(constX(field.getName()), constX(index));
             if (field.getInitialExpression() == null) {
                 if (enumClass.isAbstract()) {
-                    addError(field, "The enum constant " + field.getName() + " must override abstract methods from " + enumBase.getName() + ".");
-                    continue;
+                    addError(field, "The enum constant " + field.getName() + " must override abstract methods from " + enumClass.getName() + ".");
+                }
+                if (!(hasNoArgConstructor(enumClass) || enumClass.getDeclaredConstructors().isEmpty())) { // GROOVY-10811
+                    addError(field, "The constructor " + enumClass.getNameWithoutPackage() + "() is undefined.");
                 }
             } else {
-                ListExpression oldArgs = (ListExpression) field.getInitialExpression();
+                var initList = (ListExpression) field.getInitialExpression();
+                field.setInitialValueExpression(null);
                 List<MapEntryExpression> savedMapEntries = new ArrayList<>();
-                for (Expression exp : oldArgs.getExpressions()) {
+                for (Expression exp : initList.getExpressions()) {
                     if (exp instanceof MapEntryExpression) {
                         savedMapEntries.add((MapEntryExpression) exp);
                         continue;
                     }
 
-                    InnerClassNode inner = null;
-                    if (exp instanceof ClassExpression) {
-                        ClassExpression clazzExp = (ClassExpression) exp;
-                        ClassNode ref = clazzExp.getType();
-                        if (ref instanceof EnumConstantClassNode) {
-                            inner = (InnerClassNode) ref;
-                        }
-                    }
-                    if (inner != null) {
-                        List<MethodNode> baseMethods = enumBase.getMethods();
-                        for (MethodNode methodNode : baseMethods) {
+                    if (exp instanceof ClassExpression && exp.getType() instanceof EnumConstantClassNode) {
+                        InnerClassNode inner = (InnerClassNode) exp.getType();
+                        for (MethodNode methodNode : enumClass.getMethods()) {
                             if (!methodNode.isAbstract()) continue;
                             MethodNode enumConstMethod = inner.getMethod(methodNode.getName(), methodNode.getParameters());
                             if (enumConstMethod == null || enumConstMethod.isAbstract()) {
@@ -293,7 +289,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                             }
                         }
                         if (inner.getVariableScope() == null) {
-                            enumBase = inner;
+                            enumType = inner;
                             /*
                              * GROOVY-3985: Remove the final modifier from $INIT method in this case
                              * so that subclasses of enum generated for enum constants (aic) can provide
@@ -309,9 +305,8 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                     args.getExpressions().add(2, mapX(savedMapEntries));
                 }
             }
-            field.setInitialValueExpression(null);
-            block.add(assignS(fieldX(field), callX(enumBase, "$INIT", args)));
             arrayInit.add(fieldX(field));
+            block.add(assignS(fieldX(field), callX(enumType, "$INIT", args)));
         }
 
         if (!isAIC) {
@@ -325,13 +320,14 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
             block.add(assignS(fieldX(values), arrayX(enumClass, arrayInit)));
             enumClass.addField(values);
         }
+
         enumClass.addStaticInitializerStatements(block, true);
     }
 
-    private void addError(final AnnotatedNode exp, final String msg) {
+    private void addError(final AnnotatedNode an, final String msg) {
         getSourceUnit().getErrorCollector().addErrorAndContinue(
                 new SyntaxErrorMessage(
-                        new SyntaxException(msg + '\n', exp),
+                        new SyntaxException(msg + '\n', an),
                         getSourceUnit()
                 )
         );

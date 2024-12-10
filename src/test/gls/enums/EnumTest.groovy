@@ -861,6 +861,25 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-10811
+    void testConstructorCheck() {
+        shouldNotCompile '''
+            enum E {
+                FOO;
+                E(x) {
+                }
+            }
+        '''
+
+        shouldCompile '''
+            enum E {
+                FOO;
+                E(x=null) {
+                }
+            }
+        '''
+    }
+
+    // GROOVY-10811
     void testSuperCtorCall() {
         shouldNotCompile '''
             enum E {
