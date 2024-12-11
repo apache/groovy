@@ -22,11 +22,13 @@ import groovy.transform.Immutable
 class SemanticsTest extends CompilableTestSupport {
 
     void testVariableDefinition() {
-        // tag::variable_definition_example[]
+        // tag::variable_definition_example1[]
         String x
         def y
+        // end::variable_definition_example1[]
+        // tag::variable_definition_example2[]
         var z
-        // end::variable_definition_example[]
+        // end::variable_definition_example2[]
     }
 
     void testVariableAssignment() {
