@@ -622,7 +622,7 @@ and the resulting value will be null if something's `null`.
 
 To check your parameters, your return values, and more, you can use the `assert` statement.
 
-Contrary to Java's `assert`, ``assert``s don't need to be activated to be working, so ``assert``s are always checked.
+Contrary to Java's `assert`, Groovy's ``assert``s don't need to be activated to be working, so an `assert` is always checked.
 
 [source,groovy]
 ----
