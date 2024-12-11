@@ -457,7 +457,7 @@ final class ClassTest extends GroovyTestCase {
             @SomeAnnotation                 // <2>
             class SomeClass {}
 
-            @SomeAnnotation String var      // <3>
+            @SomeAnnotation String someVar  // <3>
 
             // end::apply_annotation_1[]
             someMethod()

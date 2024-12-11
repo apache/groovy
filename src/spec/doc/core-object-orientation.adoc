@@ -981,7 +981,7 @@ include::../test/ClassTest.groovy[tags=apply_annotation_1,indent=0]
 ----
 <1> `@SomeAnnotation` applies to the `someMethod` method
 <2> `@SomeAnnotation` applies to the `SomeClass` class
-<3> `@SomeAnnotation` applies to the `var` variable
+<3> `@SomeAnnotation` applies to the `someVar` variable
 
 In order to limit the scope where an annotation can be applied, it is necessary to declare it on the annotation
 definition, using the jdk:java.lang.annotation.Target[Target] annotation. For example, here is how you would
