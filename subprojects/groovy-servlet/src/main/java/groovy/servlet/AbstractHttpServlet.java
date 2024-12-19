@@ -21,11 +21,11 @@ package groovy.servlet;
 import groovy.util.ResourceConnector;
 import groovy.util.ResourceException;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -262,8 +262,8 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         // Why doesn't it use request.getRequestURI() or INC_REQUEST_URI?
         //
 
-        String uri = null;
-        String info = null;
+        String uri;
+        String info;
 
         //
         // Check to see if the requested script/template source file has been the
@@ -363,7 +363,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         // Get verbosity hint.
         String value = config.getInitParameter("verbose");
         if (value != null) {
-            this.verbose = Boolean.valueOf(value);
+            this.verbose = Boolean.parseBoolean(value);
         }
 
         // get encoding
@@ -390,20 +390,20 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             }
             int flags = 0; // TODO : Parse pattern compile flags (literal names).
             String flagsStr = config.getInitParameter(INIT_PARAM_RESOURCE_NAME_REGEX_FLAGS);
-            if (flagsStr != null && flagsStr.length() > 0) {
+            if (flagsStr != null && !flagsStr.isEmpty()) {
               flags = Integer.decode(flagsStr.trim());//throws NumberFormatException
             }
             resourceNamePattern = Pattern.compile(regex, flags);
             this.resourceNameReplacement = replacement;
             String all = config.getInitParameter("resource.name.replace.all");
             if (all != null) {
-                this.resourceNameReplaceAll = Boolean.valueOf(all.trim());
+                this.resourceNameReplaceAll = Boolean.parseBoolean(all.trim());
             }
         }
 
         value = config.getInitParameter("logGROOVY861");
         if (value != null) {
-            this.logGROOVY861 = Boolean.valueOf(value);
+            this.logGROOVY861 = Boolean.parseBoolean(value);
             // nothing else to do here
         }
 

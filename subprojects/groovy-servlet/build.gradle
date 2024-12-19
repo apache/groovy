@@ -21,8 +21,8 @@ plugins {
 }
 
 dependencies {
-    compileOnlyApi("javax.servlet:javax.servlet-api:${versions.javaxServletApi}")
-    compileOnlyApi("javax.servlet.jsp:javax.servlet.jsp-api:${versions.javaxJspApi}") {
+    compileOnlyApi "jakarta.servlet:jakarta.servlet-api:${versions.jakartaServletApi}"
+    compileOnlyApi("jakarta.servlet.jsp:jakarta.servlet.jsp-api:${versions.jakartaServerPagesApi}") {
         transitive = false
     }
 
@@ -30,8 +30,8 @@ dependencies {
     implementation projects.groovyXml // needed for MarkupBuilder
     implementation projects.groovyTemplates // needed by TemplateServlet
 
-    testImplementation("javax.servlet:javax.servlet-api:${versions.javaxServletApi}")
-    testImplementation("javax.servlet.jsp:javax.servlet.jsp-api:${versions.javaxJspApi}") {
+    testImplementation "jakarta.servlet:jakarta.servlet-api:${versions.jakartaServletApi}"
+    testImplementation("jakarta.servlet.jsp:jakarta.servlet.jsp-api:${versions.jakartaServerPagesApi}") {
         transitive = false
     }
     testImplementation projects.groovyJson
