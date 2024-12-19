@@ -22,10 +22,10 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import groovy.text.TemplateEngine;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -363,7 +363,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         }
         String value = config.getInitParameter("generated.by");
         if (value != null) {
-            this.generateBy = Boolean.valueOf(value);
+            this.generateBy = Boolean.parseBoolean(value);
         }
         value = config.getInitParameter(GROOVY_SOURCE_ENCODING);
         if (value != null) {
