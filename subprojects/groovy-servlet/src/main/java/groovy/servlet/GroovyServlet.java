@@ -24,10 +24,10 @@ import groovy.util.ResourceException;
 import groovy.util.ScriptException;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 /**
@@ -112,7 +112,7 @@ public class GroovyServlet extends AbstractHttpServlet {
 
         // Run the script
         try {
-            Closure<?> closure = new Closure<Object>(gse) {
+            Closure<?> closure = new Closure<>(gse) {
                 @Override
                 public Object call() {
                     try {
@@ -139,7 +139,7 @@ public class GroovyServlet extends AbstractHttpServlet {
                 if (runtimeException.getStackTrace().length > 0)
                     error.append(runtimeException.getStackTrace()[0].toString());
                 servletContext.log(error.toString());
-                System.err.println(error.toString());
+                System.err.println(error);
                 runtimeException.printStackTrace(System.err);
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error.toString());
                 return;
@@ -150,7 +150,7 @@ public class GroovyServlet extends AbstractHttpServlet {
             if (e instanceof ResourceException) {
                 error.append(" Script not found, sending 404.");
                 servletContext.log(error.toString());
-                System.err.println(error.toString());
+                System.err.println(error);
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }

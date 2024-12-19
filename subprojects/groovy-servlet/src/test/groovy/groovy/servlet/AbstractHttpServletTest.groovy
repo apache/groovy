@@ -20,9 +20,9 @@ package groovy.servlet
 
 import groovy.test.GroovyTestCase
 
-import javax.servlet.ServletConfig
-import javax.servlet.ServletContext
-import javax.servlet.http.HttpServletRequest
+import jakarta.servlet.ServletConfig
+import jakarta.servlet.ServletContext
+import jakarta.servlet.http.HttpServletRequest
 
 /**
  * This test case tests the AbstractHttpServlet class. It uses a test

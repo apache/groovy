@@ -23,13 +23,13 @@ import groovy.xml.MarkupBuilder;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.MethodClosure;
 
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -368,7 +368,7 @@ public class ServletBinding extends Binding {
         if (name == null) {
             throw new IllegalArgumentException(message + " null key.");
         }
-        if (name.length() == 0) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException(message + " blank key name. [length=0]");
         }
     }
