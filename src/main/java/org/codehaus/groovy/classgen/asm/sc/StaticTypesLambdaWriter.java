@@ -186,7 +186,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
         Optional<ConstructorNode> generatedConstructor = lambdaClass.getDeclaredConstructors().stream()
                 .filter(ctor -> Boolean.TRUE.equals(ctor.getNodeMetaData(IS_GENERATED_CONSTRUCTOR))).findFirst();
-        if (!generatedConstructor.isPresent()) {
+        if (generatedConstructor.isEmpty()) {
             throw new GroovyBugError("Failed to find the generated constructor");
         }
 

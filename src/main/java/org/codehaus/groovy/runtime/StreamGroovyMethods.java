@@ -485,7 +485,7 @@ public class StreamGroovyMethods {
      * @since 3.0.0
      */
     public static <T> Stream<T> stream(final Optional<T> self) {
-        return self.map(Stream::of).orElseGet(Stream::empty);
+        return self.stream();
     }
 
     //
@@ -497,7 +497,7 @@ public class StreamGroovyMethods {
      * @since 3.0.0
      */
     public static IntStream stream(final OptionalInt self) {
-        if (!self.isPresent()) {
+        if (self.isEmpty()) {
             return IntStream.empty();
         }
         return IntStream.of(self.getAsInt());
@@ -510,7 +510,7 @@ public class StreamGroovyMethods {
      * @since 3.0.0
      */
     public static LongStream stream(final OptionalLong self) {
-        if (!self.isPresent()) {
+        if (self.isEmpty()) {
             return LongStream.empty();
         }
         return LongStream.of(self.getAsLong());
@@ -523,7 +523,7 @@ public class StreamGroovyMethods {
      * @since 3.0.0
      */
     public static DoubleStream stream(final OptionalDouble self) {
-        if (!self.isPresent()) {
+        if (self.isEmpty()) {
             return DoubleStream.empty();
         }
         return DoubleStream.of(self.getAsDouble());

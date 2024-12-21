@@ -429,7 +429,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static OptionalInt filter(final OptionalInt self, final IntPredicate test) {
-        if (!self.isPresent() || !test.test(self.getAsInt())) {
+        if (self.isEmpty() || !test.test(self.getAsInt())) {
             return OptionalInt.empty();
         }
         return self;
@@ -449,7 +449,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static OptionalLong filter(final OptionalLong self, final LongPredicate test) {
-        if (!self.isPresent() || !test.test(self.getAsLong())) {
+        if (self.isEmpty() || !test.test(self.getAsLong())) {
             return OptionalLong.empty();
         }
         return self;
@@ -469,7 +469,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static OptionalDouble filter(final OptionalDouble self, final DoublePredicate test) {
-        if (!self.isPresent() || !test.test(self.getAsDouble())) {
+        if (self.isEmpty() || !test.test(self.getAsDouble())) {
             return OptionalDouble.empty();
         }
         return self;
@@ -488,7 +488,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> Optional<T> mapToObj(final OptionalInt self, final IntFunction<? extends T> mapper) {
-        if (!self.isPresent()) {
+        if (self.isEmpty()) {
             return Optional.empty();
         }
         return Optional.ofNullable(mapper.apply(self.getAsInt()));
@@ -507,7 +507,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> Optional<T> mapToObj(final OptionalLong self, final LongFunction<? extends T> mapper) {
-        if (!self.isPresent()) {
+        if (self.isEmpty()) {
             return Optional.empty();
         }
         return Optional.ofNullable(mapper.apply(self.getAsLong()));
@@ -526,7 +526,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 3.0.0
      */
     public static <T> Optional<T> mapToObj(final OptionalDouble self, final DoubleFunction<? extends T> mapper) {
-        if (!self.isPresent()) {
+        if (self.isEmpty()) {
             return Optional.empty();
         }
         return Optional.ofNullable(mapper.apply(self.getAsDouble()));

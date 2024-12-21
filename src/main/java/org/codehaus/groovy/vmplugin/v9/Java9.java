@@ -197,7 +197,7 @@ public class Java9 extends Java8 {
             CachedMethod  cachedMethod = (CachedMethod) metaMethod;
             CachedClass declaringClass = metaMethod.getDeclaringClass();
             Optional<CachedMethod> transformedMethod = Optional.ofNullable(cachedMethod.getTransformedMethod());
-            if (!transformedMethod.isPresent()
+            if (transformedMethod.isEmpty()
                     // if caller can access the method legally, there is no need to transform the cached method
                     && !checkAccessible(caller, declaringClass.getTheClass(), metaMethod.getModifiers(), false)) {
                 Class<?> theClass = metaClass.getTheClass();
