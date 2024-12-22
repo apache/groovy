@@ -51,7 +51,7 @@ class RichActionWidgetFactory extends AbstractFactory {
         try {
             if (value instanceof GString) value = value as String
             if (value == null) {
-                return klass.newInstance()
+                return klass.getConstructor().newInstance()
             } else if (value instanceof Action) {
                 return actionCtor.newInstance(value)
             } else if (value instanceof Icon) {
