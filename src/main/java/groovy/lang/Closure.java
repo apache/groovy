@@ -290,7 +290,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return thisObject;
     }
 
-    private Class<?> thisType;
+    private transient Class<?> thisType;
     private Class<?> getThisType() {
         Class<?> thisType = this.thisType;
         if (thisType == null) {
