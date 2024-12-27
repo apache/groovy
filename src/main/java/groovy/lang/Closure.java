@@ -364,12 +364,14 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         try {
             return InvokerHelper.getProperty(receiver, property);
         } catch (GroovyRuntimeException e1) {
-            if (null != receiver && this != receiver && this instanceof GeneratedClosure
-                    && getThisType() != receiver.getClass() && getThisType().isInstance(receiver)) { // GROOVY-11128
-                try {
-                    return ((GroovyObject) receiver).getMetaClass().getProperty(getThisType(), receiver, property, false, true);
-                } catch (GroovyRuntimeException e2) {
-                    e1.addSuppressed(e2);
+            if (null != receiver && this != receiver && this instanceof GeneratedClosure) { // GROOVY-11128
+                final Class<?> thisType = getThisType();
+                if (thisType != receiver.getClass() && thisType.isInstance(receiver)) {
+                    try {
+                        return ((GroovyObject) receiver).getMetaClass().getProperty(thisType, receiver, property, false, true);
+                    } catch (GroovyRuntimeException e2) {
+                        e1.addSuppressed(e2);
+                    }
                 }
             }
             throw e1;
@@ -395,13 +397,15 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         try {
             InvokerHelper.setProperty(receiver, property, newValue);
         } catch (GroovyRuntimeException e1) {
-            if (null != receiver && this != receiver && this instanceof GeneratedClosure
-                    && getThisType() != receiver.getClass() && getThisType().isInstance(receiver)) { // GROOVY-11128
-                try {
-                    ((GroovyObject) receiver).getMetaClass().setProperty(getThisType(), receiver, property, newValue, false, true);
-                    return;
-                } catch (GroovyRuntimeException e2) {
-                    e1.addSuppressed(e2);
+            if (null != receiver && this != receiver && this instanceof GeneratedClosure) { // GROOVY-11128
+                final Class<?> thisType = getThisType();
+                if (thisType != receiver.getClass() && thisType.isInstance(receiver)) {
+                    try {
+                        ((GroovyObject) receiver).getMetaClass().setProperty(thisType, receiver, property, newValue, false, true);
+                        return;
+                    } catch (GroovyRuntimeException e2) {
+                        e1.addSuppressed(e2);
+                    }
                 }
             }
             throw e1;
