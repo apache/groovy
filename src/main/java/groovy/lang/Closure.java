@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.apache.groovy.internal.util.UncheckedThrow;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.ComposedClosure;
@@ -36,6 +37,9 @@ import org.codehaus.groovy.runtime.memoize.Memoize;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.Writer;
+import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 /**
  * Represents any closure object in Groovy.
@@ -203,6 +207,24 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         }
     };
 
+    private static final Map<String, Function<Closure, Object>> PROPERTY_GETTERS = Maps.of(
+            "owner", Closure::getOwner,
+            "delegate", Closure::getDelegate,
+            "thisObject", Closure::getThisObject,
+            "class", Closure::getClass,
+            "metaClass", Closure::getMetaClass,
+            "directive", Closure::getDirective,
+            "parameterTypes", Closure::getParameterTypes,
+            "resolveStrategy", Closure::getResolveStrategy,
+            "maximumNumberOfParameters", Closure::getMaximumNumberOfParameters
+    );
+    private static final Map<String, BiConsumer<Closure, Object>> PROPERTY_SETTERS = Maps.of(
+            "delegate", Closure::setDelegate,
+            "metaClass", (closure, value) -> closure.setMetaClass((MetaClass) value),
+            "directive", (closure, value) -> closure.setDirective((Integer) value),
+            "resolveStrategy", (closure, value) -> closure.setResolveStrategy((Integer) value)
+    );
+
     private Object delegate;
     private Object owner;
     private Object thisObject;
@@ -277,42 +299,66 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     }
 
     @Override
-    public  Object getProperty(final String property) {
-        switch (property) {
-          case "owner":
-            return getOwner();
-          case "delegate":
-            return getDelegate();
-          case "thisObject":
-            return getThisObject();
-          case "class":
-            return getClass();
-          case "metaClass":
-            return getMetaClass();
-          case "directive":
-            return getDirective();
-          case "parameterTypes":
-            return getParameterTypes();
-          case "resolveStrategy":
-            return getResolveStrategy();
-          case "maximumNumberOfParameters":
-            return getMaximumNumberOfParameters();
+    public Object getProperty(final String property) {
+        Function<Closure, Object> getter = PROPERTY_GETTERS.get(property);
+        if (getter != null) {
+            return getter.apply(this);
         }
 
-        switch(resolveStrategy) {
-          case DELEGATE_FIRST:
-            if (getDelegate() == null) return getProperty(getOwner(), property);
-            return getPropertyTryThese(getDelegate(), getOwner(), property);
-          case DELEGATE_ONLY:
-            return getProperty(getDelegate(), property);
-          case OWNER_ONLY:
-            return getProperty(getOwner(), property);
-          case TO_SELF:
-            return super.getProperty(property);
-          default:
-            return getPropertyTryThese(getOwner(), getDelegate(), property);
+        return resolveGetProperty(property);
+    }
+
+    @Override
+    public void setProperty(final String property, final Object newValue) {
+        BiConsumer<Closure, Object> setter = PROPERTY_SETTERS.get(property);
+        if (setter != null) {
+            setter.accept(this, newValue);
+            return;
+        }
+
+        resolveSetProperty(property, newValue);
+    }
+
+    private Object resolveGetProperty(final String property) {
+        switch (resolveStrategy) {
+            case DELEGATE_FIRST:
+                final Object delegate = getDelegate();
+                final Object owner = getOwner();
+                if (delegate == null) return getProperty(owner, property);
+                return getPropertyTryThese(delegate, owner, property);
+            case DELEGATE_ONLY:
+                return getProperty(getDelegate(), property);
+            case OWNER_ONLY:
+                return getProperty(getOwner(), property);
+            case TO_SELF:
+                return super.getProperty(property);
+            default:
+                return getPropertyTryThese(getOwner(), getDelegate(), property);
         }
     }
+
+    private void resolveSetProperty(final String property, final Object newValue) {
+        switch (resolveStrategy) {
+            case DELEGATE_FIRST:
+                final Object delegate = getDelegate();
+                final Object owner = getOwner();
+                if (delegate == null) setProperty(owner, property, newValue);
+                else setPropertyTryThese(delegate, owner, property, newValue);
+                break;
+            case DELEGATE_ONLY:
+                setProperty(getDelegate(), property, newValue);
+                break;
+            case OWNER_ONLY:
+                setProperty(getOwner(), property, newValue);
+                break;
+            case TO_SELF:
+                super.setProperty(property, newValue);
+                break;
+            default:
+                setPropertyTryThese(getOwner(), getDelegate(), property, newValue);
+        }
+    }
+
 
     private Object getProperty(final Object receiver, final String property) {
         try {
@@ -342,42 +388,6 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
                 }
             }
             throw e1;
-        }
-    }
-
-    @Override
-    public  void setProperty(final String property, final Object newValue) {
-        switch (property) {
-          case "delegate":
-            setDelegate(newValue);
-            break;
-          case "metaClass":
-            setMetaClass((MetaClass) newValue);
-            break;
-          case "directive":
-            setDirective(((Number) newValue).intValue());
-            break;
-          case "resolveStrategy":
-            setResolveStrategy(((Number) newValue).intValue());
-            break;
-          default:
-            switch(resolveStrategy) {
-              case DELEGATE_FIRST:
-                if (getDelegate() == null) setProperty(getOwner(), property, newValue);
-                else setPropertyTryThese(getDelegate(), getOwner(), property, newValue);
-                break;
-              case DELEGATE_ONLY:
-                setProperty(getDelegate(), property, newValue);
-                break;
-              case OWNER_ONLY:
-                setProperty(getOwner(), property, newValue);
-                break;
-              case TO_SELF:
-                super.setProperty(property, newValue);
-                break;
-              default:
-                setPropertyTryThese(getOwner(), getDelegate(), property, newValue);
-            }
         }
     }
 
