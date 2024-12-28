@@ -255,7 +255,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
             }
 
             void checkBadFlags(flagList, conversion, Expression target, String badFlags) {
-                def mismatched = flagList?.findAll { badFlags.contains(it) }.join()
+                def mismatched = flagList?.findAll { badFlags.contains(it) }?.join()
                 if (mismatched) {
                     addStaticTypeError("FormatFlagsConversionMismatch: Conversion = $conversion, Flags = '$mismatched'", target)
                 }
