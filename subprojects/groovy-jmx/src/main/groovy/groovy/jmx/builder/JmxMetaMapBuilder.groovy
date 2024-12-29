@@ -467,7 +467,7 @@ class JmxMetaMapBuilder {
                     if (descriptor && descriptor instanceof Map) {
                         // foo:[params:["paramTypeName0":[name:"",desc:""], paramTypeNameN[:]]]
                         if (descriptor.params && descriptor.params instanceof Map) {
-                            params = descriptor?.params.keySet().toList()
+                            params = descriptor?.params?.keySet()?.toList()
                         }
                         // foo:[params:["paramTypeName0",...,"paramTypeNameN"]]
                         if (descriptor.params && descriptor.params instanceof List) {
