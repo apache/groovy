@@ -119,6 +119,7 @@
          </trusted-key>
          <trusted-key id="6BFAB2E3C6490B421B25C76C9C8C892F91F8E6D1" group="org.apache.rat"/>
          <trusted-key id="6F538074CCEBF35F28AF9B066A0975F8B1127B83" group="org.jetbrains.kotlin"/>
+         <trusted-key id="74CEFDCEADFB95278EDEDF71E5B3BB879D1EC979" group="me.sunlan"/>
          <trusted-key id="76E94E8FF0AB5AF3B6F8366972FEFD1572EB75E1" group="org.spockframework"/>
          <trusted-key id="7B79ADD11F8A779FE90FD3D0893A028475557671" group="com.gradle"/>
          <trusted-key id="9857C388D7D1D9D031274CD0A5DEF5A76F94A471" group="com.github.spotbugs"/>
@@ -806,6 +807,11 @@
       <component group="org.apache.commons" name="commons-math3" version="3.6.1">
          <artifact name="commons-math3-3.6.1.jar">
             <pgp value="41A1A08C62FCA78B79D3081164A16FAAEC16A4BE"/>
+         </artifact>
+      </component>
+      <component group="org.apache.ivy" name="ivy" version="2.5.3">
+         <artifact name="ivy-2.5.3.jar">
+            <pgp value="9C60C6B3A5A9DF8FEDD299D65BE0BA8CB80602AE"/>
          </artifact>
       </component>
       <component group="org.apache.logging.log4j" name="log4j-api" version="2.23.0">
