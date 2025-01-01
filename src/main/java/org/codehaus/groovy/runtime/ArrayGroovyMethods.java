@@ -5896,8 +5896,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * <pre class="groovyTestCase">
      * int[] nums = [10, -20, 30]
-     * assert -20L == nums.min{ n {@code ->} n }
-     * assert 10L == nums.min{ n {@code ->} n.abs() }
+     * assert -20 == nums.min{ n {@code ->} n }
+     * assert 10 == nums.min{ n {@code ->} n.abs() }
      * </pre>
      * <p>
      *
@@ -7465,6 +7465,37 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Calculates the sum of values found from applying the operator to members of the int array.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, -20, 30]
+     * assert 20 == nums.sum{ n {@code ->} n }
+     * assert 60 == nums.sum{ n {@code ->} n.abs() }
+     * int[] squares = [1, 4, 9]
+     * assert squares.sum(java.util.function.IntUnaryOperator.identity()) == 14
+     * assert squares.sum(Math::sqrt) == 6
+     * </pre>
+     * <p>
+     *
+     * @param self     an int array
+     * @param operator an operator that returns an int used for summing values
+     * @return the sum value of all values after applying the operator
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static int sum(int[] self, IntUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "sum");
+
+        int total = 0;
+        for (int i : self) {
+            total += operator.applyAsInt(i);
+        }
+        return total;
+    }
+
+    /**
      * Sums the items in an array.
      * <pre class="groovyTestCase">assert (1+2+3+4 as long) == ([1,2,3,4] as long[]).sum()</pre>
      *
@@ -7474,6 +7505,34 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static long sum(long[] self) {
         return sum(self, 0L);
+    }
+
+    /**
+     * Calculates the sum of values found from applying the operator to members of the int array.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, -20, 30]
+     * assert 20 == nums.sum{ n {@code ->} n }
+     * assert 60 == nums.sum{ n {@code ->} n.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     a long array
+     * @param operator an operator that returns a long used for summing values
+     * @return the sum value of all values after applying the operator
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static long sum(long[] self, LongUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "sum");
+
+        long total = 0;
+        for (long i : self) {
+            total += operator.applyAsLong(i);
+        }
+        return total;
     }
 
     /**
@@ -7489,6 +7548,34 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Calculates the sum of values found from applying the operator to members of the float array.
+     * <p>
+     * <pre class="groovyTestCase">
+     * float[] nums = [10f, -20f, 30f]
+     * assert 20f == nums.sum{ n {@code ->} n }
+     * assert 60f == nums.sum{ n {@code ->} n.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     a float array
+     * @param operator an operator that returns a float used for summing values
+     * @return the sum value of all values after applying the operator
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static float sum(float[] self, FloatUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "sum");
+
+        float total = 0;
+        for (float i : self) {
+            total += operator.applyAsFloat(i);
+        }
+        return total;
+    }
+
+    /**
      * Sums the items in an array.
      * <pre class="groovyTestCase">assert (1+2+3+4 as double) == ([1,2,3,4] as double[]).sum()</pre>
      *
@@ -7498,6 +7585,34 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static double sum(double[] self) {
         return sum(self, 0.0d);
+    }
+
+    /**
+     * Calculates the sum of values found from applying the operator to members of the int array.
+     * <p>
+     * <pre class="groovyTestCase">
+     * int[] nums = [10, -20, 30]
+     * assert 20 == nums.sum{ n {@code ->} n }
+     * assert 60 == nums.sum{ n {@code ->} n.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     a double array
+     * @param operator an operator that returns a double used for summing values
+     * @return the sum value of all values after applying the operator
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static double sum(double[] self, DoubleUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "sum");
+
+        double total = 0;
+        for (double i : self) {
+            total += operator.applyAsDouble(i);
+        }
+        return total;
     }
 
     /**
