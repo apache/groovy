@@ -33,6 +33,8 @@ import groovy.transform.stc.FromString;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
 import groovy.util.function.DoubleComparator;
+import groovy.util.function.FloatComparator;
+import groovy.util.function.FloatUnaryOperator;
 import groovy.util.function.IntComparator;
 import groovy.util.function.LongComparator;
 import org.apache.groovy.lang.annotation.Incubating;
@@ -5296,6 +5298,30 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Adds max() method to float arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[] nums = [1.1f, 3.3f, 2.2f]
+     * assert 3.3f == nums.max()
+     * </pre>
+     *
+     * @param self a float array
+     * @return the maximum value
+     * @since 5.0.0
+     */
+    public static float max(float[] self) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+        float answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            float value = self[i];
+            if (value > answer) answer = value;
+        }
+        return answer;
+    }
+
+    /**
      * Adds max() method to double arrays.
      * <p/>
      * Example usage:
@@ -5464,6 +5490,71 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the maximum value found from the float array
+     * using the supplied FloatComparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10f, 20f, -30f]
+     * assert 20f == nums.max{ n, m {@code ->} n {@code <=>} m }
+     * assert -30f == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self       a float array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static float max(float[] self, FloatComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        float maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            float v = self[i];
+            if (comparator.compare(v, maxV) > 0) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
+     * Selects the maximum value found from the float array
+     * using the supplied FloatUnaryOperator to determine the maximum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * float[] nums = [10f, 20f, -30f]
+     * assert -30f == nums.max{ it.abs() }
+     * assert 20f == nums.max{ it }
+     * </pre>
+     * <p>
+     *
+     * @param self     a float array
+     * @param operator an operator that returns a float used for comparing values
+     * @return the maximum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static float max(float[] self, FloatUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "max");
+
+        float maxV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            float v = self[i];
+            if (operator.applyAsFloat(v) > operator.applyAsFloat(maxV)) {
+                maxV = v;
+            }
+        }
+        return maxV;
+    }
+
+    /**
      * Selects the maximum value found from the double array
      * using the supplied DoubleComparator to determine the maximum of any two values.
      * <p>
@@ -5610,6 +5701,28 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the maximum value found from the float array
+     * using the comparator to determine the maximum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0f, 20.0f, 30.0f]
+     * assert 30f == nums.maxComparing(Comparator.naturalOrder())
+     * assert 10f == nums.maxComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a float array
+     * @param comparator a Comparator
+     * @return the maximum value
+     * @see DefaultGroovyMethods#max(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static float maxComparing(float[] self, Comparator<Float> comparator) {
+        return DefaultGroovyMethods.max(new FloatArrayIterator(self), comparator);
+    }
+
+    /**
      * Selects the maximum value found from the double array
      * using the comparator to determine the maximum of any two values.
      * <p>
@@ -5649,7 +5762,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static int min(int[] self) {
         Objects.requireNonNull(self);
-        throwUnsupportedOperationIfEmpty(self.length, "max");
+        throwUnsupportedOperationIfEmpty(self.length, "min");
         int answer = self[0];
         for (int i = 1; i < self.length; i++) {
             int value = self[i];
@@ -5673,10 +5786,34 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static long min(long[] self) {
         Objects.requireNonNull(self);
-        throwUnsupportedOperationIfEmpty(self.length, "max");
+        throwUnsupportedOperationIfEmpty(self.length, "min");
         long answer = self[0];
         for (int i = 1; i < self.length; i++) {
             long value = self[i];
+            if (value < answer) answer = value;
+        }
+        return answer;
+    }
+
+    /**
+     * Adds min() method to float arrays.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[] nums = [1.1f, 3.3f, 2.2f]
+     * assert 1.1f == nums.min()
+     * </pre>
+     *
+     * @param self a float array
+     * @return the minimum value
+     * @since 5.0.0
+     */
+    public static float min(float[] self) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+        float answer = self[0];
+        for (int i = 1; i < self.length; i++) {
+            float value = self[i];
             if (value < answer) answer = value;
         }
         return answer;
@@ -5697,7 +5834,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static double min(double[] self) {
         Objects.requireNonNull(self);
-        throwUnsupportedOperationIfEmpty(self.length, "max");
+        throwUnsupportedOperationIfEmpty(self.length, "min");
         double answer = self[0];
         for (int i = 1; i < self.length; i++) {
             double value = self[i];
@@ -5787,7 +5924,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the long array
-     * using the supplied LongBinaryOperator as a comparator to determine the minimum of any two values.
+     * using the supplied LongComparator to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * long[] nums = [10L, -20L, 30L]
@@ -5851,8 +5988,73 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the minimum value found from the float array
+     * using the supplied FloatComparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10f, -20f, 30f]
+     * assert -20f == nums.min{ n, m {@code ->} n {@code <=>} m }
+     * assert 10f == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self       a float array
+     * @param comparator a comparator, i.e. returns a negative value if the first parameter is less than the second
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static float min(float[] self, FloatComparator comparator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        float minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            float v = self[i];
+            if (comparator.compare(v, minV) < 0) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
+     * Selects the minimum value found from the float array
+     * using the supplied FloatUnaryOperator to determine the minimum of any two values.
+     * The operator is applied to each array element and the results are compared.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10f, -20f, 30f]
+     * assert -20f == nums.min{ it }
+     * assert 10f == nums.min{ it.abs() }
+     * </pre>
+     * <p>
+     *
+     * @param self     a double array
+     * @param operator an operator that returns a double used for comparing values
+     * @return the minimum value
+     * @throws UnsupportedOperationException if the array is empty
+     * @since 5.0.0
+     */
+    @Incubating
+    public static float min(float[] self, FloatUnaryOperator operator) {
+        Objects.requireNonNull(self);
+        throwUnsupportedOperationIfEmpty(self.length, "min");
+
+        float minV = self[0];
+        for (int i = 1; i < self.length; i++) {
+            float v = self[i];
+            if (operator.applyAsFloat(v) < operator.applyAsFloat(minV)) {
+                minV = v;
+            }
+        }
+        return minV;
+    }
+
+    /**
      * Selects the minimum value found from the double array
-     * using the supplied DoubleBinaryOperator as a comparator to determine the minimum of any two values.
+     * using the supplied DoubleComparator to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * double[] nums = [10d, -20d, 30d]
@@ -5995,6 +6197,28 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     @Incubating
     public static long minComparing(long[] self, Comparator<Long> comparator) {
         return DefaultGroovyMethods.min(new LongArrayIterator(self), comparator);
+    }
+
+    /**
+     * Selects the minimum value found from the float array
+     * using the comparator to determine the minimum of any two values.
+     * <p>
+     * <pre class="groovyTestCase">
+     * double[] nums = [10.0f, 20.0f, 30.0f]
+     * assert 10f == nums.minComparing(Comparator.naturalOrder())
+     * assert 30f == nums.minComparing(Comparator.reverseOrder())
+     * </pre>
+     * <p>
+     *
+     * @param self       a float array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see DefaultGroovyMethods#min(Iterator, java.util.Comparator)
+     * @since 5.0.0
+     */
+    @Incubating
+    public static float minComparing(float[] self, Comparator<Float> comparator) {
+        return DefaultGroovyMethods.min(new FloatArrayIterator(self), comparator);
     }
 
     /**
