@@ -5367,7 +5367,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found from the int array
-     * using the supplier IntUnaryOperator to determine the maximum of any two values.
+     * using the supplied IntUnaryOperator to determine the maximum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
      * <pre class="groovyTestCase">
@@ -5400,7 +5400,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found from the long array
-     * using the supplier LongBinaryOperator as a comparator to determine the maximum of any two values.
+     * using the supplied LongBinaryOperator as a comparator to determine the maximum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * long[] nums = [10L, 20L, -30L]
@@ -5432,7 +5432,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found from the long array
-     * using the supplier LongUnaryOperator to determine the maximum of any two values.
+     * using the supplied LongUnaryOperator to determine the maximum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
      * <pre class="groovyTestCase">
@@ -5465,7 +5465,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found from the double array
-     * using the supplier DoubleComparator to determine the maximum of any two values.
+     * using the supplied DoubleComparator to determine the maximum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * double[] nums = [10d, 20d, -30d]
@@ -5497,7 +5497,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found from the double array
-     * using the supplier DoubleUnaryOperator to determine the maximum of any two values.
+     * using the supplied DoubleUnaryOperator to determine the maximum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
      * <pre class="groovyTestCase">
@@ -5722,7 +5722,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the int array
-     * using the supplier IntComparator to determine the minimum of any two values.
+     * using the supplied IntComparator to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * int[] nums = [10, -20, 30]
@@ -5754,7 +5754,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the int array
-     * using the supplier IntUnaryOperator to determine the minimum of any two values.
+     * using the supplied IntUnaryOperator to determine the minimum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
      * <pre class="groovyTestCase">
@@ -5787,7 +5787,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the long array
-     * using the supplier LongBinaryOperator as a comparator to determine the minimum of any two values.
+     * using the supplied LongBinaryOperator as a comparator to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * long[] nums = [10L, -20L, 30L]
@@ -5819,7 +5819,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the long array
-     * using the supplier LongUnaryOperator to determine the minimum of any two values.
+     * using the supplied LongUnaryOperator to determine the minimum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
      * <pre class="groovyTestCase">
@@ -5852,7 +5852,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the double array
-     * using the supplier DoubleBinaryOperator as a comparator to determine the minimum of any two values.
+     * using the supplied DoubleBinaryOperator as a comparator to determine the minimum of any two values.
      * <p>
      * <pre class="groovyTestCase">
      * double[] nums = [10d, -20d, 30d]
@@ -5884,7 +5884,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found from the double array
-     * using the supplier DoubleUnaryOperator to determine the minimum of any two values.
+     * using the supplied DoubleUnaryOperator to determine the minimum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
      * <pre class="groovyTestCase">
