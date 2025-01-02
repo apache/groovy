@@ -204,7 +204,6 @@ tasks.register("asciidocAll", Copy) {
 
 tasks.named('asciidoctorPdf') {
     baseDirFollowsSourceFile()
-    configurations 'asciidocExtensions'
     logDocuments = true
     sourceDir = file('src/spec/doc')
     outputDir = layout.buildDirectory.dir("asciidocAll/pdf")
