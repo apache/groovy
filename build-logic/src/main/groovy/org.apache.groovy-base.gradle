@@ -133,13 +133,14 @@ dependencies {
     spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
     spotbugs "org.apache.logging.log4j:log4j-api:${versions.log4j2}"
     spotbugs "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
+    spotbugsSlf4j "org.slf4j:slf4j-simple:${versions.slf4j}"
 }
 
 def excludedFromManifest = [
-        'Ant-Version',
-        'Originally-Created-By',
-        'Bnd-LastModified',
-        'Created-By'
+    'Ant-Version',
+    'Originally-Created-By',
+    'Bnd-LastModified',
+    'Created-By'
 ]
 
 tasks.named('jar') {
@@ -186,22 +187,22 @@ tasks.register("jarjar", JarJarTask) {
         }
     }.files
     untouchedFiles = [
-            'groovy/cli/picocli/CliBuilder*.class',
-            'groovy/cli/picocli/OptionAccessor*.class'
+        'groovy/cli/picocli/CliBuilder*.class',
+        'groovy/cli/picocli/OptionAccessor*.class'
     ]
     patterns = [
-            'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
-            'org.objectweb.**': 'groovyjarjarasm.@1',
-            'picocli.**': 'groovyjarjarpicocli.@1'
+        'org.antlr.**': 'groovyjarjarantlr4.@1', // antlr4
+        'org.objectweb.**': 'groovyjarjarasm.@1',
+        'picocli.**': 'groovyjarjarpicocli.@1'
     ]
     excludesPerLibrary = [
-            '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', '**/module-info.class']
+        '*': ['META-INF/maven/**', 'META-INF/*', 'META-INF/services/javax.annotation.processing.Processor', '**/module-info.class']
     ]
     includesPerLibrary = [
-            'asm-util': ['org/objectweb/asm/util/Printer.class',
-                         'org/objectweb/asm/util/Textifier*',
-                         'org/objectweb/asm/util/ASMifier.class',
-                         'org/objectweb/asm/util/Trace*']
+        'asm-util': ['org/objectweb/asm/util/Printer.class',
+                     'org/objectweb/asm/util/Textifier*',
+                     'org/objectweb/asm/util/ASMifier.class',
+                     'org/objectweb/asm/util/Trace*']
     ]
     outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${(it.archiveClassifier.get() && it.archiveClassifier.get() != 'raw') ? '-' + it.archiveClassifier.get() : ''}.jar") }
 
@@ -221,6 +222,10 @@ tasks.withType(AbstractCompile).configureEach {
 
 tasks.withType(Javadoc).configureEach {
     options.source = sharedConfiguration.targetJavaVersion.get()
+}
+
+tasks.named("compileTestGroovy") {
+    options.forkOptions.jvmArgs += ["-Dspock.iKnowWhatImDoing.disableGroovyVersionCheck=true"]
 }
 
 tasks.withType(CodeNarc).configureEach {
@@ -248,7 +253,7 @@ tasks.register("checkstyle") {
     dependsOn tasks.withType(Checkstyle)
 }
 
-tasks.withType(Checkstyle).configureEach {
+tasks.withType(Checkstyle).configureEach {chk ->
     showViolations = false
     ignoreFailures = true
     configFile = rootProject.file("config/checkstyle/checkstyle.xml")
@@ -257,10 +262,9 @@ tasks.withType(Checkstyle).configureEach {
     reports {
         include('**/*.java')
         xml {
-            destination reportFile.get().asFile
+            outputLocation = reportFile
         }
     }
-    def chk = it
     finalizedBy {
         // we use a closure here as a workaround, to preserve task configuration laziness
         tasks.register("${name}Report", CheckstyleHtmlReport) {
@@ -295,8 +299,8 @@ components.groovyLibrary {
 // By declaring a codehaus capability we can tell Gradle that the user has to
 // choose between "old" groovy and "new" groovy
 List<String> capabilities = [
-        "org.codehaus.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}",
-        "org.apache.groovy:${archivesBaseName}:${sharedConfiguration.groovyVersion.get()}"
+    "org.codehaus.groovy:${base.archivesName.get()}:${sharedConfiguration.groovyVersion.get()}",
+    "org.apache.groovy:${base.archivesName.get()}:${sharedConfiguration.groovyVersion.get()}"
 ]
 int targetJvmVersion = Integer.valueOf(sharedConfiguration.targetJavaVersion.get())
 // First we create the "API" and "runtime" variants of Groovy for publication
@@ -326,13 +330,13 @@ afterEvaluate {
 
 @CompileStatic
 static Configuration createConsumableConfiguration(ObjectFactory objects,
-                                            TaskContainer tasks,
-                                            ConfigurationContainer container,
-                                            String name,
-                                            String usage,
-                                            String artifactTask,
-                                            List<String> capabilities,
-                                            int targetJvmVersion) {
+                                                   TaskContainer tasks,
+                                                   ConfigurationContainer container,
+                                                   String name,
+                                                   String usage,
+                                                   String artifactTask,
+                                                   List<String> capabilities,
+                                                   int targetJvmVersion) {
     container.create(name) { Configuration cnf ->
         cnf.canBeConsumed = true
         cnf.canBeResolved = false
