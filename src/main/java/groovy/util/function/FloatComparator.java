@@ -20,6 +20,8 @@ package groovy.util.function;
 
 /**
  * A comparator of two float values.
+ *
+ * @since 5.0.0
  */
 @FunctionalInterface
 public interface FloatComparator {
