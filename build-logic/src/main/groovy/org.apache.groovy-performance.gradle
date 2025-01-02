@@ -37,7 +37,7 @@ configurations {
 repositories {
     mavenCentral()
     maven {
-        url 'https://repository.ow2.org/nexus/content/repositories/public/'
+        url = 'https://repository.ow2.org/nexus/content/repositories/public/'
     }
 }
 
