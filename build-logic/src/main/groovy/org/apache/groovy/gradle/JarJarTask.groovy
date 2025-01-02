@@ -119,8 +119,8 @@ class JarJarTask extends DefaultTask {
                 taskdef name: 'jarjar', classname: JARJAR_CLASS_NAME, classpath: jarjarToolClasspath.asPath
                 jarjar(jarfile: tmpJar, filesonly: true, modificationtime: tstamp) {
                     zipfileset(
-                            src: originalJar,
-                            excludes: (untouchedFiles + excludes).join(','))
+                        src: originalJar,
+                        excludes: (untouchedFiles + excludes).join(','))
                     includedResources.each { String resource, String path ->
                         String dir = resource.substring(0, resource.lastIndexOf('/') + 1)
                         String filename = resource.substring(resource.lastIndexOf('/') + 1)
@@ -146,7 +146,7 @@ class JarJarTask extends DefaultTask {
 
             if (createManifest) {
                 // next step is to generate an OSGI manifest using the newly repackaged classes
-                def mf = project.rootProject.convention.plugins.osgi.osgiManifest {
+                def mf = project.rootProject.extensions.osgi.osgiManifest {
                     symbolicName = project.name
                     instruction 'Import-Package', '*;resolution:=optional'
                     classesDir = tmpJar
@@ -177,8 +177,8 @@ class JarJarTask extends DefaultTask {
                 }
                 if (untouchedFiles) {
                     zipfileset(
-                            src: originalJar,
-                            includes: untouchedFiles.join(','))
+                        src: originalJar,
+                        includes: untouchedFiles.join(','))
                 }
             }
         } finally {

@@ -19,9 +19,9 @@
 plugins {
     id 'me.champeau.buildscan-recipes' version '0.2.3'
     id 'com.github.ben-manes.versions' version '0.51.0'
-    id 'com.github.blindpirate.osgi' version '0.0.6'
-    id "com.github.jk1.dependency-license-report" version "1.3"
-    id 'org.sonarqube' version '3.5.0.2730'
+    id 'com.github.blindpirate.osgi' version '0.0.7'
+    id 'com.github.jk1.dependency-license-report' version '2.9'
+    id 'org.sonarqube' version '6.0.1.5171'
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
     id 'org.apache.groovy-jacoco-aggregation'
@@ -33,7 +33,9 @@ buildScanRecipes {
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
 }
 
-archivesBaseName = 'groovy'
+base {
+    archivesName = 'groovy'
+}
 
 groovyLibrary {
     registerOptionalFeature 'gpars'
@@ -42,25 +44,25 @@ groovyLibrary {
     registerOptionalFeature 'xstreamAst'
 
     repackagedDependencies = [
-            'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
-            'asm', 'asm-commons', 'asm-tree', 'asm-util', 'picocli'
+        'antlr', 'antlr-runtime', 'antlr4', 'antlr4-runtime', 'antlr4-annotations',
+        'asm', 'asm-commons', 'asm-tree', 'asm-util', 'picocli'
     ]
 
     withGrooid(
-            "org.apache.groovy:groovy-grooid:${sharedConfiguration.groovyVersion.get()}",
-            ['openbeans'] as Set,
-            [
-                    'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
-                    'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
-                    'java.beans.**': 'groovyjarjaropenbeans.@1'
-            ],
-            [
-                    '*': ['META-INF/NOTICE']
-            ],
-            ['META-INF/NOTICE', 'META-INF/INDEX.LIST'],
-            [
-                    (project.relativePath(rootProject.file('notices/NOTICE-GROOIDJARJAR'))): 'META-INF/NOTICE'
-            ]
+        "org.apache.groovy:groovy-grooid:${sharedConfiguration.groovyVersion.get()}",
+        ['openbeans'] as Set,
+        [
+            'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
+            'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
+            'java.beans.**': 'groovyjarjaropenbeans.@1'
+        ],
+        [
+            '*': ['META-INF/NOTICE']
+        ],
+        ['META-INF/NOTICE', 'META-INF/INDEX.LIST'],
+        [
+            (project.relativePath(rootProject.file('notices/NOTICE-GROOIDJARJAR'))): 'META-INF/NOTICE'
+        ]
     )
 }
 
@@ -88,20 +90,21 @@ dependencies {
 
     antlr "me.sunlan:antlr4:${versions.antlr4}"
 
-    loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
-
-    xstreamAstImplementation("com.thoughtworks.xstream:xstream:${versions.xstream}") {
-        exclude(group: 'xpp3', module: 'xpp3_min')
-        exclude(group: 'junit', module: 'junit')
-        exclude(group: 'jmock', module: 'jmock')
-        exclude(group: 'xmlpull', module: 'xmlpull')
+    gparsImplementation "org.codehaus.gpars:gpars:${versions.gpars}", {
+        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
     }
-    grapesImplementation("org.apache.ivy:ivy:${versions.ivy}") {
+
+    grapesImplementation "org.apache.ivy:ivy:${versions.ivy}", {
         transitive = false
     }
 
-    gparsImplementation("org.codehaus.gpars:gpars:${versions.gpars}") {
-        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
+    loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
+
+    xstreamAstImplementation "com.thoughtworks.xstream:xstream:${versions.xstream}", {
+        exclude(group: 'xpp3'   , module: 'xpp3_min')
+        exclude(group: 'junit'  , module: 'junit'   )
+        exclude(group: 'jmock'  , module: 'jmock'   )
+        exclude(group: 'xmlpull', module: 'xmlpull' )
     }
 
     testImplementation projects.groovyAnt
@@ -118,38 +121,53 @@ dependencies {
     testImplementation "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
     testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
+    testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jacksonDatabind}" // use same version for testing as we use elsewhere
+    testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    testImplementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
     tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
+    tools "org.apache.ant:ant:1.10.15" // updated jarjar dependency to remove vulnerability
     tools "org.jboss.bridger:bridger:${versions.bridger}"
-
     tools("net.sourceforge.cobertura:cobertura:${versions.cobertura}") {
         exclude(group: 'asm')
         exclude(group: 'org.ow2.asm')
         exclude(module: 'ant')
     }
+    tools "org.codehaus.plexus:plexus-utils:4.0.2" // updated bridger dependency to remove vulnerability
+    tools "org.apache.maven:maven-core:3.9.9" // updated bridger dependency to remove vulnerability
+    tools "com.jcraft:jsch:0.1.55" // updated bridger dependency to remove vulnerability
+    tools "commons-io:commons-io:2.18.0" // updated bridger dependency to remove vulnerability
+    tools "org.apache.maven.shared:maven-shared-utils:3.4.2" // updated bridger dependency to remove vulnerability
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
 
-    testRuntimeOnly(project(":")) {
-        because "Tests are using Grapes"
+    testRuntimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using Grapes'
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
+        }
+    }
+    testRuntimeOnly(project(':')) {
+        because 'Tests are using GPars'
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-gpars'
         }
     }
 }
 
 configurations {
     javadocClasspath.extendsFrom(
-            loggingImplementation,
-            xstreamAstImplementation,
-            gparsImplementation,
-            grapesImplementation
+        loggingImplementation,
+        xstreamAstImplementation,
+        gparsImplementation,
+        grapesImplementation
     )
     groovyCompilerClasspath {
         extendsFrom(implementation, compileOnly, grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
@@ -175,7 +193,6 @@ tasks.named('jar') {
     }
     exclude '**/package-info.class'
 }
-
 
 // some tests require Jars, but those are not allowed in the source directory
 // by the Apache policy, so we need to build them and add them to the test
@@ -238,7 +255,7 @@ if (file('user.gradle').exists()) {
 
 licenseReport {
     excludeGroups = [
-            'org.multiverse'  // we never include this optional dependency of an optional dependency
+        'org.multiverse'  // we never include this optional dependency of an optional dependency
     ]
 }
 
