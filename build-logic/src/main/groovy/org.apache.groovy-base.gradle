@@ -215,8 +215,8 @@ tasks.register("jarjar", JarJarTask) {
 }
 
 tasks.withType(AbstractCompile).configureEach {
-    sourceCompatibility(sharedConfiguration.targetJavaVersion.get())
-    targetCompatibility(sharedConfiguration.targetJavaVersion.get())
+    sourceCompatibility = sharedConfiguration.targetJavaVersion.get()
+    targetCompatibility = sharedConfiguration.targetJavaVersion.get()
 }
 
 tasks.withType(Javadoc).configureEach {
