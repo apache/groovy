@@ -1048,7 +1048,7 @@ public class Sql implements AutoCloseable {
      * @param closure called for each row with a <code>ResultSet</code>
      * @throws SQLException if a database access error occurs
      */
-    public void query(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSet") Closure closure) throws SQLException {
+    public void query(String sql, List<?> params, @ClosureParams(value=SimpleType.class, options="java.sql.ResultSet") Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -1309,7 +1309,7 @@ public class Sql implements AutoCloseable {
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params,
+    public void eachRow(String sql, List<?> params,
                         @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure, int offset, int maxRows,
                         @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
@@ -1407,7 +1407,7 @@ public class Sql implements AutoCloseable {
      * @param rowClosure  called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params,
+    public void eachRow(String sql, List<?> params,
                         @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
                         @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure rowClosure) throws SQLException {
         eachRow(sql, params, metaClosure, 0, 0, rowClosure);
@@ -1467,7 +1467,7 @@ public class Sql implements AutoCloseable {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params,
+    public void eachRow(String sql, List<?> params,
                         @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, params, null, closure);
     }
@@ -1525,7 +1525,7 @@ public class Sql implements AutoCloseable {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List<Object> params, int offset, int maxRows,
+    public void eachRow(String sql, List<?> params, int offset, int maxRows,
                         @ClosureParams(value=SimpleType.class, options="groovy.sql.GroovyResultSet") Closure closure) throws SQLException {
         eachRow(sql, params, null, offset, maxRows, closure);
     }
@@ -1819,7 +1819,7 @@ public class Sql implements AutoCloseable {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, List<Object> params) throws SQLException {
+    public List<GroovyRowResult> rows(String sql, List<?> params) throws SQLException {
         return rows(sql, params, null);
     }
 
@@ -1863,7 +1863,7 @@ public class Sql implements AutoCloseable {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, List<Object> params, int offset, int maxRows) throws SQLException {
+    public List<GroovyRowResult> rows(String sql, List<?> params, int offset, int maxRows) throws SQLException {
         return rows(sql, params, offset, maxRows, null);
     }
 
@@ -1974,7 +1974,7 @@ public class Sql implements AutoCloseable {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, List<Object> params,
+    public List<GroovyRowResult> rows(String sql, List<?> params,
                                       @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         return rows(sql, params, 0, 0, metaClosure);
     }
@@ -2040,7 +2040,7 @@ public class Sql implements AutoCloseable {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List<GroovyRowResult> rows(String sql, List<Object> params, int offset, int maxRows,
+    public List<GroovyRowResult> rows(String sql, List<?> params, int offset, int maxRows,
                                       @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure) throws SQLException {
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         // for efficiency set maxRows (adjusted for the first offset rows we are going to skip the cursor over)
@@ -2284,7 +2284,7 @@ public class Sql implements AutoCloseable {
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
-    public GroovyRowResult firstRow(String sql, List<Object> params) throws SQLException {
+    public GroovyRowResult firstRow(String sql, List<?> params) throws SQLException {
         List<GroovyRowResult> rows = null;
         try {
             rows = rows(sql, params, 1, 1, null);
@@ -2477,7 +2477,7 @@ public class Sql implements AutoCloseable {
      *         no results
      * @throws SQLException if a database access error occurs
      */
-    public boolean execute(String sql, List<Object> params) throws SQLException {
+    public boolean execute(String sql, List<?> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -2511,7 +2511,7 @@ public class Sql implements AutoCloseable {
      * @see #execute(String, Closure)
      * @since 2.3.2
      */
-    public void execute(String sql, List<Object> params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
+    public void execute(String sql, List<?> params, @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure) throws SQLException {
         execute(sql, params, null, resultClosure);
     }
 
@@ -2537,7 +2537,7 @@ public class Sql implements AutoCloseable {
      */
     public void execute(
         String sql,
-        List<Object> params,
+        List<?> params,
         @ClosureParams(value=SimpleType.class, options="java.sql.ResultSetMetaData") Closure metaClosure,
         @ClosureParams(value=FromString.class, options={"boolean,java.util.List<groovy.sql.GroovyRowResult>", "boolean,int"}) Closure resultClosure
     ) throws SQLException {
@@ -2810,7 +2810,7 @@ public class Sql implements AutoCloseable {
      *         inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      */
-    public List<List<Object>> executeInsert(String sql, List<Object> params) throws SQLException {
+    public List<List<Object>> executeInsert(String sql, List<?> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -2849,7 +2849,7 @@ public class Sql implements AutoCloseable {
      * @see Connection#prepareStatement(String, String[])
      * @since 2.3.2
      */
-    public List<GroovyRowResult> executeInsert(String sql, List<Object> params, List<String> keyColumnNames) throws SQLException {
+    public List<GroovyRowResult> executeInsert(String sql, List<?> params, List<String> keyColumnNames) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -3083,7 +3083,7 @@ public class Sql implements AutoCloseable {
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
-    public int executeUpdate(String sql, List<Object> params) throws SQLException {
+    public int executeUpdate(String sql, List<?> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -3223,7 +3223,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @see #call(String)
      */
-    public int call(String sql, List<Object> params) throws SQLException {
+    public int call(String sql, List<?> params) throws SQLException {
         Connection connection = createConnection();
         CallableStatement statement = null;
         try {
@@ -3334,7 +3334,7 @@ public class Sql implements AutoCloseable {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void call(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+    public void call(String sql, List<?> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         callWithRows(sql, params, NO_RESULT_SETS, closure);
     }
 
@@ -3432,7 +3432,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @see #callWithRows(GString, Closure)
      */
-    public List<GroovyRowResult> callWithRows(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+    public List<GroovyRowResult> callWithRows(String sql, List<?> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         return callWithRows(sql, params, FIRST_RESULT_SET, closure).get(0);
     }
 
@@ -3491,7 +3491,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @see #callWithRows(GString, Closure)
      */
-    public List<List<GroovyRowResult>> callWithAllRows(String sql, List<Object> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+    public List<List<GroovyRowResult>> callWithAllRows(String sql, List<?> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         return callWithRows(sql, params, ALL_RESULT_SETS, closure);
     }
 
@@ -4021,7 +4021,7 @@ public class Sql implements AutoCloseable {
      * @throws SQLException if a database access error occurs
      * @see #callWithRows(String, List, Closure)
      */
-    protected List<List<GroovyRowResult>> callWithRows(String sql, List<Object> params, int processResultsSets, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+    protected List<List<GroovyRowResult>> callWithRows(String sql, List<?> params, int processResultsSets, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         Connection connection = createConnection();
         CallableStatement statement = null;
         List<GroovyResultSet> resultSetResources = new ArrayList<>();
@@ -4116,7 +4116,7 @@ public class Sql implements AutoCloseable {
      * @return the resulting ResultSet
      * @throws SQLException if a database error occurs
      */
-    protected final ResultSet executePreparedQuery(String sql, List<Object> params)
+    protected final ResultSet executePreparedQuery(String sql, List<?> params)
             throws SQLException {
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         ResultSet rs = null;
@@ -4189,7 +4189,7 @@ public class Sql implements AutoCloseable {
      * @return the SQL version of the given query using ? instead of any parameter
      * @see #expand(Object)
      */
-    protected String asSql(GString gstring, List<Object> values) {
+    protected String asSql(GString gstring, List<?> values) {
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
@@ -4197,7 +4197,7 @@ public class Sql implements AutoCloseable {
         boolean nulls = false;
         StringBuilder buffer = new StringBuilder();
         boolean warned = false;
-        Iterator<Object> iter = values.iterator();
+        Iterator<?> iter = values.iterator();
         for (int i = 0; i < strings.length; i++) {
             String text = strings[i];
             if (text != null) {
@@ -4330,7 +4330,7 @@ public class Sql implements AutoCloseable {
      * @param statement the statement
      * @throws SQLException if a database access error occurs
      */
-    protected void setParameters(List<Object> params, PreparedStatement statement) throws SQLException {
+    protected void setParameters(List<?> params, PreparedStatement statement) throws SQLException {
         int i = 1;
         ParameterMetaData metaData = getParameterMetaDataSafe(statement);
         if (metaData != null) {
@@ -4631,7 +4631,7 @@ public class Sql implements AutoCloseable {
         return stmt;
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params, int returnGeneratedKeys) throws SQLException {
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<?> params, int returnGeneratedKeys) throws SQLException {
         SqlWithParams updated = checkForNamedParams(sql, params);
         LOG.fine(updated.getSql() + " | " + updated.getParams());
         PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, updated.getSql());
@@ -4640,7 +4640,7 @@ public class Sql implements AutoCloseable {
         return statement;
     }
 
-    private CallableStatement getCallableStatement(Connection connection, String sql, List<Object> params) throws SQLException {
+    private CallableStatement getCallableStatement(Connection connection, String sql, List<?> params) throws SQLException {
         LOG.fine(sql + " | " + params);
         CallableStatement statement = (CallableStatement) getAbstractStatement(new CreateCallableStatementCommand(), connection, sql);
         setParameters(params, statement);
@@ -4648,7 +4648,7 @@ public class Sql implements AutoCloseable {
         return statement;
     }
 
-    public SqlWithParams checkForNamedParams(String sql, List<Object> params) {
+    public SqlWithParams checkForNamedParams(String sql, List<?> params) {
         SqlWithParams preCheck = buildSqlWithIndexedProps(sql);
         if (preCheck == null) {
             return new SqlWithParams(sql, params);
@@ -4706,7 +4706,7 @@ public class Sql implements AutoCloseable {
         return new SqlWithParams(newSql, indexPropList);
     }
 
-    public List<Object> getUpdatedParams(List<Object> params, List<Tuple> indexPropList) {
+    public List<Object> getUpdatedParams(List<?> params, List<Tuple> indexPropList) {
         List<Object> updatedParams = new ArrayList<>();
         for (Tuple tuple : indexPropList) {
             int index = (Integer) tuple.get(0);
@@ -4722,7 +4722,7 @@ public class Sql implements AutoCloseable {
         return updatedParams;
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params) throws SQLException {
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<?> params) throws SQLException {
         return getPreparedStatement(connection, sql, params, 0);
     }
 
@@ -4910,9 +4910,9 @@ public class Sql implements AutoCloseable {
     }
 
     private final class PreparedQueryCommand extends AbstractQueryCommand {
-        private List<Object> params;
+        private List<?> params;
 
-        private PreparedQueryCommand(String sql, List<Object> queryParams) {
+        private PreparedQueryCommand(String sql, List<?> queryParams) {
             super(sql);
             params = queryParams;
         }
@@ -4972,7 +4972,7 @@ public class Sql implements AutoCloseable {
      * @return a command - invoke its execute() and closeResource() methods
      * @see #createQueryCommand(String)
      */
-    protected AbstractQueryCommand createPreparedQueryCommand(String sql, List<Object> queryParams) {
+    protected AbstractQueryCommand createPreparedQueryCommand(String sql, List<?> queryParams) {
         return new PreparedQueryCommand(sql, queryParams);
     }
 
