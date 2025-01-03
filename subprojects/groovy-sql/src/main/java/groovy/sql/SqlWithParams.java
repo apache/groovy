@@ -22,9 +22,9 @@ import java.util.List;
 
 public class SqlWithParams {
     private final String sql;
-    private final List<Object> params;
+    private final List<?> params;
 
-    public SqlWithParams(String sql, List<Object> params) {
+    public SqlWithParams(String sql, List<?> params) {
         this.sql = sql;
         this.params = params;
     }
@@ -33,7 +33,8 @@ public class SqlWithParams {
         return sql;
     }
 
+    @SuppressWarnings("unchecked")
     public List<Object> getParams() {
-        return params;
+        return (List<Object>) params;
     }
 }
