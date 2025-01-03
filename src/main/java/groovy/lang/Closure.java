@@ -290,15 +290,10 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
         return thisObject;
     }
 
-    private Class<?> thisType;
-    private Class<?> getThisType() {
-        Class<?> thisType = this.thisType;
-        if (thisType == null) {
-            thisType = getClass();
-            while (GeneratedClosure.class.isAssignableFrom(thisType)) {
-                thisType = thisType.getEnclosingClass();
-            }
-            this.thisType = thisType;
+    private Class getThisType() {
+        Class thisType = getClass();
+        while (GeneratedClosure.class.isAssignableFrom(thisType)) {
+            thisType = thisType.getEnclosingClass();
         }
         return thisType;
     }
