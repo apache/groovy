@@ -292,8 +292,9 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         Parameter[] lambdaParameters = getParametersSafe(expression);
         ClassNode[] lambdaParamTypes = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
         for (int i = 0, n = lambdaParameters.length; i < n; i += 1) {
-            ClassNode resolvedType = convertParameterType(targetParameters[i].getType(), lambdaParameters[i].getType(), lambdaParamTypes[i]);
-            lambdaParameters[i].setType(resolvedType);
+            final Parameter lambdaParameter = lambdaParameters[i];
+            ClassNode resolvedType = convertParameterType(targetParameters[i].getType(), lambdaParameter.getType(), lambdaParamTypes[i]);
+            lambdaParameter.setType(resolvedType);
         }
         return lambdaParameters;
     }
