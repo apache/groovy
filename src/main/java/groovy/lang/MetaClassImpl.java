@@ -2617,25 +2617,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 continue;
 
             // get the getter method
-            Method method = pd.getReadMethod();
-            MetaMethod getter;
-
-            if (method != null) {
-                CachedMethod cachedGetter = CachedMethod.find(method);
-                getter = cachedGetter == null ? null : findMethod(cachedGetter);
-            } else {
-                getter = null;
-            }
+            Method readMethod = pd.getReadMethod();
+            MetaMethod getter = readMethod != null ? findMethod(readMethod) : null;
 
             // get the setter method
-            MetaMethod setter;
-            method = pd.getWriteMethod();
-            if (method != null) {
-                CachedMethod cachedSetter = CachedMethod.find(method);
-                setter = cachedSetter == null ? null : findMethod(cachedSetter);
-            } else {
-                setter = null;
-            }
+            Method writeMethod = pd.getWriteMethod();
+            MetaMethod setter = writeMethod != null ? findMethod(writeMethod) : null;
 
             // now create the MetaProperty object
             MetaBeanProperty mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
@@ -3178,6 +3165,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         list.add(method);
     }
 
+    private MetaMethod findMethod(Method method) {
+        CachedMethod cachedMethod = CachedMethod.find(method);
+        return cachedMethod == null ? null : findMethod(cachedMethod);
+    }
+
     /**
      * @return the matching method which should be found
      */
@@ -3415,9 +3407,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (md.getMethod().getParameterCount() != 0) continue;
                 String name = md.getName();
                 if (componentNames.contains(name)) {
-                    CachedMethod cachedMethod = CachedMethod.find(md.getMethod());
-                    if (cachedMethod != null) {
-                        MetaMethod accessor = findMethod(cachedMethod);
+                    MetaMethod accessor = findMethod(md.getMethod());
+                    if (accessor != null) {
                         createMetaBeanProperty(propIndex, name, true, accessor);
                     }
                 }
