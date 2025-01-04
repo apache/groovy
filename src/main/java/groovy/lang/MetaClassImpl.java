@@ -269,7 +269,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (o instanceof FastArray) {
             return ((FastArray) o).toList();
         }
-        return Collections.<MetaMethod>singletonList((MetaMethod) o);
+        return Collections.singletonList((MetaMethod) o);
     }
 
     /**
