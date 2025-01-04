@@ -57,6 +57,7 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaClassSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
+import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
@@ -3165,9 +3166,28 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         list.add(method);
     }
 
+    private static final MetaMethod NULL_METAMETHOD = new MetaMethod() {
+        @Override
+        public int getModifiers() { return 0; }
+        @Override
+        public String getName() { return ""; }
+        @Override
+        public Class getReturnType() { return null; }
+        @Override
+        public CachedClass getDeclaringClass() { return null; }
+        @Override
+        public Object invoke(Object object, Object[] arguments) { return null; }
+    };
+    private static final LRUCache<Method, MetaMethod> METHOD_CACHE = new LRUCache<>(512);
     private MetaMethod findMethod(Method method) {
-        CachedMethod cachedMethod = CachedMethod.find(method);
-        return cachedMethod == null ? null : findMethod(cachedMethod);
+        MetaMethod result = METHOD_CACHE.getAndPut(method, m -> {
+            CachedMethod cachedMethod = CachedMethod.find(m);
+            MetaMethod metaMethod = cachedMethod == null ? null : findMethod(cachedMethod);
+            if (metaMethod == null) metaMethod = NULL_METAMETHOD;
+            return metaMethod;
+        });
+        if (result == NULL_METAMETHOD) result = null;
+        return result;
     }
 
     /**
