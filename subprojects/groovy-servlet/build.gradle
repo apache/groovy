@@ -1,3 +1,5 @@
+import org.apache.groovy.gradle.JarJarTask
+
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -36,4 +38,28 @@ dependencies {
     }
     testImplementation projects.groovyJson
     testImplementation projects.groovyTest
+}
+
+tasks.register("javaxJar", JarJarTask) {
+    def jarjar = tasks.named("jarjar", JarJarTask)
+    it.dependsOn(jarjar)
+    it.from.set(jarjar.flatMap { it.outputFile })
+    it.patterns = [
+        'jakarta.servlet.**': 'javax.servlet.@1'
+    ]
+    it.createManifest = false
+    it.outputFile.set(layout.buildDirectory.file(
+        tasks.named('jar', Jar).map { jar ->
+            "libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-javax.jar"
+        }
+    ))
+}
+
+afterEvaluate {
+    def javaxJarTask = tasks.javaxJar
+    def mavenPublish = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
+    mavenPublish?.publications.each {
+        it.artifact(javaxJarTask.outputs.files.singleFile) { classifier = "javax" }
+    }
+    tasks.matching { it.group == PublishingExtension.NAME }.configureEach { dependsOn(javaxJarTask) }
 }
