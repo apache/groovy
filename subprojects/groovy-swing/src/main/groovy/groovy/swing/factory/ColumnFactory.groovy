@@ -40,7 +40,7 @@ class ColumnFactory extends AbstractFactory {
         }
 
         if (jxTableClass != null && builder.current instanceof TableColumnModel) {
-            node = Class.forName("org.jdesktop.swingx.table.TableColumnExt").newInstance()
+            node = Class.forName("org.jdesktop.swingx.table.TableColumnExt").getConstructor().newInstance()
         } else {
             node = new javax.swing.table.TableColumn()
         }

@@ -104,7 +104,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     ASTTransformationCustomizer(Class<? extends Annotation> transformationAnnotation, String astTransformationClassName, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, astTransformationClassName, transformationClassLoader))
         Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
-        this.transformation = clazz.newInstance()
+        this.transformation = clazz.getConstructor().newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
     }
 
@@ -132,7 +132,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     ASTTransformationCustomizer(Map annotationParams, Class<? extends Annotation> transformationAnnotation, String astTransformationClassName, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, astTransformationClassName, transformationClassLoader))
         Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, astTransformationClassName, transformationClassLoader)
-        this.transformation = clazz.newInstance()
+        this.transformation = clazz.getConstructor().newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
         this.annotationParameters = annotationParams
     }
@@ -150,7 +150,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     ASTTransformationCustomizer(Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, transformationClassLoader))
         Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, transformationClassLoader)
-        this.transformation = clazz.newInstance()
+        this.transformation = clazz.getConstructor().newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
     }
 
@@ -181,7 +181,7 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     ASTTransformationCustomizer(Map annotationParams, Class<? extends Annotation> transformationAnnotation, ClassLoader transformationClassLoader) {
         super(findPhase(transformationAnnotation, transformationClassLoader))
         Class<ASTTransformation> clazz = findASTTransformationClass(transformationAnnotation, transformationClassLoader)
-        this.transformation = clazz.newInstance()
+        this.transformation = clazz.getConstructor().newInstance()
         this.annotationNode = new AnnotationNode(ClassHelper.make(transformationAnnotation))
         this.annotationParameters = annotationParams
     }
@@ -229,13 +229,13 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
     private static CompilePhase findPhase(Class<? extends Annotation> annotationClass, ClassLoader transformationClassLoader) {
         Class<ASTTransformation> clazz = findASTTransformationClass(annotationClass, transformationClassLoader)
 
-        findPhase(clazz.newInstance())
+        findPhase(clazz.getConstructor().newInstance())
     }
 
     private static CompilePhase findPhase(Class<? extends Annotation> annotationClass, String astTransformationClassName, ClassLoader transformationClassLoader) {
         Class<ASTTransformation> clazz = findASTTransformationClass(annotationClass, astTransformationClassName, transformationClassLoader)
 
-        findPhase(clazz.newInstance())
+        findPhase(clazz.getConstructor().newInstance())
     }
 
     /**

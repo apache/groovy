@@ -43,7 +43,7 @@ class BeanFactory extends AbstractFactory {
         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, beanClass)) {
             return value
         }
-        Object bean = beanClass.newInstance()
+        Object bean = beanClass.getConstructor().newInstance()
         if (value instanceof String) {
             try {
                 bean.text = value

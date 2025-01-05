@@ -38,7 +38,7 @@ class ColumnModelFactory extends AbstractFactory {
         }
 
         if (jxTableClass != null && jxTableClass.isAssignableFrom(builder.current.getClass())) {
-            return Class.forName("org.jdesktop.swingx.table.DefaultTableColumnModelExt").newInstance()
+            return Class.forName("org.jdesktop.swingx.table.DefaultTableColumnModelExt").ngetConstructor().newInstance()
         } else {
             return new javax.swing.table.DefaultTableColumnModel()
         }

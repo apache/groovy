@@ -285,9 +285,9 @@ class MockFor {
             }
         } else {
             if (GroovyObject.isAssignableFrom(clazz)) {
-                instance = clazz.newInstance()
+                instance = clazz.getConstructor().newInstance()
             } else {
-                instance = ProxyGenerator.INSTANCE.instantiateDelegate(clazz.newInstance())
+                instance = ProxyGenerator.INSTANCE.instantiateDelegate(clazz.getConstructor().newInstance())
             }
         }
         return instance

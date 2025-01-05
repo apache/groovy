@@ -150,7 +150,7 @@ class ConfigSlurper {
      * @see ConfigSlurper#parse(groovy.lang.Script)
      */
     ConfigObject parse(Class scriptClass) {
-        parse(scriptClass.newInstance())
+        parse(scriptClass.getConstructor().newInstance())
     }
 
     /**
@@ -171,7 +171,7 @@ class ConfigSlurper {
      * @return The ConfigObject instance
      */
     ConfigObject parse(URL scriptLocation) {
-        parse(classLoader.parseClass(scriptLocation.text).newInstance(), scriptLocation)
+        parse(classLoader.parseClass(scriptLocation.text).getConstructor().newInstance(), scriptLocation)
     }
 
     /**

@@ -72,11 +72,11 @@ class LookAndFeelHelper {
             theme : { laf, theme ->
                 if (!(theme instanceof MetalTheme)) {
                     if (theme == 'ocean') {
-                        theme = Class.forName('javax.swing.plaf.metal.OceanTheme').newInstance()
+                        theme = Class.forName('javax.swing.plaf.metal.OceanTheme').getConstructor().newInstance()
                     } else if (theme == 'steel') {
                         theme = new DefaultMetalTheme();
                     } else {
-                        theme = Class.forName(theme as String).newInstance()
+                        theme = Class.forName(theme as String).getConstructor().newInstance()
                     }
                 };
                 MetalLookAndFeel.currentTheme = theme

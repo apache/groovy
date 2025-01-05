@@ -373,7 +373,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         try {
             if (Class.forName('org.apache.ivy.core.event.IvyListener')) {
                 def ivyPluginClass = Class.forName('groovy.console.ui.ConsoleIvyPlugin')
-                ivyPluginClass.newInstance().addListener(this)
+                ivyPluginClass.getConstructor().newInstance().addListener(this)
             }
         } catch (ClassNotFoundException ignore) {
         }

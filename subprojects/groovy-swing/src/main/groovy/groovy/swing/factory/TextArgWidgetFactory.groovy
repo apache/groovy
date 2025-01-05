@@ -34,7 +34,7 @@ class TextArgWidgetFactory extends AbstractFactory {
             return value
         }
 
-        Object widget = klass.newInstance()
+        Object widget = klass.getConstructor().newInstance()
 
         if (value instanceof String) {
             // this does not create property setting order issues, since the value arg precedes all attributes in the builder element
