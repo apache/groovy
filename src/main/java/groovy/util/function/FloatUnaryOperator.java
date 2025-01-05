@@ -21,8 +21,8 @@ package groovy.util.function;
 import java.util.Objects;
 
 /**
- * Represents an operation on a single {@code float}-valued operand that produces
- * a {@code float}-valued result.  This is the primitive type specialization of
+ * Represents an operation that takes a {@code float}-valued operand and produces
+ * a {@code float}-valued result.  This is a specialization of
  * {@link java.util.function.UnaryOperator} for {@code float}.
  *
  * <p>This is a <a href="package-summary.html">functional interface</a>
@@ -34,7 +34,7 @@ import java.util.Objects;
 @FunctionalInterface
 public interface FloatUnaryOperator {
     /**
-     * Applies this operator to the given operand.
+     * Applies this operator.
      *
      * @param operand the operand
      * @return the operator result
@@ -42,14 +42,11 @@ public interface FloatUnaryOperator {
     float applyAsFloat(float operand);
 
     /**
-     * Returns a composed operator that first applies the {@code before}
+     * Creates a "backward" composed operator that first applies the {@code before}
      * operator to its input, and then applies this operator to the result.
-     * If evaluation of either operator throws an exception, it is relayed to
-     * the caller of the composed operator.
      *
      * @param before the operator to apply before this operator is applied
-     * @return a composed operator that first applies the {@code before}
-     * operator and then applies this operator
+     * @return the composed operator
      * @throws NullPointerException if before is null
      *
      * @see #andThen(FloatUnaryOperator)
@@ -60,14 +57,11 @@ public interface FloatUnaryOperator {
     }
 
     /**
-     * Returns a composed operator that first applies this operator to
+     * Creates a "forward" composed operator that first applies this operator to
      * its input, and then applies the {@code after} operator to the result.
-     * If evaluation of either operator throws an exception, it is relayed to
-     * the caller of the composed operator.
      *
      * @param after the operator to apply after this operator is applied
-     * @return a composed operator that first applies this operator and then
-     * applies the {@code after} operator
+     * @return the composed operator
      * @throws NullPointerException if after is null
      *
      * @see #compose(FloatUnaryOperator)
@@ -78,7 +72,7 @@ public interface FloatUnaryOperator {
     }
 
     /**
-     * Returns a unary operator that always returns its input argument.
+     * Returns the identity float unary operator.
      *
      * @return a unary operator that always returns its input argument
      */
