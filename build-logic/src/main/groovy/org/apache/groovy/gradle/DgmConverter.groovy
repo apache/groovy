@@ -24,6 +24,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputFiles
@@ -41,7 +42,6 @@ class DgmConverter extends DefaultTask {
 
     private final ExecOperations execOperations
 
-
     @OutputDirectory
     final DirectoryProperty outputDirectory
 
@@ -54,12 +54,12 @@ class DgmConverter extends DefaultTask {
     final ConfigurableFileCollection classpath
 
     @Inject
-    DgmConverter(ExecOperations execOperations) {
+    DgmConverter(ExecOperations execOperations, ObjectFactory objects) {
         description = 'Generates DGM info file required for faster startup.'
         this.execOperations = execOperations
-        classpath = project.objects.fileCollection()
-        sources = project.objects.fileTree()
-        outputDirectory = project.objects.directoryProperty().convention(
+        classpath = objects.fileCollection()
+        sources = objects.fileTree()
+        outputDirectory = objects.directoryProperty().convention(
                 project.layout.buildDirectory.dir("dgm")
         )
     }
