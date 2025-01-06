@@ -25,8 +25,10 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
@@ -41,6 +43,8 @@ import javax.inject.Inject
 class DgmConverter extends DefaultTask {
 
     private final ExecOperations execOperations
+
+    @Input Provider<String> groovyTargetBytecodeVersion = project.rootProject.extensions.getByType(SharedConfiguration).groovyTargetBytecodeVersion
 
     @OutputDirectory
     final DirectoryProperty outputDirectory
@@ -71,7 +75,7 @@ class DgmConverter extends DefaultTask {
         execOperations.javaexec {
             it.mainClass.set('org.codehaus.groovy.tools.DgmConverter')
             it.classpath = this.classpath
-            it.jvmArgs("-Dgroovy.target.bytecode=${project.rootProject.extensions.getByType(SharedConfiguration).groovyTargetBytecodeVersion.get()}" as String)
+            it.jvmArgs("-Dgroovy.target.bytecode=${groovyTargetBytecodeVersion.get()}" as String)
             it.args('--info', outputDirectory.asFile.get().absolutePath)
         }
     }
