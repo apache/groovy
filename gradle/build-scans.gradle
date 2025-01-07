@@ -22,6 +22,7 @@ boolean isCI = env.CI || env.TEAMCITY_VERSION || env.GITHUB_ACTIONS
 
 develocity {
     server = "https://develocity.apache.org"
+    projectId = "groovy"
     allowUntrustedServer = false
 
     buildScan {
