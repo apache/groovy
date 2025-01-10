@@ -2517,8 +2517,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             boolean isBooleanGetter = methodName.startsWith("is");
             if (methodNameLength < (isBooleanGetter ? 3 : 4)) continue;
 
-            boolean isGetter = methodName.startsWith("get") || isBooleanGetter;
-            boolean isSetter = methodName.startsWith("set");
+            boolean isGetter = isBooleanGetter || methodName.startsWith("get");
+            boolean isSetter = !isGetter       && methodName.startsWith("set");
             if (!isGetter && !isSetter) continue;
 
             Object propertyMethods = filterPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter, isBooleanGetter);
