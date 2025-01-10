@@ -3642,7 +3642,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected static MetaMethod findMethodInClassHierarchy(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
-
         if (metaClass instanceof MetaClassImpl) {
             boolean check = false;
             for (ClassInfo ci : ((MetaClassImpl) metaClass).theCachedClass.getHierarchy()) {
@@ -3653,24 +3652,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
 
-            if (!check)
-                return null;
+            if (!check) return null;
+        }
+
+        final Class<?> superClass;
+        final Class<?> theClass = metaClass.getTheClass();
+        if (theClass.isArray() && !theClass.getComponentType().isPrimitive() && theClass.getComponentType() != Object.class) {
+            superClass = Object[].class;
+        } else {
+            superClass = theClass.getSuperclass();
         }
 
         MetaMethod method = null;
-
-        Class superClass;
-        if (metaClass.getTheClass().isArray() && !metaClass.getTheClass().getComponentType().isPrimitive() && metaClass.getTheClass().getComponentType() != Object.class) {
-            superClass = Object[].class;
-        } else {
-            superClass = metaClass.getTheClass().getSuperclass();
-        }
-
         if (superClass != null) {
             MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(superClass);
             method = findMethodInClassHierarchy(instanceKlazz, methodName, arguments, superMetaClass);
         } else {
-            if (metaClass.getTheClass().isInterface()) {
+            if (theClass.isInterface()) {
                 MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(Object.class);
                 method = findMethodInClassHierarchy(instanceKlazz, methodName, arguments, superMetaClass);
             }
