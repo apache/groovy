@@ -33,15 +33,16 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * This class is a general adapter to map a call to a Java interface
  * to a given delegate.
  */
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
-    private final Object delegate;
     private static final long serialVersionUID = 1162833717190835227L;
-    private final ConcurrentHashMap<Method, Object> handleCache = new ConcurrentHashMap<>(16, 0.9f, 2);
+    private final ConcurrentMap<Method, Object> handleCache = new ConcurrentHashMap<>(16);
+    private final Object delegate;
     private MetaClass metaClass;
 
     /**
@@ -104,10 +105,10 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
             try {
                 if (method.getDeclaringClass() == GroovyObject.class) {
                     switch (method.getName()) {
-                    case "getMetaClass":
-                        return getMetaClass(proxy);
-                    case "setMetaClass":
-                        return setMetaClass((MetaClass) args[0]);
+                        case "getMetaClass":
+                            return getMetaClass(proxy);
+                        case "setMetaClass":
+                            return setMetaClass((MetaClass) args[0]);
                     }
                 }
                 return invokeCustom(proxy, method, args);
