@@ -173,9 +173,8 @@ public class CachedClass {
 
         @Override
         public Set<CachedClass> initValue() {
-            Set<CachedClass> res = new HashSet<>(0);
-
             Class[] classes = getTheClass().getInterfaces();
+            Set<CachedClass> res = new HashSet<>(classes.length);
             for (Class cls : classes) {
                 res.add(ReflectionCache.getCachedClass(cls));
             }
@@ -188,12 +187,13 @@ public class CachedClass {
 
         @Override
         public Set<CachedClass> initValue() {
-            Set<CachedClass> res = new HashSet<>(0);
-
-            if (getTheClass().isInterface()) {
+            Class<?> theClass = getTheClass();
+            Class[] classes = theClass.getInterfaces();
+            Set<CachedClass> res = new HashSet<>(classes.length + 8);
+            if (theClass.isInterface()) {
                 res.add(CachedClass.this);
             }
-            Class[] classes = getTheClass().getInterfaces();
+
             for (Class cls : classes) {
                 CachedClass aClass = ReflectionCache.getCachedClass(cls);
                 if (!res.contains(aClass))
