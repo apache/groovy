@@ -58,10 +58,12 @@ public class CachedClass {
     }
 
     private static <M extends AccessibleObject & Member> boolean isAccessibleOrCanSetAccessible(M m) {
-        if (isPublic(m.getModifiers()) && m.getDeclaringClass().getPackageName().startsWith("sun.")) {
+        final int modifiers = m.getModifiers();
+        final Class<?> declaringClass = m.getDeclaringClass();
+        if (isPublic(modifiers) && declaringClass.getPackageName().startsWith("sun.")) {
             return false;
         }
-        if (isProtected(m.getModifiers()) && isPublic(m.getDeclaringClass().getModifiers())) {
+        if (isProtected(modifiers) && isPublic(declaringClass.getModifiers())) {
             return true;
         }
         return ReflectionUtils.checkCanSetAccessible(m, CachedClass.class);
