@@ -57,21 +57,22 @@ public class ProxyGenerator {
         setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(ProxyGenerator.class));
     }
 
-    public static final ProxyGenerator INSTANCE = new ProxyGenerator(); // TODO: Should we make ProxyGenerator singleton?
+    public static final ProxyGenerator INSTANCE = new ProxyGenerator();
 
     /**
      * Caches proxy classes. When, for example, a call like: <code>map as MyClass</code>
      * is found, then a lookup is made into the cache to find if a suitable adapter
      * exists already. If so, it is reused instead of generating a new one.
      */
-    private final Map<CacheKey,ProxyGeneratorAdapter> adapterCache;
-
+    private final Map<CacheKey, ProxyGeneratorAdapter> adapterCache;
+    private static final int CACHE_SIZE = Integer.getInteger("groovy.adapter.cache.default.size", 64);
+    private static final float LOAD_FACTOR = 0.75f;
+    private static final int INIT_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
     {
-        final int cache_size = Integer.getInteger("groovy.adapter.cache.default.size", 64);
-        float load_factor = 0.75f; int init_capacity = (int) Math.ceil(cache_size / load_factor) + 1;
-        adapterCache = new LinkedHashMap<CacheKey, ProxyGeneratorAdapter>(init_capacity, load_factor, true) {
-            @Override protected boolean removeEldestEntry(Map.Entry<CacheKey, ProxyGeneratorAdapter> entry) {
-                return size() > cache_size;
+        adapterCache = new LinkedHashMap<>(INIT_CAPACITY, LOAD_FACTOR, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<CacheKey, ProxyGeneratorAdapter> entry) {
+                return size() > CACHE_SIZE;
             }
         };
     }
@@ -79,6 +80,8 @@ public class ProxyGenerator {
     private boolean debug;
     private boolean emptyMethods;
     private ClassLoader override;
+
+    // private ProxyGenerator() {} // TODO: Should we make ProxyGenerator singleton?
 
     public boolean getDebug() {
         return debug;
@@ -130,7 +133,7 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregateFromBaseClass(Closure cl, Class clazz) {
-        Map<String, Closure> m = new HashMap<String, Closure>();
+        Map<String, Closure> m = new HashMap<>(4);
         m.put("*", cl);
         return instantiateAggregateFromBaseClass(m, clazz, null);
     }
@@ -148,7 +151,7 @@ public class ProxyGenerator {
     }
 
     public GroovyObject instantiateAggregateFromInterface(Map map, Class clazz) {
-        List<Class> interfaces = new ArrayList<Class>();
+        List<Class> interfaces = new ArrayList<>(2);
         interfaces.add(clazz);
         return instantiateAggregate(map, interfaces);
     }
@@ -169,7 +172,7 @@ public class ProxyGenerator {
         if (clazz != null && Modifier.isFinal(clazz.getModifiers())) {
             throw new GroovyCastException("Cannot coerce a map to class " + clazz.getName() + " because it is a final class");
         }
-        Map<Object,Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
+        Map<Object, Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
         ProxyGeneratorAdapter adapter = createAdapter(map, interfaces, null, clazz);
 
         return adapter.proxy(map, constructorArgs);
@@ -206,27 +209,28 @@ public class ProxyGenerator {
      * @return a proxy object implementing the specified interfaces, and delegating to the provided object
      */
     public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List<Class> interfaces, Object delegate, Class baseClass, String name) {
-        Map<Object,Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
+        Map<Object, Object> map = closureMap != null ? closureMap : EMPTY_CLOSURE_MAP;
         ProxyGeneratorAdapter adapter = createAdapter(map, interfaces, delegate.getClass(), baseClass);
 
-        return adapter.delegatingProxy(delegate, map, (Object[])null);
+        return adapter.delegatingProxy(delegate, map, (Object[]) null);
     }
 
     private ProxyGeneratorAdapter createAdapter(final Map<Object,Object> closureMap, final List<Class> interfaceList, final Class delegateClass, final Class baseClass) {
         Class[] interfaces = interfaceList != null ? interfaceList.toArray(EMPTY_CLASS_ARRAY) : EMPTY_CLASS_ARRAY;
-        final Class base = baseClass != null ? baseClass : (interfaces.length > 0 ? interfaces[0] : Object.class);
-        Set<String> methodNames = closureMap.isEmpty() ? Collections.emptySet() : new HashSet<>();
+        final Class<?> base = baseClass != null ? baseClass : (interfaces.length > 0 ? interfaces[0] : Object.class);
+        final int closureMapSize = closureMap.size();
+        Set<String> methodNames = closureMapSize == 0 ? Collections.emptySet() : new HashSet<>(closureMapSize);
         for (Object key : closureMap.keySet()) {
             methodNames.add(key.toString());
         }
         boolean useDelegate = (delegateClass != null);
         CacheKey key = new CacheKey(base, useDelegate ? delegateClass : Object.class, methodNames, interfaces, emptyMethods, useDelegate);
+        ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
 
         synchronized (adapterCache) {
-            return adapterCache.computeIfAbsent(key, k -> {
-                ClassLoader classLoader = useDelegate ? delegateClass.getClassLoader() : base.getClassLoader();
-                return new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods, useDelegate ? delegateClass : null);
-            });
+            return adapterCache.computeIfAbsent(key,
+                        k -> new ProxyGeneratorAdapter(closureMap, base, interfaces, classLoader, emptyMethods,
+                                                                    useDelegate ? delegateClass : null));
         }
     }
 
@@ -250,29 +254,32 @@ public class ProxyGenerator {
             if (Traits.isTrait(o2)) return 1;
             return o1.getName().compareTo(o2.getName());
         };
+        private final ClassReference baseClass;
+        private final ClassReference delegateClass;
+        private final Set<String> methods;
+        private final ClassReference[] interfaces;
         private final boolean emptyMethods;
         private final boolean useDelegate;
-        private final Set<String> methods;
-        private final ClassReference delegateClass;
-        private final ClassReference baseClass;
-        private final ClassReference[] interfaces;
 
         private CacheKey(final Class baseClass, final Class delegateClass, final Set<String> methods, final Class[] interfaces, final boolean emptyMethods, final boolean useDelegate) {
-            this.useDelegate = useDelegate;
             this.baseClass = new ClassReference(baseClass);
             this.delegateClass = new ClassReference(delegateClass);
-            this.emptyMethods = emptyMethods;
-            this.interfaces = interfaces == null ? null : new ClassReference[interfaces.length];
-            if (interfaces != null) {
-                Class[] interfacesCopy = new Class[interfaces.length];
-                System.arraycopy(interfaces, 0, interfacesCopy, 0, interfaces.length);
-                Arrays.sort(interfacesCopy, INTERFACE_COMPARATOR);
-                for (int i = 0; i < interfacesCopy.length; i++) {
-                    Class anInterface = interfacesCopy[i];
-                    this.interfaces[i] = new ClassReference(anInterface);
-                }
-            }
             this.methods = methods;
+            this.emptyMethods = emptyMethods;
+            this.useDelegate = useDelegate;
+            final int interfaceCount = interfaces.length;
+            if (interfaces != null) {
+                Class[] interfacesCopy = new Class[interfaceCount];
+                System.arraycopy(interfaces, 0, interfacesCopy, 0, interfaceCount);
+                Arrays.sort(interfacesCopy, INTERFACE_COMPARATOR);
+                ClassReference[] interfaceReferences = new ClassReference[interfaceCount];
+                for (int i = 0, n = interfacesCopy.length; i < n; i++) {
+                    interfaceReferences[i] = new ClassReference(interfacesCopy[i]);
+                }
+                this.interfaces = interfaceReferences;
+            } else {
+                this.interfaces = null;
+            }
         }
 
         @Override
@@ -284,8 +291,8 @@ public class ProxyGenerator {
 
             if (emptyMethods != cacheKey.emptyMethods) return false;
             if (useDelegate != cacheKey.useDelegate) return false;
-            if (!Objects.equals(baseClass, cacheKey.baseClass)) return false;
             if (!Objects.equals(delegateClass, cacheKey.delegateClass)) return false;
+            if (!Objects.equals(baseClass, cacheKey.baseClass)) return false;
             if (!Arrays.equals(interfaces, cacheKey.interfaces)) return false;
             if (!Objects.equals(methods, cacheKey.methods)) return false;
 
@@ -294,20 +301,13 @@ public class ProxyGenerator {
 
         @Override
         public int hashCode() {
-            int result = (emptyMethods ? 1 : 0);
-            result = 31 * result + (useDelegate ? 1 : 0);
-            result = 31 * result + (methods != null ? methods.hashCode() : 0);
-            result = 31 * result + (baseClass != null ? baseClass.hashCode() : 0);
-            result = 31 * result + (delegateClass != null ? delegateClass.hashCode() : 0);
-            result = 31 * result + (interfaces != null ? Arrays.hashCode(interfaces) : 0);
-            return result;
+            return Objects.hash(emptyMethods, useDelegate, delegateClass, baseClass, Arrays.hashCode(interfaces), methods);
         }
 
         /**
          * A weak reference which delegates equals and hashcode to the referent.
          */
         private static class ClassReference extends WeakReference<Class> {
-
             public ClassReference(Class referent) {
                 super(referent);
             }
@@ -317,8 +317,8 @@ public class ProxyGenerator {
                 if (this == o) return true;
                 if (o == null || getClass() != o.getClass()) return false;
                 Class thisClass = this.get();
-                ClassReference that = (ClassReference) o;
                 if (thisClass == null) return false;
+                ClassReference that = (ClassReference) o;
                 return thisClass.equals(that.get());
             }
 
