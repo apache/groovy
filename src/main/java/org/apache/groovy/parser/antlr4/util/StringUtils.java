@@ -36,9 +36,11 @@ public class StringUtils {
     public static final int DOLLAR_SLASHY = 2;
 
     public static String replaceEscapes(String text, int slashyType) {
-        if (slashyType == SLASHY || slashyType == DOLLAR_SLASHY) {
-            text = StringUtils.replaceHexEscapes(text);
-            text = StringUtils.replaceLineEscape(text);
+        if (slashyType == NONE_SLASHY) {
+            text = replaceEscapes(text);
+        } else if (slashyType == SLASHY || slashyType == DOLLAR_SLASHY) {
+            text = replaceHexEscapes(text);
+            text = replaceLineEscape(text);
 
             if (slashyType == SLASHY) {
                 text = replace(text,"\\/", "/");
@@ -46,9 +48,7 @@ public class StringUtils {
                 text = replace(text,"$/", "/");
                 text = replace(text,"$$", "$");
             }
-        } else if (slashyType == NONE_SLASHY) {
-            text = StringUtils.replaceEscapes(text);
-        } else {
+        } else  {
             throw new IllegalArgumentException("Invalid slashyType: " + slashyType);
         }
 
@@ -160,8 +160,8 @@ public class StringUtils {
     private static String replaceEscapes(String text) {
         if (!text.contains(BACKSLASH)) return text;
         text = replace(text,"\\$", "$");
-        text = StringUtils.replaceLineEscape(text);
-        return StringUtils.replaceStandardEscapes(replaceHexEscapes(replaceOctalEscapes(text)));
+        text = replaceLineEscape(text);
+        return replaceStandardEscapes(replaceHexEscapes(replaceOctalEscapes(text)));
     }
 
     private static String replaceLineEscape(String text) {
