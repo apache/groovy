@@ -19,6 +19,7 @@
 package org.codehaus.groovy.vmplugin.v8;
 
 import org.apache.groovy.util.SystemUtil;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.memoize.MemoizeCache;
 
 import java.lang.invoke.MethodHandle;
@@ -28,7 +29,11 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.ref.SoftReference;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Represents a cacheable call site, which can reduce the cost of resolving methods
@@ -101,7 +106,11 @@ public class CacheableCallSite extends MutableCallSite {
     }
 
     private void removeAllStaleEntriesOfLruCache() {
-        lruCache.values().removeIf(v -> null == v.get());
+        CACHE_CLEANER_QUEUE.offer(() -> {
+            synchronized (lruCache) {
+                lruCache.values().removeIf(v -> null == v.get());
+            }
+        });
     }
 
     public long incrementFallbackCount() {
@@ -130,5 +139,23 @@ public class CacheableCallSite extends MutableCallSite {
 
     public MethodHandles.Lookup getLookup() {
         return lookup;
+    }
+
+    private static final BlockingQueue<Runnable> CACHE_CLEANER_QUEUE = new LinkedBlockingQueue<>();
+    static {
+        Thread cacheCleaner = new Thread(() -> {
+            while (true) {
+                try {
+                    CACHE_CLEANER_QUEUE.take().run();
+                } catch (Throwable ignore) {
+                    Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.finest(DefaultGroovyMethods.asString(ignore));
+                    }
+                }
+            }
+        }, "PIC-Cleaner");
+        cacheCleaner.setDaemon(true);
+        cacheCleaner.start();
     }
 }
