@@ -123,7 +123,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
 
     private static final String CLOSURES_MAP_FIELD = "$closures$delegate$map";
     private static final String DELEGATE_OBJECT_FIELD = "$delegate";
-    private static final AtomicLong proxyCounter = new AtomicLong();
+    private static final AtomicLong PROXY_COUNTER = new AtomicLong();
 
     private static final List<Method> OBJECT_METHODS = getInheritedMethods(Object.class, new ArrayList<>());
     private static final List<Method> GROOVYOBJECT_METHODS = getInheritedMethods(GroovyObject.class, new ArrayList<>());
@@ -348,7 +348,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         Class<?>[] candidateParamTypes = candidate.getParameterTypes();
         Class<?>[] methodParamTypes = method.getParameterTypes();
         if (candidateParamTypes.length != methodParamTypes.length) return false;
-        for (int i = 0; i < methodParamTypes.length; i++) {
+        for (int i = 0, n = methodParamTypes.length; i < n; i++) {
             if (!candidateParamTypes[i].equals(methodParamTypes[i])) return false;
         }
         return true;
@@ -400,16 +400,16 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
                     exceptions);
         }
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
-        for (Constructor<?> method : constructors) {
-            Class<?>[] exceptionTypes = method.getExceptionTypes();
+        for (Constructor<?> constructor : constructors) {
+            Class<?>[] exceptionTypes = constructor.getExceptionTypes();
             String[] exceptions = new String[exceptionTypes.length];
             for (int i = 0; i < exceptions.length; i++) {
                 exceptions[i] = BytecodeHelper.getClassInternalName(exceptionTypes[i]);
             }
-            // for each method defined in the class, generate the appropriate delegation bytecode
-            visitMethod(method.getModifiers(),
+            // for each constructor defined in the class, generate the appropriate delegation bytecode
+            visitMethod(constructor.getModifiers(),
                     "<init>",
-                    BytecodeHelper.getMethodDescriptor(Void.TYPE, method.getParameterTypes()),
+                    BytecodeHelper.getMethodDescriptor(Void.TYPE, constructor.getParameterTypes()),
                     null,
                     exceptions);
         }
@@ -446,14 +446,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         {
             mv = super.visitMethod(ACC_PUBLIC, "getMetaClass", "()Lgroovy/lang/MetaClass;", null, null);
             mv.visitCode();
-            Label l0 = new Label();
-            mv.visitLabel(l0);
             mv.visitVarInsn(ALOAD, 0);
             mv.visitFieldInsn(GETFIELD, proxyName, "metaClass", "Lgroovy/lang/MetaClass;");
             Label l1 = new Label();
             mv.visitJumpInsn(IFNONNULL, l1);
-            Label l2 = new Label();
-            mv.visitLabel(l2);
             mv.visitVarInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, 0);
             mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
@@ -471,16 +467,10 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         {
             mv = super.visitMethod(ACC_PUBLIC, "setMetaClass", "(Lgroovy/lang/MetaClass;)V", null, null);
             mv.visitCode();
-            Label l0 = new Label();
-            mv.visitLabel(l0);
             mv.visitVarInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, 1);
             mv.visitFieldInsn(PUTFIELD, proxyName, "metaClass", "Lgroovy/lang/MetaClass;");
-            Label l1 = new Label();
-            mv.visitLabel(l1);
             mv.visitInsn(RETURN);
-            Label l2 = new Label();
-            mv.visitLabel(l2);
             mv.visitMaxs(0, 0);
             mv.visitEnd();
         }
@@ -490,7 +480,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
      * Creates delegate fields for every closure defined in the map.
      */
     private void addDelegateFields() {
-        visitField(ACC_PRIVATE + ACC_FINAL, CLOSURES_MAP_FIELD, "Ljava/util/Map;", null, null);
+        visitField(ACC_PRIVATE | ACC_FINAL, CLOSURES_MAP_FIELD, "Ljava/util/Map;", null, null);
         if (generateDelegateField) {
             visitField(ACC_PRIVATE + ACC_FINAL, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass), null, null);
         }
@@ -502,8 +492,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             name = name.substring(1, name.length() - 1) + "_array";
         }
         int index = name.lastIndexOf('.');
-        if (index == -1) return name + proxyCounter.incrementAndGet() + "_groovyProxy";
-        return name.substring(index + 1) + proxyCounter.incrementAndGet() + "_groovyProxy";
+        if (index == -1) return name + PROXY_COUNTER.incrementAndGet() + "_groovyProxy";
+        return name.substring(index + 1) + PROXY_COUNTER.incrementAndGet() + "_groovyProxy";
     }
 
     private static boolean isImplemented(final Class<?> clazz, final String name, final String desc) {
@@ -545,10 +535,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             }
         } else if ("getProxyTarget".equals(name) && "()Ljava/lang/Object;".equals(desc)) {
             return createGetProxyTargetMethod(access, name, desc, signature, exceptions);
-
         } else if ("<init>".equals(name) && (Modifier.isPublic(access) || Modifier.isProtected(access))) {
             return createConstructor(access, name, desc, signature, exceptions);
-
         } else if (Modifier.isAbstract(access) && !GROOVYOBJECT_METHOD_NAMES.contains(name) && !isImplemented(superClass, name, desc)) {
             MethodVisitor mv = super.visitMethod(access & ~ACC_ABSTRACT, name, desc, signature, exceptions);
             mv.visitCode();
@@ -682,14 +670,14 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         mv.visitVarInsn(ALOAD, 0); // load this
         mv.visitFieldInsn(GETFIELD, proxyName, DELEGATE_OBJECT_FIELD, BytecodeHelper.getTypeDescription(delegateClass)); // load delegate
         // using InvokerHelper to allow potential intercepted calls
-        int size;
         mv.visitLdcInsn(name); // method name
         Type[] args = Type.getArgumentTypes(desc);
-        BytecodeHelper.pushConstant(mv, args.length);
+        final int argCount = args.length;
+        BytecodeHelper.pushConstant(mv, argCount);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-        size = 6;
+        int size = 6;
         int idx = 1;
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < argCount; i++) {
             Type arg = args[i];
             mv.visitInsn(DUP);
             BytecodeHelper.pushConstant(mv, i);
@@ -702,7 +690,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
         unwrapResult(mv, desc);
         mv.visitMaxs(0, 0);
-
         return mv;
     }
 
@@ -714,11 +701,12 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         // method body should be:
         //  this.$delegate$closure$methodName.call(new Object[] { method arguments })
         Type[] args = Type.getArgumentTypes(desc);
-        int arrayStore = args.length + 1;
-        BytecodeHelper.pushConstant(mv, args.length);
+        final int argCount = args.length;
+        int arrayStore = argCount + 1;
+        BytecodeHelper.pushConstant(mv, argCount);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object"); // stack size = 1
         int idx = 1;
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < argCount; i++) {
             Type arg = args[i];
             mv.visitInsn(DUP); // stack size = 2
             BytecodeHelper.pushConstant(mv, i); // array index, stack size = 3
@@ -752,7 +740,6 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         unwrapResult(mv, desc);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
-//        System.out.println("tmv.getText() = " + tmv.getText());
         return null;
     }
 
@@ -792,8 +779,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             }
         }
         if (constructorArgs == null) constructorArgs = EMPTY_ARGS;
-        Object[] values = new Object[constructorArgs.length + 1];
-        System.arraycopy(constructorArgs, 0, values, 0, constructorArgs.length);
+        final int constructorArgCount = constructorArgs.length;
+        Object[] values = new Object[constructorArgCount + 1];
+        System.arraycopy(constructorArgs, 0, values, 0, constructorArgCount);
         values[values.length - 1] = map;
         return DefaultGroovyMethods.<GroovyObject>newInstance(cachedClass, values);
     }
@@ -809,8 +797,9 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
             }
         }
         if (constructorArgs == null) constructorArgs = EMPTY_ARGS;
-        Object[] values = new Object[constructorArgs.length + 2];
-        System.arraycopy(constructorArgs, 0, values, 0, constructorArgs.length);
+        final int constructorArgCount = constructorArgs.length;
+        Object[] values = new Object[constructorArgCount + 2];
+        System.arraycopy(constructorArgs, 0, values, 0, constructorArgCount);
         values[values.length - 2] = map;
         values[values.length - 1] = delegate;
         return DefaultGroovyMethods.<GroovyObject>newInstance(cachedClass, values);
