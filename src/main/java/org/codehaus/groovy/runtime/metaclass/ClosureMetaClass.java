@@ -145,9 +145,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
             } else if (arguments.length == 1 && arguments[0] == null) {
                 return MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
             } else {
-                List matchingMethods = new ArrayList();
                 final Object[] data = methods.getArray();
-                for (int i = 0, n = methods.size(); i < n; i += 1) {
+                final int methodCount = methods.size();
+                List matchingMethods = new ArrayList(methodCount);
+                for (int i = 0; i < methodCount; i += 1) {
                     Object method = data[i];
 
                     // making this false helps find matches
