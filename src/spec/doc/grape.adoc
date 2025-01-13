@@ -127,6 +127,10 @@ JAVA_OPTS = -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080
 [[Grape-Logging]]
 === Logging
 
+Logging configuration depends on which Grape implementation is active.
+
+==== GrapeIvy logging
+
 If you want to see what Grape is doing set the system property
 `groovy.grape.report.downloads` to `true` (e.g. add
 `-Dgroovy.grape.report.downloads=true` to invocation or JAVA_OPTS) and Grape will
@@ -140,17 +144,31 @@ print the following infos to System.error:
 To log with even more verbosity, increase the Ivy log level
 (defaults to `-1`). For example `-Divy.message.logger.level=4`.
 
+==== GrapeMaven logging
+
+When using the GrapeMaven engine, set `-Dgroovy.grape.debug=true` to
+enable verbose Maven Resolver logging to `System.err`. The
+`groovy.grape.report.downloads` and `ivy.message.logger.level`
+properties have no effect with this engine.
+
 [[Grape-Detail]]
 == Detail
 
 Grape (The _Groovy Adaptable Packaging Engine_ or _Groovy Advanced
 Packaging Engine_) is the infrastructure enabling the grab() calls in
-Groovy, a set of classes leveraging http://ant.apache.org/ivy/[Ivy] to allow for a repository driven
-module system for Groovy. This allows a developer to write a script with
-an essentially arbitrary library requirement, and ship just the script.
-Grape will, at runtime, download as needed and link the named libraries
-and all dependencies forming a transitive closure when the script is run
-from existing repositories such as Maven Central.
+Groovy, a repository-driven module system that allows a developer to
+write a script with an essentially arbitrary library requirement, and
+ship just the script. Grape will, at runtime, download as needed and
+link the named libraries and all dependencies forming a transitive
+closure when the script is run from existing repositories such as
+Maven Central.
+
+Groovy ships with two Grape engine implementations: `GrapeIvy`, based on
+http://ant.apache.org/ivy/[Apache Ivy], and `GrapeMaven`, based on
+https://maven.apache.org/resolver/[Maven Resolver (Aether)]. They
+provide the same core `@Grab` / `@GrabResolver` / `@GrabExclude`
+experience but differ in some areas of advanced configuration and
+behaviour; see <<Grape-Implementations>> for details.
 
 Grape follows the Ivy conventions for module version identification,
 with naming change.
@@ -162,12 +180,117 @@ groovy endorsed modules.
 * `module` - The name of the module to load. Translated directly to a
 Maven artifactId or an Ivy artifact.
 * `version` - The version of the module to use. Either a literal version
-`1.1-RC3' or an Ivy Range `[2.2.1,)' meaning 2.2.1 or any greater
-version).
+`1.1-RC3' or a range `[2.2.1,)' meaning 2.2.1 or any greater version).
 * `classifier` - The optional classifier to use (for example, _jdk15_)
 
-The downloaded modules will be stored according to Ivy’s standard
-mechanism with a cache root of `~/.groovy/grapes`
+The downloaded modules will be stored according to the active engine's
+cache conventions (see <<Grape-Implementations>> for per-engine cache
+directories).
+
+[[Grape-Implementations]]
+=== Grape Implementations
+
+Groovy ships with two built-in Grape engine implementations. Both support
+the same core `@Grab`, `@GrabResolver`, and `@GrabExclude` annotations and
+method calls. They differ in their underlying resolution mechanism, cache
+layout, and some advanced configuration options.
+
+==== Built-in implementations
+
+===== GrapeIvy (default)
+
+`groovy.grape.ivy.GrapeIvy` uses http://ant.apache.org/ivy/[Apache Ivy]
+for dependency resolution. It is the default engine when both implementations
+are on the classpath.
+
+* *Backend*: Apache Ivy
+* *Local cache*: `~/.groovy/grapes` (Ivy's standard cache format)
+* *Configuration file*: `~/.groovy/grapeConfig.xml` (full Ivy XML settings — see <<Grape-CustomizeIvysettings>>)
+* *`@GrabConfig(autoDownload=false)`*: Supported. When `false`, resolution
+  is restricted to the local cache; no network calls are made.
+* *`conf:` parameter*: Mapped directly to Ivy configurations; multiple
+  configurations such as `conf:['default','optional']` are supported.
+* *Version wildcards*: `'*'` resolves to Ivy's `latest.default`.
+
+===== GrapeMaven
+
+`groovy.grape.maven.GrapeMaven` uses
+https://maven.apache.org/resolver/[Maven Resolver (Aether)]
+for dependency resolution.
+
+* *Backend*: Maven Resolver (Aether)
+* *Local cache*: `~/.groovy/grapesM2` (Maven local-repository format)
+* *Configuration*: Remote repositories configured via `@GrabResolver` or
+  the `Grape.addResolver()` API; no configuration file equivalent.
+* *`@GrabConfig(autoDownload=…)`*: The `autoDownload` flag is not
+  honoured; GrapeMaven always attempts remote resolution when an artifact
+  is not already cached.
+* *`conf:` parameter*: Treated as a Maven scope; `'default'` is mapped
+  to `'compile'`. Multiple configurations in a single grab are not supported.
+* *Version wildcards*: `'*'` resolves to Maven's `LATEST`.
+
+==== Selecting an implementation
+
+When both `groovy-grape-ivy` and `groovy-grape-maven` are on the
+classpath, `GrapeIvy` is preferred by default. To switch to GrapeMaven
+for a script, pass the system property:
+
+-------------------------------------------------------------------------
+groovy -Dgroovy.grape.impl=groovy.grape.maven.GrapeMaven yourscript.groovy
+-------------------------------------------------------------------------
+
+Or set it globally via `JAVA_OPTS`:
+
+-------------------------------------------------------------------------
+JAVA_OPTS=-Dgroovy.grape.impl=groovy.grape.maven.GrapeMaven
+-------------------------------------------------------------------------
+
+==== Migration considerations
+
+Most existing `@Grab` scripts work unchanged with both engines, but
+there are some compatibility notes to consider:
+
+* *`conf:` parameter*: GrapeIvy supports multiple Ivy configurations
+  (e.g., `conf:['default','optional']`), while GrapeMaven treats `conf:`
+  as a singular Maven scope (e.g., `conf:'compile'`). Scripts using
+  multiple configurations must remain on GrapeIvy or be reworked.
+
+* *Custom Ivy configuration*: If you have customized
+  `~/.groovy/grapeConfig.xml` with non-standard Ivy settings (especially
+  if you disabled the default `m2compatible=true`), those settings do not
+  apply to GrapeMaven. Review your configuration before switching, or
+  reconfigure custom repositories using `@GrabResolver` annotations.
+
+* *`@GrabConfig(autoDownload=false)`*: GrapeMaven does not honour
+  `autoDownload=false` as a per-grab switch. The closest equivalent is
+  to point `@GrabResolver` (or `Grape.addResolver`) to a local-only
+  repository/cache location. If you rely on `autoDownload=false`
+  semantics broadly, remain on GrapeIvy.
+
+==== Custom implementations
+
+You can provide your own `GrapeEngine` implementation by including a jar
+on the classpath that declares it as a Java SPI (Service Provider Interface).
+Groovy will discover and load it via `java.util.ServiceLoader`.
+
+To register a custom implementation:
+
+1. Create a class implementing `groovy.grape.GrapeEngine`.
+2. Add a service provider configuration file at
+   `META-INF/services/groovy.grape.GrapeEngine` in your jar with a single
+   line naming the fully-qualified class name.
+3. Place the jar on the classpath.
+
+You can then select it with:
+
+-------------------------------------------------------------------------
+groovy -Dgroovy.grape.impl=my.custom.GrapeImpl yourscript.groovy
+-------------------------------------------------------------------------
+
+If your implementation is the only one on the classpath, it will be
+automatically discovered and used by default. If multiple implementations
+are present (including the built-ins), you must specify which one to use
+via the system property.
 
 [[Grape-Usage]]
 == Usage
@@ -359,25 +482,35 @@ respective jar file from the grape cache.
 [[Grape-RepositoryDirectory]]
 ==== Repository Directory
 
-If you need to change the directory grape uses for downloading libraries
-you can specify the grape.root system property to change the default
-(which is ~/.groovy/grapes)
+The local cache directory used by each engine is:
+
+* *GrapeIvy*: `~/.groovy/grapes`
+* *GrapeMaven*: `~/.groovy/grapesM2`
+
+If you need to change the root directory that Grape uses for downloading
+libraries you can specify the `grape.root` system property to change the
+default (which is `~/.groovy`). Both engines respect this property.
 
 -------------------------------------------------
 groovy -Dgrape.root=/repo/grapes yourscript.groovy
 -------------------------------------------------
 
 [[Grape-CustomizeIvysettings]]
-==== Customize Ivy settings
+==== Customize Ivy settings (GrapeIvy only)
 
-You can customize the ivy settings that Grape uses by creating a
-~/.groovy/grapeConfig.xml file. If no such file exists,
+When using GrapeIvy, you can customize the Ivy settings that Grape uses by creating a
+`~/.groovy/grapeConfig.xml` file. If no such file exists,
 https://github.com/apache/groovy/blob/master/src/resources/groovy/grape/defaultGrapeConfig.xml[here]
 are the default settings used by Grape.
 
 For more information on how to customize these settings, please refer to
 the https://ant.apache.org/ivy/history/latest-milestone/index.html[Ivy
 documentation].
+
+This configuration file is not used by the GrapeMaven engine; with
+GrapeMaven, additional remote repositories are registered via
+`@GrabResolver` annotations or programmatically via the
+`Grape.addResolver` API.
 
 [[Grape-MoreExamples]]
 === More Examples

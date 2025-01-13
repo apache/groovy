@@ -139,13 +139,14 @@ dependencies {
 
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
 
-    testRuntimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
     testRuntimeOnly(project(':')) {
         because 'Tests are using Grapes'
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
+    testRuntimeOnly projects.groovyGrapeIvy
+
     testRuntimeOnly(project(':')) {
         because 'Tests are using GPars'
         capabilities {

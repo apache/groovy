@@ -43,5 +43,11 @@ public interface GrapeEngine {
     Map[] listDependencies(ClassLoader classLoader);
 
     void addResolver(Map<String, Object> args);
+
+    /**
+     * Sets the logging level for the grape engine.
+     * @param level the logging level (0=quiet/errors only, 1=warn, 2=info, 3=verbose, 4=debug)
+     */
+    default void setLoggingLevel(int level) { }
 }
 

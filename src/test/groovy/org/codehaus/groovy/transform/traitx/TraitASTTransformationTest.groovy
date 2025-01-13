@@ -3393,6 +3393,7 @@ final class TraitASTTransformationTest {
         System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck','true')
         assertScript shell, """
             @Grab('org.spockframework:spock-core:2.4-groovy-5.0')
+            @GrabExclude('org.codehaus.groovy:groovy-all')
             @GrabExclude('org.apache.groovy:*')
             import spock.lang.Specification
 

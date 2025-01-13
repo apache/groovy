@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.grape
+package groovy.grape.ivy
+
+import groovy.grape.Grape
 
 import org.codehaus.groovy.control.CompilationFailedException
 import org.junit.jupiter.api.BeforeAll
@@ -89,6 +91,7 @@ final class GrapeIvyTest {
 
     @Test
     void testListDependencies() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different conf rules
         def shell = new GroovyShell(new GroovyClassLoader())
         shouldFail(CompilationFailedException) {
             shell.evaluate('import com.jidesoft.swing.JideSplitButton; JideSplitButton.class')
@@ -193,6 +196,7 @@ final class GrapeIvyTest {
 
     @Test
     void testSerialGrabs() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different rules dups
         GroovyClassLoader loader = new GroovyClassLoader()
         Grape.grab(groupId:'log4j', artifactId:'log4j', version:'1.1.3', classLoader:loader)
         Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.7', classLoader:loader)
@@ -211,6 +215,7 @@ final class GrapeIvyTest {
 
     @Test
     void testConf1() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different conf rules
         Set noJars = [
         ]
         Set coreJars = [
@@ -260,8 +265,10 @@ final class GrapeIvyTest {
 
     @Test // GROOVY-8372
     void testConf2() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy uses <ivysettings>
         def tempDir = File.createTempDir()
-        def jarsDir = new File(tempDir, 'foo/bar/jars'); jarsDir.mkdirs()
+        def jarsDir = new File(tempDir, 'foo/bar/jars')
+        jarsDir.mkdirs()
 
         new File(jarsDir, 'bar-1.2.3.jar').createNewFile()
         new File(jarsDir, 'baz-1.2.3.jar').createNewFile()
@@ -324,6 +331,7 @@ final class GrapeIvyTest {
 
     @Test
     void testClassifierWithConf() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different conf rules
         Set coreJars = [
             'json-lib-2.2.3-jdk15.jar',
             'commons-beanutils-1.7.0.jar',
@@ -354,13 +362,28 @@ final class GrapeIvyTest {
         Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', classLoader:loader)
         assert jarNames(loader) == coreJars
 
-        loader = new GroovyClassLoader()
-        Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', conf:'optional', classLoader:loader)
-        assert jarNames(loader) == optionalJars
+        try {
+            loader = new GroovyClassLoader()
+            Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', conf:'optional', classLoader:loader)
+            assert jarNames(loader) == optionalJars
 
-        loader = new GroovyClassLoader()
-        Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', conf:['default', 'optional'], classLoader:loader)
-        assert jarNames(loader) == coreJars + optionalJars
+            loader = new GroovyClassLoader()
+            Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', conf:['default', 'optional'], classLoader:loader)
+            assert jarNames(loader) == coreJars + optionalJars
+        } catch (RuntimeException e) {
+            // Some legacy optional transitive artifacts for this coordinate occasionally
+            // disappear from mirrors (e.g. ant-launcher:1.7.0, jdom:1.0). When that
+            // happens, the optional-conf assertion becomes an external-network issue.
+            assumeTrue(!isKnownLegacyOptionalDownloadFailure(e),
+                "Skipping due to unavailable legacy optional artifacts: ${e.message}")
+            throw e
+        }
+    }
+
+    private static boolean isKnownLegacyOptionalDownloadFailure(RuntimeException e) {
+        String msg = e?.message ?: ''
+        msg.contains('download failed: org.apache.ant#ant-launcher;1.7.0') ||
+            msg.contains('download failed: org.jdom#jdom;1.0')
     }
 
     @Test // BeanUtils is a transitive dependency for Digester
@@ -404,21 +427,21 @@ final class GrapeIvyTest {
     void testTransitiveShorthandExpectFailure() {
         shouldFail MissingPropertyException, '''
             @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
-            @Grab('commons-logging:commons-logging:1.1.1')
-            import org.apache.commons.digester3.Digester
+            import org.apache.commons.digester3.annotations.utils.AnnotationUtils
 
-            assert Digester.name.size() == 37
+            assert AnnotationUtils.name.size() == 62
             assert org.apache.commons.beanutils.BeanUtils.name // cannot resolve
         '''
     }
 
     @Test
     void testAutoDownloadGrapeConfigDefault() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy has ivyInstance property
         assertScript '''
-            @Grab('org.apache.commons:commons-digester3:3.2')
-            import org.apache.commons.digester3.Digester
+            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
+            import org.apache.commons.digester3.annotations.utils.AnnotationUtils
 
-            assert Digester.name.size() == 37
+            assert AnnotationUtils.name.size() == 62
         '''
         assert Grape.instance.ivyInstance.settings.defaultResolver.name == 'downloadGrapes'
     }
@@ -426,31 +449,34 @@ final class GrapeIvyTest {
     @Test
     void testAutoDownloadGrapeConfigFalse() {
         assumeFalse(System.getProperty('os.name').containsIgnoreCase('windows'))
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy has ivyInstance property
 
         assertScript '''
             @Grab('org.apache.commons:commons-digester3:3.2')
             @GrabConfig(autoDownload=false)
-            import org.apache.commons.digester3.Digester
+            import org.apache.commons.digester3.annotations.utils.AnnotationUtils
 
-            assert Digester.name.size() == 37
+            assert AnnotationUtils.name.size() == 62
         '''
         assert Grape.instance.ivyInstance.settings.defaultResolver.name == 'cachedGrapes'
     }
 
     @Test
     void testAutoDownloadGrapeConfigTrue() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy has ivyInstance property
         assertScript '''
             @Grab('org.apache.commons:commons-digester3:3.2')
             @GrabConfig(autoDownload=true)
-            import org.apache.commons.digester3.Digester
+            import org.apache.commons.digester3.annotations.utils.AnnotationUtils
 
-            assert Digester.name.size() == 37
+            assert AnnotationUtils.name.size() == 62
         '''
         assert Grape.instance.ivyInstance.settings.defaultResolver.name == 'downloadGrapes'
     }
 
     @Test // GROOVY-470: multiple jars should be loaded for an artifacts with and without a classifier
     void testClassifierAndNonClassifierOnSameArtifact() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven is loading old version of Groovy
         GroovyClassLoader loader = new GroovyClassLoader()
         Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classLoader:loader)
         Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classifier:'tests', classLoader:loader)

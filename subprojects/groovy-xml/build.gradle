@@ -36,6 +36,7 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
+    testRuntimeOnly projects.groovyGrapeIvy
 }
 
 plugins.withId('eclipse') {
