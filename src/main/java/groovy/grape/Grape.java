@@ -18,6 +18,8 @@
  */
 package groovy.grape;
 
+import org.apache.groovy.lang.annotation.Incubating;
+
 import java.net.URI;
 import java.security.PrivilegedAction;
 import java.util.Collections;
@@ -119,9 +121,12 @@ public class Grape {
     public static synchronized GrapeEngine getInstance() {
         if (instance == null) {
             try {
-                // by default use GrapeIvy
+                String grapeClass = System.getProperty("groovy.grape.impl");
+                if (grapeClass == null) {
+                    grapeClass = "groovy.grape.GrapeIvy"; // by default use GrapeIvy
+                }
                 // TODO: META-INF/services resolver?
-                instance = (GrapeEngine) Class.forName("groovy.grape.GrapeIvy").getDeclaredConstructor().newInstance();
+                instance = (GrapeEngine) Class.forName(grapeClass).getDeclaredConstructor().newInstance();
             } catch (ReflectiveOperationException ignore) {
             }
         }
@@ -236,5 +241,10 @@ public class Grape {
                 instance.addResolver(args);
             }
         }
+    }
+
+    @Incubating // remove if we only allow one Grape implementation
+    public static void reset() {
+        instance = null;
     }
 }

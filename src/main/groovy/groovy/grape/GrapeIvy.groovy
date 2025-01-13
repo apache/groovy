@@ -24,8 +24,6 @@ import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
-import org.apache.groovy.plugin.GroovyRunner
-import org.apache.groovy.plugin.GroovyRunnerRegistry
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.IvyContext
 import org.apache.ivy.core.event.download.PrepareDownloadEvent
@@ -49,20 +47,12 @@ import org.apache.ivy.plugins.resolver.IBiblioResolver
 import org.apache.ivy.plugins.resolver.ResolverSettings
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
-import org.codehaus.groovy.reflection.CachedClass
-import org.codehaus.groovy.reflection.ClassInfo
 import org.codehaus.groovy.reflection.ReflectionUtils
-import org.codehaus.groovy.runtime.m12n.ExtensionModuleScanner
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
 import org.w3c.dom.Element
 
 import javax.xml.parsers.DocumentBuilderFactory
 import java.text.ParseException
-import java.util.jar.JarFile
 import java.util.regex.Pattern
-import java.util.zip.ZipEntry
-import java.util.zip.ZipException
-import java.util.zip.ZipFile
 
 /**
  * Implementation supporting {@code @Grape} and {@code @Grab} annotations based on Ivy.
@@ -70,8 +60,6 @@ import java.util.zip.ZipFile
 @AutoFinal @CompileStatic
 class GrapeIvy implements GrapeEngine {
 
-    private static final String METAINF_PREFIX = 'META-INF/services/'
-    private static final String RUNNER_PROVIDER_CONFIG = GroovyRunner.getName()
     private static final List<String> DEFAULT_CONF = Collections.singletonList('default')
     private static final Map<String, Set<String>> MUTUALLY_EXCLUSIVE_KEYS = processGrabArgs([
             ['group', 'groupId', 'organisation', 'organization', 'org'],
@@ -287,20 +275,20 @@ class GrapeIvy implements GrapeEngine {
 
             URI[] uris = resolve(loader, args, dependencies)
             for (URI uri : uris) {
-                addURL(loader, uri)
+                GrapeUtil.addURL(loader, uri)
             }
             boolean runnerServicesFound = false
             for (URI uri : uris) {
                 // TODO: check artifact type, jar vs library, etc.
                 File file = new File(uri)
-                processCategoryMethods(loader, file)
-                Collection<String> services = processMetaInfServices(loader, file)
+                GrapeUtil.processCategoryMethods(loader, file)
+                Collection<String> services = GrapeUtil.processMetaInfServices(loader, file)
                 if (!runnerServicesFound) {
-                    runnerServicesFound = services.contains(RUNNER_PROVIDER_CONFIG)
+                    runnerServicesFound = GrapeUtil.checkForRunner(services)
                 }
             }
             if (runnerServicesFound) {
-                GroovyRunnerRegistry.getInstance().load(loader)
+                GrapeUtil.registryLoad(loader)
             }
         } catch (Exception e) {
             // clean-up the state first
@@ -316,112 +304,8 @@ class GrapeIvy implements GrapeEngine {
         null
     }
 
-    @CompileDynamic
-    private void addURL(ClassLoader loader, URI uri) {
-        loader.addURL(uri.toURL())
-    }
-
-    private processCategoryMethods(ClassLoader loader, File file) {
-        // register extension methods if jar
-        if (file.getName().toLowerCase().endsWith('.jar')) {
-            def mcRegistry = GroovySystem.getMetaClassRegistry()
-            if (mcRegistry instanceof MetaClassRegistryImpl) {
-                try (JarFile jar = new JarFile(file)) {
-                    ZipEntry entry = jar.getEntry(ExtensionModuleScanner.MODULE_META_INF_FILE)
-                    if (!entry) {
-                        entry = jar.getEntry(ExtensionModuleScanner.LEGACY_MODULE_META_INF_FILE)
-                    }
-                    if (entry) {
-                        Properties props = new Properties()
-
-                        try (InputStream is = jar.getInputStream(entry)) {
-                            props.load(is)
-                        }
-
-                        Map<CachedClass, List<MetaMethod>> metaMethods = [:]
-                        mcRegistry.registerExtensionModuleFromProperties(props, loader, metaMethods)
-                        // add old methods to the map
-                        metaMethods.each { CachedClass c, List<MetaMethod> methods ->
-                            // GROOVY-5543: if a module was loaded using grab, there are chances that subclasses
-                            // have their own ClassInfo, and we must change them as well!
-                            Set<CachedClass> classesToBeUpdated = [c].toSet()
-                            ClassInfo.onAllClassInfo { ClassInfo info ->
-                                if (c.getTheClass().isAssignableFrom(info.getCachedClass().getTheClass())) {
-                                    classesToBeUpdated << info.getCachedClass()
-                                }
-                            }
-                            classesToBeUpdated*.addNewMopMethods(methods)
-                        }
-                    }
-                } catch (ZipException e) {
-                    throw new RuntimeException("Grape could not load jar '$file'", e)
-                }
-            }
-        }
-    }
-
     void processOtherServices(ClassLoader loader, File f) {
-        processMetaInfServices(loader, f) // ignore result
-    }
-
-    /**
-     * Searches the given File for known service provider
-     * configuration files to process.
-     *
-     * @param loader used to locate service provider files
-     * @param f ZipFile in which to search for services
-     * @return a collection of service provider files that were found
-     */
-    private Collection<String> processMetaInfServices(ClassLoader loader, File f) {
-        List<String> services = []
-        try (ZipFile zf = new ZipFile(f)) {
-            String providerConfig = 'org.codehaus.groovy.runtime.SerializedCategoryMethods'
-            ZipEntry serializedCategoryMethods = zf.getEntry(METAINF_PREFIX + providerConfig)
-            if (serializedCategoryMethods != null) {
-                services.add(providerConfig)
-
-                try (InputStream is = zf.getInputStream(serializedCategoryMethods)) {
-                    processSerializedCategoryMethods(is)
-                }
-            }
-            // TODO: remove in a future release (replaced by GroovyRunnerRegistry)
-            providerConfig = 'org.codehaus.groovy.plugins.Runners'
-            ZipEntry pluginRunners = zf.getEntry(METAINF_PREFIX + providerConfig)
-            if (pluginRunners != null) {
-                services.add(providerConfig)
-
-                try (InputStream is = zf.getInputStream(pluginRunners)) {
-                    processRunners(is, f.getName(), loader)
-                }
-            }
-            // GroovyRunners are loaded per ClassLoader using a ServiceLoader so here
-            // it only needs to be indicated that the service provider file was found
-            if (zf.getEntry(METAINF_PREFIX + RUNNER_PROVIDER_CONFIG) != null) {
-                services.add(RUNNER_PROVIDER_CONFIG)
-            }
-        } catch (ZipException ignore) {
-            // ignore files we can't process, e.g. non-jar/zip artifacts
-            // TODO: log a warning
-        }
-        services
-    }
-
-    void processSerializedCategoryMethods(InputStream is) {
-        is.getText().readLines().each {
-            System.err.println(it.trim()) // TODO: implement this or delete it
-        }
-    }
-
-    void processRunners(InputStream is, String name, ClassLoader loader) {
-        GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance()
-        is.getText().readLines()*.trim().each { String line ->
-            if (!line.isEmpty() && line[0] != '#')
-            try {
-                registry[name] = (GroovyRunner) loader.loadClass(line).getDeclaredConstructor().newInstance()
-            } catch (Exception e) {
-                throw new IllegalStateException("Error registering runner class '$line'", e)
-            }
-        }
+        GrapeUtil.processMetaInfServices(loader, f) // ignore result
     }
 
     ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
@@ -729,6 +613,33 @@ class GrapeIvy implements GrapeEngine {
         ivyInstance = Ivy.newInstance(settings)
         resolvedDependencies = []
         downloadedArtifacts = []
+    }
+
+    @Override
+    void setLoggingLevel(int level) {
+        // Map numeric level to Ivy logging level
+        // 0=quiet/errors only, 1=warn, 2=info, 3=verbose, 4=debug
+        int ivyLevel
+        switch (level) {
+            case 0:
+                ivyLevel = Message.MSG_ERR
+                break
+            case 1:
+                ivyLevel = Message.MSG_WARN
+                break
+            case 2:
+                ivyLevel = Message.MSG_INFO
+                break
+            case 3:
+                ivyLevel = Message.MSG_VERBOSE
+                break
+            case 4:
+                ivyLevel = Message.MSG_DEBUG
+                break
+            default:
+                ivyLevel = Message.MSG_INFO
+        }
+        Message.setDefaultLogger(new DefaultMessageLogger(ivyLevel))
     }
 }
 

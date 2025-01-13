@@ -56,6 +56,7 @@ def subprojects = [
         'groovy-datetime',
         'groovy-dateutil',
         'groovy-docgenerator',
+        'groovy-grape-maven',
         'groovy-groovydoc',
         'groovy-groovysh',
         'groovy-jmx',

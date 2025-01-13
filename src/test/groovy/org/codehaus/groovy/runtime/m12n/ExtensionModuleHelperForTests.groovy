@@ -53,7 +53,8 @@ final class ExtensionModuleHelperForTests {
         def ant = new AntBuilder()
         def allowed = [
             'Picked up JAVA_TOOL_OPTIONS: .*',
-            'Picked up _JAVA_OPTIONS: .*'
+            'Picked up _JAVA_OPTIONS: .*',
+            '(?s)SLF4J\\(W\\): Class path contains multiple SLF4J providers\\..*SLF4J\\(I\\): Actual provider is of type \\[[^\\n]+\\]'
         ]
         try {
             ant.with {

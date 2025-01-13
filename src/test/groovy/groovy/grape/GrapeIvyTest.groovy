@@ -89,6 +89,7 @@ final class GrapeIvyTest {
 
     @Test
     void testListDependencies() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different conf rules
         def shell = new GroovyShell(new GroovyClassLoader())
         shouldFail(CompilationFailedException) {
             shell.evaluate('import com.jidesoft.swing.JideSplitButton; JideSplitButton.class')
@@ -193,6 +194,7 @@ final class GrapeIvyTest {
 
     @Test
     void testSerialGrabs() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different rules dups
         GroovyClassLoader loader = new GroovyClassLoader()
         Grape.grab(groupId:'log4j', artifactId:'log4j', version:'1.1.3', classLoader:loader)
         Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.7', classLoader:loader)
@@ -211,6 +213,7 @@ final class GrapeIvyTest {
 
     @Test
     void testConf1() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different conf rules
         Set noJars = [
         ]
         Set coreJars = [
@@ -260,8 +263,10 @@ final class GrapeIvyTest {
 
     @Test // GROOVY-8372
     void testConf2() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy uses <ivysettings>
         def tempDir = File.createTempDir()
-        def jarsDir = new File(tempDir, 'foo/bar/jars'); jarsDir.mkdirs()
+        def jarsDir = new File(tempDir, 'foo/bar/jars')
+        jarsDir.mkdirs()
 
         new File(jarsDir, 'bar-1.2.3.jar').createNewFile()
         new File(jarsDir, 'baz-1.2.3.jar').createNewFile()
@@ -324,6 +329,7 @@ final class GrapeIvyTest {
 
     @Test
     void testClassifierWithConf() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven has different conf rules
         Set coreJars = [
             'json-lib-2.2.3-jdk15.jar',
             'commons-beanutils-1.7.0.jar',
@@ -413,6 +419,7 @@ final class GrapeIvyTest {
 
     @Test
     void testAutoDownloadGrapeConfigDefault() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy has ivyInstance property
         assertScript '''
             @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
             import org.apache.commons.digester3.Digester
@@ -425,6 +432,7 @@ final class GrapeIvyTest {
     @Test
     void testAutoDownloadGrapeConfigFalse() {
         assumeFalse(System.getProperty('os.name').containsIgnoreCase('windows'))
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy has ivyInstance property
 
         assertScript '''
             @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
@@ -438,6 +446,7 @@ final class GrapeIvyTest {
 
     @Test
     void testAutoDownloadGrapeConfigTrue() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // only GrapeIvy has ivyInstance property
         assertScript '''
             @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
             @GrabConfig(autoDownload=true)
@@ -450,6 +459,7 @@ final class GrapeIvyTest {
 
     @Test // GROOVY-470: multiple jars should be loaded for an artifacts with and without a classifier
     void testClassifierAndNonClassifierOnSameArtifact() {
+        assumeTrue(Grape.instance instanceof GrapeIvy) // GrapeMaven is loading old version of Groovy
         GroovyClassLoader loader = new GroovyClassLoader()
         Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classLoader:loader)
         Grape.grab(groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1', classifier:'tests', classLoader:loader)

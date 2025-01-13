@@ -378,6 +378,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         } catch (ClassNotFoundException ignore) {
         }
 
+        // listen for Maven resolver events if the Maven console plugin is on the classpath
+        try {
+            def mavenPluginClass = Class.forName('groovy.console.ui.ConsoleMavenPlugin')
+            mavenPluginClass.getConstructor().newInstance().addListener(this)
+        } catch (ClassNotFoundException ignore) {
+        }
+
         binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
     }
 
