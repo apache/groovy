@@ -19,10 +19,12 @@
 package groovy.grape;
 
 import java.net.URI;
-import java.security.PrivilegedAction;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 /**
  * Facade to GrapeEngine.
@@ -32,6 +34,8 @@ public class Grape {
     public static final String AUTO_DOWNLOAD_SETTING = "autoDownload";
     public static final String DISABLE_CHECKSUMS_SETTING = "disableChecksums";
     public static final String SYSTEM_PROPERTIES_SETTING = "systemProperties";
+    private static final String GRAPE_IMPL_SYSTEM_PROPERTY = "groovy.grape.impl";
+    private static final String DEFAULT_GRAPE_ENGINE = "groovy.grape.ivy.GrapeIvy";
     private static final URI[] EMPTY_URI_ARRAY = new URI[0];
     private static final Map[] EMPTY_MAP_ARRAY = new Map[0];
 
@@ -118,14 +122,87 @@ public class Grape {
 
     public static synchronized GrapeEngine getInstance() {
         if (instance == null) {
-            try {
-                // by default use GrapeIvy
-                // TODO: META-INF/services resolver?
-                instance = (GrapeEngine) Class.forName("groovy.grape.GrapeIvy").getDeclaredConstructor().newInstance();
-            } catch (ReflectiveOperationException ignore) {
+            String configuredImpl = System.getProperty(GRAPE_IMPL_SYSTEM_PROPERTY);
+            ServiceLoader.Provider<GrapeEngine> provider = findProvider(configuredImpl);
+            if (provider != null) {
+                instance = createEngineFromProvider(provider);
+            }
+            if (instance == null) {
+                System.err.println("Grape: Grapes disabled.");
             }
         }
         return instance;
+    }
+
+    private static ServiceLoader.Provider<GrapeEngine> findProvider(final String configuredImpl) {
+        List<ServiceLoader.Provider<GrapeEngine>> providers;
+        try {
+            ClassLoader grapeClassLoader = Grape.class.getClassLoader();
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+
+            // Keep deterministic order while avoiding duplicate provider types when both
+            // class loaders expose the same service entry.
+            Map<String, ServiceLoader.Provider<GrapeEngine>> discovered = new LinkedHashMap<>();
+            ServiceLoader.load(GrapeEngine.class, grapeClassLoader).stream()
+                    .forEach(p -> discovered.putIfAbsent(p.type().getName(), p));
+            if (contextClassLoader != null && contextClassLoader != grapeClassLoader) {
+                ServiceLoader.load(GrapeEngine.class, contextClassLoader).stream()
+                        .forEach(p -> discovered.putIfAbsent(p.type().getName(), p));
+            }
+            providers = discovered.values().stream().toList();
+        } catch (ServiceConfigurationError sce) {
+            System.err.println("Grape: failed to discover service providers for " + GrapeEngine.class.getName() + ": " + sce.getMessage());
+            return null;
+        }
+
+        if (configuredImpl != null) {
+            for (ServiceLoader.Provider<GrapeEngine> provider : providers) {
+                if (provider.type().getName().equals(configuredImpl)) {
+                    providers.stream()
+                            .filter(p -> !p.type().getName().equals(configuredImpl))
+                            .forEach(p -> System.err.println("Grape: ignoring provider '" + p.type().getName()
+                                    + "' ('" + configuredImpl + "' configured via -D" + GRAPE_IMPL_SYSTEM_PROPERTY + ")."));
+                    return provider;
+                }
+            }
+            System.err.println("Grape: configured implementation '" + configuredImpl
+                    + "' not found via service loader.");
+            return null;
+        }
+
+        if (providers.size() == 1) {
+            return providers.get(0);
+        }
+
+        if (providers.size() > 1) {
+            for (ServiceLoader.Provider<GrapeEngine> provider : providers) {
+                if (provider.type().getName().equals(DEFAULT_GRAPE_ENGINE)) {
+                    providers.stream()
+                            .filter(p -> !p.type().getName().equals(DEFAULT_GRAPE_ENGINE))
+                            .forEach(p -> System.err.println("Grape: ignoring provider '" + p.type().getName()
+                                    + "' in favour of default '" + DEFAULT_GRAPE_ENGINE
+                                    + "' (set -D" + GRAPE_IMPL_SYSTEM_PROPERTY + " to override)."));
+                    return provider;
+                }
+            }
+            // Multiple providers discovered but the default is not among them.
+            List<String> names = providers.stream().map(p -> p.type().getName()).toList();
+            System.err.println("Grape: " + providers.size() + " providers discovered " + names
+                    + " but default '" + DEFAULT_GRAPE_ENGINE + "' is not among them;"
+                    + " set -D" + GRAPE_IMPL_SYSTEM_PROPERTY + " to select one.");
+        }
+
+        // No system property set: empty list means security lockdown — return null silently.
+        return null;
+    }
+
+    private static GrapeEngine createEngineFromProvider(final ServiceLoader.Provider<GrapeEngine> provider) {
+        try {
+            return provider.get();
+        } catch (ServiceConfigurationError sce) {
+            System.err.println("Grape: failed to instantiate service provider '" + provider.type().getName() + "': " + sce.getMessage());
+            return null;
+        }
     }
 
     public static void grab(String endorsed) {
@@ -152,28 +229,21 @@ public class Grape {
         }
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     public static void grab(final Map<String, Object> args, final Map... dependencies) {
         if (enableGrapes) {
-            java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    GrapeEngine instance1 = getInstance();
-                    if (instance1 != null) {
-                        if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
-                            args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
-                        }
-                        if (!args.containsKey(DISABLE_CHECKSUMS_SETTING)) {
-                            args.put(DISABLE_CHECKSUMS_SETTING, disableChecksums);
-                        }
-                        if (!args.containsKey(GrapeEngine.CALLEE_DEPTH)) {
-                            args.put(GrapeEngine.CALLEE_DEPTH, GrapeEngine.DEFAULT_CALLEE_DEPTH + 2);
-                        }
-                        instance1.grab(args, dependencies);
-                    }
-                    return null;
+            GrapeEngine instance1 = getInstance();
+            if (instance1 != null) {
+                if (!args.containsKey(AUTO_DOWNLOAD_SETTING)) {
+                    args.put(AUTO_DOWNLOAD_SETTING, enableAutoDownload);
                 }
-            });
+                if (!args.containsKey(DISABLE_CHECKSUMS_SETTING)) {
+                    args.put(DISABLE_CHECKSUMS_SETTING, disableChecksums);
+                }
+                if (!args.containsKey(GrapeEngine.CALLEE_DEPTH)) {
+                    args.put(GrapeEngine.CALLEE_DEPTH, GrapeEngine.DEFAULT_CALLEE_DEPTH + 2);
+                }
+                instance1.grab(args, dependencies);
+            }
         }
     }
 
@@ -237,4 +307,5 @@ public class Grape {
             }
         }
     }
+
 }

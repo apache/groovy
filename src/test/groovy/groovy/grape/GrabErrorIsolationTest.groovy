@@ -47,7 +47,8 @@ class GrabErrorIsolationTest {
             fail('This @Grab usage should have failed')
         } catch (ex) {
             // fine if it failed
-            assert ex.message.contains('unresolved dependency')
+            assert ex.message.contains('unresolved dependency') ||
+                   ex.message.contains('could not be resolved')
         }
     }
 

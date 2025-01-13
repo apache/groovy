@@ -25,6 +25,7 @@ dependencies {
     api projects.groovySwing // SwingBuilder is used in public API
     implementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
+    implementation projects.groovyGrapeIvy
     implementation projects.groovyTemplates
     runtimeOnly "org.abego.treelayout:org.abego.treelayout.core:${versions.treelayout}"
     testImplementation projects.groovyTest

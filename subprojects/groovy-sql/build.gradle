@@ -33,6 +33,7 @@ dependencies {
             requireCapability("org.apache.groovy:groovy-grapes")
         }
     }
+    testRuntimeOnly projects.groovyGrapeIvy
     testCompileOnly(projects.groovyMacro) {
         because "tests are using macro methods"
     }

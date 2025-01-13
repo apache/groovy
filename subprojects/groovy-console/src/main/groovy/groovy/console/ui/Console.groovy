@@ -107,6 +107,7 @@ import java.util.prefs.Preferences
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
     static final String DEFAULT_SCRIPT_NAME_START = 'ConsoleScript'
+    private static final boolean DEBUG_GRAPE = Boolean.getBoolean('groovy.grape.debug')
 
     static prefs = Preferences.userNodeForPackage(Console)
 
@@ -375,7 +376,20 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 def ivyPluginClass = Class.forName('groovy.console.ui.ConsoleIvyPlugin')
                 ivyPluginClass.getConstructor().newInstance().addListener(this)
             }
-        } catch (ClassNotFoundException ignore) {
+        } catch (ReflectiveOperationException ignore) {
+            if (DEBUG_GRAPE) {
+                System.err.println "Ignoring attempt to load ConsoleIvyPlugin: ${ignore.message}"
+            }
+        }
+
+        // listen for Maven resolver events if the Maven console plugin is on the classpath
+        try {
+            def mavenPluginClass = Class.forName('groovy.console.ui.ConsoleMavenPlugin')
+            mavenPluginClass.getConstructor().newInstance().addListener(this)
+        } catch (ReflectiveOperationException ignore) {
+            if (DEBUG_GRAPE) {
+                System.err.println "Ignoring attempt to load ConsoleMavenPlugin: ${ignore.message}"
+            }
         }
 
         binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()

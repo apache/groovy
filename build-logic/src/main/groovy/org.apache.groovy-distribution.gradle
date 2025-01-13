@@ -179,6 +179,11 @@ tasks.register('dist') {
     dependsOn distSrc, distSdk, distDoc, distBin
 }
 
+def installGroovyExtraLibs = configurations.detachedConfiguration(
+    dependencies.create("org.slf4j:slf4j-simple:${versions.slf4j}")
+)
+installGroovyExtraLibs.transitive = false
+
 tasks.register("installGroovy", Sync) {
     duplicatesStrategy = DuplicatesStrategy.FAIL
     def installDir = sharedConfiguration.installationDirectory.orElse(layout.buildDirectory.dir("install").get().asFile)
@@ -187,6 +192,9 @@ tasks.register("installGroovy", Sync) {
         logger.lifecycle "Groovy installed under ${installDir.get()}"
     }
     with distributionExtension.distSpec
+    into('lib') {
+        from installGroovyExtraLibs
+    }
     into installDir
 }
 
