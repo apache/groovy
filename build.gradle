@@ -104,6 +104,9 @@ dependencies {
     grapesImplementation "org.apache.ivy:ivy:${versions.ivy}", {
         transitive = false
     }
+    grapesImplementation 'org.apache.maven:maven-resolver-provider:4.0.0-rc-2'
+    grapesImplementation "org.apache.maven.resolver:maven-resolver-supplier-mvn4:2.0.5"
+    grapesImplementation "org.slf4j:slf4j-simple:2.0.16"
 
     loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
 
