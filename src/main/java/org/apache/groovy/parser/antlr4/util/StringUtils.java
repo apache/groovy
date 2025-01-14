@@ -59,7 +59,7 @@ public class StringUtils {
 		return replaceAll(text, HEX_ESCAPES_PATTERN, m -> {
             final String _0 = m.group(0), _1 = m.group(1), _2 = m.group(2);
             if (isLengthOdd(_1)) return _0;
-            return _1 + new String(Character.toChars(Integer.parseInt(_2, 16)));
+            return _1 + ((char) Integer.parseInt(_2, 16));
         });
 	}
 
@@ -68,7 +68,7 @@ public class StringUtils {
 		return replaceAll(text, OCTAL_ESCAPES_PATTERN, m -> {
             final String _0 = m.group(0), _1 = m.group(1), _2 = m.group(2);
             if (isLengthOdd(_1)) return _0;
-            return _1 + new String(Character.toChars(Integer.parseInt(_2, 8)));
+            return _1 + ((char) Integer.parseInt(_2, 8));
         });
 	}
 
