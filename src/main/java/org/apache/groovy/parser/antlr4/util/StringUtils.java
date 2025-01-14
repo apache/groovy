@@ -18,13 +18,12 @@
  */
 package org.apache.groovy.parser.antlr4.util;
 
-import groovy.lang.Closure;
 import org.apache.groovy.util.Maps;
 
 import java.util.Map;
+import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.codehaus.groovy.runtime.StringGroovyMethods.replaceAll;
 
 /**
  * Utilities for handling strings
@@ -57,17 +56,30 @@ public class StringUtils {
 
     public static String replaceHexEscapes(String text) {
 		if (!text.contains(BACKSLASH)) return text;
-		return replaceAll((CharSequence) text, HEX_ESCAPES_PATTERN, REPLACE_HEX_ESCAPES);
+		return replaceAll(text, HEX_ESCAPES_PATTERN, m -> {
+            final String _0 = m.group(0), _1 = m.group(1), _2 = m.group(2);
+            if (isLengthOdd(_1)) return _0;
+            return _1 + new String(Character.toChars(Integer.parseInt(_2, 16)));
+        });
 	}
 
 	public static String replaceOctalEscapes(String text) {
 		if (!text.contains(BACKSLASH)) return text;
-		return replaceAll((CharSequence) text, OCTAL_ESCAPES_PATTERN, REPLACE_OCTAL_ESCAPES);
+		return replaceAll(text, OCTAL_ESCAPES_PATTERN, m -> {
+            final String _0 = m.group(0), _1 = m.group(1), _2 = m.group(2);
+            if (isLengthOdd(_1)) return _0;
+            return _1 + new String(Character.toChars(Integer.parseInt(_2, 8)));
+        });
 	}
 
     public static String replaceStandardEscapes(String text) {
 		if (!text.contains(BACKSLASH)) return text;
-		final String result = replaceAll((CharSequence) text, STANDARD_ESCAPES_PATTERN, REPLACE_STANDARD_ESCAPES);
+		final String result = replaceAll(text, STANDARD_ESCAPES_PATTERN, m -> {
+            final String _0 = m.group(0), _1 = m.group(1), _2 = m.group(2);
+            if (isLengthOdd(_1)) return _0;
+            final Character character = STANDARD_ESCAPES.get(_2.charAt(0));
+            return _1 + (character != null ? character : _2);
+        });
 		return replace(result,"\\\\", "\\");
 	}
 
@@ -166,8 +178,23 @@ public class StringUtils {
 
     private static String replaceLineEscape(String text) {
         if (!text.contains(BACKSLASH)) return text;
-        text = replaceAll((CharSequence) text, LINE_ESCAPE_PATTERN, REPLACE_LINE_ESCAPE);
+        text = replaceAll(text, LINE_ESCAPE_PATTERN, m -> {
+            final String _0 = m.group(0), _1 = m.group(1);
+            if (isLengthOdd(_1)) return _0;
+            return _1;
+        });
         return text;
+    }
+
+    private static String replaceAll(final CharSequence input, final Pattern pattern, final Function<? super Matcher, String> replaceFunction) {
+        final Matcher matcher = pattern.matcher(input);
+        final StringBuilder result = new StringBuilder(input.length() + matcher.groupCount() * 8);
+        while (matcher.find()) {
+            final String replacement = replaceFunction.apply(matcher);
+            matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(result);
+        return result.toString();
     }
 
     private static boolean isLengthOdd(String str) {
@@ -193,29 +220,4 @@ public class StringUtils {
         'r', '\r',
         's', ' '
     );
-    private static final Closure<String> REPLACE_STANDARD_ESCAPES = new Closure<String>(null, null) {
-        String doCall(String _0, String _1, String _2) {
-            if (isLengthOdd(_1)) return _0;
-            final Character character = STANDARD_ESCAPES.get(_2.charAt(0));
-            return _1 + (character != null ? character : _2);
-        }
-    };
-    private static final Closure<String> REPLACE_OCTAL_ESCAPES = new Closure<String>(null, null) {
-        String doCall(String _0, String _1, String _2) {
-            if (isLengthOdd(_1)) return _0;
-            return _1 + new String(Character.toChars(Integer.parseInt(_2, 8)));
-        }
-    };
-    private static final Closure<String> REPLACE_HEX_ESCAPES = new Closure<String>(null, null) {
-        String doCall(String _0, String _1, String _2) {
-            if (isLengthOdd(_1)) return _0;
-            return _1 + new String(Character.toChars(Integer.parseInt(_2, 16)));
-        }
-    };
-    private static final Closure<String> REPLACE_LINE_ESCAPE = new Closure<String>(null, null) {
-        String doCall(String _0, String _1) {
-            if (isLengthOdd(_1)) return _0;
-            return _1;
-        }
-    };
 }
