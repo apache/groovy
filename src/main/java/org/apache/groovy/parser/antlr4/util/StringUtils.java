@@ -47,7 +47,7 @@ public class StringUtils {
 					return _0;
 				}
 
-                return _1 + ((char) Integer.parseInt(_2, 16));
+				return _1 + new String(Character.toChars(Integer.parseInt(_2, 16)));
 			}
 		});
 	}
@@ -63,7 +63,7 @@ public class StringUtils {
 					return _0;
 				}
 
-                return _1 + ((char) Integer.parseInt(_2, 8));
+				return _1 + new String(Character.toChars(Integer.parseInt(_2, 8)));
 			}
 		});
 	}
