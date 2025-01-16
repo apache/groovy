@@ -27,7 +27,7 @@ jobs:
       fail-fast: true
     runs-on: ubuntu-latest
     env:
-      DEVELOCITY_ACCESS_KEY: ${{ secrets.GE_ACCESS_TOKEN }}
+      DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK

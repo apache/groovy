@@ -20,8 +20,9 @@
 def env = System.getenv()
 boolean isCI = env.CI || env.TRAVIS || env.TEAMCITY_VERSION || env.GITHUB_ACTIONS
 
-gradleEnterprise {
-    server = "https://ge.apache.org"
+develocity {
+    server = "https://develocity.apache.org"
+    projectId = "groovy"
     allowUntrustedServer = false
 
     buildScan {
