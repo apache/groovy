@@ -21,7 +21,8 @@ def env = System.getenv()
 boolean isCI = env.CI || env.TEAMCITY_VERSION || env.GITHUB_ACTIONS
 
 develocity {
-    server = "https://ge.apache.org"
+    server = "https://develocity.apache.org"
+    projectId = "groovy"
     allowUntrustedServer = false
 
     buildScan {
