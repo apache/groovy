@@ -20,6 +20,7 @@
 -->
 <ivysettings>
   <settings defaultResolver="downloadGrapes"/>
+  <caches lockStrategy="artifact-lock-nio"/>
   <resolvers>
     <chain name="downloadGrapes" returnFirst="true">
       <filesystem name="cachedGrapes">
