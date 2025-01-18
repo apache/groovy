@@ -85,6 +85,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
 
     private static final String IS_GENERATED_CONSTRUCTOR = "__IS_GENERATED_CONSTRUCTOR";
     private static final String LAMBDA_SHARED_VARIABLES = "__LAMBDA_SHARED_VARIABLES";
+    private static final String DO_CALL = "doCall";
 
     private final Map<Expression, ClassNode> lambdaClassNodes = new HashMap<>();
     private final StaticTypesClosureWriter staticTypesClosureWriter;
@@ -110,7 +111,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         }
 
         ClassNode lambdaClass = getOrAddLambdaClass(expression, abstractMethod);
-        MethodNode lambdaMethod = lambdaClass.getMethods("doCall").get(0);
+        MethodNode lambdaMethod = lambdaClass.getMethods(DO_CALL).get(0);
 
         boolean canDeserialize = controller.getClassNode().hasMethod(createDeserializeLambdaMethodName(lambdaClass), createDeserializeLambdaMethodParams());
         if (!canDeserialize) {
@@ -214,8 +215,8 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
     }
 
     private ClassNode getOrAddLambdaClass(final LambdaExpression expression, final MethodNode abstractMethod) {
-        return lambdaClassNodes.computeIfAbsent(expression, key -> {
-            ClassNode lambdaClass = createLambdaClass(expression, ACC_FINAL | ACC_PUBLIC | ACC_STATIC, abstractMethod);
+        return lambdaClassNodes.computeIfAbsent(expression, expr -> {
+            ClassNode lambdaClass = createLambdaClass((LambdaExpression) expr, ACC_FINAL | ACC_PUBLIC | ACC_STATIC, abstractMethod);
             controller.getAcg().addInnerClass(lambdaClass);
             lambdaClass.addInterface(GENERATED_LAMBDA_TYPE);
             lambdaClass.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
@@ -276,7 +277,7 @@ public class StaticTypesLambdaWriter extends LambdaWriter implements AbstractFun
         expression.putNodeMetaData(LAMBDA_SHARED_VARIABLES, localVariableParameters);
 
         MethodNode doCallMethod = lambdaClass.addMethod(
-                "doCall",
+                DO_CALL,
                 ACC_PUBLIC,
                 abstractMethod.getReturnType(),
                 parametersWithExactType.clone(),
