@@ -3591,19 +3591,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return Collections.emptyList();
         }
 
-        ClassNode elementType = ctx.getNodeMetaData(ELEMENT_TYPE);
+        final ClassNode elementType = ctx.getNodeMetaData(ELEMENT_TYPE);
         try {
             visitingArrayInitializerCount += 1;
             var initExpressions = new ArrayList<Expression>();
-            for (int i = 0; i < ctx.getChildCount(); i += 1) {
-                var c = ctx.getChild(i);
+            for (var c : ctx.children) {
                 if (c instanceof ArrayInitializerContext) {
                     var arrayInitializer = (ArrayInitializerContext) c;
                     ClassNode subType = elementType.getComponentType();
                     //if (subType == null) produce closure or throw exception
                     arrayInitializer.putNodeMetaData(ELEMENT_TYPE, subType);
                     var arrayExpression = configureAST(new ArrayExpression(subType,
-                            this.visitArrayInitializer(arrayInitializer)), arrayInitializer);
+                                                        this.visitArrayInitializer(arrayInitializer)), arrayInitializer);
                     arrayExpression.setType(elementType);
                     initExpressions.add(arrayExpression);
                 } else if (c instanceof VariableInitializerContext) {
