@@ -1146,6 +1146,9 @@ creator[int t]
         )
     ;
 
+/**
+ *  n 0: dim without size expression; 1: dim with size expression
+ */
 dim[int n]
     :   annotationsOpt LBRACK
         (
