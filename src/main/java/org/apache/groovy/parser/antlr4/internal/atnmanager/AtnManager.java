@@ -28,6 +28,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,10 +63,12 @@ public abstract class AtnManager {
                     }
                 } catch (Throwable t) {
                     Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass().getName());
-                    logger.warning(DefaultGroovyMethods.asString(t));
+                    if (logger.isLoggable(Level.WARNING)) {
+                        logger.warning(DefaultGroovyMethods.asString(t));
+                    }
                 }
             }
-        }, "Cleanup thread for DFA cache[" + this.getClass().getSimpleName() + "]");
+        }, "DFA-cache-cleaner[" + this.getClass().getSimpleName() + "]");
         cleanupThread.setDaemon(true);
         cleanupThread.start();
     }
