@@ -133,7 +133,7 @@ public class CompilerConfiguration {
     /**
      * The valid targetBytecode values.
      */
-    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[JDK_TO_BYTECODE_VERSION_MAP.size()]);
+    public static final String[] ALLOWED_JDKS = JDK_TO_BYTECODE_VERSION_MAP.keySet().toArray(new String[0]);
 
     /**
      * The ASM API version used when loading/parsing classes and generating proxy adapter classes.
