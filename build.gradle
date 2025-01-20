@@ -129,8 +129,8 @@ dependencies {
     testFixturesImplementation projects.groovyTest
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
-    tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
-    tools "org.apache.ant:ant:1.10.15" // updated jarjar dependency to remove vulnerability
+    tools "com.eed3si9n.jarjar:ant-jarjar:${versions.jarjar}"
+    tools "org.apache.ant:ant:${versions.ant}" // use latest ant
     tools "org.jboss.bridger:bridger:${versions.bridger}"
     tools("net.sourceforge.cobertura:cobertura:${versions.cobertura}") {
         exclude(group: 'asm')
