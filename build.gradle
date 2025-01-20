@@ -134,8 +134,8 @@ dependencies {
     testFixturesImplementation projects.groovyTest
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
-    tools "com.eed3si9n.jarjar:jarjar:${versions.jarjar}"
-    tools "org.apache.ant:ant:1.10.15" // updated jarjar dependency to remove vulnerability
+    tools "com.eed3si9n.jarjar:ant-jarjar:${versions.jarjar}"
+    tools "org.apache.ant:ant:${versions.ant}" // use latest ant
     tools "org.jboss.bridger:bridger:${versions.bridger}"
     tools "org.codehaus.plexus:plexus-utils:4.0.2" // updated bridger dependency to remove vulnerability
     tools "org.apache.maven:maven-core:3.9.9" // updated bridger dependency to remove vulnerability
