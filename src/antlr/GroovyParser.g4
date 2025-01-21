@@ -1141,22 +1141,12 @@ options { baseContext = mapEntryLabel; }
 creator[int t]
     :   createdName
         (   nls arguments anonymousInnerClassDeclaration[0]?
-        |   dim[0]+ nls arrayInitializer
-        |   dim[1]+ dim[0]*
+        |   dim+ (nls arrayInitializer)?
         )
     ;
 
-/**
- *  n 0: dim without size expression; 1: dim with size expression
- */
-dim[int n]
-    :   annotationsOpt LBRACK
-        (
-            { $n == 1 }?
-            expression
-        |
-        )
-        RBRACK
+dim
+    :   annotationsOpt LBRACK expression? RBRACK
     ;
 
 arrayInitializer

@@ -496,6 +496,8 @@ final class SyntaxErrorTest {
     void 'groovy core - Array'() {
         TestUtils.doRunAndShouldFail('fail/Array_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Array_02x.groovy')
+        TestUtils.doRunAndShouldFail('fail/Array_03x.groovy')
+        TestUtils.doRunAndShouldFail('fail/Array_04x.groovy')
     }
 
     @Test

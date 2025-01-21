@@ -3482,7 +3482,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             final int nDim = dims.size();
             if (asBoolean(ctx.arrayInitializer())) { // create array: new Type[][]{ ... }
                 List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
-                for (var dim : dims) typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
+                for (var dim : dims) {
+                    final ExpressionContext dimExpressionContext = dim.expression();
+                    if (asBoolean(dimExpressionContext)) {
+                        throw createParsingFailedException(
+                                "Unsupported array dimension expression: " + dimExpressionContext.getText(),
+                                dimExpressionContext);
+                    }
+                    typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
+                }
 
                 ClassNode elementType = classNode;
                 for (int i = nDim - 1; i > 0; i -= 1) {
@@ -3500,10 +3508,26 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             } else { // create array: new Type[n][]
                 final List<Expression> sizeExpressions = new ArrayList<>(nDim);
                 final List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
-                for (var dim : dims) {
+                ExpressionContext lastDimExpressionContext = null;
+                for (int i = 0, n = dims.size(); i < n; i += 1) {
+                    var dim = dims.get(i);
+                    final ExpressionContext dimExpressionContext = dim.expression();
+                    if (i == 0) {
+                        if (!asBoolean(dimExpressionContext)) {
+                            throw createParsingFailedException("array dimension expression is expected", dim);
+                        }
+                    } else {
+                        if (asBoolean(dimExpressionContext) && !asBoolean(lastDimExpressionContext)) {
+                            throw createParsingFailedException(
+                                    "Unsupported array dimension expression: " + dimExpressionContext.getText(),
+                                    dimExpressionContext);
+                        }
+                    }
+                    lastDimExpressionContext = dimExpressionContext;
+
                     final Expression sizeExpression;
-                    if (asBoolean(dim.expression())) {
-                        sizeExpression = (Expression) this.visit(dim.expression());
+                    if (asBoolean(dimExpressionContext)) {
+                        sizeExpression = (Expression) this.visit(dimExpressionContext);
                     } else {
                         sizeExpression = ConstantExpression.EMPTY_EXPRESSION;
                     }
