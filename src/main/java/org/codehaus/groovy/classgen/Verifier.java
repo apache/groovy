@@ -28,6 +28,7 @@ import groovy.transform.NonSealed;
 import groovy.transform.Sealed;
 import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -85,6 +86,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isPrivate;
@@ -281,11 +283,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (node.getInterfaces().length < 2) return;
 
         Map<String, MethodNode> defaultMethods = new HashMap<>(8);
+        Set<String> declared = node.getAllDeclaredMethods().stream()
+            .filter(m -> !m.isDefault())
+            .map(MethodNodeUtils::methodDescriptorWithoutReturnType)
+            .collect(Collectors.toSet());
         node.getAllInterfaces().stream()
                 .flatMap(i -> i.getAllDeclaredMethods().stream())
                 .filter(MethodNode::isDefault)
                 .forEach(m -> {
                     String signature = methodDescriptorWithoutReturnType(m);
+                    if (declared.contains(signature)) {
+                        return;
+                    }
                     MethodNode existing = defaultMethods.get(signature);
                     if (existing == null) {
                         defaultMethods.put(signature, m);
@@ -301,7 +310,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 (node.isInterface() ? "interface" : "class") +  " " + node.getName()
                                         + " inherits unrelated defaults for " + m.getTypeDescriptor()
                                         + " from types " + existingDeclaringClass.getName()
-                                        + " and " + currentDeclaringClass.getName(), sourceOf(m));
+                                        + " and " + currentDeclaringClass.getName(), node);
                     }
                 });
     }
