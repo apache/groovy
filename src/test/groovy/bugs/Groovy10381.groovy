@@ -22,9 +22,41 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy10381 {
+    @Test
+    void testDuplicateDefaultMethodsFromGroovyClasses_implements0() {
+        assertScript '''
+            interface A {
+              default String m(String n) { n.toLowerCase() }
+            }
+
+            interface B {
+              default String m(String n) { n.toUpperCase() }
+            }
+
+            class C1 implements A, B {
+              @Override
+              String m(String n) { A.super.m(n) }
+            }
+            assert new C1().m('Hi') == 'hi'
+
+            class C2 implements A, B {
+              @Override
+              String m(String n) { B.super.m(n) }
+            }
+            assert new C2().m('Hi') == 'HI'
+
+            class C3 implements A, B {
+              @Override
+              String m(String n) { 'overridden' }
+            }
+            assert new C3().m('Hi') == 'overridden'
+        '''
+    }
+
     @Test
     void testDuplicateDefaultMethodsFromGroovyClasses_implements1() {
         def err = shouldFail '''
