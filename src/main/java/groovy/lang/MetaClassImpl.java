@@ -2197,6 +2197,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // simply return the values of the metaproperty map as a List
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
         for (MetaProperty mp : propertyMap.values()) {
+            if (mp.getName().contains("$")) continue;
             if (mp instanceof CachedField) {
                 if (mp.isSynthetic()
                         // GROOVY-5169, GROOVY-9081, GROOVY-9103, GROOVY-10438, GROOVY-10555, et al.
