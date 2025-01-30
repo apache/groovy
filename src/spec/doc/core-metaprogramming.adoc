@@ -2235,7 +2235,7 @@ You still need to add the appropriate slf4j jar(s) to your classpath.
 [[xform-PlatformLog]]
 ===== `@groovy.util.logging.PlatformLog`
 
-Groovy supports the https://openjdk.java.net/jeps/264[Java Platform Logging API and Service]
+Groovy supports the https://openjdk.org/jeps/264[Java Platform Logging API and Service]
 framework using the `@PlatformLog` annotation. Writing:
 
 [source,groovy]

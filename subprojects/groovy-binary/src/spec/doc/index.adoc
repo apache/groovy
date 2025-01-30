@@ -167,7 +167,7 @@ offer some of the same security features as Java programs, including:
 Special security support is provided through:
 
 * gapi:groovy.lang.GroovyShell[], gapi:groovy.lang.GroovyClassLoader[] and other parts of the Groovy runtime fully support the Java security manager which allows you to sandbox script execution with a security policy. (Note: this functionality might be scaled back in future Groovy versions or when running
-on particular JDK versions in line with https://openjdk.java.net/jeps/411[JEP 411])
+on particular JDK versions in line with https://openjdk.org/jeps/411[JEP 411])
 * gapi:org.codehaus.groovy.control.customizers.SecureASTCustomizer[]
 secures source code by controlling what code constructs are permitted or prohibited in a code base
 (or part of a code base)

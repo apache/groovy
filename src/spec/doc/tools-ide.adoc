@@ -28,7 +28,7 @@ Many IDEs and text editors support the Groovy programming language.
 |Editor|Syntax highlighting|Code completion|Refactoring
 |https://github.com/groovy/groovy-eclipse[Groovy Eclipse Plugin]|Yes|Yes|Yes
 |https://www.jetbrains.com/help/idea/groovy.html[IntelliJ IDEA]|Yes|Yes|Yes
-|https://netbeans.org/features/groovy/[Netbeans]|Yes|Yes|Yes
+|https://netbeans.apache.org/tutorial/main/kb/docs/java/groovy-quickstart/[Netbeans]|Yes|Yes|Yes
 |https://github.com/Groovy-Emacs-Modes/groovy-emacs-modes[Groovy Emacs Modes]|Yes|No|No
 |https://github.com/textmate/groovy.tmbundle[TextMate]|Yes|No|No
 |http://www.vim.org/[vim]|Yes|No|No
