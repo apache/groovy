@@ -290,7 +290,7 @@ public class GenericsUtils {
         Map<String, ClassNode> gt;
 
         // relationship may be reversed for cases like "Iterable<String> x = []"
-        if (!cn.equals(hint) && implementsInterfaceOrIsSubclassOf(target, hint)) {
+        if (!cn.equals(hint) && (hint.isInterface() ? cn.implementsInterface(hint) : cn.isDerivedFrom(hint))) { // GROOVY-11559
             do { // walk target type hierarchy towards hint
                 cn = ClassHelper.getNextSuperClass(cn, hint);
                 if (hasUnresolvedGenerics(cn)) {

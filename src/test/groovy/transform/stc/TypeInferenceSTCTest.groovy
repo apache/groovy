@@ -412,11 +412,11 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8965
     void testMultipleInstanceOf4() {
-        ['o', '((Number) o)'].each {
+        for (o in ['o', '((Number) o)']) {
             assertScript """
                 def foo(o) {
                     if (o instanceof Integer || o instanceof Double) {
-                        ${it}.floatValue() // ClassCastException
+                        ${o}.floatValue() // ClassCastException
                     }
                 }
                 def bar = foo(1.1d)
@@ -427,7 +427,20 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11559
     void testMultipleInstanceOf5() {
+        assertScript '''
+            def foo(o) {
+                if (o instanceof Set || o instanceof List) {
+                    o = "" // NullPointerException
+                }
+            }
+            foo("")
+            foo([])
+        '''
+    }
+
+    void testMultipleInstanceOf6() {
         assertScript '''
             void test(thing) {
                 if (thing instanceof Deque) {
@@ -445,8 +458,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10668
-    void testMultipleInstanceOf6() {
-        ['(value as String)', 'value.toString()'].each { string ->
+    void testMultipleInstanceOf7() {
+        for (string in ['(value as String)', 'value.toString()']) {
             assertScript """
                 def toArray(Object value) {
                     def array
@@ -466,7 +479,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8828
-    void testMultipleInstanceOf7() {
+    void testMultipleInstanceOf8() {
         assertScript '''
             interface Foo { }
             interface Bar { String name() }
