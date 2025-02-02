@@ -240,8 +240,8 @@ connection.doPost("${BASE_URI}/modify.hqu", params, ResourcesResponse)
 
 == Getters and Setters
 
-In Groovy, a getters and setters form what we call a "property",
-and offers a shortcut notation for accessing and setting such properties.
+In Groovy, a getter and a setter form what we call a "property",
+and offer a shortcut notation for accessing and setting such properties.
 So instead of the Java-way of calling getters / setters, you can use a field-like access notation:
 
 [source,groovy]
@@ -635,7 +635,7 @@ def check(String name) {
 ----
 
 You'll also notice the nice output that Groovy's "Power Assert" statement provides,
-with a graph view of the various values of each sub-expressions being asserted.
+with a graph view of the various values of each sub-expression being asserted.
 
 == Elvis operator for default values
 
