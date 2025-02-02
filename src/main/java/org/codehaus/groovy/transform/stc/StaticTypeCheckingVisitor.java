@@ -1664,11 +1664,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 else if (field != null && enclosingTypes.contains(current) && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
                     return true;
                 }
+                // GROOVY-8283: accessible field shadows getter of super class; GROOVY-11381: inaccessible field stops the loop, so search supers for getter
+                boolean checkUp = field != null && !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
 
-                MethodNode getter = current.getGetterMethod(isserName);
+                MethodNode getter = getGetterMethod(current, isserName, checkUp);
                 getter = allowStaticAccessToMember(getter, staticOnly);
                 if (getter == null) {
-                    getter = current.getGetterMethod(getterName);
+                    getter = getGetterMethod(current, getterName, checkUp);
                     getter = allowStaticAccessToMember(getter, staticOnly);
                 }
                 if (getter != null && ((publicOnly && (!getter.isPublic() || "class".equals(propertyName) || "empty".equals(propertyName)))
@@ -1681,8 +1683,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
-                // prefer explicit getter or setter over property if receiver is not 'this'
-                if (property == null || !enclosingTypes.contains(receiverType)) {
+                // prefer explicit getter/setter for out-of-scope references
+                if (property == null || !enclosingTypes.contains(current)) {
                     if (readMode) {
                         if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
@@ -1826,6 +1828,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
 
         return foundGetterOrSetter;
+    }
+
+    private static MethodNode getGetterMethod(final ClassNode classNode, final String getterName, final boolean searchSupers) {
+        MethodNode getter = classNode.getGetterMethod(getterName, searchSupers);
+        if (getter != null && (getter.getModifiers() & Opcodes.ACC_BRIDGE) != 0) getter = null; // GROOVY-11341
+        return getter;
     }
 
     private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {
@@ -2714,7 +2722,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     node.setDeclaringClass(pn.getDeclaringClass());
                     node.setSynthetic(true);
                     return node;
-                } else if (name.equals(pn.getSetterNameOrDefault()) && !Modifier.isFinal(pn.getModifiers())) {
+                } else if (name.equals(pn.getSetterNameOrDefault()) && !pn.isFinal()) {
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), VOID_TYPE, new Parameter[]{new Parameter(pn.getType(), pn.getName())}, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
                     node.setSynthetic(true);
