@@ -222,10 +222,9 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
             @CompileStatic
             class Tool {
                 @CompileStatic // annotated too, even if class is already annotated
-                String relativePath(File relbase, File file) {
-                    def pathParts = []
-                    def currentFile = file
-                    while (currentFile != null && currentFile != relbase) {
+                String relativePath(File base, File file) {
+                    List<String> pathParts = []; File currentFile = file
+                    while (currentFile != null && currentFile != base) {
                         pathParts += currentFile.name
                         currentFile = currentFile.parentFile
                     }
@@ -243,10 +242,9 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
             @CompileStatic
             class Tool {
                 @CompileStatic // annotated too, even if class is already annotated
-                String relativePath(File relbase, File file) {
-                    def pathParts = []
-                    def currentFile = file
-                    while (currentFile != null && currentFile != relbase) {
+                String relativePath(File base, File file) {
+                    List<String> pathParts = []; File currentFile = file
+                    while (currentFile != null && currentFile != base) {
                         pathParts += currentFile.name
                         currentFile = currentFile.parentFile
                     }
