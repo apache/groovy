@@ -43,22 +43,22 @@ jobs:
       - name: Move sdk distribution
         run:  mkdir target/distributions/sdk/ && mv target/distributions/apache-groovy-sdk-*.zip target/distributions/sdk/
       - name: Upload binary distribution
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: apache-groovy-binary-SNAPSHOT
           path: target/distributions/binary/
       - name: Upload src distribution
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: apache-groovy-src-SNAPSHOT
           path: target/distributions/src/
       - name: Upload docs distribution
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: apache-groovy-docs-SNAPSHOT
           path: target/distributions/docs/
       - name: Upload sdk distribution
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: apache-groovy-sdk-SNAPSHOT
           path: target/distributions/sdk/
