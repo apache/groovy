@@ -237,7 +237,8 @@ final class GroovyParserTest extends GroovyTestCase {
     }
 
     void "test groovy core - IfElse"() {
-        doTest('core/IfElse_01.groovy', [AssertStatement])
+        doTest('core/IfElse_01.groovy')
+        doTest('core/IfElse_02.groovy')
     }
 
     void "test groovy core - For"() {
@@ -264,7 +265,6 @@ final class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/DoWhile_04x.groovy')
     }
 
-
     void "test groovy core - TryCatch"() {
         doTest('core/TryCatch_01.groovy')
     }
@@ -290,7 +290,6 @@ final class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/DefaultMethod_01x.groovy')
         doRunAndTestAntlr4('core/DefaultMethod_02x.groovy')
     }
-
 
     void "test groovy core - Switch"() {
         doTest('core/Switch_01.groovy')
@@ -372,12 +371,6 @@ final class GroovyParserTest extends GroovyTestCase {
         doRunAndTestAntlr4('core/Command_06x.groovy')
         doRunAndTestAntlr4('core/Command_07x.groovy')
     }
-
-    /*
-    void "test groovy core - Unicode"() {
-        doTest('core/Unicode_01.groovy')
-    }
-    */
 
     void "test groovy core - BreakingChanges"() {
         doRunAndTestAntlr4('core/BreakingChange_01x.groovy')
