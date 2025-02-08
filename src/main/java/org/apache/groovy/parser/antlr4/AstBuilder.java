@@ -3255,71 +3255,45 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(constructorCallExpression, ctx);
         }
 
-        final List<? extends DimContext> dims = ctx.dim();
-        if (asBoolean(dims)) {
-            final int nDim = dims.size();
-            if (asBoolean(ctx.arrayInitializer())) { // create array: new Type[][]{ ... }
-                List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
-                for (var dim : dims) {
-                    final ExpressionContext dimExpressionContext = dim.expression();
-                    if (asBoolean(dimExpressionContext)) {
-                        throw createParsingFailedException(
-                                "Unsupported array dimension expression: " + dimExpressionContext.getText(),
-                                dimExpressionContext);
-                    }
-                    typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
-                }
-
-                ClassNode elementType = classNode;
-                for (int i = nDim - 1; i > 0; i -= 1) {
-                    elementType = this.createArrayType(elementType);
-                    elementType.addTypeAnnotations(typeAnnotations.get(i));
-                }
-
-                var initializer = ctx.arrayInitializer();
-                initializer.putNodeMetaData(ELEMENT_TYPE, elementType);
-                List<Expression> initExpressions = this.visitArrayInitializer(initializer);
-
-                ArrayExpression arrayExpression = new ArrayExpression(elementType, initExpressions);
-                arrayExpression.getType().addTypeAnnotations(typeAnnotations.get(0));
-                return configureAST(arrayExpression, ctx);
-            } else { // create array: new Type[n][]
-                final List<Expression> sizeExpressions = new ArrayList<>(nDim);
-                final List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
-                ExpressionContext lastDimExpressionContext = null;
-                for (int i = 0, n = dims.size(); i < n; i += 1) {
-                    var dim = dims.get(i);
-                    final ExpressionContext dimExpressionContext = dim.expression();
-                    if (i == 0) {
-                        if (!asBoolean(dimExpressionContext)) {
-                            throw createParsingFailedException("array dimension expression is expected", dim);
-                        }
-                    } else {
-                        if (asBoolean(dimExpressionContext) && !asBoolean(lastDimExpressionContext)) {
-                            throw createParsingFailedException(
-                                    "Unsupported array dimension expression: " + dimExpressionContext.getText(),
-                                    dimExpressionContext);
-                        }
-                    }
-                    lastDimExpressionContext = dimExpressionContext;
-
-                    final Expression sizeExpression;
-                    if (asBoolean(dimExpressionContext)) {
-                        sizeExpression = (Expression) this.visit(dimExpressionContext);
-                    } else {
-                        sizeExpression = ConstantExpression.EMPTY_EXPRESSION;
-                    }
-                    sizeExpressions.add(sizeExpression);
-                    typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
-                }
-                ArrayExpression arrayExpression = new ArrayExpression(classNode, null, sizeExpressions);
-                ClassNode arrayType = arrayExpression.getType();
-                int i = 0; // annotations apply to array then component(s)
-                do {
-                    arrayType.addTypeAnnotations(typeAnnotations.get(i++));
-                } while ((arrayType = arrayType.getComponentType()).isArray());
-                return configureAST(arrayExpression, ctx);
+        if (asBoolean(ctx.dim1())) { // create array: new Type[n][]
+            final int nDim = ctx.dim1().size() + ctx.dim0().size();
+            List<Expression> sizeExpressions = new ArrayList<>(nDim);
+            List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
+            for (var dim : ctx.dim1()) {
+                sizeExpressions.add((Expression) this.visit(dim.expression()));
+                typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
             }
+            for (var dim : ctx.dim0()) {
+                sizeExpressions.add(ConstantExpression.EMPTY_EXPRESSION);
+                typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
+            }
+
+            ArrayExpression arrayExpression = new ArrayExpression(classNode, null, sizeExpressions);
+            ClassNode arrayType = arrayExpression.getType();
+            int i = 0; // annotations apply to array then component(s)
+            do { arrayType.addTypeAnnotations(typeAnnotations.get(i++));
+            } while ((arrayType = arrayType.getComponentType()).isArray());
+            return configureAST(arrayExpression, ctx);
+        }
+
+        if (asBoolean(ctx.dim0())) { // create array: new Type[][]{ ... }
+            final int nDim = ctx.dim0().size();
+            List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(nDim);
+            for (var dim : ctx.dim0()) typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
+
+            ClassNode elementType = classNode;
+            for (int i = nDim - 1; i > 0; i -= 1) {
+                elementType = this.createArrayType(elementType);
+                elementType.addTypeAnnotations(typeAnnotations.get(i));
+            }
+
+            var initializer = ctx.arrayInitializer();
+            initializer.putNodeMetaData("elementType", elementType);
+            List<Expression> initExpressions = this.visitArrayInitializer(initializer);
+
+            ArrayExpression arrayExpression = new ArrayExpression(elementType, initExpressions);
+            arrayExpression.getType().addTypeAnnotations(typeAnnotations.get(0));
+            return configureAST(arrayExpression, ctx);
         }
 
         throw createParsingFailedException("Unsupported creator: " + ctx.getText(), ctx);
@@ -3393,18 +3367,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return Collections.emptyList();
         }
 
-        final ClassNode elementType = ctx.getNodeMetaData(ELEMENT_TYPE);
+        ClassNode elementType = ctx.getNodeMetaData("elementType");
         try {
             visitingArrayInitializerCount += 1;
             var initExpressions = new ArrayList<Expression>();
-            for (var c : ctx.children) {
+            for (int i = 0; i < ctx.getChildCount(); i += 1) {
+                var c = ctx.getChild(i);
                 if (c instanceof ArrayInitializerContext) {
                     var arrayInitializer = (ArrayInitializerContext) c;
                     ClassNode subType = elementType.getComponentType();
                     //if (subType == null) produce closure or throw exception
-                    arrayInitializer.putNodeMetaData(ELEMENT_TYPE, subType);
+                    arrayInitializer.putNodeMetaData("elementType", subType);
                     var arrayExpression = configureAST(new ArrayExpression(subType,
-                                                        this.visitArrayInitializer(arrayInitializer)), arrayInitializer);
+                            this.visitArrayInitializer(arrayInitializer)), arrayInitializer);
                     arrayExpression.setType(elementType);
                     initExpressions.add(arrayExpression);
                 } else if (c instanceof VariableInitializerContext) {
@@ -4851,6 +4826,5 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private static final String PARAMETER_CONTEXT = "_PARAMETER_CONTEXT";
     private static final String IS_RECORD_GENERATED = "_IS_RECORD_GENERATED";
     private static final String RECORD_HEADER = "_RECORD_HEADER";
-    private static final String ELEMENT_TYPE = "elementType";
     private static final String RECORD_TYPE_NAME = "groovy.transform.RecordType";
 }
