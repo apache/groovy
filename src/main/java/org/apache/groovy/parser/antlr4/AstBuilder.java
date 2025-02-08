@@ -450,20 +450,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public IfStatement visitIfElseStatement(final IfElseStatementContext ctx) {
         Expression conditionExpression = this.visitExpressionInPar(ctx.expressionInPar());
-        BooleanExpression booleanExpression =
-                configureAST(
-                        new BooleanExpression(conditionExpression), conditionExpression);
+        BooleanExpression booleanExpression = configureAST(new BooleanExpression(conditionExpression), conditionExpression);
 
-        Statement ifBlock =
-                this.unpackStatement(
-                        (Statement) this.visit(ctx.tb));
-        Statement elseBlock =
-                this.unpackStatement(
-                        asBoolean(ctx.ELSE())
-                                ? (Statement) this.visit(ctx.fb)
-                                : EmptyStatement.INSTANCE);
+        Statement thenStatement =                      this.unpackStatement((Statement) this.visit(ctx.tb))                          ;
+        Statement elseStatement = ctx.ELSE() != null ? this.unpackStatement((Statement) this.visit(ctx.fb)) : EmptyStatement.INSTANCE;
 
-        return configureAST(new IfStatement(booleanExpression, ifBlock, elseBlock), ctx);
+        return configureAST(new IfStatement(booleanExpression, thenStatement, elseStatement), ctx);
     }
 
     @Override
@@ -484,9 +476,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         Statement loopBlock = this.unpackStatement((Statement) this.visit(ctx.statement()));
 
-        return configureAST(
-                new ForStatement(controlTuple.getV1(), controlTuple.getV2(), asBoolean(loopBlock) ? loopBlock : EmptyStatement.INSTANCE),
-                ctx);
+        return configureAST(new ForStatement(controlTuple.getV1(), controlTuple.getV2(), loopBlock), ctx);
     }
 
     @Override
@@ -510,12 +500,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         if (asBoolean(ctx.localVariableDeclaration())) {
             DeclarationListStatement declarationListStatement = this.visitLocalVariableDeclaration(ctx.localVariableDeclaration());
-            List<DeclarationExpression> declarationExpressions = declarationListStatement.getDeclarationExpressions();
+            List<? extends Expression> declarationExpressions = declarationListStatement.getDeclarationExpressions();
 
             if (declarationExpressions.size() == 1) {
-                return configureAST((Expression) declarationExpressions.get(0), ctx);
+                return configureAST(declarationExpressions.get(0), ctx);
             } else {
-                return configureAST(new ClosureListExpression((List) declarationExpressions), ctx);
+                return configureAST(new ClosureListExpression((List<Expression>) declarationExpressions), ctx);
             }
         }
 
@@ -571,28 +561,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public WhileStatement visitWhileStmtAlt(final WhileStmtAltContext ctx) {
         Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
 
-        return configureAST(
-                new WhileStatement(conditionAndBlock.getV1(), asBoolean(conditionAndBlock.getV2()) ? conditionAndBlock.getV2() : EmptyStatement.INSTANCE),
-                ctx);
+        return configureAST(new WhileStatement(conditionAndBlock.getV1(), conditionAndBlock.getV2()), ctx);
     }
 
     @Override
     public DoWhileStatement visitDoWhileStmtAlt(final DoWhileStmtAltContext ctx) {
         Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
 
-        return configureAST(
-                new DoWhileStatement(conditionAndBlock.getV1(), asBoolean(conditionAndBlock.getV2()) ? conditionAndBlock.getV2() : EmptyStatement.INSTANCE),
-                ctx);
+        return configureAST(new DoWhileStatement(conditionAndBlock.getV1(), conditionAndBlock.getV2()), ctx);
     }
 
     private Tuple2<BooleanExpression, Statement> createLoopConditionExpressionAndBlock(final ExpressionInParContext eipc, final StatementContext sc) {
         Expression conditionExpression = this.visitExpressionInPar(eipc);
-
-        BooleanExpression booleanExpression =
-                configureAST(
-                        new BooleanExpression(conditionExpression),
-                        conditionExpression
-                );
+        BooleanExpression booleanExpression = configureAST(new BooleanExpression(conditionExpression), conditionExpression);
 
         Statement loopBlock = this.unpackStatement((Statement) this.visit(sc));
 
@@ -4528,16 +4509,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     private Statement unpackStatement(final Statement statement) {
         if (statement instanceof DeclarationListStatement) {
-            List<ExpressionStatement> expressionStatementList = ((DeclarationListStatement) statement).getDeclarationStatements();
-
-            if (1 == expressionStatementList.size()) {
-                return expressionStatementList.get(0);
-            }
-
-            return configureAST(this.createBlockStatement(statement), statement); // if DeclarationListStatement contains more than 1 declarations, maybe it's better to create a block to hold them
+            // if DeclarationListStatement contains more than 1 declarations, maybe it's better to create a block to hold them
+            List<ExpressionStatement> expressionStatements = ((DeclarationListStatement) statement).getDeclarationStatements();
+            return expressionStatements.size() == 1 ? expressionStatements.get(0) : configureAST(this.createBlockStatement(statement), statement);
         }
 
-        return statement;
+        return Optional.ofNullable(statement).orElse(EmptyStatement.INSTANCE);
     }
 
     BlockStatement createBlockStatement(final Statement... statements) {
