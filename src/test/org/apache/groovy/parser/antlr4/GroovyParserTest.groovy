@@ -254,7 +254,8 @@ final class GroovyParserTest {
 
     @Test
     void 'groovy core - IfElse'() {
-        doTest('core/IfElse_01.groovy', [AssertStatement])
+        doTest('core/IfElse_01.groovy')
+        doTest('core/IfElse_02.groovy')
     }
 
     void 'groovy core - For'() {

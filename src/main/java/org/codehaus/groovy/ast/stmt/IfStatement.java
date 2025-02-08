@@ -21,6 +21,9 @@ package org.codehaus.groovy.ast.stmt;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 
+import java.util.Objects;
+import java.util.Optional;
+
 /**
  * Represents an if (condition) { ... } else { ... } statement in Groovy.
  */
@@ -37,15 +40,15 @@ public class IfStatement extends Statement {
     }
 
     public void setBooleanExpression(final BooleanExpression booleanExpression) {
-        this.booleanExpression = booleanExpression;
+        this.booleanExpression = Objects.requireNonNull(booleanExpression);
     }
 
     public void setIfBlock(final Statement statement) {
-        ifBlock = statement;
+        ifBlock = Objects.requireNonNull(statement);
     }
 
     public void setElseBlock(final Statement statement) {
-        elseBlock = statement;
+        elseBlock = Optional.ofNullable(statement).orElse(EmptyStatement.INSTANCE);
     }
 
     //--------------------------------------------------------------------------
@@ -76,7 +79,7 @@ public class IfStatement extends Statement {
         text.append(getBooleanExpression().getText());
         text.append(") ");
         text.append(thenStmt.getText());
-        if (elseStmt != null && !elseStmt.isEmpty()) {
+        if (!elseStmt.isEmpty()) {
             if (!(thenStmt instanceof BlockStatement)) {
                 text.append(';');
             }
