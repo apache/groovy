@@ -18,39 +18,30 @@
  */
 package groovy.lang;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 
 /**
- * Represents the length property of an array
+ * Represents the length property of an array.
  */
 public class MetaArrayLengthProperty extends MetaProperty {
 
-    /**
-     * Sole constructor setting name to "length" and type to int
-     */
     public MetaArrayLengthProperty() {
         super("length", int.class);
     }
 
-    /**
-     * Get this property from the given object.
-     * @param object an array
-     * @return the length of the array object
-     * @throws IllegalArgumentException if object is not an array
-     */
     @Override
-    public Object getProperty(Object object) {
-        return java.lang.reflect.Array.getLength(object);
+    public int getModifiers() {
+        return Modifier.FINAL | Modifier.PUBLIC;
     }
 
-    /**
-     * Sets the property on the given object to the new value
-     *
-     * @param object   on which to set the property
-     * @param newValue the new value of the property
-     * @throws RuntimeException if the property could not be set
-     */
     @Override
-    public void setProperty(Object object, Object newValue) {
+    public Object getProperty(final Object object) {
+        return Array.getLength(object);
+    }
+
+    @Override
+    public void setProperty(final Object object, final Object newValue) {
         throw new ReadOnlyPropertyException("length", object.getClass());
     }
 }
