@@ -33,27 +33,49 @@ public class MetaBeanProperty extends MetaProperty {
     private MetaMethod setter;
     private CachedField field;
 
-    /**
-     * Sole constructor setting name, type (class), getter and setter.
-     */
-    public MetaBeanProperty(String name, Class type, MetaMethod getter, MetaMethod setter) {
+    public MetaBeanProperty(final String name, final Class type, final MetaMethod getter, final MetaMethod setter) {
         super(name, type);
         this.getter = getter;
         this.setter = setter;
     }
 
     /**
-     * Get the property of the given object.
+     * Gets the visibility modifiers of the property as defined by the getter, setter and field.
+     */
+    @Override
+    public int getModifiers() {
+        int modifiers;
+        MetaMethod getter = getGetter();
+        MetaMethod setter = getSetter();
+        final int staticAndVisibility = 0xF;
+        if (getter == null) {
+            modifiers = setter.getModifiers() & staticAndVisibility;
+        } else if (setter == null) {
+            modifiers = getter.getModifiers() & staticAndVisibility;
+            CachedField field = getField(); // GROOVY-11562: final modifier
+            if (field == null || field.isFinal()) modifiers |= Modifier.FINAL;
+        } else {
+            modifiers = (getter.getModifiers() & staticAndVisibility) | (setter.getModifiers() & staticAndVisibility);
+            if (Modifier.isPublic   (modifiers)) modifiers &= ~(Modifier.PROTECTED | Modifier.PRIVATE);
+            if (Modifier.isProtected(modifiers)) modifiers &= ~Modifier.PRIVATE;
+        }
+        return modifiers;
+    }
+
+    /**
+     * Gets the property of the given object.
      *
      * @param object which to be got
      * @return the property of the given object
      * @throws RuntimeException if the property could not be evaluated
      */
     @Override
-    public Object getProperty(Object object) {
+    public Object getProperty(final Object object) {
         MetaMethod getter = getGetter();
         if (getter == null) {
-            if (field != null) return field.getProperty(object);
+            if (getField() != null) {
+                return getField().getProperty(object);
+            }
             //TODO: create a WriteOnlyException class?
             throw new GroovyRuntimeException("Cannot read write-only property: " + name);
         }
@@ -61,16 +83,17 @@ public class MetaBeanProperty extends MetaProperty {
     }
 
     /**
-     * Set the property on the given object to the new value.
+     * Sets the property on the given object to the new value.
      *
      * @param object   on which to set the property
      * @param newValue the new value of the property
      * @throws RuntimeException if the property could not be set
      */
     @Override
-    public void setProperty(Object object, Object newValue) {
+    public void setProperty(final Object object, Object newValue) {
         MetaMethod setter = getSetter();
         if (setter == null) {
+            CachedField field = getField();
             if (field != null && !field.isFinal()) {
                 field.setProperty(object, newValue);
                 return;
@@ -81,79 +104,47 @@ public class MetaBeanProperty extends MetaProperty {
         setter.invoke(object, new Object[]{newValue});
     }
 
+    //--------------------------------------------------------------------------
+
     /**
-     * Get the getter method.
-     *
-     * @return the getter method for this property.
+     * Gets the field of this property.
+     */
+    public CachedField getField() {
+        return field;
+    }
+
+    /**
+     * Gets the getter method of this property.
      */
     public MetaMethod getGetter() {
         return getter;
     }
 
     /**
-     * Get the setter method.
-     *
-     * @return the setter method for this property.
+     * Gets the setter method of this property.
      */
     public MetaMethod getSetter() {
         return setter;
     }
 
     /**
-     * This is for MetaClass to patch up the object later when looking for get*() methods.
-     *
-     * @param getter The getter for this property
+     * Sets the field of this property.
      */
-    void setGetter(MetaMethod getter) {
+    public void setField(final CachedField field) {
+        this.field = field;
+    }
+
+    /**
+     * This is for MetaClass to patch up the object later when looking for get*() methods.
+     */
+    void setGetter(final MetaMethod getter) {
         this.getter = getter;
     }
 
     /**
      * This is for MetaClass to patch up the object later when looking for set*() methods.
-     *
-     * @param setter The setter for this property
      */
-    void setSetter(MetaMethod setter) {
+    void setSetter(final MetaMethod setter) {
         this.setter = setter;
-    }
-
-    /**
-     * Gets the visibility modifiers for the property as defined by the getter and setter methods.
-     *
-     * @return the visibility modifier of the getter, the setter, or both depending on which exist
-     */
-    @Override
-    public int getModifiers() {
-        MetaMethod getter = getGetter();
-        MetaMethod setter = getSetter();
-        if (setter != null && getter == null) return setter.getModifiers();
-        if (getter != null && setter == null) return getter.getModifiers();
-        int modifiers = getter.getModifiers() | setter.getModifiers();
-        int visibility = 0;
-        if (Modifier.isPublic(modifiers)) visibility = Modifier.PUBLIC;
-        if (Modifier.isProtected(modifiers)) visibility = Modifier.PROTECTED;
-        if (Modifier.isPrivate(modifiers)) visibility = Modifier.PRIVATE;
-        int states = getter.getModifiers() & setter.getModifiers();
-        states &= ~(Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE);
-        states |= visibility;
-        return states;
-    }
-
-    /**
-     * Sets the field of this property
-     *
-     * @param field
-     */
-    public void setField(CachedField field) {
-        this.field = field;
-    }
-
-    /**
-     * Gets the field of this property
-     *
-     * @return The field of this property
-     */
-    public CachedField getField() {
-        return field;
     }
 }

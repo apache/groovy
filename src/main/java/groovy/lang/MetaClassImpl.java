@@ -1923,16 +1923,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         boolean isStatic = (theClass != Class.class && object instanceof Class);
         if (isStatic && object != theClass) {
-            return new MetaProperty(name, Object.class) {
+            return new ReadOnlyMetaProperty(name) {
                 @Override
-                public Object getProperty(Object object) {
-                    MetaClass mc = registry.getMetaClass((Class<?>) object);
-                    return mc.getProperty(sender, object, name, useSuper, false);
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
+                public Object getProperty(final Object receiver) {
+                    MetaClass mc = registry.getMetaClass((Class<?>) receiver);
+                    return mc.getProperty(sender, receiver, getName(), useSuper, false);
                 }
             };
         }
@@ -1958,15 +1953,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // java.util.Map get method
             //------------------------------------------------------------------
             if (isMap && !isStatic) {
-                return new MetaProperty(name, Object.class) {
+                return new ReadOnlyMetaProperty(name) {
                     @Override
-                    public Object getProperty(Object object) {
-                        return ((Map<?,?>) object).get(name);
-                    }
-
-                    @Override
-                    public void setProperty(Object object, Object newValue) {
-                        throw new UnsupportedOperationException();
+                    public Object getProperty(final Object receiver) {
+                        return ((Map<?,?>) receiver).get(getName());
                     }
                 };
             }
@@ -1983,15 +1973,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // java.util.Map get method before non-public getter -- see GROOVY-11367
         //----------------------------------------------------------------------
         if (isMap && !isStatic && !method.isPublic()) {
-            return new MetaProperty(name, Object.class) {
+            return new ReadOnlyMetaProperty(name) {
                 @Override
-                public Object getProperty(Object object) {
-                    return ((Map<?,?>) object).get(name);
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
+                public Object getProperty(final Object receiver) {
+                    return ((Map<?,?>) receiver).get(getName());
                 }
             };
         }
@@ -2020,57 +2005,35 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // special cases
         //----------------------------------------------------------------------
         if (theClass != Class.class && object instanceof Class) {
-            return new MetaProperty(name, Object.class) {
+            return new ReadOnlyMetaProperty(name) {
                 @Override
-                public Object getProperty(Object object) {
+                public Object getProperty(final Object receiver) {
                     MetaClass cmc = registry.getMetaClass(Class.class);
-                    return cmc.getProperty(Class.class, object, name, false, false);
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
+                    return cmc.getProperty(Class.class, receiver, getName(), false, false);
                 }
             };
         }
         if (object instanceof Collection) {
-            return new MetaProperty(name, Object.class) {
+            return new ReadOnlyMetaProperty(name) {
                 @Override
-                public Object getProperty(Object object) {
-                    return DefaultGroovyMethods.getAt((Collection<?>) object, name);
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
+                public Object getProperty(final Object receiver) {
+                    return DefaultGroovyMethods.getAt((Collection<?>) receiver, getName());
                 }
             };
         }
         if (object instanceof Object[]) {
-            return new MetaProperty(name, Object.class) {
+            return new ReadOnlyMetaProperty(name) {
                 @Override
-                public Object getProperty(Object object) {
-                    return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
+                public Object getProperty(final Object receiver) {
+                    return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) receiver), getName());
                 }
             };
         }
         MetaMethod addListenerMethod = listeners.get(name);
         if (addListenerMethod != null) {
-            return new MetaProperty(name, Object.class) {
+            return new ReadOnlyMetaProperty(name) {
                 @Override
-                public Object getProperty(Object object) {
-                    return null;
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
-                }
+                public Object getProperty(final Object receiver) { return null; }
             };
         }
 
@@ -2078,29 +2041,35 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // error due to missing method/field
         //----------------------------------------------------------------------
         if (isStatic || object instanceof Class) {
-            return new MetaProperty(name, Object.class) {
+            return new ReadOnlyMetaProperty(name) {
                 @Override
-                public Object getProperty(Object object) {
-                    return invokeStaticMissingProperty(object, name, null, true);
-                }
-
-                @Override
-                public void setProperty(Object object, Object newValue) {
-                    throw new UnsupportedOperationException();
+                public Object getProperty(final Object receiver) {
+                    return invokeStaticMissingProperty(receiver, getName(), null, true);
                 }
             };
         }
-        return new MetaProperty(name, Object.class) {
+        return new ReadOnlyMetaProperty(name) {
             @Override
-            public Object getProperty(Object object) {
-                return invokeMissingProperty(object, name, null, true);
-            }
-
-            @Override
-            public void setProperty(Object object, Object newValue) {
-                throw new UnsupportedOperationException();
+            public Object getProperty(final Object receiver) {
+                return invokeMissingProperty(receiver, getName(), null, true);
             }
         };
+    }
+
+    private static abstract class ReadOnlyMetaProperty extends MetaProperty {
+        ReadOnlyMetaProperty(final String name) {
+            super(name, Object.class);
+        }
+
+        @Override
+        public int getModifiers() {
+            return Opcodes.ACC_FINAL | Opcodes.ACC_PUBLIC;
+        }
+
+        @Override
+        public void setProperty(final Object object, final Object newValue) {
+            throw new UnsupportedOperationException("Cannot set read-only property: " + getName());
+        }
     }
 
     /**
