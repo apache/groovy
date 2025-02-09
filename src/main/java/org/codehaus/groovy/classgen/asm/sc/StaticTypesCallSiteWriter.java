@@ -750,7 +750,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         } else {
             mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "power", "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
         }
-        controller.getOperandStack().replace(Number_TYPE, m2 - m1);
+        operandStack.replace(Number_TYPE, m2 - m1);
     }
 
     private void writeStringPlusCall(final Expression receiver, final String message, final Expression arguments) {
@@ -762,8 +762,8 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         visitBoxedArgument(arguments);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "plus", "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;", false);
-        controller.getOperandStack().replace(STRING_TYPE, m2 - m1);
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/StringGroovyMethods", "plus", "(Ljava/lang/CharSequence;Ljava/lang/Object;)Ljava/lang/String;", false);
+        operandStack.replace(STRING_TYPE, m2 - m1);
     }
 
     private void writeNumberNumberCall(final Expression receiver, final String message, final Expression arguments) {
@@ -777,7 +777,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter implements Opcodes
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/dgmimpl/NumberNumber" + capitalize(message), message, "(Ljava/lang/Number;Ljava/lang/Number;)Ljava/lang/Number;", false);
-        controller.getOperandStack().replace(Number_TYPE, m2 - m1);
+        operandStack.replace(Number_TYPE, m2 - m1);
     }
 
     @Override
