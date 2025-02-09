@@ -755,7 +755,7 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         visitBoxedArgument(arguments);
         int m2 = operandStack.getStackLength();
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", "plus", "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/String;", false);
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/StringGroovyMethods", "plus", "(Ljava/lang/CharSequence;Ljava/lang/Object;)Ljava/lang/String;", false);
         operandStack.replace(STRING_TYPE, m2 - m1);
     }
 
