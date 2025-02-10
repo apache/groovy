@@ -160,7 +160,7 @@ final class FieldTransformTest {
     }
 
     @Test // GROOVY-4700
-    void testFieldShouldBeAccessibleFromClosureWithoutAssignment() {
+    void testFieldShouldBeAccessibleFromClosure2() {
         assertScript shell, '''
             @Field xxx = 3
             foo = {
@@ -171,7 +171,7 @@ final class FieldTransformTest {
     }
 
     @Test // GROOVY-5207
-    void testFieldShouldBeAccessibleFromClosureForExternalClosures() {
+    void testFieldShouldBeAccessibleFromClosure3() {
         assertScript shell, '''
             @Field xxx = [:]
             @Field static yyy = [:]
@@ -181,6 +181,22 @@ final class FieldTransformTest {
             }
             assert xxx == [(1):1, (2):2, (3):3]
             assert yyy == xxx
+        '''
+    }
+
+    @Test // GROOVY-9554
+    void testFieldShouldBeAccessibleFromClosure4() {
+        assertScript shell, '''
+            @Field String abc
+            binding.variables.clear()
+            abc = 'abc'
+            assert !binding.hasVariable('abc')
+            ['D','E','F'].each {
+                abc += it
+            }
+            assert !binding.hasVariable('abc')
+            assert this.@abc == 'abcDEF'
+            assert abc == 'abcDEF'
         '''
     }
 
@@ -263,19 +279,15 @@ final class FieldTransformTest {
         '''
     }
 
-    @Test // GROOVY-9554
-    void testClosureReferencesToField() {
+    @Test // GROOVY-11567
+    void testAnonymousInnerClassReferencesToField2() {
         assertScript shell, '''
-            @Field String abc
-            binding.variables.clear()
-            abc = 'abc'
-            assert !binding.hasVariable('abc')
-            ['D','E','F'].each {
-                abc += it
-            }
-            assert !binding.hasVariable('abc')
-            assert this.@abc == 'abcDEF'
-            assert abc == 'abcDEF'
+            @Field String foo = 'bar'
+            assert({ ->
+                new Object() {
+                    String toString() { foo + 'baz' }
+                }
+            }.call().toString() == 'barbaz')
         '''
     }
 

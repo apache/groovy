@@ -39,9 +39,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.VariableScopeVisitor;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -53,7 +51,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
-import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
@@ -68,60 +65,65 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * Handles transformation for the @Field annotation.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class FieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation, Opcodes {
+public class FieldASTTransformation extends ClassCodeExpressionTransformer implements ASTTransformation {
 
-    private static final Class MY_CLASS = Field.class;
-    private static final ClassNode MY_TYPE = make(MY_CLASS);
-    private static final ClassNode LAZY_TYPE = make(Lazy.class);
-    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
-    private static final ClassNode ASTTRANSFORMCLASS_TYPE = make(GroovyASTTransformationClass.class);
-    private static final ClassNode OPTION_TYPE = make(Option.class);
-    private SourceUnit sourceUnit;
+    private static final ClassNode MY_TYPE = ClassHelper.make(Field.class);
+    private static final ClassNode LAZY_TYPE = ClassHelper.make(Lazy.class);
+    private static final ClassNode OPTION_TYPE = ClassHelper.make(Option.class);
+    private static final ClassNode ASTTRANSFORMCLASS_TYPE = ClassHelper.make(GroovyASTTransformationClass.class);
+
     private DeclarationExpression candidate;
-    private boolean insideScriptBody;
-    private String variableName;
     private FieldNode fieldNode;
+    private String variableName;
+
     private ClosureExpression currentClosure;
-    private ConstructorCallExpression currentAIC;
+    private boolean insideScriptBody;
+    private SourceUnit sourceUnit;
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
-        sourceUnit = source;
+    protected SourceUnit getSourceUnit() {
+        return sourceUnit;
+    }
+
+    @Override
+    public void visit(final ASTNode[] nodes, final SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
+            throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.toString(nodes));
         }
 
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(node.getClassNode())) return;
+        if (!MY_TYPE.equals(((AnnotationNode) nodes[0]).getClassNode())) return;
 
-        if (parent instanceof DeclarationExpression) {
-            DeclarationExpression de = (DeclarationExpression) parent;
-            ClassNode cNode = de.getDeclaringClass();
-            if (!cNode.isScript()) {
-                addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script.", parent);
+        sourceUnit = source; // support for addError
+
+        if (nodes[1] instanceof DeclarationExpression) {
+            DeclarationExpression de = (DeclarationExpression) nodes[1];
+            ClassNode declaringClass = de.getDeclaringClass();
+            if (!declaringClass.isScript()) {
+                addError("Annotation @" + MY_TYPE.getNameWithoutPackage() + " can only be used within a Script.", de);
                 return;
             }
-            candidate = de;
             // GROOVY-4548: temp fix to stop CCE until proper support is added
             if (de.isMultipleAssignmentDeclaration()) {
-                addError("Annotation " + MY_TYPE_NAME + " not supported with multiple assignment notation.", parent);
+                addError("Annotation @" + MY_TYPE.getNameWithoutPackage() + " not supported with multiple assignment notation.", de);
                 return;
             }
+
             VariableExpression ve = de.getVariableExpression();
             variableName = ve.getName();
+            candidate = de;
+
             // set owner null here, it will be updated by addField
             fieldNode = new FieldNode(variableName, ve.getModifiers(), ve.getType(), null, de.getRightExpression());
             fieldNode.setSourcePosition(de);
-            cNode.addField(fieldNode);
-            // provide setter for CLI Builder purposes unless final
+            declaringClass.addField(fieldNode);
+
             if (fieldNode.isFinal()) {
                 if (!de.getAnnotations(OPTION_TYPE).isEmpty()) {
                     addError("Can't have a final field also annotated with @" + OPTION_TYPE.getNameWithoutPackage(), de);
                 }
-            } else {
+            } else { // provide setter for CLI Builder purposes
                 String setterName = getSetterName(variableName);
-                cNode.addMethod(setterName, ACC_PUBLIC | ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType(), variableName)), ClassNode.EMPTY_ARRAY, block(
+                declaringClass.addMethod(setterName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, ClassHelper.VOID_TYPE, params(param(ve.getType(), variableName)), ClassNode.EMPTY_ARRAY, block(
                         stmt(assignX(propX(varX("this"), variableName), varX(variableName)))
                 ));
             }
@@ -137,15 +139,19 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
                 }
             }
 
-            super.visitClass(cNode);
+            super.visitClass(declaringClass);
             // GROOVY-5207: So that Closures can see newly added fields
             // (not super efficient for a very large class with many @Fields but we chose simplicity
             // and understandability of this solution over more complex but efficient alternatives)
-            new VariableScopeVisitor(source).visitClass(cNode);
+            new VariableScopeVisitor(source).visitClass(declaringClass);
         }
     }
 
-    private static boolean acceptableTransform(AnnotationNode annotation) {
+    private static boolean notTransform(final ClassNode annotationType) {
+        return annotationType.getAnnotations(ASTTRANSFORMCLASS_TYPE).isEmpty();
+    }
+
+    private static boolean acceptableTransform(final AnnotationNode annotation) {
         // TODO also check for phase after sourceUnit.getPhase()? but will be ignored anyway?
         // TODO we should only copy those annotations with FIELD_TARGET but haven't visited annotations
         // and gathered target info at this phase, so we can't do this:
@@ -154,66 +160,81 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         return !annotation.getClassNode().equals(MY_TYPE);
     }
 
-    private static boolean notTransform(ClassNode annotationClassNode) {
-        return annotationClassNode.getAnnotations(ASTTRANSFORMCLASS_TYPE).isEmpty();
+    //
+
+    @Override
+    public void visitMethod(final MethodNode node) {
+        boolean old = insideScriptBody;
+        if (node.isScriptBody()) insideScriptBody = true;
+        super.visitMethod(node);
+        insideScriptBody = old;
     }
 
     @Override
-    public Expression transform(Expression expr) {
+    public Expression transform(final Expression expr) {
         if (expr == null) return null;
         if (expr instanceof DeclarationExpression) {
             DeclarationExpression de = (DeclarationExpression) expr;
-            if (de.getLeftExpression() == candidate.getLeftExpression()) {
+            if (de.getLeftExpression() == candidate.getVariableExpression()) {
                 if (insideScriptBody) {
-                    // TODO make EmptyExpression work
+                    // TODO: make EmptyExpression work
                     // partially works but not if only thing in script
-                    // return EmptyExpression.INSTANCE;
+                    //return EmptyExpression.INSTANCE;
                     return nullX();
                 }
-                addError("Annotation " + MY_TYPE_NAME + " can only be used within a Script body.", expr);
+                addError("Annotation @" + MY_TYPE.getNameWithoutPackage() + " can only be used within a Script body.", expr);
                 return expr;
             }
-        } else if (insideScriptBody && expr instanceof VariableExpression && currentClosure != null) {
+        } else if (expr instanceof ClosureExpression) {
+            var old = currentClosure; currentClosure = (ClosureExpression) expr;
+            // GROOVY-4700, GROOVY-5207, GROOVY-9554
+            visitClosureExpression(currentClosure);
+            currentClosure = old;
+        } else if (expr instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) expr;
-            if (ve.getName().equals(variableName)) {
+            // only need to check the variable name because the Groovy compiler already fails if a variable
+            // with the same name exists in the scope; this means a closure cannot shadow a class variable
+            if (insideScriptBody && currentClosure != null && ve.getName().equals(variableName)) {
                 adjustToClassVar(ve);
-                return ve;
             }
-        } else if (currentAIC != null && expr instanceof ArgumentListExpression) {
-            // if a match is found, the compiler will have already set up aic constructor to hav
-            // an argument which isn't needed since we'll be accessing the field; we must undo it
-            Expression skip = null;
-            List<Expression> origArgList = ((ArgumentListExpression) expr).getExpressions();
-            for (int i = 0; i < origArgList.size(); i++) {
-                Expression arg = origArgList.get(i);
-                if (matchesCandidate(arg)) {
-                    skip = arg;
-                    adjustConstructorAndFields(i, currentAIC.getType());
-                    break;
+        } else if (expr instanceof ConstructorCallExpression) {
+            ConstructorCallExpression cce = (ConstructorCallExpression) expr;
+            if (insideScriptBody && cce.isUsingAnonymousInnerClass()) {
+                // if a match is found, the compiler will have already set up AIC constructor to have
+                // an argument which isn't needed since we'll be accessing the field; we must undo it
+                List<Expression> arguments = ((ArgumentListExpression) cce.getArguments()).getExpressions();
+                for (int i = 0, n = arguments.size(); i < n; i += 1) { Expression argument = arguments.get(i);
+                    if (matchesCandidate(argument)) { // GROOVY-8112
+                        adjustConstructorAndFields(i, cce.getType());
+
+                        var copy = new ConstructorCallExpression(cce.getType(), adjustedArgList(argument, arguments));
+                        copy.setUsingAnonymousInnerClass(true);
+                        copy.setSourcePosition(cce);
+                        copy.copyNodeMetaData(cce);
+                        return copy;
+                    }
                 }
-            }
-            if (skip != null) {
-                return adjustedArgList(skip, origArgList);
             }
         }
         return expr.transformExpression(this);
     }
 
-    private boolean matchesCandidate(Expression arg) {
-        return arg instanceof VariableExpression && ((VariableExpression) arg).getAccessedVariable() == candidate.getVariableExpression().getAccessedVariable();
+    private boolean matchesCandidate(final Expression expr) {
+        return expr instanceof VariableExpression && ((VariableExpression) expr).getAccessedVariable() == candidate.getVariableExpression().getAccessedVariable();
     }
 
-    private Expression adjustedArgList(Expression skip, List<Expression> origArgs) {
-        List<Expression> newArgs = new ArrayList<Expression>(origArgs.size() - 1);
-        for (Expression origArg : origArgs) {
-            if (skip != origArg) {
-                newArgs.add(origArg);
-            }
+    private void adjustToClassVar(final VariableExpression expr) {
+        expr.setAccessedVariable(fieldNode);
+        VariableScope variableScope = currentClosure.getVariableScope();
+        Iterator<Variable> iterator = variableScope.getReferencedLocalVariablesIterator();
+        while (iterator.hasNext()) {
+            Variable next = iterator.next();
+            if (next.getName().equals(variableName)) iterator.remove();
         }
-        return new ArgumentListExpression(newArgs);
+        variableScope.putReferencedClassVariable(fieldNode);
     }
 
-    private void adjustConstructorAndFields(int skipIndex, ClassNode type) {
+    private void adjustConstructorAndFields(final int skipIndex, final ClassNode type) {
         List<ConstructorNode> constructors = type.getDeclaredConstructors();
         if (constructors.size() == 1) {
             ConstructorNode constructor = constructors.get(0);
@@ -232,59 +253,13 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
         }
     }
 
-    private void adjustToClassVar(VariableExpression expr) {
-        // we only need to check the variable name because the Groovy compiler
-        // already fails if a variable with the same name already exists in the scope.
-        // this means that a closure cannot shadow a class variable
-        expr.setAccessedVariable(fieldNode);
-        final VariableScope variableScope = currentClosure.getVariableScope();
-        final Iterator<Variable> iterator = variableScope.getReferencedLocalVariablesIterator();
-        while (iterator.hasNext()) {
-            Variable next = iterator.next();
-            if (next.getName().equals(variableName)) iterator.remove();
+    private Expression adjustedArgList(final Expression skip, final List<Expression> origArgs) {
+        List<Expression> newArgs = new ArrayList<>(origArgs.size() - 1);
+        for (Expression origArg : origArgs) {
+            if (skip != origArg) {
+                newArgs.add(transform(origArg));
+            }
         }
-        variableScope.putReferencedClassVariable(fieldNode);
-    }
-
-    @Override
-    public void visitClosureExpression(final ClosureExpression expression) {
-        ClosureExpression old = currentClosure;
-        currentClosure = expression;
-        super.visitClosureExpression(expression);
-        currentClosure = old;
-    }
-
-    @Override
-    public void visitConstructorCallExpression(final ConstructorCallExpression cce) {
-        if (!insideScriptBody || !cce.isUsingAnonymousInnerClass()) return;
-        ConstructorCallExpression old = currentAIC;
-        currentAIC = cce;
-        Expression newArgs = transform(cce.getArguments());
-        if (cce.getArguments() instanceof TupleExpression && newArgs instanceof TupleExpression) {
-            List<Expression> argList = ((TupleExpression) cce.getArguments()).getExpressions();
-            argList.clear();
-            argList.addAll(((TupleExpression) newArgs).getExpressions());
-        }
-        currentAIC = old;
-    }
-
-    @Override
-    public void visitMethod(MethodNode node) {
-        boolean oldInsideScriptBody = insideScriptBody;
-        if (node.isScriptBody()) insideScriptBody = true;
-        super.visitMethod(node);
-        insideScriptBody = oldInsideScriptBody;
-    }
-
-    @Override
-    public void visitExpressionStatement(ExpressionStatement es) {
-        Expression exp = es.getExpression();
-        exp.visit(this);
-        super.visitExpressionStatement(es);
-    }
-
-    @Override
-    protected SourceUnit getSourceUnit() {
-        return sourceUnit;
+        return new ArgumentListExpression(newArgs);
     }
 }
