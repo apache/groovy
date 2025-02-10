@@ -19,6 +19,7 @@
 package groovy.json
 
 import groovy.transform.Canonical
+import groovy.transform.RecordOptions
 import groovy.transform.TupleConstructor
 import org.junit.Test
 
@@ -26,6 +27,7 @@ import static groovy.json.JsonOutput.toJson
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
+import static groovy.transform.RecordTypeMode.*
 
 final class JsonOutputTest {
 
@@ -495,7 +497,7 @@ final class JsonOutputTest {
     @Test // GROOVY-7682
     void testStackOverflowError1() {
         assertScript '''
-            @Grab('joda-time:joda-time:2.10.10')
+            @Grab('joda-time:joda-time:2.13.1')
             import org.joda.time.DateTime
             import org.joda.time.format.DateTimeFormat
             import org.joda.time.format.DateTimeFormatter
@@ -507,12 +509,14 @@ final class JsonOutputTest {
                 "afterNow":false,
                 "beforeNow":true,
                 "centuryOfEra":20,
+                "chronology":"\\${json-unit.ignore-element}",
                 "dayOfMonth":20,
                 "dayOfWeek":5,
                 "dayOfYear":324,
                 "equalNow":false,
                 "era":1,
                 "hourOfDay":13,
+                "millis":1448044641123,
                 "millisOfDay":49041123,
                 "millisOfSecond":123,
                 "minuteOfDay":817,
@@ -593,9 +597,6 @@ class JsonStreet {
 enum JsonStreetKind {
     street, boulevard, avenue
 }
-
-import groovy.transform.RecordOptions
-import static groovy.transform.RecordTypeMode.*
 
 @RecordOptions(mode=EMULATE)
 record PersonA(String name) {}
