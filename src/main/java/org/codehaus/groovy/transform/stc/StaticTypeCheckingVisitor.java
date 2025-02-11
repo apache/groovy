@@ -65,6 +65,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -271,6 +272,7 @@ import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
 import static org.codehaus.groovy.syntax.Types.PLUS_PLUS;
 import static org.codehaus.groovy.syntax.Types.REMAINDER;
 import static org.codehaus.groovy.syntax.Types.REMAINDER_EQUAL;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BINARY_EXP_TARGET;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.ArrayList_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.Collection_TYPE;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.LinkedHashMap_TYPE;
@@ -815,15 +817,49 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             int op = expression.getOperation().getType();
             Expression leftExpression = expression.getLeftExpression();
             Expression rightExpression = expression.getRightExpression();
+            Expression wrongExpression = null; // GROOVY-10628, GROOVY-11563
+
+            if (isAssignment(op) && op != EQUAL) {
+                // for "x op= y", find type as if it was "x = x op y"
+                ExpressionTransformer cloneMaker = new ExpressionTransformer() {
+                    @Override
+                    public Expression transform(final Expression expr) {
+                        // TODO: is there a beter way to clone?
+                        if (expr instanceof VariableExpression) {
+                            var variable = (VariableExpression) expr;
+                            var copy = new VariableExpression(variable.getAccessedVariable());
+                            copy.setClosureSharedVariable(variable.isClosureSharedVariable());
+                            copy.setUseReferenceDirectly(variable.isUseReferenceDirectly());
+                            copy.setInStaticContext(variable.isInStaticContext());
+                            copy.setSynthetic(variable.isSynthetic());
+                            copy.setType(variable.getType());
+                            copy.setSourcePosition(variable);
+                            copy.copyNodeMetaData(variable);
+                            return copy;
+                        }
+                        return expr.transformExpression(this);
+                    }
+                };
+                if (op == ELVIS_EQUAL) {
+                    wrongExpression = elvisX(cloneMaker.transform(leftExpression), rightExpression);
+                } else {
+                    wrongExpression = binX(cloneMaker.transform(leftExpression), Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression);
+                }
+                wrongExpression.setSourcePosition(expression);
+                op = EQUAL;
+            }
 
             leftExpression.visit(this);
             SetterInfo setterInfo = removeSetterInfo(leftExpression);
             ClassNode lType = null;
+// TODO: can visit and getType be split out of if/else for simpler structure?
             if (setterInfo != null) {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
                 lType = getType(leftExpression);
+// TODO: ensureValidSetter expands compound operator and visits rightExpression
+if (wrongExpression != null) wrongExpression.visit(this);
             } else {
                 if (op != EQUAL && op != ELVIS_EQUAL) {
                     lType = getType(leftExpression);
@@ -832,7 +868,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
                     applyTargetType(lType, rightExpression);
                 }
-                rightExpression.visit(this);
+// TODO: want to visit before left expression above...
+if (wrongExpression != null) wrongExpression.visit(this);
+else                         rightExpression.visit(this);
             }
 
             ClassNode rType = isNullConstant(rightExpression)
@@ -846,16 +884,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 resultType = getResultType(rType, op, lType, reverseExpression);
                 if (resultType == null) resultType = boolean_TYPE; // GROOVY-10239
                 storeTargetMethod(expression, reverseExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
-            } else {
+            } else if (wrongExpression == null) {
                 resultType = getResultType(lType, op, rType, expression);
-                if (op == ELVIS_EQUAL) {
-                    // TODO: Should this transform and visit be done before left and right are visited above?
-                    Expression fullExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
-                    fullExpression.setSourcePosition(expression);
-                    fullExpression.visit(this);
-
-                    resultType = getType(fullExpression);
-                }
+            } else {
+                resultType = getResultType(lType, op, getType(wrongExpression), expression);
+expression.putNodeMetaData(BINARY_EXP_TARGET, wrongExpression.getNodeMetaData(BINARY_EXP_TARGET));
+expression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, wrongExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
             }
             if (resultType == null) {
                 resultType = lType;

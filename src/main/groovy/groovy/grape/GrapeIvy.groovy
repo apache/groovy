@@ -57,6 +57,7 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
 import org.w3c.dom.Element
 
 import javax.xml.parsers.DocumentBuilderFactory
+
 import java.text.ParseException
 import java.util.jar.JarFile
 import java.util.regex.Pattern
@@ -589,7 +590,7 @@ class GrapeIvy implements GrapeEngine {
                 List<String> versions = []
                 moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
                     def m = ivyFilePattern.matcher(ivyFile.getName())
-                    if (m.matches()) versions += m.group(1)
+                    if (m.matches()) versions.add(m.group(1))
                 }
                 grapes[moduleDir.getName()] = versions
             }
@@ -656,7 +657,7 @@ class GrapeIvy implements GrapeEngine {
         for (ArtifactDownloadReport adl : report.getAllArtifactsReports()) {
             // TODO: check artifact type, jar vs library, etc.
             if (adl.getLocalFile()) {
-                results += adl.getLocalFile().toURI()
+                results.add(adl.getLocalFile().toURI())
             }
         }
 
