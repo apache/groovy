@@ -65,6 +65,9 @@ public class CompilerConfiguration {
     /** Joint Compilation Option for enabling generating stubs in memory. */
     public static final String MEM_STUB = "memStub";
 
+    /** Optimization Option for enabling dead code analysis */
+    public static final String ANALYZE_DEAD_CODE = "analyzeDeadCode";
+
     /** This (<code>"1.4"</code>) is the value for targetBytecode to compile for a JDK 1.4. */
     @Deprecated public static final String JDK4 = "1.4";
     /** This (<code>"1.5"</code>) is the value for targetBytecode to compile for a JDK 1.5. */
@@ -475,6 +478,8 @@ public class CompilerConfiguration {
         handleOptimizationOption(GROOVYDOC, getSystemPropertySafe("groovy.attach.groovydoc"));
         handleOptimizationOption(RUNTIME_GROOVYDOC, getSystemPropertySafe("groovy.attach.runtime.groovydoc"));
         handleOptimizationOption(PARALLEL_PARSE, getSystemPropertySafe("groovy.parallel.parse", "true"));
+        handleOptimizationOption(ANALYZE_DEAD_CODE, getSystemPropertySafe("groovy.analyze.deadcode", "true"));
+
 
         if (getBooleanSafe("groovy.mem.stub")) {
             jointCompilationOptions = new HashMap<>(2);
