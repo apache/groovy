@@ -589,7 +589,7 @@ class GrapeIvy implements GrapeEngine {
                 List<String> versions = []
                 moduleDir.eachFileMatch(ivyFilePattern) { File ivyFile ->
                     def m = ivyFilePattern.matcher(ivyFile.getName())
-                    if (m.matches()) versions += m.group(1)
+                    if (m.matches()) versions.add(m.group(1))
                 }
                 grapes[moduleDir.getName()] = versions
             }
@@ -655,8 +655,9 @@ class GrapeIvy implements GrapeEngine {
         List<URI> results = []
         for (ArtifactDownloadReport adl : report.getAllArtifactsReports()) {
             // TODO: check artifact type, jar vs library, etc.
-            if (adl.getLocalFile()) {
-                results += adl.getLocalFile().toURI()
+            def adlLocalFile = adl.getLocalFile()
+            if (adlLocalFile) {
+                results.add(adlLocalFile.toURI())
             }
         }
 

@@ -65,6 +65,7 @@ import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.LambdaExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -816,20 +817,36 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             Expression leftExpression = expression.getLeftExpression();
             Expression rightExpression = expression.getRightExpression();
 
+            if (isAssignment(op) && op != EQUAL) {
+                ExpressionTransformer cloneMaker = new ExpressionTransformer() {
+                    @Override
+                    public Expression transform(final Expression expr) {
+                        if (expr instanceof VariableExpression) {
+                            return ((VariableExpression) expr).clone();
+                        }
+                        return expr.transformExpression(this);
+                    }
+                };
+                // GROOVY-10628, GROOVY-11563: for "x op= y", find type as if it was "x = x op y"
+                rightExpression = (op == ELVIS_EQUAL ? elvisX(cloneMaker.transform(leftExpression), rightExpression) :
+                        binX(cloneMaker.transform(leftExpression), Token.newSymbol(TokenUtil.removeAssignment(op), expression.getOperation().getStartLine(), expression.getOperation().getStartColumn()), rightExpression));
+                rightExpression.setSourcePosition(expression);
+
+                visitBinaryExpression(assignX(leftExpression, rightExpression, expression));
+                expression.copyNodeMetaData(rightExpression);
+                return;
+            }
+
             leftExpression.visit(this);
-            SetterInfo setterInfo = removeSetterInfo(leftExpression);
-            ClassNode lType = null;
+            ClassNode lType = getType(leftExpression);
+            var setterInfo  = removeSetterInfo(leftExpression);
             if (setterInfo != null) {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
-                lType = getType(leftExpression);
             } else {
-                if (op != EQUAL && op != ELVIS_EQUAL) {
-                    lType = getType(leftExpression);
-                } else {
+                if (op == EQUAL) {
                     lType = getOriginalDeclarationType(leftExpression);
-
                     applyTargetType(lType, rightExpression);
                 }
                 rightExpression.visit(this);
@@ -848,14 +865,6 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 storeTargetMethod(expression, reverseExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
             } else {
                 resultType = getResultType(lType, op, rType, expression);
-                if (op == ELVIS_EQUAL) {
-                    // TODO: Should this transform and visit be done before left and right are visited above?
-                    Expression fullExpression = new ElvisOperatorExpression(leftExpression, rightExpression);
-                    fullExpression.setSourcePosition(expression);
-                    fullExpression.visit(this);
-
-                    resultType = getType(fullExpression);
-                }
             }
             if (resultType == null) {
                 resultType = lType;
