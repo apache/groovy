@@ -341,10 +341,19 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Integer#minus(java.lang.Object)'
     }
 
+    // GROOVY-11563
+    void testNumberPlusEqualsString() {
+        shouldFailWithMessages '''
+        Number n = 0
+        n += "no"
+    ''',
+        'Cannot assign value of type java.lang.String to variable of type java.lang.Number'
+    }
+
     void testStringPlusEqualsString() {
         assertScript '''
-            String str = 'test'
-            str += 'test2'
+            String s = 'prefix'
+            s += 'suffix'
         '''
     }
 

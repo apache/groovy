@@ -18,14 +18,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-
 /**
- * Provides a way to transform expressions
+ * Provides a way to transform expressions.
  */
+@FunctionalInterface
 public interface ExpressionTransformer {
-
-    /** 
-     * Transforms the given expression into another expression
-     */
     Expression transform(Expression expression);
 }

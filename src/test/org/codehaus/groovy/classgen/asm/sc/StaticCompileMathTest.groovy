@@ -20,10 +20,13 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
+import static groovy.test.GroovyAssert.shouldFail
+
 /**
  * Unit tests for static compilation: basic math operations.
  */
-class StaticCompileMathTest extends AbstractBytecodeTestCase {
+final class StaticCompileMathTest extends AbstractBytecodeTestCase {
+
     void testIntSum() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -243,13 +246,22 @@ class StaticCompileMathTest extends AbstractBytecodeTestCase {
     void testStaticCompileDivideEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
-            int foo() {
-                int i = 4
+            def foo() {
+                def i = 4
                 i /= 2
                 i
             }
             assert foo()==2
         '''
+
+        def err = shouldFail '''
+            @groovy.transform.CompileStatic
+            int foo() {
+                int i = 4
+                i /= 2
+            }
+        '''
+        assert err =~ /Cannot assign value of type java.math.BigDecimal to variable of type int/
     }
 
     void testStaticCompileMultiplyEquals() {
