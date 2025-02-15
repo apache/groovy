@@ -181,7 +181,7 @@ public class InspectorTest implements Serializable {
             "getMetaPropertyValues", "getProperties", "grep", "grep", "hasProperty", "identity", "inject", "inject",
             "inspect", "invokeMethod", "is", "isCase", "isNotCase", "iterator", "metaClass", "print", "print",
             "printf", "printf", "println", "println", "println", "putAt", "respondsTo", "respondsTo",
-            "setMetaClass", "split", "sprintf", "sprintf", "tap", "toString", "use", "use", "use", "with",
+            "setMetaClass", "split", "sprintf", "sprintf", "sprintf", "tap", "toString", "use", "use", "use", "with",
             "with", "withMethodClosure", "withTraits", "stream", "sleep", "sleep", "macro", "macro", "macro", "macro"
         };
         assertEquals("Incorrect number of methods found examining: " + Arrays.stream(metaMethods)

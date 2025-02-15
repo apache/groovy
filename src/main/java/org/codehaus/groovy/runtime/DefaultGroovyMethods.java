@@ -12279,6 +12279,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return sprintf(self, format, ans);
     }
 
+    /**
+     * Returns a formatted string using the specified format string with the self object as the single argument.
+     * The format string should have one format specifier, or at least reference only argument.
+     * <pre class="groovyTestCase">
+     * assert Math.PI.sprintf('%4.2f') == '3.14'
+     * var c = new GregorianCalendar(1995, Calendar.MAY, 23)
+     * assert c.sprintf('Duke was born: %1$tb %1$te, %1$tY') == 'Duke was born: May 23, 1995'
+     * </pre>
+     *
+     * @param self   any Object
+     * @param format A format string
+     * @return the resulting formatted string
+     * @since 5.0.0
+     */
+    public static String sprintf(Object self, String format) {
+        return sprintf(self, format, self);
+    }
+
     //--------------------------------------------------------------------------
     // step
 
