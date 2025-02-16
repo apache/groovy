@@ -21,47 +21,31 @@ package groovy.bugs
 import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
-class Groovy4116Bug extends GroovyTestCase {
+final class Groovy4116Bug extends GroovyTestCase {
+
     void testAnInterfaceMethodNotImplementedPublic() {
-        try {
-            new GroovyShell().parse """
-                class C4116 implements I4116 {
-                    protected foo() {}
-                }
-
-                interface I4116 {
-                    def foo()
-                }
-
-                def c = new C4116()
-                c.foo()
-            """
-            fail('The compilation should have failed as the interface method is not implemented as public')
-        } catch (MultipleCompilationErrorsException e) {
-            def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError.message.contains('The method foo should be public as it implements the corresponding method from interface I4116')
-        }
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            class C4116 implements I4116 {
+                protected foo() {}
+            }
+            interface I4116 {
+                def foo()
+            }
+        '''
+        assert err =~ /The method foo should be public as it implements the corresponding method from interface I4116/
     }
 
     void testAnInterfaceMethodNotImplementedPublicV2SuperClassInterface() {
-        try {
-            new GroovyShell().parse """
-                abstract class S4116V2 implements I4116V2 { }
-                class C4116V2 extends S4116V2 {
-                    protected foo() {}
-                }
-
-                interface I4116V2 {
-                    def foo()
-                }
-
-                def c = new C4116V2()
-                c.foo()
-            """
-            fail('The compilation should have failed as the interface method is not implemented as public')
-        } catch (MultipleCompilationErrorsException e) {
-            def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError.message.contains('The method foo should be public as it implements the corresponding method from interface I4116')
-        }
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            abstract class A4116 implements I4116 {
+            }
+            class C4116 extends A4116 {
+                protected foo() {}
+            }
+            interface I4116 {
+                def foo()
+            }
+        '''
+        assert err =~ /The method foo should be public as it implements the corresponding method from interface I4116/
     }
 }

@@ -146,20 +146,18 @@ final class CovariantReturnTest {
             assert c.foo() == ""
         '''
 
-        // basically the same as above, but with an example from an error report
-        // Properties has a method "String getProperty(String)", this class
-        // is also a GroovyObject, meaning a "Object getProperty(String)" method
-        // should be implemented. But this method should not be the usual automatically
-        // added getProperty, but a bridge to the getProperty method provided by Properties
-        assertScript '''
-            class Configuration extends java.util.Properties {
+        // an example from an error report
+        // Properties has a method "String getProperty(String)"
+        // GroovyObject has a default method "Object getProperty(String)"
+        assertScript '''import static groovy.test.GroovyAssert.shouldFail
+            class C extends Properties { }
+            shouldFail(NoSuchMethodException) {
+                C.getDeclaredMethod("getProperty")
             }
 
-            assert Configuration.declaredMethods.count{ it.name=="getProperty" } == 1
-            def conf = new Configuration()
-            conf.setProperty("a","b")
-            // the following assert would fail if standard getProperty method was added by the compiler
-            assert conf.getProperty("a") == "b"
+            def c = new C()
+            c.setProperty("a", "b")
+            assert c.getProperty("a") == "b" // fails if standard method added by the compiler
         '''
 
         assertScript '''

@@ -1416,10 +1416,31 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addCovariantMethods(final ClassNode classNode) {
-        // unimplemented abstract methods from interfaces
-        Map<String, MethodNode> absInterfaceMethods = ClassNodeUtils.getDeclaredMethodsFromInterfaces(classNode);
-        Map<String, MethodNode> allInterfaceMethods = new HashMap<>(absInterfaceMethods);
-        ClassNodeUtils.addDeclaredMethodsFromAllInterfaces(classNode, allInterfaceMethods);
+        Map<String, MethodNode> absInterfaceMethods = new HashMap<>();
+        Map<String, MethodNode> allInterfaceMethods = new HashMap<>();
+        Set<ClassNode> allInterfaces = getAllInterfaces(classNode);
+        allInterfaces.remove(classNode);
+
+        for (ClassNode in : allInterfaces) {
+            for (MethodNode mn : in.getMethods()) {
+                // interfaces may have private/static methods
+                if (mn.isPrivate() || mn.isStatic()) continue;
+
+                if (mn.isAbstract()) {
+                    allInterfaceMethods.putIfAbsent(mn.getTypeDescriptor(), mn);
+                } else { // GROOVY-11549: default method replaces an abstract
+                    mn = allInterfaceMethods.put(mn.getTypeDescriptor(), mn);
+                    if (mn != null && !mn.isAbstract())
+                        allInterfaceMethods.put(mn.getTypeDescriptor(), mn);
+                }
+            }
+        }
+
+        for (Map.Entry<String, MethodNode> entry : allInterfaceMethods.entrySet()) {
+            if (entry.getValue().isAbstract()/* || entry.getValue().isDefault()*/) {
+                absInterfaceMethods.putIfAbsent(entry.getKey(), entry.getValue());
+            }
+        }
 
         List<MethodNode> declaredMethods = new ArrayList<>(classNode.getMethods());
         for (Iterator<MethodNode> methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext(); ) {
@@ -1434,8 +1455,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 throw new RuntimeParserException("The method " + m.getName() + " should be public as it implements the corresponding method from interface " + interfaceMethod.getDeclaringClass(), sourceOf(m));
             }
         }
-        // interfaces may have private/static methods in JDK9
-        absInterfaceMethods.values().removeIf(interfaceMethod -> interfaceMethod.isPrivate() || interfaceMethod.isStatic());
 
         Map<String, MethodNode> methodsToAdd = new HashMap<>();
         Map<String, ClassNode > genericsSpec = Collections.emptyMap();
