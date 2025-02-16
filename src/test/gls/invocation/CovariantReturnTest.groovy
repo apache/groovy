@@ -208,7 +208,7 @@ final class CovariantReturnTest {
     // GROOVY-11549
     @Test
     void testDefaultMethodCovariantReturnForParameterizedType() {
-        assertScript '''
+        String types = '''
             interface A<T> {
                 T m()
             }
@@ -218,8 +218,18 @@ final class CovariantReturnTest {
                     return 'B'
                 }
             }
+        '''
 
+        assertScript types + '''
             assert 2 == B.declaredMethods.count { it.name == 'm' }
+        '''
+
+        assertScript types + '''
+            class C implements A<String>, B {
+            }
+
+            def result = new C().m()
+            assert result == 'B'
         '''
     }
 

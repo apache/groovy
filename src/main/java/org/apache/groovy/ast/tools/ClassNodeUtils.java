@@ -58,7 +58,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.dimension;
 import static org.codehaus.groovy.runtime.ArrayTypeUtils.elementType;
-import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
  * Utility class for working with ClassNodes
@@ -197,8 +196,16 @@ public class ClassNodeUtils {
         for (ClassNode iface : cNode.getInterfaces()) {
             Map<String, MethodNode> declaredMethods = iface.getDeclaredMethodsMap();
             for (Map.Entry<String, MethodNode> entry : declaredMethods.entrySet()) {
-                if (entry.getValue().getDeclaringClass().isInterface() && (entry.getValue().getModifiers() & ACC_SYNTHETIC) == 0) {
-                    methodsMap.putIfAbsent(entry.getKey(), entry.getValue());
+                MethodNode mNode = entry.getValue();
+                if (mNode.getDeclaringClass().isInterface()) {
+                    if (mNode.isAbstract()) {
+                        methodsMap.putIfAbsent(entry.getKey(), mNode);
+                    } else if (mNode.isPublic() && !mNode.isStatic()) {
+                        mNode = methodsMap.put(entry.getKey(), mNode); // GROOVY-11549: default replaces abstract
+                        if (mNode != null && (!mNode.isAbstract() || !mNode.getDeclaringClass().isInterface())) {
+                            methodsMap.put(entry.getKey(), mNode);
+                        }
+                    }
                 }
             }
         }
