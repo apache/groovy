@@ -223,83 +223,51 @@ final class AutoImplementTransformTest {
     @Test
     void testCovariantReturnTypes() {
         assertScript shell, '''
-            interface Super { List findAll() }
-            interface Sub extends Super { Iterable findAll() }
+            interface A { Iterable findAll() }
+            interface B extends A { List findAll() }
 
             @AutoImplement
-            class ThisClassFails implements Sub{}
+            class C implements B { }
 
-            assert !(new ThisClassFails().findAll())
+            assert !(new C().findAll())
         '''
 
-        assertScript shell, '''
-            interface Super { ArrayList findAll() }
-            interface Sub extends Super { Iterable findAll() }
+        def err = shouldFail shell, '''
+            interface A { List findAll() }
+            interface B extends A { Iterable findAll() }
 
             @AutoImplement
-            class ThisClassFails implements Sub{}
+            class C implements B { }
+        '''
+        assert err =~ /The return type of java.lang.Iterable findAll\(\) in B is incompatible with java.util.List in A/
 
-            assert !(new ThisClassFails().findAll())
+        assertScript shell, '''
+            interface A { Iterable findAll() }
+            interface B extends A { ArrayList findAll() }
+
+            @AutoImplement
+            class C implements B { }
+
+            assert !(new C().findAll())
         '''
 
-        assertScript shell, '''
-            interface Super { Iterable findAll() }
-            interface Sub extends Super { List findAll() }
+        err = shouldFail shell, '''
+            interface A { ArrayList findAll() }
+            interface B extends A { Iterable findAll() }
 
             @AutoImplement
-            class ThisClassFails implements Sub{}
-
-            assert !(new ThisClassFails().findAll())
+            class C implements B { }
         '''
+        assert err =~ /The return type of java.lang.Iterable findAll\(\) in B is incompatible with java.util.ArrayList in A/
 
         assertScript shell, '''
-            interface Super { Iterable findAll() }
-            interface Sub extends Super { ArrayList findAll() }
+            interface A { AbstractList findAll() }
+            interface B extends A { ArrayList findAll() }
 
             @AutoImplement
-            class ThisClassFails implements Sub{}
+            class C implements B { }
 
-            assert !(new ThisClassFails().findAll())
-        '''
-
-        assertScript shell, '''
-            interface Super { AbstractList findAll() }
-            interface Sub extends Super { List findAll() }
-
-            @AutoImplement
-            class ThisClassFails implements Sub{}
-
-            assert !(new ThisClassFails().findAll())
-        '''
-
-        assertScript shell, '''
-            interface Super { List findAll() }
-            interface Sub extends Super { AbstractList findAll() }
-
-            @AutoImplement
-            class ThisClassFails implements Sub{}
-
-            assert !(new ThisClassFails().findAll())
-        '''
-
-        assertScript shell, '''
-            interface Super { AbstractList findAll() }
-            interface Sub extends Super { ArrayList findAll() }
-
-            @AutoImplement
-            class ThisClassFails implements Sub{}
-
-            assert !(new ThisClassFails().findAll())
-        '''
-
-        assertScript shell, '''
-            interface Super { ArrayList findAll() }
-            interface Sub extends Super { AbstractList findAll() }
-
-            @AutoImplement
-            class ThisClassFails implements Sub{}
-
-            assert !(new ThisClassFails().findAll())
+            assert !(new C().findAll())
         '''
     }
 

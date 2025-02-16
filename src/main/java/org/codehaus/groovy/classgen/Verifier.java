@@ -247,8 +247,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 node.setNodeMetaData(ClassNodeSkip.class, Boolean.TRUE);
             }
             if (node.isInterface()) {
-                // GROOVY-11273
-                checkFinalVariables(node);
+                addCovariantMethods(node); // GROOVY-8299
+                checkFinalVariables(node); // GROOVY-11273
             }
             return;
         }

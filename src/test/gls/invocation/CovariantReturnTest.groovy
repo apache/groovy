@@ -195,7 +195,7 @@ final class CovariantReturnTest {
     }
 
     @Test
-    void testCovariantReturnFromGenericsInterface() {
+    void testDeclaredMethodCovariantReturnForParameterizedType() {
         assertScript '''
             class Task implements java.util.concurrent.Callable<List> {
                 List call() throws Exception {
@@ -204,6 +204,24 @@ final class CovariantReturnTest {
             }
 
             assert new Task().call() == [42]
+        '''
+    }
+
+    // GROOVY-11549
+    @Test
+    void testDefaultMethodCovariantReturnForParameterizedType() {
+        assertScript '''
+            interface A<T> {
+                T m()
+            }
+            interface B extends A<String> {
+                @Override
+                default String m() {
+                    return 'B'
+                }
+            }
+
+            assert 2 == B.declaredMethods.count { it.name == 'm' }
         '''
     }
 
