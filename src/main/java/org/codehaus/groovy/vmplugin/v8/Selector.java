@@ -79,6 +79,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.HAS
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.HAS_CATEGORY_IN_CURRENT_THREAD_GUARD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.INTERCEPTABLE_INVOKER;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.IS_NULL;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_CLASS_INVOKE_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_CLASS_INVOKE_STATIC_METHOD;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_METHOD_INVOKER;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.META_PROPERTY_GETTER;
@@ -727,6 +728,13 @@ public abstract class Selector {
             return targetType;
         }
 
+        private Method metaClassMethod(String name, Class<?>... signature) {
+            try { return mc.getClass().getMethod(name, signature);
+            } catch (ReflectiveOperationException e) {
+                throw new GroovyBugError(e);
+            }
+        }
+
         /**
          * Creates a MethodHandle, which will use the metaclass path.
          * This method is called only if no handle has been created before. This
@@ -741,9 +749,19 @@ public abstract class Selector {
                 handle = META_CLASS_INVOKE_STATIC_METHOD.bindTo(mc);
                 if (LOG_ENABLED) LOG.info("use invokeStaticMethod with bound meta class");
             } else {
-                handle = MOP_INVOKE_METHOD.bindTo(mc);
-                if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class");
-
+                if (standardMetaClass
+                    || metaClassMethod("invokeMethod", Object.class, String.class, Object[].class).getDeclaringClass().isAssignableFrom(
+                       metaClassMethod("invokeMethod", Class.class, Object.class, String.class, Object[].class, boolean.class, boolean.class).getDeclaringClass())
+                ) {
+                    // GROOVY-11568: use MetaClass#invokeMethod(Class,Object,Object[],boolean,boolean)
+                    handle = META_CLASS_INVOKE_METHOD;
+                    handle = handle.bindTo(mc).bindTo(sender);
+                    handle = MethodHandles.insertArguments(handle, 3, Boolean.FALSE, Boolean.FALSE);
+                    if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class and sender class");
+                } else {
+                    handle = MOP_INVOKE_METHOD.bindTo(mc);
+                    if (LOG_ENABLED) LOG.info("use invokeMethod with bound meta class");
+                }
                 if (receiver instanceof GroovyObject) {
                     // if the metaclass call fails we may still want to fall back to call
                     // GroovyObject#invokeMethod if the receiver is a GroovyObject
@@ -1011,7 +1029,7 @@ public abstract class Selector {
         }
 
         /**
-         * Sets a handle to call {@link GroovyInterceptable#invokeMethod(String, Object)}
+         * Sets a handle to call {@link GroovyObject#invokeMethod(String,Object)}
          */
         public boolean setInterceptor() {
             if (!(args[0] instanceof GroovyInterceptable)) return false;
