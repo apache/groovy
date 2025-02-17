@@ -324,9 +324,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Returns the class this object this is the metaclass of.
-     *
-     * @return The class contained by this metaclass
+     * Returns the class this metaclass represents.
      */
     @Override
     public Class getTheClass() {
@@ -334,12 +332,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Return whether the class represented by this metaclass instance is an instance of the GroovyObject class
-     *
-     * @return true if this is a groovy class, false otherwise.
+     * Indicates if the represented class is an instance of the {@link GroovyObject} class.
      */
     public boolean isGroovyObject() {
         return isGroovyObject;
+    }
+
+    /**
+     * Indicates if the represented class comes from a Groovy closure or lambda expression.
+     */
+    private boolean isGroovyFunctor() {
+        return GeneratedClosure.class.isAssignableFrom(theClass);
     }
 
     private void fillMethodIndex() {
@@ -671,7 +674,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private Object getMethods(final Class<?> sender, final String name, final boolean isCallToSuper) {
         Object answer;
 
-        final MetaMethodIndex.Cache entry = metaMethodIndex.getMethods(sender, name);
+        var entry = metaMethodIndex.getMethods( sender , name);
+        if (entry == null && !isGroovyFunctor()) {
+            entry = metaMethodIndex.getMethods(theClass, name);
+        }
         if (entry == null) {
             answer = FastArray.EMPTY_LIST;
         } else if (isCallToSuper) {
@@ -1086,7 +1092,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
+        final Object[] arguments = Optional.ofNullable(originalArguments).orElse(EMPTY_ARGUMENTS);
 
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
@@ -1237,9 +1243,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
         }
         MetaClassHelper.unwrap(arguments);
-
-        if (method == null)
+        if (method == null) {
             method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
+        }
         return method;
     }
 
@@ -1329,6 +1335,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (e == null ? (sender == theClass && !sender.isEnum() && (sender.getModifiers() & Opcodes.ACC_ENUM) != 0) // GROOVY-9523: private
                       : (isCallToSuper && e.methodsForSuper == null)) { // allow "super.name()" to find DGM if class declares method "name"
             e = metaMethodIndex.getMethods(sender.getSuperclass(), methodName);
+        }
+        if (e == null && !isGroovyFunctor()) { // GROOVY-4322, GROOVY-11568
+            e = metaMethodIndex.getMethods(theClass, methodName);
         }
         if (e == null) {
             return null;
@@ -2932,7 +2941,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public ClassNode getClassNode() {
-        if (classNode == null && GroovyObject.class.isAssignableFrom(theClass)) {
+        if (classNode == null && isGroovyObject()) {
             // let's try load it from the classpath
             String groovyFile = theClass.getName();
             int idx = groovyFile.indexOf('$');
@@ -3465,7 +3474,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (!GroovyCategorySupport.hasCategoryInCurrentThread() && !(this instanceof AdaptingMetaClass)) {
             Class[] params = MetaClassHelper.convertToTypeArray(args);
             CallSite tempSite = site;
-            if (site.getName().equals(CALL_METHOD) && GeneratedClosure.class.isAssignableFrom(theClass)) {
+            if (site.getName().equals(CALL_METHOD) && isGroovyFunctor()) {
                 // here, we want to point to a method named "doCall" instead of "call"
                 // but we don't want to replace the original call site name, otherwise
                 // we lose the fact that the original method name was "call" so instead

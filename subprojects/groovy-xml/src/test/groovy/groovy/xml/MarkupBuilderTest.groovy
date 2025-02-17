@@ -23,7 +23,7 @@ package groovy.xml
  * to MarkupBuilder. Functionality in common with StreamingMarkupBuilder
  * is tested in the BuilderTestSupport parent class.
  */
-class MarkupBuilderTest extends BuilderTestSupport {
+final class MarkupBuilderTest extends BuilderTestSupport {
     private StringWriter writer
     private MarkupBuilder xml
 
@@ -238,18 +238,19 @@ class MarkupBuilderTest extends BuilderTestSupport {
         assertExpectedXmlDefault "<element />"
     }
 
+    // GROOVY-4322
     void testDelegateOnlyToSkipInternalClosureMethods() {
         def items = {
-          pizza(price: 8.5)
-          curry(price: 8)
+          pizza (price: 8.5)
+          curry (price: 8  )
           burger(price: 7.5)
         }
         items.resolveStrategy = Closure.DELEGATE_ONLY
         xml.menu(items)
         assertExpectedXmlDefault '''
             <menu>
-              <pizza price='8.5' />
-              <curry price='8' />
+              <pizza  price='8.5' />
+              <curry  price='8'   />
               <burger price='7.5' />
             </menu>
         '''
@@ -278,29 +279,22 @@ class MarkupBuilderTest extends BuilderTestSupport {
     }
 
     void testEscapingOfAttributes() {
-        def writer = new StringWriter()
-        def builder = new groovy.xml.MarkupBuilder(writer)
-        builder.a(href: "http://www.example.com?foo=1&bar=2")
+        xml.a(href: 'http://www.example.com?foo=1&bar=2')
         assert writer.toString().contains('http://www.example.com?foo=1&amp;bar=2')
     }
 
     void testNoEscapingOfAttributes() {
-        def writer = new StringWriter()
-        def builder = new groovy.xml.MarkupBuilder(writer)
-        builder.escapeAttributes = false
-        builder.a(href: "http://www.example.com?foo=1&bar=2")
+        xml.escapeAttributes = false
+        xml.a(href: 'http://www.example.com?foo=1&bar=2')
         assert writer.toString().contains('http://www.example.com?foo=1&bar=2')
     }
 
-    private myMethod(x) {
-      x.value='call to outside'
-      return x
-    }
-
+    @Override
     protected assertExpectedXml(Closure markup, String expectedXml) {
         assertExpectedXml markup, null, expectedXml
     }
 
+    @Override
     protected assertExpectedXml(Closure markup, Closure configureBuilder, String expectedXml) {
         def writer = new StringWriter()
         def builder = new MarkupBuilder(writer)
@@ -310,4 +304,8 @@ class MarkupBuilderTest extends BuilderTestSupport {
         checkXml(expectedXml, writer)
     }
 
+    private myMethod(x) {
+        x.value = 'call to outside'
+        x
+    }
 }
