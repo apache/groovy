@@ -3544,6 +3544,23 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-11548
+    @Test
+    void testFinalModifierSupport2() {
+        assertScript shell, '''
+            class Foo {
+                final m() { 'Foo' }
+            }
+            trait Bar {
+                def   m() { 'Bar' }
+            }
+            class Baz extends Foo implements Bar {
+            }
+
+            assert new Baz().m() == 'Foo'
+        '''
+    }
+
     // GROOVY-8880
     @Test
     void testTraitWithInitBlock() {
