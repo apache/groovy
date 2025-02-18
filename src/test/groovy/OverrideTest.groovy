@@ -249,4 +249,21 @@ final class OverrideTest {
             new TemplatedInterfaceImplementation()
         '''
     }
+
+    // GROOVY-11548
+    @Test
+    void testDefaultMethodDoesNotOverride() {
+        assertScript '''
+            class A {
+                final func() { 'A' }
+            }
+            interface B {
+                default func() { 'B' }
+            }
+            class C extends A implements B {
+            }
+
+            assert new C().func() == 'A'
+        '''
+    }
 }

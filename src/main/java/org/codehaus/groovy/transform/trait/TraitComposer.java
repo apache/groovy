@@ -529,7 +529,12 @@ public abstract class TraitComposer {
     }
 
     private static MethodNode findExistingMethod(final ClassNode cNode, final String name, final Parameter[] params) {
-        return cNode.getDeclaredMethod(name, params);
+        MethodNode mNode = cNode.getDeclaredMethod(name, params);
+        if (mNode == null) { // GROOVY-11548: check for final method
+            mNode = Optional.ofNullable(cNode.getMethod(name, params))
+                    .filter(m -> m.isFinal() && !m.isPrivate() && !m.isStatic()).orElse(null);
+        }
+        return mNode;
     }
 
     private static boolean shouldSkipMethod(final ClassNode cNode, final String name, final Parameter[] params) {
