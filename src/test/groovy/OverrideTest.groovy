@@ -258,4 +258,23 @@ final class OverrideTest {
             new TemplatedInterfaceImplementation()
         '''
     }
+
+    // GROOVY-11548
+    @Test
+    void testDefaultMethodDoesNotOverride() {
+        for (kind in ['def', 'final', 'public']) {
+            assertScript """
+                class A {
+                    $kind func() { 'A' }
+                }
+                interface B {
+                    default func() { 'B' }
+                }
+                class C extends A implements B {
+                }
+
+                assert new C().func() == 'A'
+            """
+        }
+    }
 }
