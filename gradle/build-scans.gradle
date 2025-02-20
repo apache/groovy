@@ -18,7 +18,7 @@
  */
 
 def env = System.getenv()
-boolean isCI = env.CI || env.TRAVIS || env.TEAMCITY_VERSION || env.GITHUB_ACTIONS
+boolean isCI = env.CI || env.TEAMCITY_VERSION || env.GITHUB_ACTIONS
 
 develocity {
     server = "https://develocity.apache.org"
@@ -26,10 +26,8 @@ develocity {
     allowUntrustedServer = false
 
     buildScan {
-        capture { taskInputFiles = true }
         uploadInBackground = !isCI
-        publishAlways()
-        publishIfAuthenticated()
+        publishing.onlyIf { it.authenticated }
         obfuscation {
             ipAddresses { addresses -> addresses.collect { address -> "0.0.0.0" } }
         }
