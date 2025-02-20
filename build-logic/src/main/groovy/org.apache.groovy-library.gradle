@@ -36,6 +36,7 @@ tasks.named('jarjar') { JarJarTask it ->
         version = groovyBundleVersion
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
+        instruction 'Fragment-Host', 'groovy'
         def folder = file("${projectDir}/src/main/resources/META-INF/services")
         if (folder.exists()) {
             if (folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
