@@ -836,6 +836,15 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11572
+    void testListExpressionWithSpreadOnNonIterable() {
+        assertScript '''import static groovy.test.GroovyAssert.*
+            shouldFail IllegalArgumentException, {
+                def list = [0,*1]
+            }
+        '''
+    }
+
     // GROOVY-6241
     void testAsImmutable() {
         assertScript '''

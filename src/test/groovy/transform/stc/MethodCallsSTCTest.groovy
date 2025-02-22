@@ -1282,6 +1282,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
         'Cannot find matching method '
+
+        shouldFailWithMessages '''
+            def m(String... strings) {
+                strings?.join('')
+            }
+            def str = m(*1) // GROOVY-11572
+        ''',
+        'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time',
+        'Cannot find matching method '
     }
 
     void testSpreadArgsForbiddenInStaticMethodCall() {
