@@ -1018,6 +1018,14 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11572
+    void testListExpressionWithSpreadOnNonIterable() {
+        def err = shouldFail '''
+            def list = [0,*1]
+        '''
+        assert err =~ 'Cannot spread the type java.lang.Integer with value 1'
+    }
+
     // GROOVY-6241
     void testAsImmutable() {
         assertScript '''

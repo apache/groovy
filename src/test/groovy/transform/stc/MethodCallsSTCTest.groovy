@@ -1294,6 +1294,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             assert m(1, '2', *strings(), '5') == '12345'
         '''
 
+        // GROOVY-11572
+        def err = shouldFail '''
+            def m(String... strings) {
+                strings?.join('')
+            }
+            def str = m(*1)
+        '''
+        assert err =~ 'Cannot spread the type java.lang.Integer with value 1'
+
         shouldFailWithMessages '''
             def foo(String one, String... zeroOrMore) {
             }

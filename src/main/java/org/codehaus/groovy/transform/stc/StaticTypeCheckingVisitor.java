@@ -5265,7 +5265,10 @@ trying: for (ClassNode[] signature : signatures) {
 
         if (node instanceof SpreadExpression) {
             type = getType(((SpreadExpression) node).getExpression());
-            return inferComponentType(type, null); // for list literal
+            type = inferComponentType(type, null); // for list literal
+            if (type == null) // GROOVY-11572: not an iterable
+                type = UNKNOWN_PARAMETER_TYPE;
+            return type;
         }
 
         if (node instanceof UnaryPlusExpression) {
