@@ -22,9 +22,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-public class GroovycTest2 {
+public class ParameterMetadataCheck {
     public static void main(String[] args) throws IOException {
-        File file = new File("build/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest2_Result.txt");
+        File file = new File("build/classes/groovy/test/org/codehaus/groovy/ant/ParameterMetadataCheck_Result.txt");
         file.createNewFile();
         try (FileOutputStream fout = new FileOutputStream(file)) {
             fout.write("OK.".getBytes());

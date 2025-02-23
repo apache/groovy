@@ -44,10 +44,12 @@ import static groovy.test.GroovyAssert.isAtLeastJdk;
  * matter as the tests remove all class files that should not pre-exist from this directory at each step.
  */
 public class GroovycTest extends GroovyTestCase {
+
     private final File antFile = new File("src/test-resources/org/codehaus/groovy/ant/GroovycTest.xml");
     private Project project;
     private static boolean warned = false;
 
+    @Override
     protected void setUp() {
         project = new Project();
         project.init();
@@ -120,6 +122,70 @@ public class GroovycTest extends GroovyTestCase {
         }
     }
 
+    private void ensureExecutes(final String target) {
+        ensureNotPresent("GroovycTest1");
+        project.executeTarget(target);
+        ensureResultOK("GroovycTest1");
+    }
+
+    private void ensureExecutesWithJavaHome(final String target) {
+        if (project.getProperty("alt.java.home") != null) {
+            ensureExecutes(target);
+        } else {
+            if (!warned) {
+                System.err.println("Forked Java tests skipped, not a sun JDK layout");
+                warned = true;
+            }
+        }
+    }
+
+    private void ensureFails(final String target) {
+        File badGroovy = new File(antFile.getParentFile(), "GroovyTestBad1.groovy");
+        PrintStream ps = null;
+        try {
+            ps = new PrintStream(new FileOutputStream(badGroovy));
+        } catch (FileNotFoundException e) {
+            fail("Could not create test file:" + badGroovy.getAbsolutePath());
+        }
+        ps.println("class GroovyTest1Bad { Thi$ $hould Fail! (somehow) };:??''+_|\\|");
+        ps.close();
+        ensureNotPresent("GroovycTestBad1");
+        try {
+            project.executeTarget(target);
+            fail("Ant script should have failed with execution exception");
+        } catch (BuildException be) {
+            be.printStackTrace();
+            ensureNotPresent("GroovycTestBad1");
+        } finally {
+            badGroovy.delete();
+        }
+    }
+
+    /**
+     * For the code:
+     * private ArrayList<String> x = new ArrayList<String>();
+     * x = (ArrayList)z ;
+     * Upto JDK6, 'javac -Xlint' produces the following output:
+     * found   : java.util.ArrayList
+     * required: java.util.ArrayList<java.lang.String>
+     * But, OpenJDK seems to be producing the following output:
+     * required: ArrayList<String>
+     * found:    ArrayList
+     * So, we first adjust the output a bit, so that difference in the output brought in by OpenJDK javac
+     * does not impact the test adversely
+     */
+    private String adjustOutputToHandleOpenJDKJavacOutputDifference(String antOutput) {
+        if (!antOutput.contains("java.util.ArrayList") && antOutput.contains("ArrayList")) {
+            antOutput = antOutput.replace("ArrayList", "java.util.ArrayList");
+        }
+        if (!antOutput.contains("java.lang.String") && antOutput.contains("String")) {
+            antOutput = antOutput.replace("String", "java.lang.String");
+        }
+        return antOutput;
+    }
+
+    //--------------------------------------------------------------------------
+
     public void testGroovycTest1_NoFork_NoClasspath() {
         if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_NoClasspath");
@@ -141,22 +207,18 @@ public class GroovycTest extends GroovyTestCase {
     }
 
     public void testGroovycTest1_ForkGroovy_NoClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_ForkGroovy_NoClasspath");
     }
 
     public void testGroovycTest1_ForkGroovy_WithGroovyClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_ForkGroovy_WithGroovyClasspath");
     }
 
     public void testGroovycTest1_ForkGroovy_WithJavaClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_ForkGroovy_WithJavaClasspath");
     }
 
     public void testGroovycTest1_ForkGroovy_WithBothClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_ForkGroovy_WithBothClasspath");
     }
 
@@ -192,29 +254,6 @@ public class GroovycTest extends GroovyTestCase {
         }
     }
 
-    /**
-     * For the code:
-     * private ArrayList<String> x = new ArrayList<String>();
-     * x = (ArrayList)z ;
-     * Upto JDK6, 'javac -Xlint' produces the following output:
-     * found   : java.util.ArrayList
-     * required: java.util.ArrayList<java.lang.String>
-     * But, OpenJDK seems to be producing the following output:
-     * required: ArrayList<String>
-     * found:    ArrayList
-     * So, we first adjust the output a bit, so that difference in the output brought in by OpenJDK javac
-     * does not impact the test adversely
-     */
-    private String adjustOutputToHandleOpenJDKJavacOutputDifference(String antOutput) {
-        if (!antOutput.contains("java.util.ArrayList") && antOutput.contains("ArrayList")) {
-            antOutput = antOutput.replace("ArrayList", "java.util.ArrayList");
-        }
-        if (!antOutput.contains("java.lang.String") && antOutput.contains("String")) {
-            antOutput = antOutput.replace("String", "java.lang.String");
-        }
-        return antOutput;
-    }
-
     public void testGroovycTest1_Joint_NoFork_WithJavaClasspath() {
         if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_WithJavaClasspath");
@@ -226,22 +265,18 @@ public class GroovycTest extends GroovyTestCase {
     }
 
     public void testGroovycTest1_Joint_ForkGroovy_NoClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_NoClasspath");
     }
 
     public void testGroovycTest1_Joint_ForkGroovy_WithGroovyClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_WithGroovyClasspath");
     }
 
     public void testGroovycTest1_Joint_ForkGroovy_WithJavaClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_WithJavaClasspath");
     }
 
     public void testGroovycTest1_Joint_ForkGroovy_WithBothClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_WithBothClasspath");
     }
 
@@ -271,48 +306,19 @@ public class GroovycTest extends GroovyTestCase {
 
     // GROOVY-9197
     public void testJointCompilationPropagatesClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
         ensureNotPresent("MakesExternalReference");
         project.executeTarget("jointForkedCompilation_ExternalJarOnClasspath");
         ensureResultOK("MakesExternalReference");
     }
 
-    private void ensureExecutes(String target) {
-        ensureNotPresent("GroovycTest1");
-        project.executeTarget(target);
-        ensureResultOK("GroovycTest1");
-    }
+    // GROOVY-11573
+    public void testJointCompilationPropagatesParameters() throws Exception {
+        ensureNotPresent("ParameterMetadataCheck");
+        project.executeTarget("jointForkedCompilation_ParameterMetadataCheck");
+        ensureResultOK("ParameterMetadataCheck");
 
-    private void ensureExecutesWithJavaHome(String target) {
-        if (project.getProperty("alt.java.home") != null) {
-            ensureExecutes(target);
-        } else {
-            if (!warned) {
-                System.err.println("Forked Java tests skipped, not a sun JDK layout");
-                warned = true;
-            }
-        }
-    }
-
-    private void ensureFails(String target) {
-        File badGroovy = new File(antFile.getParentFile(), "GroovyTestBad1.groovy");
-        PrintStream ps = null;
-        try {
-            ps = new PrintStream(new FileOutputStream(badGroovy));
-        } catch (FileNotFoundException e) {
-            fail("Could not create test file:" + badGroovy.getAbsolutePath());
-        }
-        ps.println("class GroovyTest1Bad { Thi$ $hould Fail! (somehow) };:??''+_|\\|");
-        ps.close();
-        ensureNotPresent("GroovycTestBad1");
-        try {
-            project.executeTarget(target);
-            fail("Ant script should have failed with execution exception");
-        } catch (BuildException be) {
-            be.printStackTrace();
-            ensureNotPresent("GroovycTestBad1");
-        } finally {
-            badGroovy.delete();
-        }
+        var c = Class.forName("org.codehaus.groovy.ant.ParameterMetadataCheck");
+        var m = c.getDeclaredMethod("main", String[].class);
+        assertEquals("args",m.getParameters()[0].getName());
     }
 }
