@@ -23,6 +23,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
@@ -325,7 +326,7 @@ public class FileSystemCompiler {
         public String[] getVersion() {
             return new String[]{
                     "Groovy compiler version " + GroovySystem.getVersion(),
-                    "Copyright 2003-2023 The Apache Software Foundation. https://groovy-lang.org/",
+                    "Copyright 2003-2025 The Apache Software Foundation. https://groovy-lang.org/",
                     "",
             };
         }
@@ -421,7 +422,7 @@ public class FileSystemCompiler {
                 configuration.setClasspath(classpath);
             }
 
-            if (targetDir != null && targetDir.getName().length() > 0) {
+            if (targetDir != null && !targetDir.getName().isEmpty()) {
                 configuration.setTargetDirectory(targetDir);
             }
 
@@ -451,12 +452,12 @@ public class FileSystemCompiler {
                     compilerOptions.put("stubDir", stubDirectory);
                 }
                 if (keepStubs) {
-                    compilerOptions.put("keepStubs", true);
+                    compilerOptions.put("keepStubs", Boolean.TRUE);
                 }
                 configuration.setJointCompilationOptions(compilerOptions);
             }
 
-            final List<String> transformations = new ArrayList<>();
+            List<String> transformations = new ArrayList<>();
             if (compileStatic) {
                 transformations.add("ast(groovy.transform.CompileStatic)");
             }
@@ -477,6 +478,15 @@ public class FileSystemCompiler {
                     scripts.addAll(StringGroovyMethods.tokenize(configScripts, ','));
                 }
                 processConfigScripts(scripts, configuration);
+                // GROOVY-11573: propagate parameters configuration
+                if (jointCompilation && configuration.getParameters()) {
+                    Map<String, Object> options = configuration.getJointCompilationOptions();
+                    String[] flags = (String[]) options.getOrDefault("flags", new String[0]);
+                    if (!DefaultGroovyMethods.contains(flags, "parameters")) {
+                        flags = DefaultGroovyMethods.plus(flags, "parameters");
+                        options.put("flags", flags);
+                    }
+                }
             }
 
             return configuration;

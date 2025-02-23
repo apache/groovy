@@ -16,18 +16,5 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ant;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-
-public class GroovycTest2 {
-    public static void main(String[] args) throws IOException {
-        File file = new File("build/classes/groovy/test/org/codehaus/groovy/ant/GroovycTest2_Result.txt");
-        file.createNewFile();
-        try (FileOutputStream fout = new FileOutputStream(file)) {
-            fout.write("OK.".getBytes());
-        }
-    }
-}
+configuration.parameters=true
