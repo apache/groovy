@@ -129,7 +129,7 @@ configurations {
 }
 
 ext {
-    antVersion = '1.10.14'
+    antVersion = '1.10.15'
     asmVersion = '9.7.1'
     antlrVersion = '2.7.7'
     antlr4Version = '4.9.0'
