@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.gradle
 
-import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
@@ -42,7 +41,7 @@ class JarJarTask extends DefaultTask {
     private final static String JARJAR_CLASS_NAME = 'com.eed3si9n.jarjar.JarJarTask'
 
     @Internal
-    String description = "Repackages dependencies into a shaded jar"
+    String description = 'Repackages dependencies into a shaded jar'
 
     private List<Action<? super Manifest>> manifestTweaks = []
 
@@ -145,7 +144,7 @@ class JarJarTask extends DefaultTask {
             }
 
             if (createManifest) {
-                // next step is to generate an OSGI manifest using the newly repackaged classes
+                // next step is to generate an OSGi manifest using the newly repackaged classes
                 def mf = project.rootProject.extensions.osgi.osgiManifest {
                     symbolicName = project.name
                     instruction 'Import-Package', '*;resolution:=optional'
@@ -169,16 +168,9 @@ class JarJarTask extends DefaultTask {
                 it.into(outputFile.parentFile)
                 it.rename { outputFile.name }
             }
-            project.ant.jar(destfile: outputFile, update: true, index: true, manifest: manifestFile, modificationtime: tstamp) {
-                manifest {
-                    // because we don't want to use JDK 1.8.0_91, we don't care and it will
-                    // introduce cache misses
-                    attribute(name: 'Created-By', value: 'Gradle')
-                }
+            project.ant.jar(destfile: outputFile, index: true, manifest: manifestFile, modificationtime: tstamp, update: true) {
                 if (untouchedFiles) {
-                    zipfileset(
-                            src: originalJar,
-                            includes: untouchedFiles.join(','))
+                    zipfileset(src: originalJar, includes: untouchedFiles.join(','))
                 }
             }
         } finally {
@@ -188,7 +180,6 @@ class JarJarTask extends DefaultTask {
         }
     }
 
-    @CompileStatic
     private static String baseName(File file) {
         file.name.substring(0, file.name.lastIndexOf('-'))
     }
