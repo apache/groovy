@@ -17,12 +17,9 @@
  *  under the License.
  */
 
-
 import org.apache.groovy.gradle.CoreExtension
 import org.apache.groovy.gradle.DgmConverter
 import org.apache.groovy.gradle.JarJarTask
-
-import javax.inject.Inject
 
 plugins {
     id 'org.apache.groovy-common'
@@ -104,7 +101,7 @@ sourceSets {
     }
 }
 
-def dgmConverter = tasks.register("dgmConverter", DgmConverter) {
+def dgmConverter = tasks.register('dgmConverter', DgmConverter) {
     classpath.from files(compileJava, configurations.compileClasspath)
     sources.from('src/main').include('**/*GroovyMethods.java')
 }
@@ -117,10 +114,9 @@ tasks.named('jar') {
     from dgmConverter
 }
 
-tasks.named('jarjar') { JarJarTask it ->
+tasks.named('jarjar') { JarJarTask jjt ->
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
-    it.withManifest {
-        version = groovyBundleVersion
+    jjt.withManifest {
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
         instruction 'Eclipse-ExtensibleAPI', 'true'
@@ -130,11 +126,11 @@ tasks.named('jarjar') { JarJarTask it ->
 // Gradle classloading magic with Groovy will only work if it finds a *jar*
 // on classpath. This "bootstrap jar" contains the minimal compiler, without .groovy compiled files
 
-def bootstrapJar = tasks.register("bootstrapJar", Jar) {
+def bootstrapJar = tasks.register('bootstrapJar', Jar) {
     from compileJava
     from dgmConverter
 
-    destinationDirectory = layout.buildDirectory.dir("bootstrap")
+    destinationDirectory = layout.buildDirectory.dir('bootstrap')
     archiveClassifier = 'bootstrap'
 }
 
@@ -155,7 +151,7 @@ allprojects {
 }
 
 interface CoreServices {
-    @Inject
+    @javax.inject.Inject
     ExecOperations getExecOperations()
 }
 

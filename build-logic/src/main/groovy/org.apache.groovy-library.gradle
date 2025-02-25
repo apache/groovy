@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 import org.apache.groovy.gradle.JarJarTask
 
 plugins {
@@ -29,23 +30,19 @@ dependencies {
     testImplementation testFixtures(project(":"))
 }
 
-tasks.named('jarjar') { JarJarTask it ->
+tasks.named('jarjar') { JarJarTask jjt ->
     def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
-    def symbolicName = project.name
-    it.withManifest {
-        version = groovyBundleVersion
+    jjt.withManifest {
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
-        instruction 'Fragment-Host', 'groovy'
+        instruction 'Fragment-Host', 'groovy' // GROOVY-9402, GROOVY-11570
         def folder = file("${projectDir}/src/main/resources/META-INF/services")
-        if (folder.exists()) {
-            if (folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
-                instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"'
-                instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)"'
-                folder.eachFileMatch(~/^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/) {
-                    instruction 'Require-Capability', "osgi.serviceloader;filter:=\"(osgi.serviceloader=${it.name})\";cardinality:=multiple"
-                    instruction 'Provide-Capability', "osgi.serviceloader;osgi.serviceloader=\"${it.name}\""
-                }
+        if (folder.exists() && folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
+            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)"'
+            instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"'
+            folder.eachFileMatch(~/^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/) {
+                instruction 'Require-Capability', "osgi.serviceloader;filter:=\"(osgi.serviceloader=${it.name})\";cardinality:=multiple"
+                instruction 'Provide-Capability', "osgi.serviceloader;osgi.serviceloader=\"${it.name}\""
             }
         }
     }

@@ -20,6 +20,7 @@ package org.apache.groovy.gradle
 
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
+import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
@@ -60,20 +61,20 @@ class GroovyLibraryExtension {
     final JavaPluginExtension javaPluginExtension
     final SoftwareComponentContainer components
     final ConfigurationContainer configurations
-    final TaskContainer tasks
+    private final String projectName
     final ProjectLayout layout
+    final TaskContainer tasks
 
     @Inject
     GroovyLibraryExtension(ObjectFactory factory,
-                           ProjectLayout layout,
                            SharedConfiguration sharedConfiguration,
                            JavaPluginExtension javaPluginExtension,
                            SoftwareComponentContainer components,
                            ConfigurationContainer configurations,
+                           Project project, ProjectLayout layout,
                            TaskContainer tasks
     ) {
         this.objects = factory
-        this.layout = layout
         this.sharedConfiguration = sharedConfiguration
         this.includeInGroovyAll = factory.property(Boolean).convention(true)
         this.grooid = factory.property(Boolean).convention(false)
@@ -82,6 +83,8 @@ class GroovyLibraryExtension {
         this.javaPluginExtension = javaPluginExtension
         this.components = components
         this.configurations = configurations
+        this.projectName = project.name
+        this.layout = layout
         this.tasks = tasks
     }
 
@@ -192,7 +195,7 @@ class GroovyLibraryExtension {
     void configureManifest(Manifest manifest, List<String> exclusions) {
         manifest.from(createBaseManifest()) { ManifestMergeSpec spec ->
             spec.eachEntry { ManifestMergeDetails details ->
-                if (exclusions.any { it == details.key }) {
+                if (exclusions.contains(details.getKey())) {
                     details.exclude()
                 }
             }
@@ -201,25 +204,26 @@ class GroovyLibraryExtension {
 
     private Manifest createBaseManifest() {
         def groovyBundleVersion = sharedConfiguration.groovyBundleVersion.get()
-        javaPluginExtension.manifest { Manifest mn ->
-            mn.attributes(
-                    'Extension-Name': 'groovy',
-                    'Specification-Title': 'Groovy: a powerful, multi-faceted language for the JVM',
-                    'Specification-Version': groovyBundleVersion,
-                    'Specification-Vendor': 'The Apache Software Foundation',
-                    'Implementation-Title': 'Groovy: a powerful, multi-faceted language for the JVM',
-                    'Implementation-Version': groovyBundleVersion,
-                    'Implementation-Vendor': 'The Apache Software Foundation',
-                    'Bundle-ManifestVersion': '2',
-                    'Bundle-Description': 'Groovy Runtime',
-                    'Bundle-License': 'Apache-2.0',
-                    'Bundle-Version': groovyBundleVersion,
-                    'Bundle-Vendor': 'The Apache Software Foundation',
-                    'Bundle-ClassPath': '.',
-                    'Eclipse-BuddyPolicy': 'dependent',
-                    'DynamicImport-Package': '*')
+        javaPluginExtension.manifest {
+            attributes(
+                'Bundle-ManifestVersion': '2',
+                'Bundle-Description'    : 'Groovy Runtime',
+                'Bundle-Vendor'         : 'The Apache Software Foundation',
+                'Bundle-Version'        : groovyBundleVersion,
+                'Bundle-License'        : 'Apache-2.0',
+                'DynamicImport-Package' : '*',
+                'Eclipse-BuddyPolicy'   : 'dependent',
+                'Specification-Title'   : 'Groovy: a powerful, multi-faceted language for the JVM',
+                'Specification-Vendor'  : 'The Apache Software Foundation',
+                'Specification-Version' : groovyBundleVersion,
+                'Implementation-Title'  : 'Groovy: a powerful, multi-faceted language for the JVM',
+                'Implementation-Vendor' : 'The Apache Software Foundation',
+                'Implementation-Version': groovyBundleVersion
+            )
+            if (projectName == 'groovy') {
+                attributes('Main-Class': 'groovy.ui.GroovyMain')
+            }
         }
-
     }
 
     class ModuleDescriptorSpec {
@@ -227,11 +231,11 @@ class GroovyLibraryExtension {
         String staticExtensionClasses = ''
 
         private void build() {
-            def moduleDescriptor = tasks.register("moduleDescriptor", WriteExtensionDescriptorTask) {
-                it.extensionClasses = extensionClasses
-                it.staticExtensionClasses = staticExtensionClasses
+            def moduleDescriptor = tasks.register('moduleDescriptor', WriteExtensionDescriptorTask) { t ->
+                t.extensionClasses = extensionClasses
+                t.staticExtensionClasses = staticExtensionClasses
             }
-            tasks.named("processResources") { Task t ->
+            tasks.named('processResources') { Task t ->
                 t.dependsOn(moduleDescriptor)
             }
         }
