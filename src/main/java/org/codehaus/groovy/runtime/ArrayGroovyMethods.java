@@ -50,6 +50,7 @@ import org.codehaus.groovy.util.CharArrayIterator;
 import org.codehaus.groovy.util.DoubleArrayIterable;
 import org.codehaus.groovy.util.DoubleArrayIterator;
 import org.codehaus.groovy.util.DoubleDoubleArrayColumnIterator;
+import org.codehaus.groovy.util.FloatArrayIterable;
 import org.codehaus.groovy.util.FloatArrayIterator;
 import org.codehaus.groovy.util.FloatFloatArrayColumnIterator;
 import org.codehaus.groovy.util.IntArrayIterable;
@@ -4469,6 +4470,22 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Zips a float[] with indices in (index, value) order starting from index 0.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[] nums = [10.0f, 20.0f, 30.0f]
+     * assert [0: 10.0f, 1: 20.0f, 2: 30.0f] == nums.indexed()
+     * </pre>
+     *
+     * @see #indexed(float[], int)
+     * @since 5.0.0
+     */
+    public static Map<Integer, Float> indexed(float[] self) {
+        return indexed(self, 0);
+    }
+
+    /**
      * Zips a double[] with indices in (index, value) order starting from index 0.
      * <p/>
      * Example usage:
@@ -4484,10 +4501,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         return indexed(self, 0);
     }
 
-    //
-
     /**
-     * Zips an int[] with indices in (index, value) order.
+     * Zips an int[] with indices in (index, value) order starting from a given index.
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -4507,7 +4522,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips a long[] with indices in (index, value) order.
+     * Zips a long[] with indices in (index, value) order starting from a given index.
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -4526,7 +4541,26 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Zips a double[] with indices in (index, value) order.
+     * Zips a float[] with indices in (index, value) order starting from a given index.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[] nums = [10.0f, 20.0f, 30.0f]
+     * assert [5: 10.0f, 6: 20.0f, 7: 30.0f] == nums.indexed(5)
+     * </pre>
+     *
+     * @param self   a float[]
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see DefaultGroovyMethods#indexed(Iterable, int)
+     * @since 5.0.0
+     */
+    public static Map<Integer, Float> indexed(float[] self, int offset) {
+        return DefaultGroovyMethods.indexed(new FloatArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips a double[] with indices in (index, value) order starting from a given index.
      * <p/>
      * Example usage:
      * <pre class="groovyTestCase">
@@ -9203,6 +9237,165 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V> Map<K, V> withCollectedValues(K[] keys, Map<K, V> collector, Function<? super K, V> valueTransform) {
         return DefaultGroovyMethods.collectEntries(new ArrayIterator<>(keys), collector, Function.identity(), valueTransform);
+    }
+
+    //--------------------------------------------------------------------------
+    // withIndex
+
+    /**
+     * Zips an int array with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [42, -1]
+     * assert [[42, 0], [-1, 1]] == nums.withIndex()
+     * assert ["0: 42", "1: -1"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self an int array
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Integer, Integer>> withIndex(int[] self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips an int array with indices in (value, index) order starting from a given index.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * int[] nums = [42, -1]
+     * assert [[42, 5], [-1, 6]] == nums.withIndex(5)
+     * assert ["5: 42", "6: -1"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self an int array
+     * @param offset an index to start from
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable, int)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Integer, Integer>> withIndex(int[] self, int offset) {
+        return DefaultGroovyMethods.withIndex(new IntArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips a long array with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * long[] nums = [42L, -1L]
+     * assert [[42L, 0], [-1L, 1]] == nums.withIndex()
+     * assert ["0: 42", "1: -1"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self a long array
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Long, Integer>> withIndex(long[] self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips a long array with indices in (value, index) order starting from a given index.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * long[] nums = [42L, -1L]
+     * assert [[42L, 5], [-1L, 6]] == nums.withIndex(5)
+     * assert ["5: 42", "6: -1"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self a long array
+     * @param offset an index to start from
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Long, Integer>> withIndex(long[] self, int offset) {
+        return DefaultGroovyMethods.withIndex(new LongArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips a float array with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[] nums = [42.0f, -1.0f]
+     * assert [[42.0f, 0], [-1.0f, 1]] == nums.withIndex()
+     * assert ["0: 42.0", "1: -1.0"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self a float array
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Float, Integer>> withIndex(float[] self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips a float array with indices in (value, index) order starting from a given index.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * float[] nums = [42.0f, -1.0f]
+     * assert [[42.0f, 5], [-1.0f, 6]] == nums.withIndex(5)
+     * assert ["5: 42.0", "6: -1.0"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self a float array
+     * @param offset an index to start from
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Float, Integer>> withIndex(float[] self, int offset) {
+        return DefaultGroovyMethods.withIndex(new FloatArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips a double array with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * double[] nums = [42.0d, -1.0d]
+     * assert [[42.0d, 0], [-1.0d, 1]] == nums.withIndex()
+     * assert ["0: 42.0", "1: -1.0"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self a double array
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Double, Integer>> withIndex(double[] self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips a double array with indices in (value, index) order starting from a given index.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * double[] nums = [42.0d, -1.0d]
+     * assert [[42.0d, 5], [-1.0d, 6]] == nums.withIndex(5)
+     * assert ["5: 42.0", "6: -1.0"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self a double array
+     * @param offset an index to start from
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static List<Tuple2<Double, Integer>> withIndex(double[] self, int offset) {
+        return DefaultGroovyMethods.withIndex(new DoubleArrayIterable(self), offset);
     }
 
     //--------------------------------------------------------------------------
