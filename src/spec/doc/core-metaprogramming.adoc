@@ -3023,14 +3023,14 @@ thoroughly in this <<{grape}#section-grape,section of the guide>>.
 
 There are two kinds of transformations: global and local transformations.
 
-* <<transforms-global,Global transformations>> are applied to by the compiler on the code being compiled,
-wherever the transformation apply. Compiled classes that implement global transformations
+* <<transforms-global,Global transformations>> are applied by the compiler on the code being compiled,
+wherever the transformation applies. Compiled classes that implement global transformations
 are in a JAR added to the classpath of the compiler and contain service locator file
 `META-INF/services/org.codehaus.groovy.transform.ASTTransformation` with a line with the name of the
 transformation class. The transformation class must have a no-arg constructor and implement the
 `org.codehaus.groovy.transform.ASTTransformation` interface.
-It will be run against *every source in the compilation*, so be sure to not create transformations which
-scan all the AST in an expansive and time-consuming manner, to keep the compiler fast.
+It will be run against *every source in the compilation*, so if you want fast compilation times, don't create transformations which
+scan all the AST in an expansive and time-consuming manner.
 * <<transforms-local,Local transformations>> are transformations applied locally by annotating code elements you want to
 transform. For this, we reuse the annotation notation, and those annotations should implement
 `org.codehaus.groovy.transform.ASTTransformation`. The compiler will discover them and apply the
