@@ -140,7 +140,8 @@ final class OverrideTest {
         assert err.message.contains("Method 'methodTakesObject' from class 'HasMethodWithBadArgType' does not override method from its superclass or interfaces but is annotated with @Override.")
     }
 
-    @Test // GROOVY-6654
+    // GROOVY-6654
+    @Test
     void testCovariantParameterType1() {
         assertScript '''
             class C<T> {
@@ -156,7 +157,8 @@ final class OverrideTest {
         '''
     }
 
-    @Test // GROOVY-10675
+    // GROOVY-10675
+    @Test
     void testCovariantParameterType2() {
         assertScript '''
             @FunctionalInterface
@@ -174,45 +176,63 @@ final class OverrideTest {
         '''
     }
 
-    @Test // GROOVY-7849
+    // GROOVY-7849
+    @Test
     void testCovariantArrayReturnType1() {
         assertScript '''
-            interface Base {}
-
-            interface Derived extends Base {}
-
+            interface A {
+            }
+            interface B extends A {
+            }
             interface I {
-                Base[] foo()
+                A[] foo()
+            }
+            class C implements I {
+                B[] foo() { null }
             }
 
-            class C implements I {
-                Derived[] foo() { null }
-            }
             new C().foo()
         '''
     }
 
-    @Test // GROOVY-7185
+    // GROOVY-7185
+    @Test
     void testCovariantArrayReturnType2() {
         assertScript '''
             interface A<T> {
                 T[] process();
             }
-
             class B implements A<String> {
                 @Override
                 public String[] process() {
                     ['foo']
                 }
             }
-
             class C extends B {
                 @Override
                 String[] process() {
                     super.process()
                 }
             }
+
             assert new C().process()[0] == 'foo'
+        '''
+    }
+
+    // GROOVY-11579
+    @Test
+    void testCovariantBridgeReturnType() {
+        assertScript '''
+            interface I<T> {
+                T m()
+            }
+            abstract class A {
+                final String m() { 'A' }
+            }
+            class C extends A implements I<String> {
+            }
+
+            assert new C().m() == 'A'
         '''
     }
 
