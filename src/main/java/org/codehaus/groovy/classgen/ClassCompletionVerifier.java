@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen;
 import groovy.transform.Sealed;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -55,6 +56,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isNative;
@@ -65,6 +67,10 @@ import static java.lang.reflect.Modifier.isStrict;
 import static java.lang.reflect.Modifier.isSynchronized;
 import static java.lang.reflect.Modifier.isTransient;
 import static java.lang.reflect.Modifier.isVolatile;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.buildWildcardType;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_NATIVE;
@@ -123,6 +129,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 checkMethodsForIncorrectName(node);
                 checkMethodsForWeakerAccess(node);
                 checkMethodsForOverridingFinal(node);
+                checkMethodsForOverridingIssue(node);
                 checkNoAbstractMethodsNonAbstractClass(node);
                 checkClassExtendsOrImplementsSelfTypes(node);
                 checkNoStaticMethodWithSameSignatureAsNonStatic(node);
@@ -279,7 +286,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private static String getDescription(final MethodNode node) {
-        return "method '" + node.getTypeDescriptor() + "'";
+        return "method '" + MethodNodeUtils.methodDescriptor(node, true) + "'";
     }
 
     private static String getDescription(final FieldNode node) {
@@ -299,7 +306,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
         addError("Can't have an abstract method in a non-abstract class." +
                 " The " + getDescription(currentClass) + " must be declared abstract or the method '" +
-                methodNode.getTypeDescriptor() + "' must not be abstract.", methodNode);
+                MethodNodeUtils.methodDescriptor(methodNode, true) + "' must not be abstract.", methodNode);
     }
 
     private void checkClassForExtendingFinalOrSealed(final ClassNode cn) {
@@ -404,26 +411,95 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkMethodsForOverridingFinal(final ClassNode cn) {
+        final int skips = ACC_SYNTHETIC | ACC_STATIC | ACC_PRIVATE;
         for (MethodNode method : cn.getMethods()) {
-            if ((method.getModifiers() & ACC_SYNTHETIC) != 0) continue; // GROOVY-11579: bridge method
+            if ((method.getModifiers() & skips) != 0) continue; // GROOVY-11579
 
-            ClassNode sc = cn.getSuperClass();
             Parameter[] params = method.getParameters();
-            for (MethodNode superMethod : sc.getMethods(method.getName())) {
-                if (superMethod.isFinal()
+            for (MethodNode superMethod : cn.getSuperClass().getMethods(method.getName())) {
+                if ((superMethod.getModifiers() & skips + ACC_FINAL) == ACC_FINAL
                         && ParameterUtils.parametersEqual(params, superMethod.getParameters())) {
                     StringBuilder sb = new StringBuilder();
                     sb.append("You are not allowed to override the final method ");
-                    sb.append(method.getName());
+                    if (method.getName().contains(" ")) {
+                        sb.append('"').append(method.getName()).append('"');
+                    } else {
+                        sb.append(method.getName());
+                    }
                     appendParamsDescription(params, sb);
                     sb.append(" from ");
-                    sb.append(getDescription(sc));
+                    sb.append(getDescription(superMethod.getDeclaringClass()));
                     sb.append(".");
 
                     addError(sb.toString(), method.getLineNumber() > 0 ? method : cn);
+                    break;
                 }
             }
         }
+    }
+
+    private void checkMethodsForOverridingIssue(final ClassNode cn) {
+        Set<ClassNode> superTypes = getAllSuperTypes(cn);
+        superTypes.remove(ClassHelper.GROOVY_OBJECT_TYPE);
+        superTypes.remove(ClassHelper.OBJECT_TYPE);
+        if (superTypes.isEmpty()) return;
+
+        for (MethodNode mn : cn.getMethods()) {
+            Parameter[] pa = mn.getParameters();
+            if (pa.length == 0 || (mn.getModifiers() & ACC_SYNTHETIC + ACC_STATIC + ACC_PRIVATE) != 0) continue;
+
+out:        for (ClassNode sc : superTypes) {
+                Map<String, ClassNode> cspec = createGenericsSpec(sc);
+                for (MethodNode sm : sc.getDeclaredMethods(mn.getName())) {
+                    if (!sm.isStatic() && !sm.isPrivate() && ParameterUtils.parametersEqual(pa, sm.getParameters())) {
+                        Map<String, ClassNode> mspec = addMethodGenerics(sm, cspec);
+                        for (int i = 0, n = pa.length; i < n; i += 1) {
+                            var t0 = sm.getParameters()[i].getType();
+                            var t1 = pa[i].getType();
+                            if (!t0.isGenericsPlaceHolder() && !ClassHelper.isPrimitiveType(t0)
+                                    && !t1.isGenericsPlaceHolder() && !ClassHelper.isPrimitiveType(t1)
+                                    && !buildWildcardType(t0 = correctToGenericsSpecRecurse(mspec, t0)).isCompatibleWith(t1)) {
+                                StringBuilder sb = new StringBuilder();
+                                sb.append("name clash: ");
+                                if (mn.getName().contains(" ")) {
+                                    sb.append('"').append(mn.getName()).append('"');
+                                } else {
+                                    sb.append(mn.getName());
+                                }
+                                appendParamsDescription(pa, sb);
+                                sb.append(" in ");
+                                sb.append(getDescription(cn));
+                                sb.append(" and ");
+                                if (sm.getName().contains(" ")) {
+                                    sb.append('"').append(sm.getName()).append('"');
+                                } else {
+                                    sb.append(sm.getName());
+                                }
+                                appendParamsDescription(sm.getParameters(), sb);
+                                sb.append(" in ");
+                                sb.append(getDescription(sc));
+                                sb.append(" have the same erasure, yet neither overrides the other.");
+
+                                addError(sb.toString(), mn.getLineNumber() > 0 ? mn : cn);
+                                break;
+                            }
+                        }
+                        break out;
+                    }
+                }
+            }
+        }
+    }
+
+    private static Set<ClassNode> getAllSuperTypes(ClassNode cn) {
+        Set<ClassNode> interfaces = GeneralUtils.getInterfacesAndSuperInterfaces(cn);
+        Set<ClassNode> superTypes = new LinkedHashSet<>();
+        interfaces.remove(cn);
+        while ((cn = cn.getSuperClass()) != null) {
+            superTypes.add(cn);
+        }
+        superTypes.addAll(interfaces);
+        return superTypes;
     }
 
     private void appendParamsDescription(final Parameter[] parameters, final StringBuilder msg) {
@@ -435,7 +511,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             } else {
                 needsComma = true;
             }
-            msg.append(parameter.getType());
+            msg.append(parameter.getType().toString(false));
         }
         msg.append(')');
     }

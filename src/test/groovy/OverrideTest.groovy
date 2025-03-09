@@ -225,21 +225,19 @@ final class OverrideTest {
         '''
     }
 
-    // GROOVY-11579
+    // GROOVY-11550
     @Test
-    void testCovariantReturnType() {
-        assertScript '''
+    void testCovariantParameterType6() {
+        def err = shouldFail '''
             interface I<T> {
-                T m()
+                void m(I<Object> i_of_object)
             }
-            abstract class A {
-                final String m() { 'A' }
+            class C implements I<Object> {
+                void m(I<String> i_of_string) {
+                }
             }
-            class C extends A implements I<String> {
-            }
-
-            assert new C().m() == 'A'
         '''
+        assert err =~ /name clash: m\(I<java.lang.String>\) in class 'C' and m\(I<java.lang.Object>\) in interface 'I' have the same erasure, yet neither overrides the other./
     }
 
     @Test

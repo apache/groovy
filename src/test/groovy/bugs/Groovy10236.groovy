@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package groovy.bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -30,7 +30,7 @@ final class Groovy10236 {
     void testOmittingParenthesesInLambdaBody() {
         assertScript '''
             def same(obj) { obj }
-            
+
             assert ['1', '2', '3'] == [1, 2, 3].stream().map(num -> same "$num").toList()
         '''
     }

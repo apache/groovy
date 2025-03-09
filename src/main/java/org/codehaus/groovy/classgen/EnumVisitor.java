@@ -285,7 +285,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                             if (!methodNode.isAbstract()) continue;
                             MethodNode enumConstMethod = inner.getMethod(methodNode.getName(), methodNode.getParameters());
                             if (enumConstMethod == null || enumConstMethod.isAbstract()) {
-                                addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + methodNode.getTypeDescriptor() + "'.");
+                                addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + methodNode.getTypeDescriptor(true) + "'.");
                             }
                         }
                         if (inner.getVariableScope() == null) {

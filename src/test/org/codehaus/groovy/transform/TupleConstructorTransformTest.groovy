@@ -373,8 +373,8 @@ final class TupleConstructorTransformTest {
             @ASTTest(phase=CANONICALIZATION, value={
                 assert node.constructors.size() == 2
                 node.constructors.each {
-                    assert (it.typeDescriptor == 'void <init>(java.lang.String)' && isProtected(it.modifiers)) ||
-                            (it.typeDescriptor == 'void <init>(int)' && isPrivate(it.modifiers))
+                    assert (it.typeDescriptor == '<init>(java.lang.String)' && isProtected(it.modifiers))
+                        || (it.typeDescriptor == '<init>(int)' && isPrivate(it.modifiers))
                 }
             })
             class Person {

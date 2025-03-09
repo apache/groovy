@@ -3238,12 +3238,12 @@ final class TraitASTTransformationTest {
             def mn = cn.getMethods('m')[0]
             def td = mn.typeDescriptor
 
-            assert td == 'java.lang.Object m(java.lang.Class, java.lang.Object[])'
+            assert td == 'm(java.lang.Class,[java.lang.Object):java.lang.Object'
         """
 
         System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck','true')
         assertScript shell, """
-            @Grab('org.spockframework:spock-core:2.4-M1-groovy-4.0')
+            @Grab('org.spockframework:spock-core:2.4-M5-groovy-4.0')
             @GrabExclude('org.apache.groovy:*')
             import spock.lang.Specification
 

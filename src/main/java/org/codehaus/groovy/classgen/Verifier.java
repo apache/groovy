@@ -98,9 +98,6 @@ import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
-import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
-import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
-import static org.apache.groovy.ast.tools.MethodNodeUtils.methodDescriptorWithoutReturnType;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveDouble;
@@ -291,7 +288,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 .flatMap(i -> i.getAllDeclaredMethods().stream())
                 .filter(MethodNode::isDefault)
                 .forEach(m -> {
-                    String signature = methodDescriptorWithoutReturnType(m);
+                    String signature = MethodNodeUtils.methodDescriptorWithoutReturnType(m);
                     if (declared.contains(signature)) {
                         return;
                     }
@@ -308,7 +305,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             || currentDeclaringClass.implementsInterface(existingDeclaringClass))) {
                         throw new RuntimeParserException(
                                 (node.isInterface() ? "interface" : "class") +  " " + node.getName()
-                                        + " inherits unrelated defaults for " + m.getTypeDescriptor()
+                                        + " inherits unrelated defaults for " + MethodNodeUtils.methodDescriptor(m, true)
                                         + " from types " + existingDeclaringClass.getName()
                                         + " and " + currentDeclaringClass.getName(), node);
                     }
@@ -427,7 +424,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Set<String> descriptors = new HashSet<>();
         for (MethodNode mn : cn.getMethods()) {
             if (mn.isSynthetic()) continue;
-            String mySig = methodDescriptorWithoutReturnType(mn);
+            String mySig = MethodNodeUtils.methodDescriptorWithoutReturnType(mn);
             if (descriptors.contains(mySig)) {
                 if (mn.isScriptBody() || mySig.equals(scriptBodySignatureWithoutReturnType(cn))) {
                     throw new RuntimeParserException("The method " + mn.getText() +
@@ -444,7 +441,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static void checkForDuplicateConstructors(final ClassNode cn) {
         Set<String> descriptors = new HashSet<>();
         for (ConstructorNode cons : cn.getDeclaredConstructors()) {
-            String mySig = methodDescriptorWithoutReturnType(cons);
+            String mySig = MethodNodeUtils.methodDescriptorWithoutReturnType(cons);
             if (descriptors.contains(mySig)) {
                 throw new RuntimeParserException("The constructor " + cons.getText() +
                     " duplicates another constructor of the same signature", sourceOf(cons));
@@ -455,7 +452,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private static String scriptBodySignatureWithoutReturnType(final ClassNode cn) {
         for (MethodNode mn : cn.getMethods()) {
-            if (mn.isScriptBody()) return methodDescriptorWithoutReturnType(mn);
+            if (mn.isScriptBody()) return MethodNodeUtils.methodDescriptorWithoutReturnType(mn);
         }
         return null;
     }
@@ -921,8 +918,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             MethodNode oldMethod = type.getDeclaredMethod(method.getName(), params);
             if (oldMethod != null) {
                 throw new RuntimeParserException(
-                        "The method with default parameters \"" + method.getTypeDescriptor() +
-                                "\" defines a method \"" + newMethod.getTypeDescriptor() +
+                        "The method with default parameters \"" + MethodNodeUtils.methodDescriptor(method, true) +
+                                "\" defines a method \"" + MethodNodeUtils.methodDescriptor(newMethod, true) +
                                 "\" that is already defined.",
                         sourceOf(method));
             }
@@ -1057,7 +1054,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 addConstructor(params, (ConstructorNode) method, stmt(ctorThisX(arguments)), type);
             } else {
                 String warning = "Default argument(s) specify duplicate constructor: " +
-                        old.getTypeDescriptor().replace("void <init>", type.getNameWithoutPackage());
+                    MethodNodeUtils.methodDescriptor(old,true).replace("<init>",type.getNameWithoutPackage());
                 type.getModule().getContext().addWarning(warning, method.getLineNumber() > 0 ? method : type);
             }
         });
@@ -1183,7 +1180,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
 
-        BlockStatement block = getCodeAsBlock(constructorNode);
+        BlockStatement block = MethodNodeUtils.getCodeAsBlock(constructorNode);
         List<Statement> blockStatements = block.getStatements();
         if (!blockStatements.isEmpty()) {
             if (specialCtorCall != null) {
@@ -1541,7 +1538,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (ignoreError) return null;
             throw new RuntimeParserException(
                     "The return type of " +
-                            overrideCandidate.getTypeDescriptor() +
+                            MethodNodeUtils.methodDescriptor(overrideCandidate, true) +
                             " in " + overrideCandidate.getDeclaringClass().getName() +
                             " is incompatible with " + omrCorrected.getName() +
                             " in " + oldMethod.getDeclaringClass().getName(),
@@ -1553,14 +1550,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (oldMethod.isFinal()) {
             throw new RuntimeParserException(
                     "Cannot override final method " +
-                            oldMethod.getTypeDescriptor() +
+                            MethodNodeUtils.methodDescriptor(oldMethod, true) +
                             " in " + oldMethod.getDeclaringClass().getName(),
                     sourceOf(overrideCandidate));
         }
         if (oldMethod.isStatic() != overrideCandidate.isStatic()) {
             throw new RuntimeParserException(
                     "Cannot override method " +
-                            oldMethod.getTypeDescriptor() +
+                            MethodNodeUtils.methodDescriptor(oldMethod, true) +
                             " in " + oldMethod.getDeclaringClass().getName() +
                             " with disparate static modifier",
                     sourceOf(overrideCandidate));
@@ -1579,7 +1576,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
                 throw new RuntimeParserException(
                         "Cannot override method " +
-                                oldMethod.getTypeDescriptor() +
+                                MethodNodeUtils.methodDescriptor(oldMethod, true) +
                                 " in " + oldMethod.getDeclaringClass().getName() +
                                 message,
                         sourceOf(overrideCandidate));
@@ -1661,9 +1658,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private static ClassNode cleanType(final ClassNode type) {
-        // TODO: Should this be directly handled by getPlainNodeReference?
-        if (type.isArray()) return cleanType(type.getComponentType()).makeArray();
-        return type.getPlainNodeReference();
+        if (type.isArray()) {
+            return cleanType(type.getComponentType()).makeArray();
+        }
+        return type.redirect().getPlainNodeReference();
     }
 
     private static boolean equalParametersNormal(final MethodNode m1, final MethodNode m2) {
@@ -1729,7 +1727,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (methodNode.getLineNumber() < 1) {
             ClassNode declaringClass = methodNode.getDeclaringClass();
             if (methodNode.isSynthetic()) {
-                String propertyName = getPropertyName(methodNode);
+                String propertyName = MethodNodeUtils.getPropertyName(methodNode);
                 if (propertyName != null) {
                     PropertyNode propertyNode = declaringClass.getProperty(propertyName);
                     if (propertyNode != null && propertyNode.getLineNumber() > 0) {

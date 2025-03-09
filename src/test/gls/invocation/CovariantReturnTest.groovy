@@ -237,17 +237,17 @@ final class CovariantReturnTest {
     @Test
     void testCovariantArrayReturnType1() {
         assertScript '''
-            interface Base {}
-
-            interface Derived extends Base {}
-
+            interface A {
+            }
+            interface B extends A {
+            }
             interface I {
-                Base[] foo()
+                A[] foo()
+            }
+            class C implements I {
+                B[] foo() { null }
             }
 
-            class C implements I {
-                Derived[] foo() { null }
-            }
             new C().foo()
         '''
     }
@@ -257,23 +257,39 @@ final class CovariantReturnTest {
     void testCovariantArrayReturnType2() {
         assertScript '''
             interface A<T> {
-                T[] process();
+                T[] process()
             }
-
             class B implements A<String> {
                 @Override
                 public String[] process() {
                     ['foo']
                 }
             }
-
             class C extends B {
                 @Override
                 String[] process() {
                     super.process()
                 }
             }
+
             assert new C().process()[0] == 'foo'
+        '''
+    }
+
+    // GROOVY-11579
+    @Test
+    void testCovariantBridgeReturnType() {
+        assertScript '''
+            interface I<T> {
+                T m()
+            }
+            abstract class A {
+                final String m() { 'A' }
+            }
+            class C extends A implements I<String> {
+            }
+
+            assert new C().m() == 'A'
         '''
     }
 

@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ast.tools;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -40,6 +41,14 @@ public class MethodNodeUtils {
 
     private MethodNodeUtils() { }
 
+    private static void appendTypeName(final StringBuilder sb, ClassNode cn) {
+        while (cn.isArray()) {
+            cn = cn.getComponentType();
+            sb.append('[');
+        }
+        sb.append(cn.getName());
+    }
+
     /**
      * Return the method node's descriptor including its
      * name and parameter types without generics.
@@ -51,7 +60,8 @@ public class MethodNodeUtils {
         StringBuilder sb = new StringBuilder();
         sb.append(mNode.getName()).append(':');
         for (Parameter p : mNode.getParameters()) {
-            sb.append(ClassNodeUtils.formatTypeName(p.getType())).append(',');
+            appendTypeName(sb, p.getType());
+            sb.append(';');
         }
         return sb.toString();
     }
@@ -75,26 +85,38 @@ public class MethodNodeUtils {
      * @param pretty whether to quote a name with spaces
      * @return the method node's descriptor
      */
-    public static String methodDescriptor(final MethodNode mNode, boolean pretty) {
+    public static String methodDescriptor(final MethodNode mNode, final boolean pretty) {
         String name = mNode.getName();
-        if (pretty) pretty = name.contains(" ");
         Parameter[] parameters = mNode.getParameters();
-        int nParameters = parameters == null ? 0 : parameters.length;
+        int nParameters = (parameters == null ? 0 : parameters.length);
 
-        StringBuilder sb = new StringBuilder(name.length() * 2 + nParameters * 10);
-        sb.append(ClassNodeUtils.formatTypeName(mNode.getReturnType()));
-        sb.append(' ');
-        if (pretty) sb.append('"');
-        sb.append(name);
-        if (pretty) sb.append('"');
+        StringBuilder sb = new StringBuilder((name.length() * 2) + (nParameters * 10));
+        if (pretty && !mNode.isConstructor()) {
+            sb.append(ClassNodeUtils.formatTypeName(mNode.getReturnType()));
+            sb.append(' ');
+        }
+        if (name.contains(" ")) {
+            sb.append('"').append(name).append('"');
+        } else {
+            sb.append(name);
+        }
         sb.append('(');
         for (int i = 0; i < nParameters; i += 1) {
             if (i > 0) {
-                sb.append(", ");
+                sb.append(',');
+                if (pretty) sb.append(' ');
             }
-            sb.append(ClassNodeUtils.formatTypeName(parameters[i].getType()));
+            if (pretty) {
+                sb.append(ClassNodeUtils.formatTypeName(parameters[i].getType()));
+            } else {
+                appendTypeName(sb, parameters[i].getType());
+            }
         }
         sb.append(')');
+        if (!pretty && !mNode.isConstructor()) {
+            sb.append(':');
+            appendTypeName(sb, mNode.getReturnType());
+        }
         return sb.toString();
     }
 

@@ -194,6 +194,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 ClassNode.EMPTY_ARRAY,
                 null
         );
+        helper.setGenericsTypes(cNode.getGenericsTypes());
         helper.setStaticClass(true); // GROOVY-7242, GROOVY-7456, etc.
 
         MethodNode initializer = createInitMethod(false, helper);
@@ -226,6 +227,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                     ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_INTERFACE | ACC_SYNTHETIC,
                     OBJECT_TYPE
             );
+            fieldHelper.setGenericsTypes(cNode.getGenericsTypes());
             fieldHelper.setStaticClass(true);
             if (hasStatic) {
                 staticFieldHelper = new InnerClassNode(

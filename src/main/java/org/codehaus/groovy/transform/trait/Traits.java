@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -42,7 +42,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -130,10 +129,10 @@ public abstract class Traits {
         ClassNode helperClassNode = null;
         ClassNode fieldHelperClassNode = null;
         ClassNode staticFieldHelperClassNode = null;
-        Iterator<InnerClassNode> innerClasses = trait.redirect().getInnerClasses();
-        if (innerClasses != null && innerClasses.hasNext()) {
+        var innerClasses = trait.redirect().getInnerClasses();
+        if (innerClasses != null && innerClasses.hasNext() ) {
             // trait declared in same unit
-            while (innerClasses.hasNext()) {
+            do {
                 ClassNode icn = innerClasses.next();
                 if (icn.getName().endsWith(Traits.TRAIT_HELPER)) {
                     helperClassNode = icn;
@@ -142,7 +141,7 @@ public abstract class Traits {
                 } else if (icn.getName().endsWith(Traits.STATIC_FIELD_HELPER)) {
                     staticFieldHelperClassNode = icn;
                 }
-            }
+            } while (innerClasses.hasNext());
         } else {
             // precompiled trait
             try {
@@ -158,6 +157,11 @@ public abstract class Traits {
             } catch (ClassNotFoundException e) {
                 throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!", e);
             }
+        }
+        GenericsType[] typeArguments = trait.getGenericsTypes();
+        helperClassNode = GenericsUtils.makeClassSafe0(helperClassNode, typeArguments);
+        if (fieldHelperClassNode != null) {
+            fieldHelperClassNode = GenericsUtils.makeClassSafe0(fieldHelperClassNode, typeArguments);
         }
         return new TraitHelpersTuple(helperClassNode, fieldHelperClassNode, staticFieldHelperClassNode);
     }

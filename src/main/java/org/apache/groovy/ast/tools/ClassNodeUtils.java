@@ -75,20 +75,20 @@ public class ClassNodeUtils {
      */
     public static String formatTypeName(final ClassNode cNode) {
         if (cNode.isArray()) {
-            ClassNode it = cNode;
             int dim = 0;
-            while (it.isArray()) {
-                dim++;
-                it = it.getComponentType();
+            ClassNode cn = cNode;
+            while (cn.isArray()) {
+                dim += 1;
+                cn = cn.getComponentType();
             }
-            StringBuilder sb = new StringBuilder(it.getName().length() + 2 * dim);
-            sb.append(it.getName());
-            for (int i = 0; i < dim; i++) {
+            StringBuilder sb = new StringBuilder(cn.getName().length() + (2 * dim));
+            sb.append(formatTypeName(cn));
+            for (int i = 0; i < dim; i += 1) {
                 sb.append("[]");
             }
             return sb.toString();
         }
-        return cNode.getName();
+        return cNode.isGenericsPlaceHolder() ? cNode.getUnresolvedName() : cNode.getName();
     }
 
     /**

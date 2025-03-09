@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package groovy.bugs
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationUnit

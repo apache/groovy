@@ -597,7 +597,7 @@ public class GenericsUtils {
         } else {
             ClassNode superClass = getSuperClass(type, target);
             if (superClass != null) {
-                if (hasUnresolvedGenerics(superClass)) {
+                if (type.isRedirectNode() && hasUnresolvedGenerics(superClass)) {
                     GenericsType[] tp = type.redirect().getGenericsTypes();
                     if (tp != null) {
                         GenericsType[] ta = type.getGenericsTypes();
