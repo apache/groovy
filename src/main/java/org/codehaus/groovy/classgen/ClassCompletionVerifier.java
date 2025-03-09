@@ -73,6 +73,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_STRICT;
 import static org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 /**
@@ -366,40 +367,46 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         return method.getName().equals("<clinit>");
     }
 
-    private void checkMethodsForOverridingFinal(ClassNode cn) {
+    private void checkMethodsForOverridingFinal(final ClassNode cn) {
+        final int skips = ACC_SYNTHETIC | ACC_STATIC | ACC_PRIVATE;
         for (MethodNode method : cn.getMethods()) {
+            if ((method.getModifiers() & skips) != 0) continue; // GROOVY-11579
+
             Parameter[] params = method.getParameters();
             for (MethodNode superMethod : cn.getSuperClass().getMethods(method.getName())) {
-                Parameter[] superParams = superMethod.getParameters();
-                if (!hasEqualParameterTypes(params, superParams)) continue;
-                if (!superMethod.isFinal()) break;
-                addInvalidUseOfFinalError(method, params, superMethod.getDeclaringClass());
-                return;
+                if ((superMethod.getModifiers() & skips + ACC_FINAL) == ACC_FINAL
+                        && hasEqualParameterTypes(params, superMethod.getParameters())) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("You are not allowed to override the final method ");
+                    if (method.getName().contains(" ")) {
+                        sb.append('"').append(method.getName()).append('"');
+                    } else {
+                        sb.append(method.getName());
+                    }
+                    appendParamsDescription(params, sb);
+                    sb.append(" from ");
+                    sb.append(getDescription(superMethod.getDeclaringClass()));
+                    sb.append(".");
+
+                    addError(sb.toString(), method.getLineNumber() > 0 ? method : cn);
+                    break;
+                }
             }
         }
     }
 
-    private void addInvalidUseOfFinalError(MethodNode method, Parameter[] parameters, ClassNode superCN) {
-        StringBuilder msg = new StringBuilder();
-        msg.append("You are not allowed to override the final method ").append(method.getName());
-        appendParamsDescription(parameters, msg);
-        msg.append(" from ").append(getDescription(superCN));
-        msg.append(".");
-        addError(msg.toString(), method);
-    }
-
     private void appendParamsDescription(Parameter[] parameters, StringBuilder msg) {
-        msg.append("(");
+        msg.append('(');
         boolean needsComma = false;
         for (Parameter parameter : parameters) {
             if (needsComma) {
-                msg.append(",");
+                msg.append(',');
             } else {
                 needsComma = true;
             }
             msg.append(parameter.getType());
         }
-        msg.append(")");
+        msg.append(')');
     }
 
     private void addWeakerAccessError(ClassNode cn, MethodNode method, Parameter[] parameters, MethodNode superMethod) {
@@ -414,6 +421,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         msg.append(superMethod.getDeclaringClass().getName());
         msg.append("; attempting to assign weaker access privileges; was ");
         msg.append(superMethod.isPublic() ? "public" : (superMethod.isProtected() ? "protected" : "package-private"));
+
         addError(msg.toString(), method);
     }
 

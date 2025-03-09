@@ -1510,9 +1510,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     private static ClassNode cleanType(final ClassNode type) {
-        // TODO: Should this be directly handled by getPlainNodeReference?
-        if (type.isArray()) return cleanType(type.getComponentType()).makeArray();
-        return type.getPlainNodeReference();
+        if (type.isArray()) {
+            return cleanType(type.getComponentType()).makeArray();
+        }
+        return type.redirect().getPlainNodeReference();
     }
 
     private void storeMissingCovariantMethods(final Iterable<MethodNode> methods, final MethodNode method, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> genericsSpec, final boolean ignoreError) {
