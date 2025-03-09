@@ -225,6 +225,23 @@ final class OverrideTest {
         '''
     }
 
+    // GROOVY-11579
+    @Test
+    void testCovariantReturnType() {
+        assertScript '''
+            interface I<T> {
+                T m()
+            }
+            abstract class A {
+                final String m() { 'A' }
+            }
+            class C extends A implements I<String> {
+            }
+
+            assert new C().m() == 'A'
+        '''
+    }
+
     @Test
     void testOverrideOnMethodWithDefaultParameters() {
         assertScript '''

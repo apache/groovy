@@ -74,6 +74,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_STRICT;
 import static org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 
@@ -404,24 +405,25 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private void checkMethodsForOverridingFinal(final ClassNode cn) {
         for (MethodNode method : cn.getMethods()) {
+            if ((method.getModifiers() & ACC_SYNTHETIC) != 0) continue; // GROOVY-11579: bridge method
+
+            ClassNode sc = cn.getSuperClass();
             Parameter[] params = method.getParameters();
-            for (MethodNode superMethod : cn.getSuperClass().getMethods(method.getName())) {
-                Parameter[] superParams = superMethod.getParameters();
-                if (!ParameterUtils.parametersEqual(params, superParams)) continue;
-                if (!superMethod.isFinal()) break;
-                addInvalidUseOfFinalError(method, params, superMethod.getDeclaringClass());
-                return;
+            for (MethodNode superMethod : sc.getMethods(method.getName())) {
+                if (superMethod.isFinal()
+                        && ParameterUtils.parametersEqual(params, superMethod.getParameters())) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("You are not allowed to override the final method ");
+                    sb.append(method.getName());
+                    appendParamsDescription(params, sb);
+                    sb.append(" from ");
+                    sb.append(getDescription(sc));
+                    sb.append(".");
+
+                    addError(sb.toString(), method.getLineNumber() > 0 ? method : cn);
+                }
             }
         }
-    }
-
-    private void addInvalidUseOfFinalError(final MethodNode method, final Parameter[] parameters, final ClassNode superCN) {
-        StringBuilder msg = new StringBuilder();
-        msg.append("You are not allowed to override the final method ").append(method.getName());
-        appendParamsDescription(parameters, msg);
-        msg.append(" from ").append(getDescription(superCN));
-        msg.append(".");
-        addError(msg.toString(), method);
     }
 
     private void appendParamsDescription(final Parameter[] parameters, final StringBuilder msg) {
@@ -450,6 +452,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         msg.append(superMethod.getDeclaringClass().getName());
         msg.append("; attempting to assign weaker access privileges; was ");
         msg.append(superMethod.isPublic() ? "public" : (superMethod.isProtected() ? "protected" : "package-private"));
+
         addError(msg.toString(), method);
     }
 
