@@ -1087,19 +1087,49 @@ final class InnerClassTest {
     void testUsageOfOuterMethod7() {
         assertScript '''
             class Super {
-              protected final String s
-              Super(String s) { this.s = s }
+                protected final String s
+                Super(String s) { this.s = s }
             }
             class Outer {
-              static String initValue() { 'ok' }
-              static class Inner extends Super {
-                Inner() {
-                  super(initValue()) // here
+                static String initValue() { 'ok' }
+                static class Inner extends Super {
+                    Inner() {
+                        super(initValue()) // here
+                    }
                 }
-              }
-              String test() { new Inner().s }
+                String test() { new Inner().s }
             }
+
             assert new Outer().test() == 'ok'
+        '''
+    }
+
+    // GROOVY-11581
+    @Test
+    void testUsageOfOuterMethod8() {
+        assertScript '''
+            class Outer {
+                void foo() {
+                    def byteArr = "FOO".bytes
+                    new Inner().checkClass(byteArr)
+                }
+                static bar(xxx, yyy) {
+                    assert xxx instanceof byte[]
+                    assert yyy instanceof String
+                }
+                static baz(zzz) {
+                    assert zzz instanceof byte[]
+                }
+                static class Inner {
+                    def checkClass(val) {
+                        assert val instanceof byte[]
+                        bar(val, "")
+                        baz(val)
+                    }
+                }
+            }
+
+            new Outer().foo()
         '''
     }
 

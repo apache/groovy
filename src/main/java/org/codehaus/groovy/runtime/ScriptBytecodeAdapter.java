@@ -42,6 +42,7 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -910,7 +911,7 @@ public class ScriptBytecodeAdapter {
             } else if (value instanceof List) {
                 ret.addAll((List) value);
             } else if (value.getClass().isArray()) {
-                ret.addAll(DefaultTypeTransformation.primitiveArrayToList(value));
+                Collections.addAll(ret, DefaultTypeTransformation.primitiveArrayBox(value));
             } else {
                 String error = "Cannot spread the type " + value.getClass().getName() + " with value " + value;
                 if (value instanceof Map) {
