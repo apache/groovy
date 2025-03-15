@@ -27,7 +27,7 @@ plugins {
     id 'me.champeau.jmh'
 }
 
-project.extensions.create("performanceTests", PerformanceTestsExtension, objects, tasks, configurations, dependencies, sourceSets)
+project.extensions.create('performanceTests', PerformanceTestsExtension, objects, tasks, configurations, dependencies, sourceSets)
 
 configurations {
     stats
@@ -42,8 +42,8 @@ repositories {
 }
 
 dependencies {
-    jmh project(":")
-    testImplementation project(":")
+    jmh project(':')
+    testImplementation project(':')
     testImplementation "junit:junit:${versions.junit}"
     stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
 }
@@ -71,11 +71,11 @@ tasks.named('compileJmhGroovy') {
 
 tasks.register('displayJmhResults') {
     doLast {
-        println layout.buildDirectory.file("results/jmh/results.txt").get().asFile.text
+        println layout.buildDirectory.file('results/jmh/results.txt').get().asFile.text
     }
 }
 
-tasks.register("performanceTests", PerformanceTestSummary)
+tasks.register('performanceTests', PerformanceTestSummary)
 
 sonarqube {
     skipProject = true

@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 plugins {
     id 'me.champeau.buildscan-recipes' version '0.2.3'
     id 'com.github.ben-manes.versions' version '0.52.0'
@@ -28,8 +29,8 @@ plugins {
 }
 
 buildScanRecipes {
-    recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
+    recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
 }
 
@@ -108,10 +109,10 @@ dependencies {
     loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
 
     xstreamAstImplementation "com.thoughtworks.xstream:xstream:${versions.xstream}", {
-        exclude(group: 'xpp3'   , module: 'xpp3_min')
-        exclude(group: 'junit'  , module: 'junit'   )
-        exclude(group: 'jmock'  , module: 'jmock'   )
-        exclude(group: 'xmlpull', module: 'xmlpull' )
+        exclude group: 'jmock'  , module: 'jmock'
+        exclude group: 'junit'  , module: 'junit'
+        exclude group: 'xmlpull', module: 'xmlpull'
+        exclude group: 'xpp3'   , module: 'xpp3_min'
     }
 
     testImplementation projects.groovyAnt
@@ -126,22 +127,23 @@ dependencies {
     testImplementation "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
     testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
-    testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jacksonDatabind}"
+    testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
-    testImplementation "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
     tools "com.eed3si9n.jarjar:ant-jarjar:${versions.jarjar}"
-    tools "org.apache.ant:ant:${versions.ant}" // use latest ant
+    tools "org.apache.ant:ant:${versions.ant}"
     tools "org.jboss.bridger:bridger:${versions.bridger}"
-    tools "org.codehaus.plexus:plexus-utils:4.0.2" // updated bridger dependency to remove vulnerability
-    tools "org.apache.maven:maven-core:3.9.9" // updated bridger dependency to remove vulnerability
-    tools "com.jcraft:jsch:0.1.55" // updated bridger dependency to remove vulnerability
-    tools "commons-io:commons-io:2.18.0" // updated bridger dependency to remove vulnerability
-    tools "org.apache.maven.shared:maven-shared-utils:3.4.2" // updated bridger dependency to remove vulnerability
+    // updated bridger dependencies to remove vulnerabilities:
+    tools "com.jcraft:jsch:0.1.55"
+    tools "commons-io:commons-io:2.18.0"
+    tools "org.apache.maven:maven-core:3.9.9"
+    tools "org.apache.maven.shared:maven-shared-utils:3.4.2"
+    tools "org.codehaus.plexus:plexus-utils:4.0.2"
+    // end
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
@@ -199,24 +201,24 @@ tasks.named('jar') {
 // by the Apache policy, so we need to build them and add them to the test
 // resources classpath
 
-def extModuleFixtureDir = project.layout.projectDirectory.dir("src/test-fixtures/extmodule")
-def extModuleOutputDir = project.layout.buildDirectory.dir("testFixtures/extmodule")
-def extModuleRepoDir = extModuleOutputDir.map { it.dir("repo") }
+def extModuleFixtureDir = project.layout.projectDirectory.dir('src/test-fixtures/extmodule')
+def extModuleOutputDir = project.layout.buildDirectory.dir('testFixtures/extmodule')
+def extModuleRepoDir = extModuleOutputDir.map { it.dir('repo') }
 
-def compileTestExtensionModule = tasks.register("compileTestExtensionModule", JavaCompile) {
+def compileTestExtensionModule = tasks.register('compileTestExtensionModule', JavaCompile) {
     classpath = files(tasks.named('jar'))
-    source fileTree(extModuleFixtureDir.dir("src/main/java"))
-    destinationDirectory = extModuleOutputDir.map  { it.dir("classes") }
+    source fileTree(extModuleFixtureDir.dir('src/main/java'))
+    destinationDirectory = extModuleOutputDir.map  { it.dir('classes') }
     sourceCompatibility = sharedConfiguration.targetJavaVersion.get()
     targetCompatibility = sharedConfiguration.targetJavaVersion.get()
 }
 
-def testExtensionModuleJar = tasks.register("testExtensionModuleJar", Jar) {
+def testExtensionModuleJar = tasks.register('testExtensionModuleJar', Jar) {
     description = 'Builds a sample extension module used in tests'
     archiveBaseName = 'module-test'
     archiveVersion = '1.4'
     from compileTestExtensionModule
-    from extModuleFixtureDir.dir("src/main/resources")
+    from extModuleFixtureDir.dir('src/main/resources')
     // emulate Maven repo format for output
     destinationDirectory = extModuleRepoDir.map { it.dir("jars/module-test/module-test/${archiveVersion.get()}") }
 }
@@ -258,18 +260,18 @@ licenseReport {
 
 sonarqube {
     properties {
-        property "sonar.projectName", "Apache Groovy"
-        property "sonar.projectKey", "apache_groovy"
-        property "sonar.organization", "apache"
-        property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.cpd.exclusions", "**/*"
-//        property "sonar.coverage.jacoco.xmlReportPaths", layout.buildDirectory.file("reports/jacoco/jacocoAllReport/jacocoAllReport.xml").get().asFile.absolutePath
+        property 'sonar.projectName', 'Apache Groovy'
+        property 'sonar.projectKey', 'apache_groovy'
+        property 'sonar.organization', 'apache'
+        property 'sonar.host.url', 'https://sonarcloud.io'
+        property 'sonar.cpd.exclusions', '**/*'
+//        property 'sonar.coverage.jacoco.xmlReportPaths', layout.buildDirectory.file('reports/jacoco/jacocoAllReport/jacocoAllReport.xml').get().asFile.absolutePath
     }
 }
 
 def UNSTABLE = /^([\d.-]+(alpha|beta|rc|m)[\d.-]+(groovy[\d.-]+)?|20030203.000550|20031129.200437|200404\d\d|2004-03-19)$/
 // ignore non-stable releases
-tasks.named("dependencyUpdates")?.configure {
+tasks.named('dependencyUpdates')?.configure {
     gradleReleaseChannel = 'current'
     rejectVersionIf {
         !(it.currentVersion.toLowerCase() ==~ UNSTABLE) && it.candidate.version.toLowerCase() ==~ UNSTABLE

@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
-import javax.inject.Inject
 
-// Instead of adding to the test sources, this should
-// be a separate source set so that we can run spec tests in isolation
+import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
+
+// TODO: Instead of adding to the test sources, these should be a
+// separate source set so that we can run spec tests in isolation
 sourceSets {
     test {
         groovy {
@@ -32,11 +32,20 @@ sourceSets {
     }
 }
 
+dependencies {
+    testCompileOnly "junit:junit:${versions.junit}"
+    testImplementation "org.junit.jupiter:junit-jupiter:${versions.junit5}"
+    testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${versions.junit5}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit5Platform}", {
+        exclude group: 'org.apiguardian', module: 'apiguardian-api'
+    }
+}
+
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
     def grapeDirectory = new File(temporaryDir, 'grape')
     def jdk8 = ['-XX:+UseConcMarkSweepGC']
-    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI'/*, '--illegal-access=debug'*/]
+    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
     def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en']
     if (JavaVersion.current().isJava9Compatible()) {
         jvmArgs(*common, *jdk9)
@@ -44,17 +53,21 @@ tasks.withType(Test).configureEach {
     } else {
         jvmArgs(*common, *jdk8)
     }
+    def testdb = System.properties['groovy.testdb.props']
+    if (testdb) {
+        systemProperty 'groovy.testdb.props', testdb
+    }
     def headless = System.properties['java.awt.headless']
     if (headless == 'true') {
-        systemProperties 'java.awt.headless': 'true'
+        systemProperty 'java.awt.headless', 'true'
     }
-    systemProperties 'apple.awt.UIElement': 'true',
-            'javadocAssertion.src.dir': './src/main'
+    systemProperty 'apple.awt.UIElement', 'true'
+    systemProperty 'javadocAssertion.src.dir', './src/main'
 
     jvmArgumentProviders.add(new TestCommandLineArgumentProvider(
-            grapeRoot: grapeDirectory,
-            gradleHome: gradle.gradleHomeDir, // this is needed by the security.policy
-            userHome: temporaryDir // make sure tests are isolated from real user home or tests using Grape may fail
+        grapeRoot: grapeDirectory,
+        gradleHome: gradle.gradleHomeDir, // this is needed by the security.policy
+        userHome: temporaryDir // make sure tests are isolated from real user home or tests using Grape may fail
     ))
 
     if (rootProject.hasProperty('target.java.home')) {
@@ -66,29 +79,29 @@ tasks.withType(Test).configureEach {
     }
 
     forkEvery = 50
-    maxParallelForks = sharedConfiguration.isRunningOnCI ? 1 : Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    maxParallelForks = sharedConfiguration.isRunningOnCI ? 1 : (Runtime.runtime.availableProcessors().intdiv(2) ?: 1)
     scanForTestClasses = true
     ignoreFailures = false
-    testLogging {
-        exceptionFormat = 'full'
-        // uncomment the following line if you need more logging
-        // events "failed", "started"
-    }
-    def testdb = System.properties['groovy.testdb.props']
-    if (testdb) {
-        systemProperties 'groovy.testdb.props': testdb
-    }
-
     classpath = files('src/test') + classpath
     exclude buildExcludeFilter(it.name == 'test')
     ext.resultText = ''
+
+    testLogging {
+        exceptionFormat = 'full'
+        events 'FAILED'
+        info.events 'FAILED', 'PASSED', 'SKIPPED'
+    }
+
+    useJUnitPlatform()
     usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle, 2))
+
     doFirst {
         fs.delete {
             // delete if it exists already to be in a clean state
             delete(grapeDirectory)
         }
     }
+
     doLast {
         fs.delete {
             delete(files(".").filter { it.name.endsWith '.class' })
@@ -137,6 +150,6 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
 }
 
 interface TestServices {
-    @Inject
+    @javax.inject.Inject
     FileSystemOperations getFileSystemOperations()
 }

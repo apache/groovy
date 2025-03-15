@@ -23,7 +23,7 @@ plugins {
 dependencies {
     api rootProject  // YamlBuilder extends GroovyObjectSupport...
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
-    implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jacksonDatabind}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     implementation projects.groovyJson
     testImplementation projects.groovyTest
     testRuntimeOnly "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"

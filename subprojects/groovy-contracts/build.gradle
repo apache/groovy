@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 plugins {
     id 'org.apache.groovy-library'
 }
@@ -25,12 +26,8 @@ dependencies {
 
     testImplementation projects.groovyTest
     testImplementation projects.groovyTemplates
-    testImplementation("org.spockframework:spock-junit4:${versions.spock}") {
+    testImplementation "org.spockframework:spock-junit4:${versions.spock}", {
         exclude group: 'org.codehaus.groovy'
-    }
-    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${versions.junit5}")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:${versions.junit5Platform}") {
-        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
     }
 }
 
