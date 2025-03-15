@@ -50,6 +50,7 @@ import org.codehaus.groovy.runtime.metaclass.MethodMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
@@ -154,12 +155,24 @@ public abstract class Selector {
      * number arguments.
      */
     private static Object[] spread(Object[] args, boolean spreadCall) {
-        if (!spreadCall) return args;
-        Object[] normalArguments = (Object[]) args[1];
-        Object[] ret = new Object[normalArguments.length + 1];
-        ret[0] = args[0];
-        System.arraycopy(normalArguments, 0, ret, 1, ret.length - 1);
-        return ret;
+        Object[] result = args;
+        if (spreadCall) {
+            Object[] arguments = (Object[]) args[1];
+            final int nArguments = arguments.length;
+
+            result = new Object[nArguments + 1];
+            result[0] = args[0]; // the receiver
+            System.arraycopy(arguments, 0, result, 1, nArguments);
+
+            // accommodate Object[] spreader m. handle
+            for (int i = 1; i <= nArguments; i += 1) {
+                Class argumentType = result[i] != null ? result[i].getClass() : Object.class;
+                if (argumentType.isArray() && argumentType.getComponentType().isPrimitive()) {
+                    result[i] = DefaultTypeTransformation.primitiveArrayBox(result[i]); // GROOVY-4843, GROOVY-8560
+                }
+            }
+        }
+        return result;
     }
 
     private static class CastSelector extends MethodSelector {
@@ -523,7 +536,7 @@ public abstract class Selector {
             this.safeNavigation = safeNavigation && arguments[0] == null;
             this.thisCall = thisCall;
             this.spread = spreadCall;
-            this.cache = !spread;
+            this.cache = !spreadCall;
 
             if (LOG_ENABLED) {
                 StringBuilder msg =
@@ -762,8 +775,7 @@ public abstract class Selector {
             Class<?>[] params = handle.type().parameterArray();
             if (currentType != null) params = currentType.parameterArray();
             if (!isVargs) {
-                if (spread && useMetaClass) return;
-                if (params.length == 2 && args.length == 1) {
+                if (!(spread && useMetaClass) && params.length == 2 && args.length == 1) {
                     handle = MethodHandles.insertArguments(handle, 1, SINGLE_NULL_ARRAY);
                 }
                 return;
@@ -860,8 +872,9 @@ public abstract class Selector {
         }
 
         public void correctSpreading() {
-            if (!spread || useMetaClass || skipSpreadCollector) return;
-            handle = handle.asSpreader(Object[].class, args.length - 1);
+            if (spread && !useMetaClass && !skipSpreadCollector) {
+                handle = handle.asSpreader(Object[].class, args.length - 1);
+            }
         }
 
         /**

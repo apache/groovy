@@ -18,20 +18,22 @@
  */
 package groovy.mock.interceptor
 
-import groovy.test.GroovyTestCase
+import org.junit.Test
 
-class MockForJavaTest extends GroovyTestCase {
+final class MockForJavaTest {
+
+    @Test
     void testIterator() {
         def iteratorContext = new MockFor(Iterator)
         iteratorContext.demand.hasNext() { true }
         iteratorContext.demand.hasNext() { true }
         iteratorContext.demand.hasNext() { false }
         def iterator = iteratorContext.proxyDelegateInstance()
-        iteratorContext.demand.next() { "foo" }
+        iteratorContext.demand.next() { 'foo' }
         def iterator2 = iteratorContext.proxyDelegateInstance()
 
         assert new IteratorCounter().count(iterator2) == 2
-        assert iterator2.next() == "foo"
+        assert iterator2.next() == 'foo'
         iteratorContext.verify(iterator2)
 
         assert new IteratorCounter().count(iterator) == 2
@@ -45,13 +47,31 @@ class MockForJavaTest extends GroovyTestCase {
         iteratorContext.verify(iterator3)
     }
 
-    void testString() {
-        def stringContext = new MockFor(String)
-        stringContext.demand.endsWith(2..2) { String arg -> arg == "foo" }
-        def s = stringContext.proxyDelegateInstance()
-        assert !s.endsWith("bar")
-        assert s.endsWith("foo")
-        stringContext.verify(s)
+    // GROOVY-4843
+    @Test
+    void testStream() {
+        def streamContext = new MockFor(FileInputStream)
+        streamContext.demand.read(1..1) { byte[] b ->
+            b[0] = 1
+            b[1] = 2
+            return 2
+        }
+        def p = System.getProperty('os.name').contains('Windows') ? 'NUL' : '/dev/null'
+        def s = streamContext.proxyDelegateInstance(p)
+        byte[] buffer = new byte[2]
+        assert s.read(buffer) == 2
+        assert buffer[0] == 1
+        assert buffer[1] == 2
+        streamContext.verify(s)
     }
 
+    @Test
+    void testString() {
+        def stringContext = new MockFor(String)
+        stringContext.demand.endsWith(2..2) { String arg -> arg == 'foo' }
+        def s = stringContext.proxyDelegateInstance()
+        assert !s.endsWith('bar')
+        assert s.endsWith('foo')
+        stringContext.verify(s)
+    }
 }
