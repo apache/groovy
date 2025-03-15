@@ -950,7 +950,8 @@ public class ScriptBytecodeAdapter {
             } else if (value instanceof BaseStream) {
                 ((BaseStream<?,?>) value).iterator().forEachRemaining(ret::add);
             } else if (value.getClass().isArray()) {
-                Collections.addAll(ret, DefaultTypeTransformation.primitiveArrayBox(value));
+                Collections.addAll(ret, value.getClass().getComponentType().isPrimitive()
+                        ? DefaultTypeTransformation.primitiveArrayBox(value) : (Object[]) value);
             } else {
                 String error = "Cannot spread the type " + value.getClass().getName() + " with value " + value;
                 if (value instanceof Map) {

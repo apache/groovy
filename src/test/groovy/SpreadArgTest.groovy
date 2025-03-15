@@ -18,7 +18,7 @@
  */
 package groovy
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -49,6 +49,21 @@ final class SpreadArgTest {
 
             Number[] nums = [1, 2, 39]
             assert f(*nums) == 42
+        '''
+    }
+
+    // GROOVY-8560
+    @Test
+    void testSpreadArray2() {
+        assertScript '''
+            def f(byte[] bytes) {
+                assert bytes.length == 2
+            }
+
+            def ba = new byte[]{0, 0}
+            def oa = new Object[]{ba}
+            f(oa[0])
+            f( *oa )
         '''
     }
 
