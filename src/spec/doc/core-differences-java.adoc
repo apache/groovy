@@ -45,6 +45,7 @@ have to use an explicit `import` statement to use them:
 * java.math.BigDecimal
 * java.math.BigInteger
 * java.net.*
+* java.time.*
 * java.util.*
 * groovy.lang.*
 * groovy.util.*

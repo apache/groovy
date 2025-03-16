@@ -24,7 +24,9 @@ import org.apache.groovy.groovysh.completion.antlr4.ImportsSyntaxCompleter
 
 import static org.apache.groovy.groovysh.completion.TokenUtilTest.tokenList
 
-class ImportsSyntaxCompleterTest extends CompleterTestSupport {
+final class ImportsSyntaxCompleterTest extends CompleterTestSupport {
+
+    private static final int DEFAULT_IMPORT_COUNT = org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS.size()
 
     void testPackagePattern() {
         assert 'static java.lang.Math'.matches(ImportsSyntaxCompleter.STATIC_IMPORT_PATTERN)
@@ -36,19 +38,19 @@ class ImportsSyntaxCompleterTest extends CompleterTestSupport {
     }
 
     void testPreImported() {
-        groovyshMocker.demand.getPackageHelper(6) { [getContents: {['Foo']}] }
+        groovyshMocker.demand.getPackageHelper(DEFAULT_IMPORT_COUNT) { [getContents: {['Foo']}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
             def candidates = ['prefill']
             assert completer.findMatchingPreImportedClasses('Foo', candidates)
             // once for each standard package
-            assert ['prefill', 'Foo', 'Foo', 'Foo', 'Foo', 'Foo', 'Foo'] == candidates
+            assert ['prefill', *Collections.nCopies(DEFAULT_IMPORT_COUNT, 'Foo')] == candidates
         }
     }
 
     void testPreImportedBigs() {
-        groovyshMocker.demand.getPackageHelper(6) { [getContents: {[]}] }
+        groovyshMocker.demand.getPackageHelper(DEFAULT_IMPORT_COUNT) { [getContents: {[]}] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
             ImportsSyntaxCompleter completer = new ImportsSyntaxCompleter(groovyshMock)
@@ -178,7 +180,7 @@ class ImportsSyntaxCompleterTest extends CompleterTestSupport {
 
     // Integration tests over all methods
     void testNoImports() {
-        groovyshMocker.demand.getPackageHelper(6) { [getContents: {[]}] }
+        groovyshMocker.demand.getPackageHelper(DEFAULT_IMPORT_COUNT) { [getContents: {[]}] }
         groovyshMocker.demand.getImports(1) { [] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -190,7 +192,7 @@ class ImportsSyntaxCompleterTest extends CompleterTestSupport {
     }
 
     void testSimpleImport() {
-        groovyshMocker.demand.getPackageHelper(6) { [getContents: {[]}] }
+        groovyshMocker.demand.getPackageHelper(DEFAULT_IMPORT_COUNT) { [getContents: {[]}] }
         groovyshMocker.demand.getImports(1) { ['xyzabc.*', 'xxxx.*'] }
         groovyshMocker.demand.getPackageHelper(1) { [getContents: { ['Xyzabc']}] }
         groovyshMocker.demand.getPackageHelper(1) { [getContents: { ['Xyz123']}] }
@@ -211,7 +213,7 @@ class ImportsSyntaxCompleterTest extends CompleterTestSupport {
     }
 
     void testUnknownImport() {
-        groovyshMocker.demand.getPackageHelper(6) { [getContents: {[]}] }
+        groovyshMocker.demand.getPackageHelper(DEFAULT_IMPORT_COUNT) { [getContents: {[]}] }
         groovyshMocker.demand.getImports(1) { ['xxxx'] }
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
