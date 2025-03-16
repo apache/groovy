@@ -19,10 +19,11 @@
 package groovy.lang
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 @CompileStatic
-class NamedValueTest {
+final class NamedValueTest {
+
     @Test
     void testGetters() {
         def nv = new NamedValue('foo', 'bar')
