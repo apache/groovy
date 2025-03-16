@@ -685,7 +685,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.0
      */
     public static boolean asBoolean(Boolean bool) {
-        return bool != null && bool;
+        return Boolean.TRUE.equals(bool);
     }
 
     /**

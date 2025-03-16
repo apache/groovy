@@ -18,6 +18,9 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
+import groovy.transform.AutoFinal
+import groovy.transform.SelfType
+import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilationUnit
@@ -40,7 +43,9 @@ import java.security.CodeSource
  * available to the developer for additional checks. This property provides the
  * AST and the result of the ASM check class adapter (bytecode) for each class.
  */
+@AutoFinal @SelfType(StaticTypeCheckingTestCase)
 trait StaticCompilationTestSupport {
+
     Map<String, Tuple2<ClassNode, String>> astTrees
     CompilationUnit compilationUnit
 
@@ -76,7 +81,7 @@ trait StaticCompilationTestSupport {
         super.tearDown()
     }
 
-    void assertAndDump(final String script) {
+    void assertAndDump(String script) {
         try {
             assertScript(script)
         } finally {
@@ -88,15 +93,15 @@ trait StaticCompilationTestSupport {
         StaticCompilationTestSupport testCase
 
         CompilationUnitAwareGroovyClassLoader(
-                final ClassLoader loader,
-                final CompilerConfiguration config,
-                final StaticCompilationTestSupport testCase) {
+                ClassLoader loader,
+                CompilerConfiguration config,
+                StaticCompilationTestSupport testCase) {
             super(loader, config)
             this.testCase = testCase
         }
 
         @Override
-        protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
+        protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
             testCase.compilationUnit = new CompilationUnit(config, source, this)
         }
     }
@@ -104,13 +109,13 @@ trait StaticCompilationTestSupport {
     static class ASTTreeCollector extends CompilationCustomizer {
         StaticCompilationTestSupport testCase
 
-        ASTTreeCollector(final StaticCompilationTestSupport testCase) {
+        ASTTreeCollector(StaticCompilationTestSupport testCase) {
             super(CompilePhase.CLASS_GENERATION)
             this.testCase = testCase
         }
 
         @Override
-        void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
+        void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
             def unit = testCase.compilationUnit
             if (unit) {
                 def groovyClass = unit.classes.find { it.name == classNode.name }
