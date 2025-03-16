@@ -18,13 +18,14 @@
  */
 package org.codehaus.groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ManagedConcurrentValueMapTest extends GroovyTestCase {
+final class ManagedConcurrentValueMapTest {
 
-    ManagedConcurrentValueMap<String, Object> map =
+    private ManagedConcurrentValueMap<String, Object> map =
             new ManagedConcurrentValueMap<String, Object>(ReferenceBundle.getHardBundle())
 
+    @Test
     void testEntriesRemoveSelfFromMapWhenFinalized() {
         for (int i = 0; i < 5; i++) {
             map.put("Key${i}", new Object())

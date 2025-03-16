@@ -18,14 +18,17 @@
  */
 package org.codehaus.groovy.vmplugin.v8
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class InterfaceStaticMethodCallTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class InterfaceStaticMethodCallTest {
+
+    @Test
     void testStreamOf() {
         // "of" is a static method declared on the interface, we only want to be sure we can call the method
         assertScript '''
             import java.util.stream.Stream
-
             assert Stream.of("1") instanceof Stream
         '''
     }

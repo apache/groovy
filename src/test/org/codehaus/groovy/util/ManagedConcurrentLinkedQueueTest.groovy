@@ -18,18 +18,22 @@
  */
 package org.codehaus.groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class ManagedConcurrentLinkedQueueTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertThrows
 
-    def queue
+final class ManagedConcurrentLinkedQueueTest {
 
+    private ManagedConcurrentLinkedQueue queue
+
+    @BeforeEach
     void setUp() {
-        def manager = ReferenceManager.createIdlingManager(null)
-        def bundle = new ReferenceBundle(manager, ReferenceType.HARD)
+        def bundle = new ReferenceBundle(ReferenceManager.createIdlingManager(null), ReferenceType.HARD)
         queue = new ManagedConcurrentLinkedQueue(bundle)
     }
 
+    @Test
     void testElementAdd() {
         queue.add(1)
         def i = 0
@@ -40,10 +44,12 @@ class ManagedConcurrentLinkedQueueTest extends GroovyTestCase {
         assert i ==1
     }
 
+    @Test
     void testEmptylist() {
         assert queue.isEmpty()
     }
 
+    @Test
     void testRemoveinTheMiddle() {
         queue.add(1)
         queue.add(2)
@@ -58,6 +64,7 @@ class ManagedConcurrentLinkedQueueTest extends GroovyTestCase {
         assert val == 12
     }
 
+    @Test
     void testAddRemove() {
         10.times {
             queue.add(it)
@@ -69,8 +76,9 @@ class ManagedConcurrentLinkedQueueTest extends GroovyTestCase {
         assert queue.isEmpty()
     }
 
+    @Test
     void testIteratorThrowsNoSuchElementException() {
-        shouldFail(NoSuchElementException) {
+        assertThrows(NoSuchElementException) {
             queue.add(1)
             def iter = queue.iterator()
             assert iter.next() == 1
@@ -78,13 +86,13 @@ class ManagedConcurrentLinkedQueueTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIteratorThrowsOnRemoveIfNextNotCalled() {
-        shouldFail(IllegalStateException) {
+        assertThrows(IllegalStateException) {
             queue.add(1)
             def iter = queue.iterator()
             assert iter.hasNext()
             iter.remove()
         }
     }
-
 }

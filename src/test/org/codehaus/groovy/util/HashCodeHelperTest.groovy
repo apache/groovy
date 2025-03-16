@@ -19,10 +19,11 @@
 package org.codehaus.groovy.util
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 @CompileStatic
-class HashCodeHelperTest {
+final class HashCodeHelperTest {
+
     @Test
     void testUpdateHash() {
         assert 158 == HashCodeHelper.updateHash(1, new Character('c' as char))

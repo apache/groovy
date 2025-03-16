@@ -18,18 +18,23 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6736Bug extends GroovyTestCase {
-    void testAddExtraMethodToMapUsingTraitAndAsKeyword() {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_7196 {
+
+    @Test
+    void testShouldNotThrowDuplicateMethodWithPrecompiledTrait() {
         assertScript '''
-trait Extra {
-    String extra() { "I'm an extra method" }
-}
-def extraList = [] as Extra
-assert extraList.extra() == "I'm an extra method"
-def extraMap = [:] as Extra
-assert extraMap.extra() == "I'm an extra method"
-'''
+            class SomeTestClass implements org.codehaus.groovy.transform.traitx.Groovy7196SupportTrait {
+            }
+            assert SomeTestClass.org_codehaus_groovy_transform_traitx_Groovy7196SupportTrait__someString == 'ok'
+        '''
+    }
+
+    @Test
+    void testStaticFieldShouldBeInitialized() {
+        assert Groovy7196SupportTraitImpl.org_codehaus_groovy_transform_traitx_Groovy7196SupportTrait__someString == 'ok'
     }
 }

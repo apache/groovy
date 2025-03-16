@@ -18,13 +18,20 @@
  */
 package org.codehaus.groovy.vmplugin.v8
 
-import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
-class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class PluginDefaultGroovyMethodsTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        ast(groovy.transform.CompileStatic)
+    }
 
     // GROOVY-7611
+    @Test
     void testOptionalAsBoolean() {
-        assertScript '''
+        assertScript shell, '''
             boolean m() {
                 assert Optional.of('foo')
                 assert !Optional.empty()
@@ -42,97 +49,110 @@ class PluginDefaultGroovyMethodsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStreamToList() {
-        assertScript '''
+        assertScript shell, '''
             def list = [1, 2, 3]
             assert list == list.stream().toList()
         '''
     }
 
+    @Test
     void testStreamToSet() {
-        assertScript '''
+        assertScript shell, '''
             def set = [1, 2, 3] as Set
             assert set.sort() == set.stream().toSet().sort()
         '''
     }
 
+    @Test
     void testBaseStreamToList() {
-        assertScript '''
+        assertScript shell, '''
             def list = [1, 2, 3]
             assert list == Arrays.stream(list as int[]).toList()
         '''
     }
 
+    @Test
     void testBaseStreamToSet() {
-        assertScript '''
+        assertScript shell, '''
             def set = [1, 2, 3] as Set
             assert set.sort() == Arrays.stream(set as int[]).toSet().sort()
         '''
     }
 
+    @Test
     void testObjectArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = ["Hello", "World"] as Object[]
             assert array == array.stream().toArray()
         '''
 
-        assertScript '''
+        assertScript shell, '''
             def array = ["Hello", "World"] as String[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testIntArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [1, 2] as int[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testLongArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [1, 2] as long[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testDoubleArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [1, 2] as double[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testCharArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [65, 66] as char[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testByteArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [65, 66] as byte[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testShortArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [65, 66] as short[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testBooleanArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [true, false] as boolean[]
             assert array == array.stream().toArray()
         '''
     }
 
+    @Test
     void testFloatArrayToStream() {
-        assertScript '''
+        assertScript shell, '''
             def array = [65, 66] as float[]
             assert array == array.stream().toArray()
         '''

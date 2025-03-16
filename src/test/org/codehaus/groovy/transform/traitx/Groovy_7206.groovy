@@ -16,13 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7206Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_7206 {
+
+    @Test
     void testShouldNotThrowNPEDuringCompilation() {
         assertScript '''
             trait SetUnknown {
@@ -33,12 +35,14 @@ class Groovy7206Bug extends GroovyTestCase {
             class A implements SetUnknown {
                 def unknownProperty
             }
+
             def a = new A()
             a.setup()
             assert a.unknownProperty == 1
         '''
     }
 
+    @Test
     void testShouldNotThrowNPEDuringCompilation2() {
         assertScript '''
             trait SetUnknown {
@@ -50,6 +54,7 @@ class Groovy7206Bug extends GroovyTestCase {
             class A implements SetUnknown {
                 def unknownProperty
             }
+
             def a = new A()
             a.setup()
             assert a.unknownProperty == 1
@@ -57,6 +62,7 @@ class Groovy7206Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testShouldNotThrowNPEDuringCompilation3() {
         assertScript '''
             trait SetUnknown {
@@ -68,6 +74,7 @@ class Groovy7206Bug extends GroovyTestCase {
             class A implements SetUnknown {
                 def unknownProperty = 1
             }
+
             def a = new A()
             a.setup()
             assert a.unknownProperty == 3
@@ -75,19 +82,22 @@ class Groovy7206Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testShouldRecognizeStaticProperty() {
         assertScript '''
-trait Validateable {
-    private static Map constraintsMapInternal
-    static Map getConstraintsMap() {
-        if(this.constraintsMapInternal == null) {
-            this.constraintsMapInternal = [:]
-        }
-    }
-}
-class ValidateTest implements Validateable {}
-def v = new ValidateTest()
-assert v.constraintsMap == [:]
+            trait Validateable {
+                private static Map constraintsMapInternal
+                static Map getConstraintsMap() {
+                    if(this.constraintsMapInternal == null) {
+                        this.constraintsMapInternal = [:]
+                    }
+                }
+            }
+            class ValidateTest implements Validateable {
+            }
+
+            def v = new ValidateTest()
+            assert v.constraintsMap == [:]
         '''
     }
 }

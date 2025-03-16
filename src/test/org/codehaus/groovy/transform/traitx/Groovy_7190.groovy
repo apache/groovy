@@ -18,30 +18,38 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import org.codehaus.groovy.tools.stubgenerator.StringSourcesStubTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7215Bug extends StringSourcesStubTestCase {
-    @Override
-    Map<String, String> provideSources() {
-        [
-                'FooJ.java': '''
+import static groovy.test.GroovyAssert.assertScript
 
-                public class FooJ {
-                    public static String TEXT = "FooJ";
+final class Groovy_7190 {
+
+    @Test
+    void testStaticPropertyBug() {
+        assertScript '''
+            trait SomeTrait {
+                private static String someString
+
+                static String getStringValue() {
+                    if(someString == null) {
+                        someString = 'Default Value'
+                    }
+                    someString
                 }
-            ''',
-                'FilterConfig.groovy':'''
 
-                @groovy.transform.CompileStatic
-                class FilterConfig implements org.codehaus.groovy.transform.traitx.Groovy7215SupportTrait {
-                    String text
+                static String getStringValueUsingThis() {
+                    if(this.someString == null) {
+                        someString = 'Default Value'
+                    }
+                    this.someString
                 }
+            }
+
+            class SomeClass implements SomeTrait {
+            }
+
+            assert 'Default Value' == SomeClass.stringValue
+            assert 'Default Value' == SomeClass.stringValueUsingThis
         '''
-        ]
-    }
-
-    @Override
-    void verifyStubs() {
-
     }
 }

@@ -18,25 +18,36 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import org.junit.Test
+import org.codehaus.groovy.ast.ClassNode
+import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
-
-final class Groovy7500 {
+final class Groovy_7846 {
 
     @Test
-    void testMetaClassOverride() {
-        shouldFail UnsupportedOperationException, '''
-            trait T {
-                def m() { 'T' }
-            }
-            class C implements T {
+    void testTraitsShouldAllowGenerifiedReturnTypesInStaticMethods() {
+        def gcl = new GroovyClassLoader()
+        gcl.parseClass '''
+            class Foo {
+                static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
+                    callable.call()
+                }
             }
 
-            C.metaClass.m = { ->
-                throw new UnsupportedOperationException()
+            trait TraitWithStaticMethod<D>  {
+                Collection<D> asCollection(D type) {
+                    return [type]
+                }
+                static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
+                    callable.call()
+                }
             }
-            new C().m()
         '''
+        Class cls = gcl.parseClass '''
+            class Bar implements TraitWithStaticMethod<Bar> {
+            }
+        '''
+
+        assert new ClassNode(cls).methods
+        assert cls.withClient { true }
     }
 }

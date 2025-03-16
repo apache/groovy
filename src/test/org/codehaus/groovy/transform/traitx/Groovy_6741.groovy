@@ -16,11 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v8
+package org.codehaus.groovy.transform.traitx
 
-import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class PluginDefaultGroovyMethodsSCTest
-        extends PluginDefaultGroovyMethodsTest
-        implements StaticCompilationTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_6741 {
+
+    @Test
+    void testRunTimeCoercionOfTraitUsingGenerics() {
+        assertScript '''
+            trait GPredicate<T> {
+                abstract boolean test( T t )
+            }
+
+            GPredicate<Integer> p = { Integer n -> n > 1 }
+            assert p.test(0) == false
+            assert p.test(1) == false
+            assert p.test(2) == true
+        '''
+    }
 }

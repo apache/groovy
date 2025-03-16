@@ -21,3 +21,6 @@ package org.codehaus.groovy.transform.traitx
 trait Groovy7196SupportTrait {
     public static String someString = 'ok'
 }
+
+class Groovy7196SupportTraitImpl implements Groovy7196SupportTrait {
+}

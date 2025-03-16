@@ -18,8 +18,13 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-@groovy.transform.CompileStatic
+import groovy.transform.CompileStatic
+
+@CompileStatic
 trait Groovy7215SupportTrait {
-    void setText(String text) {}
-    String getText() { 'ok' }
+    void setText(String s) {
+    }
+    String getText() {
+        'ok'
+    }
 }

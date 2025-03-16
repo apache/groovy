@@ -16,38 +16,47 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7217Bug extends GroovyTestCase {
-    void testNumberInitializationInTrait() {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_7269 {
+
+    @Test
+    void testTraitWithMetaClassMod() {
         assertScript '''
-            trait Version {
-                Long version = 1
+            trait SomeTrait {
+                String title
+            }
+            class Widget implements SomeTrait {
             }
 
-            class HasVersion implements Version {}
+            Widget.metaClass.getTitle = {
+                'Some Default Title'
+            }
 
-            def v = new HasVersion()
-            assert v.version == 1'''
+            def w = new Widget()
+            w.title = 'Some New Title'
+            assert w.title == 'Some Default Title'
+        '''
     }
 
-    void testAnyInitializerInTrait() {
+    // GROOVY-7308
+    @Test
+    void testMixOfStaticAndNotStaticPropertiesOfSameName() {
         assertScript '''
-            class SomeA {}
-            trait DummyInit {
-                SomeA a = init()
+            class Widget {
+                static Integer someNumber = 42
             }
-            class Dummy implements DummyInit {
-                def init() {
-                    new SomeA()
-                }
+
+            Widget.metaClass.getSomeNumber = {
+                2112
             }
-            def d = new Dummy()
-            assert d.a instanceof SomeA
+
+            def widget = new Widget()
+            assert widget.someNumber == 2112
         '''
     }
 }

@@ -18,36 +18,40 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.ast.ClassNode
+import org.junit.jupiter.api.Test
 
-class Groovy7846Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
-    void testTraitsShouldAllowGenerifiedReturnTypesInStaticMethods() {
-        def cl = new GroovyClassLoader()
-        cl.parseClass('''
-            class Foo {
-                static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
-                    callable.call()
+final class Groovy_7456 {
+
+    @Test
+    void testShouldAllowBuilderInTrait() {
+        assertScript '''import groovy.xml.*
+
+            trait MyBuilder {
+                def build2() {
+                    def mkp = new MarkupBuilder()
+
+                    mkp.foo {
+                        bar()
+                    }
                 }
             }
 
-            trait TraitWithStaticMethod<D>  {
-                Collection<D> asCollection(D type) {
-                    return [type]
-                }
+            class Foo implements MyBuilder {
 
-                static <T> T withClient(@DelegatesTo(Foo) Closure<T> callable ) {
-                    callable.call()
+                def build1() {
+                    def mkp = new MarkupBuilder()
+
+                    mkp.foo {
+                        bar()
+                    }
                 }
             }
-        ''')
-        Class cls = cl.parseClass('''
-            class Bar implements TraitWithStaticMethod<Bar> {}
-        ''')
 
-        assert new ClassNode(cls).methods
-        assert cls.withClient { true }
+            def foo = new Foo()
+            foo.build1()
+            foo.build2()
+        '''
     }
 }
-

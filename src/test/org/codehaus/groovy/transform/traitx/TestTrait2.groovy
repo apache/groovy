@@ -20,8 +20,12 @@ package org.codehaus.groovy.transform.traitx
 
 trait TestTrait2 {
     private String message = 'Hello'
-    String getMessage() { this.message }
-    String blah() { message }
+    String getMessage() {
+        this.message
+    }
+    String blah() {
+        message
+    }
     def meow() {
         "Meow! I'm a ${cat()}"
     }

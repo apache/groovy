@@ -16,15 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7011Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_7011 {
+
+    @Test
     void testTraitWithDefaultArgumentMethod() {
         assertScript '''
             trait HiSupport {
@@ -40,6 +40,7 @@ class Groovy7011Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testTraitWithDefaultArgumentMethod2() {
         assertScript '''
             trait HiSupport {
@@ -55,6 +56,7 @@ class Groovy7011Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testTraitWithDefaultArgumentMethodCompileStatic() {
         assertScript '''import groovy.transform.CompileStatic
 
@@ -77,6 +79,7 @@ class Groovy7011Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testTraitWithDefaultArgumentMethod2CompileStatic() {
         assertScript '''import groovy.transform.CompileStatic
 

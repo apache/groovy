@@ -18,7 +18,9 @@
  */
 package org.codehaus.groovy.util
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class ListHashMapTest {
 
@@ -188,21 +190,27 @@ final class ListHashMapTest {
         assert !lhm.containsValue('3')
     }
 
-    @Test(expected = UnsupportedOperationException)
+    @Test
     void testCannotModifyInnerMapViaKeySet() {
         testSwitchToInnerMap()
-        lhm.keySet().clear()
+        assertThrows(UnsupportedOperationException) {
+            lhm.keySet().clear()
+        }
     }
 
-    @Test(expected = UnsupportedOperationException)
+    @Test
     void testCannotModifyInnerMapViaEntrySet() {
         testSwitchToInnerMap()
-        lhm.entrySet().clear()
+        assertThrows(UnsupportedOperationException) {
+            lhm.entrySet().clear()
+        }
     }
 
-    @Test(expected = UnsupportedOperationException)
+    @Test
     void testCannotModifyInnerMapViaValueCol() {
         testSwitchToInnerMap()
-        lhm.values().clear()
+        assertThrows(UnsupportedOperationException) {
+            lhm.values().clear()
+        }
     }
 }

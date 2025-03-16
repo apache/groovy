@@ -18,17 +18,19 @@
  */
 package org.codehaus.groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import java.lang.ref.ReferenceQueue
 
-class ReferenceManagerTest extends GroovyTestCase {
+final class ReferenceManagerTest {
 
-    int finalizeCounter
-    TestReference<Object> testReference
-    TestQueue<Object> queue
-    ReferenceManager callback
+    private int finalizeCounter
+    private TestReference<Object> testReference
+    private TestQueue<Object> queue
+    private ReferenceManager callback
 
+    @BeforeEach
     void setUp() {
         finalizeCounter = 0
         testReference = new TestReference<Object>(new Object())
@@ -36,6 +38,7 @@ class ReferenceManagerTest extends GroovyTestCase {
         callback = ReferenceManager.createCallBackedManager(queue)
     }
 
+    @Test
     void testCallbackManagerRemovesFromQueueAfterCreation() {
         3.times {
             queue.add(testReference)
@@ -45,6 +48,7 @@ class ReferenceManagerTest extends GroovyTestCase {
         assert finalizeCounter == 3
     }
 
+    @Test
     void testCallbackManagerRemovesStalledEntriesFromQueue() {
         5.times {
             queue.add(testReference)
@@ -54,6 +58,7 @@ class ReferenceManagerTest extends GroovyTestCase {
         assert finalizeCounter == 5
     }
 
+    @Test
     void testThresholdManagerRemovesFromQueueAfterCreationWhenThresholdIsReached() {
         ReferenceManager manager = ReferenceManager.createThresholdedIdlingManager(queue, callback, 2)
         2.times {
@@ -72,6 +77,7 @@ class ReferenceManagerTest extends GroovyTestCase {
         assert finalizeCounter == 3
     }
 
+    @Test
     void testThresholdManagerRemovesStalledEntriesFromQueueWhenThresholdIsReached() {
         ReferenceManager manager = ReferenceManager.createThresholdedIdlingManager(queue, callback, 2)
         2.times {
@@ -99,6 +105,7 @@ class ReferenceManagerTest extends GroovyTestCase {
         assert finalizeCounter == 4
     }
 
+    @Test
     void testCallbackManagerGuardsAgainstRecursiveQueueProcessing() {
         // Populate queue with enough references that call back into removeStallEntries
         // so that would normally generate a StackOverflowError
@@ -115,6 +122,8 @@ class ReferenceManagerTest extends GroovyTestCase {
         // Success if we made it this far with no StackOverflowError
         assert queue.size() == 0
     }
+
+    //--------------------------------------------------------------------------
 
     private static class TestQueue<T> extends ReferenceQueue<T> {
 

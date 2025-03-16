@@ -22,8 +22,8 @@ import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -3828,7 +3828,7 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-10598
-    @Ignore @Test
+    @Disabled @Test
     void testAssignOperators() {
         assertScript shell, '''
             trait T {

@@ -18,32 +18,27 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7190Bug extends GroovyTestCase {
-    void testStaticPropertyBug() {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_8864 {
+
+    @Test
+    void testGenericsAppliedToStaticMethodsForTraits() {
         assertScript '''
-            trait SomeTrait {
-                private static String someString
-
-                static String getStringValue() {
-                    if(someString == null) {
-                        someString = 'Default Value'
-                    }
-                    someString
-                }
-
-                static String getStringValueUsingThis() {
-                    if(this.someString == null) {
-                        someString = 'Default Value'
-                    }
-                    this.someString
+            trait Foo<T> {
+                static T INSTANCE
+                static T get(T t) {
                 }
             }
-            class SomeClass implements SomeTrait {}
+            class Bar implements Foo<Bar> {
+            }
 
-            assert 'Default Value' == SomeClass.stringValue
-            assert 'Default Value' == SomeClass.stringValueUsingThis
+            assert Bar.getMethod("get", new Class[]{Bar}).returnType == Bar
+            assert Bar.getDeclaredField("Foo__INSTANCE").type == Bar
+            assert Bar.getMethod("setINSTANCE", new Class[]{Bar})
+            assert Bar.getMethod("getINSTANCE").returnType == Bar
         '''
     }
 }

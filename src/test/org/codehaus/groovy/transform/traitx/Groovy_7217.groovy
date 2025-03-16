@@ -18,5 +18,40 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-class Groovy7196SupportTraitImpl implements Groovy7196SupportTrait {
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_7217 {
+
+    @Test
+    void testNumberInitializationInTrait() {
+        assertScript '''
+            trait Version {
+                Long version = 1
+            }
+            class HasVersion implements Version {
+            }
+
+            def v = new HasVersion()
+            assert v.version == 1'''
+    }
+
+    @Test
+    void testAnyInitializerInTrait() {
+        assertScript '''
+            class SomeA {}
+            trait DummyInit {
+                SomeA a = init()
+            }
+            class Dummy implements DummyInit {
+                def init() {
+                    new SomeA()
+                }
+            }
+
+            def d = new Dummy()
+            assert d.a instanceof SomeA
+        '''
+    }
 }

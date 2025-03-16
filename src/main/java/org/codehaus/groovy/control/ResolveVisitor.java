@@ -273,7 +273,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         if (!fieldTypesChecked.contains(node)) {
-            resolveOrFail(node.getType(), node);
+            ClassNode t = node.getOriginType();
+            resolveOrFail(t, t);
         }
         super.visitField(node);
 
@@ -287,7 +288,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             genericParameterNames = Collections.emptyMap();
         }
 
-        resolveOrFail(node.getType(), node);
+        ClassNode t = node.getOriginType();
+        resolveOrFail(t, t);
         fieldTypesChecked.add(node.getField());
 
         super.visitProperty(node);
@@ -310,10 +312,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         resolveGenericsHeader(node.getGenericsTypes());
 
-        resolveOrFail(node.getReturnType(), node);
+        {
+            ClassNode t = node.getReturnType();
+            resolveOrFail(t, t);
+        }
         for (Parameter p : node.getParameters()) {
             p.setInitialExpression(transform(p.getInitialExpression()));
-            ClassNode t = p.getType();
+            ClassNode t = p.getOriginType();
             resolveOrFail(t, t);
             visitAnnotations(p);
         }
@@ -848,7 +853,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
             String property = ((PropertyExpression) expr).getPropertyAsString();
             // the class property stops resolving, dynamic property names too
-            if (property == null || "class".equals(property)) {
+            if (property == null || property.equals("class")) {
                 return null;
             }
             Tuple2<StringBuilder, Boolean> classNameInfo = makeClassName(doInitialClassTest, name, property);
@@ -898,7 +903,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         String propertyName = classProperty.getPropertyAsString();
 
         // if it's "Type.foo.bar" or something else return PropertyExpression
-        if (propertyName == null || !"class".equals(propertyName)) return pe;
+        if (propertyName == null || !propertyName.equals("class")) return pe;
         // if it's "Type.class" or "pack.Type.class" return ClassExpression
         ce.setSourcePosition(classProperty);
         if (stack.isEmpty()) return ce;
@@ -972,8 +977,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private void checkThisAndSuperAsPropertyAccess(final PropertyExpression expression) {
         if (expression.isImplicitThis()) return;
         String prop = expression.getPropertyAsString();
-        if (prop == null) return;
-        if (!"this".equals(prop) && !"super".equals(prop)) return;
+        if (prop == null || !(prop.equals("this") || prop.equals("super"))) return;
 
         ClassNode type = expression.getObjectExpression().getType();
         if (expression.getObjectExpression() instanceof ClassExpression && !isSuperCallToDefaultMethod(expression) && !isThisCallToPrivateInterfaceMethod(expression)) {
@@ -1122,7 +1126,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         boolean oldInClosure = inClosure;
         inClosure = true;
         for (Parameter p : getParametersSafe(ce)) {
-            ClassNode t = p.getType();
+            ClassNode t = p.getOriginType();
             resolveOrFail(t, t);
             visitAnnotations(p);
             if (p.hasInitialExpression()) {

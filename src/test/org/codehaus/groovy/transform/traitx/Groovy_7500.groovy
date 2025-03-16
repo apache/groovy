@@ -18,37 +18,25 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7456Bug extends GroovyTestCase {
-    void testShouldAllowBuilderInTrait() {
-        assertScript '''
-            import groovy.xml.*
+import static groovy.test.GroovyAssert.shouldFail
 
-            trait MyBuilder {
-                def build2() {
-                    def mkp = new MarkupBuilder()
+final class Groovy_7500 {
 
-                    mkp.foo {
-                        bar()
-                    }
-                }
+    @Test
+    void testMetaClassOverride() {
+        shouldFail UnsupportedOperationException, '''
+            trait T {
+                def m() { 'T' }
+            }
+            class C implements T {
             }
 
-            class Foo implements MyBuilder {
-
-                def build1() {
-                    def mkp = new MarkupBuilder()
-
-                    mkp.foo {
-                        bar()
-                    }
-                }
+            C.metaClass.m = { ->
+                throw new UnsupportedOperationException()
             }
-
-            def foo = new Foo()
-            foo.build1()
-            foo.build2()
+            new C().m()
         '''
     }
 }

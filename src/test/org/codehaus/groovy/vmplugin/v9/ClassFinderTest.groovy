@@ -20,95 +20,97 @@ package org.codehaus.groovy.vmplugin.v9
 
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.vmplugin.VMPluginFactory
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import java.util.stream.Collectors
 
-class ClassFinderTest {
+import static org.junit.jupiter.api.Assertions.assertThrows
+
+final class ClassFinderTest {
+
     @Test
     void findGroovyClass() {
-        Map<String, Set<String>> result = ClassFinder.find(GroovySystem.location.toURI(), "groovy/lang")
-        assert ["groovy/lang"] == result.get("GString")?.toList()
-        assert null == result.get("GroovydocHolder")
+        Map<String, Set<String>> result = ClassFinder.find(GroovySystem.location.toURI(), 'groovy/lang')
+        assert ['groovy/lang'] == result.get('GString')?.toList()
+        assert null == result.get('GroovydocHolder')
     }
 
     @Test
     void findGroovyClass2() {
-        Map<String, Set<String>> result = ClassFinder.find(GroovySystem.location.toURI(), "groovy/util")
-        assert ["groovy/util"] == result.get("NodeBuilder")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(GroovySystem.location.toURI(), 'groovy/util')
+        assert ['groovy/util'] == result.get('NodeBuilder')?.toList()
     }
 
     @Test
     void findGroovyClass3() {
-        Map<String, Set<String>> result = ClassFinder.find(org.codehaus.groovy.control.ResolveVisitor.location.toURI(), "org/codehaus/groovy/control")
-        assert ["org/codehaus/groovy/control"] == result.get("ResolveVisitor")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(org.codehaus.groovy.control.ResolveVisitor.location.toURI(), 'org/codehaus/groovy/control')
+        assert ['org/codehaus/groovy/control'] == result.get('ResolveVisitor')?.toList()
     }
 
     @Test
     void findGroovyClassRecursive() {
-        Map<String, Set<String>> result = ClassFinder.find(GroovySystem.location.toURI(), "groovy/lang", true)
-        assert ["groovy/lang"] == result.get("GString")?.toList()
-        assert ["groovy/lang/groovydoc"] == result.get("GroovydocHolder")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(GroovySystem.location.toURI(), 'groovy/lang', true)
+        assert ['groovy/lang'] == result.get('GString')?.toList()
+        assert ['groovy/lang/groovydoc'] == result.get('GroovydocHolder')?.toList()
     }
 
     @Test
     void findJavaClass() {
-        Map<String, Set<String>> result = ClassFinder.find(URI.create("jrt:/modules/java.base/"), "java/lang")
-        assert ["java/lang"] == result.get("String")?.toList()
-        assert null == result.get("MethodHandle")
+        Map<String, Set<String>> result = ClassFinder.find(URI.create('jrt:/modules/java.base/'), 'java/lang')
+        assert ['java/lang'] == result.get('String')?.toList()
+        assert null == result.get('MethodHandle')
     }
 
     @Test
     void findJavaClass2() {
-        Map<String, Set<String>> result = ClassFinder.find(URI.create("jrt:/modules/java.base/"), "java/util")
-        assert ["java/util"] == result.get("Map")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(URI.create('jrt:/modules/java.base/'), 'java/util')
+        assert ['java/util'] == result.get('Map')?.toList()
     }
 
     @Test
     void findJavaClass3() {
-        Map<String, Set<String>> result = ClassFinder.find(URI.create("jrt:/modules/java.base/"), "java/io")
-        assert ["java/io"] == result.get("InputStream")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(URI.create('jrt:/modules/java.base/'), 'java/io')
+        assert ['java/io'] == result.get('InputStream')?.toList()
     }
 
     @Test
     void findJavaClass4() {
-        Map<String, Set<String>> result = ClassFinder.find(URI.create("jrt:/modules/java.base/"), "java/net")
-        assert ["java/net"] == result.get("Inet4Address")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(URI.create('jrt:/modules/java.base/'), 'java/net')
+        assert ['java/net'] == result.get('Inet4Address')?.toList()
     }
 
     @Test
     void findJavaClassRecursive() {
-        Map<String, Set<String>> result = ClassFinder.find(URI.create("jrt:/modules/java.base/"), "java/lang", true)
-        assert ["java/lang/invoke"] == result.get("MethodHandle")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(URI.create('jrt:/modules/java.base/'), 'java/lang', true)
+        assert ['java/lang/invoke'] == result.get('MethodHandle')?.toList()
     }
 
     @Test
     void findJarClass() {
-        Map<String, Set<String>> result = ClassFinder.find(org.antlr.v4.runtime.tree.ParseTree.location.toURI(), "org/antlr/v4/runtime/tree")
-        assert ["org/antlr/v4/runtime/tree"] == result.get("ParseTree")?.toList()
-        assert null == result.get("ParseTreePattern")
+        Map<String, Set<String>> result = ClassFinder.find(org.antlr.v4.runtime.tree.ParseTree.location.toURI(), 'org/antlr/v4/runtime/tree')
+        assert ['org/antlr/v4/runtime/tree'] == result.get('ParseTree')?.toList()
+        assert null == result.get('ParseTreePattern')
     }
 
     @Test
     void findJarClassRecursive() {
-        Map<String, Set<String>> result = ClassFinder.find(org.antlr.v4.runtime.tree.ParseTree.location.toURI(), "org/antlr/v4/runtime/tree", true)
-        assert ["org/antlr/v4/runtime/tree"] == result.get("ParseTree")?.toList()
-        assert ["org/antlr/v4/runtime/tree/pattern"] == result.get("ParseTreePattern")?.toList()
+        Map<String, Set<String>> result = ClassFinder.find(org.antlr.v4.runtime.tree.ParseTree.location.toURI(), 'org/antlr/v4/runtime/tree', true)
+        assert ['org/antlr/v4/runtime/tree'] == result.get('ParseTree')?.toList()
+        assert ['org/antlr/v4/runtime/tree/pattern'] == result.get('ParseTreePattern')?.toList()
     }
 
     @Test
     void defaultImportClasses() {
         Map<String, Set<String>> r1 = VMPluginFactory.getPlugin().getDefaultImportClasses(ResolveVisitor.DEFAULT_IMPORTS) as TreeMap<String, Set<String>>
-
         assert (ResolveVisitor.DEFAULT_IMPORTS as List).sort() == r1.values().stream().flatMap(e -> e.stream()).collect(Collectors.toSet()).sort()
     }
 
+    // GROOVY-9480
     @Test
-    void testGroovy9480() {
-        try {
-            ClassFinder.find(URI.create("file:/"), "NOT_EXISTS", "org/", false, true)
-        } catch (ClassFindFailedException e) {
-            assert e.message.contains('Failed to find classes')
+    void noNoSuchFieldException() {
+        def e = assertThrows(ClassFindFailedException) {
+            ClassFinder.find(URI.create('file:/'), 'NOT_EXISTS', 'org/', false, true)
         }
+        assert e.message.contains('Failed to find classes')
     }
 }

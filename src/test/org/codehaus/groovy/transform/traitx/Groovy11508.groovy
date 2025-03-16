@@ -18,11 +18,12 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy11508 {
+
     @Test
     void testGenericsAppliedToStaticMethodsForTraits() {
         assertScript '''

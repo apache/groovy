@@ -18,16 +18,32 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7196Bug extends GroovyTestCase {
-    void testShouldNotThrowDuplicateMethodWithPrecompiledTrait() {
-        assertScript '''import org.codehaus.groovy.transform.traitx.Groovy7196SupportTrait
-            class SomeTestClass implements Groovy7196SupportTrait {}
-            assert SomeTestClass.org_codehaus_groovy_transform_traitx_Groovy7196SupportTrait__someString == 'ok'
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_7275 {
+
+    @Test
+    void testShouldNotThrowCompileBug() {
+        assertScript '''
+            import groovy.transform.SelfType
+            import groovy.transform.CompileStatic
+
+            class BitcoinClient {
+                Map<String,Object> getTransaction(String txid) {
+                }
+            }
+
+            @CompileStatic
+            @SelfType(BitcoinClient)
+            trait BitcoinCLIAPI {
+                Map<String, Object> gettransaction(String txid) {
+                    return getTransaction(txid)
+                }
+            }
+
+            BitcoinCLIAPI
         '''
-    }
-    void testStaticFieldShouldBeInitialized() {
-        assert Groovy7196SupportTraitImpl.org_codehaus_groovy_transform_traitx_Groovy7196SupportTrait__someString == 'ok'
     }
 }

@@ -18,30 +18,23 @@
  */
 package org.codehaus.groovy.transform.traitx
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7275Bug extends GroovyTestCase {
-    void testShouldNotThrowCompileBug() {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy_6736 {
+
+    @Test
+    void testAddExtraMethodToMapUsingTraitAndAsKeyword() {
         assertScript '''
+            trait Extra {
+                String extra() { "I'm an extra method" }
+            }
 
-import groovy.transform.SelfType
-import groovy.transform.CompileStatic
-
-class BitcoinClient {
-   Map<String,Object> getTransaction(String txid) {}
-}
-
-@SelfType(BitcoinClient)
-@CompileStatic
-trait BitcoinCLIAPI {
-
-    Map<String, Object> gettransaction(String txid) {
-       return getTransaction(txid)
-    }
-}
-
-BitcoinCLIAPI
-
-'''
+            def extraList = [] as Extra
+            assert extraList.extra() == "I'm an extra method"
+            def extraMap = [:] as Extra
+            assert extraMap.extra() == "I'm an extra method"
+        '''
     }
 }
