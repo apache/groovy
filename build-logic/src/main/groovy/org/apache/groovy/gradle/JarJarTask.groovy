@@ -56,6 +56,10 @@ class JarJarTask extends DefaultTask {
     @Classpath
     final ConfigurableFileCollection jarjarToolClasspath = project.objects.fileCollection()
 
+    final protected osgi = project.rootProject.extensions.osgi
+
+    final protected String projectName = project.name
+
     @InputFiles
     @Classpath
     @Optional
@@ -119,7 +123,7 @@ class JarJarTask extends DefaultTask {
         String tstamp = Date.parse('yyyy-MM-dd HH:mm', '1980-02-01 00:00').getTime().toString()
 
         // Step 1: create a repackaged jar
-        project.ant {
+        ant.with {
             taskdef name: 'jarjar', classname: 'com.eed3si9n.jarjar.JarJarTask', classpath: jarjarToolClasspath.asPath
             jarjar(jarfile: tmpJar, filesonly: true, modificationtime: tstamp) {
                 zipfileset(src: from.get(), excludes: (untouchedFiles + excludes).join(','))
@@ -153,7 +157,7 @@ class JarJarTask extends DefaultTask {
         }
 
         // Step 2: update the archive with a class index and any untouched files
-        project.ant.jar(destfile: outputFile, index: true, modificationtime: tstamp, update: true) {
+        ant.jar(destfile: outputFile, index: true, modificationtime: tstamp, update: true) {
             if (untouchedFiles) {
                 zipfileset(src: from.get(), includes: untouchedFiles.join(','))
             }
@@ -161,15 +165,15 @@ class JarJarTask extends DefaultTask {
 
         // Step 3: generate an OSGi manifest referencing the repackaged classes
         if (createManifest) {
-            def mf = project.rootProject.extensions.osgi.osgiManifest {
-                symbolicName = project.name
+            def mf = osgi.osgiManifest {
+                symbolicName = this.projectName
                 instruction 'Import-Package', '*;resolution:=optional'
                 classesDir = tmpJar
             }
             manifestTweaks*.execute(mf)
             mf.writeTo(manifestFile)
 
-            project.ant.zip(destfile: outputFile, modificationtime: tstamp, update: true) {
+            ant.zip(destfile: outputFile, modificationtime: tstamp, update: true) {
                 zipfileset(dir: manifestFile.parent, includes: manifestFile.name, prefix: 'META-INF')
             }
         }

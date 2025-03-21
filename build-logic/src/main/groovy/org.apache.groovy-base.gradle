@@ -179,6 +179,7 @@ tasks.withType(Jar).configureEach { jar ->
 }
 
 tasks.register('jarjar', JarJarTask) {
+    String projectName = project.name
     from = jar.archiveFile
     repackagedLibraries.from configurations.runtimeClasspath.incoming.artifactView {
         componentFilter { component ->
@@ -209,7 +210,6 @@ tasks.register('jarjar', JarJarTask) {
     outputFile = tasks.named('jar').flatMap { layout.buildDirectory.file("libs/${it.archiveBaseName.get()}-${it.archiveVersion.get()}${(it.archiveClassifier.get() && it.archiveClassifier.get() != 'raw') ? '-' + it.archiveClassifier.get() : ''}.jar") }
 
     withManifest {
-        String projectName = project.name
         String autoModName = "org.apache.${projectName.replace('-','.')}"
         attributes('Automatic-Module-Name': autoModName, 'Bundle-Name': "Groovy module: $projectName")
         groovyLibrary.configureManifest(it, excludedFromManifest)
