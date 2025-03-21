@@ -5730,8 +5730,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 1.6.0
      */
-    public static <T> Collection<T> flatten(Collection<T> self) {
-        return flatten(self, createSimilarCollection(self), true);
+    public static <T, E> Collection<T> flatten(Collection<E> self) {
+        return flatten(self, (Collection<T>) createSimilarCollection(self), true);
     }
 
     /**
@@ -5743,8 +5743,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 1.6.0
      */
-    public static <T> Collection<T> flatten(Iterable<T> self) {
-        return flatten(self, createSimilarCollection(self), true);
+    public static <T, E> Collection<T> flatten(Iterable<E> self) {
+        return flatten(self, (Collection<T>) createSimilarCollection(self), true);
     }
 
     /**
@@ -5764,8 +5764,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 5.0.0
      */
-    public static <T> Collection<T> flatten(Iterable<T> self, boolean flattenOptionals) {
-        return flatten(self, createSimilarCollection(self), flattenOptionals);
+    public static <T, E> Collection<T> flatten(Iterable<E> self, boolean flattenOptionals) {
+        return flatten(self, (Collection<T>) createSimilarCollection(self), flattenOptionals);
     }
 
     /**
@@ -5777,7 +5777,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened List
      * @since 2.4.0
      */
-    public static <T> List<T> flatten(List<T> self) {
+    public static <T, E> List<T> flatten(List<E> self) {
         return (List<T>) flatten(self, true);
     }
 
@@ -5790,7 +5790,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Set
      * @since 2.4.0
      */
-    public static <T> Set<T> flatten(Set<T> self) {
+    public static <T, E> Set<T> flatten(Set<E> self) {
         return (Set<T>) flatten(self, true);
     }
 
@@ -5808,12 +5808,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened SortedSet
      * @since 2.4.0
      */
-    public static <T> SortedSet<T> flatten(SortedSet<T> self) {
+    public static <T, E> SortedSet<T> flatten(SortedSet<E> self) {
         return (SortedSet<T>) flatten(self, true);
     }
 
-    private static <T> Collection<T> flatten(Iterable<T> elements, Collection<T> addTo, boolean flattenOptionals) {
-        for (T element : elements) {
+    private static <T, E> Collection<T> flatten(Iterable<E> elements, Collection<T> addTo, boolean flattenOptionals) {
+        for (E element : elements) {
             flattenSingle(element, addTo, flattenOptionals);
         }
         return addTo;
@@ -5871,7 +5871,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectNested(Iterable, Closure)
      * @since 1.6.0
      */
-    public static <T, E> Collection<T> flatten(Iterable<E> self, Closure<?> flattenUsing) {
+    public static <T, E> Collection<T> flatten(Iterable<E> self, @ClosureParams(value=FromString.class, options="?") Closure<?> flattenUsing) {
         return flatten(self, true, flattenUsing);
     }
 
@@ -5904,7 +5904,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Collection
      * @since 5.0.0
      */
-    public static <T, E> Collection<T> flatten(Iterable<E> self, boolean flattenOptionals, Closure<?> flattenUsing) {
+    public static <T, E> Collection<T> flatten(Iterable<E> self, boolean flattenOptionals, @ClosureParams(value=FromString.class, options="?") Closure<?> flattenUsing) {
         return flatten(self, flattenOptionals, (Collection<T>) createSimilarCollection(self), flattenUsing);
     }
 
@@ -5920,20 +5920,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a flattened Optional
      * @since 5.0.0
      */
-    public static <T> Collection<T> flatten(Optional<T> self) {
+    public static <T, E> Collection<T> flatten(Optional<E> self) {
         List<T> result = new ArrayList<>();
-        self.ifPresent(result::add);
+        self.ifPresent(e -> flattenSingle(e, result, true));
         return result;
     }
 
     private static <T, E> Collection<T> flatten(Iterable<E> elements, boolean flattenOptionals, Collection<T> addTo, Closure<?> flattenUsing) {
-        for (Object element : elements) {
+        for (E element : elements) {
             if (element instanceof Collection) {
-                flatten((Collection<T>) element, flattenOptionals, addTo, flattenUsing);
+                flatten((Collection<?>) element, flattenOptionals, addTo, flattenUsing);
             } else if (element != null && element.getClass().isArray()) {
-                flatten(new ArrayIterable<>((Object[]) element), flattenOptionals, addTo, flattenUsing);
+                flatten(DefaultTypeTransformation.primitiveArrayToUnmodifiableList(element), flattenOptionals, addTo, flattenUsing);
             } else if (element instanceof Optional && flattenOptionals) {
-                flatten(flatten((Optional<T>) element), flattenOptionals, addTo, flattenUsing);
+                flatten(flatten((Optional<?>) element), flattenOptionals, addTo, flattenUsing);
             } else {
                 flattenSingle(element, flattenOptionals, addTo, flattenUsing);
             }
@@ -5943,15 +5943,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static <T> void flattenSingle(Object element, boolean flattenOptionals, Collection<T> addTo, Closure<?> flattenUsing) {
         Object flattened = flattenUsing.call(new Object[]{element});
-        boolean returnedSelf = flattened == element;
+        boolean returnedSelf = (flattened == element);
         if (!returnedSelf && flattened instanceof Collection) {
-            List list = toList((Iterable) flattened);
+            List<?> list = toList((Iterable<?>) flattened);
             if (list.size() == 1 && list.get(0) == element) {
                 returnedSelf = true;
             }
         }
         if (flattened instanceof Collection && !returnedSelf) {
-            addTo.addAll(flatten((Collection) flattened, flattenOptionals));
+            addTo.addAll(flatten((Collection<?>) flattened, flattenOptionals));
         } else {
             addTo.add((T) flattened);
         }
@@ -5986,18 +5986,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #collectMany(Iterable, Closure)
      * @since 5.0.0
      */
-    public static Collection<Object> flattenMany(Iterable<?> self, Closure<?> transform) {
-        return flattenMany(self, (Collection<Object>) createSimilarCollection(self), transform);
+    public static <T> Collection<T> flattenMany(Iterable<?> self, Closure<?> transform) {
+        return flattenMany(self, (Collection<T>) createSimilarCollection(self), transform);
     }
 
-    private static Collection<Object> flattenMany(Iterable<?> self, Collection<Object> addTo, Closure<?> flattenUsing) {
+    private static <T> Collection<T> flattenMany(Iterable<?> self, Collection<T> addTo, Closure<?> flattenUsing) {
         for (Object element : self) {
             flattenSingle(element, addTo, flattenUsing);
         }
         return addTo;
     }
 
-    private static void flattenSingle(Object element, Collection<Object> addTo, Closure<?> transform) {
+    private static <T> void flattenSingle(Object element, Collection<T> addTo, Closure<?> transform) {
         if (element instanceof Collection) {
             addTo.addAll(flattenMany((Collection) element, addTo, transform));
         } else if (element != null && element.getClass().isArray()) {
