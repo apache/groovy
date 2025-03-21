@@ -671,7 +671,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private Object getMethods(final Class<?> sender, final String name, final boolean isCallToSuper) {
         Object answer;
 
-        final MetaMethodIndex.Cache entry = metaMethodIndex.getMethods(sender, name);
+        var entry = metaMethodIndex.getMethods( sender , name);
+        if (entry == null) {
+            entry = metaMethodIndex.getMethods(theClass, name);
+        }
         if (entry == null) {
             answer = FastArray.EMPTY_LIST;
         } else if (isCallToSuper) {
@@ -1086,7 +1089,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
+        final Object[] arguments = Optional.ofNullable(originalArguments).orElse(EMPTY_ARGUMENTS);
 
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
@@ -1237,9 +1240,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
         }
         MetaClassHelper.unwrap(arguments);
-
-        if (method == null)
+        if (method == null) {
             method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
+        }
         return method;
     }
 
@@ -1329,6 +1332,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (e == null ? (sender == theClass && !sender.isEnum() && (sender.getModifiers() & Opcodes.ACC_ENUM) != 0) // GROOVY-9523: private
                       : (isCallToSuper && e.methodsForSuper == null)) { // allow "super.name()" to find DGM if class declares method "name"
             e = metaMethodIndex.getMethods(sender.getSuperclass(), methodName);
+        }
+        if (e == null) {
+            e = metaMethodIndex.getMethods(theClass, methodName); // GROOVY-11568
         }
         if (e == null) {
             return null;

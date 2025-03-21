@@ -56,15 +56,14 @@ public class IndyGuardsFiltersAndSignatures {
 
     private static final MethodType
             OBJECT_FILTER = MethodType.methodType(Object.class, Object.class),
-            OBJECT_GUARD = MethodType.methodType(boolean.class, Object.class),
-            INVOKER = MethodType.methodType(Object.class, Object.class, String.class, Object[].class);
+            OBJECT_GUARD = MethodType.methodType(boolean.class, Object.class);
 
     protected static final MethodHandle
             SAME_CLASS, SAME_CLASSES, SAME_MC, IS_NULL, NON_NULL,
             UNWRAP_METHOD, UNWRAP_EXCEPTION,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
-            META_METHOD_INVOKER, GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,
-            META_CLASS_INVOKE_STATIC_METHOD,
+            GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,META_METHOD_INVOKER,
+            META_CLASS_INVOKE_METHOD, META_CLASS_INVOKE_STATIC_METHOD,
             BEAN_CONSTRUCTOR_PROPERTY_SETTER,
             META_PROPERTY_GETTER,
             SLOW_META_CLASS_FIND,
@@ -78,35 +77,36 @@ public class IndyGuardsFiltersAndSignatures {
 
     static {
         try {
-            SAME_CLASS = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
-            SAME_CLASSES = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class[].class, Object[].class));
-            SAME_MC = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
-            IS_NULL = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
-            NON_NULL = LOOKUP.findStatic(Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class));
-            UNWRAP_METHOD = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", OBJECT_FILTER);
-            UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
-            HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic(GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
-            META_METHOD_INVOKER = LOOKUP.findVirtual(MetaMethod.class, "doMethodInvoke", MethodType.methodType(Object.class, Object.class, Object[].class));
-            GROOVY_OBJECT_INVOKER = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "invokeGroovyObjectInvoker", INVOKER.insertParameterTypes(0, MissingMethodException.class));
-            GROOVY_OBJECT_GET_PROPERTY = LOOKUP.findVirtual(GroovyObject.class, "getProperty", MethodType.methodType(Object.class, String.class));
-            META_CLASS_INVOKE_STATIC_METHOD = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeStaticMethod", INVOKER);
-            BEAN_CONSTRUCTOR_PROPERTY_SETTER = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
-            META_PROPERTY_GETTER = LOOKUP.findVirtual(MetaProperty.class, "getProperty", OBJECT_FILTER);
-            SLOW_META_CLASS_FIND = LOOKUP.findStatic(InvokerHelper.class, "getMetaClass", MethodType.methodType(MetaClass.class, Object.class));
-            MOP_GET = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
-            MOP_INVOKE_CONSTRUCTOR = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", MethodType.methodType(Object.class, Object[].class));
-            MOP_INVOKE_METHOD = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", INVOKER);
-            INTERCEPTABLE_INVOKER = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
+            SAME_CLASS                           = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "sameClass", MethodType.methodType(boolean.class, Class.class, Object.class));
+            SAME_CLASSES                         = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "sameClasses", MethodType.methodType(boolean.class, Class[].class, Object[].class));
+            SAME_MC                              = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", MethodType.methodType(boolean.class, MetaClass.class, Object.class));
+            IS_NULL                              = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
+            NON_NULL                             = LOOKUP.findStatic (Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class));
+            UNWRAP_METHOD                        = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "unwrap", OBJECT_FILTER);
+            UNWRAP_EXCEPTION                     = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "unwrap", MethodType.methodType(Object.class, GroovyRuntimeException.class));
+            HAS_CATEGORY_IN_CURRENT_THREAD_GUARD = LOOKUP.findStatic (GroovyCategorySupport.class, "hasCategoryInCurrentThread", MethodType.methodType(boolean.class));
+            GROOVY_OBJECT_INVOKER                = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "invokeGroovyObjectInvoker", MethodType.methodType(Object.class, MissingMethodException.class, Object.class, String.class, Object[].class));
+            GROOVY_OBJECT_GET_PROPERTY           = LOOKUP.findVirtual(GroovyObject.class, "getProperty", MethodType.methodType(Object.class, String.class));
+            META_METHOD_INVOKER                  = LOOKUP.findVirtual(MetaMethod.class, "doMethodInvoke", MethodType.methodType(Object.class, Object.class, Object[].class));
+            META_CLASS_INVOKE_METHOD             = LOOKUP.findVirtual(MetaClass.class, "invokeMethod", MethodType.methodType(Object.class, Class.class, Object.class, String.class, Object[].class, boolean.class, boolean.class));
+            META_CLASS_INVOKE_STATIC_METHOD      = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeStaticMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
+            BEAN_CONSTRUCTOR_PROPERTY_SETTER     = LOOKUP.findStatic (IndyGuardsFiltersAndSignatures.class, "setBeanProperties", MethodType.methodType(Object.class, MetaClass.class, Object.class, Map.class));
+            META_PROPERTY_GETTER                 = LOOKUP.findVirtual(MetaProperty.class, "getProperty", OBJECT_FILTER);
+            SLOW_META_CLASS_FIND                 = LOOKUP.findStatic (InvokerHelper.class, "getMetaClass", MethodType.methodType(MetaClass.class, Object.class));
+            MOP_GET                              = LOOKUP.findVirtual(MetaObjectProtocol.class, "getProperty", MethodType.methodType(Object.class, Object.class, String.class));
+            MOP_INVOKE_CONSTRUCTOR               = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeConstructor", MethodType.methodType(Object.class, Object[].class));
+            MOP_INVOKE_METHOD                    = LOOKUP.findVirtual(MetaObjectProtocol.class, "invokeMethod", MethodType.methodType(Object.class, Object.class, String.class, Object[].class));
+            INTERCEPTABLE_INVOKER                = LOOKUP.findVirtual(GroovyObject.class, "invokeMethod", MethodType.methodType(Object.class, String.class, Object.class));
 
-            BOOLEAN_IDENTITY = MethodHandles.identity(Boolean.class);
-            CLASS_FOR_NAME = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
-            DTT_CAST_TO_TYPE = LOOKUP.findStatic(DefaultTypeTransformation.class, "castToType", MethodType.methodType(Object.class, Object.class, Class.class));
-            SAM_CONVERSION = LOOKUP.findStatic(CachedSAMClass.class, "coerceToSAM", MethodType.methodType(Object.class, Closure.class, Method.class, Class.class));
-            HASHSET_CONSTRUCTOR = LOOKUP.findConstructor(HashSet.class, MethodType.methodType(void.class, Collection.class));
-            ARRAYLIST_CONSTRUCTOR = LOOKUP.findConstructor(ArrayList.class, MethodType.methodType(void.class, Collection.class));
-            GROOVY_CAST_EXCEPTION = LOOKUP.findConstructor(GroovyCastException.class, MethodType.methodType(void.class, Object.class, Class.class));
+            BOOLEAN_IDENTITY                     = MethodHandles.identity(Boolean.class);
+            CLASS_FOR_NAME                       = LOOKUP.findStatic(Class.class, "forName", MethodType.methodType(Class.class, String.class, boolean.class, ClassLoader.class));
+            DTT_CAST_TO_TYPE                     = LOOKUP.findStatic(DefaultTypeTransformation.class, "castToType", MethodType.methodType(Object.class, Object.class, Class.class));
+            SAM_CONVERSION                       = LOOKUP.findStatic(CachedSAMClass.class, "coerceToSAM", MethodType.methodType(Object.class, Closure.class, Method.class, Class.class));
+            HASHSET_CONSTRUCTOR                  = LOOKUP.findConstructor(HashSet.class, MethodType.methodType(void.class, Collection.class));
+            ARRAYLIST_CONSTRUCTOR                = LOOKUP.findConstructor(ArrayList.class, MethodType.methodType(void.class, Collection.class));
+            GROOVY_CAST_EXCEPTION                = LOOKUP.findConstructor(GroovyCastException.class, MethodType.methodType(void.class, Object.class, Class.class));
 
-            EQUALS = LOOKUP.findVirtual(Object.class, "equals", OBJECT_GUARD);
+            EQUALS                               = LOOKUP.findVirtual(Object.class, "equals", OBJECT_GUARD);
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }

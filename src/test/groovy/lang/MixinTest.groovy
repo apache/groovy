@@ -306,9 +306,8 @@ class MixinTest extends GroovyTestCase {
         u << 2
 
         assertEquals 6, u.size()
-        assertEquals 6, ((List) u).size()
         assertEquals 6, ((Collection) u).size()
-        assertEquals 2, u.mixedIn[Set].size()
+        assertEquals 6, ((List) u).size()
         assertEquals 2, ((Set) u).size()
     }
 

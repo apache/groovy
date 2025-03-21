@@ -365,7 +365,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
         Class thisType = sender;
         while (GeneratedClosure.class.isAssignableFrom(thisType)) thisType = thisType.getEnclosingClass();
-        if (thisType != sender && thisType != object.getClass() && thisType.isInstance(object)) { // GROOVY-2433, GROOVY-11128
+        if (thisType != object.getClass() && thisType.isInstance(object)) { // GROOVY-2433, GROOVY-11128
             try {
                 return ((GroovyObject) object).getMetaClass().invokeMethod(thisType, object, methodName, arguments, false, true);
             } catch (GroovyRuntimeException gre) {
