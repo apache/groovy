@@ -34,7 +34,9 @@ class GroovySystemTest extends GroovyTestCase {
         assert GroovySystem.getVersion()
         // so we can check these values in test reports
         println GroovySystem.getVersion()
-        println System.getProperties()
-        println System.getenv()
+        println '\nSystem properties:'
+        println System.getProperties().entrySet().join('\n')
+        println '\nEnvironment variables:'
+        println System.getenv().entrySet().join('\n')
     }
 }
