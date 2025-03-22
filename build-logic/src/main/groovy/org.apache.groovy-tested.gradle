@@ -72,12 +72,7 @@ tasks.withType(Test).configureEach {
 
     println GroovySystem.getVersion()
     if (rootProject.hasProperty('target.java.home')) {
-        println '\nSystem properties:'
-        println System.getProperties().entrySet().join('\n')
-        println '\nEnvironment variables:'
-        println System.getenv().entrySet().join('\n')
         String targetJavaHome = rootProject.property('target.java.home')?.trim()
-        println targetJavaHome
         if (targetJavaHome) {
             executable = "${targetJavaHome}/bin/java"
             println "Using ${executable} to run tests"
