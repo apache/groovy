@@ -83,6 +83,7 @@ jobs:
             21
           check-latest: true
       - uses: gradle/actions/setup-gradle@v4
+      - run: set | grep JAVA
       - name: Test with Gradle
         run: ./gradlew test -Ptarget.java.home=$JAVA_HOME_24
         timeout-minutes: 60
