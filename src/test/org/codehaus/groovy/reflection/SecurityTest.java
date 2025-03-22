@@ -35,6 +35,8 @@ import static groovy.test.GroovyAssert.isAtLeastJdk;
 
 public class SecurityTest extends GroovyTestCase {
 
+    private final boolean skip = Runtime.version().feature() >= 24;
+
     @SuppressWarnings("unused")
     public class TestClass{
         public String publicField;
@@ -84,6 +86,7 @@ public class SecurityTest extends GroovyTestCase {
 
     @SuppressWarnings("removal") // TODO in a future Groovy version remove reference to SecurityManager & AccessControlException
     public void setUp() {
+        if (skip) return;
         // Forbidding suppressAccessChecks in the test will make the internal implementation of some JDK fail,
         // so load vm plugin before security manager is installed:
         /*
@@ -114,6 +117,7 @@ public class SecurityTest extends GroovyTestCase {
 
     @SuppressWarnings("removal") // TODO in a future Groovy version remove reference to SecurityManager, for now not run for JDK18+
     public void tearDown(){
+        if (skip) return;
         System.setSecurityManager(null);
     }
 
