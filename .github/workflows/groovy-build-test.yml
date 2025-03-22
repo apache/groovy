@@ -47,7 +47,7 @@ jobs:
         if: always()
         with:
           name: build-reports-${{ matrix.java }}
-          path: build/reports/
+          path: '**/build/reports/'
 
   additional:
     #if: github.event_name == 'push'
@@ -91,7 +91,7 @@ jobs:
         if: always()
         with:
           name: build-reports-24
-          path: build/reports/
+          path: '**/build/reports/'
 
   ea:
     #if: github.event_name == 'push'
@@ -123,4 +123,4 @@ jobs:
         if: always()
         with:
           name: build-reports-ea
-          path: build/reports/
+          path: '**/build/reports/'
