@@ -85,7 +85,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: set | grep JAVA
       - name: Test with Gradle
-        run: ./gradlew test -Ptarget.java.home=$JAVA_HOME_24
+        run: ./gradlew test -Ptarget.java.home=JAVA_HOME_24_X64
         timeout-minutes: 60
       - name: Upload reports
         uses: actions/upload-artifact@v4
