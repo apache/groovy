@@ -769,15 +769,38 @@ public class BinaryExpressionHelper {
     }
 
     private void evaluateInstanceof(final BinaryExpression expression) {
+        CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+
         expression.getLeftExpression().visit(controller.getAcg());
-        controller.getOperandStack().box();
-        Expression rightExp = expression.getRightExpression();
-        if (!(rightExp instanceof ClassExpression)) {
-            throw new RuntimeException("RHS of the instanceof keyword must be a class name, not: " + rightExp);
+        operandStack.box(); // TODO: support instanceof primitives
+
+        ClassNode sourceType = operandStack.getTopOperand();
+        ClassNode targetType = expression.getRightExpression().getType();
+
+        int jep394 = 0;
+        if (!(expression.getRightExpression() instanceof ClassExpression)) {
+            operandStack.dup(); // stash value for use by JEP 394 pattern variable
+            String name = "instanceof"+Integer.toHexString(expression.hashCode());
+            jep394 = compileStack.defineTemporaryVariable(name, sourceType, true);
         }
-        String classInternalName = BytecodeHelper.getClassInternalName(rightExp.getType());
-        controller.getMethodVisitor().visitTypeInsn(INSTANCEOF, classInternalName);
-        controller.getOperandStack().replace(ClassHelper.boolean_TYPE);
+
+        String typeName = BytecodeHelper.getClassInternalName(targetType);
+        controller.getMethodVisitor().visitTypeInsn(INSTANCEOF, typeName);
+        operandStack.replace(ClassHelper.boolean_TYPE);
+
+        if (jep394 > 0) {
+            var variable = (Variable) ((BinaryExpression) expression.getRightExpression()).getLeftExpression();
+            BytecodeVariable v = compileStack.defineVariable(variable, targetType, false);
+
+            operandStack.dup();
+            Label l0 = operandStack.jump(IFEQ); // skip store if not instanceof
+            BytecodeHelper.load(controller.getMethodVisitor(), sourceType, jep394);
+            BytecodeHelper.store(controller.getMethodVisitor(), targetType, v.getIndex());
+
+            controller.getMethodVisitor().visitLabel(l0);
+            compileStack.removeVar(jep394);
+        }
     }
 
     private void evaluateNotInstanceof(final BinaryExpression expression) {

@@ -160,6 +160,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
@@ -3024,12 +3025,21 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
           case AS:
             Expression expr = (Expression) this.visit(ctx.left);
             if (expr instanceof VariableExpression && ((VariableExpression) expr).isSuperExpression()) {
-                this.createParsingFailedException("Cannot cast or coerce `super`", ctx); // GROOVY-9391
+                throw this.createParsingFailedException("Cannot cast or coerce `super`", ctx); // GROOVY-9391
             }
-            CastExpression cast = CastExpression.asExpression(this.visitType(ctx.type()), expr);
-            return configureAST(cast, ctx);
+            return configureAST(
+                    CastExpression.asExpression(this.visitType(ctx.type()), expr),
+                    ctx);
 
           case INSTANCEOF:
+            ctx.matchingType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            return configureAST(
+                    new BinaryExpression(
+                            (Expression) this.visit(ctx.left),
+                            this.createGroovyToken(ctx.op),
+                            this.visitMatchingType(ctx.matchingType())),
+                    ctx);
+
           case NOT_INSTANCEOF:
             ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
             return configureAST(
@@ -4056,6 +4066,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     // } type ------------------------------------------------------------------
+
+    @Override
+    public Expression visitMatchingType(final MatchingTypeContext ctx) {
+        if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+            ctx.type().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+        }
+        ClassNode type = this.visitType(ctx.type());
+        Expression ex;
+        if (asBoolean(ctx.identifier())) { // Type name (JEP 394)
+            ex = configureAST(varX(this.visitIdentifier(ctx.identifier()), type), ctx.identifier());
+            ex = declX(ex, EmptyExpression.INSTANCE);
+        } else { // Type
+            ex = new ClassExpression(type);
+        }
+        return configureAST(ex, ctx);
+    }
 
     @Override
     public VariableExpression visitVariableDeclaratorId(final VariableDeclaratorIdContext ctx) {

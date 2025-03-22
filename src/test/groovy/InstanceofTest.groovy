@@ -18,57 +18,65 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class InstanceofTest extends GroovyTestCase {
+final class InstanceofTest {
 
-    void testTrue() {
-
-        def x = false
+    @Test
+    void testIsInstance() {
         def o = 12
 
-        if ( o instanceof Integer ) {
-            x = true
-        }
-
-        assert x == true
+        assert (o instanceof Integer)
     }
 
-    void testFalse() {
-
-        def x = false
+    @Test
+    void testNotInstance() {
         def o = 12
 
-        if ( o instanceof Double ) {
-            x = true
-        }
-
-        assert x == false
+        assert !(o instanceof Double)
     }
 
+    @Test
     void testImportedClass() {
         def m = ["xyz":2]
-        assert m instanceof Map
-        assert !(m instanceof Double)
 
-        assertTrue(m instanceof Map)
-        assertFalse(m instanceof Double)
+        assert  (m  instanceof Map)
+        assert !(m !instanceof Map)
+        assert !(m  instanceof Double)
+        assert  (m !instanceof Double)
     }
 
+    @Test
     void testFullyQualifiedClass() {
         def l = [1, 2, 3]
-        assert l instanceof java.util.List
-        assert !(l instanceof Map)
 
-        assertTrue(l instanceof java.util.List)
-        assertFalse(l instanceof Map)
+        assert (l instanceof java.util.List)
+        assert !(l instanceof java.util.Map)
+        assert (l !instanceof java.util.Map)
     }
 
-    void testBoolean(){
+    @Test
+    void testBoolean() {
        assert true instanceof Object
        assert true==true instanceof Object
        assert true==false instanceof Object
        assert true==false instanceof Boolean
        assert !new Object() instanceof Boolean
+    }
+
+    // GROOVY-11229
+    @Test
+    void testVariable() {
+        Number n = 12345;
+        if (n instanceof Integer i) {
+            assert i.intValue() == 12345
+        } else {
+            assert false : 'expected Integer'
+        }
+        if (n instanceof String s) {
+            assert false : 'not String'
+        } else {
+            assert n.intValue() == 12345
+        }
     }
 }

@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.syntax.Token;
 
@@ -128,6 +129,11 @@ public class DeclarationExpression extends BinaryExpression {
         return leftExpression instanceof TupleExpression
                     ? (TupleExpression) leftExpression
                     : null;
+    }
+
+    @Override
+    public ClassNode getType() {
+        return (isMultipleAssignmentDeclaration() ? getTupleExpression() : getVariableExpression()).getType();
     }
 
     @Override
