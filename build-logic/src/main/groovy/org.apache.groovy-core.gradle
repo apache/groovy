@@ -119,7 +119,7 @@ tasks.named('jarjar') { JarJarTask jjt ->
     jjt.withManifest {
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
-        instruction 'Eclipse-ExtensibleAPI', 'true'
+        instruction 'Eclipse-ExtensibleAPI', 'true' // GROOVY-8713, GROOVY-11582
     }
 }
 
