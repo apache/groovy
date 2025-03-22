@@ -325,15 +325,27 @@ variableInitializer
     :   enhancedStatementExpression
     ;
 
-emptyDims
-    :   (annotationsOpt LBRACK RBRACK)+
+type
+    :   annotationsOpt
+        (
+            VOID // error
+        |
+            primitiveType
+        |
+            referenceType
+        )
+        dim0*
     ;
 
-emptyDimsOpt
-    :   emptyDims?
+primitiveType
+    :   BuiltInPrimitiveType
     ;
 
-standardType
+referenceType
+    :   qualifiedClassName typeArguments?
+    ;
+
+standardType // see: returnType
 options { baseContext = type; }
     :   annotationsOpt
         (
@@ -341,42 +353,12 @@ options { baseContext = type; }
         |
             standardClassOrInterfaceType
         )
-        emptyDimsOpt
-    ;
-
-type
-    :   annotationsOpt
-        (
-            (
-                primitiveType
-            |
-                // !!! Error Alternative !!!
-                 VOID
-            )
-        |
-                generalClassOrInterfaceType
-        )
-        emptyDimsOpt
-    ;
-
-classOrInterfaceType
-    :   (   qualifiedClassName
-        |   qualifiedStandardClassName
-        ) typeArguments?
-    ;
-
-generalClassOrInterfaceType
-options { baseContext = classOrInterfaceType; }
-    :   qualifiedClassName typeArguments?
+        dim0*
     ;
 
 standardClassOrInterfaceType
-options { baseContext = classOrInterfaceType; }
+options { baseContext = referenceType; }
     :   qualifiedStandardClassName typeArguments?
-    ;
-
-primitiveType
-    :   BuiltInPrimitiveType
     ;
 
 typeArguments

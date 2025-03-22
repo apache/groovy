@@ -226,7 +226,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     private void visitTypeAnnotations(final ClassNode node) {
         if ((node.isRedirectNode() || node.isPrimaryClassNode()) && !Boolean.TRUE.equals(node.putNodeMetaData("EXTENDED_VERIFIER_SEEN", Boolean.TRUE))) {
             visitAnnotations(node, node.getTypeAnnotations(), node.isGenericsPlaceHolder() ? TYPE_PARAMETER_TARGET : TYPE_USE_TARGET);
-            visitGenericsTypeAnnotations(node);
+            if (node.isArray()) visitTypeAnnotations(node.getComponentType());
+            else visitGenericsTypeAnnotations(node);
         }
     }
 
@@ -258,7 +259,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private void extractTypeUseAnnotations(final List<AnnotationNode> mixed, final ClassNode targetType, final int keepTarget) {
+    private void extractTypeUseAnnotations(final List<AnnotationNode> mixed, ClassNode targetType, final int keepTarget) {
         List<AnnotationNode> typeUseAnnos = new ArrayList<>();
         for (AnnotationNode anno : mixed) {
             if (anno.isTargetAllowed(TYPE_USE_TARGET)) {
@@ -266,6 +267,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
         }
         if (!typeUseAnnos.isEmpty()) {
+            while (targetType.isArray()) targetType = targetType.getComponentType();
             targetType.addTypeAnnotations(typeUseAnnos);
             for (AnnotationNode anno : typeUseAnnos) {
                 if (!anno.isTargetAllowed(keepTarget)) {

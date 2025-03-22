@@ -1211,6 +1211,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private void visitTypeAnnotations(final ClassNode node) {
         visitAnnotations(node.getTypeAnnotations());
+        if (node.isArray()) visitTypeAnnotations(node.getComponentType());
     }
 
     @Override

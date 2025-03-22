@@ -2215,7 +2215,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * @param an the node with an annotation
      * @param av the visitor to use
      */
-    private void visitAnnotationAttributes(final AnnotationNode an, final AnnotationVisitor av) {
+    public void visitAnnotationAttributes(final AnnotationNode an, final AnnotationVisitor av) {
         Map<String, Object> constantAttrs = new HashMap<>();
         Map<String, PropertyExpression> enumAttrs = new HashMap<>();
         Map<String, Object> atAttrs = new HashMap<>();

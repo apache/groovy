@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -28,6 +29,8 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.TypePath;
+import org.objectweb.asm.TypeReference;
 
 import java.util.Collection;
 import java.util.Deque;
@@ -373,8 +376,25 @@ public class CompileStack {
             }
             for (BytecodeVariable v : usedVariables) {
                 String type = BytecodeHelper.getTypeDescription(v.isHolder() ? ClassHelper.REFERENCE_TYPE : v.getType());
-                Label endLabel = v.getEndLabel() == null ? v.getStartLabel() : v.getEndLabel(); // only occurs for '_' placeholder
-                mv.visitLocalVariable(v.getName(), type, null, v.getStartLabel(), endLabel, v.getIndex());
+                Label startLabel = v.getStartLabel(), endLabel = v.getEndLabel();
+                if (endLabel == null) endLabel = startLabel; // only occurs for '_' placeholder
+                mv.visitLocalVariable(v.getName(), type, null, startLabel, endLabel, v.getIndex());
+                // JSR 308: local variable type annotations
+                ClassNode t = v.getType();
+                String typePath = ""; // ?
+                do {
+                    for (AnnotationNode a : t.getTypeAnnotations()) {
+                        type = BytecodeHelper.getTypeDescription(a.getClassNode());
+                        var av = mv.visitLocalVariableAnnotation(TypeReference.LOCAL_VARIABLE << 24, TypePath.fromString(typePath),
+                            new Label[]{startLabel}, new Label[]{endLabel}, new int[]{v.getIndex()}, type, a.hasRuntimeRetention());
+                        if (av != null) {
+                            controller.getAcg().visitAnnotationAttributes(a, av);
+                            av.visitEnd();
+                        }
+                    }
+                    typePath += "[";
+                    t = t.getComponentType();
+                } while (t != null); // array
             }
         }
 

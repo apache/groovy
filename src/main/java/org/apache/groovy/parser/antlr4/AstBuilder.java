@@ -3939,27 +3939,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<List<AnnotationNode>> visitEmptyDims(final EmptyDimsContext ctx) {
-        List<List<AnnotationNode>> dimList =
-                ctx.annotationsOpt().stream()
-                        .map(this::visitAnnotationsOpt)
-                        .collect(Collectors.toList());
-
-        Collections.reverse(dimList);
-
-        return dimList;
-    }
-
-    @Override
-    public List<List<AnnotationNode>> visitEmptyDimsOpt(final EmptyDimsOptContext ctx) {
-        if (!asBoolean(ctx.emptyDims())) {
-            return Collections.emptyList();
-        }
-
-        return this.visitEmptyDims(ctx.emptyDims());
-    }
-
     // type { ------------------------------------------------------------------
 
     @Override
@@ -3968,49 +3947,56 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return ClassHelper.dynamicType();
         }
 
-        ClassNode classNode = null;
-
-        if (asBoolean(ctx.classOrInterfaceType())) {
-            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR))
-                ctx.classOrInterfaceType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
-            classNode = this.visitClassOrInterfaceType(ctx.classOrInterfaceType());
-        } else if (asBoolean(ctx.primitiveType())) {
-            classNode = this.visitPrimitiveType(ctx.primitiveType());
+        if (asBoolean(ctx.VOID())) {
+            throw createParsingFailedException("void is not allowed here", ctx);
         }
 
-        if (!asBoolean(classNode)) {
-            if (VOID_STR.equals(ctx.getText())) {
-                throw createParsingFailedException("void is not allowed here", ctx);
+        ClassNode classNode;
+
+        if (asBoolean(ctx.primitiveType())) {
+            classNode = this.visitPrimitiveType(ctx.primitiveType());
+        } else {
+            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
+                ctx.referenceType().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
             }
-            throw createParsingFailedException("Unsupported type: " + ctx.getText(), ctx);
+            classNode = this.visitReferenceType(ctx.referenceType());
         }
 
         classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
-        List<List<AnnotationNode>> dimList = this.visitEmptyDimsOpt(ctx.emptyDimsOpt());
-        if (asBoolean(dimList)) {
-            classNode = this.createArrayType(classNode, dimList);
+        if (asBoolean(ctx.dim0())) {
+            List<List<AnnotationNode>> typeAnnotations = new ArrayList<>();
+            for (var dim : ctx.dim0()) typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
+
+            classNode = this.createArrayType(classNode, typeAnnotations);
         }
 
         return configureAST(classNode, ctx);
     }
 
     @Override
-    public ClassNode visitClassOrInterfaceType(final ClassOrInterfaceTypeContext ctx) {
+    public ClassNode visitPrimitiveType(final PrimitiveTypeContext ctx) {
+        return configureAST(ClassHelper.make(ctx.getText()).getPlainNodeReference(false), ctx);
+    }
+
+    @Override
+    public ClassNode visitReferenceType(final ReferenceTypeContext ctx) {
         ClassNode classNode;
         if (asBoolean(ctx.qualifiedClassName())) {
-            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR))
+            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
                 ctx.qualifiedClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            }
             classNode = this.visitQualifiedClassName(ctx.qualifiedClassName());
         } else {
-            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR))
+            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR)) {
                 ctx.qualifiedStandardClassName().putNodeMetaData(IS_INSIDE_INSTANCEOF_EXPR, Boolean.TRUE);
+            }
             classNode = this.visitQualifiedStandardClassName(ctx.qualifiedStandardClassName());
         }
 
         if (asBoolean(ctx.typeArguments())) {
-            classNode.setGenericsTypes(
-                    this.visitTypeArguments(ctx.typeArguments()));
+            GenericsType[] generics = this.visitTypeArguments(ctx.typeArguments());
+            classNode.setGenericsTypes(generics);
         }
 
         return configureAST(classNode, ctx);
@@ -4067,11 +4053,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         throw createParsingFailedException("Unsupported type argument: " + ctx.getText(), ctx);
-    }
-
-    @Override
-    public ClassNode visitPrimitiveType(final PrimitiveTypeContext ctx) {
-        return configureAST(ClassHelper.make(ctx.getText()).getPlainNodeReference(false), ctx);
     }
 
     // } type ------------------------------------------------------------------
@@ -4154,7 +4135,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public List<AnnotationNode> visitAnnotationsOpt(final AnnotationsOptContext ctx) {
-        if (!asBoolean(ctx)) {
+        if (!asBoolean(ctx.annotation())) {
             return Collections.emptyList();
         }
 
@@ -4294,7 +4275,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         ClassNode arrayType = elementType;
         for (int i = dimAnnotationsList.size() - 1; i >= 0; i -= 1) {
             arrayType = this.createArrayType(arrayType);
-            arrayType.addAnnotations(dimAnnotationsList.get(i));
+            arrayType.addTypeAnnotations(dimAnnotationsList.get(i));
         }
         return arrayType;
     }

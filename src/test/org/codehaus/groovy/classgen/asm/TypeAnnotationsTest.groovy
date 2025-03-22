@@ -184,7 +184,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                     if (arg2 instanceof @TypeAnno2 Number) {
                         return (@TypeAnno3 Map<@TypeAnno4 ? extends X, ? super @TypeAnno5 Y>) null;
                     }
-                    //if (numbers.stream().sorted(@TypeAnno6 Integer::compareTo).count() > 0) return null; // needs grammar tweak
+                    if (numbers.stream().sorted(/*@TypeAnno6*/ Integer::compareTo).count() > 0) return null; // TODO: grammar support
                     return arg2;
                 }
             }
@@ -376,6 +376,35 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
                 '@LTypeUseAnno5;(value="foo") : CLASS_EXTENDS 0, null',
                 '@LTypeUseAnno6;(value="foo") : CLASS_EXTENDS 1, null',
                 '@LTypeUseAnno7;(value="foo") : CLASS_EXTENDS 1, 0;'
+        ])
+    }
+
+    /**
+     * @see https://docs.oracle.com/javase/specs/jls/se11/html/jls-9.html#jls-9.7.4
+     */
+    void testTypeAnnotationsForArray() {
+        def bytecode = compile(classNamePattern: 'Foo', method: 'bar', imports + '''
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno1 { }
+            @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno2 { }
+
+            class Foo {
+                def bar() {
+                    // Object[][] : @TypeAnno0
+                    // Object[]   : @TypeAnno1
+                    // Object     : @TypeAnno2
+                    def @TypeAnno2 Object @TypeAnno0 [] @TypeAnno1 [] baz = null
+                }
+            }
+        ''')
+        assert bytecode.hasStrictSequence([
+                'LOCALVARIABLE this LFoo; L0 L2 0',
+                'LOCALVARIABLE baz [[Ljava/lang/Object; L1 L2 1',
+                'LOCALVARIABLE @LTypeAnno0;() : LOCAL_VARIABLE, null [ L1 - L2 - 1 ]',
+                'LOCALVARIABLE @LTypeAnno1;() : LOCAL_VARIABLE, [ [ L1 - L2 - 1 ]',
+                'LOCALVARIABLE @LTypeAnno2;() : LOCAL_VARIABLE, [[ [ L1 - L2 - 1 ]',
+                'MAXSTACK = 1',
+                'MAXLOCALS = 2'
         ])
     }
 }

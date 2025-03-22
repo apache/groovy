@@ -414,6 +414,7 @@ public class BinaryExpressionHelper {
         if (lhsType.isArray() && rightExpression instanceof ListExpression) { // array = [ ... ]
             Expression array = new ArrayExpression(lhsType.getComponentType(), ((ListExpression) rightExpression).getExpressions());
             array.setSourcePosition(rightExpression);
+            array.setType(lhsType);
             array.visit(acg);
         } else if (rightExpression instanceof EmptyExpression) { // define field
             /*  */ if (ClassHelper.isPrimitiveDouble(lhsType)) {
