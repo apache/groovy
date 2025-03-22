@@ -688,7 +688,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
         String result = compileToScript(script, CompilePhase.CLASS_GENERATION)
 
         assert result =~ /groovy\.lang\.Delegate\s*private java\.util\.Date when/
-        assert result =~ /public int compareTo\(java\.util\.Date param0\)/
+        assert result =~ /public int compareTo\(java\.util\.Date (param|arg)0\)/
         assert result.contains('public void setWhen(java.util.Date value) {')
         assert result.contains('public java.util.Date getWhen() {')
     }
