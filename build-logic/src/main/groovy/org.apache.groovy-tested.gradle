@@ -70,7 +70,6 @@ tasks.withType(Test).configureEach {
         userHome: temporaryDir // make sure tests are isolated from real user home or tests using Grape may fail
     ))
 
-    println GroovySystem.getVersion()
     if (rootProject.hasProperty('target.java.home')) {
         String targetJavaHome = rootProject.property('target.java.home')?.trim()
         if (targetJavaHome) {
