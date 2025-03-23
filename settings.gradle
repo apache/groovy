@@ -40,6 +40,9 @@ apply from: 'gradle/build-scans.gradle'
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
+        maven {
+            url = 'https://repository.ow2.org/nexus/content/repositories/snapshots/'
+        }
     }
 }
 
