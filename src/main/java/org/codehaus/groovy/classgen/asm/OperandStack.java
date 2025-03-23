@@ -635,9 +635,9 @@ public class OperandStack {
         push(type);
     }
 
-    public void pushBool(final boolean inclusive) {
+    public void pushBool(final boolean value) {
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitLdcInsn(inclusive);
+        mv.visitInsn(value ? ICONST_1 : ICONST_0);
         push(ClassHelper.boolean_TYPE);
     }
 

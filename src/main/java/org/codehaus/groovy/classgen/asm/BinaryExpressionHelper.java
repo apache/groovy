@@ -114,6 +114,7 @@ import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DUP;
+import static org.objectweb.asm.Opcodes.DUP_X1;
 import static org.objectweb.asm.Opcodes.FCONST_0;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.ICONST_0;
@@ -775,31 +776,34 @@ public class BinaryExpressionHelper {
         expression.getLeftExpression().visit(controller.getAcg());
         operandStack.box(); // TODO: support instanceof primitives
 
-        ClassNode sourceType = operandStack.getTopOperand();
+      //ClassNode sourceType = operandStack.getTopOperand();
         ClassNode targetType = expression.getRightExpression().getType();
 
-        int jep394 = 0;
-        if (!(expression.getRightExpression() instanceof ClassExpression)) {
+        var jep394 = !(expression.getRightExpression() instanceof ClassExpression);
+        if (jep394) {
             operandStack.dup(); // stash value for use by JEP 394 pattern variable
-            String name = "instanceof"+Integer.toHexString(expression.hashCode());
-            jep394 = compileStack.defineTemporaryVariable(name, sourceType, true);
         }
 
         String typeName = BytecodeHelper.getClassInternalName(targetType);
         controller.getMethodVisitor().visitTypeInsn(INSTANCEOF, typeName);
         operandStack.replace(ClassHelper.boolean_TYPE);
 
-        if (jep394 > 0) {
+        if (jep394) {
             var variable = (Variable) ((BinaryExpression) expression.getRightExpression()).getLeftExpression();
             BytecodeVariable v = compileStack.defineVariable(variable, targetType, false);
+            MethodVisitor mv = controller.getMethodVisitor();
 
-            operandStack.dup();
+            mv.visitInsn(DUP_X1); // stack: ..., check, value, check
             Label l0 = operandStack.jump(IFEQ); // skip store if not instanceof
-            BytecodeHelper.load(controller.getMethodVisitor(), sourceType, jep394);
-            BytecodeHelper.store(controller.getMethodVisitor(), targetType, v.getIndex());
 
-            controller.getMethodVisitor().visitLabel(l0);
-            compileStack.removeVar(jep394);
+            BytecodeHelper.store(mv, targetType, v.getIndex());
+            Label l1 = operandStack.jump(GOTO); // skip pop
+
+            mv.visitLabel(l0); // stack: ..., check, value
+            mv.visitInsn(POP);
+
+            mv.visitLabel(l1); // stack: ..., check
+            operandStack.push(ClassHelper.boolean_TYPE);
         }
     }
 
