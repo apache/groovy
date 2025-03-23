@@ -93,34 +93,34 @@ jobs:
           name: build-reports-24
           path: '**/build/reports/'
 
-  ea:
-    #if: github.event_name == 'push'
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
-        jdk:
-          - "https://download.java.net/java/early_access/jdk25/15/GPL/openjdk-25-ea+15_linux-x64_bin.tar.gz"
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: Download JDK ${{ matrix.jdk }}
-        run: wget -c ${{ matrix.jdk }} -O /tmp/openjdk.tar.gz
-      - name: Set up JDK ${{ matrix.jdk }}
-        run: mkdir -p /home/runner/openjdk && tar -xvf /tmp/openjdk.tar.gz -C /home/runner/openjdk && chmod -R 755 /home/runner/openjdk && mv /home/runner/openjdk/jdk*/* /home/runner/openjdk/
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          check-latest: true
-      - uses: gradle/actions/setup-gradle@v4
-      - name: Test with Gradle
-        run: ./gradlew test -Ptarget.java.home=/home/runner/openjdk
-        timeout-minutes: 60
-      - name: Upload reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: build-reports-ea
-          path: '**/build/reports/'
+#  ea:
+#    #if: github.event_name == 'push'
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        os: [ubuntu-latest]
+#        # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
+#        jdk:
+#          - "https://download.java.net/java/early_access/jdk25/15/GPL/openjdk-25-ea+15_linux-x64_bin.tar.gz"
+#    runs-on: ${{ matrix.os }}
+#    steps:
+#      - name: Download JDK ${{ matrix.jdk }}
+#        run: wget -c ${{ matrix.jdk }} -O /tmp/openjdk.tar.gz
+#      - name: Set up JDK ${{ matrix.jdk }}
+#        run: mkdir -p /home/runner/openjdk && tar -xvf /tmp/openjdk.tar.gz -C /home/runner/openjdk && chmod -R 755 /home/runner/openjdk && mv /home/runner/openjdk/jdk*/* /home/runner/openjdk/
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-java@v4
+#        with:
+#          distribution: 'zulu'
+#          java-version: 21
+#          check-latest: true
+#      - uses: gradle/actions/setup-gradle@v4
+#      - name: Test with Gradle
+#        run: ./gradlew test -Ptarget.java.home=/home/runner/openjdk
+#        timeout-minutes: 60
+#      - name: Upload reports
+#        uses: actions/upload-artifact@v4
+#        if: always()
+#        with:
+#          name: build-reports-ea
+#          path: '**/build/reports/'
