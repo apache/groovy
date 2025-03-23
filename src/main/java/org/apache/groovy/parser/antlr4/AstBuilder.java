@@ -126,7 +126,6 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -3027,8 +3026,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             if (expr instanceof VariableExpression && ((VariableExpression) expr).isSuperExpression()) {
                 throw this.createParsingFailedException("Cannot cast or coerce `super`", ctx); // GROOVY-9391
             }
+            Expression cast = CastExpression.asExpression(this.visitType(ctx.type()), expr);
             return configureAST(
-                    CastExpression.asExpression(this.visitType(ctx.type()), expr),
+                    cast,
                     ctx);
 
           case INSTANCEOF:
@@ -3958,7 +3958,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         if (asBoolean(ctx.VOID())) {
-            throw createParsingFailedException("void is not allowed here", ctx);
+            throw this.createParsingFailedException("void is not allowed here", ctx);
         }
 
         ClassNode classNode;
@@ -3975,7 +3975,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         classNode.addTypeAnnotations(this.visitAnnotationsOpt(ctx.annotationsOpt()));
 
         if (asBoolean(ctx.dim0())) {
-            List<List<AnnotationNode>> typeAnnotations = new ArrayList<>();
+            List<List<AnnotationNode>> typeAnnotations = new ArrayList<>(ctx.dim0().size());
             for (var dim : ctx.dim0()) typeAnnotations.add(this.visitAnnotationsOpt(dim.annotationsOpt()));
 
             classNode = this.createArrayType(classNode, typeAnnotations);
@@ -4007,6 +4007,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         if (asBoolean(ctx.typeArguments())) {
             GenericsType[] generics = this.visitTypeArguments(ctx.typeArguments());
             classNode.setGenericsTypes(generics);
+            if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR) && Arrays.stream(generics).anyMatch(gt ->
+                    !gt.isWildcard() || asBoolean(gt.getLowerBound()) || asBoolean(gt.getUpperBounds()))) { // GROOVY-11585
+                throw this.createParsingFailedException("Cannot perform instanceof check against parameterized type " + classNode, ctx);
+            }
         }
 
         return configureAST(classNode, ctx);
@@ -4022,7 +4026,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return GenericsType.EMPTY_ARRAY;
         }
 
-        throw createParsingFailedException("Unsupported type arguments or diamond: " + ctx.getText(), ctx);
+        throw this.createParsingFailedException("Unsupported type arguments or diamond: " + ctx.getText(), ctx);
     }
 
     @Override
@@ -4062,7 +4066,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return configureAST(this.createGenericsType(baseType), ctx);
         }
 
-        throw createParsingFailedException("Unsupported type argument: " + ctx.getText(), ctx);
+        throw this.createParsingFailedException("Unsupported type argument: " + ctx.getText(), ctx);
     }
 
     // } type ------------------------------------------------------------------
@@ -4127,7 +4131,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 this.createBlockStatement(
                         ctx.blockStatement().stream()
                                 .map(this::visitBlockStatement)
-                                .filter(DefaultGroovyMethods::asBoolean)
+                                .filter(Objects::nonNull)
                                 .collect(Collectors.toList())),
                 ctx);
     }

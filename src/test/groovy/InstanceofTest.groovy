@@ -20,6 +20,8 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
+
 final class InstanceofTest {
 
     @Test
@@ -62,6 +64,17 @@ final class InstanceofTest {
        assert true==false instanceof Object
        assert true==false instanceof Boolean
        assert !new Object() instanceof Boolean
+    }
+
+    // GROOVY-11585
+    @Test
+    void testGenerics() {
+        assert [] instanceof List<?>
+
+        def err = shouldFail '''
+            def x = ([] instanceof List<String>)
+        '''
+        assert err =~ 'Cannot perform instanceof check against parameterized type List<String>'
     }
 
     // GROOVY-11229
