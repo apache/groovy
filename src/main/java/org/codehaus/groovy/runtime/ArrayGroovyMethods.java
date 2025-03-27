@@ -4870,6 +4870,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through the given array, injecting values as per <tt>inject</tt>
      * but returns the list of all calculated values instead of just the final result.
      *
+     * <pre class="groovyTestCase">
+     * Integer[] nums = 1..5
+     * var prefixSum = nums.injectAll(0, Integer::sum)
+     * Arrays.parallelPrefix(nums, Integer::sum) // built-in JDK mutating method
+     * assert nums == prefixSum
+     * </pre>
+     *
      * @since 5.0.0
      */
     public static <E, T, U extends T, V extends T> List<T> injectAll(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
