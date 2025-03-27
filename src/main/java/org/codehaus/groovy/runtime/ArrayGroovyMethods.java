@@ -4842,6 +4842,50 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // injectAll
+
+    /**
+     * Iterates through the given array, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
+     *
+     * @since 5.0.0
+     */
+    public static <E extends T, T, V extends T> List<T> injectAll(E[] self, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
+        if (self.length == 0) {
+            throw new NoSuchElementException("Cannot call inject() on an empty array without passing an initial value.");
+        }
+        List<T> result = new ArrayList<>();
+        T value = self[0];
+        Object[] params = new Object[2];
+        for (int i = 1; i < self.length; i += 1) {
+            params[0] = value;
+            params[1] = self[i];
+            value = closure.call(params);
+            result.add(value);
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through the given array, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
+     *
+     * @since 5.0.0
+     */
+    public static <E, T, U extends T, V extends T> List<T> injectAll(E[] self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
+        List<T> result = new ArrayList<>();
+        T value = initialValue;
+        Object[] params = new Object[2];
+        for (E e : self) {
+            params[0] = value;
+            params[1] = e;
+            value = closure.call(params);
+            result.add(value);
+        }
+        return result;
+    }
+
+    //--------------------------------------------------------------------------
     // iterator
 
     /**
