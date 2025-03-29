@@ -1688,7 +1688,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         String methodName = this.visitMethodName(ctx.methodName());
         String className = classNode.getNodeMetaData(CLASS_NAME);
         if (!methodName.equals(className)) {
-            createParsingFailedException("Compact constructor should have the same name as record: " + className, ctx.methodName());
+            throw createParsingFailedException("Compact constructor should have the same name as record: " + className, ctx.methodName());
         }
 
         Parameter[] header = classNode.getNodeMetaData(RECORD_HEADER);
