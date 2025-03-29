@@ -35,8 +35,8 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
-import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.ClassVisitor;
@@ -99,7 +99,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * This cache contains mappings of file name to class. It is used to bypass compilation.
      */
-    protected final StampedCommonCache<String, Class> sourceCache = new StampedCommonCache<>();
+    protected final ConcurrentCommonCache<String, Class> sourceCache = new ConcurrentCommonCache<>();
 
     private final CompilerConfiguration config;
     private final String sourceEncoding;
