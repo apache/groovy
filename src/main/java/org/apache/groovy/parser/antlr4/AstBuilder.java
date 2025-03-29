@@ -1699,7 +1699,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 String receiverText = expression.getObjectExpression().getText();
                 String propertyName = expression.getPropertyAsString();
                 if (THIS_STR.equals(receiverText) && Arrays.stream(header).anyMatch(p -> p.getName().equals(propertyName))) {
-                    createParsingFailedException("Cannot assign a value to final variable '" + propertyName + "'", expression.getProperty());
+                    throw createParsingFailedException("Cannot assign a value to final variable '" + propertyName + "'", expression.getProperty());
                 }
                 super.visitPropertyExpression(expression);
             }
