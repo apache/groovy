@@ -1660,7 +1660,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         ClassNode classNode = ctx.getNodeMetaData(CLASS_DECLARATION_CLASS_NODE);
 
         if (classNode.getAnnotations().stream().noneMatch(a -> a.getClassNode().getName().equals(RECORD_TYPE_NAME))) {
-            createParsingFailedException("Only record can have compact constructor", ctx);
+            throw createParsingFailedException("Only record can have compact constructor", ctx);
         }
 
         if (new ModifierManager(this, ctx.getNodeMetaData(COMPACT_CONSTRUCTOR_DECLARATION_MODIFIERS)).containsAny(VAR)) {
