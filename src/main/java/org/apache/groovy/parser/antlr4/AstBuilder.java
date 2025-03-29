@@ -1365,6 +1365,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     .ifPresent(fn -> {
                         throw this.createParsingFailedException("Instance field is not allowed in `record`", fn);
                     });
+
+            final List<Statement> objectInitializerStatements = classNode.getObjectInitializerStatements();
+            if (asBoolean(objectInitializerStatements)) {
+                throw this.createParsingFailedException("Instance initializer is not allowed in `record`", objectInitializerStatements.get(0));
+            }
         }
         classNodeStack.pop();
 
