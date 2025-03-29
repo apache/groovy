@@ -1362,7 +1362,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         this.visitClassBody(ctx.classBody());
         if (isRecord) {
             classNode.getFields().stream().filter(f -> !isTrue(f, IS_RECORD_GENERATED) && !f.isStatic()).findFirst()
-                    .ifPresent(fn -> this.createParsingFailedException("Instance field is not allowed in `record`", fn));
+                    .ifPresent(fn -> {
+                        throw this.createParsingFailedException("Instance field is not allowed in `record`", fn);
+                    });
         }
         classNodeStack.pop();
 
