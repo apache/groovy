@@ -112,6 +112,8 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
 import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ASTORE;
+import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP_X1;
@@ -796,8 +798,9 @@ public class BinaryExpressionHelper {
             mv.visitInsn(DUP_X1); // stack: ..., check, value, check
             Label l0 = operandStack.jump(IFEQ); // skip store if not instanceof
 
-            BytecodeHelper.store(mv, targetType, v.getIndex());
-            Label l1 = operandStack.jump(GOTO); // skip pop
+            mv.visitTypeInsn(CHECKCAST, typeName);
+            mv.visitVarInsn(ASTORE, v.getIndex());
+            Label l1 = operandStack.jump(GOTO);
 
             mv.visitLabel(l0); // stack: ..., check, value
             mv.visitInsn(POP);

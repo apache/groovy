@@ -80,7 +80,7 @@ final class InstanceofTest {
     // GROOVY-11229
     @Test
     void testVariable() {
-        Number n = 12345;
+        def n = (Number) 12345
         if (n instanceof Integer i) {
             assert i.intValue() == 12345
         } else {
@@ -92,6 +92,18 @@ final class InstanceofTest {
             assert n.intValue() == 12345
         }
         assert (n instanceof Integer i && i.intValue() == 12345)
+    }
+
+    // GROOVY-11229
+    @Test
+    void testVariable2() {
+        assert transformString(null) == null
+        assert transformString(1234) == 1234
+        assert transformString('xx') == 'XX'
+    }
+
+    def transformString(o) {
+        o instanceof String s ? s.toUpperCase() : o
     }
 
     // GROOVY-11229
