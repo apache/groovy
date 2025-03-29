@@ -348,7 +348,7 @@ public class InvokerHelper {
 
     public static SpreadMap spreadMap(Object value) {
         if (value instanceof Map) {
-            Object[] values = new Object[((Map) value).keySet().size() * 2];
+            Object[] values = new Object[((Map) value).size() * 2];
             int index = 0;
             for (Object key : ((Map) value).keySet()) {
                 values[index++] = key;

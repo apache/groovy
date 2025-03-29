@@ -77,7 +77,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     @Override
     public GroovyClassDoc[] enums() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isEnum()) {
                 result.add(doc);
@@ -88,7 +88,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     @Override
     public GroovyClassDoc[] errors() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isError()) {
                 result.add(doc);
@@ -99,7 +99,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     @Override
     public GroovyClassDoc[] exceptions() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isException()) {
                 result.add(doc);
@@ -115,7 +115,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     @Override
     public GroovyClassDoc[] interfaces() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isInterface()) {
                 result.add(doc);
@@ -126,7 +126,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     @Override
     public GroovyClassDoc[] ordinaryClasses() {
-        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.size());
         for (GroovyClassDoc doc : classDocs.values()) {
             if (doc.isOrdinaryClass()) {
                 result.add(doc);
