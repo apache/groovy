@@ -16,13 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-class OperatorsTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
 
+final class OperatorsTest {
+
+    @Test
     void testArithmeticOperators() {
         // tag::binary_arith_ops[]
         assert  1  + 2 == 3
@@ -63,6 +66,7 @@ class OperatorsTest extends CompilableTestSupport {
         // end::plusplus_minusminus[]
     }
 
+    @Test
     void testArithmeticOperatorsWithAssignment() {
         // tag::binary_assign_operators[]
         def a = 4
@@ -97,6 +101,7 @@ class OperatorsTest extends CompilableTestSupport {
         // end::binary_assign_operators[]
     }
 
+    @Test
     void testSimpleRelationalOperators() {
         // tag::simple_relational_op[]
         assert 1 + 2 == 3
@@ -111,6 +116,7 @@ class OperatorsTest extends CompilableTestSupport {
         // end::simple_relational_op[]
     }
 
+    @Test
     void testLogicalOperators() {
         // tag::logical_op[]
         assert !false           // <1>
@@ -119,6 +125,7 @@ class OperatorsTest extends CompilableTestSupport {
         // end::logical_op[]
     }
 
+    @Test
     void testBitwiseOperators() {
         // tag::bitwise_op[]
         int a = 0b00101010
@@ -137,6 +144,7 @@ class OperatorsTest extends CompilableTestSupport {
         // end::bitwise_op[]
     }
 
+    @Test
     void testBitShiftOperators() {
         // tag::bit_shift_op[]
         assert 12.equals(3 << 2)           // <1>
@@ -150,6 +158,7 @@ class OperatorsTest extends CompilableTestSupport {
         // end::bit_shift_op[]
     }
 
+    @Test
     void testLogicalOperatorPrecedence() {
         // tag::logical_precendence_1[]
         assert (!false && false) == false   // <1>
@@ -160,32 +169,34 @@ class OperatorsTest extends CompilableTestSupport {
         // end::logical_precendence_2[]
     }
 
+    @Test
     void testLogicalShortCircuit() {
         assertScript '''
-	        // tag::logical_shortcircuit[]
-	        boolean checkIfCalled() {   // <1>
-	            called = true
-	        }
+            // tag::logical_shortcircuit[]
+            boolean checkIfCalled() {   // <1>
+                called = true
+            }
 
-	        called = false
-	        true || checkIfCalled()
-	        assert !called              // <2>
+            called = false
+            true || checkIfCalled()
+            assert !called              // <2>
 
-	        called = false
-	        false || checkIfCalled()
-	        assert called               // <3>
+            called = false
+            false || checkIfCalled()
+            assert called               // <3>
 
-	        called = false
-	        false && checkIfCalled()
-	        assert !called              // <4>
+            called = false
+            false && checkIfCalled()
+            assert !called              // <4>
 
-	        called = false
-	        true && checkIfCalled()
-	        assert called               // <5>
-	        // end::logical_shortcircuit[]
+            called = false
+            true && checkIfCalled()
+            assert called               // <5>
+            // end::logical_shortcircuit[]
         '''
     }
 
+    @Test
     void testConditionalOperators() {
         // tag::conditional_op_not[]
         assert (!true)    == false                      // <1>
@@ -219,20 +230,32 @@ class OperatorsTest extends CompilableTestSupport {
         displayName = user.name ? user.name : 'Anonymous'   // <1>
         displayName = user.name ?: 'Anonymous'              // <2>
         // end::conditional_op_elvis[]
-
     }
 
+    private record Person(long id, String name) {
+        static Person find(Closure<?> c) { null }
+    }
+
+    @Test
     void testNullSafeOperator() {
         // tag::nullsafe[]
         def person = Person.find { it.id == 123 }    // <1>
         def name = person?.name                      // <2>
         assert name == null                          // <3>
         // end::nullsafe[]
+
+        // GROOVY-11591
+        boolean called
+        def f = { -> called = true }
+        def obj = null
+        assert !called
+        obj?.grep(f())
+        assert !called
+        obj?[f()]
+        assert !called
     }
 
-    OperatorsTest() {
-    }
-
+    @Test
     void testDirectFieldAccess() {
         assertScript '''
 // tag::direct_field_class[]
@@ -250,6 +273,7 @@ assert user.@name == 'Bob'                   // <1>
 '''
     }
 
+    @Test
     void testMethodPointer() {
         // tag::method_pointer[]
         def str = 'example of method reference'            // <1>
@@ -310,6 +334,7 @@ assert user.@name == 'Bob'                   // <1>
         '''
     }
 
+    @Test
     void testMethodReference() {
         assertScript '''
             // tag::method_refs[]
@@ -344,6 +369,7 @@ assert user.@name == 'Bob'                   // <1>
         '''
     }
 
+    @Test
     void testRegularExpressionOperators() {
         def pattern = 'foo'
         // tag::pattern_op[]
@@ -396,6 +422,7 @@ assert user.@name == 'Bob'                   // <1>
         // end::pattern_find_vs_matcher[]
     }
 
+    @Test
     void testSpreadDotOperator() {
         assertScript '''
 // tag::spreaddot[]
@@ -418,6 +445,7 @@ assert cars*.make == ['Peugeot', null, 'Renault']     // <2>
 assert null*.make == null                             // <3>
 // end::spreaddot_nullsafe[]
 '''
+
         assertScript '''
 // tag::spreaddot_iterable[]
 class Component {
@@ -439,6 +467,7 @@ assert composite*.id == [1,2]
 assert composite*.name == ['Foo','Bar']
 // end::spreaddot_iterable[]
 '''
+
         assertScript '''
 import groovy.transform.Canonical
 
@@ -469,6 +498,7 @@ assert models.sum() == ['408', '508', 'Clio', 'Captur'] // flatten one level
 assert models.flatten() == ['408', '508', 'Clio', 'Captur'] // flatten all levels (one in this case)
 // end::spreaddot_multilevel[]
 '''
+
         assertScript '''
 // tag::spreaddot_alternative[]
 class Car {
@@ -490,6 +520,7 @@ assert models == [['408', '508'], ['Clio', 'Captur']]
 '''
     }
 
+    @Test
     void testSpreadMethodArguments() {
         assertScript '''
 // tag::spreadmethodargs_method[]
@@ -510,6 +541,7 @@ assert function(*args,5,6) == 26
 '''
     }
 
+    @Test
     void testSpreadList() {
         // tag::spread_list[]
         def items = [4,5]                      // <1>
@@ -518,6 +550,7 @@ assert function(*args,5,6) == 26
         // end::spread_list[]
     }
 
+    @Test
     void testSpreadMap() {
         assertScript '''
         // tag::spread_map[]
@@ -534,9 +567,9 @@ assert function(*args,5,6) == 26
         assert map == [a:1, b:2, c:3, d:8]    // <3>
         // end::spread_map_position[]
         '''
-
     }
 
+    @Test
     void testRangeOperator() {
         assertScript '''
         // tag::intrange[]
@@ -549,6 +582,7 @@ assert function(*args,5,6) == 26
         assert (0..5).size() == 6                           // <7>
         // end::intrange[]
         '''
+
         assertScript '''
         // tag::charrange[]
         assert ('a'..'d').collect() == ['a','b','c','d']
@@ -556,6 +590,7 @@ assert function(*args,5,6) == 26
         '''
     }
 
+    @Test
     void testSpaceshipOperator() {
         assertScript '''
         // tag::spaceship[]
@@ -564,9 +599,10 @@ assert function(*args,5,6) == 26
         assert (2 <=> 1) == 1
         assert ('a' <=> 'z') == -1
         // end::spaceship[]
-'''
+        '''
     }
 
+    @Test
     void testSubscriptOperator() {
         assertScript '''
         // tag::subscript_op[]
@@ -608,6 +644,7 @@ assert function(*args,5,6) == 26
         '''
     }
 
+    @Test
     void testMembershipOperator() {
         // tag::membership_op[]
         def list = ['Grace','Rob','Emmy']
@@ -616,6 +653,7 @@ assert function(*args,5,6) == 26
         // end::membership_op[]
     }
 
+    @Test
     void testIdentityOperator() {
         // tag::identity_op[]
         def list1 = ['Groovy 1.8','Groovy 2.0','Groovy 2.3']        // <1>
@@ -626,6 +664,7 @@ assert function(*args,5,6) == 26
         // end::identity_op[]
     }
 
+    @Test
     void testCoercionOperator() {
         try {
             // tag::coerce_op_cast[]
@@ -641,6 +680,7 @@ assert function(*args,5,6) == 26
             // end::coerce_op[]
             assert num == 42
         }
+
         assertScript '''
         // tag::coerce_op_custom[]
         class Identifiable {
@@ -664,12 +704,14 @@ assert function(*args,5,6) == 26
         '''
     }
 
+    @Test
     void testDiamondOperator() {
         // tag::diamond_op[]
         List<String> strings = new LinkedList<>()
         // end::diamond_op[]
     }
 
+    @Test
     void testCallOperator() {
         assertScript '''
         // tag::call_op[]
@@ -686,6 +728,7 @@ assert function(*args,5,6) == 26
         '''
     }
 
+    @Test
     void testOperatorOverloading() {
         assertScript '''
 // tag::operator_overload_class[]
@@ -706,6 +749,8 @@ assert (b1 + b2).size == 15                         // <1>
 // end::operator_overload_op[]
 '''
     }
+
+    @Test
     void testOperatorOverloadingWithDifferentArgumentType() {
         assertScript '''
 class Bucket {
@@ -726,12 +771,7 @@ assert (b1 + 11).size == 15
 '''
     }
 
-    private static class Person {
-        Long id
-        String name
-        static Person find(Closure c) { null }
-    }
-
+    @Test
     void testGStringEquals() {
         assertScript '''
             w = 'world'
@@ -746,6 +786,7 @@ assert (b1 + 11).size == 15
             '''
     }
 
+    @Test
     void testBooleanOr() {
         assertScript '''
 boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
@@ -760,6 +801,7 @@ assert !(falseValue3 |= null)
 '''
     }
 
+    @Test
     void testBooleanAnd() {
         assertScript '''
 boolean trueValue1 = true, trueValue2 = true, trueValue3 = true
@@ -774,6 +816,7 @@ assert !(falseValue3 &= null)
 '''
     }
 
+    @Test
     void testBooleanXor() {
         assertScript '''
 boolean trueValue1 = true, trueValue2 = true, trueValue3 = true

@@ -1,5 +1,3 @@
-import groovy.transform.CompileStatic
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,11 +16,14 @@ import groovy.transform.CompileStatic
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
+import groovy.transform.CompileStatic
+
 def testSCO() {
-    assert 3 == 1??.plus(2)
-    assert 6 == 1??.plus(2).plus(3)
-    assert 6 == 1??.plus(2)?.plus(3)
-    assert 6 == 1??.plus(2)??.plus(3)
+    assert  3 == 1??.plus(2)
+    assert  6 == 1??.plus(2).plus(3)
+    assert  6 == 1??.plus(2)?.plus(3)
+    assert  6 == 1??.plus(2)??.plus(3)
     assert 10 == 1??.plus(2)?.plus(3).plus(4)
     assert 10 == 1?.plus(2)??.plus(3).plus(4)
     assert 10 == 1?.plus(2)?.plus(3)??.plus(4)
@@ -41,10 +42,10 @@ testSCO()
 
 @CompileStatic
 def testCsSCO() {
-    assert 3 == 1??.plus(2)
-    assert 6 == 1??.plus(2).plus(3)
-    assert 6 == 1??.plus(2)?.plus(3)
-    assert 6 == 1??.plus(2)??.plus(3)
+    assert  3 == 1??.plus(2)
+    assert  6 == 1??.plus(2).plus(3)
+    assert  6 == 1??.plus(2)?.plus(3)
+    assert  6 == 1??.plus(2)??.plus(3)
     assert 10 == 1??.plus(2)?.plus(3).plus(4)
     assert 10 == 1?.plus(2)??.plus(3).plus(4)
     assert 10 == 1?.plus(2)?.plus(3)??.plus(4)

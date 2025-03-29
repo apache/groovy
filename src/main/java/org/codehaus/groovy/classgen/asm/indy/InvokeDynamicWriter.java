@@ -36,6 +36,7 @@ import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.vmplugin.v8.IndyInterface;
 import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.CallSite;
@@ -48,6 +49,7 @@ import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.boolean_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.getWrapper;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
 import static org.codehaus.groovy.ast.ClassHelper.isWrapperBoolean;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.bytecodeX;
 import static org.codehaus.groovy.classgen.asm.BytecodeHelper.doCast;
@@ -63,6 +65,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INIT;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.INTERFACE;
 import static org.codehaus.groovy.vmplugin.v8.IndyInterface.CallType.METHOD;
 import static org.objectweb.asm.Opcodes.H_INVOKESTATIC;
+import static org.objectweb.asm.Opcodes.IFNULL;
 
 /**
  * This Writer is used to generate the call invocation byte codes
@@ -132,6 +135,12 @@ public class InvokeDynamicWriter extends InvocationWriter {
         Expression receiver = correctReceiverForInterfaceCall(origReceiver, operandStack);
         StringBuilder sig = new StringBuilder(prepareIndyCall(receiver, implicitThis));
 
+        Label end = null;
+        if (safe && !isPrimitiveType(operandStack.getTopOperand())) {
+            operandStack.dup();
+            end = operandStack.jump(IFNULL);
+        }
+
         // load arguments
         int numberOfArguments = 1;
         List<Expression> args = makeArgumentList(arguments).getExpressions();
@@ -161,9 +170,11 @@ public class InvokeDynamicWriter extends InvocationWriter {
         // receiver != origReceiver interface default method call
         if (receiver != origReceiver) callSiteName = INTERFACE.getCallSiteName();
 
-        int flags = getMethodCallFlags(adapter, safe, containsSpreadExpression);
+        int flags = getMethodCallFlags(adapter, false, containsSpreadExpression);
 
         finishIndyCall(BSM, callSiteName, sig.toString(), numberOfArguments, methodName, flags);
+
+        if (end != null) controller.getMethodVisitor().visitLabel(end);
     }
 
     private Expression correctReceiverForInterfaceCall(Expression exp, OperandStack operandStack) {
