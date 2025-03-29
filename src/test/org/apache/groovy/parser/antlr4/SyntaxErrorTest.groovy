@@ -151,6 +151,7 @@ final class SyntaxErrorTest {
     @Test
     void 'test groovy core - Super'() {
         TestUtils.doRunAndShouldFail('fail/Super_01x.groovy')
+        TestUtils.doRunAndShouldFail('fail/Super_02x.groovy')
     }
 
     @Test // GROOVY-9391
