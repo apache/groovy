@@ -7409,7 +7409,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (!iter.hasNext()) {
             throw new NoSuchElementException("Cannot call inject() on an empty iterable without passing an initial value.");
         }
-        return (T) inject(iter, iter.next(), closure);
+        return inject(iter, iter.next(), closure);
     }
 
     //
@@ -7541,6 +7541,100 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return value;
+    }
+
+    //--------------------------------------------------------------------------
+    // injectAll
+
+    /**
+     * Iterates through the given iterable, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
+     * <p>
+     * Also known as <em>prefix sum</em> or <em>scan</em> in functional parlance.
+     * <pre class="groovyTestCase">
+     * assert (1..3).injectAll(''){ carry, next {@code ->} carry + next } == ['1', '12', '123']
+     * var runningAvg = [1.0, 2.0, 3.0].injectAll([0.0, 0, null]){ accum, next {@code ->}
+     *     var total = accum[0] + next
+     *     var count = accum[1] + 1
+     *     [total, count, total/count]
+     * }
+     * assert runningAvg*.get(2) == [1.0, 1.5, 2.0]
+     * </pre>
+     *
+     * @param self         an iterator
+     * @param initialValue some initial value
+     * @param closure      a closure
+     * @return the list of all calculated values
+     * @since 5.0.0
+     */
+    public static <E, T, U extends T, V extends T> List<T> injectAll(Iterable<E> self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
+        return injectAll(self.iterator(), initialValue, closure);
+    }
+
+    /**
+     * Iterates through the given iterable, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
+     *
+     * @since 5.0.0
+     */
+    public static <E extends T, T, V extends T> List<T> injectAll(Iterable<E> self, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
+        Iterator<E> iter = self.iterator();
+        if (!iter.hasNext()) {
+            throw new NoSuchElementException("Cannot call injectAll() on an empty iterable without passing an initial value.");
+        }
+        return injectAll(iter, iter.next(), closure);
+    }
+
+    /**
+     * Iterates through the given iterator, injecting values as per <tt>inject</tt>
+     * but returns the list of all calculated values instead of just the final result.
+     *
+     * @since 5.0.0
+     */
+    public static <E, T, U extends T, V extends T> List<T> injectAll(Iterator<E> self, U initialValue, @ClosureParams(value=FromString.class,options="T,E") Closure<V> closure) {
+        List<T> result = new ArrayList<>();
+        T value = initialValue;
+        Object[] params = new Object[2];
+        while (self.hasNext()) {
+            params[0] = value;
+            params[1] = self.next();
+            value = closure.call(params);
+            result.add(value);
+        }
+        return result;
+    }
+
+    /**
+     * Iterates through the given map, passing in the initial value to
+     * the 2-arg Closure along with the first item (or 3-arg Closure along with the first key and value)
+     * and then similarly for other map entries. The results are collected in a list.
+     *
+     * Examples:
+     * <pre class="groovyTestCase">
+     * def map = [a:1, b:2, c:3]
+     * assert map.injectAll('') { carry, k, v {@code ->}
+     *     carry + k * v
+     * } == ['a', 'abb', 'abbccc']
+     * </pre>
+     *
+     * @param self         a map
+     * @param initialValue some initial value
+     * @param closure      a 2 or 3 arg Closure
+     * @return the accumulated results from each closure call
+     * @since 5.0.0
+     */
+    public static <K, V, T, U extends T, W extends T> List<T> injectAll(Map<K, V> self, U initialValue, @ClosureParams(value=FromString.class,options={"T,Map.Entry<K,V>","T,K,V"}) Closure<W> closure) {
+        List<T> result = new ArrayList<>();
+        T value = initialValue;
+        for (Map.Entry<K, V> entry : self.entrySet()) {
+            if (closure.getMaximumNumberOfParameters() == 3) {
+                value = closure.call(value, entry.getKey(), entry.getValue());
+            } else {
+                value = closure.call(value, entry);
+            }
+            result.add(value);
+        }
+        return result;
     }
 
     //--------------------------------------------------------------------------
