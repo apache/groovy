@@ -414,9 +414,9 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
     @Override
     public String toString() {
         if (inclusiveRight == null && inclusiveLeft == null)  {
-               return reverse ? "" + to + ".." + from : "" + from + ".." + to;
+               return reverse ? to + ".." + from : from + ".." + to;
         }
-        return "" + from + (inclusiveLeft ? "" : "<") + ".." + (inclusiveRight ? "" : "<") + to;
+        return from + (inclusiveLeft ? "" : "<") + ".." + (inclusiveRight ? "" : "<") + to;
     }
 
     @Override

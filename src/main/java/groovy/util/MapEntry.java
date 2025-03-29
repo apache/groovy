@@ -54,7 +54,7 @@ public class MapEntry implements Map.Entry {
 
     @Override
     public String toString() {
-        return "" + key + ":" + value;
+        return key + ":" + value;
     }
 
     @Override

@@ -63,7 +63,7 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
 
     @Override
     public String toString() {
-        return "" + getClass() + "(" + name + ")";
+        return getClass() + "(" + name + ")";
     }
 
     protected void setCommentText(String commentText) {
