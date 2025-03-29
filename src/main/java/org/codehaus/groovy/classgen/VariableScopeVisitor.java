@@ -48,11 +48,17 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.PlaceholderVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
@@ -481,6 +487,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     // statements:
 
     @Override
+    public void visitAssertStatement(final AssertStatement statement) {
+        pushState();
+        super.visitAssertStatement(statement);
+        popState();
+    }
+
+    @Override
     public void visitBlockStatement(final BlockStatement statement) {
         pushState();
         statement.setVariableScope(currentScope);
@@ -499,6 +512,25 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     @Override
+    public void visitDoWhileLoop(final DoWhileStatement statement) {
+        pushState();
+        visitStatement(statement);
+        statement.getLoopBlock().visit(this);
+        pushState();
+        statement.getBooleanExpression().visit(this);
+        popState();
+        popState();
+    }
+
+    @Override
+    public void visitExpressionStatement(final ExpressionStatement statement) {
+        boolean declaresVariable = statement.getExpression() instanceof DeclarationExpression;
+        if (!declaresVariable) pushState(); // GROOVY-11229: instanceof variable in expression
+        super.visitExpressionStatement(statement);
+        if (!declaresVariable) popState();
+    }
+
+    @Override
     public void visitForLoop(final ForStatement statement) {
         pushState();
         statement.setVariableScope(currentScope);
@@ -511,12 +543,36 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitIfElse(final IfStatement statement) {
+        pushState();
+        visitStatement(statement);
         statement.getBooleanExpression().visit(this);
         pushState();
         statement.getIfBlock().visit(this);
         popState();
+        popState();
         pushState();
         statement.getElseBlock().visit(this);
+        popState();
+    }
+
+    @Override
+    public void visitReturnStatement(final ReturnStatement statement) {
+        pushState();
+        super.visitReturnStatement(statement);
+        popState();
+    }
+
+    @Override
+    public void visitSwitch(final SwitchStatement statement) {
+        pushState();
+        super.visitSwitch(statement);
+        popState();
+    }
+
+    @Override
+    public void visitWhileLoop(final WhileStatement statement) {
+        pushState();
+        super.visitWhileLoop(statement);
         popState();
     }
 
@@ -627,9 +683,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitDeclarationExpression(final DeclarationExpression expression) {
+        pushState(); // GROOVY-11229
         visitAnnotations(expression);
         // visit right side first to prevent the use of a variable before its declaration
         expression.getRightExpression().visit(this);
+        popState();
 
         if (expression.isMultipleAssignmentDeclaration()) {
             TupleExpression list = expression.getTupleExpression();
