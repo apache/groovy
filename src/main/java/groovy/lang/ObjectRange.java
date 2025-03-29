@@ -368,14 +368,14 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
 
     @Override
     public String toString() {
-        return reverse ? "" + to + ".." + from : "" + from + ".." + to;
+        return reverse ? to + ".." + from : from + ".." + to;
     }
 
     @Override
     public String inspect() {
         final String toText = FormatHelper.inspect(to);
         final String fromText = FormatHelper.inspect(from);
-        return reverse ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
+        return reverse ? toText + ".." + fromText : fromText + ".." + toText;
     }
 
     /**

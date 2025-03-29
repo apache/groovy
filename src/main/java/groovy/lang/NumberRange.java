@@ -554,7 +554,7 @@ public class NumberRange extends AbstractList<Comparable> implements Range<Compa
     private String getToString(String toText, String fromText) {
         String sepLeft = inclusiveLeft ? ".." : "<..";
         String sep = inclusiveRight ? sepLeft : sepLeft + "<";
-        String base = reverse ? "" + toText + sep + fromText : "" + fromText + sep + toText;
+        String base = reverse ? toText + sep + fromText : fromText + sep + toText;
         return Integer.valueOf(1).equals(stepSize) ? base : base + ".by(" + stepSize + ")";
     }
 

@@ -217,6 +217,6 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
 
     private static String plural(final String string, final int count) {
-        return "" + count + " " + (count == 1 ? string : string + "s");
+        return count + " " + (count == 1 ? string : string + "s");
     }
 }
