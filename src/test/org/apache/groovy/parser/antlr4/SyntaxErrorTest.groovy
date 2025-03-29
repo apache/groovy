@@ -234,6 +234,11 @@ final class SyntaxErrorTest {
     }
 
     @Test
+    void 'groovy core - ClassDeclaration 4'() {
+        TestUtils.doRunAndShouldFail('fail/ClassDeclaration_04x.groovy')
+    }
+
+    @Test
     void 'test groovy core - EnumDeclaration 1'() {
         expectParseError '''\
             |enum E<T> {}
