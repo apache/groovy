@@ -29,8 +29,8 @@ import org.codehaus.groovy.ast.stmt.AssertStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.syntax.Token
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
 import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTestAntlr4
@@ -435,7 +435,7 @@ final class GroovyParserTest {
         doRunAndTestAntlr4('core/Command_07x.groovy')
     }
 
-    @Ignore @Test
+    @Disabled @Test
     void 'groovy core - Unicode'() {
         doTest('core/Unicode_01.groovy')
     }
@@ -535,7 +535,6 @@ final class GroovyParserTest {
         doRunAndTestAntlr4('bugs/BUG-GROOVY-6038.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-2324.groovy')
         doTest('bugs/BUG-GROOVY-8161.groovy')
-        doRunAndTestAntlr4('bugs/GROOVY-3898.groovy')
         doRunAndTestAntlr4('bugs/GROOVY-8228.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-8311.groovy')
         doRunAndTest('bugs/BUG-GROOVY-8426.groovy')

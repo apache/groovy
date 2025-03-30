@@ -26,26 +26,39 @@ import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
 
 /**
- * Represents a standard for loop in Groovy
+ * Represents a for loop in Groovy.
  */
 public class ForStatement extends Statement implements LoopingStatement {
-    public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE,"forLoopDummyParameter");
 
-    private Parameter variable;
+    public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter");
+
+    private final Parameter variable;
     private Expression collectionExpression;
     private Statement loopBlock;
-    private VariableScope scope;
 
-
-    public ForStatement(Parameter variable, Expression collectionExpression, Statement loopBlock) {
+    public ForStatement(final Parameter variable, final Expression collectionExpression, final Statement loopBlock) {
         this.variable = variable;
+        setCollectionExpression(collectionExpression);
+        setLoopBlock(loopBlock);
+    }
+
+    public void setCollectionExpression(final Expression collectionExpression) {
         this.collectionExpression = collectionExpression;
-        this.loopBlock = loopBlock;
     }
 
     @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitForLoop(this);
+    public void setLoopBlock(final Statement loopBlock) {
+        this.loopBlock = loopBlock;
+    }
+
+    //--------------------------------------------------------------------------
+
+    public Parameter getVariable() {
+        return variable;
+    }
+
+    public ClassNode getVariableType() {
+        return variable.getType();
     }
 
     public Expression getCollectionExpression() {
@@ -57,28 +70,22 @@ public class ForStatement extends Statement implements LoopingStatement {
         return loopBlock;
     }
 
-    public Parameter getVariable() {
-        return variable;
-    }
+    //--------------------------------------------------------------------------
 
-    public ClassNode getVariableType() {
-        return variable.getType();
-    }
-
-    public void setCollectionExpression(Expression collectionExpression) {
-        this.collectionExpression = collectionExpression;
-    }
-
-    public void setVariableScope(VariableScope variableScope) {
-       scope = variableScope;
-    }
+    private VariableScope scope;
 
     public VariableScope getVariableScope() {
-        return scope;
+        return this.scope;
     }
 
+    public void setVariableScope(final VariableScope scope) {
+       this.scope = scope;
+    }
+
+    //--------------------------------------------------------------------------
+
     @Override
-    public void setLoopBlock(Statement loopBlock) {
-        this.loopBlock = loopBlock;
+    public void visit(final GroovyCodeVisitor visitor) {
+        visitor.visitForLoop(this);
     }
 }

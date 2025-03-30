@@ -469,24 +469,47 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ForStatement visitForStmtAlt(final ForStmtAltContext ctx) {
-        Tuple2<Parameter, Expression> controlTuple = this.visitForControl(ctx.forControl());
+        var controlElements = this.visitForControl(ctx.forControl());
 
         Statement loopBlock = this.unpackStatement((Statement) this.visit(ctx.statement()));
 
-        return configureAST(new ForStatement(controlTuple.getV1(), controlTuple.getV2(), loopBlock), ctx);
+        return configureAST(new ForStatement(controlElements.getV1(), controlElements.getV2(), loopBlock), ctx);
     }
 
     @Override
     public Tuple2<Parameter, Expression> visitForControl(final ForControlContext ctx) {
-        if (asBoolean(ctx.enhancedForControl())) { // e.g. for(int i in 0..<10) {}
-            return this.visitEnhancedForControl(ctx.enhancedForControl());
+        // e.g. `for (var e : x) { }` and `for (e in x) { }`
+        EnhancedForControlContext enhancedCtx = ctx.enhancedForControl();
+        if (asBoolean(enhancedCtx)) {
+            return this.visitEnhancedForControl(enhancedCtx);
         }
 
-        if (asBoolean(ctx.classicalForControl())) { // e.g. for(int i = 0; i < 10; i++) {}
-            return this.visitClassicalForControl(ctx.classicalForControl());
+        // e.g. `for (int i = 0, n = 10; i < n; i += 1) { }`
+        OriginalForControlContext originalCtx = ctx.originalForControl();
+        if (asBoolean(originalCtx)) {
+            return this.visitOriginalForControl(originalCtx);
         }
 
         throw createParsingFailedException("Unsupported for control: " + ctx.getText(), ctx);
+    }
+
+    @Override
+    public Tuple2<Parameter, Expression> visitEnhancedForControl(final EnhancedForControlContext ctx) {
+        var parameter = configureAST(new Parameter(this.visitType(ctx.type()), this.visitIdentifier(ctx.identifier())), ctx.identifier());
+        new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt())).processParameter(parameter);
+
+        return tuple(parameter, (Expression) this.visit(ctx.expression()));
+    }
+
+    @Override
+    public Tuple2<Parameter, Expression> visitOriginalForControl(final OriginalForControlContext ctx) {
+        ClosureListExpression closureListExpression = new ClosureListExpression();
+        closureListExpression.addExpression(this.visitForInit(ctx.forInit()));
+        closureListExpression.addExpression(Optional.ofNullable(ctx.expression())
+          .map(e -> (Expression) this.visit(e)).orElse(EmptyExpression.INSTANCE));
+        closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
+
+        return tuple(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
     }
 
     @Override
@@ -530,26 +553,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else {
             return configureAST(new ClosureListExpression(expressionList), ctx);
         }
-    }
-
-    @Override
-    public Tuple2<Parameter, Expression> visitEnhancedForControl(final EnhancedForControlContext ctx) {
-        Parameter parameter = new Parameter(this.visitType(ctx.type()), this.visitVariableDeclaratorId(ctx.variableDeclaratorId()).getName());
-        ModifierManager modifierManager = new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt()));
-        modifierManager.processParameter(parameter);
-        configureAST(parameter, ctx.variableDeclaratorId());
-        return tuple(parameter, (Expression) this.visit(ctx.expression()));
-    }
-
-    @Override
-    public Tuple2<Parameter, Expression> visitClassicalForControl(final ClassicalForControlContext ctx) {
-        ClosureListExpression closureListExpression = new ClosureListExpression();
-
-        closureListExpression.addExpression(this.visitForInit(ctx.forInit()));
-        closureListExpression.addExpression(asBoolean(ctx.expression()) ? (Expression) this.visit(ctx.expression()) : EmptyExpression.INSTANCE);
-        closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
-
-        return tuple(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
     }
 
     @Override

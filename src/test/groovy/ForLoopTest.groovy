@@ -18,112 +18,103 @@
  */
 package groovy
 
-import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
-class ForLoopTest extends gls.CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-    def x
+final class ForLoopTest {
 
-    void testFinalParameterInForLoopIsAllowed() {
-        // only 'final' should be allowed: other modifiers like 'synchronized' should be forbidden
-        shouldNotCompile """
+    private int x
+
+    @ParameterizedTest
+    @ValueSource(strings=[
+        /*'public','private','protected','abstract','static',*/'native',/*'strictfp',*/'synchronized'
+    ])
+    void testFinalParameterInForLoopIsAllowed(String modifier) {
+        // only 'final' should be allowed; other modifiers should be forbidden
+        shouldFail """
             def collection = ["a", "b", "c", "d", "e"]
-            for (synchronized String letter in collection) { }
+            for ($modifier String letter in collection) { }
         """
 
-        // only 'final' allowed, and no additional modifier
-        shouldNotCompile """
+        shouldFail """
             def collection = ["a", "b", "c", "d", "e"]
-            for (final synchronized String letter in collection) { }
+            for (final $modifier String letter in collection) { }
         """
 
-        shouldCompile """
+        assertScript '''
             def collection = ["a", "b", "c", "d", "e"]
             for (final String letter in collection) { }
             for (final String letter : collection) { }
             for (final letter in collection) { }
             for (final letter : collection) { }
-        """
+        '''
     }
 
-    void testRange() {
-        x = 0
-
+    @Test
+    void testForEachInRange() {
         for (i in 0..9) {
             x = x + i
         }
-
         assert x == 45
     }
 
-    void testRangeWithType() {
-        x = 0
-
+    @Test
+    void testForEachInRangeWithType() {
         for (Integer i in 0..9) {
             assert i.getClass() == Integer
             x = x + i
         }
-
         assert x == 45
     }
 
-    void testRangeWithJdk15StyleAndType() {
-        x = 0
-
+    @Test
+    void testForEachInRangeWithJdk15StyleAndType() {
         for (Integer i: 0..9) {
             assert i.getClass() == Integer
             x = x + i
         }
-
         assert x == 45
     }
 
-    void testList() {
-        x = 0
-
+    @Test
+    void testForEachInList() {
         for (i in [0, 1, 2, 3, 4]) {
             x = x + i
         }
-
         assert x == 10
     }
 
-    void testArray() {
-        def array = (0..4).toArray()
-
-        x = 0
-
-        for (i in array) {
+    @Test
+    void testForEachInArray() {
+        for (i in new Integer[]{0, 1, 2, 3, 4}) {
             x = x + i
         }
-
         assert x == 10
     }
 
-    void testIntArray() {
-        def array = TestSupport.getIntArray()
-
-        x = 0
-
-        for (i in array) {
+    @Test
+    void testForEachInIntArray() {
+        for (i in new int[]{1, 2, 3, 4, 5}) {
             x = x + i
         }
-
         assert x == 15
     }
 
-    void testString() {
-        def text = "abc"
-
+    @Test
+    void testForEachInString() {
         def list = []
-        for (c in text) {
+        for (c in 'abc') {
             list.add(c)
         }
-
-        assert list == ["a", "b", "c"]
+        assert list == ['a', 'b', 'c']
     }
 
-    void testVector() {
+    @Test
+    void testForEachInVector() {
         def vector = new Vector()
         vector.addAll([1, 2, 3])
 
@@ -134,74 +125,88 @@ class ForLoopTest extends gls.CompilableTestSupport {
         assert answer == [1, 2, 3]
     }
 
+    @Test
     void testClassicFor() {
-        def sum = 0
         for (int i = 0; i < 10; i++) {
-            sum++
+            x++
         }
-        assert sum == 10
+        assert x == 10
 
         def list = [1, 2]
-        sum = 0
+        x = 0
         for (Iterator i = list.iterator(); i.hasNext();) {
-            sum += i.next()
+            x += i.next()
         }
-        assert sum == 3
+        assert x == 3
     }
 
+    @Test
     void testClassicForNested() {
-        def sum = 0
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                sum++
+                x++
             }
         }
-        assert sum == 100
+        assert x == 100
     }
 
+    @Test
     void testClassicForWithContinue() {
-        def sum1 = 0
         for (int i = 0; i < 10; i++) {
             if (i % 2 == 0) continue
-            sum1 += i
+            x += i
         }
-        assert sum1 == 25
+        assert x == 25
 
         // same as before, but with label
-        def sum2 = 0
+        x = 0
         test:
         for (int i = 0; i < 10; i++) {
             if (i % 2 == 0) continue test
-            sum2 += i
+            x += i
         }
-        assert sum2 == 25
-
+        assert x == 25
     }
 
+    // GROOVY-3898
+    @Test
+    void testClassicForWithMultiAssignment() {
+        def result = ''
+        for (def (int i, char c) = [0, 'x']; i < 3; ++i, c++) {
+            result += c
+        }
+        assert result == 'xyz'
+
+        result = 1
+        for (def (i,j) = [0,0]; i < 3; {i++;j++}() ) { // odd
+            result += i + j
+        }
+        assert result == 7 // 1 + 2 + 4
+    }
+
+    @Test
     void testClassicForWithEmptyInitializer() {
         def i = 0
-        def sum1 = 0
         for (; i < 10; i++) {
             if (i % 2 == 0) continue
-            sum1 += i
+            x += i
         }
-        assert sum1 == 25
+        assert x == 25
     }
 
-    void testClassicForWithEmptyBody() {
-        int i
-        for (i = 0; i < 5; i++);
-        assert i == 5
+    @Test
+    void testClassicForWithEmptyStatementBody() {
+        for (; x < 5; ++x) ;
+        assert x == 5
     }
 
+    @Test
     void testClassicForWithEverythingInitCondNextExpressionsEmpty() {
         int counter = 0
         for (;;) {
-            counter++
+            counter += 1
             if (counter == 10) break
         }
-
         assert counter == 10, "The body of the for loop wasn't executed, it should have looped 10 times."
     }
-
 }
