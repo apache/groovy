@@ -44,6 +44,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.ast.tools.ParameterUtils;
 import org.codehaus.groovy.control.SourceUnit;
@@ -58,10 +59,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isNative;
 import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isProtected;
+import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.lang.reflect.Modifier.isStrict;
 import static java.lang.reflect.Modifier.isSynchronized;
@@ -71,17 +74,10 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.buildWildcardType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
-import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
-import static org.objectweb.asm.Opcodes.ACC_NATIVE;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_STRICT;
-import static org.objectweb.asm.Opcodes.ACC_SYNCHRONIZED;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
-import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 
 /**
@@ -752,10 +748,44 @@ out:        for (ClassNode sc : superTypes) {
 
     @Override
     public void visitCatchStatement(final CatchStatement cs) {
+        List<String> modifiers = new ArrayList<>();
+        int mods = cs.getVariable().getModifiers();
+
+        if (isAbstract (mods)) modifiers.add("abstract" );
+        if (isPrivate  (mods)) modifiers.add("private"  );
+        if (isProtected(mods)) modifiers.add("protected");
+        if (isPublic   (mods)) modifiers.add("public"   );
+        if (isStatic   (mods)) modifiers.add("static"   );
+        if (isStrict   (mods)) modifiers.add("strictfp" );
+
+        for (String modifier : modifiers) {
+            addError("The catch " + getDescription(cs.getVariable()) + " has invalid modifier " + modifier + ".", cs);
+        }
+
         if (!(cs.getExceptionType().isDerivedFrom(ClassHelper.THROWABLE_TYPE))) {
             addError("Catch statement parameter type is not a subclass of Throwable.", cs);
         }
+
         super.visitCatchStatement(cs);
+    }
+
+    @Override
+    public void visitForLoop(final ForStatement fs) {
+        List<String> modifiers = new ArrayList<>();
+        int mods = fs.getVariable().getModifiers();
+
+        if (isAbstract (mods)) modifiers.add("abstract" );
+        if (isPrivate  (mods)) modifiers.add("private"  );
+        if (isProtected(mods)) modifiers.add("protected");
+        if (isPublic   (mods)) modifiers.add("public"   );
+        if (isStatic   (mods)) modifiers.add("static"   );
+        if (isStrict   (mods)) modifiers.add("strictfp" );
+
+        for (String modifier : modifiers) {
+            addError("The variable '" + fs.getVariable().getName() + "' has invalid modifier " + modifier + ".", fs);
+        }
+
+        super.visitForLoop(fs);
     }
 
     @Override
@@ -772,34 +802,38 @@ out:        for (ClassNode sc : superTypes) {
         }
     }
 
-    @Override
-    public void visitDeclarationExpression(final DeclarationExpression expression) {
-        super.visitDeclarationExpression(expression);
-        if (expression.isMultipleAssignmentDeclaration()) return;
-        checkInvalidDeclarationModifier(expression, ACC_ABSTRACT, "abstract");
-        checkInvalidDeclarationModifier(expression, ACC_NATIVE, "native");
-        checkInvalidDeclarationModifier(expression, ACC_PRIVATE, "private");
-        checkInvalidDeclarationModifier(expression, ACC_PROTECTED, "protected");
-        checkInvalidDeclarationModifier(expression, ACC_PUBLIC, "public");
-        checkInvalidDeclarationModifier(expression, ACC_STATIC, "static");
-        checkInvalidDeclarationModifier(expression, ACC_STRICT, "strictfp");
-        checkInvalidDeclarationModifier(expression, ACC_SYNCHRONIZED, "synchronized");
-        checkInvalidDeclarationModifier(expression, ACC_TRANSIENT, "transient");
-        checkInvalidDeclarationModifier(expression, ACC_VOLATILE, "volatile");
-        if (ClassHelper.isPrimitiveVoid(expression.getVariableExpression().getOriginType())) {
-            addError("The variable '" + expression.getVariableExpression().getName() + "' has invalid type void", expression);
-        }
-    }
-
-    private void checkInvalidDeclarationModifier(final DeclarationExpression expression, int modifier, String modName) {
-        if ((expression.getVariableExpression().getModifiers() & modifier) != 0) {
-            addError("Modifier '" + modName + "' not allowed here.", expression);
-        }
-    }
-
     private void checkForInvalidDeclaration(final Expression exp) {
         if (!(exp instanceof DeclarationExpression)) return;
         addError("Invalid use of declaration inside method call.", exp);
+    }
+
+    @Override
+    public void visitDeclarationExpression(final DeclarationExpression expression) {
+        super.visitDeclarationExpression(expression);
+
+        if (expression.isMultipleAssignmentDeclaration()) return;
+        var vexp = expression.getVariableExpression();
+        List<String> modifiers = new ArrayList<>();
+        int mods = vexp.getModifiers();
+
+        if (isAbstract    (mods)) modifiers.add("abstract"     );
+        if (isNative      (mods)) modifiers.add("native"       );
+        if (isPrivate     (mods)) modifiers.add("private"      );
+        if (isProtected   (mods)) modifiers.add("protected"    );
+        if (isPublic      (mods)) modifiers.add("public"       );
+        if (isStatic      (mods)) modifiers.add("static"       );
+        if (isStrict      (mods)) modifiers.add("strictfp"     );
+        if (isSynchronized(mods)) modifiers.add("synchronized" );
+        if (isTransient   (mods)) modifiers.add("transient"    );
+        if (isVolatile    (mods)) modifiers.add("volatile"     );
+
+        for (String modifier : modifiers) {
+            addError("The variable '" + vexp.getName() + "' has invalid modifier " + modifier + ".", expression);
+        }
+
+        if (ClassHelper.isPrimitiveVoid(vexp.getOriginType())) {
+            addError("The variable '" + vexp.getName() + "' has invalid type void.", expression);
+        }
     }
 
     @Override
