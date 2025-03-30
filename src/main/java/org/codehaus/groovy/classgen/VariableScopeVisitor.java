@@ -168,11 +168,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 variableType = "parameter";
             }
 
-            final StringBuilder msg = new StringBuilder(64);
-            msg.append("The current ").append(scopeType);
-            msg.append(" already contains a ").append(variableType);
-            msg.append(" of the name ").append(variableName);
-            return msg.toString();
+            String msg = "The current " + scopeType + " already contains a " + variableType + " of the name " + variableName;
+            return msg;
         };
 
         if (currentScope.getDeclaredVariable(variableName) != null) {
