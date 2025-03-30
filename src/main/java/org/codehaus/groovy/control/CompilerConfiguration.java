@@ -107,7 +107,7 @@ public class CompilerConfiguration {
     public static final String JDK23 = "23";
     /** This (<code>"24"</code>) is the value for targetBytecode to compile for a JDK 24. */
     public static final String JDK24 = "24";
-    /** This (<code>"24"</code>) is the value for targetBytecode to compile for a JDK 24. */
+    /** This (<code>"24"</code>) is the value for targetBytecode to compile for a JDK 25. */
     public static final String JDK25 = "25";
 
     /**
