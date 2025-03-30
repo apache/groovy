@@ -31,7 +31,7 @@ final class ForLoopTest {
 
     @ParameterizedTest
     @ValueSource(strings=[
-        /*'public','private','protected','abstract','static',*/'native',/*'strictfp',*/'synchronized'
+        'public','private','protected','abstract','static','native','strictfp','synchronized'
     ])
     void testFinalParameterInForLoopIsAllowed(String modifier) {
         // only 'final' should be allowed; other modifiers should be forbidden
