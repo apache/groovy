@@ -393,9 +393,6 @@ IN              : 'in';
 TRAIT           : 'trait';
 THREADSAFE      : 'threadsafe'; // reserved keyword
 
-// the reserved type name of Java10
-VAR             : 'var';
-
 // §3.9 Keywords
 BuiltInPrimitiveType
     :   BOOLEAN
@@ -415,7 +412,6 @@ fragment
 BOOLEAN       : 'boolean';
 
 BREAK         : 'break';
-YIELD         : 'yield';
 
 fragment
 BYTE          : 'byte';
@@ -444,18 +440,16 @@ FINALLY       : 'finally';
 fragment
 FLOAT         : 'float';
 
-
 FOR           : 'for';
 IF            : 'if';
 GOTO          : 'goto';
 IMPLEMENTS    : 'implements';
 IMPORT        : 'import';
 INSTANCEOF    : 'instanceof';
+INTERFACE     : 'interface';
 
 fragment
 INT           : 'int';
-
-INTERFACE     : 'interface';
 
 fragment
 LONG          : 'long';
@@ -463,21 +457,17 @@ LONG          : 'long';
 NATIVE        : 'native';
 NEW           : 'new';
 NON_SEALED    : 'non-sealed';
-
 PACKAGE       : 'package';
 PERMITS       : 'permits';
 PRIVATE       : 'private';
 PROTECTED     : 'protected';
 PUBLIC        : 'public';
-
 RECORD        : 'record';
 RETURN        : 'return';
-
 SEALED        : 'sealed';
 
 fragment
 SHORT         : 'short';
-
 
 STATIC        : 'static';
 STRICTFP      : 'strictfp';
@@ -489,10 +479,11 @@ THROW         : 'throw';
 THROWS        : 'throws';
 TRANSIENT     : 'transient';
 TRY           : 'try';
+VAR           : 'var';
 VOID          : 'void';
 VOLATILE      : 'volatile';
 WHILE         : 'while';
-
+YIELD         : 'yield';
 
 // §3.10.1 Integer Literals
 

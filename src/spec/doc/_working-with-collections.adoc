@@ -364,7 +364,7 @@ next / previous item in the range. For example, you can create a range of `Strin
 include::../test/gdk/WorkingWithCollectionsTest.groovy[tags=stringrange,indent=0]
 --------------------------------------
 
-You can iterate on a range using a classic `for` loop:
+You can iterate on a range using a `for` loop:
 
 [source,groovy]
 ----------------------

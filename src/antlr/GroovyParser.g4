@@ -383,7 +383,7 @@ qualifiedClassNameList
     ;
 
 formalParameters
-    :   LPAREN formalParameterList? rparen
+    :   LPAREN formalParameterList? RPAREN
     ;
 
 formalParameterList
@@ -510,7 +510,7 @@ annotationsOpt
     ;
 
 annotation
-    :   AT annotationName (nls LPAREN elementValues? rparen)?
+    :   AT annotationName (nls LPAREN elementValues? RPAREN)?
     ;
 
 elementValues
@@ -573,7 +573,7 @@ variableDeclaration[int t]
     ;
 
 typeNamePairs
-    :   LPAREN typeNamePair (COMMA typeNamePair)* rparen
+    :   LPAREN typeNamePair (COMMA typeNamePair)* RPAREN
     ;
 
 typeNamePair
@@ -581,7 +581,7 @@ typeNamePair
     ;
 
 variableNames
-    :   LPAREN variableDeclaratorId (COMMA variableDeclaratorId)+ rparen
+    :   LPAREN variableDeclaratorId (COMMA variableDeclaratorId)+ RPAREN
     ;
 
 conditionalStatement
@@ -598,7 +598,7 @@ switchStatement
     ;
 
 loopStatement
-    :   FOR LPAREN forControl rparen nls statement                                                            #forStmtAlt
+    :   FOR LPAREN forControl RPAREN nls statement                                                            #forStmtAlt
     |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
     |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
     ;
@@ -648,7 +648,7 @@ statement
     ;
 
 catchClause
-    :   CATCH LPAREN variableModifiersOpt catchType? identifier rparen nls block
+    :   CATCH LPAREN variableModifiersOpt catchType? identifier RPAREN nls block
     ;
 
 catchType
@@ -660,7 +660,7 @@ finallyBlock
     ;
 
 resources
-    :   LPAREN nls resourceList sep? rparen
+    :   LPAREN nls resourceList sep? RPAREN
     ;
 
 resourceList
@@ -687,14 +687,14 @@ switchLabel
 
 forControl
     :   enhancedForControl
-    |   classicalForControl
+    |   originalForControl
     ;
 
 enhancedForControl
-    :   variableModifiersOpt type? variableDeclaratorId (COLON | IN) expression
+    :   variableModifiersOpt type? identifier (COLON | IN) expression
     ;
 
-classicalForControl
+originalForControl
     :   forInit? SEMI expression? SEMI forUpdate?
     ;
 
@@ -711,7 +711,7 @@ forUpdate
 // EXPRESSIONS
 
 castParExpression
-    :   LPAREN type rparen
+    :   LPAREN type RPAREN
     ;
 
 parExpression
@@ -719,7 +719,7 @@ parExpression
     ;
 
 expressionInPar
-    :   LPAREN enhancedStatementExpression rparen
+    :   LPAREN enhancedStatementExpression RPAREN
     ;
 
 expressionList[boolean canSpread]
@@ -1174,7 +1174,7 @@ typeArgumentsOrDiamond
     ;
 
 arguments
-    :   LPAREN enhancedArgumentListInPar? COMMA? rparen
+    :   LPAREN enhancedArgumentListInPar? COMMA? RPAREN
     ;
 
 argumentList
@@ -1296,10 +1296,6 @@ keywords
     |   PUBLIC
     |   PROTECTED
     |   PRIVATE
-    ;
-
-rparen
-    :   RPAREN
     ;
 
 nls
