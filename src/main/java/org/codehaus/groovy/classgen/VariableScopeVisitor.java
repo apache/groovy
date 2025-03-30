@@ -64,8 +64,11 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -235,71 +238,77 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         return null;
     }
 
+    private final Map<VariableCacheKey, Variable> variableCache = new HashMap<>(64);
     private Variable findVariableDeclaration(final String name) {
-        if ("super".equals(name) || "this".equals(name)) return null;
+        if ("this".equals(name) || "super".equals(name)) return null;
+        return variableCache.computeIfAbsent(new VariableCacheKey(name, currentScope, inSpecialConstructorCall), k -> {
+            final String variableName = k.name;
+            final VariableScope currentScope = k.scope;
+            final boolean inSpecialConstructorCall = k.inSpecialConstructorCall;
 
-        Variable variable = null;
-        VariableScope scope = currentScope;
-        boolean crossingStaticContext = false;
-        // try to find a declaration of a variable
-        while (true) {
-            crossingStaticContext = (crossingStaticContext || scope.isInStaticContext());
+            Variable variable = null;
+            VariableScope scope = currentScope;
+            boolean crossingStaticContext = false;
+            // try to find a declaration of a variable
+            while (true) {
+                crossingStaticContext = (crossingStaticContext || scope.isInStaticContext());
 
-            Variable var = scope.getDeclaredVariable(name);
-            if (var != null) {
-                variable = var;
-                break;
-            }
-
-            var = scope.getReferencedLocalVariable(name);
-            if (var != null) {
-                variable = var;
-                break;
-            }
-
-            var = scope.getReferencedClassVariable(name);
-            if (var != null) {
-                variable = var;
-                break;
-            }
-
-            ClassNode node = scope.getClassScope();
-            if (node != null) {
-                Variable member = findClassMember(node, name);
-                boolean requireStatic = (crossingStaticContext || inSpecialConstructorCall);
-                while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
-                    requireStatic = requireStatic || isStatic(node.getModifiers());
-                    member = findClassMember((node = node.getOuterClass()), name);
+                Variable var = scope.getDeclaredVariable(variableName);
+                if (var != null) {
+                    variable = var;
+                    break;
                 }
-                if (member != null) {
-                    // prevent a static context (e.g. a static method) from accessing a non-static member (e.g. a non-static field)
-                    if (requireStatic ? member.isInStaticContext() : !node.isScript()) {
-                        variable = member;
+
+                var = scope.getReferencedLocalVariable(variableName);
+                if (var != null) {
+                    variable = var;
+                    break;
+                }
+
+                var = scope.getReferencedClassVariable(variableName);
+                if (var != null) {
+                    variable = var;
+                    break;
+                }
+
+                ClassNode node = scope.getClassScope();
+                if (node != null) {
+                    Variable member = findClassMember(node, variableName);
+                    boolean requireStatic = (crossingStaticContext || inSpecialConstructorCall);
+                    while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
+                        requireStatic = requireStatic || isStatic(node.getModifiers());
+                        member = findClassMember((node = node.getOuterClass()), variableName);
                     }
+                    if (member != null) {
+                        // prevent a static context (e.g. a static method) from accessing a non-static member (e.g. a non-static field)
+                        if (requireStatic ? member.isInStaticContext() : !node.isScript()) {
+                            variable = member;
+                        }
+                    }
+
+                    if (!isAnonymous(scope.getClassScope())) break; // GROOVY-5961
                 }
-
-                if (!isAnonymous(scope.getClassScope())) break; // GROOVY-5961
+                scope = scope.getParent();
             }
-            scope = scope.getParent();
-        }
-        if (variable == null) {
-            variable = new DynamicVariable(name, crossingStaticContext);
-        }
-
-        boolean isClassVariable = (scope.isClassScope() && !scope.isReferencedLocalVariable(name))
-            || (scope.isReferencedClassVariable(name) && scope.getDeclaredVariable(name) == null);
-        VariableScope end = scope;
-        scope = currentScope;
-        while (scope != end) {
-            if (isClassVariable) {
-                scope.putReferencedClassVariable(variable);
-            } else {
-                scope.putReferencedLocalVariable(variable);
+            if (variable == null) {
+                variable = new DynamicVariable(variableName, crossingStaticContext);
             }
-            scope = scope.getParent();
-        }
 
-        return variable;
+            boolean isClassVariable = (scope.isClassScope() && !scope.isReferencedLocalVariable(variableName))
+                || (scope.isReferencedClassVariable(variableName) && scope.getDeclaredVariable(variableName) == null);
+            VariableScope end = scope;
+            scope = currentScope;
+            while (scope != end) {
+                if (isClassVariable) {
+                    scope.putReferencedClassVariable(variable);
+                } else {
+                    scope.putReferencedLocalVariable(variable);
+                }
+                scope = scope.getParent();
+            }
+
+            return variable;
+        });
     }
 
     private void visitTypeVariables(final GenericsType[] types) {
@@ -756,6 +765,33 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (variable != null) {
             expression.setAccessedVariable(variable);
             checkVariableContextAccess(variable, expression);
+        }
+    }
+
+    private static class VariableCacheKey {
+        private static final int DEFAULT_HASH = 0;
+        private final String name;
+        private final VariableScope scope;
+        private final boolean inSpecialConstructorCall;
+        private int hash = DEFAULT_HASH;
+
+        VariableCacheKey(final String name, final VariableScope scope, boolean inSpecialConstructorCall) {
+            this.name = name;
+            this.scope = scope;
+            this.inSpecialConstructorCall = inSpecialConstructorCall;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof VariableCacheKey)) return false;
+            VariableCacheKey that = (VariableCacheKey) obj;
+            return name.equals(that.name) && scope.equals(that.scope) && inSpecialConstructorCall == that.inSpecialConstructorCall;
+        }
+
+        @Override
+        public int hashCode() {
+            return DEFAULT_HASH != hash ? hash : (hash = Objects.hash(name, scope, inSpecialConstructorCall));
         }
     }
 }
