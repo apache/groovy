@@ -67,6 +67,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
@@ -147,27 +148,32 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             return;
         }
         visitTypeReference(variable.getOriginType());
+        final String variableName = variable.getName();
 
-        String scopeType    = "scope";
-        String variableType = "variable";
-        if (context.getClass() == FieldNode.class) {
-            scopeType    = "class";
-            variableType = "field";
-        } else if (context.getClass() == PropertyNode.class) {
-            scopeType    = "class";
-            variableType = "property";
-        } else if (context.getClass() == ClosureExpression.class) {
-            scopeType    = "parameter list";
-            variableType = "parameter";
-        }
+        final Supplier<String> msgSupplier = () -> {
+            String scopeType    = "scope";
+            String variableType = "variable";
+            final Class<? extends ASTNode> clazz = context.getClass();
+            if (clazz == FieldNode.class) {
+                scopeType    = "class";
+                variableType = "field";
+            } else if (clazz == PropertyNode.class) {
+                scopeType    = "class";
+                variableType = "property";
+            } else if (clazz == ClosureExpression.class) {
+                scopeType    = "parameter list";
+                variableType = "parameter";
+            }
 
-        StringBuilder msg = new StringBuilder();
-        msg.append("The current ").append(scopeType);
-        msg.append(" already contains a ").append(variableType);
-        msg.append(" of the name ").append(variable.getName());
+            final StringBuilder msg = new StringBuilder(64);
+            msg.append("The current ").append(scopeType);
+            msg.append(" already contains a ").append(variableType);
+            msg.append(" of the name ").append(variableName);
+            return msg.toString();
+        };
 
-        if (currentScope.getDeclaredVariable(variable.getName()) != null) {
-            addError(msg.toString(), context);
+        if (currentScope.getDeclaredVariable(variableName) != null) {
+            addError(msgSupplier.get(), context);
             return;
         }
 
@@ -177,9 +183,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             // to declare a variable of the same name as a class member
             if (scope.getClassScope() != null && !isAnonymous(scope.getClassScope())) break;
 
-            if (scope.getDeclaredVariable(variable.getName()) != null) {
+            if (scope.getDeclaredVariable(variableName) != null) {
                 // variable already declared
-                addError(msg.toString(), context);
+                addError(msgSupplier.get(), context);
                 break;
             }
         }
