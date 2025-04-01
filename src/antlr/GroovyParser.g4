@@ -691,7 +691,11 @@ forControl
     ;
 
 enhancedForControl
-    :   variableModifiersOpt type? identifier (COLON | IN) expression
+    :   (indexVariable COMMA)? variableModifiersOpt type? identifier (COLON | IN) expression
+    ;
+
+indexVariable
+    :   (BuiltInPrimitiveType | DEF | VAR)? identifier
     ;
 
 originalForControl

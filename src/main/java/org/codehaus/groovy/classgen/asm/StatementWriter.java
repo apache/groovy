@@ -93,7 +93,7 @@ public class StatementWriter {
     }
 
     public void writeForStatement(final ForStatement statement) {
-        if (statement.getVariable() == ForStatement.FOR_LOOP_DUMMY) {
+        if (statement.getCollectionExpression() instanceof ClosureListExpression) {
             writeForLoopWithClosureList(statement);
         } else {
             writeForInLoop(statement);
@@ -122,8 +122,12 @@ public class StatementWriter {
         MethodVisitor mv = controller.getMethodVisitor();
         OperandStack operandStack = controller.getOperandStack();
 
-        // declare the loop counter
-        BytecodeVariable variable = compileStack.defineVariable(statement.getVariable(), false);
+        // declare the loop index and value variables
+        BytecodeVariable indexVariable = Optional.ofNullable(statement.getIndexVariable()).map(iv -> {
+            mv.visitInsn(ICONST_M1); // initialize to -1 so increment can pair with next()
+            return compileStack.defineVariable(iv, true);
+        }).orElse(null);
+        BytecodeVariable valueVariable = compileStack.defineVariable(statement.getValueVariable(), false);
 
         // get the iterator and generate the loop control
         int iterator = compileStack.defineTemporaryVariable("iterator", ClassHelper.Iterator_TYPE, true);
@@ -141,7 +145,10 @@ public class StatementWriter {
         mv.visitVarInsn(ALOAD, iterator);
         writeIteratorNext(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
-        operandStack.storeVar(variable);
+        operandStack.storeVar(valueVariable);
+        if (indexVariable != null) {
+            mv.visitIincInsn(indexVariable.getIndex(), 1);
+        }
 
         // generate the loop body
         statement.getLoopBlock().visit(controller.getAcg());

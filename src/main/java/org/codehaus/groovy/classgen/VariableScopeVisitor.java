@@ -69,7 +69,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.lang.reflect.Modifier.isFinal;
@@ -546,9 +548,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitForLoop(final ForStatement statement) {
         pushState();
         statement.setVariableScope(currentScope);
-        Parameter parameter = statement.getVariable();
-        parameter.setInStaticContext(currentScope.isInStaticContext());
-        if (parameter != ForStatement.FOR_LOOP_DUMMY) declare(parameter, statement);
+        Consumer<Parameter> define = (parameter) -> {
+            parameter.setInStaticContext(currentScope.isInStaticContext());
+            declare(parameter, statement);
+        };
+        Optional.ofNullable(statement.getIndexVariable()).ifPresent(define);
+        Optional.ofNullable(statement.getValueVariable()).ifPresent(define);
         super.visitForLoop(statement);
         popState();
     }

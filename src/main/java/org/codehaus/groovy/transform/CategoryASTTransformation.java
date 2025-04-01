@@ -221,7 +221,11 @@ public class CategoryASTTransformation implements ASTTransformation {
             public void visitForLoop(final ForStatement statement) {
                 Expression exp = statement.getCollectionExpression();
                 exp.visit(this);
-                Parameter loopParam = statement.getVariable();
+                Parameter loopParam = statement.getIndexVariable();
+                if (loopParam != null) {
+                    varStack.getLast().add(loopParam.getName());
+                }
+                loopParam = statement.getValueVariable();
                 if (loopParam != null) {
                     varStack.getLast().add(loopParam.getName());
                 }

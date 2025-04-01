@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.Expression;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Represents a for loop in Groovy.
  */
@@ -32,33 +34,57 @@ public class ForStatement extends Statement implements LoopingStatement {
 
     public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter");
 
-    private final Parameter variable;
+    private final Parameter indexVariable, valueVariable;
     private Expression collectionExpression;
     private Statement loopBlock;
 
-    public ForStatement(final Parameter variable, final Expression collectionExpression, final Statement loopBlock) {
-        this.variable = variable;
+    /**
+     * @since 5.0.0
+     */
+    public ForStatement(final Parameter indexVariable, final Parameter valueVariable, final Expression collectionExpression, final Statement loopBlock) {
+        this.indexVariable = indexVariable; // optional component
+        this.valueVariable = requireNonNull(valueVariable);
         setCollectionExpression(collectionExpression);
         setLoopBlock(loopBlock);
     }
 
+    public ForStatement(final Parameter variable, final Expression collectionExpression, final Statement loopBlock) {
+        this(null, variable, collectionExpression, loopBlock);
+    }
+
     public void setCollectionExpression(final Expression collectionExpression) {
-        this.collectionExpression = collectionExpression;
+        this.collectionExpression = requireNonNull(collectionExpression);
     }
 
     @Override
     public void setLoopBlock(final Statement loopBlock) {
-        this.loopBlock = loopBlock;
+        this.loopBlock = requireNonNull(loopBlock);
     }
 
     //--------------------------------------------------------------------------
 
-    public Parameter getVariable() {
-        return variable;
+    /**
+     * @since 5.0.0
+     */
+    public Parameter getIndexVariable() {
+        return indexVariable;
     }
 
+    /**
+     * @since 5.0.0
+     */
+    public Parameter getValueVariable() {
+        return valueVariable != FOR_LOOP_DUMMY ? valueVariable : null;
+    }
+
+    @Deprecated(since = "5.0.0")
+    public Parameter getVariable() {
+        return valueVariable;
+    }
+
+    @Deprecated(since = "5.0.0")
     public ClassNode getVariableType() {
-        return variable.getType();
+        return valueVariable.getType();
     }
 
     public Expression getCollectionExpression() {
@@ -79,7 +105,7 @@ public class ForStatement extends Statement implements LoopingStatement {
     }
 
     public void setVariableScope(final VariableScope scope) {
-       this.scope = scope;
+        this.scope = scope;
     }
 
     //--------------------------------------------------------------------------

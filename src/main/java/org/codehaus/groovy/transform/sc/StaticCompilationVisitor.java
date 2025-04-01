@@ -257,9 +257,10 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
         super.visitForLoop(statement);
         var collectionExpression = statement.getCollectionExpression();
         if (!(collectionExpression instanceof ClosureListExpression)) {
-            if (statement.getVariable().isDynamicTyped()) { // GROOVY-8169
-                ClassNode inferredType = getType(statement.getVariable());
-                statement.getVariable().setType(inferredType); // GROOVY-5640, GROOVY-5641
+            var valueVariable = statement.getValueVariable();
+            if (valueVariable.isDynamicTyped()) { // GROOVY-8169
+                ClassNode inferredType = getType(valueVariable);
+                valueVariable.setType(inferredType); // GROOVY-5640, GROOVY-5641
             }
         }
     }
