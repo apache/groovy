@@ -147,6 +147,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static groovy.lang.Tuple.tuple;
@@ -469,15 +470,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ForStatement visitForStmtAlt(final ForStmtAltContext ctx) {
-        var controlElements = this.visitForControl(ctx.forControl());
+        Function<Statement, ForStatement> maker = this.visitForControl(ctx.forControl());
 
-        Statement loopBlock = this.unpackStatement((Statement) this.visit(ctx.statement()));
+        Statement loopBody = this.unpackStatement((Statement) this.visit(ctx.statement()));
 
-        return configureAST(new ForStatement(controlElements.getV1(), controlElements.getV2(), loopBlock), ctx);
+        return configureAST(maker.apply(loopBody), ctx);
     }
 
     @Override
-    public Tuple2<Parameter, Expression> visitForControl(final ForControlContext ctx) {
+    public Function<Statement, ForStatement> visitForControl(final ForControlContext ctx) {
         // e.g. `for (var e : x) { }` and `for (e in x) { }`
         EnhancedForControlContext enhancedCtx = ctx.enhancedForControl();
         if (asBoolean(enhancedCtx)) {
@@ -494,22 +495,37 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public Tuple2<Parameter, Expression> visitEnhancedForControl(final EnhancedForControlContext ctx) {
-        var parameter = configureAST(new Parameter(this.visitType(ctx.type()), this.visitIdentifier(ctx.identifier())), ctx.identifier());
-        new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt())).processParameter(parameter);
+    public Function<Statement, ForStatement> visitEnhancedForControl(final EnhancedForControlContext ctx) {
+        var indexParameter = asBoolean(ctx.indexVariable()) ? this.visitIndexVariable(ctx.indexVariable()) : null;
 
-        return tuple(parameter, (Expression) this.visit(ctx.expression()));
+        var valueParameter = configureAST(new Parameter(this.visitType(ctx.type()), this.visitIdentifier(ctx.identifier())), ctx.identifier());
+        ModifierManager modifierManager = new ModifierManager(this, this.visitVariableModifiersOpt(ctx.variableModifiersOpt()));
+        modifierManager.processParameter(valueParameter);
+
+        return (body) -> new ForStatement(indexParameter, valueParameter, (Expression) this.visit(ctx.expression()), body);
     }
 
     @Override
-    public Tuple2<Parameter, Expression> visitOriginalForControl(final OriginalForControlContext ctx) {
+    public Parameter visitIndexVariable(final IndexVariableContext ctx) {
+        var primitiveType = ctx.BuiltInPrimitiveType();
+        if (primitiveType != null && primitiveType.getText().length() != 3) {
+            throw this.createParsingFailedException(primitiveType.getText() + " is not allowed here", ctx);
+        }
+
+        var indexParameter = configureAST(new Parameter(ClassHelper.int_TYPE, this.visitIdentifier(ctx.identifier())), ctx.identifier());
+        indexParameter.setModifiers(Opcodes.ACC_FINAL);
+        return indexParameter;
+    }
+
+    @Override
+    public Function<Statement, ForStatement> visitOriginalForControl(final OriginalForControlContext ctx) {
         ClosureListExpression closureListExpression = new ClosureListExpression();
         closureListExpression.addExpression(this.visitForInit(ctx.forInit()));
         closureListExpression.addExpression(Optional.ofNullable(ctx.expression())
           .map(e -> (Expression) this.visit(e)).orElse(EmptyExpression.INSTANCE));
         closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
 
-        return tuple(ForStatement.FOR_LOOP_DUMMY, closureListExpression);
+        return (body) -> new ForStatement(ForStatement.FOR_LOOP_DUMMY, closureListExpression, body);
     }
 
     @Override

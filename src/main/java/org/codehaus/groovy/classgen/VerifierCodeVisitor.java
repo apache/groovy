@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -29,6 +30,8 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.syntax.RuntimeParserException;
+
+import java.util.Optional;
 
 /**
  * Performs various checks on code inside methods and constructors
@@ -44,9 +47,12 @@ public class VerifierCodeVisitor extends CodeVisitorSupport {
     }
 
     @Override
-    public void visitForLoop(ForStatement expression) {
-        assertValidIdentifier(expression.getVariable().getName(), "for loop variable name", expression);
-        super.visitForLoop(expression);
+    public void visitForLoop(ForStatement statement) {
+        Optional.ofNullable(statement.getIndexVariable()).map(Variable::getName)
+            .ifPresent(name -> assertValidIdentifier(name, "for loop index variable name", statement));
+        Optional.ofNullable(statement.getValueVariable()).map(Variable::getName)
+            .ifPresent(name -> assertValidIdentifier(name, "for loop value variable name", statement));
+        super.visitForLoop(statement);
     }
 
     @Override

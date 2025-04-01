@@ -245,6 +245,11 @@ final class SemanticsTest {
             list.add(c)
         }
         assert list == ['a', 'b', 'c']
+
+        // iterate with index
+        for ( int i, k in map.keySet() ) {
+            assert map.get(k) == i + 1
+        }
         // end::groovy_for_loop_example[]
     }
 

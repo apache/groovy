@@ -38,6 +38,7 @@ import org.objectweb.asm.MethodVisitor;
 
 import java.util.Enumeration;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ALOAD;
@@ -50,6 +51,7 @@ import static org.objectweb.asm.Opcodes.FALOAD;
 import static org.objectweb.asm.Opcodes.GOTO;
 import static org.objectweb.asm.Opcodes.IALOAD;
 import static org.objectweb.asm.Opcodes.ICONST_0;
+import static org.objectweb.asm.Opcodes.ICONST_M1;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.IF_ICMPGE;
@@ -95,9 +97,8 @@ public class StaticTypesStatementWriter extends StatementWriter {
         ClassNode collectionType = controller.getTypeChooser().resolveType(collectionExpression, controller.getClassNode());
 
         int mark = operandStack.getStackLength();
-        Parameter loopVariable = loop.getVariable();
-        if (collectionType.isArray() && loopVariable.getType().equals(collectionType.getComponentType())) {
-            writeOptimizedForEachLoop(loop, loopVariable, collectionExpression, collectionType);
+        if (collectionType.isArray() && collectionType.getComponentType().equals(loop.getVariableType())) {
+            writeOptimizedForEachLoop(loop, collectionExpression, collectionType);
         } else if (GeneralUtils.isOrImplements(collectionType, ENUMERATION_CLASSNODE)) {
             writeEnumerationBasedForEachLoop(loop, collectionExpression, collectionType);
         } else {
@@ -107,13 +108,16 @@ public class StaticTypesStatementWriter extends StatementWriter {
         compileStack.pop();
     }
 
-    private void writeOptimizedForEachLoop(final ForStatement loop, final Parameter loopVariable, final Expression arrayExpression, final ClassNode arrayType) {
+    private void writeOptimizedForEachLoop(final ForStatement loop, final Expression arrayExpression, final ClassNode arrayType) {
         CompileStack compileStack = controller.getCompileStack();
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
         AsmClassGenerator acg = controller.getAcg();
 
-        BytecodeVariable variable = compileStack.defineVariable(loopVariable, arrayType.getComponentType(), false);
+        BytecodeVariable indexVariable = Optional.ofNullable(loop.getIndexVariable()).map(iv -> {
+            mv.visitInsn(ICONST_M1); return compileStack.defineVariable(iv, true);
+        }).orElse(null);
+        BytecodeVariable valueVariable = compileStack.defineVariable(loop.getValueVariable(), arrayType.getComponentType(), false);
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
 
@@ -141,10 +145,13 @@ public class StaticTypesStatementWriter extends StatementWriter {
         mv.visitJumpInsn(IF_ICMPGE, breakLabel);
 
         // get array element
-        loadFromArray(mv, operandStack, variable, array, loopIdx);
+        loadFromArray(mv, operandStack, valueVariable, array, loopIdx);
 
         // $idx += 1
         mv.visitIincInsn(loopIdx, 1);
+        if (indexVariable != null) {
+            mv.visitIincInsn(indexVariable.getIndex(), 1);
+        }
 
         // loop body
         loop.getLoopBlock().visit(acg);
@@ -190,7 +197,10 @@ public class StaticTypesStatementWriter extends StatementWriter {
         OperandStack operandStack = controller.getOperandStack();
         MethodVisitor mv = controller.getMethodVisitor();
 
-        BytecodeVariable variable = compileStack.defineVariable(loop.getVariable(), false);
+        BytecodeVariable indexVariable = Optional.ofNullable(loop.getIndexVariable()).map(iv -> {
+            mv.visitInsn(ICONST_M1); return compileStack.defineVariable(iv, true);
+        }).orElse(null);
+        BytecodeVariable valueVariable = compileStack.defineVariable(loop.getValueVariable(), false);
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
 
@@ -210,7 +220,10 @@ public class StaticTypesStatementWriter extends StatementWriter {
         mv.visitVarInsn(ALOAD, enumeration);
         ENUMERATION_NEXT_METHOD.call(mv);
         operandStack.push(ClassHelper.OBJECT_TYPE);
-        operandStack.storeVar(variable);
+        operandStack.storeVar(valueVariable);
+        if (indexVariable != null) {
+            mv.visitIincInsn(indexVariable.getIndex(), 1);
+        }
 
         loop.getLoopBlock().visit(controller.getAcg());
         mv.visitJumpInsn(GOTO, continueLabel);

@@ -18,6 +18,8 @@
  */
 package groovy
 
+import groovy.transform.CompileStatic
+
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -123,6 +125,26 @@ final class ForLoopTest {
             answer << i
         }
         assert answer == [1, 2, 3]
+    }
+
+    // GROOVY-10683
+    @Test @CompileStatic
+    void testForEachWithIndex() {
+        for (int i, var v in [0, 1, 2, 3]) {
+            assert i == v
+            continue
+        }
+        for (int i, var v in new int[]{0, 1, 2, 3}) {
+            assert i == v
+            continue
+        }
+        for (int i, var v in Collections.enumeration([0, 1, 2, 3])) {
+            assert i == v
+            continue
+        }
+        for (int i, def ts in Thread.State) {
+            assert i == ((Thread.State) ts).ordinal() // GROOVY-11597
+        }
     }
 
     @Test

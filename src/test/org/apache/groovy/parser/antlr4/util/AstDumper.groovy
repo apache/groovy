@@ -533,8 +533,12 @@ class AstNodeToScriptVisitor implements CompilationUnit.IPrimaryClassNodeOperati
     void visitForLoop(ForStatement statement) {
         printStatementLabels(statement)
         print 'for ('
-        if (statement?.variable != ForStatement.FOR_LOOP_DUMMY) {
-            visitParameters statement.variable
+        if (statement?.indexVariable) {
+            visitParameters statement.indexVariable
+            print ', '
+        }
+        if (statement?.valueVariable) {
+            visitParameters statement.valueVariable
             print ' : '
         }
 
