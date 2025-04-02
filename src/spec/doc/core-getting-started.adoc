@@ -73,7 +73,7 @@ Simply open a new terminal and enter:
 
 [source,shell]
 ----
-$ curl -s get.sdkman.io | bash
+$ curl -s "https://get.sdkman.io" | bash
 ----
 
 Follow the instructions on-screen to complete installation.
