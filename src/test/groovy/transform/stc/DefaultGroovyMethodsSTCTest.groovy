@@ -444,6 +444,14 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11596
+    void testTapEveryTypeInference() {
+        assertScript '''
+            List<String> pets = ['cat', 'canary', 'cockroach']
+            pets.iterator().tapEvery{ assert it.startsWith('c') }.collect()
+        '''
+    }
+
     // GROOVY-6668, GROOVY-8212
     void testMapGetAtVsObjectGetAt2() {
         assertScript '''

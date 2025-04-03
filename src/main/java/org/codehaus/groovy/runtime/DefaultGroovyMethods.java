@@ -14051,7 +14051,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator for the original elements
      * @since 5.0.0
      */
-    public static <T, U> Iterator<T> tapEvery(Iterator<T> self, int every, Closure<U> closure) {
+    public static <T, U> Iterator<U> tapEvery(Iterator<U> self, int every,
+                                              @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> closure) {
         return new TapIterator<>(self, closure, every);
     }
 
@@ -14082,7 +14083,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator for the original elements
      * @since 5.0.0
      */
-    public static <T, U> Iterator<T> tapEvery(Iterator<T> self, Closure<U> closure) {
+    public static <T, U> Iterator<U> tapEvery(Iterator<U> self,
+                                              @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> closure) {
         return new TapIterator<>(self, closure, 1);
     }
 
@@ -14110,6 +14112,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             T next = delegate.next();
             if (++index % every == 0) {
                 closure.setDelegate(next);
+                closure.setResolveStrategy(Closure.DELEGATE_FIRST);
                 closure.call(next);
             }
             return next;
