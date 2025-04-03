@@ -1978,8 +1978,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param step          the number of elements to step through for each sub-list
      * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return an iterator for the collated sub-lists
+     * @since 5.0.0
      */
-    public static <T> Iterator<Collection<T>> collate(Iterator<T> self, int size, int step, boolean keepRemainder) {
+    public static <T> Iterator<List<T>> collate(Iterator<T> self, int size, int step, boolean keepRemainder) {
         return new CollateIterator<>(self, size, step, keepRemainder);
     }
 
@@ -1996,8 +1997,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param size          the length of each sub-list in the returned elements
      * @param step          the number of elements to step through for each sub-list
      * @return an iterator for the collated sub-lists
+     * @since 5.0.0
      */
-    public static <T> Iterator<Collection<T>> collate(Iterator<T> self, int size, int step) {
+    public static <T> Iterator<List<T>> collate(Iterator<T> self, int size, int step) {
         return new CollateIterator<>(self, size, step);
     }
 
@@ -2015,8 +2017,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param size          the length of each sub-list in the returned elements
      * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
      * @return an iterator for the collated sub-lists
+     * @since 5.0.0
      */
-    public static <T> Iterator<Collection<T>> collate(Iterator<T> self, int size, boolean keepRemainder) {
+    public static <T> Iterator<List<T>> collate(Iterator<T> self, int size, boolean keepRemainder) {
         return new CollateIterator<>(self, size, keepRemainder);
     }
 
@@ -2032,15 +2035,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          an Iterator
      * @param size          the length of each sub-list in the returned elements
      * @return an iterator for the collated sub-lists
+     * @since 5.0.0
      */
-    public static <T> Iterator<Collection<T>> collate(Iterator<T> self, int size) {
+    public static <T> Iterator<List<T>> collate(Iterator<T> self, int size) {
         return new CollateIterator<>(self, size);
     }
 
-    private static class CollateIterator<T> implements Iterator<Collection<T>> {
-        private final Queue<Collection<T>> cache = new LinkedList<>();
+    private static class CollateIterator<T> implements Iterator<List<T>> {
+        private final Queue<List<T>> cache = new LinkedList<>();
         private final Iterator<T> parent;
-        private Collection<T> current;
+        private List<T> current;
         private boolean loaded;
         private boolean exhausted;
         private final int size;
@@ -2117,7 +2121,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
 
         @Override
-        public Collection<T> next() {
+        public List<T> next() {
             hasNext();
             if (exhausted) {
                 throw new NoSuchElementException("CollateIterator has been exhausted and contains no more elements");
