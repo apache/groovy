@@ -14051,8 +14051,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator for the original elements
      * @since 5.0.0
      */
-    public static <T, U> Iterator<U> tapEvery(Iterator<U> self, int every,
-                                              @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> closure) {
+    public static <T, U> Iterator<U> tapEvery(
+        @DelegatesTo.Target Iterator<U> self,
+        int every,
+        @DelegatesTo(genericTypeIndex=0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> closure) {
         return new TapIterator<>(self, closure, every);
     }
 
@@ -14083,8 +14086,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator for the original elements
      * @since 5.0.0
      */
-    public static <T, U> Iterator<U> tapEvery(Iterator<U> self,
-                                              @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> closure) {
+    public static <T, U> Iterator<U> tapEvery(
+        @DelegatesTo.Target Iterator<U> self,
+        @DelegatesTo(genericTypeIndex=0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> closure) {
         return new TapIterator<>(self, closure, 1);
     }
 
