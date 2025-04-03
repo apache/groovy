@@ -193,46 +193,51 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.putDeclaredVariable(variable);
     }
 
+    private final Map<ClassMemberCacheKey, Variable> classMemberCache = new HashMap<>(64);
     private Variable findClassMember(final ClassNode node, final String name) {
-        final boolean abstractType = node.isAbstract();
+        return classMemberCache.computeIfAbsent(new ClassMemberCacheKey(name, node), k -> {
+            final ClassNode classNode = k.node;
+            final String memberName = k.name;
+            final boolean abstractType = classNode.isAbstract();
 
-        for (ClassNode cn = node; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
-            for (FieldNode fn : cn.getFields()) {
-                if (name.equals(fn.getName())) return fn;
-            }
+            for (ClassNode cn = classNode; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
+                for (FieldNode fn : cn.getFields()) {
+                    if (memberName.equals(fn.getName())) return fn;
+                }
 
-            for (PropertyNode pn : cn.getProperties()) {
-                if (name.equals(pn.getName())) return pn;
-            }
+                for (PropertyNode pn : cn.getProperties()) {
+                    if (memberName.equals(pn.getName())) return pn;
+                }
 
-            for (MethodNode mn : cn.getMethods()) {
-                if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
-                    // check for super property before returning a pseudo-property
-                    for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {
-                        if (name.equals(pn.getName())) return pn;
+                for (MethodNode mn : cn.getMethods()) {
+                    if ((abstractType || !mn.isAbstract()) && memberName.equals(getPropertyName(mn))) {
+                        // check for super property before returning a pseudo-property
+                        for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {
+                            if (memberName.equals(pn.getName())) return pn;
+                        }
+
+                        FieldNode fn = new FieldNode(memberName, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
+                        fn.setHasNoRealSourcePosition(true);
+                        fn.setDeclaringClass(cn);
+                        fn.setSynthetic(true);
+
+                        PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
+                        pn.putNodeMetaData("access.method", mn);
+                        pn.setDeclaringClass(cn);
+                        return pn;
                     }
+                }
 
-                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
-                    fn.setHasNoRealSourcePosition(true);
-                    fn.setDeclaringClass(cn);
-                    fn.setSynthetic(true);
-
-                    PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
-                    pn.putNodeMetaData("access.method", mn);
-                    pn.setDeclaringClass(cn);
-                    return pn;
+                for (ClassNode in : cn.getAllInterfaces()) {
+                    FieldNode fn = in.getDeclaredField(memberName);
+                    if (fn != null) return fn;
+                    PropertyNode pn = in.getProperty(memberName);
+                    if (pn != null) return pn;
                 }
             }
 
-            for (ClassNode in : cn.getAllInterfaces()) {
-                FieldNode fn = in.getDeclaredField(name);
-                if (fn != null) return fn;
-                PropertyNode pn = in.getProperty(name);
-                if (pn != null) return pn;
-            }
-        }
-
-        return null;
+            return null;
+        });
     }
 
     private final Map<VariableCacheKey, Variable> variableCache = new HashMap<>(64);
@@ -762,6 +767,31 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (variable != null) {
             expression.setAccessedVariable(variable);
             checkVariableContextAccess(variable, expression);
+        }
+    }
+
+    private static class ClassMemberCacheKey {
+        private static final int DEFAULT_HASH = 0;
+        private final String name;
+        private final ClassNode node;
+        private int hash = DEFAULT_HASH;
+
+        ClassMemberCacheKey(final String name, final ClassNode node) {
+            this.name = name;
+            this.node = node;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof ClassMemberCacheKey)) return false;
+            ClassMemberCacheKey that = (ClassMemberCacheKey) obj;
+            return name.equals(that.name) && node.equals(that.node);
+        }
+
+        @Override
+        public int hashCode() {
+            return DEFAULT_HASH != hash ? hash : (hash = Objects.hash(name, node));
         }
     }
 
