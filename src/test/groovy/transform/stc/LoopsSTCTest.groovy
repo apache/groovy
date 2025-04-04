@@ -310,6 +310,15 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11597
+    void testForInLoopOnAnEnumClass() {
+        assertScript '''
+            for (i, s in Thread.State) {
+                assert i === s.ordinal()
+            }
+        '''
+    }
+
     // GROOVY-11305
     void testForInLoopOnNearlyIterable() {
         assertScript '''
