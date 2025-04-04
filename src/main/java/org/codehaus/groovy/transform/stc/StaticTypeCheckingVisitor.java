@@ -158,6 +158,7 @@ import static org.codehaus.groovy.ast.ClassHelper.CLASS_Type;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Character_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Double_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.Enum_Type;
 import static org.codehaus.groovy.ast.ClassHelper.Float_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.Iterator_TYPE;
@@ -2120,6 +2121,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 } else {
                     componentType = STRING_TYPE;
                 }
+            } else if (isClassType(collectionType) && collectionType.getGenericsTypes() != null
+                  && collectionType.getGenericsTypes()[0].getType().isDerivedFrom(Enum_Type)) {
+                componentType = collectionType.getGenericsTypes()[0].getType(); // GROOVY-11597
             } else {
                 componentType = inferComponentType(collectionType, null);
                 if (componentType == null) {
@@ -2134,11 +2138,11 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             if (!isDynamicTyped(forLoopVariableType)) { // user-supplied type
                 componentType = forLoopVariableType;
             }
-            typeCheckingContext.controlStructureVariables.put(forLoop.getVariable(), componentType);
+            typeCheckingContext.controlStructureVariables.put(forLoop.getValueVariable(), componentType);
             try {
                 forLoop.getLoopBlock().visit(this);
             } finally {
-                typeCheckingContext.controlStructureVariables.remove(forLoop.getVariable());
+                typeCheckingContext.controlStructureVariables.remove(forLoop.getValueVariable());
             }
         }
         if (isSecondPassNeededForControlStructure(varTypes, oldTracker)) {
