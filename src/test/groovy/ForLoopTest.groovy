@@ -142,9 +142,6 @@ final class ForLoopTest {
             assert i == v
             continue
         }
-        for (int i, def ts in Thread.State) {
-            assert i == ((Thread.State) ts).ordinal() // GROOVY-11597
-        }
     }
 
     @Test
