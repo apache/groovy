@@ -545,10 +545,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             }
         }
 
-        if (asBoolean(ctx.expressionList())) {
-            return this.translateExpressionList(ctx.expressionList());
-        }
-
         throw createParsingFailedException("Unsupported for init: " + ctx.getText(), ctx);
     }
 
@@ -558,14 +554,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return EmptyExpression.INSTANCE;
         }
 
-        return this.translateExpressionList(ctx.expressionList());
-    }
-
-    private Expression translateExpressionList(final ExpressionListContext ctx) {
-        List<Expression> expressionList = this.visitExpressionList(ctx);
-
+        var expressionList = this.visitExpressionList(ctx.expressionList());
         if (expressionList.size() == 1) {
-            return configureAST(expressionList.get(0), ctx);
+            return configureAST(expressionList.get(0), ctx); // one Expression
         } else {
             return configureAST(new ClosureListExpression(expressionList), ctx);
         }
