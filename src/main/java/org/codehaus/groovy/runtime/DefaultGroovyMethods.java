@@ -1828,7 +1828,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.2
      */
     public static <T> List<List<T>> chop(Iterable<T> self, int... chopSizes) {
-        return chop(self.iterator(), chopSizes);
+        return toList(chop(self.iterator(), chopSizes));
+    }
+
+    /**
+     * Chops the iterator items into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     *
+     * @deprecated
+     * @since 2.5.2
+     */
+    @Deprecated
+    public static <T> List<List<T>> chop$$bridge(Iterator<T> self, int... chopSizes) {
+        return toList(chop(self, chopSizes));
     }
 
     /**
@@ -1838,26 +1849,52 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * assert (1..6).iterator().chop(1, 2, -1) == [[1], [2, 3], [4, 5, 6]]
+     * assert (1..6).iterator().chop(1, 2, -1).collect() == [[1], [2, 3], [4, 5, 6]]
      * </pre>
      *
      * @param self      an Iterator to be chopped
      * @param chopSizes the sizes for the returned pieces
-     * @return a list of lists chopping the original iterator elements into pieces determined by chopSizes
-     * @since 2.5.2
+     * @return an iterator of lists chopping the original iterator elements into pieces determined by chopSizes
+     * @since 5.0.0
      */
-    public static <T> List<List<T>> chop(Iterator<T> self, int... chopSizes) {
+    public static <T> Iterator<List<T>> chop(Iterator<T> self, int... chopSizes) {
         Objects.requireNonNull(self);
-        List<List<T>> result = new ArrayList<>();
-        for (int nextSize : chopSizes) {
-            int size = nextSize;
-            List<T> next = new ArrayList<>();
-            while (size-- != 0 && self.hasNext()) {
-                next.add(self.next());
+        return new ChopIterator<>(self, chopSizes);
+    }
+
+    private static final class ChopIterator<T> implements Iterator<List<T>> {
+        private final Iterator<T> delegate;
+        private final Queue<Integer> remainingSizes = new LinkedList<>();
+
+        private ChopIterator(Iterator<T> delegate, int... chopSizes) {
+            this.delegate = delegate;
+            int count = chopSizes.length;
+            for (int i : chopSizes) {
+                --count;
+                remainingSizes.offer(i);
             }
-            result.add(next);
         }
-        return result;
+
+        @Override
+        public boolean hasNext() {
+            return !remainingSizes.isEmpty();
+        }
+
+        @Override
+        public List<T> next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            int size = remainingSizes.poll();
+            List<T> next = new ArrayList<>();
+            while (size-- != 0 && delegate.hasNext()) {
+                next.add(delegate.next());
+            }
+            return next;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     //--------------------------------------------------------------------------

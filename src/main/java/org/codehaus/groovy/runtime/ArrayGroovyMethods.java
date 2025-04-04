@@ -662,7 +662,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Boolean>> chop(boolean[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new BooleanArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new BooleanArrayIterator(self), chopSizes));
     }
 
     /**
@@ -681,7 +681,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Byte>> chop(byte[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new ByteArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new ByteArrayIterator(self), chopSizes));
     }
 
     /**
@@ -700,7 +700,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Character>> chop(char[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new CharArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new CharArrayIterator(self), chopSizes));
     }
 
     /**
@@ -719,7 +719,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Short>> chop(short[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new ShortArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new ShortArrayIterator(self), chopSizes));
     }
 
     /**
@@ -738,7 +738,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Integer>> chop(int[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new IntArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new IntArrayIterator(self), chopSizes));
     }
 
     /**
@@ -757,7 +757,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Long>> chop(long[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new LongArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new LongArrayIterator(self), chopSizes));
     }
 
     /**
@@ -776,7 +776,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Float>> chop(float[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new FloatArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new FloatArrayIterator(self), chopSizes));
     }
 
     /**
@@ -795,7 +795,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static List<List<Double>> chop(double[] self, int... chopSizes) {
-        return DefaultGroovyMethods.chop(new DoubleArrayIterator(self), chopSizes);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.chop(new DoubleArrayIterator(self), chopSizes));
     }
 
     /**
