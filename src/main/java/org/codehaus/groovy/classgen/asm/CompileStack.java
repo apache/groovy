@@ -576,9 +576,12 @@ public class CompileStack {
     }
 
     /**
-     * because a boolean Expression may not be evaluated completely
-     * it is important to keep the registers clean
+     * Because a boolean Expression may not be evaluated completely
+     * it is important to keep the registers clean.
+     *
+     * @deprecated Use {@link #pushState()} directly.
      */
+    @Deprecated(since = "5.0.0")
     public void pushBooleanExpression() {
         pushState();
     }

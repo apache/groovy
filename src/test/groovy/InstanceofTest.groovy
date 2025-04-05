@@ -109,11 +109,20 @@ final class InstanceofTest {
     // GROOVY-11229
     @Test
     void testVariableScope() {
+        def err = shouldFail '''
+            def x = null
+            if (x instanceof String s) {
+            } else {
+                s
+            }
+        '''
+        assert err =~ /No such property: s/
+
         def shell = GroovyShell.withConfig {
             ast groovy.transform.TypeChecked
         }
 
-        def err = shouldFail shell, '''
+        err = shouldFail shell, '''
             Number n = 12345
             if (n instanceof Integer i) {
             }
