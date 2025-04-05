@@ -590,4 +590,20 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
             assert new A().test() == ['value']
         '''
     }
+
+    // GROOVY-11600
+    void testInnerRecordConstructorCall() {
+        assertScript '''
+            class C {
+                record R(int i, Number n) {
+                }
+                void test() {
+                    def r = new C.R(1,2)
+                    assert r.i() == 1
+                    assert r.n() == 2
+                }
+            }
+            new C().test()
+        '''
+    }
 }
