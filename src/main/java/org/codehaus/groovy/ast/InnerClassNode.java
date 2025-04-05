@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.objectweb.asm.Opcodes;
+
 /**
  * Represents an inner class definition.
  */
@@ -30,7 +32,7 @@ public class InnerClassNode extends ClassNode {
     /**
      * @param name is the full name of the class
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
+     * @param superClass the base class name; use "java.lang.Object" if no direct base class
      */
     public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass) {
         this(outerClass, name, modifiers, superClass, ClassNode.EMPTY_ARRAY, MixinNode.EMPTY_ARRAY);
@@ -39,10 +41,10 @@ public class InnerClassNode extends ClassNode {
     /**
      * @param name is the full name of the class
      * @param modifiers the modifiers, @see org.objectweb.asm.Opcodes
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
+     * @param superClass the base class name; use "java.lang.Object" if no direct base class
      */
     public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass, ClassNode[] interfaces, MixinNode[] mixins) {
-        super(name, modifiers, superClass, interfaces, mixins);
+        super(name, modifiers | (outerClass != null && outerClass.isInterface() ? Opcodes.ACC_STATIC : 0), superClass, interfaces, mixins);
         if (outerClass != null) outerClass.addInnerClass(this);
         this.outerClass = outerClass;
     }

@@ -35,7 +35,7 @@ public class EnumHelper {
         if (outerClass == null) {
             enumClass = new ClassNode(name, modifiers | Opcodes.ACC_ENUM, null, interfaces, MixinNode.EMPTY_ARRAY);
         } else {
-            enumClass = new InnerClassNode(outerClass, outerClass.getName() + "$" + name, modifiers | Opcodes.ACC_ENUM, null, interfaces, MixinNode.EMPTY_ARRAY);
+            enumClass = new InnerClassNode(outerClass, outerClass.getName() + "$" + name, modifiers | Opcodes.ACC_ENUM | Opcodes.ACC_STATIC, null, interfaces, MixinNode.EMPTY_ARRAY);
         }
 
         // enum E extends java.lang.Enum<E>
