@@ -1255,8 +1255,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     null,
                     outerClass
             );
-        } else if (asBoolean(outerClass)) {
-            if (outerClass.isInterface()) modifiers |= Opcodes.ACC_STATIC;
+        } else if (outerClass != null) {
             classNode = new InnerClassNode(
                     outerClass,
                     outerClass.getName() + "$" + className,
@@ -1317,20 +1316,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             this.checkUsingGenerics(classNode);
 
         } else if (isInterface) {
-            classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT);
+            classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | (outerClass != null ? Opcodes.ACC_STATIC : 0));
             classNode.setInterfaces(this.visitTypeList(ctx.scs));
             this.checkUsingGenerics(classNode);
             this.hackMixins(classNode);
 
         } else if (isEnum || isRecord) {
+            if (isRecord) this.transformRecordHeaderToProperties(ctx, classNode);
             classNode.setInterfaces(this.visitTypeList(ctx.is));
             this.checkUsingGenerics(classNode);
-            if (isRecord) {
-                this.transformRecordHeaderToProperties(ctx, classNode);
-            }
 
         } else if (isAnnotation) {
-            classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_ANNOTATION);
+            classNode.setModifiers(classNode.getModifiers() | Opcodes.ACC_ANNOTATION | Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | (outerClass != null ? Opcodes.ACC_STATIC : 0));
             classNode.addInterface(ClassHelper.Annotation_TYPE);
             this.hackMixins(classNode);
 

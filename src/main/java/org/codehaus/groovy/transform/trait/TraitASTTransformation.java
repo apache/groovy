@@ -184,7 +184,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private ClassNode createHelperClass(final ClassNode cNode) {
-        cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE);
+        cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE
+                | (cNode.getOuterClass() != null ? ACC_STATIC : 0)); // GROOVY-11600
 
         ClassNode helper = new InnerClassNode(
                 cNode,

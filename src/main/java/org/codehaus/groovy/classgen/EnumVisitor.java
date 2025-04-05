@@ -141,8 +141,6 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
 
             addMethods(enumClass, values, minValue, maxValue);
 
-            // for now, inner enum is always static
-            if (isInnerClass) enumClass.setModifiers(enumClass.getModifiers() | ACC_STATIC);
             if (isAnyAbstract(enumClass)) enumClass.setModifiers(enumClass.getModifiers() | ACC_ABSTRACT);
             else if (isNotExtended(enumClass)) enumClass.setModifiers(enumClass.getModifiers() | ACC_FINAL);
         }

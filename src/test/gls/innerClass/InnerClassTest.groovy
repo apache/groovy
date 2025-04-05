@@ -341,6 +341,31 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-11600
+    @Test
+    void testInnerEnumOrRecordOrInterfaceHasStaticModifier() {
+        assertScript '''
+            import static java.lang.reflect.Modifier.*
+
+            class C {
+                enum E {}
+                class C {}
+                trait T {}
+                record R() {}
+                interface I {}
+                @interface A {}
+            }
+
+            assert  isStatic(C.E.modifiers)
+            assert !isStatic(C.C.modifiers)
+            assert  isStatic(C.T.modifiers)
+            assert  isStatic(C.R.modifiers)
+            assert  isFinal (C.R.modifiers)
+            assert  isStatic(C.I.modifiers)
+            assert  isStatic(C.A.modifiers)
+        '''
+    }
+
     @Test
     void testStaticInnerClass() {
         assertScript '''
