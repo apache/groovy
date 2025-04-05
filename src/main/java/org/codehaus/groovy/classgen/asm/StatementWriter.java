@@ -306,9 +306,14 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitIfElse");
         writeStatementLabel(statement);
 
+        CompileStack compileStack = controller.getCompileStack();
+        compileStack.pushState();
+
         statement.getBooleanExpression().visit(controller.getAcg());
         Label elsePath = controller.getOperandStack().jump(IFEQ);
         statement.getIfBlock().visit(controller.getAcg());
+        compileStack.pop();
+
         MethodVisitor mv = controller.getMethodVisitor();
         if (statement.getElseBlock().isEmpty()) {
             mv.visitLabel(elsePath);
@@ -436,10 +441,11 @@ public class StatementWriter {
 
         statement.getExpression().visit(controller.getAcg());
 
-        // switch does not have a continue label. use its parent's for continue
-        Label breakLabel = controller.getCompileStack().pushSwitch();
+        // switch does not have a continue label; use enclosing continue label
+        CompileStack compileStack = controller.getCompileStack();
+        Label breakLabel = compileStack.pushSwitch();
 
-        int switchVariableIndex = controller.getCompileStack().defineTemporaryVariable("switch", true);
+        int switchVariableIndex = compileStack.defineTemporaryVariable("switch", true);
 
         List<CaseStatement> caseStatements = statement.getCaseStatements();
         int caseCount = caseStatements.size();
@@ -456,9 +462,8 @@ public class StatementWriter {
         statement.getDefaultStatement().visit(controller.getAcg());
 
         controller.getMethodVisitor().visitLabel(breakLabel);
-
-        controller.getCompileStack().removeVar(switchVariableIndex);
-        controller.getCompileStack().pop();
+        compileStack.removeVar(switchVariableIndex);
+        compileStack.pop();
     }
 
     private void writeCaseStatement(final CaseStatement statement, final int switchVariableIndex, final Label thisLabel, final Label nextLabel) {
@@ -576,12 +581,13 @@ public class StatementWriter {
     public void writeReturn(final ReturnStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitReturnStatement");
         writeStatementLabel(statement);
-        ClassNode rType = controller.getReturnType();
-        CompileStack cs = controller.getCompileStack();
-        OperandStack os = controller.getOperandStack();
-        MethodVisitor mv = controller.getMethodVisitor();
 
-        if (ClassHelper.isPrimitiveVoid(rType)) {
+        var cs = controller.getCompileStack();
+        var os = controller.getOperandStack();
+        var mv = controller.getMethodVisitor();
+
+        var returnType = controller.getReturnType();
+        if (ClassHelper.isPrimitiveVoid(returnType)) {
             if (!statement.isReturningNullOrVoid()) { // TODO: move to Verifier
                 controller.getAcg().throwException("Cannot use return statement with an expression on a method that returns void");
             }
@@ -591,21 +597,21 @@ public class StatementWriter {
             Expression expression = statement.getExpression();
             expression.visit(controller.getAcg());
 
-            if (!isNullConstant(expression) || ClassHelper.isPrimitiveType(rType)) {
-                os.doGroovyCast(rType);
+            if (!isNullConstant(expression) || ClassHelper.isPrimitiveType(returnType)) {
+                os.doGroovyCast(returnType);
             } else { // GROOVY-10617
-                os.replace(rType);
+                os.replace(returnType);
             }
 
             if (cs.hasBlockRecorder()) {
                 ClassNode top = os.getTopOperand();
-                int returnVal = cs.defineTemporaryVariable("returnValue", rType, true);
+                int returnVal = cs.defineTemporaryVariable("returnValue", returnType, true);
                 cs.applyBlockRecorder();
                 os.load(top, returnVal);
                 cs.removeVar(returnVal);
             }
 
-            BytecodeHelper.doReturn(mv, rType);
+            BytecodeHelper.doReturn(mv, returnType);
             os.remove(1);
         }
     }
