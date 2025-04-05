@@ -14805,6 +14805,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // toTuple
+
+    /**
+     * Create a Tuple from the key and value of this Map Entry.
+     *
+     * <pre class="groovyTestCase">
+     * assert [a:1, b:2, c:3]*.toTuple().toString() == '[[a, 1], [b, 2], [c, 3]]'
+     * assert [a:1, b:2, c:3].findAll(e -> e.toTuple().sum() != 'b2') == [a:1, c:3]
+     * </pre>
+     *
+     * @param entry a Map Entry
+     * @return a tuple containing the key and value.
+     * @since 5.0.0
+     */
+    public static <K, V> Tuple2<K, V> toTuple(Map.Entry<K, V> entry) {
+        return new Tuple2<>(entry.getKey(), entry.getValue());
+    }
+
+    //--------------------------------------------------------------------------
     // toUnique
 
     /**
