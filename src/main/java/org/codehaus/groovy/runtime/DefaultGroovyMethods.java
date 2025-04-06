@@ -12027,6 +12027,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Repeat the elements from an iterable infinitely.
+     *
+     * <pre class="groovyTestCase">
+     * assert ['a', 42].repeat().take(5).collect() == ['a', 42, 'a', 42, 'a']
+     * </pre>
+     *
+     * @param self an Iterable
+     * @return an iterator containing the (infinite) repeated elements
+     */
+    public static <T> Iterator<T> repeat(Iterable<T> self) {
+        return repeat(self.iterator());
+    }
+
+    /**
      * Repeat the elements from an iterator.
      *
      * <pre class="groovyTestCase">
@@ -12049,7 +12063,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self an Iterable
-     * @return a collection containing the repeated elements
+     * @return an iterator containing the (infinite) repeated elements
      */
     public static <T> Iterator<T> repeat(Iterator<T> self) {
         return new RepeatIterator<>(self);
