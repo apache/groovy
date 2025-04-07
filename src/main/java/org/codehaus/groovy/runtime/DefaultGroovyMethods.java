@@ -8218,11 +8218,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @param other another Iterable
-     * @return a collection of all the pairs from self and other
+     * @return a list of all the pairs from self and other interleaved
      * @since 5.0.0
      */
-    public static <T, U extends T, V extends T> Collection<T> interleave(Iterable<U> self, Iterable<V> other) {
-        Collection<T> result = new ArrayList<>();
+    public static <T, U extends T, V extends T> List<T> interleave(Iterable<U> self, Iterable<V> other) {
+        List<T> result = new ArrayList<>();
         addAll(result, interleave(self.iterator(), other.iterator()));
         return result;
     }
@@ -8243,12 +8243,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @param other another Iterable
-     * @return a collection of all the pairs from self and other
+     * @return a list of all the pairs from self and other interleaved
      * @see #transpose(List) for zipping more than two lists
      * @since 5.0.0
      */
-    public static <T, U extends T, V extends T> Collection<T> interleave(Iterable<U> self, Iterable<V> other, boolean includeRemainder) {
-        Collection<T> result = new ArrayList<>();
+    public static <T, U extends T, V extends T> List<T> interleave(Iterable<U> self, Iterable<V> other, boolean includeRemainder) {
+        List<T> result = new ArrayList<>();
         addAll(result, interleave(self.iterator(), other.iterator(), includeRemainder));
         return result;
     }
@@ -8353,7 +8353,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             this.delegate = delegate;
             this.other = other;
             this.includeRemainder = includeRemainder;
-            current = (Iterator<T>) delegate;
+            current = cast(delegate);
         }
 
         @Override
@@ -8369,13 +8369,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (!hasNext()) throw new NoSuchElementException();
             T result = current.next();
             if (current == delegate && other.hasNext()) {
-                current = (Iterator<T>) other;
+                current = cast(other);
             } else if (current == other && delegate.hasNext() && (other.hasNext() || includeRemainder)) {
-                current = (Iterator<T>) delegate;
+                current = cast(delegate);
             } else if (!includeRemainder) {
                 current = null;
             }
             return result;
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T> Iterator<T> cast(Iterator<? extends T> it) {
+            return (Iterator<T>) it;
         }
 
         @Override
