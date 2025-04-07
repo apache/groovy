@@ -96,6 +96,7 @@ import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.transform.trait.Traits;
 import org.codehaus.groovy.util.ArrayIterable;
+import org.codehaus.groovy.util.IntArrayIterator;
 import org.codehaus.groovy.util.IteratorBufferedIterator;
 import org.codehaus.groovy.util.ListBufferedIterator;
 
@@ -1808,7 +1809,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Chops the Iterable into pieces, returning lists with sizes corresponding to the supplied chop sizes.
-     * If the Iterable isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the Iterable.
      * <p>
      * Example usage:
@@ -1818,7 +1818,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ('a'..'h').chop(2, 4) == [['a', 'b'], ['c', 'd', 'e', 'f']]
      * assert ['a', 'b', 'c', 'd', 'e'].chop(3) == [['a', 'b', 'c']]
      * assert ['a', 'b', 'c', 'd', 'e'].chop(1, 2, 3) == [['a'], ['b', 'c'], ['d', 'e']]
-     * assert ['a', 'b', 'c', 'd', 'e'].chop(1, 2, 3, 3, 3) == [['a'], ['b', 'c'], ['d', 'e'], [], []]
+     * assert ['a', 'b', 'c', 'd', 'e'].chop(1, 2, 3, 3, 3) == [['a'], ['b', 'c'], ['d', 'e']]
      * </pre>
      *
      * @param self      an Iterable to be chopped
@@ -1828,7 +1828,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.2
      */
     public static <T> List<List<T>> chop(Iterable<T> self, int... chopSizes) {
-        return toList(chop(self.iterator(), chopSizes));
+        return chop(self, true, chopSizes);
+    }
+
+    /**
+     * Chops the Iterable into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     * When no more elements remain in the iterable, truncated (possibly empty) pieces are returned unless returnEarly is true.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the Iterable.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert ['a', 'b', 'c', 'd', 'e'].chop(false, 1, 2, 3, 3, 3) == [['a'], ['b', 'c'], ['d', 'e'], [], []]
+     * assert ['a', 'b', 'c', 'd', 'e'].chop(true, 1, 2, 3, 3, 3) == [['a'], ['b', 'c'], ['d', 'e']]
+     * </pre>
+     *
+     * @param self      an Iterable to be chopped
+     * @param chopSizes the sizes for the returned pieces
+     * @param returnEarly as soon as the source is exhausted, ignore remaining asked for chop sizes
+     * @return a list of lists chopping the original iterable into pieces determined by chopSizes
+     * @see #collate(Iterable, int) to chop an Iterable into pieces of a fixed size
+     * @since 2.5.2
+     */
+    public static <T> List<List<T>> chop(Iterable<T> self, boolean returnEarly, int... chopSizes) {
+        return toList(chop(self.iterator(), returnEarly, chopSizes));
     }
 
     /**
@@ -1844,7 +1866,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Chops the iterator items into pieces, returning lists with sizes corresponding to the supplied chop sizes.
-     * If the iterator is exhausted early, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the iterator.
      * <p>
      * Example usage:
@@ -1858,32 +1879,130 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static <T> Iterator<List<T>> chop(Iterator<T> self, int... chopSizes) {
+        return chop(self, true, chopSizes);
+    }
+
+    /**
+     * Chops the source iterator elements into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     * If the source iterator is exhausted early, truncated (possibly empty) pieces are returned unless returnEarly is true.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the source iterator.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * assert (1..6).iterator().chop(1, 2, -1).collect() == [[1], [2, 3], [4, 5, 6]]
+     * </pre>
+     *
+     * @param self      an Iterator to be chopped
+     * @param chopSizes the sizes for the returned pieces
+     * @param returnEarly as soon as the source is exhausted, ignore remaining asked for chop sizes
+     * @return an iterator of lists chopping the original source iterator elements into pieces determined by chopSizes
+     * @since 5.0.0
+     */
+    public static <T> Iterator<List<T>> chop(Iterator<T> self, boolean returnEarly, int... chopSizes) {
         Objects.requireNonNull(self);
-        return new ChopIterator<>(self, chopSizes);
+        return new ChopIterator<>(self, returnEarly, new IntArrayIterator(chopSizes));
+    }
+
+    /**
+     * Chops the source iterator elements into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the source iterator.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * import java.util.stream.Stream
+     *
+     * def stars = ['*']
+     *     .repeat()
+     *     .chop(Stream.iterate(1, n {@code ->} n + 2).iterator())
+     *     .take(10)
+     *     *.join()
+     *     .collect()
+     * def width = stars[-1].size()
+     * assert stars*.center(width, '.').join('\n') == '''
+     * .........*.........
+     * ........***........
+     * .......*****.......
+     * ......*******......
+     * .....*********.....
+     * ....***********....
+     * ...*************...
+     * ..***************..
+     * .*****************.
+     * *******************
+     * '''.trim()
+     * </pre>
+     *
+     * @param self      an Iterator of source elements to be chopped
+     * @param chopSizes the sizes for the returned pieces
+     * @return an iterator of lists chopping the original iterator elements into pieces determined by chopSizes
+     * @since 5.0.0
+     */
+    public static <T> Iterator<List<T>> chop(Iterator<T> self, Iterator<Integer> chopSizes) {
+        Objects.requireNonNull(self);
+        return new ChopIterator<>(self, true, chopSizes);
+    }
+
+    /**
+     * Chops the source iterator elements into pieces, returning lists with sizes corresponding to the supplied chop sizes.
+     * If the source iterator is exhausted early, truncated (possibly empty) pieces are returned unless returnEarly is true.
+     * Using a chop size of -1 will cause that piece to contain all remaining items from the source iterator.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * import java.util.stream.Stream
+     *
+     * def stars = ['*']
+     *     .repeat()
+     *     .chop(true, Stream.iterate(1, n {@code ->} n + 2).iterator())
+     *     .take(10)
+     *     *.join()
+     *     .collect()
+     * def width = stars[-1].size()
+     * assert stars*.center(width, '.').join('\n') == '''
+     * .........*.........
+     * ........***........
+     * .......*****.......
+     * ......*******......
+     * .....*********.....
+     * ....***********....
+     * ...*************...
+     * ..***************..
+     * .*****************.
+     * *******************
+     * '''.trim()
+     * </pre>
+     *
+     * @param self      an Iterator of source elements to be chopped
+     * @param chopSizes the sizes for the returned pieces
+     * @param returnEarly as soon as the source is exhausted, ignore remaining asked for chop sizes
+     * @return an iterator of lists chopping the original iterator elements into pieces determined by chopSizes
+     * @since 5.0.0
+     */
+    public static <T> Iterator<List<T>> chop(Iterator<T> self, boolean returnEarly, Iterator<Integer> chopSizes) {
+        Objects.requireNonNull(self);
+        return new ChopIterator<>(self, returnEarly, chopSizes);
     }
 
     private static final class ChopIterator<T> implements Iterator<List<T>> {
         private final Iterator<T> delegate;
-        private final Queue<Integer> remainingSizes = new LinkedList<>();
+        private final boolean returnEarly;
+        private final Iterator<Integer> chopSizes;
 
-        private ChopIterator(Iterator<T> delegate, int... chopSizes) {
+        private ChopIterator(Iterator<T> delegate, boolean returnEarly, Iterator<Integer> chopSizes) {
             this.delegate = delegate;
-            int count = chopSizes.length;
-            for (int i : chopSizes) {
-                --count;
-                remainingSizes.offer(i);
-            }
+            this.returnEarly = returnEarly;
+            this.chopSizes = chopSizes;
         }
 
         @Override
         public boolean hasNext() {
-            return !remainingSizes.isEmpty();
+            return chopSizes.hasNext() && (!returnEarly || delegate.hasNext());
         }
 
         @Override
         public List<T> next() {
             if (!hasNext()) throw new NoSuchElementException();
-            int size = remainingSizes.poll();
+            int size = chopSizes.next();
             List<T> next = new ArrayList<>();
             while (size-- != 0 && delegate.hasNext()) {
                 next.add(delegate.next());
