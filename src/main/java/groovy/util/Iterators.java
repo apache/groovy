@@ -46,7 +46,8 @@ public class Iterators {
      * to stop requesting elements external to this iterator.
      *
      * <pre class="groovyTestCase">
-     * assert Iterators.iterate(0, n -> n + 2).take(5).collect() == [0, 2, 4, 6, 8]
+     * assert Iterators.iterate(0, n -> n + 2).take(5).toList() == [0, 2, 4, 6, 8]
+     * assert Iterators.iterate('a', String::next).take(6).join() == 'abcdef'
      * </pre>
      *
      * @param seed the first element
