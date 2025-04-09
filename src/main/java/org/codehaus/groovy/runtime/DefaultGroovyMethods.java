@@ -1909,11 +1909,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * import java.util.stream.Stream
-     *
      * def stars = ['*']
      *     .repeat()
-     *     .chop(Stream.iterate(1, n {@code ->} n + 2).iterator())
+     *     .chop(Iterators.iterate(1, n {@code ->} n + 2))
      *     .take(10)
      *     *.join()
      *     .collect()
@@ -1949,16 +1947,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * import java.util.stream.Stream
-     *
-     * def stars = ['*']
+     * def shape = Iterators.iterate(1, n {@code ->} n + 2).take(10).plus([3] * 3)
+     * def tree = ['*']
      *     .repeat()
-     *     .chop(true, Stream.iterate(1, n {@code ->} n + 2).iterator())
-     *     .take(10)
+     *     .chop(true, shape)
      *     *.join()
      *     .collect()
-     * def width = stars[-1].size()
-     * assert stars*.center(width, '.').join('\n') == '''
+     * def width = tree*.size().max()
+     * assert tree*.center(width, '.').join('\n') == '''
      * .........*.........
      * ........***........
      * .......*****.......
@@ -1969,6 +1965,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * ..***************..
      * .*****************.
      * *******************
+     * ........***........
+     * ........***........
+     * ........***........
      * '''.trim()
      * </pre>
      *
