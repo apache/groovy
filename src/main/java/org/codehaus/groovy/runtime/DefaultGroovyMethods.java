@@ -55,6 +55,7 @@ import groovy.util.OrderBy;
 import groovy.util.PermutationGenerator;
 import groovy.util.ProxyGenerator;
 import org.apache.groovy.io.StringBuilderWriter;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.apache.groovy.util.ReversedList;
 import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.classgen.Verifier;
@@ -153,6 +154,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
 
@@ -271,6 +273,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         clone.setDelegate(object);
         T result = clone.call(object);
         return new Tuple2<>(result, object);
+    }
+
+    private static <T, U> T callWithDelegate(Closure<T> closure, U object) {
+        if (object == NullObject.getNullObject()) {
+            object = null; // GROOVY-4526, et al.
+        }
+        @SuppressWarnings("unchecked")
+        final Closure<T> clone = (Closure<T>) closure.clone();
+        clone.setDelegate(object);
+        return clone.call(object);
+    }
+
+    private static <U> boolean callBooleanWithDelegate(Closure<?> closure, U object) {
+        if (object == NullObject.getNullObject()) {
+            object = null; // GROOVY-4526, et al.
+        }
+        final Closure<?> clone = (Closure<?>) closure.clone();
+        clone.setDelegate(object);
+        final BooleanClosureWrapper wrapper = new BooleanClosureWrapper(clone);
+        return wrapper.call(object);
     }
 
     //--------------------------------------------------------------------------
@@ -2358,6 +2380,96 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> closure.
+     *
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].repeat().collectLazy(Integer::next).take(6).toList() == [2, 3, 4, 2, 3, 4]
+     * assert Iterators.iterate('a', String::next).collectLazy{ (int)it - (int)'a' }.take(26).toList() == 0..25
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param transform the closure used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <E, T> Iterator<T> collectLazy(
+        @DelegatesTo.Target Iterator<E> self,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<T> transform) {
+        return new CollectIterator<>(self, transform);
+    }
+
+    private static final class CollectIterator<E, T> implements Iterator<T> {
+        private final Iterator<E> source;
+        private final Closure<T> transform;
+
+        private CollectIterator(Iterator<E> source, Closure<T> transform) {
+            this.source = source;
+            this.transform = transform;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return source.hasNext();
+        }
+
+        @Override
+        public T next() {
+            return callWithDelegate(transform, source.next());
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> closure.
+     *
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].repeat().map(Integer::next).take(6).toList() == [2, 3, 4, 2, 3, 4]
+     * </pre>
+     *
+     * @param self      a source Iterator
+     * @param transform a function used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <T, R> Iterator<R> map(Iterator<T> self, Function<T, R> transform) {
+        return new MapIterator<>(self, transform);
+    }
+
+    private static final class MapIterator<T, R> implements Iterator<R> {
+        private final Iterator<T> source;
+        private final Function<T, R> transform;
+
+        private MapIterator(Iterator<T> source, Function<T, R> transform) {
+            this.source = source;
+            this.transform = transform;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return source.hasNext();
+        }
+
+        @Override
+        public R next() {
+            return transform.apply(source.next());
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
      * Iterates through this Iterator transforming each item into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
@@ -2544,6 +2656,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A variant of collectEntries for Iterators.
      *
+     * <pre class="groovyTestCase">
+     * assert Iterators.iterate(0, Integer::next).take(4).collectEntries { n ->
+     *     ['' + (char) (n + (int) 'a'), n]
+     * } == [a:0, b:1, c:2, d:3]
+     * </pre>
+     *
      * @param self      an Iterator
      * @param transform the closure used for transforming, which has an item from self as the parameter and
      *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
@@ -2553,6 +2671,57 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <K, V, E> Map<K, V> collectEntries(Iterator<E> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
         return collectEntries(self, new LinkedHashMap<>(), transform);
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> closure.
+     *
+     * <pre class="groovyTestCase">
+     * assert Iterators.iterate(0, Integer::next).take(40).collectEntriesLazy { n -&gt;
+     *     var c = 'a'
+     *     n.times{ c = c.next() }
+     *     [c, n]
+     * }.take(4).collectEntries() == [a:0, b:1, c:2, d:3]
+     * </pre>
+     *
+     * @param self      an Iterator
+     * @param transform the closure used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <K, V, E> Iterator<Map.Entry<K, V>> collectEntriesLazy(
+        @DelegatesTo.Target Iterator<E> self,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
+        return new CollectEntriesIterator<>(self, transform);
+    }
+
+    private static final class CollectEntriesIterator<E, K, V> implements Iterator<Map.Entry<K, V>> {
+        private final Iterator<E> source;
+        private final Closure<?> transform;
+
+        private CollectEntriesIterator(Iterator<E> source, Closure<?> transform) {
+            this.source = source;
+            this.transform = transform;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return source.hasNext();
+        }
+
+        @SuppressWarnings({"unchecked"})
+        @Override
+        public Map.Entry<K, V> next() {
+            return getEntry(callWithDelegate(transform, source.next()));
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -2798,23 +2967,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             // GROOVY-10893: insert nothing
         } else if (entrySpec instanceof Map) {
             leftShift(target, (Map) entrySpec);
-        } else if (entrySpec instanceof List) {
+        } else {
+            leftShift(target, getEntry(entrySpec));
+        }
+    }
+
+    @SuppressWarnings({"rawtypes"})
+    private static Map.Entry getEntry(Object entrySpec) {
+        if (entrySpec instanceof List) {
             var list = (List) entrySpec;
             // def (key, value) == list
             Object key = list.isEmpty() ? null : list.get(0);
             Object value = list.size() <= 1 ? null : list.get(1);
-            leftShift(target, new MapEntry(key, value));
-        } else if (entrySpec.getClass().isArray()) {
+            return new MapEntry(key, value);
+        }
+        if (entrySpec.getClass().isArray()) {
             Object[] array = (Object[]) entrySpec;
             // def (key, value) == array.toList()
             Object key = array.length == 0 ? null : array[0];
             Object value = array.length <= 1 ? null : array[1];
-            leftShift(target, new MapEntry(key, value));
-        } else {
-            // given Map.Entry is an interface, we get a proxy which gives us lots
-            // of flexibility but sometimes the error messages might be unexpected
-            leftShift(target, asType(entrySpec, Map.Entry.class));
+            return new MapEntry(key, value);
         }
+        // given Map.Entry is an interface, we get a proxy which gives us lots
+        // of flexibility but sometimes the error messages might be unexpected
+        return asType(entrySpec, Map.Entry.class);
     }
 
     //--------------------------------------------------------------------------
@@ -3010,6 +3186,145 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (items != null) collector.addAll(items);
         }
         return collector;
+    }
+
+    /**
+     * Iterates through the elements produced by projecting and flattening the elements from a source iterator.
+     * <p>
+     * <pre class="groovyTestCase">
+     * def numsIter = [1, 2, 3, 4, 5, 6].iterator()
+     * def squaresAndCubesOfEvens = numsIter.collectManyLazy{ if (it % 2 == 0) [it**2, it**3] }.collect()
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     * <p>
+     * <pre class="groovyTestCase">
+     *     var letters = 'a'..'z'
+     * var pairs = letters.iterator().collectManyLazy{ a ->
+     *     letters.iterator().collectManyLazy{ b ->
+     *         if (a != b) ["$a$b"]
+     *     }.collect()
+     * }.collect()
+     * assert pairs.join(',').matches('ab,ac,ad,.*,zw,zx,zy')
+     * </pre>
+     *
+     * @param self       a source iterator
+     * @param projection a projecting Closure returning a collection of items
+     * @return an iterator of the projected collections flattened
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <T, E> Iterator<T> collectManyLazy(
+        @DelegatesTo.Target Iterator<E> self,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Collection<? extends T>> projection) {
+        return new CollectManyIterator<>(self, projection);
+    }
+
+    private static final class CollectManyIterator<E, T> implements Iterator<T> {
+        private final Iterator<E> source;
+        private final Closure<? extends Collection<? extends T>> transform;
+        private final Queue<T> buffer = new LinkedList<>();
+        private boolean ready = false;
+
+        private CollectManyIterator(Iterator<E> source, Closure<? extends Collection<? extends T>> transform) {
+            this.source = source;
+            this.transform = transform;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ready;
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("CollectManyIterator has been exhausted and contains no more elements");
+            }
+            T result = buffer.poll();
+            ready = !buffer.isEmpty();
+            advance();
+            return result;
+        }
+
+        private void advance() {
+            while (!ready && source.hasNext()) {
+                Collection<? extends T> result = callWithDelegate(transform, source.next());
+                if (result != null) {
+                    buffer.addAll(result);
+                }
+                ready = !buffer.isEmpty();
+            }
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Iterates through the elements produced by projecting and flattening the elements from a source iterator.
+     * <p>
+     * <pre class="groovyTestCase">
+     * def numsIter = Iterators.iterate(1, Integer::next).take(6)
+     * def squaresAndCubesOfEvens = numsIter.flatMap{ it % 2 == 0 ? [it**2, it**3] : [] }.collect()
+     * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
+     * </pre>
+     *
+     * @param self   a source iterator
+     * @param mapper a projecting function returning a collection of items
+     * @return an iterator of the projected collections flattened
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <T, R> Iterator<R> flatMap(Iterator<T> self, Function<? super T, ? extends Collection<? extends R>> mapper) {
+        return new FlatMapIterator<>(self, mapper);
+    }
+
+    private static final class FlatMapIterator<T, R> implements Iterator<R> {
+        private final Iterator<T> source;
+        private final Function<? super T, ? extends Collection<? extends R>> mapper;
+        private final Queue<R> buffer = new LinkedList<>();
+        private boolean ready = false;
+
+        private FlatMapIterator(Iterator<T> source, Function<? super T, ? extends Collection<? extends R>> mapper) {
+            this.source = source;
+            this.mapper = mapper;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ready;
+        }
+
+        @Override
+        public R next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("FlatMapIterator has been exhausted and contains no more elements");
+            }
+            R result = buffer.poll();
+            ready = !buffer.isEmpty();
+            advance();
+            return result;
+        }
+
+        private void advance() {
+            while (!ready && source.hasNext()) {
+                Collection<? extends R> result = mapper.apply(source.next());
+                if (result != null) {
+                    buffer.addAll(result);
+                }
+                ready = !buffer.isEmpty();
+            }
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -5097,7 +5412,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object find(Object self, Closure closure) {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+        for (Iterator<Object> iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
             if (bcw.call(value)) {
                 return value;
@@ -5356,6 +5671,137 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return collector;
     }
 
+    /**
+     * Lazily finds all items matching the closure condition.
+     *
+     * <pre class="groovyTestCase">
+     * def letters = Iterators.iterate('A', String::next).take(26).plus(Iterators.iterate('a', String::next).take(26))
+     * assert letters.findAllLazy{ toUpperCase() < 'D' }.toList() == ['A', 'B', 'C', 'a', 'b', 'c']
+     * </pre>
+     *
+     * @param self      a source Iterator
+     * @param transform the closure used to select elements
+     * @return an Iterator returning the selected elements
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <T> Iterator<T> findAllLazy(
+        @DelegatesTo.Target Iterator<T> self,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
+        return new FindAllIterator<>(self, transform);
+    }
+
+    private static final class FindAllIterator<T> implements Iterator<T> {
+        private final Iterator<T> source;
+        private final Closure<?> transform;
+        private T current;
+        private boolean found;
+
+        private FindAllIterator(Iterator<T> source, Closure<?> transform) {
+            this.source = source;
+            this.transform = transform;
+            this.found = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return found;
+        }
+
+        private void advance() {
+            while (!found && source.hasNext()) {
+                current = source.next();
+                if (callBooleanWithDelegate(transform, current)) {
+                    found = true;
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("FindAllIterator has been exhausted and contains no more elements");
+            }
+            T result = current;
+            found = false;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    /**
+     * Finds all items matching the closure condition.
+     *
+     * <pre class="groovyTestCase">
+     * def letters = Iterators.iterate('A', String::next).take(26).plus(Iterators.iterate('a', String::next).take(26))
+     * assert letters.filter{ it > 'W' && it < 'd' }.toList() == ['X', 'Y', 'Z', 'a', 'b', 'c']
+     * </pre>
+     *
+     * @param self      a source Iterator
+     * @param predicate the predicate used to test each element for selection
+     * @return an Iterator for the selected values
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <T> Iterator<T> filter(
+        Iterator<T> self,
+        Predicate<? super T> predicate) {
+        return new FilterIterator<>(self, predicate);
+    }
+
+    private static final class FilterIterator<T> implements Iterator<T> {
+        private final Iterator<T> source;
+        private final Predicate<? super T> predicate;
+        private T current;
+        private boolean found;
+
+        private FilterIterator(Iterator<T> source, Predicate<? super T> predicate) {
+            this.source = source;
+            this.predicate = predicate;
+            this.found = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return found;
+        }
+
+        private void advance() {
+            while (!found && source.hasNext()) {
+                current = source.next();
+                if (predicate.test(current)) {
+                    found = true;
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("FilterIterator has been exhausted and contains no more elements");
+            }
+            T result = current;
+            found = false;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
     //--------------------------------------------------------------------------
     // findIndexOf
 
@@ -5537,6 +5983,104 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return result;
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> closure.
+     * <pre class="groovyTestCase">
+     * def letters = ('a'..'z')
+     * def vowels = 'aeiou'.toSet()
+     * assert letters.iterator().findIndexValuesLazy{ vowels.contains(it) }.toList() == [0, 4, 8, 14, 20]
+     * </pre>
+     *
+     * @param self       an Iterator
+     * @param transform  the closure used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 5.0.0
+     */
+    @Incubating
+    public static <T> Iterator<Number> findIndexValuesLazy(
+        @DelegatesTo.Target Iterator<T> self,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
+        return findIndexValuesLazy(self, 0, transform);
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> closure and starting with index <code>startIndex</code>.
+     *
+     * <pre class="groovyTestCase">
+     * def letters = ('a'..'z')
+     * def vowels = 'aeiou'.toSet()
+     * assert letters.iterator().findIndexValuesLazy(0){ vowels.contains(it) }.toList() == [0, 4, 8, 14, 20]
+     * assert letters.iterator().findIndexValuesLazy(1){ vowels.contains(it) }.toList() == [4, 8, 14, 20]
+     * </pre>
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param transform  the closure used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 5.0.0
+     */
+    public static <T> Iterator<Number> findIndexValuesLazy(
+        @DelegatesTo.Target Iterator<T> self,
+        Number startIndex,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
+        return new FindIndexValuesIterator<>(self, startIndex, transform);
+    }
+
+    private static final class FindIndexValuesIterator<T> implements Iterator<Number> {
+        private final Iterator<T> source;
+        private final Closure<?> transform;
+        private final long startCount;
+        private long count = 0;
+        private Number current;
+        private boolean exhausted;
+
+        private FindIndexValuesIterator(Iterator<T> source, Number startIndex, Closure<?> transform) {
+            this.source = source;
+            this.transform = transform;
+            this.startCount = startIndex.longValue();
+            this.exhausted = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !exhausted;
+        }
+
+        private void advance() {
+            while (source.hasNext()) {
+                Object value = source.next();
+                if (count++ < startCount) {
+                    continue;
+                }
+                if (callBooleanWithDelegate(transform, value)) {
+                    current = count - 1;
+                    return;
+                }
+            }
+            exhausted = true;
+        }
+
+        @Override
+        public Number next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("FindIndexValuesIterator has been exhausted and contains no more elements");
+            }
+            Number result = current;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
