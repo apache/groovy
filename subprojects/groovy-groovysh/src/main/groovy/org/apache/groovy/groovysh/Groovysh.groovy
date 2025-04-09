@@ -291,7 +291,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         // Evaluate the current buffer w/imports and dummy statement
         List<String> buff
         if (variableBlocks) {
-            buff = [importsSpec] + ['try {', 'true'] + current + ['} finally {' + variableBlocks + '}']
+            buff = [importsSpec] + ['try {', 'true'] + current + [variableBlocks, '} finally {' + variableBlocks + '}']
         } else {
             buff = [importsSpec] + ['true'] + current
         }

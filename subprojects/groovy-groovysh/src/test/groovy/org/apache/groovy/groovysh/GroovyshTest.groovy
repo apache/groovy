@@ -19,15 +19,13 @@
 package org.apache.groovy.groovysh
 
 import groovy.test.GroovyTestCase
-import groovy.test.NotYetImplemented
+import org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter
 import org.apache.groovy.groovysh.completion.ReflectionCompletionCandidate
 import org.apache.groovy.groovysh.completion.TokenUtilTest
-import org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter
 import org.codehaus.groovy.GroovyException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.shell.IO
 import org.fusesource.jansi.AnsiOutputStream
-import org.junit.jupiter.api.Disabled
 
 class GroovyshTest extends GroovyTestCase {
 
@@ -394,19 +392,10 @@ class GroovyshInterpreterModeTest extends GroovyshTest {
         }
     }
 
-    // groovy:000> int x = 3
-    // ===> 3
-    // groovy:000> x
-    // Unknown property: x
-    // groovy:000> x = 3
-    // ===> 3
-    // groovy:000> x
-    // ===> 3
-    // groovy:000>
     void testBoundVar() {
         Groovysh groovysh = createGroovysh()
 
-        groovysh.execute('x = 3')
+        groovysh.execute('int x = 3')
         assert mockOut.toString().length() > 0
         assert ' 3\n' == mockOut.toString().normalize()[-3..-1]
         groovysh.execute('x')
@@ -414,14 +403,6 @@ class GroovyshInterpreterModeTest extends GroovyshTest {
         assert ' 3\n' == mockOut.toString().normalize()[-3..-1]
     }
 
-    // collecting variables relies on GROOVY-4721, e.g. accessing variable declared in try block is in scope in finally block
-    // but after GROOVY-4721 is fixed, this test will fail, but it is aligned with the behavior of the groovySh:
-    // groovy:000> int x, y, z
-    // ===> 0
-    // groovy:000> y
-    // Unknown property: y
-    // groovy:000>
-    @NotYetImplemented
     void testBoundVarmultiple() {
         Groovysh groovysh = createGroovysh()
         groovysh.execute('int x, y, z')
