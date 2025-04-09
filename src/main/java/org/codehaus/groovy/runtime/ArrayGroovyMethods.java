@@ -1199,60 +1199,22 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     //--------------------------------------------------------------------------
     // columns
 
-    /**
-     * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
-     * double[][] nums = [[1.0d, 2.0d], [10.0d, 20.0d]]
-     * assert nums.transpose() == nums.columns().toList()
-     * </pre>
-     *
-     * @param self a double[][]
-     * @return the iterator
-     */
+    @Deprecated
     public static Iterator<double[]> columns(double[][] self) {
         return new DoubleDoubleArrayColumnIterator(self);
     }
 
-    /**
-     * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
-     * float[][] nums = [[1.0f, 2.0f], [10.0f, 20.0f]]
-     * assert nums.transpose() == nums.columns().toList()
-     * </pre>
-     *
-     * @param self a float[][]
-     * @return the iterator
-     */
+    @Deprecated
     public static Iterator<float[]> columns(float[][] self) {
         return new FloatFloatArrayColumnIterator(self);
     }
 
-    /**
-     * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
-     * int[][] nums = [[1, 2], [10, 20]]
-     * assert nums.transpose() == nums.columns().toList()
-     * assert nums.columns().collect{ int[] col -> col.sum() } == [11, 22]
-     * </pre>
-     *
-     * @param self an int[][]
-     * @return the iterator
-     */
+    @Deprecated
     public static Iterator<int[]> columns(int[][] self) {
         return new IntIntArrayColumnIterator(self);
     }
 
-    /**
-     * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
-     * long[][] nums = [[1L, 2L], [10L, 20L]]
-     * assert nums.transpose() == nums.columns().toList()
-     * assert nums.columns().collect{ long[] col -> col.sum() } == [11L, 22L]
-     * </pre>
-     *
-     * @param self a long[][]
-     * @return the iterator
-     */
+    @Deprecated
     public static Iterator<long[]> columns(long[][] self) {
         return new LongLongArrayColumnIterator(self);
     }
@@ -9320,6 +9282,67 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // transposing
+
+    /**
+     * An iterator of the columns of the array.
+     * <pre class="groovyTestCase">
+     * double[][] nums = [[1.0d, 2.0d], [10.0d, 20.0d]]
+     * assert nums.transpose() == nums.transposing().toList()
+     * </pre>
+     *
+     * @param self a double[][]
+     * @return the iterator
+     */
+    public static Iterator<double[]> transposing(double[][] self) {
+        return new DoubleDoubleArrayColumnIterator(self);
+    }
+
+    /**
+     * An iterator of the columns of the array.
+     * <pre class="groovyTestCase">
+     * float[][] nums = [[1.0f, 2.0f], [10.0f, 20.0f]]
+     * assert nums.transpose() == nums.transposing().toList()
+     * </pre>
+     *
+     * @param self a float[][]
+     * @return the iterator
+     */
+    public static Iterator<float[]> transposing(float[][] self) {
+        return new FloatFloatArrayColumnIterator(self);
+    }
+
+    /**
+     * An iterator of the columns of the array.
+     * <pre class="groovyTestCase">
+     * int[][] nums = [[1, 2], [10, 20]]
+     * assert nums.transpose() == nums.transposing().toList()
+     * assert nums.transposing().collect{ int[] col -> col.sum() } == [11, 22]
+     * </pre>
+     *
+     * @param self an int[][]
+     * @return the iterator
+     */
+    public static Iterator<int[]> transposing(int[][] self) {
+        return new IntIntArrayColumnIterator(self);
+    }
+
+    /**
+     * An iterator of the columns of the array.
+     * <pre class="groovyTestCase">
+     * long[][] nums = [[1L, 2L], [10L, 20L]]
+     * assert nums.transpose() == nums.transposing().toList()
+     * assert nums.transposing().collect{ long[] col -> col.sum() } == [11L, 22L]
+     * </pre>
+     *
+     * @param self a long[][]
+     * @return the iterator
+     */
+    public static Iterator<long[]> transposing(long[][] self) {
+        return new LongLongArrayColumnIterator(self);
+    }
+
+    //--------------------------------------------------------------------------
     // union
 
     /**
@@ -9640,68 +9663,134 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     // zip
 
     /**
-     * An iterator of all the pairs of two arrays.
+     * A list of all the pairs from two arrays.
      * <pre class="groovyTestCase">
      * double[] small = [1.0d, 2.0d, 3.0d]
      * double[] large = [100d, 200d, 300d]
-     * assert [small, large].transpose() == small.zip(large).toList()
+     * assert [small, large].transpose() == small.zip(large)
+     * </pre>
+     *
+     * @param self a double[]
+     * @param other another double[]
+     * @return a list of all the pairs from self and other
+     */
+    public static List<Tuple2<Double, Double>> zip(double[] self, double[] other) {
+        return DefaultGroovyMethods.zip(new DoubleArrayIterable(self), new DoubleArrayIterable(other));
+    }
+
+    /**
+     * An iterator of all the pairs from two arrays.
+     * <pre class="groovyTestCase">
+     * double[] small = [1.0d, 2.0d, 3.0d]
+     * double[] large = [100d, 200d, 300d]
+     * assert [small, large].transpose() == small.zipping(large).toList()
      * </pre>
      *
      * @param self a double[]
      * @param other another double[]
      * @return an iterator of all the pairs from self and other
      */
-    public static Iterator<Tuple2<Double, Double>> zip(double[] self, double[] other) {
+    public static Iterator<Tuple2<Double, Double>> zipping(double[] self, double[] other) {
         return DefaultGroovyMethods.zip(new DoubleArrayIterator(self), new DoubleArrayIterator(other));
     }
 
     /**
-     * An iterator of all the pairs of two arrays.
+     * A list of all the pairs from two arrays.
      * <pre class="groovyTestCase">
      * float[] small = [1.0f, 2.0f, 3.0f]
      * float[] large = [100f, 200f, 300f]
-     * assert [small, large].transpose() == small.zip(large).toList()
+     * assert [small, large].transpose() == small.zip(large)
+     * </pre>
+     *
+     * @param self a float[]
+     * @param other another float[]
+     * @return a list of all the pairs from self and other
+     */
+    public static List<Tuple2<Float, Float>> zip(float[] self, float[] other) {
+        return DefaultGroovyMethods.zip(new FloatArrayIterable(self), new FloatArrayIterable(other));
+    }
+
+    /**
+     * An iterator of all the pairs from two arrays.
+     * <pre class="groovyTestCase">
+     * float[] small = [1.0f, 2.0f, 3.0f]
+     * float[] large = [100f, 200f, 300f]
+     * assert [small, large].transpose() == small.zipping(large).toList()
      * </pre>
      *
      * @param self a float[]
      * @param other another float[]
      * @return an iterator of all the pairs from self and other
      */
-    public static Iterator<Tuple2<Float, Float>> zip(float[] self, float[] other) {
+    public static Iterator<Tuple2<Float, Float>> zipping(float[] self, float[] other) {
         return DefaultGroovyMethods.zip(new FloatArrayIterator(self), new FloatArrayIterator(other));
     }
 
     /**
-     * An iterator of all the pairs of two arrays.
+     * A list of all the pairs from two arrays.
      * <pre class="groovyTestCase">
      * int[] small = [1, 2, 3]
      * int[] large = [100, 200, 300]
      * assert [101, 202, 303] == small.zip(large).collect{ a, b -> a + b }
-     * assert [small, large].transpose() == small.zip(large).toList()
+     * assert [small, large].transpose() == small.zip(large)
+     * </pre>
+     *
+     * @param self an int[]
+     * @param other another int[]
+     * @return a list of all the pairs from self and other
+     */
+    public static List<Tuple2<Integer, Integer>> zip(int[] self, int[] other) {
+        return DefaultGroovyMethods.zip(new IntArrayIterable(self), new IntArrayIterable(other));
+    }
+
+    /**
+     * An iterator of all the pairs from two arrays.
+     * <pre class="groovyTestCase">
+     * int[] small = [1, 2, 3]
+     * int[] large = [100, 200, 300]
+     * assert [101, 202, 303] == small.zipping(large).collect{ a, b -> a + b }
+     * assert [small, large].transpose() == small.zipping(large).toList()
      * </pre>
      *
      * @param self an int[]
      * @param other another int[]
      * @return an iterator of all the pairs from self and other
      */
-    public static Iterator<Tuple2<Integer, Integer>> zip(int[] self, int[] other) {
+    public static Iterator<Tuple2<Integer, Integer>> zipping(int[] self, int[] other) {
         return DefaultGroovyMethods.zip(new IntArrayIterator(self), new IntArrayIterator(other));
     }
 
     /**
-     * An iterator of all the pairs of two arrays.
+     * A list of all the pairs from two arrays.
      * <pre class="groovyTestCase">
      * long[] small = [1L, 2L, 3L]
      * long[] large = [100L, 200L, 300L]
      * assert [101L, 202L, 303L] == small.zip(large).collect{ a, b -> a + b }
-     * assert [small, large].transpose() == small.zip(large).toList()
+     * assert [small, large].transpose() == small.zip(large)
+     * </pre>
+     *
+     * @param self a long[]
+     * @param other another long[]
+     * @return a list of all the pairs from self and other
+     */
+    public static List<Tuple2<Long, Long>> zip(long[] self, long[] other) {
+        return DefaultGroovyMethods.zip(new LongArrayIterable(self), new LongArrayIterable(other));
+    }
+
+    /**
+     * An iterator of all the pairs from two arrays.
+     * <pre class="groovyTestCase">
+     * long[] small = [1L, 2L, 3L]
+     * long[] large = [100L, 200L, 300L]
+     * assert [101L, 202L, 303L] == small.zipping(large).collect{ a, b -> a + b }
+     * assert [small, large].transpose() == small.zipping(large).toList()
      * </pre>
      *
      * @param self a long[]
      * @param other another long[]
      * @return an iterator of all the pairs from self and other
      */
-    public static Iterator<Tuple2<Long, Long>> zip(long[] self, long[] other) {
+    public static Iterator<Tuple2<Long, Long>> zipping(long[] self, long[] other) {
         return DefaultGroovyMethods.zip(new LongArrayIterator(self), new LongArrayIterator(other));
     }
 
