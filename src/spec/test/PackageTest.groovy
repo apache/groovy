@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -55,7 +55,8 @@ final class PackageTest {
     void testDefaultImports() {
         assertScript '''
             // tag::default_import[]
-            new Date()
+            long time = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+            Date date = new Date(time)
             // end::default_import[]
         '''
     }
