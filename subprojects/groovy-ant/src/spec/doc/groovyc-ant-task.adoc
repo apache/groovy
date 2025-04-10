@@ -179,12 +179,17 @@ https://ant.apache.org/manual/using.html#path
 * For usages of the `javac` task see
 https://ant.apache.org/manual/Tasks/javac.html
 * The nested `javac` task behaves more or less as documented for the top-level
-`javac` task. `srcdir`, `destdir`, `classpath`, `encoding` and `parameters`
-for the nested `javac` task are taken from the enclosing `groovyc` task. If
-these attributes are specified then they are added, they do not replace. In fact,
-you should not attempt to overwrite the destination. Other attributes and nested
-elements are unaffected, for example `fork`, `memoryMaximumSize`, etc. may be
-used freely.
+`javac` task. `srcdir`, `destdir`, `fork`, `memoryInitialSize`, and `memoryMaximumSize`
+for the nested `javac` task are taken from the enclosing `groovyc` task.
+If these attributes or any else that are not explicitly supported are specified then a
+warning is logged, and they are ignored completely.
+`classpath` and `classpathref` specified on the nested `javac` task is merged with
+the values taken from the enclosing `groovyc` task and also used for the Groovy compilation.
+Nested inside the nested `javac` task the only element supported is `compilerarg`,
+and this only with the `value` attribute, which is treated like the `line` attribute of the
+top-level `javac` task, i.e. it is split by spaces into separate arguments.
+Only arguments starting with `-W`, `-X`, or `-proc:` are properly translated as needed.
+Anything else is supplied as-is to groovyc and has to be manually prefixed with `-F` or `-J`.
 
 [[groovyc-ant-task-joint-compilation]]
 === Joint Compilation
