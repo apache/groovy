@@ -5675,8 +5675,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Lazily finds all items matching the closure condition.
      *
      * <pre class="groovyTestCase">
-     * def letters = Iterators.iterate('A', String::next).take(26).plus(Iterators.iterate('a', String::next).take(26))
-     * assert letters.findAllLazy{ toUpperCase() < 'D' }.toList() == ['A', 'B', 'C', 'a', 'b', 'c']
+     * def letters = Iterators.iterate('A', String::next).take(26) + Iterators.iterate('a', String::next).take(26)
+     * assert letters.findAllLazy{ toUpperCase() < 'D' }.join() == 'ABCabc'
      * </pre>
      *
      * @param self      a source Iterator
@@ -5741,8 +5741,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds all items matching the closure condition.
      *
      * <pre class="groovyTestCase">
-     * def letters = Iterators.iterate('A', String::next).take(26).plus(Iterators.iterate('a', String::next).take(26))
-     * assert letters.filter{ it > 'W' && it < 'd' }.toList() == ['X', 'Y', 'Z', 'a', 'b', 'c']
+     * def letters = Iterators.iterate('A', String::next).take(26) + Iterators.iterate('a', String::next).take(26)
+     * assert letters.filter{ it > 'W' && it < 'd' }.join() == 'XYZabc'
      * </pre>
      *
      * @param self      a source Iterator
