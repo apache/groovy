@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureListExpression;
@@ -36,6 +37,7 @@ import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
@@ -413,12 +415,20 @@ public class StatementWriter {
 
     private BlockRecorder makeBlockRecorder(final Statement finallyStatement) {
         BlockRecorder recorder = new BlockRecorder();
+        final CompileStack compileStack = controller.getCompileStack();
+
         recorder.excludedStatement = () -> {
-            controller.getCompileStack().pushBlockRecorderVisit(recorder);
+            if (finallyStatement == null || finallyStatement instanceof EmptyStatement) return;
+
+            final VariableScope originalScope = compileStack.getScope();
+            compileStack.pop();
+            compileStack.pushBlockRecorderVisit(recorder);
             finallyStatement.visit(controller.getAcg());
-            controller.getCompileStack().popBlockRecorderVisit(recorder);
+            compileStack.popBlockRecorderVisit(recorder);
+            compileStack.pushVariableScope(originalScope);
         };
-        controller.getCompileStack().pushBlockRecorder(recorder);
+
+        compileStack.pushBlockRecorder(recorder);
         return recorder;
     }
 
