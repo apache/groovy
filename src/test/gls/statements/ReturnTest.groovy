@@ -26,18 +26,22 @@ class ReturnTest extends CompilableTestSupport {
       shouldNotCompile """
          class A {
             {return}
-         }      
+         }
       """
   }
 
   void testStaticInitializer() {
-      assertScript """
+      def err = shouldFail  """\
          class A {
              static foo=2
-             static { return; foo=1 }
+             static {
+                return;
+                foo=1
+             }
          }
          assert A.foo==2
-      """      
+      """
+      assert err ==~ /(?s)(.+)\s+Unreachable statement found\s+@ line 5, column 17\.\s+foo=1\s+(.+)/
   }
 
   void testReturnAdditionInFinally() {
