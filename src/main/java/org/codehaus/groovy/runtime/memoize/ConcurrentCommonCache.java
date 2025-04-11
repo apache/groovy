@@ -33,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @since 2.5.0
  */
 @ThreadSafe
-public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
+public class ConcurrentCommonCache<K, V> implements FlexibleEvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
     private static final long serialVersionUID = -7352338549333024936L;
 
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
@@ -113,6 +113,7 @@ public class ConcurrentCommonCache<K, V> implements EvictableCache<K, V>, ValueC
         return getAndPut(key, valueProvider, true);
     }
 
+    @Override
     public V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache) {
         V value;
 
