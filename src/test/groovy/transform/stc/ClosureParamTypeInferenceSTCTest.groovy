@@ -831,7 +831,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
         assertScript '''
             Iterator<String> iter = ['foo', 'bar', 'baz'].iterator()
-            assert iter.collect { it.startsWith('ba') } == [false, true, true]
+            assert iter.collect { it.startsWith('ba') }.toList() == [false, true, true]
         '''
         assertScript '''
             assert [1234, 3.14].collect { it.intValue() } == [1234,3]
@@ -880,7 +880,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
     void testDGM_collectEntriesIterator() {
         assertScript '''
-            assert ['a','b','c'].iterator().collectEntries { [it, it.toUpperCase() ]} == [a:'A',b:'B',c:'C']
+            assert ['a','b','c'].iterator().collectEntries { [it, it.toUpperCase() ]}.collectEntries() == [a:'A',b:'B',c:'C']
         '''
     }
     void testDGM_collectEntriesIteratorWithCollector() {
@@ -947,7 +947,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testDGM_collectManyOnIterator() {
         assertScript '''
-            assert (0..5).iterator().collectMany { [it, 2*it ]} == [0,0,1,2,2,4,3,6,4,8,5,10]
+            assert (0..5).iterator().collectMany { [it, 2*it ]}.toList() == [0,0,1,2,2,4,3,6,4,8,5,10]
         '''
     }
 
@@ -1334,7 +1334,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert items1.findIndexValues { String s -> s.startsWith('ba') } == [1, 2]
             def items2 = ['foo','bar','baz']
             assert items2.findIndexValues { it.startsWith('ba') } == [1, 2]
-            assert items2.iterator().findIndexValues { it.startsWith('ba') } == [1, 2]
+            assert items2.iterator().findIndexValues { it.startsWith('ba') }.toList() == [1, 2]
         '''
     }
 
@@ -1477,7 +1477,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert items1.findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
             def items2 = ['foo','bar','baz']
             assert items2.findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
-            assert items2.iterator().findResults { it.startsWith('ba') ? it : null } == ['bar', 'baz']
+            assert items2.iterator().findResults { it.startsWith('ba') ? it : null }.toList() == ['bar', 'baz']
         '''
     }
 
