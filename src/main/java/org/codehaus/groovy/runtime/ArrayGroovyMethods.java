@@ -903,7 +903,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <E, T> List<T> collect(E[] self, @ClosureParams(FirstParam.Component.class) Closure<T> transform) {
-        return DefaultGroovyMethods.collect(new ArrayIterator<>(self), transform);
+        return DefaultGroovyMethods.collect(new ArrayIterable<>(self), transform);
     }
 
     /**
@@ -1120,7 +1120,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * int[][] nums = [[1, 2], [10, 20]]
      * assert nums.transpose() == nums.columns().toList()
-     * assert nums.columns().collect{ int[] col -> col.sum() } == [11, 22]
+     * assert nums.columns().collect{ int[] col -> col.sum() }.toList() == [11, 22]
      * </pre>
      *
      * @param self an int[][]
@@ -1135,7 +1135,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * long[][] nums = [[1L, 2L], [10L, 20L]]
      * assert nums.transpose() == nums.columns().toList()
-     * assert nums.columns().collect{ long[] col -> col.sum() } == [11L, 22L]
+     * assert nums.columns().collect{ long[] col -> col.sum() }.toList() == [11L, 22L]
      * </pre>
      *
      * @param self a long[][]
@@ -2623,7 +2623,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<Number> findIndexValues(T[] self, Number startIndex, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
-        return DefaultGroovyMethods.findIndexValues(new ArrayIterator<>(self), startIndex, condition);
+        return DefaultGroovyMethods.findIndexValues(new ArrayIterable<>(self), startIndex, condition);
     }
 
     //--------------------------------------------------------------------------
@@ -2762,7 +2762,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T, U> Collection<T> findResults(U[] self, @ClosureParams(FirstParam.Component.class) Closure<T> filteringTransform) {
-        return DefaultGroovyMethods.findResults(new ArrayIterator<>(self), filteringTransform);
+        return DefaultGroovyMethods.findResults(new ArrayIterable<>(self), filteringTransform);
     }
 
     //--------------------------------------------------------------------------
@@ -9489,7 +9489,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * int[] small = [1, 2, 3]
      * int[] large = [100, 200, 300]
-     * assert [101, 202, 303] == small.zip(large).collect{ a, b -> a + b }
+     * assert [101, 202, 303] == small.zip(large).collect{ a, b -> a + b }.toList()
      * assert [small, large].transpose() == small.zip(large).toList()
      * </pre>
      *
@@ -9506,7 +9506,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * long[] small = [1L, 2L, 3L]
      * long[] large = [100L, 200L, 300L]
-     * assert [101L, 202L, 303L] == small.zip(large).collect{ a, b -> a + b }
+     * assert [101L, 202L, 303L] == small.zip(large).collect{ a, b -> a + b }.toList()
      * assert [small, large].transpose() == small.zip(large).toList()
      * </pre>
      *

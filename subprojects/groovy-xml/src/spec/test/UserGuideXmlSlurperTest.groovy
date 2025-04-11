@@ -136,9 +136,9 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         def withId2or3 = { node -> node.@id in [2, 3] }
 
         assert ['book', 'author', 'book', 'author'] ==
-                response.value.books.depthFirst().findAll(withId2or3).collect(nodeName)
+                response.value.books.depthFirst().findAll(withId2or3).collect(nodeName).toList()
         assert ['book', 'book', 'author', 'author'] ==
-                response.value.books.breadthFirst().findAll(withId2or3).collect(nodeName)
+                response.value.books.breadthFirst().findAll(withId2or3).collect(nodeName).toList()
         // end::testDepthVsBreadth[]
     }
 
