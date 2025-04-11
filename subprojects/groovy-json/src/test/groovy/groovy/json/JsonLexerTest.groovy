@@ -63,7 +63,7 @@ class JsonLexerTest extends GroovyTestCase {
         def content = ' [ true, null, false, { "a" : 1, "b": "hi"}, 12.34 ] '
         def lexer = new JsonLexer(new StringReader(content))
 
-        def output = lexer.collect { it.toString() }
+        def output = lexer.collect { it.toString() }.toList()
 
         assert output == [
                 "[ (OPEN_BRACKET) [1:2-1:3]",
