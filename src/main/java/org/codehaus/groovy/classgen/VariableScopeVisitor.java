@@ -64,8 +64,11 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -192,113 +195,130 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope.putDeclaredVariable(variable);
     }
 
+    private final Map<ClassMemberCacheKey, VariableWrapper> classMemberCache = new HashMap<>(64);
     private Variable findClassMember(final ClassNode node, final String name) {
-        final boolean abstractType = node.isAbstract();
+        VariableWrapper variableWrapper = classMemberCache.computeIfAbsent(new ClassMemberCacheKey(name, node), k -> {
+            final ClassNode classNode = k.node;
+            final String memberName = k.name;
+            final boolean abstractType = classNode.isAbstract();
 
-        for (ClassNode cn = node; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
-            for (FieldNode fn : cn.getFields()) {
-                if (name.equals(fn.getName())) return fn;
-            }
+            for (ClassNode cn = classNode; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
+                for (FieldNode fn : cn.getFields()) {
+                    if (memberName.equals(fn.getName())) return new VariableWrapper(fn);
+                }
 
-            for (PropertyNode pn : cn.getProperties()) {
-                if (name.equals(pn.getName())) return pn;
-            }
+                for (PropertyNode pn : cn.getProperties()) {
+                    if (memberName.equals(pn.getName())) return new VariableWrapper(pn);
+                }
 
-            for (MethodNode mn : cn.getMethods()) {
-                if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
-                    // check for super property before returning a pseudo-property
-                    for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {
-                        if (name.equals(pn.getName())) return pn;
+                for (MethodNode mn : cn.getMethods()) {
+                    if ((abstractType || !mn.isAbstract()) && memberName.equals(getPropertyName(mn))) {
+                        // check for super property before returning a pseudo-property
+                        for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {
+                            if (memberName.equals(pn.getName())) return new VariableWrapper(pn);
+                        }
+
+                        FieldNode fn = new FieldNode(memberName, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
+                        fn.setHasNoRealSourcePosition(true);
+                        fn.setDeclaringClass(cn);
+                        fn.setSynthetic(true);
+
+                        PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
+                        pn.putNodeMetaData("access.method", mn);
+                        pn.setDeclaringClass(cn);
+                        return new VariableWrapper(pn);
                     }
+                }
 
-                    FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
-                    fn.setHasNoRealSourcePosition(true);
-                    fn.setDeclaringClass(cn);
-                    fn.setSynthetic(true);
-
-                    PropertyNode pn = new PropertyNode(fn, fn.getModifiers(), null, null);
-                    pn.putNodeMetaData("access.method", mn);
-                    pn.setDeclaringClass(cn);
-                    return pn;
+                for (ClassNode in : cn.getAllInterfaces()) {
+                    FieldNode fn = in.getDeclaredField(memberName);
+                    if (fn != null) return new VariableWrapper(fn);
+                    PropertyNode pn = in.getProperty(memberName);
+                    if (pn != null) return new VariableWrapper(pn);
                 }
             }
 
-            for (ClassNode in : cn.getAllInterfaces()) {
-                FieldNode fn = in.getDeclaredField(name);
-                if (fn != null) return fn;
-                PropertyNode pn = in.getProperty(name);
-                if (pn != null) return pn;
-            }
-        }
+            return new VariableWrapper(null);
+        });
 
-        return null;
+        variableWrapper.accessedCount += 1;
+        return variableWrapper.variable;
     }
 
+    private final Map<VariableCacheKey, VariableWrapper> variableCache = new HashMap<>(64);
     private Variable findVariableDeclaration(final String name) {
-        if ("super".equals(name) || "this".equals(name)) return null;
+        if ("this".equals(name) || "super".equals(name)) return null;
+        VariableWrapper variableWrapper = variableCache.computeIfAbsent(new VariableCacheKey(name, currentScope, inSpecialConstructorCall), k -> {
+            final String variableName = k.name;
+            final VariableScope currentScope = k.scope;
+            final boolean inSpecialConstructorCall = k.inSpecialConstructorCall;
 
-        Variable variable = null;
-        VariableScope scope = currentScope;
-        boolean crossingStaticContext = false;
-        // try to find a declaration of a variable
-        while (true) {
-            crossingStaticContext = (crossingStaticContext || scope.isInStaticContext());
+            Variable variable = null;
+            VariableScope scope = currentScope;
+            boolean crossingStaticContext = false;
+            // try to find a declaration of a variable
+            while (true) {
+                crossingStaticContext = (crossingStaticContext || scope.isInStaticContext());
 
-            Variable var = scope.getDeclaredVariable(name);
-            if (var != null) {
-                variable = var;
-                break;
-            }
-
-            var = scope.getReferencedLocalVariable(name);
-            if (var != null) {
-                variable = var;
-                break;
-            }
-
-            var = scope.getReferencedClassVariable(name);
-            if (var != null) {
-                variable = var;
-                break;
-            }
-
-            ClassNode node = scope.getClassScope();
-            if (node != null) {
-                Variable member = findClassMember(node, name);
-                boolean requireStatic = (crossingStaticContext || inSpecialConstructorCall);
-                while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
-                    requireStatic = requireStatic || isStatic(node.getModifiers());
-                    member = findClassMember((node = node.getOuterClass()), name);
+                Variable var = scope.getDeclaredVariable(variableName);
+                if (var != null) {
+                    variable = var;
+                    break;
                 }
-                if (member != null) {
-                    // prevent a static context (e.g. a static method) from accessing a non-static member (e.g. a non-static field)
-                    if (requireStatic ? member.isInStaticContext() : !node.isScript()) {
-                        variable = member;
+
+                var = scope.getReferencedLocalVariable(variableName);
+                if (var != null) {
+                    variable = var;
+                    break;
+                }
+
+                var = scope.getReferencedClassVariable(variableName);
+                if (var != null) {
+                    variable = var;
+                    break;
+                }
+
+                ClassNode node = scope.getClassScope();
+                if (node != null) {
+                    Variable member = findClassMember(node, variableName);
+                    boolean requireStatic = (crossingStaticContext || inSpecialConstructorCall);
+                    while (member == null && node.getOuterClass() != null && !isAnonymous(node)) {
+                        requireStatic = requireStatic || isStatic(node.getModifiers());
+                        member = findClassMember((node = node.getOuterClass()), variableName);
                     }
+                    if (member != null) {
+                        // prevent a static context (e.g. a static method) from accessing a non-static member (e.g. a non-static field)
+                        if (requireStatic ? member.isInStaticContext() : !node.isScript()) {
+                            variable = member;
+                        }
+                    }
+
+                    if (!isAnonymous(scope.getClassScope())) break; // GROOVY-5961
                 }
-
-                if (!isAnonymous(scope.getClassScope())) break; // GROOVY-5961
+                scope = scope.getParent();
             }
-            scope = scope.getParent();
-        }
-        if (variable == null) {
-            variable = new DynamicVariable(name, crossingStaticContext);
-        }
-
-        boolean isClassVariable = (scope.isClassScope() && !scope.isReferencedLocalVariable(name))
-            || (scope.isReferencedClassVariable(name) && scope.getDeclaredVariable(name) == null);
-        VariableScope end = scope;
-        scope = currentScope;
-        while (scope != end) {
-            if (isClassVariable) {
-                scope.putReferencedClassVariable(variable);
-            } else {
-                scope.putReferencedLocalVariable(variable);
+            if (variable == null) {
+                variable = new DynamicVariable(variableName, crossingStaticContext);
             }
-            scope = scope.getParent();
-        }
 
-        return variable;
+            boolean isClassVariable = (scope.isClassScope() && !scope.isReferencedLocalVariable(variableName))
+                || (scope.isReferencedClassVariable(variableName) && scope.getDeclaredVariable(variableName) == null);
+            VariableScope end = scope;
+            scope = currentScope;
+            while (scope != end) {
+                if (isClassVariable) {
+                    scope.putReferencedClassVariable(variable);
+                } else {
+                    scope.putReferencedLocalVariable(variable);
+                }
+                scope = scope.getParent();
+            }
+
+            return new VariableWrapper(variable);
+        });
+
+        variableWrapper.accessedCount += 1;
+        return variableWrapper.variable;
     }
 
     private void visitTypeVariables(final GenericsType[] types) {
@@ -760,4 +780,66 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             checkVariableContextAccess(variable, expression);
         }
     }
+
+    private static class VariableWrapper {
+        private final Variable variable;
+        private int accessedCount;
+
+        VariableWrapper(final Variable variable) {
+            this.variable = variable;
+        }
+    }
+
+    private static class ClassMemberCacheKey {
+        private static final int DEFAULT_HASH = -1;
+        private final String name;
+        private final ClassNode node;
+        private int hash = DEFAULT_HASH;
+
+        ClassMemberCacheKey(final String name, final ClassNode node) {
+            this.name = name;
+            this.node = node;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof ClassMemberCacheKey)) return false;
+            ClassMemberCacheKey that = (ClassMemberCacheKey) obj;
+            return name.equals(that.name) && node.equals(that.node);
+        }
+
+        @Override
+        public int hashCode() {
+            return DEFAULT_HASH != hash ? hash : (hash = Objects.hash(name, node));
+        }
+    }
+
+    private static class VariableCacheKey {
+        private static final int DEFAULT_HASH = -1;
+        private final String name;
+        private final VariableScope scope;
+        private final boolean inSpecialConstructorCall;
+        private int hash = DEFAULT_HASH;
+
+        VariableCacheKey(final String name, final VariableScope scope, boolean inSpecialConstructorCall) {
+            this.name = name;
+            this.scope = scope;
+            this.inSpecialConstructorCall = inSpecialConstructorCall;
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof VariableCacheKey)) return false;
+            VariableCacheKey that = (VariableCacheKey) obj;
+            return name.equals(that.name) && scope.equals(that.scope) && inSpecialConstructorCall == that.inSpecialConstructorCall;
+        }
+
+        @Override
+        public int hashCode() {
+            return DEFAULT_HASH != hash ? hash : (hash = Objects.hash(name, scope, inSpecialConstructorCall));
+        }
+    }
+
 }
