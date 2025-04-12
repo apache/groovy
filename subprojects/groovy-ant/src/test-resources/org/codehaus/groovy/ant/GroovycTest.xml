@@ -186,6 +186,20 @@
         <java classname="org.codehaus.groovy.ant.ParameterMetadataCheck"/>
     </target>
 
+    <!-- GROOVY-11607 -->
+    <target name="plainForkedCompilation_NestingSrcElementCheck">
+        <groovyc destdir="${destPath}" fork="true">
+            <src>
+                <fileset dir="${srcPath}">
+                    <include name="GroovycTest*.*"/>
+                    <exclude name="GroovycTest.xml"/>
+                    <exclude name="GroovycTest2.java"/>
+                </fileset>
+            </src>
+        </groovyc>
+        <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+    </target>
+
     <target name="clean">
         <delete quiet="true">
             <fileset dir="${destPath}/org/codehaus/groovy/ant">

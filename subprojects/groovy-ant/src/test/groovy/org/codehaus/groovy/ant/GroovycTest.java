@@ -322,4 +322,10 @@ public class GroovycTest extends GroovyTestCase {
         Method   m = c.getDeclaredMethod("main", String[].class);
         assertEquals("args", m.getParameters()[0].getName());
     }
+
+    // GROOVY-11607
+    public void testPlainForkedCompilation_NestingSrcElementCheck() {
+        ensureExecutes("plainForkedCompilation_NestingSrcElementCheck");
+        ensureNotPresent("GroovycTest2"); // excluded from src > fileset
+    }
 }
