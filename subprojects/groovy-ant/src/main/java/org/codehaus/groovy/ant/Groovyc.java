@@ -37,7 +37,6 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.SourceExtensionHandler;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
@@ -870,17 +869,19 @@ public class Groovyc extends MatchingTask {
 
         if (javac != null) jointCompilation = true;
 
-        // scan source directories and dest directory to build up
-        // compile lists
-        String[] list = src.list();
-        for (String filename : list) {
+        // scan source directories and dest directory to build up compile lists
+        for (String filename : src.list()) {
             File file = getProject().resolveFile(filename);
             if (!file.exists()) {
                 throw new BuildException("srcdir \"" + file.getPath() + "\" does not exist!", getLocation());
             }
-            DirectoryScanner ds = this.getDirectoryScanner(file);
-            String[] files = ds.getIncludedFiles();
-            scanDir(file, destDir != null ? destDir : file, files);
+            if (file.isDirectory()) {
+                DirectoryScanner ds = getDirectoryScanner(file);
+                scanDir(file, destDir != null ? destDir : file, ds.getIncludedFiles());
+            } else { // GROOVY-11607: fileset lists files
+                compileList = Arrays.copyOf(compileList, compileList.length + 1);
+                compileList[compileList.length - 1] = file;
+            }
         }
 
         compile();
@@ -892,7 +893,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Clear the list of files to be compiled and copied.
+     * Clears the list of files to be compiled and copied.
      */
     protected void resetFileLists() {
         compileList = EMPTY_FILE_ARRAY;
@@ -1260,8 +1261,9 @@ public class Groovyc extends MatchingTask {
     }
 
     private String[] makeCommandLine(List<String> commandLineList) {
-        log.info("Compilation arguments:\n" + DefaultGroovyMethods.join((Iterable<String>) commandLineList, "\n"));
-        return commandLineList.toArray(EMPTY_STRING_ARRAY);
+        String[] commandLine = commandLineList.toArray(EMPTY_STRING_ARRAY);
+        log.info("Compilation arguments:\n" + String.join("\n", commandLine));
+        return commandLine;
     }
 
     private void runForked(String[] commandLine) {
