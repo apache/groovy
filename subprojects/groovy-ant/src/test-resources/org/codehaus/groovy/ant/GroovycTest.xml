@@ -170,7 +170,7 @@
     <target name="jointForkedCompilation_ExternalJarOnClasspath">
         <path id="the.classpath">
             <path refid="groovyMaterials"/>
-            <fileset file="commons-lang3-3.4.jar"/>
+            <fileset file="commons-lang3-3.17.0.jar"/>
         </path>
 
         <compile-joint fork="true" includeantruntime="false" includes="MakesExternalReference.java">
@@ -184,6 +184,17 @@
     <target name="jointForkedCompilation_ParameterMetadataCheck">
         <compile-joint fork="true" configscript="params.groovy" includes="ParameterMetadataCheck.java"/>
         <java classname="org.codehaus.groovy.ant.ParameterMetadataCheck"/>
+    </target>
+
+    <!-- GROOVY-11607 -->
+    <target name="plainForkedCompilation_NestingSrcElementCheck">
+        <groovyc destdir="${destPath}" fork="true">
+            <src path="${srcPath}">
+                <include name="GroovycTest*.*"/>
+                <exclude name="GroovycTest2.java"/>
+            </src>
+        </groovyc>
+        <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
     </target>
 
     <target name="clean">
