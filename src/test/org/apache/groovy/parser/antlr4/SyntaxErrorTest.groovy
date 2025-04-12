@@ -377,6 +377,27 @@ final class SyntaxErrorTest {
             |'''.stripMargin()
     }
 
+    @Test // GROOVY-3908: groovyc should enforce correct usage of "continue"
+    void 'groovy core - Continue 1'() {
+        expectParseError '''\
+            |class UseContinueAsGoto {
+            |   static main(args) {
+            |     continue label1
+            |     return
+            |
+            |     label1:
+            |     println "Groovy supports goto!"
+            |   }
+            |}
+            |'''.stripMargin(), '''\
+            |continue statement is only allowed inside loops @ line 3, column 6.
+            |        continue label1
+            |        ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
     @Test
     void 'test groovy core - void'() {
         TestUtils.doRunAndShouldFail('fail/Void_01x.groovy')
