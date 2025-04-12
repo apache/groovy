@@ -1870,7 +1870,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * assert (1..6).iterator().chop(1, 2, -1).collect() == [[1], [2, 3], [4, 5, 6]]
+     * assert (1..6).iterator().chop(1, 2, -1).toList() == [[1], [2, 3], [4, 5, 6]]
      * </pre>
      *
      * @param self      an Iterator to be chopped
@@ -1889,7 +1889,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * assert (1..6).iterator().chop(1, 2, -1).collect() == [[1], [2, 3], [4, 5, 6]]
+     * assert (1..6).iterator().chop(1, 2, -1).toList() == [[1], [2, 3], [4, 5, 6]]
      * </pre>
      *
      * @param self      an Iterator to be chopped
@@ -1914,7 +1914,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     .chop(Iterators.iterate(1, n {@code ->} n + 2))
      *     .take(10)
      *     *.join()
-     *     .collect()
+     *     .toList()
      * def width = stars[-1].size()
      * assert stars*.center(width, '.').join('\n') == '''
      * .........*.........
@@ -1952,7 +1952,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     .repeat()
      *     .chop(true, shape)
      *     *.join()
-     *     .collect()
+     *     .toList()
      * def width = tree*.size().max()
      * assert tree*.center(width, '.').join('\n') == '''
      * .........*.........
@@ -2123,9 +2123,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Example:
      * <pre class="groovyTestCase">
      * var letters = 'A'..'G'
-     * assert letters.iterator().collate(2, 2, false).collect() == [['A', 'B'], ['C', 'D'], ['E', 'F']]
-     * assert letters.iterator().collate(3, 2, true).collect() == [['A', 'B', 'C'], ['C', 'D', 'E'], ['E', 'F', 'G'], ['G']]
-     * assert letters.iterator().collate(2, 3, true).collect() == [['A', 'B'], ['D', 'E'], ['G']]
+     * assert letters.iterator().collate(2, 2, false).toList() == [['A', 'B'], ['C', 'D'], ['E', 'F']]
+     * assert letters.iterator().collate(3, 2, true).toList() == [['A', 'B', 'C'], ['C', 'D', 'E'], ['E', 'F', 'G'], ['G']]
+     * assert letters.iterator().collate(2, 3, true).toList() == [['A', 'B'], ['D', 'E'], ['G']]
      * </pre>
      *
      * @param self          an Iterator
@@ -2145,7 +2145,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example:
      * <pre class="groovyTestCase">
-     * assert ('A'..'I').iterator().collate(4, 4).collect() == [['A', 'B', 'C', 'D'], ['E', 'F', 'G', 'H'], ['I']]
+     * assert ('A'..'I').iterator().collate(4, 4).toList() == [['A', 'B', 'C', 'D'], ['E', 'F', 'G', 'H'], ['I']]
      * </pre>
      *
      * @param self          an Iterator
@@ -2165,7 +2165,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example:
      * <pre class="groovyTestCase">
-     * assert ('A'..'I').iterator().collate(4, false).collect() == [['A', 'B', 'C', 'D'], ['E', 'F', 'G', 'H']]
+     * assert ('A'..'I').iterator().collate(4, false).toList() == [['A', 'B', 'C', 'D'], ['E', 'F', 'G', 'H']]
      * </pre>
      *
      * @param self          an Iterator
@@ -2184,7 +2184,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example:
      * <pre class="groovyTestCase">
-     * assert ('A'..'H').iterator().collate(3).collect() == [['A', 'B', 'C'], ['D', 'E', 'F'], ['G', 'H']]
+     * assert ('A'..'H').iterator().collate(3).toList() == [['A', 'B', 'C'], ['D', 'E', 'F'], ['G', 'H']]
      * </pre>
      *
      * @param self          an Iterator
@@ -2361,7 +2361,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Iterator transforming each item into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
-     * <pre class="groovyTestCase">assert [1,2,3].iterator().collect() == [1,2,3]</pre>
+     * <pre class="groovyTestCase">assert [1,2,3].iterator().collect([]){ it * 2 } == [2,4,6]</pre>
      *
      * @param self      an Iterator
      * @param collector the Collection to which the transformed values are added
@@ -2918,7 +2918,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert origPlusIncrements.size() == nums.size() + 1
      *
      * &#64;groovy.transform.TypeChecked void test() {
-     *   LinkedHashSet&lt;String> lhs = ['abc','def'].collectMany(new LinkedHashSet&lt;>()){ it.iterator().collect() }
+     *   LinkedHashSet&lt;String> lhs = ['abc','def'].collectMany(new LinkedHashSet&lt;>()){ it.iterator().toList() }
      *   assert lhs == ['a','b','c','d','e','f'] as Set&lt;String>
      * }
      * test()
@@ -6171,7 +6171,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Example:
      * <pre class="groovyTestCase">
      * var items = [1..2, [3, [4]], Optional.of(5)]
-     * assert items.iterator().flatten().collect() == [1, 2, 3, 4, 5]
+     * assert items.iterator().flatten().toList() == [1, 2, 3, 4, 5]
      * </pre>
      *
      * @param self an Iterator to flatten
@@ -8151,7 +8151,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert (1..3)
      *     .iterator()
      *     .injectAll(''){ carry, next {@code ->} carry + next }
-     *     .collect() == ['1', '12', '123']
+     *     .toList() == ['1', '12', '123']
      * </pre>
      *
      * @see #injectAll(Iterable, Object, Closure)
@@ -8167,7 +8167,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example:
      * <pre class="groovyTestCase">
-     * assert (1..5).iterator().injectAll(Integer::plus).collect() == [3, 6, 10, 15]
+     * assert (1..5).iterator().injectAll(Integer::plus).toList() == [3, 6, 10, 15]
      * </pre>
      *
      * @since 5.0.0
@@ -8380,7 +8380,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def items = (1..4).iterator()
      * def other = [10, 20].iterator()
-     * assert [1, 10, 2, 20] == items.interleave(other).collect()
+     * assert [1, 10, 2, 20] == items.interleave(other).toList()
      * </pre>
      *
      * @param self an Iterator
@@ -8401,7 +8401,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def items = (1..4).iterator()
      * def other = [10, 20].iterator()
-     * assert [1, 10, 2, 20, 3, 4] == items.interleave(other, true).collect()
+     * assert [1, 10, 2, 20, 3, 4] == items.interleave(other, true).toList()
      * </pre>
      * <p>
      * When <code>includeRemainder</code> is false, this is equivalent to <code>zip</code> then <code>collectMany</code>.
@@ -8425,7 +8425,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def items = (1..4).iterator()
      * def other = [10, 20]
-     * assert [1, 10, 2, 20] == items.interleave(other).collect()
+     * assert [1, 10, 2, 20] == items.interleave(other).toList()
      * </pre>
      *
      * @param self an Iterator
@@ -8446,7 +8446,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def items = (1..4).iterator()
      * def other = [10, 20]
-     * assert [1, 10, 2, 20, 3, 4] == items.interleave(other, true).collect()
+     * assert [1, 10, 2, 20, 3, 4] == items.interleave(other, true).toList()
      * </pre>
      * <p>
      * When <code>includeRemainder</code> is false, this is equivalent to <code>zip</code> then <code>collectMany</code>.
@@ -11167,7 +11167,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Appends two iterators.
      *
      * <pre class="groovyTestCase">
-     * assert [1, 2].iterator().plus([3, 4].iterator()).collect() == 1..4
+     * assert [1, 2].iterator().plus([3, 4].iterator()).toList() == 1..4
      * </pre>
      *
      * @param left  an Iterator
@@ -11183,7 +11183,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Appends an iterator and an iterable.
      *
      * <pre class="groovyTestCase">
-     * assert [1, 2].iterator().plus([3, 4]).collect() == 1..4
+     * assert [1, 2].iterator().plus([3, 4]).toList() == 1..4
      * </pre>
      *
      * @param left  an Iterator
@@ -12153,7 +12153,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Repeat the elements from an iterable infinitely.
      *
      * <pre class="groovyTestCase">
-     * assert ['a', 42].repeat().take(5).collect() == ['a', 42, 'a', 42, 'a']
+     * assert ['a', 42].repeat().take(5).toList() == ['a', 42, 'a', 42, 'a']
      * </pre>
      *
      * @param self an Iterable
@@ -12167,7 +12167,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Repeat the elements from an iterator.
      *
      * <pre class="groovyTestCase">
-     * assert ['a', 42].iterator().repeat(2).collect() == ['a', 42, 'a', 42]
+     * assert ['a', 42].iterator().repeat(2).toList() == ['a', 42, 'a', 42]
      * </pre>
      *
      * @param self an Iterator
@@ -12182,7 +12182,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Repeat the elements from an iterator infinitely.
      *
      * <pre class="groovyTestCase">
-     * assert ['a', 42].iterator().repeat().take(5).collect() == ['a', 42, 'a', 42, 'a']
+     * assert ['a', 42].iterator().repeat().take(5).toList() == ['a', 42, 'a', 42, 'a']
      * </pre>
      *
      * @param self an Iterable
@@ -14219,7 +14219,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre>
      * def items = (1..9).iterator()
      * def collected = []
-     * assert items.tapEvery(3) { collected {@code <<} it }.collect() == 1..9
+     * assert items.tapEvery(3) { collected {@code <<} it }.toList() == 1..9
      * assert collected == [1, 4, 7]
      * </pre>
      *
@@ -14244,7 +14244,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre>
      * def items = (1..9).iterator()
      * def collected = []
-     * assert items.tapEvery { collected {@code <<} it }.collect() == 1..9
+     * assert items.tapEvery { collected {@code <<} it }.toList() == 1..9
      * assert collected == 1..9
      *
      * var nums = []
@@ -14255,7 +14255,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     [x: 7, y: 24]
      * ].iterator().tapEvery {
      *     nums {@code <<} Math.sqrt(x ** 2 + y ** 2).intValue()
-     * }.collect()*.x == [3, 5, 8, 7]
+     * }*.x == [3, 5, 8, 7]
      * assert nums == [5, 13, 17, 25]
      * </pre>
      *
