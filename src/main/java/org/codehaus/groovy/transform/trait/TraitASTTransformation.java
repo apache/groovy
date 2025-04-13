@@ -171,8 +171,9 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 ClassNode.EMPTY_ARRAY,
                 null
         );
-        helper.setStaticClass(true); // GROOVY-7242, GROOVY-7456, etc.
-        cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE);
+        helper.setStaticClass(true); // GROOVY-7242, GROOVY-7456
+        cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE
+                | (cNode.getOuterClass() != null ? ACC_STATIC : 0)); // GROOVY-11600, GROOVY-11613
 
         checkInnerClasses(cNode);
 
