@@ -19,55 +19,20 @@
 package groovy.bugs.groovy9742;
 
 import groovy.lang.GroovyClassLoader;
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
+import groovy.lang.GroovyShell;
+import org.codehaus.groovy.runtime.memoize.StampedCommonCache;
 
-public class CustomGroovyClassLoader extends ClassLoader {
-    public int loadedCount = 0;
-    public CustomGroovyClassLoader(ClassLoader parent) {
-        super(parent);
-        groovyClassLoader = new GroovyClassLoader(this);
-    }
-    private static final File srcDir;
-
-    static {
-        try {
-            srcDir = new File(CustomGroovyClassLoader.class.getResource("/").toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+/**
+ * A custom groovyClassLoader that users a StampedCommonCache as the sourceCache
+ */
+public class CustomGroovyClassLoader extends GroovyClassLoader {
+    public CustomGroovyClassLoader() {
+        super(Thread.currentThread().getContextClassLoader(), null, true, new StampedCommonCache<>());
     }
 
-    private final GroovyClassLoader groovyClassLoader;
-    @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        synchronized (getClassLoadingLock(name)) {
-            Class<?> c = doFindClass(name);
-            if (c != null) {
-                if (resolve) {
-                    resolveClass(c);
-                }
-                return c;
-            }
-        }
-        return super.loadClass(name, resolve);
-    }
-    private Class<?> doFindClass(String name) {
-        File classFile = new File(srcDir, name.replace('.', '/') + ".groovy");
-        if (classFile.exists()) {
-            try {
-//                System.out.println("PARSE\t: " + name);
-                Class<?> clz = groovyClassLoader.parseClass(classFile);
-                loadedCount++;
-//                System.out.println("PARSED\t: " + clz);
-                return clz;
-            }
-            catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return null;
+    public Object evaluate(final String scriptText) {
+        GroovyClassLoader gcl = new CustomGroovyClassLoader();
+        GroovyShell gsh = new GroovyShell(gcl);
+        return gsh.evaluate(scriptText);
     }
 }
-
