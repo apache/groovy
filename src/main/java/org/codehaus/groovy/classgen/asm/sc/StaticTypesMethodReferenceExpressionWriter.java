@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
@@ -399,6 +400,11 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
 
     private List<MethodNode> findVisibleMethods(final String name, final ClassNode type) {
         List<MethodNode> methods = type.getMethods(name);
+        // GROOVY-11618: reference to a property node's method
+        MethodNode generated = findPropertyMethod(name, type);
+        if (generated != null && methods.stream().noneMatch(m -> m.getName().equals(generated.getName()))) {
+            methods.add(generated);
+        }
         // GROOVY-10791, GROOVY-11467: include non-static interface methods
         Set<ClassNode> implemented = getInterfacesAndSuperInterfaces(type);
         implemented.remove(type);
@@ -411,6 +417,25 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         }
         methods.addAll(findDGMMethodsForClassNode(controller.getSourceUnit().getClassLoader(), type, name));
         return filterMethodsByVisibility(methods, controller.getClassNode());
+    }
+
+    private MethodNode findPropertyMethod(final String name, final ClassNode type) {
+        for (ClassNode cn = type; cn != null; cn = cn.getSuperClass()) {
+            for (PropertyNode pn : cn.getProperties()) {
+                if (name.equals(pn.getGetterNameOrDefault())) {
+                    MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), pn.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null);
+                    node.setDeclaringClass(pn.getDeclaringClass());
+                    node.setSynthetic(true);
+                    return node;
+                } else if (name.equals(pn.getSetterNameOrDefault()) && (pn.getModifiers() & Opcodes.ACC_FINAL) == 0) {
+                    MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), ClassHelper.VOID_TYPE, new Parameter[]{new Parameter(pn.getType(), pn.getName())}, ClassNode.EMPTY_ARRAY, null);
+                    node.setDeclaringClass(pn.getDeclaringClass());
+                    node.setSynthetic(true);
+                    return node;
+                }
+            }
+        }
+        return null;
     }
 
     private void addFatalError(final String msg, final ASTNode node) {
