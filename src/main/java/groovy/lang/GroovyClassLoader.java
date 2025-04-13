@@ -100,7 +100,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * This cache contains mappings of file name to class. It is used to bypass compilation.
      */
-    protected final FlexibleEvictableCache<String, Class> sourceCache = new ConcurrentCommonCache<>();
+    protected final FlexibleEvictableCache<String, Class> sourceCache;
 
     private final CompilerConfiguration config;
     private final String sourceEncoding;
@@ -140,15 +140,28 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Creates a GroovyClassLoader.
+     * Creates a GroovyClassLoader with the default sourceCache.
      *
      * @param parent                    the parent class loader
      * @param config                    the compiler configuration
      * @param useConfigurationClasspath determines if the configurations classpath should be added
      */
     public GroovyClassLoader(final ClassLoader parent, final CompilerConfiguration config, final boolean useConfigurationClasspath) {
+        this(parent, config, useConfigurationClasspath, new ConcurrentCommonCache<>());
+    }
+
+    /**
+     * Creates a GroovyClassLoader with a custom sourceCache.
+     *
+     * @param parent                    the parent class loader
+     * @param config                    the compiler configuration
+     * @param useConfigurationClasspath determines if the configurations classpath should be added
+     * @param sourceCache               the source cache to use
+     */
+    public GroovyClassLoader(final ClassLoader parent, final CompilerConfiguration config, final boolean useConfigurationClasspath, FlexibleEvictableCache<String, Class> sourceCache) {
         super(EMPTY_URL_ARRAY, parent);
         this.config = (config != null ? config : CompilerConfiguration.DEFAULT);
+        this.sourceCache = sourceCache;
         if (useConfigurationClasspath) {
             for (String path : this.config.getClasspath()) {
                 addClasspath(path);
@@ -233,7 +246,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
     private static void collect(final ClassCollector collector, final LinkedHashMap<ClassNode, ClassVisitor> generatedClasses) {
         // GROOVY-10687: drive ClassCollector after classgen -- interfaces first
-        var classes = new ArrayList<ClassNode>(generatedClasses.keySet());
+        var classes = new ArrayList<>(generatedClasses.keySet());
         classes.sort(Comparator.comparingInt(cn -> {
             int n;
             if (cn.isInterface()) {

@@ -31,13 +31,19 @@ class Groovy9742 {
     void testDeadLock() {
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
         Future future = fixedThreadPool.submit((Callable<Class<?>>) () -> {
-                CustomGroovyClassLoader ccl = new CustomGroovyClassLoader(Groovy9742.class.getClassLoader())
-                Class<?> clz = ccl.loadClass("groovy.bugs.groovy9742.Foo")
-                assert ccl.loadedCount == 2
-                return clz
-            })
+            DelegatingGroovyClassLoader ccl = new DelegatingGroovyClassLoader(Groovy9742.class.getClassLoader())
+            Class<?> clz = ccl.loadClass("groovy.bugs.groovy9742.Foo")
+            assert ccl.loadedCount == 2
+            return clz
+        })
         Class c = future.get(3000, TimeUnit.MILLISECONDS)
         assert c instanceof Class
         fixedThreadPool.shutdownNow()
+    }
+
+    @Test
+    void testCustomGroovyClassLoader() {
+        CustomGroovyClassLoader gcl = new CustomGroovyClassLoader()
+        assert gcl.evaluate('1 + 1') == 2
     }
 }
