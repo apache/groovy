@@ -18,7 +18,7 @@
  */
 package groovy.transform.stc
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -1016,7 +1016,10 @@ final class MethodReferenceTest {
     @Test // class::new
     void testFunctionCN6() {
         assertScript shell, '''
-            class Foo { Foo(String s) { } }
+            class Foo {
+                Foo(String s) {
+                }
+            }
 
             @CompileStatic
             void test() {
@@ -1603,6 +1606,25 @@ final class MethodReferenceTest {
             }
             def bars = [new Bar(name: 'A'), new Bar(name: 'B')]
             assert bars.stream().map(Bar::name).map(String::toLowerCase).toList() == ['a', 'b']
+        '''
+    }
+
+    // GROOVY-11618
+    @Test
+    void testRecordComponentMethodReference2() {
+        assertScript shell, '''
+            class C {
+                record R(String x) {
+                }
+                @CompileStatic m() {
+                    def list = [new R('x')]
+                    def stream = list.stream().map(R::x)
+                    def string = stream.collect(Collectors.joining())
+
+                    assert string == 'x'
+                }
+            }
+            new C().m()
         '''
     }
 
