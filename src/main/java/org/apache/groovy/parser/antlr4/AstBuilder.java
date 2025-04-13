@@ -1263,7 +1263,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     outerClass
             );
         } else if (asBoolean(outerClass)) {
-            if (outerClass.isInterface()) modifiers |= Opcodes.ACC_STATIC;
+            if (outerClass.isInterface() || isTrue(outerClass, IS_INTERFACE_WITH_DEFAULT_METHODS)) { // GROOVY-11613
+                modifiers |= Opcodes.ACC_STATIC;
+            }
             classNode = new InnerClassNode(
                     outerClass,
                     outerClass.getName() + "$" + className,
