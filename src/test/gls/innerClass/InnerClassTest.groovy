@@ -22,7 +22,7 @@ import groovy.test.NotYetImplemented
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -2156,6 +2156,24 @@ final class InnerClassTest {
             new Outer.Inner().missing
         '''
         assert err =~ /No such property: missing for class: Outer.Inner/
+    }
+
+    // GROOVY-11612
+    @Test
+    void testNestedPropertyHandling3() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Outer {
+                private final String description
+                Outer(Inner inner) {
+                    this.description = inner.description
+                }
+                static class Inner {
+                    public final String description = 'test'
+                }
+            }
+            assert new Outer(new Outer.Inner()).description == 'test'
+        '''
     }
 
     // GROOVY-7312
