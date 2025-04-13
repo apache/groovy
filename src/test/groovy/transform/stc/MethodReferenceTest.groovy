@@ -61,7 +61,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-10047
+    // GROOVY-10047
+    @Test // class::instanceMethod
     void testFunctionCI3() {
         assertScript shell, '''
             @CompileStatic
@@ -99,7 +100,8 @@ final class MethodReferenceTest {
         assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
 
-    @Test // class::instanceMethod -- GROOVY-9814
+    // GROOVY-9814
+    @Test // class::instanceMethod
     void testFunctionCI5() {
         assertScript shell, '''
             class One { String id }
@@ -123,7 +125,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-9813
+    // GROOVY-9813
+    @Test // class::instanceMethod
     void testFunctionCI6() {
         String head = '''
             @CompileStatic
@@ -156,7 +159,8 @@ final class MethodReferenceTest {
         ''' + tail
     }
 
-    @Test // class::instanceMethod -- GROOVY-9853
+    // GROOVY-9853
+    @Test // class::instanceMethod
     void testFunctionCI7() {
         assertScript shell, '''
             @CompileStatic
@@ -218,7 +222,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-10734
+    // GROOVY-10054, GROOVY-10734
+    @Test // class::instanceMethod
     void testFunctionCI8() {
         assertScript shell, '''
             class C {
@@ -238,7 +243,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-9803
+    // GROOVY-9803
+    @Test // class::instanceMethod
     void testFunctionCI9() {
         assertScript shell, '''
             class Try<X> { X x
@@ -265,7 +271,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-11241
+    // GROOVY-11241
+    @Test // class::instanceMethod
     void testFunctionCI10() {
         assertScript shell, '''
             @Grab('io.vavr:vavr:0.10.4')
@@ -327,7 +334,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-11259
+    // GROOVY-11259
+    @Test // class::instanceMethod
     void testFunctionCI11() {
         assertScript shell, '''
             def consume(Set<String> keys){keys}
@@ -345,7 +353,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::instanceMethod -- GROOVY-9974
+    // GROOVY-9974
+    @Test // class::instanceMethod
     void testPredicateCI1() {
         assertScript shell, '''
             @CompileStatic
@@ -358,8 +367,9 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-11051
     @NotYetImplemented
-    @Test // class::instanceMethod -- GROOVY-11051
+    @Test // class::instanceMethod
     void testPredicateCI2() {
         [['null','Empty'],['new Object()','Present']].each { value, which ->
             assertScript """import java.util.concurrent.atomic.AtomicReference
@@ -370,7 +380,8 @@ final class MethodReferenceTest {
         }
     }
 
-    @Test // class::instanceMethod -- GROOVY-10791
+    // GROOVY-10791
+    @Test // class::instanceMethod
     void testBiConsumerCI() {
         assertScript shell, '''
             @CompileStatic
@@ -383,7 +394,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-10974
+    // GROOVY-10974
+    @Test // instance::instanceMethod
     void testBiConsumerII() {
         assertScript shell, '''import java.util.stream.*
             @CompileStatic
@@ -411,7 +423,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-10933
+    // GROOVY-10933
+    @Test // instance::instanceMethod
     void testConsumerII() {
         assertScript shell, '''
             @CompileStatic
@@ -426,7 +439,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-11020
+    // GROOVY-11020
+    @Test // instance::instanceMethod
     void testConsumerII2() {
         assertScript shell, '''
             def <C extends Consumer<String>> void m(C c) {
@@ -462,7 +476,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-11068
+    // GROOVY-11068
+    @Test // instance::instanceMethod
     void testConsumerII3() {
         assertScript shell, '''
             @Grab('org.apache.pdfbox:pdfbox:2.0.28')
@@ -485,7 +500,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-11068
+    // GROOVY-11068
+    @Test // instance::instanceMethod
     void testConsumerII4() {
         assertScript shell, '''
             @Grab('org.apache.pdfbox:pdfbox:2.0.28')
@@ -510,7 +526,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-9813
+    // GROOVY-9813
+    @Test // instance::instanceMethod
     void testFunctionII() {
         String asList = '''
             def <T> List<T> asList(T... a) {
@@ -568,7 +585,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-10653
+    // GROOVY-10653
+    @Test // instance::instanceMethod
     void testFunctionII2() {
         assertScript shell, '''
             class C {
@@ -591,7 +609,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceGroovyMethod -- GROOVY-10653
+    // GROOVY-10653
+    @Test // instance::instanceGroovyMethod
     void testFunctionII3() {
         assertScript shell, '''
             @CompileStatic
@@ -605,7 +624,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-10972
+    // GROOVY-10972
+    @Test // instance::instanceMethod
     void testFunctionII4() {
         assertScript shell, '''
             @CompileStatic
@@ -620,7 +640,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-11364
+    // GROOVY-11364
+    @Test // instance::instanceMethod
     void testFunctionII5() {
         assertScript shell, '''
             abstract class A<N extends Number> {
@@ -643,7 +664,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-10057
+    // GROOVY-10057
+    @Test // instance::instanceMethod
     void testPredicateII() {
         assertScript shell, '''
             Class c = Integer
@@ -671,7 +693,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-10994
+    // GROOVY-10994
+    @Test // instance::instanceMethod
     void testPredicateII2() {
         assertScript shell, '''
             @CompileStatic
@@ -683,7 +706,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // instance::instanceMethod -- GROOVY-10975
+    // GROOVY-10975
+    @Test // instance::instanceMethod
     void testComparatorII() {
         assertScript shell, '''
             @CompileStatic
@@ -697,8 +721,9 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-11026
     @NotYetImplemented
-    @Test // instance::instanceMethod -- GROOVY-11026
+    @Test // instance::instanceMethod
     void testBiFunctionII() {
         assertScript shell, '''
             @CompileDynamic
@@ -902,7 +927,7 @@ final class MethodReferenceTest {
     }
 
     @Test // class::new
-    void testFunctionCN() {
+    void testFunctionCN1() {
         assertScript shell, '''
             @CompileStatic
             void test() {
@@ -928,7 +953,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::new -- GROOVY-10033
+    // GROOVY-10033
+    @Test // class::new
     void testFunctionCN3() {
         assertScript shell, '''
             @CompileStatic
@@ -946,7 +972,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::new -- GROOVY-10033
+    // GROOVY-10033
+    @Test // class::new
     void testFunctionCN4() {
         assertScript shell, '''
             class A {
@@ -976,8 +1003,9 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-10930
     @NotYetImplemented
-    @Test // class::new -- GROOVY-10930
+    @Test // class::new
     void testFunctionCN5() {
         def err = shouldFail shell, '''
             class Foo { Foo() { } }
@@ -993,7 +1021,8 @@ final class MethodReferenceTest {
         assert err =~ /Cannot find matching constructor Foo\(java.lang.String\)/
     }
 
-    @Test // class::new -- GROOVY-10971
+    // GROOVY-10971
+    @Test // class::new
     void testFunctionCN6() {
         assertScript shell, '''
             class Foo {
@@ -1009,7 +1038,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::new -- GROOVY-11001
+    // GROOVY-11001
+    @Test // class::new
     void testFunctionCN7() {
         assertScript shell, '''
             @Grab('io.vavr:vavr:0.10.4')
@@ -1031,7 +1061,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::new -- GROOVY-11385
+    // GROOVY-11385
+    @Test // class::new
     void testFunctionCN8() {
         def err = shouldFail shell, '''
             abstract class A {
@@ -1067,7 +1098,7 @@ final class MethodReferenceTest {
             void test() {
                 IntFunction<Integer[]> f = Integer[]::new;
                 def result = [1, 2, 3].stream().toArray(f)
-                assert result == new Integer[] {1, 2, 3}
+                assert result == new Integer[] { 1, 2, 3 }
             }
 
             test()
@@ -1090,7 +1121,7 @@ final class MethodReferenceTest {
     @Test // class::staticMethod
     void testFunctionCS2() {
         def methods = ['Collections::singletonList']
-        if (isAtLeastJdk('9.0')) methods<<'List::of' // GROOVY-11024
+        if (isAtLeastJdk('9.0')) methods.add('List::of') // GROOVY-11024
         for (makeList in methods) {
             assertScript shell, """
                 @CompileStatic
@@ -1103,7 +1134,8 @@ final class MethodReferenceTest {
         }
     }
 
-    @Test // class::staticMethod -- GROOVY-9799
+    // GROOVY-9799
+    @Test // class::staticMethod
     void testFunctionCS3() {
         assertScript shell, '''
             class C {
@@ -1155,7 +1187,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::staticMethod -- GROOVY-9813
+    // GROOVY-9813
+    @Test // class::staticMethod
     void testFunctionCS6() {
         assertScript shell, '''
             @CompileStatic
@@ -1194,7 +1227,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::staticMethod -- GROOVY-10807
+    // GROOVY-10807
+    @Test // class::staticMethod
     void testFunctionCS7() {
         assertScript shell, '''
             @CompileStatic
@@ -1212,8 +1246,9 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-10807
     @NotYetImplemented
-    @Test // class::staticMethod -- GROOVY-10807
+    @Test // class::staticMethod
     void testFunctionCS8() {
         assertScript shell, '''
             @CompileStatic
@@ -1231,7 +1266,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // class::staticMethod -- GROOVY-11009
+    // GROOVY-11009
+    @Test // class::staticMethod
     void testFunctionCS9() {
         assertScript shell, '''
             class C {
@@ -1316,7 +1352,8 @@ final class MethodReferenceTest {
         assert err.message.contains("Failed to find class method 'addx(java.math.BigDecimal,java.math.BigDecimal)' or instance method 'addx(java.math.BigDecimal)' for the type: java.math.BigDecimal")
     }
 
-    @Test // GROOVY-9463
+    // GROOVY-9463
+    @Test
     void testMethodNotFound2() {
         def err = shouldFail shell, '''
             @CompileStatic
@@ -1327,7 +1364,8 @@ final class MethodReferenceTest {
         assert err.message.contains("Failed to find class method 'toLowerCaseX(java.lang.String)' or instance method 'toLowerCaseX()' for the type: java.lang.String")
     }
 
-    @Test // GROOVY-10714
+    // GROOVY-10714
+    @Test
     void testMethodSelection() {
         assertScript shell, '''
             class C {
@@ -1359,7 +1397,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // GROOVY-10813, GROOVY-11363
+    // GROOVY-10813, GROOVY-11363
+    @Test
     void testMethodSelection2() {
         for (spec in ['', '<?>', '<Object>', '<? extends Object>', '<? super String>']) {
             assertScript shell, """
@@ -1414,7 +1453,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // GROOVY-10813, GROOVY-10858
+    // GROOVY-10813, GROOVY-10858
+    @Test
     void testMethodSelection3() {
         def err = shouldFail shell, '''
             @CompileStatic
@@ -1425,7 +1465,8 @@ final class MethodReferenceTest {
         assert err.message.contains("Failed to find class method 'toString()' for the type: java.lang.Object")
     }
 
-    @Test // GROOVY-10859
+    // GROOVY-10859
+    @Test
     void testDynamicMethodSelection() {
         for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
             assertScript shell, """
@@ -1440,8 +1481,8 @@ final class MethodReferenceTest {
         }
     }
 
-    @NotYetImplemented
-    @Test // GROOVY-10904
+    // GROOVY-10904
+    @Test
     void testPropertyMethodLocation() {
         for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
             assertScript shell, """
@@ -1462,7 +1503,8 @@ final class MethodReferenceTest {
         }
     }
 
-    @Test // GROOVY-10742
+    // GROOVY-10742
+    @Test
     void testIncompatibleReturnType() {
         def err = shouldFail shell, '''
             void foo(bar) {
@@ -1475,7 +1517,8 @@ final class MethodReferenceTest {
         assert err =~ /Invalid return type: void is not convertible to java.lang.String/
     }
 
-    @Test // GROOVY-10269
+    // GROOVY-10269
+    @Test
     void testNotFunctionalInterface() {
         def err = shouldFail shell, '''
             void foo(Integer y) {
@@ -1492,7 +1535,8 @@ final class MethodReferenceTest {
         assert err =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
-    @Test // GROOVY-10336
+    // GROOVY-10336
+    @Test
     void testNotFunctionalInterface2() {
         def err = shouldFail shell, '''
             class C {
@@ -1509,7 +1553,8 @@ final class MethodReferenceTest {
         assert err =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
-    @Test // GROOVY-10979
+    // GROOVY-10979
+    @Test
     void testNotFunctionalInterface3() {
         def err = shouldFail shell, '''
             Integer m(String x) {
@@ -1529,7 +1574,8 @@ final class MethodReferenceTest {
         assert err =~ /Argument is a method reference, but parameter type 'U' is not a functional interface/
     }
 
-    @Test // GROOVY-11254
+    // GROOVY-11254
+    @Test
     void testLocalFunctionalInterface() {
         assertScript shell, '''
             class C { String s }
@@ -1547,7 +1593,8 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // GROOVY-11467
+    // GROOVY-11467
+    @Test
     void testSuperInterfaceMethodReference() {
         assertScript shell, '''
             interface A { int m() }
@@ -1567,13 +1614,33 @@ final class MethodReferenceTest {
         '''
     }
 
-    @Test // GROOVY-10635
+    // GROOVY-10635
+    @Test
     void testRecordComponentMethodReference() {
         assertScript shell, '''
             record Bar(String name) {
             }
             def bars = [new Bar(name: 'A'), new Bar(name: 'B')]
             assert bars.stream().map(Bar::name).map(String::toLowerCase).toList() == ['a', 'b']
+        '''
+    }
+
+    // GROOVY-11618
+    @Test
+    void testRecordComponentMethodReference2() {
+        assertScript shell, '''
+            class C {
+                record R(String x) {
+                }
+                @CompileStatic m() {
+                    def list = [new R('x')]
+                    def stream = list.stream().map(R::x)
+                    def string = stream.collect(Collectors.joining())
+
+                    assert string == 'x'
+                }
+            }
+            new C().m()
         '''
     }
 }
