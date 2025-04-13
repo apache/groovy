@@ -2042,6 +2042,23 @@ final class InnerClassTest {
         assert err =~ /No such property: missing for class: Outer.Inner/
     }
 
+    @Test // GROOVY-11612
+    void testNestedPropertyHandling3() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class Outer {
+                private final String description
+                Outer(Inner inner) {
+                    this.description = inner.description
+                }
+                static class Inner {
+                    public final String description = 'test'
+                }
+            }
+            assert new Outer(new Outer.Inner()).description == 'test'
+        '''
+    }
+
     @Test // GROOVY-7312
     void testInnerClassOfInterfaceIsStatic() {
         assertScript '''
