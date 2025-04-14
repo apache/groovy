@@ -16,8 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 plugins {
-    id 'me.champeau.buildscan-recipes' version '0.2.3'
     id 'com.github.ben-manes.versions' version '0.52.0'
     id 'com.github.blindpirate.osgi' version '0.0.7'
     id 'com.github.jk1.dependency-license-report' version '2.9'
@@ -25,12 +25,6 @@ plugins {
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
     id 'org.apache.groovy-jacoco-aggregation'
-}
-
-buildScanRecipes {
-    recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
-    recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
-    recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
 }
 
 base {
