@@ -39,7 +39,7 @@ buildCache {
         enabled = !isCI
     }
 
-    remote(gradleEnterprise.buildCache) {
+    remote(develocity.buildCache) {
         enabled = false
     }
 }
