@@ -18,7 +18,10 @@
  */
 package org.apache.groovy.gradle
 
-import groovy.transform.CompileStatic
+import groovy.transform.AutoFinal
+
+import javax.inject.Inject
+
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
@@ -31,22 +34,15 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
-import javax.inject.Inject
-
-@CacheableTask
+@AutoFinal @CacheableTask
 class JarJarTask extends DefaultTask {
-    private final static String JARJAR_CLASS_NAME = 'com.eed3si9n.jarjar.JarJarTask'
 
     @Internal
-    String description = "Repackages dependencies into a shaded jar"
-
-    private List<Action<? super Manifest>> manifestTweaks = []
-
-    private final FileSystemOperations fs
+    String description = 'Repackages dependencies into a shaded jar'
 
     @InputFile
     @Classpath
@@ -59,6 +55,10 @@ class JarJarTask extends DefaultTask {
     @InputFiles
     @Classpath
     final ConfigurableFileCollection jarjarToolClasspath = project.objects.fileCollection()
+
+    final protected osgi = project.rootProject.extensions.osgi
+
+    final protected String projectName = project.name
 
     @InputFiles
     @Classpath
@@ -90,13 +90,17 @@ class JarJarTask extends DefaultTask {
     @Input
     boolean createManifest = true
 
+    private final FileSystemOperations fs
+
+    private List<Action<? super Manifest>> manifestTweaks = []
+
     @Inject
     JarJarTask(FileSystemOperations fileSystemOperations) {
         this.fs = fileSystemOperations
     }
 
     void withManifest(Action<? super Manifest> action) {
-        manifestTweaks << action
+        manifestTweaks.add(action)
     }
 
     @Internal
@@ -106,89 +110,75 @@ class JarJarTask extends DefaultTask {
 
     @TaskAction
     void generateDescriptor() {
-        def originalJar = from.get()
-        def outputFile = this.outputFile.get().asFile
-        def tmpJar = new File(temporaryDir, "${outputFile.name}.${Integer.toHexString(UUID.randomUUID().hashCode())}.tmp")
-        tmpJar.deleteOnExit()
-        def manifestFile = new File(temporaryDir, 'MANIFEST.MF')
-        // First step is to create a repackaged jar
+        File outputFile = this.outputFile.get().asFile
         outputFile.parentFile.mkdirs()
-        def tstamp = Date.parse('yyyy-MM-dd HH:mm', '1980-02-01 00:00').time.toString()
-        try {
-            project.ant {
-                taskdef name: 'jarjar', classname: JARJAR_CLASS_NAME, classpath: jarjarToolClasspath.asPath
-                jarjar(jarfile: tmpJar, filesonly: true, modificationtime: tstamp) {
-                    zipfileset(
-                        src: originalJar,
-                        excludes: (untouchedFiles + excludes).join(','))
-                    includedResources.each { String resource, String path ->
-                        String dir = resource.substring(0, resource.lastIndexOf('/') + 1)
-                        String filename = resource.substring(resource.lastIndexOf('/') + 1)
-                        zipfileset(dir: dir, includes: filename, fullpath: path)
+
+        File tmpJar = new File(temporaryDir, "${archiveName}.${Integer.toHexString(UUID.randomUUID().hashCode())}.tmp")
+        tmpJar.deleteOnExit()
+
+        File manifestFile = new File(temporaryDir, 'MANIFEST.MF')
+        manifestFile.deleteOnExit()
+
+        // Use fixed date/timestamp for reproducible build
+        String tstamp = Date.parse('yyyy-MM-dd HH:mm', '1980-02-01 00:00').getTime().toString()
+
+        // Step 1: create a repackaged jar
+        ant.with {
+            taskdef name: 'jarjar', classname: 'com.eed3si9n.jarjar.JarJarTask', classpath: jarjarToolClasspath.asPath
+            jarjar(jarfile: tmpJar, filesonly: true, modificationtime: tstamp) {
+                zipfileset(src: from.get(), excludes: (untouchedFiles + excludes).join(','))
+                includedResources.each { String resource, String path ->
+                    String dir = resource.substring(0, resource.lastIndexOf('/') + 1)
+                    String filename = resource.substring(resource.lastIndexOf('/') + 1)
+                    zipfileset(dir: dir, includes: filename, fullpath: path)
+                }
+                repackagedLibraries.files.each { File library ->
+                    def libraryName = JarJarTask.baseName(library)
+                    def includes = includesPerLibrary[libraryName]
+                    def excludes = excludesPerLibrary[libraryName]
+                    if (includes) {
+                        zipfileset(src: library, includes: includes.join(','))
+                    } else if (excludes) {
+                        zipfileset(src: library, excludes: excludes.join(','))
+                    } else {
+                        zipfileset(src: library, excludes: excludesPerLibrary['*'].join(','))
                     }
-                    repackagedLibraries.files.each { File library ->
-                        def libraryName = JarJarTask.baseName(library)
-                        def includes = includesPerLibrary[libraryName]
-                        def excludes = excludesPerLibrary[libraryName]
-                        if (includes) {
-                            zipfileset(src: library, includes: includes.join(','))
-                        } else if (excludes) {
-                            zipfileset(src: library, excludes: excludes.join(','))
-                        } else {
-                            zipfileset(src: library, excludes: excludesPerLibrary['*'].join(','))
-                        }
-                    }
-                    patterns.each { pattern, result ->
-                        rule pattern: pattern, result: result
-                    }
+                }
+                patterns.each { pattern, result ->
+                    rule pattern: pattern, result: result
                 }
             }
+        }
 
-            if (createManifest) {
-                // next step is to generate an OSGI manifest using the newly repackaged classes
-                def mf = project.rootProject.extensions.osgi.osgiManifest {
-                    symbolicName = project.name
-                    instruction 'Import-Package', '*;resolution:=optional'
-                    classesDir = tmpJar
-                }
+        fs.copy { spec ->
+            spec.from(tmpJar)
+            spec.into(outputFile.parentFile)
+            spec.rename { this.archiveName }
+        }
 
-                manifestTweaks.each {
-                    it.execute(mf)
-                }
-
-                // then we need to generate the manifest file
-                mf.writeTo(manifestFile)
-
-            } else {
-                manifestFile << ''
+        // Step 2: update the archive with a class index and any untouched files
+        ant.jar(destfile: outputFile, index: true, modificationtime: tstamp, update: true) {
+            if (untouchedFiles) {
+                zipfileset(src: from.get(), includes: untouchedFiles.join(','))
             }
+        }
 
-            // so that we can put it into the final jar
-            fs.copy {
-                it.from(tmpJar)
-                it.into(outputFile.parentFile)
-                it.rename { outputFile.name }
+        // Step 3: generate an OSGi manifest referencing the repackaged classes
+        if (createManifest) {
+            def mf = osgi.osgiManifest {
+                symbolicName = this.projectName
+                instruction 'Import-Package', '*;resolution:=optional'
+                classesDir = tmpJar
             }
-            project.ant.jar(destfile: outputFile, update: true, index: true, manifest: manifestFile, modificationtime: tstamp) {
-                manifest {
-                    // because we don't want to use JDK 1.8.0_91, we don't care and it will
-                    // introduce cache misses
-                    attribute(name: 'Created-By', value: 'Gradle')
-                }
-                if (untouchedFiles) {
-                    zipfileset(
-                        src: originalJar,
-                        includes: untouchedFiles.join(','))
-                }
-            }
-        } finally {
-            fs.delete {
-                it.delete(manifestFile)
+            manifestTweaks*.execute(mf)
+            mf.writeTo(manifestFile)
+
+            ant.zip(destfile: outputFile, modificationtime: tstamp, update: true) {
+                zipfileset(dir: manifestFile.parent, includes: manifestFile.name, prefix: 'META-INF')
             }
         }
     }
 
-    @CompileStatic
     private static String baseName(File file) {
         file.name.substring(0, file.name.lastIndexOf('-'))
     }
