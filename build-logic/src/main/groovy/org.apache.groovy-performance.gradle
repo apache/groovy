@@ -44,6 +44,7 @@ repositories {
 dependencies {
     jmh project(":")
     testImplementation project(":")
+    testImplementation "junit:junit:${versions.junit}"
     stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
 }
 

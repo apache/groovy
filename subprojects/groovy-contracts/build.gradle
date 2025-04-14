@@ -29,6 +29,9 @@ dependencies {
         exclude group: 'org.codehaus.groovy'
     }
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${versions.junit5}")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:${versions.junit5Platform}") {
+        exclude(group: 'org.apiguardian', module: 'apiguardian-api')
+    }
 }
 
 tasks.named('test') {
