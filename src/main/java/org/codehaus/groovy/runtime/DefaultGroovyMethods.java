@@ -8416,51 +8416,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new InterleaveIterator<>(self, other, includeRemainder);
     }
 
-    /**
-     * An iterator of all the elements from this iterator and the iterable interleaved.
-     * If the sources are of different sizes, the result will have twice the
-     * size of the shorter one.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = (1..4).iterator()
-     * def other = [10, 20]
-     * assert [1, 10, 2, 20] == items.interleave(other).toList()
-     * </pre>
-     *
-     * @param self an Iterator
-     * @param other another Iterator
-     * @return an iterator of all the elements from self and other interleaved (until one source is exhausted)
-     * @since 5.0.0
-     */
-    public static <T, U extends T, V extends T> Iterator<T> interleave(Iterator<U> self, Iterable<V> other) {
-        return interleave(self, other, false);
-    }
-
-    /**
-     * An iterator of all the elements from this iterator and the iterable interleaved.
-     * If the sources are of different sizes, and <code>includeRemainder</code> is true,
-     * the extra elements from the longer source will be appended after interleaving.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def items = (1..4).iterator()
-     * def other = [10, 20]
-     * assert [1, 10, 2, 20, 3, 4] == items.interleave(other, true).toList()
-     * </pre>
-     * <p>
-     * When <code>includeRemainder</code> is false, this is equivalent to <code>zip</code> then <code>collectMany</code>.
-     *
-     * @param self an Iterator
-     * @param other an Iterable
-     * @param includeRemainder whether to process extra elements if the operands are of different sizes
-     * @return an iterator of all the pairs from self and other
-     * @since 5.0.0
-     */
-    public static <T, U extends T, V extends T> Iterator<T> interleave(Iterator<U> self, Iterable<V> other, boolean includeRemainder) {
-        return interleave(self, other.iterator(), includeRemainder);
-    }
-
     private static final class InterleaveIterator<T, U extends T, V extends T> implements Iterator<T> {
         private final Iterator<U> delegate;
         private final Iterator<V> other;
