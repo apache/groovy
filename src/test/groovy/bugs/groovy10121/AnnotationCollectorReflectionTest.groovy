@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy10121
+package bugs.groovy10121
 
 import org.junit.Test
 
@@ -24,6 +24,6 @@ final class AnnotationCollectorReflectionTest {
     @Test
     void testHelperIsVisibleAsInnerClass() {
         def innerNames = SomeCollectedAnnotations.classes*.name
-        assert innerNames.contains('groovy.bugs.groovy10121.SomeCollectedAnnotations$CollectorHelper')
+        assert innerNames.contains('bugs.groovy10121.SomeCollectedAnnotations$CollectorHelper')
     }
 }

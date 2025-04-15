@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -77,7 +77,7 @@ class SuperMethod2Bug extends GroovyTestCase {
        base = new SuperDerived("derived super cheese")
        assert base.longMethod() == 1
        assert base.intMethod() == 1
-       assert base.boolMethod() == true       
+       assert base.boolMethod() == true
     }
 }
 
@@ -138,7 +138,7 @@ class SuperDerived extends SuperBase {
         "foo(x,y)Derived" + x + "," + y + super.foo(x, y)
     }
 
-    // we want to ensure that a call with super, which is directly added into 
+    // we want to ensure that a call with super, which is directly added into
     // bytecode without calling MetaClass does correct boxing
     boolean booMethod(){super.boolMethod()}
     int intMethod(){super.intMethod()}

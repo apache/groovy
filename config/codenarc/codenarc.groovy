@@ -51,26 +51,26 @@ ruleset {
                 'org.codehaus.groovy.tools.shell.commands.HistoryCommand,org.codehaus.groovy.tools.shell.commands.PurgeCommand,' +
                 'org.codehaus.groovy.tools.shell.commands.RecordCommand,org.codehaus.groovy.tools.shell.commands.ShadowCommand,' +
                 'org.codehaus.groovy.tools.shell.commands.ShowCommand,org.codehaus.groovy.tools.shell.ComplexCommandSupport,' +
-                'groovy.bugs.StaticPropertyFoo,groovy.bugs.Groovy3135Bug,groovy.util.XmlParserTest,' +
+                'bugs.StaticPropertyFoo,bugs.Groovy3135Bug,groovy.util.XmlParserTest,' +
                 'org.codehaus.groovy.runtime.PerInstanceMetaClassTest,groovy.StaticImportChild,' +
-                'gls.scope.VariablePrecedenceTest,groovy.bugs.Groovy3069Bug,groovy.StaticImportTarget,' +
-                'gls.scope.VariablePrecedenceTest,groovy.bugs.Groovy3069Bug,groovy.mock.interceptor.Baz,' +
-                'groovy.bugs.Groovy2706Bug,groovy.sql.TestHelper,org.codehaus.groovy.runtime.WriterAppendTest,' +
-                'groovy.bugs.Groovy3135Bug,groovy.mock.interceptor.Baz,groovy.ReadLineTest,' +
-                'groovy.bugs.TedsClosureBug,groovy.tree.ClosureClassLoaderBug,groovy.tree.NestedClosureBugTest,' +
-                'groovy.tree.SmallTreeTest,groovy.ReadLineTest,groovy.bugs.Groovy3135Bug,' +
-                'org.codehaus.groovy.runtime.DateGDKTest,groovy.sql.PersonDTO,groovy.bugs.One,' +
-                'groovy.bugs.Two,org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,' +
+                'gls.scope.VariablePrecedenceTest,bugs.Groovy3069Bug,groovy.StaticImportTarget,' +
+                'gls.scope.VariablePrecedenceTest,bugs.Groovy3069Bug,groovy.mock.interceptor.Baz,' +
+                'bugs.Groovy2706Bug,groovy.sql.TestHelper,org.codehaus.groovy.runtime.WriterAppendTest,' +
+                'bugs.Groovy3135Bug,groovy.mock.interceptor.Baz,groovy.ReadLineTest,' +
+                'bugs.TedsClosureBug,groovy.tree.ClosureClassLoaderBug,groovy.tree.NestedClosureBugTest,' +
+                'groovy.tree.SmallTreeTest,groovy.ReadLineTest,bugs.Groovy3135Bug,' +
+                'org.codehaus.groovy.runtime.DateGDKTest,groovy.sql.PersonDTO,bugs.One,' +
+                'bugs.Two,org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,' +
                 'org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,groovy.sql.PersonDTO,' +
-                'groovy.bugs.Groovy3135Bug,Sphere,groovy.sql.PersonDTO,groovy.bugs.Groovy3135Bug,' +
-                'gls.enums.GroovyColors3693,groovy.sql.PersonDTO,groovy.bugs.HasStaticFieldSomeClass,groovy.PrintTest,' +
-                'groovy.bugs.StaticClosurePropertyBug,groovy.bugs.Groovy3311Bug,groovy.StaticImportParent,' +
+                'bugs.Groovy3135Bug,Sphere,groovy.sql.PersonDTO,bugs.Groovy3135Bug,' +
+                'gls.enums.GroovyColors3693,groovy.sql.PersonDTO,bugs.HasStaticFieldSomeClass,groovy.PrintTest,' +
+                'bugs.StaticClosurePropertyBug,bugs.Groovy3311Bug,groovy.StaticImportParent,' +
                 'org.codehaus.groovy.transform.TestTransform,org.codehaus.groovy.classgen.asm.InstructionSequenceHelperClassTest,' +
-                'groovy.bugs.Groovy3511Bug,groovy.bugs.Groovy3135Bug,groovy.bugs.Groovy2556Bug,' +
+                'bugs.Groovy3511Bug,bugs.Groovy3135Bug,bugs.Groovy2556Bug,' +
                 'groovy.mock.interceptor.Baz,org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest,' +
-                'groovy.bugs.UseStaticInClosureBug,groovy.bugs.Groovy2556Bug,' +
+                'bugs.UseStaticInClosureBug,bugs.Groovy2556Bug,' +
                 'groovy.ReadLineTest,org.codehaus.groovy.runtime.FileAppendTest,org.codehaus.groovy.runtime.WriterAppendTest,' +
-                'org.codehaus.groovy.transform.TestTransform,groovy.bugs.ClosureWithStaticVariablesBug'
+                'org.codehaus.groovy.transform.TestTransform,bugs.ClosureWithStaticVariablesBug'
         }
         'VariableName' {
             regex = '^[a-z]([a-zA-Z0-9$])*\\b'
@@ -91,13 +91,13 @@ ruleset {
         }
 
         'MethodName' {
-            doNotApplyToClassNames='groovy.swing.SwingBuilder,groovy.$Temp,groovy.bugs.Groovy4119Bug,' +
+            doNotApplyToClassNames='groovy.swing.SwingBuilder,groovy.$Temp,bugs.Groovy4119Bug,' +
                         'groovy.lang.MetaClassRegistryTest,groovy.lang.MixinTest,' +
                         'groovy.swing.TitledBorderFactoryJustificationTest'
             doNotApplyToFilesMatching='.*spectralnorm\\.groovy'
         }
         'ParameterName' {
-            doNotApplyToClassNames='groovy.bugs.MyDelegatingMetaClass'
+            doNotApplyToClassNames='bugs.MyDelegatingMetaClass'
             doNotApplyToFilesMatching='.*spectralnorm\\.groovy'
         }
         'ConfusingMethodName'  {
@@ -107,18 +107,18 @@ ruleset {
     }
     ruleset('rulesets/unused.xml') {
         'UnusedVariable' {
-            doNotApplyToClassNames = 'SourceBaseTestCase,SAXTest,groovy.ForLoopTest,groovy.bugs.Groovy3894Bug,' +
+            doNotApplyToClassNames = 'SourceBaseTestCase,SAXTest,groovy.ForLoopTest,bugs.Groovy3894Bug,' +
                 'ExpandoMetaClassTest,ExceptionTest,JSR223Test,' +
                 'groovy.test.GroovyShellTestCase,org.codehaus.groovy.tools.shell.ShellRunner,' +
-                'groovy.bugs.Bytecode7Bug,groovy.mock.interceptor.HalfMockTest,' +
+                'bugs.Bytecode7Bug,groovy.mock.interceptor.HalfMockTest,' +
                 'groovy.mock.interceptor.MockSingleCallTest,groovy.mock.interceptor.StubSingleCallTest,' +
                 'groovy.operator.TernaryOperatorsTest,groovy.swing.SwingBuilderTableTest,' +
                 'groovy.swing.SwingBuilderTest,groovy.util.BuilderSupportTest,' +
                 'groovy.util.GroovyScriptEngineTest,groovy.util.ObservableMapTest,' +
-                'groovy.xml.NamespaceNodeGPathTest,groovy.bugs.ClassGeneratorFixesTest,' +
-                'groovy.bugs.ClosureWithBitwiseDefaultParamTest,groovy.bugs.ConstructorThisCallBug,' +
-                'groovy.bugs.InconsistentStackHeightBug,groovy.bugs.InterfaceImplBug,' +
-                'groovy.bugs.TedsClosureBug,org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest,' +
+                'groovy.xml.NamespaceNodeGPathTest,bugs.ClassGeneratorFixesTest,' +
+                'bugs.ClosureWithBitwiseDefaultParamTest,bugs.ConstructorThisCallBug,' +
+                'bugs.InconsistentStackHeightBug,bugs.InterfaceImplBug,' +
+                'bugs.TedsClosureBug,org.codehaus.groovy.ast.builder.AstBuilderFromCodeTest,' +
                 'SubscriptTest,UnsafeNavigationTest,' +
                 'GStringTest,GeneratorTest,GroovyClosureMethodsTest,' +
                 'GroovyMethodsTest,ImmutableModificationTest,LittleClosureTest,' +
@@ -128,8 +128,8 @@ ruleset {
                 'gls.annotations.closures.CallOnThisObject,gls.annotations.closures.JavaCompatibilityParameterized,' +
                 'gls.annotations.closures.UnqualifiedCall,groovy.CompileOrderTest,' +
                 'gls.annotations.closures.ClosureWithParameters,EscapedUnicodeTest,' +
-                'groovy.bugs.Groovy2365Base,groovy.bugs.Groovy249_Bug,' +
-                'groovy.bugs.Groovy3139Bug,groovy.bugs.Get2,groovy.bugs.Groovy3511Bug,' +
+                'bugs.Groovy2365Base,bugs.Groovy249_Bug,' +
+                'bugs.Groovy3139Bug,bugs.Get2,bugs.Groovy3511Bug,' +
                 'org.codehaus.groovy.tools.LoaderConfigurationTest'
         }
 
@@ -211,13 +211,13 @@ ruleset {
         }
 
         'ConsecutiveStringConcatenation' {
-            doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,groovy.bugs.Groovy675_Bug,groovy.bugs.MorgansBug,' +
-                        'groovy.bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' +
+            doNotApplyToClassNames='groovy.DynamicMemberTest,groovy.StaticImportTest,bugs.Groovy675_Bug,bugs.MorgansBug,' +
+                        'bugs.WriteOnlyPropertyBug,groovy.operator.StringOperatorsTest,groovy.swing.SwingBuilderTest,' +
                         'org.codehaus.groovy.runtime.powerassert.EvaluationTest,groovy.json.JsonLexerTest'
         }
 
         'ConsecutiveLiteralAppends' {
-            doNotApplyToClassNames='groovy.bugs.ByteIndexBug'
+            doNotApplyToClassNames='bugs.ByteIndexBug'
         }
 
         exclude 'UnnecessaryPackageReference' // failing for all scripts

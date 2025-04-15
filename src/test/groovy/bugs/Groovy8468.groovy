@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -29,7 +29,7 @@ final class Groovy8468 {
     @Test
     void testGenericArrayType() {
         assertScript '''
-            import groovy.bugs.groovy8468.*
+            import bugs.groovy8468.*
 
             @groovy.transform.CompileStatic
             def test() {

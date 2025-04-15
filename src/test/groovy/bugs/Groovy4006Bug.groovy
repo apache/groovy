@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -25,7 +25,7 @@ class Groovy4006Bug extends GroovyTestCase {
         try {
             assertScript """
                 class MyOuterClass4006V1 {
-                    def outerName = 'OC1' 
+                    def outerName = 'OC1'
                     def foo() {
                         def ic = new MyInnerClass4006V1()
                         ic.bar()
@@ -57,7 +57,7 @@ class Groovy4006Bug extends GroovyTestCase {
         try {
             assertScript """
                 class MyOuterClass4006V2 {
-                    def outerName = 'OC2' 
+                    def outerName = 'OC2'
                     def foo() {
                         def ic = new MyInnerClass4006V1('IC2')
                         ic.bar()
@@ -89,7 +89,7 @@ class Groovy4006Bug extends GroovyTestCase {
         try {
             assertScript """
                 class MyOuterClass4006V3 {
-                    def outerName = 'OC3' 
+                    def outerName = 'OC3'
                     def icField = new MyInnerClass4006V3('IC3');
                     def foo() {
                         icField.bar()
@@ -121,7 +121,7 @@ class Groovy4006Bug extends GroovyTestCase {
         try {
             assertScript """
                 class MyOuterClass4006V4 {
-                    def outerName = 'OC4' 
+                    def outerName = 'OC4'
                     private def icField = new MyInnerClass4006V4('IC4');
                     def foo() {
                         icField.bar()

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9890;
+package bugs.groovy9890;
 
 public interface Face {
     default Object foo(long n) {

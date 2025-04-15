@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
 class Groovy675_Bug extends GroovyTestCase {
     void testStringAndGString() {
-    assert "\\"!="\\\\" 
-    assert "\\\$"=="\\"+"\$" 
+    assert "\\"!="\\\\"
+    assert "\\\$"=="\\"+"\$"
     assert "\\"+"\\\\" == "\\"+"\\"+"\\" && "\\\\"+"\\" == "\\"+"\\"+"\\"
     assert ("\\\\"+"\\").length() == 3
     assert "\\3 \$1\$2" == "\\" + "3" + " " + "\$" + "1" + "\$" + "2"

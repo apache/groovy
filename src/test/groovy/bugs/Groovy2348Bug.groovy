@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -30,7 +30,7 @@ class Foo {
 
     private static test(tokens) {
         tokens.collect {
-            trimTag(it) 
+            trimTag(it)
         }
     }
 

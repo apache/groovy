@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy8757
+package bugs.groovy8757
 
 trait T0 {
     def <XX extends Number> XX foo(Class<XX> c) {

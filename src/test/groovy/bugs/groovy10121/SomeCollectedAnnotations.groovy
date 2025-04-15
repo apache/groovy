@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy10121
+package bugs.groovy10121
 
 import groovy.transform.AnnotationCollector
 

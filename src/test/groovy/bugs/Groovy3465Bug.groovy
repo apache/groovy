@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
-import static groovy.bugs.Groovy3465Helper.*
+import static bugs.Groovy3465Helper.*
 
 class Groovy3465Bug extends GroovyTestCase {
     void testCallingAStaticImportedMethodWithNamedParamaters() {

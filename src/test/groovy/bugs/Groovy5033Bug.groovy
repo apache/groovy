@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -25,12 +25,12 @@ class Groovy5033Bug extends GroovyTestCase {
         assertScript """
             class MyService5033 {
                 @Deprecated
-                def update(a, b = null, c = null) {} 
+                def update(a, b = null, c = null) {}
             }
             int count = 0
             MyService5033.methods.findAll { it.name == 'update'}.each{
-                count++ 
-                assert it.getAnnotation(Deprecated) 
+                count++
+                assert it.getAnnotation(Deprecated)
             }
             assert count == 3
         """

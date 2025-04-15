@@ -46,10 +46,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     public void setUp() {
         plainTool = new GroovyDocTool(new String[]{"src/test/groovy"});
 
-        xmlTool = makeXmlTool(new ArrayList<LinkArgument>(), new Properties());
-        xmlToolForTests = makeXmlTool(new ArrayList<LinkArgument>(), new Properties(), new String[] {"src/test/groovy", "src/test/resources", "../../src/test"});
+        xmlTool = makeXmlTool(new ArrayList<>(), new Properties());
+        xmlToolForTests = makeXmlTool(new ArrayList<>(), new Properties(), new String[] {"src/test/groovy", "src/test/resources", "../../src/test/groovy"});
 
-        ArrayList<LinkArgument> links = new ArrayList<LinkArgument>();
+        ArrayList<LinkArgument> links = new ArrayList<>();
         LinkArgument link = new LinkArgument();
         link.setHref("https://docs.oracle.com/javase/8/docs/api/");
         link.setPackages("java.,org.xml.,javax.,org.xml.");
@@ -77,7 +77,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     private GroovyDocTool makeHtmltool(ArrayList<LinkArgument> links, Properties props) {
         return new GroovyDocTool(
                 new FileSystemResourceManager("src/main/resources"), // template storage
-                new String[] {"src/test/groovy", "../../src/test"}, // source file dirs
+                new String[] {"src/test/groovy", "../../src/test/groovy"}, // source file dirs
                 GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
@@ -87,7 +87,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testPlainGroovyDocTool() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/GroovyDocToolTest.java");
         plainTool.add(srcList);
         GroovyRootDoc root = plainTool.getRootDoc();
@@ -113,7 +113,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testGroovyDocTheCategoryMethodClass() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("groovy/cli/picocli/CliBuilder.groovy");
         srcList.add("groovy/test/GroovyLogTestCase.groovy");
         srcList.add("groovy/mock/interceptor/StrictExpectation.groovy");
@@ -133,19 +133,19 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 categoryMethodDocument.indexOf("<method modifiers=\"public \" returns=\"boolean\" name=\"add\">") > 0);
 
         String packageDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/packageDocStructuredData.xml");
-        assertTrue("Failed to find 'packageDocStructuredData.xml' in generated output", packageDocument != null);
+        assertNotNull("Failed to find 'packageDocStructuredData.xml' in generated output", packageDocument);
         assertTrue(packageDocument.indexOf("<class name=\"GroovyCategorySupport\" />") > 0);
         assertTrue("Expected GroovyCategorySupport.CategoryMethod in:\n" + packageDocument, packageDocument.indexOf("<class name=\"GroovyCategorySupport.CategoryMethod\" />") > 0);
 
         String rootDocument = output.getText(MOCK_DIR + "/rootDocStructuredData.xml");
-        assertTrue("Failed to find 'rootDocStructuredData.xml' in generated output", rootDocument != null);
+        assertNotNull("Failed to find 'rootDocStructuredData.xml' in generated output", rootDocument);
         assertTrue(rootDocument.indexOf("<package name=\"org/codehaus/groovy/runtime\" />") > 0);
         assertTrue(rootDocument.indexOf("<class path=\"org/codehaus/groovy/runtime/GroovyCategorySupport\" name=\"GroovyCategorySupport\" />") > 0);
         assertTrue(rootDocument.indexOf("<class path=\"org/codehaus/groovy/runtime/GroovyCategorySupport.CategoryMethod\" name=\"GroovyCategorySupport.CategoryMethod\" />") > 0);
     }
 
     public void testConstructors() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/TestConstructors";
         srcList.add(base + ".groovy");
         xmlTool.add(srcList);
@@ -160,9 +160,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     public void testInterfaceConstructor() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         final String groovyInterface = "GroovyInterface1";
-        htmlTool.add(Arrays.asList(
-            base + "/"+ groovyInterface +".groovy"
-        ));
+        htmlTool.add(List.of(base + "/" + groovyInterface + ".groovy"));
 
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -175,7 +173,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testClassComment() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
@@ -187,7 +185,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testMethodComment() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/ClassWithMethodComment.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -197,7 +195,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testPackageName() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
@@ -209,7 +207,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testExtendsClauseWithoutSuperClassInTree() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
@@ -221,7 +219,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testExtendsClauseWithSuperClassInTree() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/Builder";
         srcList.add(base + ".java");
         srcList.add("groovy/util/BuilderSupport.java");
@@ -234,7 +232,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testInterfaceExtendsClauseWithMultipleInterfaces() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterfaceWithMultipleInterfaces.groovy");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaInterfaceWithMultipleInterfaces.java");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.groovy");
@@ -257,7 +255,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testImplementsClauseWithMultipleInterfaces() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.groovy");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.java");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.groovy");
@@ -280,7 +278,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testFullyQualifiedNamesInImplementsClause() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyClassWithMultipleInterfaces.groovy");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithMultipleInterfaces.java");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/GroovyInterface1.groovy");
@@ -299,7 +297,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testDefaultPackage() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("DefaultPackageClassSupport.java");
         xmlToolForTests.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -309,7 +307,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testJavaClassMultiCatch() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/MultiCatchExample";
         srcList.add(base + ".java");
         xmlToolForTests.add(srcList);
@@ -321,7 +319,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testStaticModifier() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/StaticModifier";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
@@ -333,7 +331,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testAnonymousInnerClassMethodsNotIncluded() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/ClassWithAnonymousInnerClass";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
@@ -341,11 +339,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
         String classWithAnonymousInnerClassDoc = output.getText(MOCK_DIR + "/" + base + ".html");
         assertNotNull("No GroovyDoc found for " + base, classWithAnonymousInnerClassDoc);
-        assertTrue("innerClassMethod found in: \"" + classWithAnonymousInnerClassDoc + "\"", !classWithAnonymousInnerClassDoc.contains("innerClassMethod"));
+        assertFalse("innerClassMethod found in: \"" + classWithAnonymousInnerClassDoc + "\"", classWithAnonymousInnerClassDoc.contains("innerClassMethod"));
     }
 
     public void testJavaClassWithDiamondOperator() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/JavaClassWithDiamond";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
@@ -357,7 +355,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testJavaStaticNestedClassWithDiamondOperator() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/JavaStaticNestedClassWithDiamond";
         srcList.add(base + ".java");
         xmlTool.add(srcList);
@@ -436,9 +434,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         testPropertiesFromGetterSetter("GeneratePropertyFromGetSet", "testBoolean2 properties should be there","<a href=\"#testBoolean2\">testBoolean2</a>", true);
     }
 
-    private void testPropertiesFromGetterSetter(String fileName,String assertMessage,String expected,boolean isTrue) throws Exception {
-        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), new Properties());
-        List<String> srcList = new ArrayList<String>();
+    private void testPropertiesFromGetterSetter(String fileName, String assertMessage,String expected,boolean isTrue) throws Exception {
+        htmlTool = makeHtmltool(new ArrayList<>(), new Properties());
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/";
         srcList.add(base + fileName + ".groovy");
         htmlTool.add(srcList);
@@ -452,8 +450,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     private void testVisibility(Properties props, boolean a, boolean b, boolean c, boolean d) throws Exception {
-        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
-        List<String> srcList = new ArrayList<String>();
+        htmlTool = makeHtmltool(new ArrayList<>(), props);
+        List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/ExampleVisibility";
         srcList.add(base + "G.groovy");
         srcList.add(base + "J.java");
@@ -488,7 +486,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testMultipleConstructorErrorBug() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/MultipleConstructorErrorBug.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -499,7 +497,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testReturnTypeResolution() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
         srcList.add("org/codehaus/groovy/groovydoc/GroovyClassDoc.java");
         xmlTool.add(srcList);
@@ -510,7 +508,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testParameterTypeResolution() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
         srcList.add("org/codehaus/groovy/groovydoc/GroovyPackageDoc.java");
         xmlTool.add(srcList);
@@ -532,7 +530,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[0],
                 new String[0],
                 new String[0],
-                new ArrayList<LinkArgument>(),
+                new ArrayList<>(),
                 props);
 
         assertEquals("'fileEncoding' falls back to 'charset' if not provided", expectedCharset, tool.properties.getProperty("fileEncoding"));
@@ -550,7 +548,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[0],
                 new String[0],
                 new String[0],
-                new ArrayList<LinkArgument>(),
+                new ArrayList<>(),
                 props);
 
         assertEquals("'charset' falls back to 'fileEncoding' if not provided", expectedCharset, tool.properties.getProperty("charset"));
@@ -566,7 +564,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[0],
                 new String[0],
                 new String[0],
-                new ArrayList<LinkArgument>(),
+                new ArrayList<>(),
                 new Properties());
 
         assertEquals("'charset' falls back to the default charset", expectedCharset, tool.properties.getProperty("charset"));
@@ -575,7 +573,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     // GROOVY-5940
     public void testWrongPackageNameInClassHierarchyWithPlainTool() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
 
         String fullPathBaseA = "org/codehaus/groovy/tools/groovydoc/testfiles/a/Base";
         srcList.add(fullPathBaseA + ".groovy");
@@ -622,7 +620,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     // GROOVY-5939
     public void testArrayPropertyLinkWithSelfReference() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/ArrayPropertyLink.groovy");
         htmlTool.add(srcList);
 
@@ -630,7 +628,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
         String arrayPropertyLinkDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/ArrayPropertyLink.html");
 
-        Pattern p = Pattern.compile("<a(.+?)ArrayPropertyLink.html'>(.+?)</a>\\[\\]");
+        Pattern p = Pattern.compile("<a(.+?)ArrayPropertyLink.html'>(.+?)</a>\\[]");
         Matcher m = p.matcher(arrayPropertyLinkDoc);
 
         assertTrue(m.find());
@@ -638,7 +636,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testClassesAreNotInitialized() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/staticInit/UsesClassesWithFailingStaticInit.groovy");
         htmlTool.add(srcList);
 
@@ -650,7 +648,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testArrayPropertyLinkWithExternalReference() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/PropertyLink.groovy");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/ArrayPropertyLink.groovy");
         htmlTool.add(srcList);
@@ -659,7 +657,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
         String propertyLinkDoc = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/testfiles/PropertyLink.html");
 
-        Pattern p = Pattern.compile("<a(.+?)ArrayPropertyLink.html'>(.+?)</a>\\[\\]");
+        Pattern p = Pattern.compile("<a(.+?)ArrayPropertyLink.html'>(.+?)</a>\\[]");
         Matcher m = p.matcher(propertyLinkDoc);
 
         assertTrue(m.find());
@@ -667,7 +665,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testInnerEnumReference() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
 
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/InnerEnum.groovy");
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/InnerClassProperty.groovy");
@@ -696,7 +694,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         htmlTool.renderToOutput(output, MOCK_DIR);
 
         final String groovydoc = output.getText(MOCK_DIR + "/" + base + "/"+ klass +".html");
-        assertTrue(groovydoc.matches("(?s).*<table .*summary=\"Enum constants summary table\".*>bar<.*<\\/table>.*"));
+        assertTrue(groovydoc.matches("(?s).*<table .*summary=\"Enum constants summary table\".*>bar<.*</table>.*"));
 
         final Matcher ctor = Pattern.compile(Pattern.quote("$INIT")).matcher(groovydoc);
 
@@ -705,7 +703,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testClassAliasing() throws Exception {
 
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Alias.groovy");
         htmlTool.add(srcList);
 
@@ -1028,9 +1026,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testJavaGenericsTitle() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
-        htmlTool.add(Arrays.asList(
-                base + "/Java.java"
-        ));
+        htmlTool.add(List.of(base + "/Java.java"));
 
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -1047,9 +1043,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testGroovyGenericsTitle() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
-        htmlTool.add(Arrays.asList(
-                base + "/Groovy.groovy"
-        ));
+        htmlTool.add(List.of(base + "/Groovy.groovy"));
 
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -1160,7 +1154,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/anno";
         Properties props = new Properties();
         props.put("phaseOverride", "7");
-        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
+        htmlTool = makeHtmltool(new ArrayList<>(), props);
         htmlTool.add(Arrays.asList(
                 base + "/Groovy.groovy",
                 base + "/Java.java"
@@ -1369,9 +1363,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
     public void testArray() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
-        htmlTool.add(Arrays.asList(
-            base + "/GroovyInterface1.groovy"
-        ));
+        htmlTool.add(List.of(base + "/GroovyInterface1.groovy"));
 
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -1389,13 +1381,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testScript() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
 
         Properties props = new Properties();
         props.put("packageScope", "true");
         props.put("phaseOverride", "7");
-        xmlTool = makeXmlTool(new ArrayList<LinkArgument>(), props);
+        xmlTool = makeXmlTool(new ArrayList<>(), props);
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
@@ -1415,7 +1407,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testScriptCommandLineOptions() throws Exception {
-        List<String> srcList = new ArrayList<String>();
+        List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/testfiles/Script.groovy");
 
         // default params
@@ -1430,7 +1422,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // -noscript case
         Properties props = new Properties();
         props.put("processScripts", "false");
-        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
+        htmlTool = makeHtmltool(new ArrayList<>(), props);
         htmlTool.add(srcList);
         output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -1440,7 +1432,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // -nomainforscript case
         props = new Properties();
         props.put("includeMainForScripts", "false");
-        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), props);
+        htmlTool = makeHtmltool(new ArrayList<>(), props);
         htmlTool.add(srcList);
         output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);

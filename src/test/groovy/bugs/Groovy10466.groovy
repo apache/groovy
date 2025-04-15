@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -49,7 +49,7 @@ class Groovy10466 {
             '''
             def b = new File(parentDir, 'B.groovy')
             b.write '''
-                class B extends groovy.bugs.Groovy10466 {
+                class B extends bugs.Groovy10466 {
                 }
             '''
 

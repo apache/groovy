@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -37,6 +37,6 @@ class Groovy3868Bug extends GroovyTestCase {
         if(klazz == Character) num = num as char // Character.valueOf(String) is not there
 
         assert result == klazz.valueOf(num)
-        assert result.class == klazz 
+        assert result.class == klazz
     }
 }

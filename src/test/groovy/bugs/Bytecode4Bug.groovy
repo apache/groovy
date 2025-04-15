@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -33,13 +33,13 @@ class Bytecode4Bug extends GroovyTestCase {
 
     void testUsingProperty() {
         count = 0
-        getCollection().each { count += it }       
+        getCollection().each { count += it }
         assert count == 10
     }
 
     void testUsingIncrementingProperty() {
         count = 0
-        getCollection().each { count++ }       
+        getCollection().each { count++ }
         assert count == 4
     }
 

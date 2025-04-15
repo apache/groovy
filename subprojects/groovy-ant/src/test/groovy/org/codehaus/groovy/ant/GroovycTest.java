@@ -79,7 +79,7 @@ final class GroovycTest {
 
     private String getTargetDirectory() {
         try {
-            return Paths.get(getClass().getResource(".").toURI()).toString() + File.separator;
+            return Paths.get(getClass().getResource(getClass().getSimpleName() + ".class").toURI()).getParent() + File.separator;
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -87,7 +87,7 @@ final class GroovycTest {
 
     private void ensureNotPresent(final String classname) {
         if (!(new File(getTargetDirectory() + getClass().getSimpleName() + ".class")).exists()) {
-            fail("Class file for GroovycTest does not exist and should.");
+            fail("Class file for GroovycTest does not exist and should. Looked in " + getTargetDirectory() + getClass().getSimpleName() + ".class");
         }
         if ((new File(getTargetDirectory() + classname + ".class")).exists()) {
             fail("Class file for " + classname + " already exists and shouldn't.");

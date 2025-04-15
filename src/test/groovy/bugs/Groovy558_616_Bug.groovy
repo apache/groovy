@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -51,7 +51,7 @@ class Groovy558_616_Bug extends GroovyTestCase {
     }
 
     void testFooClass() {
-        assert groovy.bugs.Groovy558_616_Bug.class == Groovy558_616_Bug
+        assert bugs.Groovy558_616_Bug.class == Groovy558_616_Bug
         assert Groovy558_616_Bug != Class
         def f = new Groovy558_616_Bug()
         assert f.class == Groovy558_616_Bug

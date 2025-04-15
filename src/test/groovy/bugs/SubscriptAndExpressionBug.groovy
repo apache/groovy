@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -82,7 +82,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
 
     void testBooleanExpression() {
        int[] a = new int[1]
-       assert (a[0] = 42) == 42 
+       assert (a[0] = 42) == 42
        assert a[0] == 42
     }
 }

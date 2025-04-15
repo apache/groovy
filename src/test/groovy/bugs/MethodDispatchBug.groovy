@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -52,11 +52,11 @@ class MethodDispatchBug extends GroovyTestCase {
 
     void testListExpansion() {
        // there was a bug discovered while looking at GROOVY-1803
-       // a list expansion was cached like 
+       // a list expansion was cached like
        // methodWithDefaults(List) -> methodWithDefaults(Object,Object,Object)
-       // but this cached version can't handle lists with an arbitrary length 
+       // but this cached version can't handle lists with an arbitrary length
        // of parameters, resulting in the second call here to fail
        assert methodWithDefaults([1,10,100]) == 111
-       assert methodWithDefaults([1,10]) == 1011    
-    }    
+       assert methodWithDefaults([1,10]) == 1011
+    }
 }

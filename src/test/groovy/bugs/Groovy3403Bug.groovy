@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.mock.interceptor.StubFor
 import groovy.test.GroovyTestCase
@@ -41,7 +41,7 @@ class Groovy3403Bug extends GroovyTestCase {
         }
 
         // the following stubbed call is on stub2 and its demand count should be separate.
-        // Currently due to caching of MockProxyMetaClass, it gets counted towards stub1 demands 
+        // Currently due to caching of MockProxyMetaClass, it gets counted towards stub1 demands
         // and throws "End of demands" exception
         stub2.use {
             assert ot.doTest() == "stubbed call made - 2"

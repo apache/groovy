@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -34,7 +34,7 @@ class Groovy4415Bug extends GroovyTestCase {
 
         // the bug report is when the interface is written in Java
         assertScript '''
-            public class A implements groovy.bugs.Groovy4415BugSupport<Long> {
+            public class A implements bugs.Groovy4415BugSupport<Long> {
                 Long id
             }
             def o = new A(id:666)

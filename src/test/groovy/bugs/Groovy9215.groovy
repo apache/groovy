@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-package groovy.bugs
+package bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test

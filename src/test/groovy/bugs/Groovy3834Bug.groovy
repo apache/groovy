@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -32,7 +32,7 @@ class AClassWithMethodMissingMethod {
     int count = 0
     def methodMissing(String name, args) {
         count++
-        throw new MissingMethodException(name, AClassWithMethodMissingMethod, args)        
+        throw new MissingMethodException(name, AClassWithMethodMissingMethod, args)
     }
 
 }

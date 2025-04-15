@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy8966
+package bugs.groovy8966
 
 import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic

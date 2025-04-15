@@ -16,7 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
+
+import groovy.bugs.TestSupport
 
 class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
     int[] ia;  // type is not necessary

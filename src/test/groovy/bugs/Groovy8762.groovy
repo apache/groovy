@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -36,7 +36,7 @@ final class Groovy8762 {
                     Inner(int i) {
                         super(null, null)
                         x = i
-                        this.y = i // NPE at groovy.bugs.Outer$Inner.<init>
+                        this.y = i // NPE at bugs.Outer$Inner.<init>
                     }
 
                     def doCall(... args) {

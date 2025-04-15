@@ -19,7 +19,7 @@
 /**
  */
 
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -34,7 +34,7 @@ class Groovy965_Bug extends GroovyTestCase {
   void testUnicodeMëthødName ( ) { }
 
   void testUnicodeClassName ( ) {
-    def object = new Bläh ( ) 
+    def object = new Bläh ( )
     assert true
   }
 }
