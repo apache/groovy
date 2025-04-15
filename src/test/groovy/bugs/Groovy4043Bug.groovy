@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import gls.CompilableTestSupport
 
@@ -30,6 +30,6 @@ class Groovy4043Bug extends CompilableTestSupport {
             class C4043 extends A4043 {
                 B4043 b
             }
-        """        
+        """
     }
 }

@@ -18,7 +18,7 @@
  */
 
 
-package groovy.bugs
+package bugs
 
 import org.codehaus.groovy.tools.stubgenerator.StringSourcesStubTestCase
 

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -26,7 +26,7 @@ class Groovy4069Bug extends GroovyTestCase {
         def shell = new GroovyShell()
         shell.evaluate """
             ExpandoMetaClass.enableGlobally()
-            try {            
+            try {
                 // ChildX.metaClass
                 def oldMetaClass = ParentX.metaClass
 
@@ -38,7 +38,7 @@ class Groovy4069Bug extends GroovyTestCase {
 
                 assert new ChildX([:]).class.name == 'ChildX'
 
-                GroovySystem.metaClassRegistry.removeMetaClass(ParentX) 
+                GroovySystem.metaClassRegistry.removeMetaClass(ParentX)
                 GroovySystem.metaClassRegistry.setMetaClass(ParentX, oldMetaClass)
 
                 assert new ChildX([:]).class.name == 'ChildX'
@@ -66,7 +66,7 @@ class Groovy4069Bug extends GroovyTestCase {
 
                 assert new ChildX([:]).class.name == 'ChildX'
 
-                GroovySystem.metaClassRegistry.removeMetaClass(ParentX) 
+                GroovySystem.metaClassRegistry.removeMetaClass(ParentX)
                 GroovySystem.metaClassRegistry.setMetaClass(ParentX, oldMetaClass)
 
                 assert new ChildX([:]).class.name == 'ChildX'
@@ -82,7 +82,7 @@ class Groovy4069Bug extends GroovyTestCase {
         def shell = new GroovyShell()
         shell.evaluate """
             ExpandoMetaClass.enableGlobally()
-            try {            
+            try {
                 // ChildY.metaClass
                 def oldMetaClass = ChildY.metaClass
 
@@ -94,7 +94,7 @@ class Groovy4069Bug extends GroovyTestCase {
 
                 assert new ChildY([:]).class.name == 'ParentY'
 
-                GroovySystem.metaClassRegistry.removeMetaClass(ChildY) 
+                GroovySystem.metaClassRegistry.removeMetaClass(ChildY)
                 GroovySystem.metaClassRegistry.setMetaClass(ChildY, oldMetaClass)
 
                 assert new ChildY([:]).class.name == 'ChildY'
@@ -110,7 +110,7 @@ class Groovy4069Bug extends GroovyTestCase {
         def shell = new GroovyShell()
         shell.evaluate """
             ExpandoMetaClass.enableGlobally()
-            try {            
+            try {
                 ChildY.metaClass
                 def oldMetaClass = ChildY.metaClass
 
@@ -122,7 +122,7 @@ class Groovy4069Bug extends GroovyTestCase {
 
                 assert new ChildY([:]).class.name == 'ParentY'
 
-                GroovySystem.metaClassRegistry.removeMetaClass(ChildY) 
+                GroovySystem.metaClassRegistry.removeMetaClass(ChildY)
                 GroovySystem.metaClassRegistry.setMetaClass(ChildY, oldMetaClass)
 
                 assert new ChildY([:]).class.name == 'ChildY'

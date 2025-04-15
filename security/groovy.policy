@@ -173,14 +173,14 @@ grant codeBase "file:/groovy/security/javax/print/allow" {
  * expected to be missing by the test case.  It is here as a comment for
  * information.
  */
-grant codeBase "file:${user.dir}/src/test/-" {
+grant codeBase "file:${user.dir}/src/test/groovy/-" {
     // Required by most groovy scripts during execution because of the heavy use of reflection/
     // introspection.  The groovy code could potentially be changed to eliminate this requirement
     // by adding privileged operations in many places.
     permission java.lang.RuntimePermission "accessDeclaredMembers";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/security/forbiddenCodeBase.gvy" {
+grant codeBase "file:${user.dir}/src/test/groovy/groovy/security/forbiddenCodeBase.gvy" {
     //The following grant is commented out so that the test case will throw an AccessControlException
     //permission groovy.security.GroovyCodeSourcePermission "/groovy/security/forbiddenCodeBase";
 };
@@ -196,11 +196,11 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/BadScriptNameBug.groovy" {
     permission java.util.PropertyPermission "groovy.compiler.strictNames", "read";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/ClosureMethodTest.groovy" {
+grant codeBase "file:${user.dir}/src/test/groovy/groovy/ClosureMethodTest.groovy" {
     permission java.lang.RuntimePermission "getClassLoader";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/ClosureWithDefaultParamTest.groovy" {
+grant codeBase "file:${user.dir}/src/test/groovy/groovy/ClosureWithDefaultParamTest.groovy" {
     permission java.lang.RuntimePermission "getClassLoader";
     permission java.io.FilePermission "src${/}test${/}-", "read";
 
@@ -223,7 +223,7 @@ grant codeBase "file:${user.dir}/src/test/groovy/bugs/ConstructorBug.groovy" {
     permission java.io.FilePermission "${user.dir}${/}target${/}classes${/}test${/}groovy${/}bugs${/}TestDerived.class", "read";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/script/ScriptTest.groovy" {
+grant codeBase "file:${user.dir}/src/test/groovy/groovy/script/ScriptTest.groovy" {
     permission java.io.FilePermission "src${/}test${/}groovy${/}-", "read";
     permission groovy.security.GroovyCodeSourcePermission "/groovy/shell";
 
@@ -244,7 +244,7 @@ grant codeBase "file:${user.dir}/src/test/groovy/script/ScriptTest.groovy" {
     permission java.util.PropertyPermission "line.separator", "read";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/script/EvalInScript.groovy" {
+grant codeBase "file:${user.dir}/src/test/groovy/groovy/script/EvalInScript.groovy" {
     permission java.io.FilePermission "src${/}test${/}groovy${/}script${/}HelloWorld.groovy", "read";
     permission groovy.security.GroovyCodeSourcePermission "/groovy/shell";
 
@@ -252,11 +252,11 @@ grant codeBase "file:${user.dir}/src/test/groovy/script/EvalInScript.groovy" {
     permission java.util.PropertyPermission "user.dir", "read";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/script/MethodTestScript.groovy" {
+grant codeBase "file:${user.dir}/src/test/groovy/groovy/script/MethodTestScript.groovy" {
     permission java.lang.RuntimePermission "accessClassInPackage.sun.reflect";
 };
 
-grant codeBase "file:${user.dir}/src/test/groovy/script/StreamClassloaderInScriptTest.groovy" {
+grant codeBase "file:${user.dir}/src/test/groovy/groovy/script/StreamClassloaderInScriptTest.groovy" {
     permission groovy.security.GroovyCodeSourcePermission "/groovy/shell";
     permission java.io.FilePermission "${user.dir}${/}blahblah.dat", "read,write,delete";
 };

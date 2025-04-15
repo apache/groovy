@@ -16,9 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
-public class Groovy3465Helper {
+class Groovy3465Helper {
     static func(arg) {
         assert arg instanceof Map
         assert arg.size() == 2

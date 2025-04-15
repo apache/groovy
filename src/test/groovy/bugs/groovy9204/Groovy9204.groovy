@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9204
+package bugs.groovy9204
 
 import groovy.test.GroovyTestCase
 
 class Groovy9204 extends GroovyTestCase {
     void testGenerics() {
         assertScript '''
-            package groovy.bugs.groovy9204
+            package bugs.groovy9204
             @groovy.transform.CompileStatic
             class ArrayListTest extends Three {
                 def test() {

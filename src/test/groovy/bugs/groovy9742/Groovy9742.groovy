@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9742
+package bugs.groovy9742
 
 import org.junit.jupiter.api.Test
 
@@ -32,7 +32,7 @@ class Groovy9742 {
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
         Future future = fixedThreadPool.submit((Callable<Class<?>>) () -> {
             DelegatingGroovyClassLoader ccl = new DelegatingGroovyClassLoader(Groovy9742.class.getClassLoader())
-            Class<?> clz = ccl.loadClass("groovy.bugs.groovy9742.Foo")
+            Class<?> clz = ccl.loadClass("bugs.groovy9742.Foo")
             assert ccl.loadedCount == 2
             return clz
         })

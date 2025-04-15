@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import org.apache.groovy.parser.antlr4.TestUtils
 import org.codehaus.groovy.ast.ModuleNode

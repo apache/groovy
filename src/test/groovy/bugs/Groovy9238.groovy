@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.transform.AnnotationCollector
 import groovy.transform.CompileStatic
@@ -31,7 +31,7 @@ final class Groovy9238 {
     @Test
     void testAnnotationCollectorOfCollectedAnnotations() {
         assertScript '''
-            import groovy.bugs.Groovy9238.Collector
+            import bugs.Groovy9238.Collector
 
             @Collector
             class Pogo9238 {

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
@@ -67,7 +67,7 @@ final class Groovy8964 {
     @Test // GROOVY-9737
     void testInstanceMethodNotMaskedByStaticMethodWithSameNumberOfArgs2() {
         assertScript '''
-            import groovy.bugs.Groovy8964.A
+            import bugs.Groovy8964.A
             @groovy.transform.CompileStatic
             class C extends A {
                 void test() {

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import gls.CompilableTestSupport
 
@@ -34,5 +34,5 @@ class Groovy4081Bug extends CompilableTestSupport {
 
             new Alphabet(2)
         """
-    }    
+    }
 }

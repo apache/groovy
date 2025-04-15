@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import gls.CompilableTestSupport
 
@@ -29,7 +29,7 @@ class Groovy4025Bug extends CompilableTestSupport {
                 }
             }
         """
-    }    
+    }
     public void testAbstractMethodInAClass() {
         shouldNotCompile """
             abstract class Test {
@@ -38,5 +38,5 @@ class Groovy4025Bug extends CompilableTestSupport {
                 }
             }
         """
-    }    
+    }
 }

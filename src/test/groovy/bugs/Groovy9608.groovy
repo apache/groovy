@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import org.junit.Test
 
@@ -34,7 +34,7 @@ final class Groovy9608 {
     @Test
     void testGetFieldOnSelf() {
         assertScript '''
-            import groovy.bugs.Groovy9608.*
+            import bugs.Groovy9608.*
 
             def a = new A()
             def ax = a.metaClass.getAttribute(A, a, 'x', false)
@@ -49,7 +49,7 @@ final class Groovy9608 {
     @Test
     void testGetFieldOnSuper() {
         assertScript '''
-            import groovy.bugs.Groovy9608.*
+            import bugs.Groovy9608.*
             import org.codehaus.groovy.runtime.ScriptBytecodeAdapter
 
             def b = new B()
@@ -64,7 +64,7 @@ final class Groovy9608 {
     @Test
     void testGetPropertyOnSelf() {
         assertScript '''
-            import groovy.bugs.Groovy9608.*
+            import bugs.Groovy9608.*
 
             def a = new A()
             def ax = a.metaClass.getProperty(A, a, 'x', false, false)
@@ -79,7 +79,7 @@ final class Groovy9608 {
     @Test // GROOVY-9609
     void testGetPropertyOnSuper() {
         assertScript '''
-            import groovy.bugs.Groovy9608.*
+            import bugs.Groovy9608.*
             import org.codehaus.groovy.runtime.ScriptBytecodeAdapter
 
             def b = new B()

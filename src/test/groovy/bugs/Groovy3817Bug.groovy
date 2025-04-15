@@ -16,22 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import gls.CompilableTestSupport
 
 class Groovy3817Bug extends CompilableTestSupport {
     void testUsageOfRangeExpressionJustAfterTryCatch() {
         shouldCompile """
-            try { println "nix" } 
+            try { println "nix" }
             catch ( Exception e ) { e.printStackTrace() }
             (1..10).each{ print it }
         """
 
         shouldCompile """
-            try { println "nix" } 
-            catch ( Exception e ) { 
-                e.printStackTrace() 
+            try { println "nix" }
+            catch ( Exception e ) {
+                e.printStackTrace()
             }
             (1..10).each{ print it }
         """

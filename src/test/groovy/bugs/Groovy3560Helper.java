@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs;
+package bugs;
 
 public class Groovy3560Helper {
     public static int m1(IGroovy3560... ifcs) {

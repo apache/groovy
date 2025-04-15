@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation
@@ -25,25 +25,25 @@ class Groovy3511Bug extends GroovyTestCase {
     final SHOULD_HAVE_FAILED = "The conversion above should have failed"
     void testExceptionMessageStringToNumberConversion() {
         try {
-            Double test = "Hello" 
+            Double test = "Hello"
             fail(SHOULD_HAVE_FAILED)
         } catch (ex) {
             verifyExceptionMsg(ex, Double.class.name)
         }
         try {
-            Float test = "Hello" 
+            Float test = "Hello"
             fail(SHOULD_HAVE_FAILED)
         } catch (ex) {
             verifyExceptionMsg(ex, Float.class.name)
         }
         try {
-            DefaultTypeTransformation.castToNumber("Hello", Long.class) 
+            DefaultTypeTransformation.castToNumber("Hello", Long.class)
             fail(SHOULD_HAVE_FAILED)
         } catch (ex) {
             verifyExceptionMsg(ex, Long.class.name)
         }
         try {
-            DefaultTypeTransformation.castToNumber("Hello") 
+            DefaultTypeTransformation.castToNumber("Hello")
             fail(SHOULD_HAVE_FAILED)
         } catch (ex) {
             verifyExceptionMsg(ex, Number.class.name)
@@ -51,6 +51,6 @@ class Groovy3511Bug extends GroovyTestCase {
     }
 
     def verifyExceptionMsg(ex, className) {
-        assertTrue ex.message.contains(className)       
+        assertTrue ex.message.contains(className)
     }
 }

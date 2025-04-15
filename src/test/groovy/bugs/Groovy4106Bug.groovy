@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle
 import groovy.test.GroovyTestCase

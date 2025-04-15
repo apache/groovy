@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy8953
+package bugs.groovy8953
 
 import groovy.test.GroovyTestCase
 
@@ -25,7 +25,7 @@ class SyntheticParameterAnnotationsBug extends GroovyTestCase {
         assertScript '''
             import org.codehaus.groovy.control.CompilerConfiguration
 
-            def script = "assert groovy.bugs.groovy8953.Enum8953.A.value == 'value'"
+            def script = "assert bugs.groovy8953.Enum8953.A.value == 'value'"
             def config = new CompilerConfiguration()
             config.optimizationOptions.asmResolving = false
             new GroovyShell(config).evaluate(script, "bug8953_dummyName.groovy")

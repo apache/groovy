@@ -16,15 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
 class Groovy8819Bug extends GroovyTestCase {
     void testAccessStaticFieldInThisConstructor() {
         assertScript '''
-            class Parent { 
-                static final String DEFAULT = 'default' 
+            class Parent {
+                static final String DEFAULT = 'default'
             }
             class Child extends Parent {
                 String value
@@ -41,8 +41,8 @@ class Groovy8819Bug extends GroovyTestCase {
             import groovy.transform.CompileStatic
 
             @CompileStatic
-            class Parent { 
-                static final String DEFAULT = 'default' 
+            class Parent {
+                static final String DEFAULT = 'default'
             }
 
             @CompileStatic

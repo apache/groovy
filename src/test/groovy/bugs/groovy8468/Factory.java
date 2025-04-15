@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy8468;
+package bugs.groovy8468;
 
 public interface Factory {
   public <T extends Face> T[] makeArray(Class<T> clazz);

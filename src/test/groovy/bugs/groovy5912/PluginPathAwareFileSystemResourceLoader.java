@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-package groovy.bugs.groovy5912;
+package bugs.groovy5912;
 
 import java.util.Collection;
 

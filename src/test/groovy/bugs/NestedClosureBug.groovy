@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -26,7 +26,7 @@ class NestedClosureBug extends GroovyTestCase {
 
     void testBug() {
         def a = 123
-        getValues().each { 
+        getValues().each {
             it.each {
                 assert a == 123
             }

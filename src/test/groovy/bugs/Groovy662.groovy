@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
@@ -45,7 +45,7 @@ final class Groovy662 {
     @Test
     void testJavaClassAsScript() {
         assertScript '''
-            def object = new groovy.bugs.Groovy662_JavaClass()
+            def object = new bugs.Groovy662_JavaClass()
             assert object.getMyProperty() == 'Hello'
             assert object.@myProperty == 'Hello'
             assert object.myProperty == 'Hello'
@@ -73,7 +73,7 @@ final class Groovy662 {
     @Test
     void testGroovyClassAsScript() {
         assertScript '''
-            def object = new groovy.bugs.Groovy662_GroovyClass()
+            def object = new bugs.Groovy662_GroovyClass()
             assert object.getMyProperty() == 'Hello'
             assert object.@myProperty == 'Hello'
             assert object.myProperty == 'Hello'

@@ -16,11 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 /**
  * A base class for testing constructors
- * 
+ *
  */
 
  class TestBase {

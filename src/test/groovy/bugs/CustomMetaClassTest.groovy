@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -69,7 +69,7 @@ class CustomMetaClassTest extends GroovyTestCase {
     }
 
     void testNormalCreated() {
-        assert groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass == metaClass.class
+        assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == metaClass.class
         assert MetaClassImpl == metaClass.delegate.class
     }
 
@@ -77,19 +77,19 @@ class CustomMetaClassTest extends GroovyTestCase {
         GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
         ExpandoMetaClass.enableGlobally()
         metaClass = GroovySystem.metaClassRegistry.getMetaClass(CustomMetaClassTest)
-        assert metaClass instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
+        assert metaClass instanceof groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass
         assert ExpandoMetaClass == metaClass.delegate.class
         ExpandoMetaClass.disableGlobally()
 
         GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
         metaClass = null
         assert getMetaClass() instanceof org.codehaus.groovy.runtime.HandleMetaClass
-        assert groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
+        assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
     }
 
     void testStaticMetaClass() {
         // Custom metaclass created
-        assert groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass == metaClass.class
+        assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == metaClass.class
         // delegated to MCImpl
         assert MetaClassImpl == metaClass.delegate.class
 
@@ -98,7 +98,7 @@ class CustomMetaClassTest extends GroovyTestCase {
         // It should still be custom
         assert org.codehaus.groovy.runtime.HandleMetaClass == handle.class
         // delegated to CustomMetaClassTestMetaClass
-        assert groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass == handle.delegate.class
+        assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == handle.delegate.class
 
         // object should still hold reference to old one
         assert MetaClassImpl == metaClass.delegate.class
@@ -106,7 +106,7 @@ class CustomMetaClassTest extends GroovyTestCase {
         metaClass = null
         // should still be default one
         assert org.codehaus.groovy.runtime.HandleMetaClass == getMetaClass().class
-        assert groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
+        assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
 
         handle.toString = {
             -> "I am modified"
@@ -127,7 +127,7 @@ class CustomMetaClassTest extends GroovyTestCase {
         GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
         metaClass = null
         assert getMetaClass() instanceof org.codehaus.groovy.runtime.HandleMetaClass
-        assert groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
+        assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
     }
 
 }

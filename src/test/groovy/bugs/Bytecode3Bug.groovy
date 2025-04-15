@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -35,7 +35,7 @@ class Bytecode3Bug extends GroovyTestCase {
     }
 
     void doLoop(args, m) {
-        args.each { 
+        args.each {
             m.put(it, count++)
         }
     }

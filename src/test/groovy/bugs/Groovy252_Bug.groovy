@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -43,15 +43,15 @@ class Groovy252_Bug extends GroovyTestCase {
             return null
          else
             return null
-    } 
+    }
 
     def g() {
          ++count
          return null
-    } 
+    }
 
     def h() {
          ++count
          return null
-    } 
+    }
 }

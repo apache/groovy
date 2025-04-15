@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
 class GuillaumesBug extends GroovyTestCase {
 
     void testBug() {
-        if (true) 
+        if (true)
             println("true")
     }
 }

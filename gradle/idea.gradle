@@ -113,7 +113,7 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)idea/ }) {
                         groovyCompilerConfig = node.component.find { it.'@name' == 'GroovyCompilerConfiguration' }
                     }
                     def excludeNode = groovyCompilerConfig.excludes[0]
-                    ['/src/test/org/codehaus/groovy/transform/DelegateTransformTest.groovy',
+                    ['/src/test/groovy/org/codehaus/groovy/transform/DelegateTransformTest.groovy',
                      '/src/test/groovy/bugs/Groovy593_Bug.groovy'].each { excludedFile ->
                         def url = "file://\$PROJECT_DIR\$$excludedFile"
                         if (!excludeNode.file.any { it.'@url' == url }) {

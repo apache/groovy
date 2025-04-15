@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -26,7 +26,7 @@ class Bytecode5Bug extends GroovyTestCase {
 
     void testUsingLocalVar() {
         def c = 0
-        getCollection().each { c += it }       
+        getCollection().each { c += it }
         assert c == 10
     }
 

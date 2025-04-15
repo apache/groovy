@@ -1109,7 +1109,7 @@ type checking extensions and AST transformations.
 
 Examples of real life type checking extensions are easy to find. You can download the source code for Groovy and
 take a look at the
-https://github.com/apache/groovy/blob/master/src/test/groovy/transform/stc/TypeCheckingExtensionsTest.groovy[TypeCheckingExtensionsTest]
+https://github.com/apache/groovy/blob/master/src/test/groovy/groovy/transform/stc/TypeCheckingExtensionsTest.groovy[TypeCheckingExtensionsTest]
 class which is linked to
 https://github.com/apache/groovy/tree/master/src/test-resources/groovy/transform/stc[various extension scripts].
 

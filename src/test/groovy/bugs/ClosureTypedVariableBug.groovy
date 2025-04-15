@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -70,9 +70,9 @@ class ClosureTypedVariableBug extends GroovyTestCase {
 
     void testDoubleSlotReference() {
         // there was a bug that the local variable index
-        // was wrong set for a closure shared variable. 
+        // was wrong set for a closure shared variable.
         // One slot should have be used and one was used sometimes
-        // Thus resulting in sometimes assuming a wrong index 
+        // Thus resulting in sometimes assuming a wrong index
         double d1 = 1.0d
         double d2 = 10.0d
         1.times { d1=d1*d2 }
