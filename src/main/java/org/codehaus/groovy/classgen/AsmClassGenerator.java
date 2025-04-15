@@ -1122,11 +1122,12 @@ public class AsmClassGenerator extends ClassGenerator {
         String propertyName = pexp.getPropertyAsString();
         Expression objectExpression = pexp.getObjectExpression();
 
-        if (objectExpression instanceof ClassExpression && "this".equals(propertyName)) {
-            // we have something like A.B.this, and need to make it
-            // into this.this$0.this$0, where this.this$0 returns
-            // A.B and this.this$0.this$0 return A.
-            ClassNode type = objectExpression.getType();
+        ClassNode type = objectExpression.getType();
+        if (objectExpression instanceof ClassExpression && !type.isInterface()
+                && ("this".equals(propertyName) || "super".equals(propertyName))) {
+            // we have something like A.B.this and need to make it
+            // into this.this$0.this$0, where this.this$0 produces
+            // A.B and this.this$0.this$0 produces A.
             if (controller.getCompileStack().isInSpecialConstructorCall() && type.equals(classNode.getOuterClass())) {
                 // Outer.this in a special constructor call
                 ConstructorNode ctor = controller.getConstructorNode();

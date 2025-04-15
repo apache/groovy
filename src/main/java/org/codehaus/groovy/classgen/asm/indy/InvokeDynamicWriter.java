@@ -132,7 +132,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
     private void makeIndyCall(final MethodCallerMultiAdapter adapter, final Expression origReceiver, final boolean implicitThis, final boolean safe, final String methodName, final Expression arguments) {
         OperandStack operandStack = controller.getOperandStack();
 
-        Expression receiver = correctReceiverForInterfaceCall(origReceiver, operandStack);
+        Expression receiver = correctReceiverForInterfaceCall(origReceiver);
         StringBuilder sig = new StringBuilder(prepareIndyCall(receiver, implicitThis));
 
         Label end = null;
@@ -167,7 +167,6 @@ public class InvokeDynamicWriter extends InvocationWriter {
 
         String callSiteName = METHOD.getCallSiteName();
         if (adapter == null) callSiteName = INIT.getCallSiteName();
-        // receiver != origReceiver interface default method call
         if (receiver != origReceiver) callSiteName = INTERFACE.getCallSiteName();
 
         int flags = getMethodCallFlags(adapter, false, containsSpreadExpression);
@@ -177,19 +176,19 @@ public class InvokeDynamicWriter extends InvocationWriter {
         if (end != null) controller.getMethodVisitor().visitLabel(end);
     }
 
-    private Expression correctReceiverForInterfaceCall(Expression exp, OperandStack operandStack) {
-        if (exp instanceof PropertyExpression) {
-            PropertyExpression pexp = (PropertyExpression) exp;
-            if (pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString())) {
-                return bytecodeX(pexp.getObjectExpression().getType(), mv -> mv.visitIntInsn(Opcodes.ALOAD, 0));
-            } else if (pexp.getObjectExpression() instanceof ClassExpression && "this".equals(pexp.getPropertyAsString())) {
-                ClassExpression ce = (ClassExpression) pexp.getObjectExpression();
-                if (ce.getType().isInterface()) {
-                    return bytecodeX(pexp.getObjectExpression().getType(), mv -> mv.visitIntInsn(Opcodes.ALOAD, 0));
+    private Expression correctReceiverForInterfaceCall(final Expression receiver) {
+        if (receiver instanceof PropertyExpression) {
+            PropertyExpression pexp = (PropertyExpression) receiver;
+            if (pexp.getObjectExpression() instanceof ClassExpression
+                     && pexp.getProperty() instanceof ConstantExpression) {
+                String name = pexp.getProperty().getText();
+                ClassNode type = pexp.getObjectExpression().getType();
+                if ((name.equals("this") || name.equals("super")) && type.isInterface()) {
+                    return bytecodeX(type, mv -> mv.visitIntInsn(Opcodes.ALOAD, 0)); // load this with type
                 }
             }
         }
-        return exp;
+        return receiver;
     }
 
     private static int getMethodCallFlags(final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spread) {
