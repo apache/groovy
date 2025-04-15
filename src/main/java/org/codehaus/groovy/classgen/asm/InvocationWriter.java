@@ -248,7 +248,7 @@ public class InvocationWriter {
         return true;
     }
 
-    private boolean callSuperDefault(ClassNode enclosingClass, MethodNode target, Expression receiver) {
+    private boolean callSuperDefault(final ClassNode enclosingClass, final MethodNode target, final Expression receiver) {
         ClassNode declaringClass = target.getDeclaringClass();
         if (declaringClass.isInterface() && enclosingClass.implementsInterface(declaringClass)) {
             return isClassWithSuper(receiver);
@@ -256,10 +256,18 @@ public class InvocationWriter {
         return false;
     }
 
-    private boolean isClassWithSuper(Expression exp) {
+    private boolean isClassWithSuper(final Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pexp = (PropertyExpression) exp;
             return pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString());
+        }
+        return false;
+    }
+
+    private boolean isOuterClassSuper(final Expression exp) {
+        if (isClassWithSuper(exp)) {
+            PropertyExpression pexp = (PropertyExpression) exp;
+            return !pexp.getObjectExpression().getType().isInterface();
         }
         return false;
     }
@@ -481,7 +489,7 @@ public class InvocationWriter {
             if (isFunctionalInterface(type)) call = transformToRealMethodCall(call, type);
         }
         MethodCallerMultiAdapter adapter = invokeMethod;
-        if (isSuperExpression(receiver)) {
+        if (isSuperExpression(receiver) || isOuterClassSuper(receiver)) { // GROOVY-11611
             adapter = invokeMethodOnSuper;
         } else if (isThisExpression(receiver)) {
             adapter = invokeMethodOnCurrent;

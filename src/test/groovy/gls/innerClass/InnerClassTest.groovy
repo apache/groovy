@@ -1272,6 +1272,30 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-11611
+    @Test
+    void testUsageOfOuterMethodOverridden3() {
+        assertScript '''
+            class C {
+                String value() { 'C' }
+                static class D extends C {
+                    @Override
+                    String value() {
+                        super.value() + 'D'
+                    }
+                    final class B {
+                        def m() {
+                            'B' + D.super.value()
+                        }
+                    }
+                }
+            }
+            def d = new C.D()
+            def b = new C.D.B(d)
+            assert b.m() == 'BC'
+        '''
+    }
+
     @Test
     void testUsageOfOuterType() {
         assertScript '''
