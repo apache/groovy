@@ -27,7 +27,7 @@ final class Groovy11046 {
 
     @Test
     void testMissingDependency1() {
-        // throws NoClassDefFoundError: com.lmax.disruptor.EventTranslatorVararg
+        // (previously) throws NoClassDefFoundError: com.lmax.disruptor.EventTranslatorVararg
         assertScript '''
             @Grab('org.apache.logging.log4j:log4j-core:2.22.0')
             org.apache.logging.log4j.core.async.AsyncLogger log
