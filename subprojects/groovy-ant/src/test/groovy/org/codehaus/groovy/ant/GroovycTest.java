@@ -87,7 +87,7 @@ final class GroovycTest {
 
     private void ensureNotPresent(final String classname) {
         if (!(new File(getTargetDirectory() + getClass().getSimpleName() + ".class")).exists()) {
-            fail("Class file for GroovycTest does not exist and should. Looked in " + getTargetDirectory() + getClass().getSimpleName() + ".class");
+            fail("Class file for GroovycTest does not exist and should.");
         }
         if ((new File(getTargetDirectory() + classname + ".class")).exists()) {
             fail("Class file for " + classname + " already exists and shouldn't.");
