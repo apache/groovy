@@ -34,7 +34,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     void testNonStaticExtensionMethod() {
         assertScript '''
             def str = 'This is a string'
-            // reverseToUpperCase is a usnit test extension method
+            // reverseToUpperCase is a unit test extension method
             assert str.reverseToUpperCase() == str.toUpperCase().reverse()
         '''
     }
