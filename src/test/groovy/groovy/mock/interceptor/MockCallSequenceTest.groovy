@@ -23,7 +23,7 @@ import junit.framework.AssertionFailedError
 
 /**
  * Testing Groovy Mock support for multiple calls to the Collaborator with
- * demanding one or two methods multiple and and various ranges.
+ * demanding one or two methods multiple and various ranges.
  */
 class MockCallSequenceTest extends GroovyTestCase {
 
