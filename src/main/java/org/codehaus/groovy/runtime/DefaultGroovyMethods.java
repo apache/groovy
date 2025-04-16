@@ -6535,7 +6535,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Flatten the elements from an Iterator. This iterator and any nested arrays, collections,
-     * iterators, or optionals have their contents (recursively) added to to the elements for
+     * iterators, or optionals have their contents (recursively) added to the elements for
      * the resulting iterator. A transform is applied to any leaf nodes before further flattening.
      *
      * @param self an Iterable
