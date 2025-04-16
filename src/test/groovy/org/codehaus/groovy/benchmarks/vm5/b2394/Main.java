@@ -76,7 +76,7 @@ public class Main
 
         GroovyClassLoader gcl = new GroovyClassLoader(this.getClass().getClassLoader());
 
-        name = "src/test/" + getClass().getPackage().getName().replace(".", "/") + "/" + name;
+        name = "src/test/groovy/" + getClass().getPackage().getName().replace(".", "/") + "/" + name;
 
         try
         {
