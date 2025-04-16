@@ -40,6 +40,9 @@ class AppendableDgmMethodsTest extends GroovyTestCase {
         app.withFormatter(Locale.FRANCE) { Formatter f ->
             f.format(" e = %+10.4f", Math.E)
         }
-        assert store.join('') == 'hello [a:1, b:2] 2001 e =    +2,7183'
+        // seems some JDKs fall back to default locale when COMPAT locale goes away (23+)
+        assert store.join('') in ['hello [a:1, b:2] 2001 e =    +2,7183',
+                                  'hello [a:1, b:2] 2001 e =    +2.7183' // for JDK 23
+        ]
     }
 }
