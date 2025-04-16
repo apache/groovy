@@ -29,7 +29,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             int x = method()
-        ''', 'Cannot assign value of type void to variable of type int'
+        ''',
+        'Cannot assign value of type void to variable of type int'
     }
 
     void testIncompatibleExplicitReturn() {
@@ -39,7 +40,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             int x = method()
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testIncompatibleExplicitReturn2() {
@@ -47,7 +49,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             int method() {
                 return 'String'
             }
-        ''', 'Cannot return value of type java.lang.String for method returning int'
+        ''',
+        'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testIncompatibleImplicitReturn2() {
@@ -55,7 +58,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             int method() {
                 'String'
             }
-        ''', 'Cannot return value of type java.lang.String for method returning int'
+        ''',
+        'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testIncompatibleImplicitReturn() {
@@ -65,7 +69,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             }
 
             int x = method()
-        ''', 'Cannot assign value of type java.lang.String to variable of type int'
+        ''',
+        'Cannot assign value of type java.lang.String to variable of type int'
     }
 
     void testImplicitReturnFailureWithIfElse() {
@@ -77,7 +82,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                     2
                 }
             }
-        ''', 'Cannot return value of type java.lang.String for method returning int'
+        ''',
+        'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testImplicitReturnFailureWithIfElse2() {
@@ -89,7 +95,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                     'String'
                 }
             }
-        ''', 'Cannot return value of type java.lang.String for method returning int'
+        ''',
+        'Cannot return value of type java.lang.String for method returning int'
     }
 
     void testImplicitReturnFailureWithIfElse3() {
@@ -145,7 +152,8 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
             double greeting(String name) {
                 new Object()
             }
-        ''', 'Cannot return value of type java.lang.Object for method returning double'
+        ''',
+        'Cannot return value of type java.lang.Object for method returning double'
     }
 
     void testRecursiveTypeInferrence() {
@@ -169,14 +177,13 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
 
     void testReturnTypeInferrenceInSingleClass() {
         assertScript '''
-        class Foo {
-            int square(int i) { i*i }
-
-            int foo(int i) {
-                square(i)
+            class Foo {
+                int square(int i) { i*i }
+                int foo(int i) {
+                    square(i)
+                }
             }
-        }
-        new Foo().foo(2)
+            new Foo().foo(2)
         '''
     }
 
@@ -248,6 +255,62 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
                 return x
             }
             assert foo().charValue() == 'x'
+        '''
+    }
+
+    // GROOVY-11623
+    void testImplicitReturnToArray() {
+        assertScript '''
+            int[] foo() {
+                []
+            }
+            int[] bar() {
+                [0]
+            }
+            assert foo().length == 0
+            assert bar().length == 1
+        '''
+
+        shouldFailWithMessages '''
+            int[] baz() {
+                [null]
+            }
+        ''',
+        'Cannot assign value of type java.lang.Object into array of type int[]'
+
+        assertScript '''
+            Number[] foo() {
+                []
+            }
+            Number[] bar() {
+                [0]
+            }
+            Number[] baz() {
+                [null]
+            }
+            assert foo().length == 0
+            assert bar().length == 1
+            assert baz().length == 1
+        '''
+
+        shouldFailWithMessages '''
+            Integer[] baz() {
+                [new Object()]
+            }
+        ''',
+        'Cannot assign value of type java.lang.Object into array of type java.lang.Integer[]'
+
+        assertScript '''
+            Object[][] foo() {
+                []
+            }
+            Object[][] bar() {
+                [[12345]]
+            }
+            assert foo().length == 0
+            assert bar().length == 1
+            assert bar()[0].length == 1
+            assert bar()[0][0] == 12345
         '''
     }
 
