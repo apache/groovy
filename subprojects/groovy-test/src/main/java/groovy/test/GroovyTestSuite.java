@@ -36,13 +36,13 @@ import java.security.PrivilegedAction;
  * You can specify the GroovyUnitTest to run by running this class as an application
  * and specifying the script to run on the command line.
  * <code>
- * java groovy.test.GroovyTestSuite src/test/Foo.groovy
+ * java groovy.test.GroovyTestSuite src/test/groovy/Foo.groovy
  * </code>
  * Or to run the test suite as a unit test suite in an IDE you can use
  * the 'test' system property to define the test script to run.
  * e.g.&#160;pass this into the JVM when the unit test plugin runs...
  * <code>
- * -Dtest=src/test/Foo.groovy
+ * -Dtest=src/test/groovy/Foo.groovy
  * </code>
  */
 public class GroovyTestSuite extends TestSuite {

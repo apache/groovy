@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -30,7 +30,7 @@ final class Groovy3839 {
     @Test
     void testGroovyASTTransformationWithOneClass() {
         assertScript '''
-            import groovy.bugs.*
+            import bugs.*
 
             @G3839A1
             class G3839V1 {}
@@ -42,7 +42,7 @@ final class Groovy3839 {
     @Test
     void testGroovyASTTransformationWithMultipleClass() {
         assertScript '''
-            import groovy.bugs.*
+            import bugs.*
 
             @G3839A2
             class G3839V2 {}
@@ -55,24 +55,24 @@ final class Groovy3839 {
     @Test
     void testGroovyASTTransformationWithNeitherTransClassNamesNorClasses() {
         def err = shouldFail '''
-            import groovy.bugs.*
+            import bugs.*
 
             @G3839A3
             class G3839V3 {}
             new G3839V3()
         '''
-        assert err =~ '@GroovyASTTransformationClass in groovy.bugs.G3839A3 does not specify any transform class names or types'
+        assert err =~ '@GroovyASTTransformationClass in bugs.G3839A3 does not specify any transform class names or types'
     }
 
     @Test
     void testGroovyASTTransformationWithBothTransClassNamesAndClasses() {
         def err = shouldFail '''
-            import groovy.bugs.*
+            import bugs.*
 
             @G3839A4
             class G3839V4 {}
             new G3839V4()
         '''
-        assert err =~ '@GroovyASTTransformationClass in groovy.bugs.G3839A4 should specify transforms by name or by type, not by both'
+        assert err =~ '@GroovyASTTransformationClass in bugs.G3839A4 should specify transforms by name or by type, not by both'
     }
 }

@@ -16,9 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9081
+package bugs.groovy9081
 
-import groovy.bugs.groovy9081.somepkg.ProtectedConstructor
+import bugs.groovy9081.somepkg.ProtectedConstructor
 import org.junit.Test
 
 import java.awt.Font

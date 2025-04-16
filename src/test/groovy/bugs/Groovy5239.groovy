@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import org.junit.Test
 
@@ -31,7 +31,7 @@ final class Groovy5239 {
     @Test @groovy.test.NotYetImplemented
     void testStaticImportVersusDelegateMethod() {
         assertScript '''
-            import static groovy.bugs.Groovy5239.PublicStatic.who
+            import static bugs.Groovy5239.PublicStatic.who
 
             class C {
                 def who() {
@@ -48,7 +48,7 @@ final class Groovy5239 {
     @Test
     void testStaticImportVersusOuterClassMethod1() {
         assertScript '''
-            import static groovy.bugs.Groovy5239.PublicStatic.who
+            import static bugs.Groovy5239.PublicStatic.who
 
             class C {
                 def who() {
@@ -73,7 +73,7 @@ final class Groovy5239 {
     @Test
     void testStaticImportVersusOuterClassMethod2() {
         assertScript '''
-            import static groovy.bugs.Groovy5239.PublicStatic.who
+            import static bugs.Groovy5239.PublicStatic.who
 
             class C {
                 def who() {

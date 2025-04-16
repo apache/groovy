@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -31,7 +31,7 @@ class Groovy3410Bug extends GroovyTestCase {
                     return (id ? true : false)
                 }
             }
-            println new Groovy3405N1()     
+            println new Groovy3405N1()
         """
 
             assertScript """
@@ -40,8 +40,8 @@ class Groovy3410Bug extends GroovyTestCase {
                 def bar() {
                     return (id ? "a" : "b")
                 }
-            }              
-            println new Groovy3405N2()     
+            }
+            println new Groovy3405N2()
         """
 
             assertScript """
@@ -50,8 +50,8 @@ class Groovy3410Bug extends GroovyTestCase {
                 def bar() {
                     assert id, "Done"
                 }
-            }   
-            println new Groovy3405N3()     
+            }
+            println new Groovy3405N3()
         """
 
         assertScript """
@@ -63,8 +63,8 @@ class Groovy3410Bug extends GroovyTestCase {
                         break
                     }
                 }
-            }   
-            println new Groovy3405N4()     
+            }
+            println new Groovy3405N4()
         """
 
         assertScript """
@@ -77,8 +77,8 @@ class Groovy3410Bug extends GroovyTestCase {
                         false
                     }
                 }
-            }   
-            println new Groovy3405N5()     
+            }
+            println new Groovy3405N5()
         """
     }
 }

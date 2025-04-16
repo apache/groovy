@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 final class Groovy9556 {
-// .\gradlew --no-daemon --max-workers 2 :test --tests groovy.bugs.Groovy9556 --debug-jvm
+// .\gradlew --no-daemon --max-workers 2 :test --tests bugs.Groovy9556 --debug-jvm
     @Test
     void testInheritConstructors() {
         def config = new CompilerConfiguration(

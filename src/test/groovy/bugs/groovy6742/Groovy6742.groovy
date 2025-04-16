@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy6742
+package bugs.groovy6742
 
 import org.junit.Test
 
@@ -27,7 +27,7 @@ final class Groovy6742 {
     @Test
     void testAssignAIC() {
         assertScript '''
-            package groovy.bugs.groovy6742
+            package bugs.groovy6742
 
             @groovy.transform.TypeChecked
             def test() {
@@ -47,7 +47,7 @@ final class Groovy6742 {
     @Test
     void testReturnAIC() {
         assertScript '''
-            package groovy.bugs.groovy6742
+            package bugs.groovy6742
 
             @groovy.transform.TypeChecked
             static <R,T> FutureCallback<R> deferredCallback(DeferredResult<R> deferredResult, final Function<R,T> transformation) {

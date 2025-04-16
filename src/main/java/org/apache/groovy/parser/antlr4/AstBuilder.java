@@ -2574,7 +2574,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 if (THIS_STR.equals(baseExprText) || SUPER_STR.equals(baseExprText)) { // e.g. this(...), super(...)
                     // class declaration is not allowed in the closure,
                     // so if this and super is inside the closure, it will not be constructor call.
-                    // e.g. src/test/org/codehaus/groovy/transform/MapConstructorTransformTest.groovy:
+                    // e.g. src/test/groovy/org/codehaus/groovy/transform/MapConstructorTransformTest.groovy:
                     // @MapConstructor(pre={ super(args?.first, args?.last); args = args ?: [:] }, post = { first = first?.toUpperCase() })
                     if (visitingClosureCount > 0) {
                         return configureAST(

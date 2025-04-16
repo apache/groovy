@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.mock.interceptor.StubFor
 import groovy.test.GroovyTestCase
@@ -28,12 +28,12 @@ class Groovy3139Bug extends GroovyTestCase {
         urlStub1.demand.openConnection {""}
         urlStub1.use {
            def get = new Get2(url: "http://localhost")
-           def result = get.text            
+           def result = get.text
         }
 
         def urlStub2 = new StubFor(URL)
         // the following stubbed call is on urlStub2 and its demand cound should be separate.
-        // Currently due to caching of MockProxyMetaClass, it gets counted towards urlStub1 demands 
+        // Currently due to caching of MockProxyMetaClass, it gets counted towards urlStub1 demands
         // and throws "End of demands" exception
         urlStub2.demand.openConnection {""}
         urlStub2.use {

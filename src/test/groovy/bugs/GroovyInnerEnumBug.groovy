@@ -16,12 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
 class GroovyInnerEnumBug extends GroovyTestCase {
-    static public enum MyEnum { 
+    static public enum MyEnum {
         a, b, c
         public static MyEnum[] myenums = [a, b, c];
     }
@@ -32,7 +32,7 @@ class GroovyInnerEnumBug extends GroovyTestCase {
             class EnumTest2 {
                 enum Direction3979 { North, East, South, West }
                 static void main(args) {
-                    for (d in Direction3979) { 
+                    for (d in Direction3979) {
                         assert d instanceof Direction3979
                     }
                 }
@@ -44,6 +44,6 @@ class GroovyInnerEnumBug extends GroovyTestCase {
     void testEnumInsideAClass3994() {
         assert MyEnum.a.name() == 'a'
         assertTrue Enum.isAssignableFrom(MyEnum.class)
-        assert EnumSet.allOf(MyEnum.class) instanceof EnumSet 
+        assert EnumSet.allOf(MyEnum.class) instanceof EnumSet
     }
 }

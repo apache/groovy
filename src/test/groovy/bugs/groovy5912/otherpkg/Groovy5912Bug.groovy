@@ -16,16 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy5912.otherpkg
+package bugs.groovy5912.otherpkg
 
 import groovy.test.GroovyTestCase
 
 class Groovy5912Bug extends GroovyTestCase {
     void test() {
         def errMsg = shouldFail '''
-        package groovy.bugs.groovy5912.otherpkg
+        package bugs.groovy5912.otherpkg
 
-        import groovy.bugs.groovy5912.PluginPathAwareFileSystemResourceLoader
+        import bugs.groovy5912.PluginPathAwareFileSystemResourceLoader
 
         @groovy.transform.CompileStatic
         class GrailsProjectLoader {
@@ -37,6 +37,6 @@ class Groovy5912Bug extends GroovyTestCase {
         new GrailsProjectLoader().access()
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method groovy.bugs.groovy5912.PluginPathAwareFileSystemResourceLoader#setSearchLocations')
+        assert errMsg.contains('[Static type checking] - Cannot find matching method bugs.groovy5912.PluginPathAwareFileSystemResourceLoader#setSearchLocations')
     }
 }

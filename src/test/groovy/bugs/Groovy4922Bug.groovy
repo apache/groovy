@@ -16,14 +16,14 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
 class Groovy4922Bug extends GroovyTestCase {
     void testShouldNotThrowStackOverflow() {
         assertScript """
-            package groovy.bugs
+            package bugs
 
             import groovy.transform.PackageScope
 

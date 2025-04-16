@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -30,5 +30,5 @@ class ZoharsBug extends GroovyTestCase {
 
     def bloo(a,b){
         return a.findAll{b.call(it)}
-    }    
+    }
 }

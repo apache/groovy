@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-package groovy.bugs.groovy6742;
+package bugs.groovy6742;
 
 public interface FutureCallback<V> {
     void onSuccess(V result);

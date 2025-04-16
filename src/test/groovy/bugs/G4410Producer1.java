@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs;
+package bugs;
 
 @SuppressWarnings("all")
 public interface G4410Producer1 {

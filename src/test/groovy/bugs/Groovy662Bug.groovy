@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -55,7 +55,7 @@ class Groovy662 extends GroovyTestCase {
     """
 
     public void testJavaClass() {
-        def object = new groovy.bugs.Groovy662_JavaClass()
+        def object = new Groovy662_JavaClass()
         doAssertions(object)
         assertTrue(usePropertyIncorrectly(object) == null)
     }
@@ -68,7 +68,7 @@ class Groovy662 extends GroovyTestCase {
 
     public void testJavaClassAsScript() {
         assertScript(theTestScriptDefinitions + """
-            def object = new groovy.bugs.Groovy662_JavaClass ( )
+            def object = new bugs.Groovy662_JavaClass ( )
         """ + theTestScriptAssertions + """
             assert usePropertyIncorrectly ( object ) == null
         """)

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs.groovy9081.somepkg;
+package bugs.groovy9081.somepkg;
 
 public class ProtectedConstructor {
     protected ProtectedConstructor() {}

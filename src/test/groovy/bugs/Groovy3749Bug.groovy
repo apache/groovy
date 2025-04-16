@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -87,7 +87,7 @@ class Groovy3749Bug extends GroovyTestCase {
         try{
             assertScript(scriptText)
         }catch(Throwable ex) {
-            assertTrue ex.class.name.contains(expectedFailure) 
+            assertTrue ex.class.name.contains(expectedFailure)
         }
     }
 }

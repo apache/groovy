@@ -16,41 +16,41 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.mock.interceptor.*
 import groovy.test.GroovyTestCase
 
 class Groovy3720Bug extends GroovyTestCase {
     void testCreateStubNode() {
-        def stubNodeContext1 = new StubFor(AnotherNode3720) 
+        def stubNodeContext1 = new StubFor(AnotherNode3720)
         assertNotNull stubNodeContext1.proxyInstance()
 
-        def stubNodeContext2 = new StubFor(MyNode3720) 
+        def stubNodeContext2 = new StubFor(MyNode3720)
         assertNotNull stubNodeContext2.proxyInstance()
     }
 
     void testCreateStubNodeDelegate() {
-        def stubNodeContext1 = new StubFor(AnotherNode3720) 
+        def stubNodeContext1 = new StubFor(AnotherNode3720)
         assertNotNull stubNodeContext1.proxyDelegateInstance()
 
-        def stubNodeContext2 = new StubFor(MyNode3720) 
+        def stubNodeContext2 = new StubFor(MyNode3720)
         assertNotNull stubNodeContext2.proxyDelegateInstance()
     }
 
     void testCreateMockNode() {
-        def mockNodeContext1 = new MockFor(AnotherNode3720) 
+        def mockNodeContext1 = new MockFor(AnotherNode3720)
         assertNotNull mockNodeContext1.proxyInstance()
 
-        def mockNodeContext2 = new MockFor(MyNode3720) 
+        def mockNodeContext2 = new MockFor(MyNode3720)
         assertNotNull mockNodeContext2.proxyInstance()
     }
 
     void testCreateMockNodeDelegate() {
-        def mockNodeContext1 = new MockFor(AnotherNode3720) 
+        def mockNodeContext1 = new MockFor(AnotherNode3720)
         assertNotNull mockNodeContext1.proxyDelegateInstance()
 
-        def mockNodeContext2 = new MockFor(MyNode3720) 
+        def mockNodeContext2 = new MockFor(MyNode3720)
         assertNotNull mockNodeContext2.proxyDelegateInstance()
     }
 }

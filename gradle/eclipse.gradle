@@ -106,8 +106,6 @@ if (gradle.startParameter.taskNames.any { it =~ /(?i)eclipse/ }) {
     }
 
     eclipse.classpath.file.whenMerged {
-        entries.removeAll { entry -> entry.path in ['src/test/groovy', 'src/test-resources'] }
-
         entries.findAll { entry -> entry.path =~ '^build/generated/sources/antlr' }.each { entry ->
             entry.entryAttributes['ignore_optional_problems'] = 'true'
             entry.entryAttributes['optional'] = 'true'

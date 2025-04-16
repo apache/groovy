@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -24,7 +24,7 @@ class AttributeSetExpressionBug extends GroovyTestCase {
     void testAttributeSetAccess() {
         def a = new HasStaticFieldSomeClass()
         a.name = a.name * 3
-        assert a.@name == "gettter" * 3 
+        assert a.@name == "gettter" * 3
         assert a.name == "gettter"
 
         new HasStaticFieldSomeClass().@name = "changed bar"
@@ -36,7 +36,7 @@ class AttributeSetExpressionBug extends GroovyTestCase {
 }
 
 class HasStaticFieldSomeClass {
-    static String name = "bar" 
+    static String name = "bar"
     static String getName() {
         return "gettter"
     }

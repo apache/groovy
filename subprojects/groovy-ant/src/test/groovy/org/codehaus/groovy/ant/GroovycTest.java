@@ -76,7 +76,7 @@ public class GroovycTest extends GroovyTestCase {
 
     private String getTargetDirectory() {
         try {
-            return Paths.get(getClass().getResource(".").toURI()).toString() + File.separator;
+            return Paths.get(getClass().getResource(getClass().getSimpleName() + ".class").toURI()).getParent() + File.separator;
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

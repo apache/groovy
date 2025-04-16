@@ -47,7 +47,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         plainTool = new GroovyDocTool(new String[]{"src/test/groovy"});
 
         xmlTool = makeXmlTool(new ArrayList<LinkArgument>(), new Properties());
-        xmlToolForTests = makeXmlTool(new ArrayList<LinkArgument>(), new Properties(), new String[] {"src/test/groovy", "src/test/resources", "../../src/test"});
+        xmlToolForTests = makeXmlTool(new ArrayList<LinkArgument>(), new Properties(), new String[] {"src/test/groovy", "src/test/resources", "../../src/test/groovy"});
 
         ArrayList<LinkArgument> links = new ArrayList<LinkArgument>();
         LinkArgument link = new LinkArgument();
@@ -77,7 +77,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     private GroovyDocTool makeHtmltool(ArrayList<LinkArgument> links, Properties props) {
         return new GroovyDocTool(
                 new FileSystemResourceManager("src/main/resources"), // template storage
-                new String[] {"src/test/groovy", "../../src/test"}, // source file dirs
+                new String[] {"src/test/groovy", "../../src/test/groovy"}, // source file dirs
                 GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,

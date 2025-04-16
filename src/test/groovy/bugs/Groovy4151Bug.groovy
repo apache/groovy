@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import gls.CompilableTestSupport
 
@@ -27,7 +27,7 @@ class Groovy4151Bug extends CompilableTestSupport {
                 class S4151 {
                     S4151() { println "$this" }
                 }
-            }        
+            }
         """
     }
 }

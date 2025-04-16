@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyLogTestCase
 
@@ -25,7 +25,7 @@ import java.util.logging.Level
 class Groovy2432Bug extends GroovyLogTestCase {
 
     void testMe () {
-        withLevel (Level.ALL, "methodCalls.groovy.bugs.Groovy2432Bug.println") {
+        withLevel (Level.ALL, "methodCalls.bugs.Groovy2432Bug.println") {
             withLevel (Level.ALL, MetaClass.class.getName()) {
                 println new WillCauseInfiniteLoop().toString()
             }

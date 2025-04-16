@@ -77,7 +77,7 @@ tasks.withType(Test).configureEach {
         systemProperties 'groovy.testdb.props': testdb
     }
 
-    classpath = files('src/test') + classpath
+    classpath = files('src/test/groovy') + classpath
     exclude buildExcludeFilter(it.name == 'test')
     ext.resultText = ''
     usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle, 2))

@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -26,7 +26,7 @@ class Groovy4246Bug extends GroovyTestCase {
             class Bug4246 {
                 int randCallCount = 0
                 static void main(args) {
-                    new Bug4246()    
+                    new Bug4246()
                 }
 
                 Bug4246() {
@@ -41,7 +41,7 @@ class Groovy4246Bug extends GroovyTestCase {
 
                 int rand() {
                     randCallCount++
-                    return new Random().nextInt(3)    
+                    return new Random().nextInt(3)
                 }
             }
         """

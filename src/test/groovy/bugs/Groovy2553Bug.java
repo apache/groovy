@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs;
+package bugs;
 
 import groovy.lang.GroovyShell;
 import junit.framework.TestCase;
@@ -33,7 +33,7 @@ class Autobox {
 public class Groovy2553Bug extends TestCase {
 
     public void testMe () {
-        new GroovyShell().evaluate("groovy.bugs.Autobox.Util.printByte(\"1\", Byte.valueOf((byte)1));");
-        new GroovyShell().evaluate("groovy.bugs.Autobox.Util.printByte(\"1\", (byte)1);");
+        new GroovyShell().evaluate("bugs.Autobox.Util.printByte(\"1\", Byte.valueOf((byte)1));");
+        new GroovyShell().evaluate("bugs.Autobox.Util.printByte(\"1\", (byte)1);");
     }
 }

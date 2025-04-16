@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -36,7 +36,7 @@ class Groovy3679Bug extends GroovyTestCase {
         // broken by the fix introduced
         def x = new X3679()
         x.setSomething("foo",2)
-        assert x.getAFoo() == 2    
+        assert x.getAFoo() == 2
     }
 }
 

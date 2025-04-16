@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -30,7 +30,7 @@ println ( cal.get ( Calendar.DAY_OF_MONTH ) )
   }
   void testCode ( ) {
     new MyCalendar ( ).tryit ( )
-  }   
+  }
 }
 
 class MyCalendar {

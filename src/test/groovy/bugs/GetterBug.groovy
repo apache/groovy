@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.test.GroovyTestCase
 
@@ -28,7 +28,7 @@ class GetterBug extends GroovyTestCase {
     def bar
 
     String getFoo() {
-        if (foo == null) { 
+        if (foo == null) {
             foo = "James"
         }
         return foo

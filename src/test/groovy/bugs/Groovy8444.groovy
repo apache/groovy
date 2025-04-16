@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.transform.CompileStatic
 import org.junit.Test
@@ -178,7 +178,7 @@ final class Groovy8444 {
             @groovy.transform.CompileStatic
             def meth(SomeEnum e) {
                 switch (e) {
-                    case A: 
+                    case A:
                         switch(e) {
                             case A: return 1.1
                             case B: return 1.2
@@ -207,7 +207,7 @@ final class Groovy8444 {
             @groovy.transform.CompileStatic
             def meth(SomeEnum e, OtherEnum e2) {
                 switch (e) {
-                    case A: 
+                    case A:
                         switch(e2) {
                             case C: return 1.1
                             case D: return 1.2

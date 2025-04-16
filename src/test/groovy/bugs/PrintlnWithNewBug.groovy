@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
 import groovy.Foo
 import groovy.test.GroovyTestCase
@@ -24,7 +24,7 @@ import groovy.test.GroovyTestCase
 class PrintlnWithNewBug extends GroovyTestCase {
 
     void testBug() {
-        println(new Foo(name:'abc')) 
-        println new Foo(name:'def') 
+        println(new Foo(name:'abc'))
+        println new Foo(name:'def')
     }
 }
