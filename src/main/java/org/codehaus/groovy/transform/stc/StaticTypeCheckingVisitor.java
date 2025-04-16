@@ -882,12 +882,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                         && enclosingBinaryExpression != null
                         && enclosingBinaryExpression.getLeftExpression() == expression
                         && isAssignment(enclosingBinaryExpression.getOperation().getType())) {
-                    // left hand side of a subscript assignment: map['foo'] = ...
+                    // left hand side of a subscript assignment: map['key'] = ...
                     Expression enclosingExpressionRHS = enclosingBinaryExpression.getRightExpression();
                     if (!(enclosingExpressionRHS instanceof ClosureExpression)) {
                         enclosingExpressionRHS.visit(this);
                     }
-                    ClassNode[] arguments = {rType, getType(enclosingExpressionRHS)};
+                    ClassNode[] arguments = {rType, isNullConstant(enclosingExpressionRHS) // GROOVY-11621
+                                ? UNKNOWN_PARAMETER_TYPE : getType(enclosingExpressionRHS)};
                     List<MethodNode> methods = findMethod(lType, "putAt", arguments);
                     if (methods.isEmpty()) {
                         addNoMatchingMethodError(lType, "putAt", arguments, enclosingBinaryExpression);
