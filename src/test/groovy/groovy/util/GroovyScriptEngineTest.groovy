@@ -41,9 +41,6 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 
     @Test
     void createASTDumpWhenScriptIsLoadedByName() {
-        // current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions
-        if (isAtLeastJdk('9.0')) return
-
         def scriptFile = temporaryFolder.newFile('Script1.groovy')
         scriptFile << "assert 1 + 1 == 2" // the script just has to have _some_ content
 
@@ -80,7 +77,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         def scriptFile = temporaryFolder.newFile('Script1.groovy')
         scriptFile << '''
             class Foo {}
-            assert 1 + 1 == 2 
+            assert 1 + 1 == 2
         '''
         def counts = [:].withDefault { 0 }
 

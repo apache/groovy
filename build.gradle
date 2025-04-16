@@ -149,6 +149,12 @@ dependencies {
         }
     }
     testRuntimeOnly(project(':')) {
+        because 'GroovyScriptEngineTest uses XStream'
+        capabilities {
+            requireCapability 'org.apache.groovy:groovy-xstream-ast'
+        }
+    }
+    testRuntimeOnly(project(':')) {
         because 'Tests are using GPars'
         capabilities {
             requireCapability 'org.apache.groovy:groovy-gpars'
