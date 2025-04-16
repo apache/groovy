@@ -803,6 +803,45 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.util.Collection#putAt(int, java.lang.Object)'
     }
 
+    // GROOVY-11621
+    void testListPutAt() {
+        assertScript '''
+            def list = ['a', 'b', 'c']
+            list[0] = 'aa'
+            assert list[0] == 'aa'
+
+            list.set(2, null)
+            assert list[2] == null
+
+            list.putAt(0, null)
+            assert list[0] == null
+
+            list[1] = null
+            assert list[1] == null
+        '''
+    }
+
+    // GROOVY-11621
+    void testMapPutAt() {
+        assertScript '''
+            def map = [a: 'foo', b: 'bar', c: 'baz']
+            map['a'] = 'aa'
+            assert map['a'] == 'aa'
+
+            map.put('c', null)
+            assert map['c'] == null
+
+            map.putAt('a', null)
+            assert map['a'] == null
+
+            map.d = null
+            assert map['d'] == null
+
+            map['b'] = null
+            assert map['b'] == null
+        '''
+    }
+
     // GROOVY-6266
     void testMapGenerics() {
         assertScript '''
