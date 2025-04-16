@@ -36,7 +36,9 @@ class AppendableDgmMethodsTest extends GroovyTestCase {
         app << [a:1, b:2]
         app.withFormatter { Formatter f ->
             f.format(" %tY", Date.parse('dd MM yyyy', '01 01 2001'))
-            f.format(Locale.FRANCE, " e = %+10.4f", Math.E)
+        }
+        app.withFormatter(Locale.FRANCE) { Formatter f ->
+            f.format(" e = %+10.4f", Math.E)
         }
         assert store.join('') == 'hello [a:1, b:2] 2001 e =    +2,7183'
     }
