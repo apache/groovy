@@ -823,7 +823,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 if (!(enclosingBE_rightExpr instanceof ClosureExpression)) {
                     enclosingBE_rightExpr.visit(this);
                 }
-                ClassNode[] arguments = {rType, getType(enclosingBE_rightExpr)};
+                ClassNode[] arguments = {rType, isNullConstant(enclosingBE_rightExpr) // GROOVY-11621
+                            ? UNKNOWN_PARAMETER_TYPE : getType(enclosingBE_rightExpr) };
                 List<MethodNode> nodes = findMethod(lType.redirect(), "putAt", arguments);
                 if (nodes.size() == 1) {
                     typeCheckMethodsWithGenericsOrFail(lType, arguments, nodes.get(0), enclosingBE_rightExpr);
