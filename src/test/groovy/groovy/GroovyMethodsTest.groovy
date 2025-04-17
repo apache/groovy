@@ -1200,10 +1200,10 @@ final class GroovyMethodsTest extends GroovyTestCase {
         int a = 1
         Iterator items = [ hasNext:{ true }, next:{ a++ } ] as Iterator
 
-        assert items.take( -1 ).collect { it } == []
-        assert items.take(  0 ).collect { it } == []
-        assert items.take(  2 ).collect { it } == [ 1, 2 ]
-        assert items.take(  4 ).collect { it } == [ 3, 4, 5, 6 ]
+        assert items.take( -1 ).toList() == []
+        assert items.take(  0 ).toList() == []
+        assert items.take(  2 ).toList() == [ 1, 2 ]
+        assert items.take(  4 ).toList() == [ 3, 4, 5, 6 ]
     }
 
     void testWellBehavedIteratorsForInfiniteStreams() {
@@ -1216,20 +1216,20 @@ final class GroovyMethodsTest extends GroovyTestCase {
         int a = 1
         Iterable items = { [ hasNext:{ true }, next:{ a++ } ] as Iterator } as Iterable
 
-        assert items.take( -1 ).collect { it } == []
-        assert items.take(  0 ).collect { it } == []
-        assert items.take(  2 ).collect { it } == [ 1, 2 ]
-        assert items.take(  4 ).collect { it } == [ 3, 4, 5, 6 ]
+        assert items.take( -1 ) == []
+        assert items.take(  0 ) == []
+        assert items.take(  2 ) == [ 1, 2 ]
+        assert items.take(  4 ) == [ 3, 4, 5, 6 ]
 
         items = { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable
 
-        assert items.takeRight( -1 ).collect { it } == []
+        assert items.takeRight( -1 ) == []
         a = 1
-        assert items.takeRight(  0 ).collect { it } == []
+        assert items.takeRight(  0 ) == []
         a = 1
-        assert items.takeRight(  2 ).collect { it } == [ 4, 5 ]
+        assert items.takeRight(  2 ) == [ 4, 5 ]
         a = 1
-        assert items.takeRight(  4 ).collect { it } == [ 2, 3, 4, 5 ]
+        assert items.takeRight(  4 ) == [ 2, 3, 4, 5 ]
     }
 
     void testCharSequenceTake() {
@@ -1300,22 +1300,22 @@ final class GroovyMethodsTest extends GroovyTestCase {
         int a = 1
         Iterator items = [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator
 
-        assert items.drop( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        assert items.drop( 0 ).toList() == [ 1, 2, 3, 4, 5 ]
         a = 1
-        assert items.drop( 2 ).collect { it } == [ 3, 4, 5 ]
+        assert items.drop( 2 ).toList() == [ 3, 4, 5 ]
         a = 1
-        assert items.drop( 4 ).collect { it } == [ 5 ]
+        assert items.drop( 4 ).toList() == [ 5 ]
         a = 1
-        assert items.drop( 5 ).collect { it } == []
+        assert items.drop( 5 ).toList() == []
 
         a = 1
-        assert items.dropRight( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        assert items.dropRight( 0 ).toList() == [ 1, 2, 3, 4, 5 ]
         a = 1
-        assert items.dropRight( 2 ).collect { it } == [ 1, 2, 3 ]
+        assert items.dropRight( 2 ).toList() == [ 1, 2, 3 ]
         a = 1
-        assert items.dropRight( 4 ).collect { it } == [ 1 ]
+        assert items.dropRight( 4 ).toList() == [ 1 ]
         a = 1
-        assert items.dropRight( 5 ).collect { it } == []
+        assert items.dropRight( 5 ).toList() == []
 
         // if we ever traverse the whole exploding list we'll get a RuntimeException
         assert new ExplodingList('letters'.toList(), 4).iterator().dropRight(1).drop(1).take(1).toList() == ['e']
@@ -1325,22 +1325,22 @@ final class GroovyMethodsTest extends GroovyTestCase {
         int a = 1
         Iterable items = { [ hasNext:{ a < 6 }, next:{ a++ } ] as Iterator } as Iterable
 
-        assert items.drop( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        assert items.drop( 0 ) == [ 1, 2, 3, 4, 5 ]
         a = 1
-        assert items.drop( 2 ).collect { it } == [ 3, 4, 5 ]
+        assert items.drop( 2 ) == [ 3, 4, 5 ]
         a = 1
-        assert items.drop( 4 ).collect { it } == [ 5 ]
+        assert items.drop( 4 ) == [ 5 ]
         a = 1
-        assert items.drop( 5 ).collect { it } == []
+        assert items.drop( 5 ) == []
 
         a = 1
-        assert items.dropRight( 0 ).collect { it } == [ 1, 2, 3, 4, 5 ]
+        assert items.dropRight( 0 ) == [ 1, 2, 3, 4, 5 ]
         a = 1
-        assert items.dropRight( 2 ).collect { it } == [ 1, 2, 3 ]
+        assert items.dropRight( 2 ) == [ 1, 2, 3 ]
         a = 1
-        assert items.dropRight( 4 ).collect { it } == [ 1 ]
+        assert items.dropRight( 4 ) == [ 1 ]
         a = 1
-        assert items.dropRight( 5 ).collect { it } == []
+        assert items.dropRight( 5 ) == []
     }
 
     void testCharSequenceDrop() {
@@ -1554,7 +1554,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
         int a = 1
         Iterator items = [ hasNext:{ true }, next:{ a++ } ] as Iterator
 
-        assert items.takeWhile{ it < 5 }.collect { it } == [ 1, 2, 3, 4 ]
+        assert items.takeWhile{ it < 5 }.toList() == [ 1, 2, 3, 4 ]
     }
 
     void testCharSequenceTakeWhile() {
