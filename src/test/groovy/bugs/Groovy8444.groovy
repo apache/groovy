@@ -226,5 +226,211 @@ final class Groovy8444 {
         '''
     }
 
+    @Test
+    // GROOVY-11614
+    void testAccessingEnumConstantInSwitchExprCase() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case A -> 1
+                    case B -> 2
+                }
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
 
+    @Test
+    // GROOVY-11614
+    void testAccessingEnumConstantInSwitchExprCase2() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (same(e)) {
+                    case A -> 1
+                    case B -> 2
+                }
+            }
+            @groovy.transform.CompileStatic
+            SomeEnum same(SomeEnum e) {
+                return e
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
+
+    @Test
+    // GROOVY-11614
+    void testAccessingEnumConstantInSwitchExprCase3() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch ([e][0]) {
+                    case A -> 1
+                    case B -> 2
+                }
+            }
+            assert 1 == meth(SomeEnum.A)
+            assert 2 == meth(SomeEnum.B)
+        '''
+    }
+
+    @Test
+    // GROOVY-11614
+    void testAccessingNonEnumConstantInSwitchExprCase() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+
+                static final String C = 'C'
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C -> 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
+    }
+
+    @Test
+    // GROOVY-11614
+    void testAccessingNonEnumConstantInSwitchExprCase2() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+
+                SomeEnum C = A
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C -> 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
+    }
+
+    @Test
+    // GROOVY-11614
+    void testAccessingNonEnumConstantInSwitchExprCase3() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+
+                static SomeEnum C = A
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C -> 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
+    }
+
+    @Test
+    // GROOVY-11614
+    void testAccessingNonEnumConstantInSwitchExprCase4() {
+        def err = shouldFail '''\
+            enum SomeEnum {
+                A, B
+
+                static final SomeEnum C = A
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case C -> 3
+                }
+            }
+            meth(SomeEnum.C)
+        '''
+
+        assert err.message.contains('[Static type checking] - The variable [C] is undeclared')
+        assert err.message.contains('@ line 9, column 26.')
+    }
+
+    @Test
+    // GROOVY-11614
+    void testAccessingEnumConstantInNestedSwitchExprCase() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e) {
+                switch (e) {
+                    case A ->
+                        switch(e) {
+                            case A -> 1.1
+                            case B -> 1.2
+                        }
+                    case B ->
+                        switch(e) {
+                            case A -> 2.1
+                            case B -> 2.2
+                        }
+                }
+            }
+            assert 1.1 == meth(SomeEnum.A)
+            assert 2.2 == meth(SomeEnum.B)
+        '''
+    }
+
+    @Test
+    // GROOVY-11614
+    void testAccessingEnumConstantInNestedSwitchExprCase2() {
+        assertScript '''\
+            enum SomeEnum {
+                A, B
+            }
+            enum OtherEnum {
+                C, D
+            }
+            @groovy.transform.CompileStatic
+            def meth(SomeEnum e, OtherEnum e2) {
+                switch (e) {
+                    case A ->
+                        switch(e2) {
+                            case C -> 1.1
+                            case D -> 1.2
+                        }
+                    case B ->
+                        switch(e2) {
+                            case C -> 2.1
+                            case D -> 2.2
+                        }
+                }
+            }
+            assert 1.1 == meth(SomeEnum.A, OtherEnum.C)
+            assert 1.2 == meth(SomeEnum.A, OtherEnum.D)
+            assert 2.1 == meth(SomeEnum.B, OtherEnum.C)
+            assert 2.2 == meth(SomeEnum.B, OtherEnum.D)
+        '''
+    }
 }

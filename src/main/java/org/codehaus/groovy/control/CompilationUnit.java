@@ -30,7 +30,9 @@ import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.ClassCompletionVerifier;
@@ -365,6 +367,13 @@ public class CompilationUnit extends ProcessingUnit {
                             Expression propertyExpression = propX(classX(enumType), expression.getText());
                             setSourcePosition(propertyExpression, expression);
                             return propertyExpression;
+                        }
+                    } else if (expression instanceof MethodCallExpression) {
+                        // we wrap SwitchExpressions into a method call on a ClosureExpression
+                        MethodCallExpression mce = (MethodCallExpression) expression;
+                        if (mce.getObjectExpression() instanceof ClosureExpression) {
+                            expression.visit(this);
+                            return expression;
                         }
                     }
                     return expression;
