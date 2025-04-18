@@ -18,10 +18,12 @@
  */
 package org.codehaus.groovy.transform.sc.transformers;
 
+import org.apache.groovy.ast.tools.ExpressionUtils;
 import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -157,6 +159,15 @@ public class StaticCompilationTransformer extends ClassCodeExpressionTransformer
     public void visitClass(final ClassNode node) {
         super.visitClass(node);
         node.getInnerClasses().forEachRemaining(this::visitClass);
+    }
+
+    @Override
+    public void visitField(final FieldNode node) {
+        // GROOVY-11624: post-ResolveVisitor, pre-Verifier constant inlining; do not replace initializer expression "x"+WHY with "x".plus(WHY)
+        if (node.hasInitialExpression() && node.isStatic() && node.isFinal() && ClassHelper.isStaticConstantInitializerType(node.getType())) {
+            node.setInitialValueExpression(ExpressionUtils.transformInlineConstants(node.getInitialExpression(), node.getType()));
+        }
+        super.visitField(node);
     }
 
     @Override
