@@ -53,7 +53,7 @@ class MemberSignatureParser {
             // ex: java.util.Collections#EMPTY_LIST/EMPTY_MAP/EMPTY_SET
             type[0] = GenericsUtils.nonGeneric(type[0]);
         }
-        return new FieldNode(field.fieldName, field.accessModifiers, type[0], owner, field.value != null ? new ConstantExpression(field.value) : null);
+        return new FieldNode(field.fieldName, field.accessModifiers, type[0], owner, field.value != null ? new ConstantExpression(field.value, true) : null);
     }
 
     static MethodNode createMethodNode(final AsmReferenceResolver resolver, final MethodStub method) {
