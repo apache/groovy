@@ -1500,6 +1500,42 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11623
+    void testAnnotationDefaults() {
+        assertScript '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface A {
+                int     iType() default 1
+                long    lType() default 1
+                short   sType() default 1
+                float   fType() default 1f
+                double  dType() default 1d
+                boolean bType() default true
+                char    cType() default 'c'
+                String  chars() default 's'
+                Class   tType() default Object
+                Class[] xType() default [] // TODO: {} -- GROOVY-11492
+            }
+
+            @A class C {
+            }
+
+            assert C.getAnnotation(A).iType() == 1
+            assert C.getAnnotation(A).lType() == 1L
+            assert C.getAnnotation(A).sType() == (short) 1
+            assert C.getAnnotation(A).fType() == 1.0f
+            assert C.getAnnotation(A).dType() == 1.0d
+            assert C.getAnnotation(A).bType() == true
+            assert C.getAnnotation(A).cType() == (char) 'c'
+            assert C.getAnnotation(A).chars() == "s"
+            assert C.getAnnotation(A).tType() == Object.class
+            assert C.getAnnotation(A).xType() == new Class[0]
+        '''
+    }
+
     // GROOVY-
     void testGetAnnotationFails() {
         assertScript '''

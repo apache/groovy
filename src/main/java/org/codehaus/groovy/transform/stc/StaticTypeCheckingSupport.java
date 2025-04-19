@@ -652,23 +652,26 @@ public abstract class StaticTypeCheckingSupport {
         }
 
         if (left.isArray()) {
+            ClassNode leftItemType = left.getComponentType();
             if (right.isArray()) {
-                ClassNode leftComponent = left.getComponentType();
-                ClassNode rightComponent = right.getComponentType();
-                return (isPrimitiveType(leftComponent) && !isPrimitiveBoolean(leftComponent))
-                        ? isPrimitiveType(rightComponent) // GROOVY-11371: primitive array only
-                        : checkCompatibleAssignmentTypes(leftComponent, rightComponent, rightExpression, false);
+                ClassNode rightItemType = right.getComponentType();
+                return (isPrimitiveType(leftItemType) && !isPrimitiveBoolean(leftItemType))
+                        ? isPrimitiveType(rightItemType) // GROOVY-11371: primitive array only
+                        : checkCompatibleAssignmentTypes(leftItemType, rightItemType, rightExpression, false);
             }
-            if (GeneralUtils.isOrImplements(right, Collection_TYPE) && !(rightExpression instanceof ListExpression)) {
-                GenericsType elementType = GenericsUtils.parameterizeType(right, Collection_TYPE).getGenericsTypes()[0];
-                return OBJECT_TYPE.equals(left.getComponentType()) // Object[] can accept any collection element type(s)
-                    || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), left.getComponentType()));
+            if (rightExpression instanceof ListExpression) {
+                return true; // addPrecisionErrors checks values
+            }
+            if (GeneralUtils.isOrImplements(right, Collection_TYPE)) {
+                var elementType = GenericsUtils.parameterizeType(right, Collection_TYPE).getGenericsTypes()[0];
+                return isObjectType(leftItemType) // Object[] can accept any collection element type(s)
+                    || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), leftItemType));
                     //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GROOVY-8984: "? super T" is only compatible with an Object[] target
             }
             if (GeneralUtils.isOrImplements(right, BaseStream_TYPE)) {
-                GenericsType elementType = GenericsUtils.parameterizeType(right, BaseStream_TYPE).getGenericsTypes()[0];
-                return isObjectType(left.getComponentType()) // Object[] can accept any stream API element type(s)
-                    || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), getWrapper(left.getComponentType())));
+                var elementType = GenericsUtils.parameterizeType(right, BaseStream_TYPE).getGenericsTypes()[0];
+                return isObjectType(leftItemType) // Object[] can accept any stream API element type(s)
+                    || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), getWrapper(leftItemType)));
             }
         }
 

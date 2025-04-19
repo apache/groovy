@@ -2428,6 +2428,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 BinaryExpression dummy = assignX(varX("{target}", returnType), expression, statement);
                 ClassNode resultType = getResultType(returnType, ASSIGN, type, dummy); // GROOVY-10295
                 checkTypeGenerics(returnType, resultType, expression);
+            } else { // GROOVY-11623: check array items or number bounds
+                addPrecisionErrors(returnType.redirect(), returnType, type, expression);
             }
         }
         return null;
