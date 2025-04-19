@@ -1499,7 +1499,7 @@ final class GroovyMethodsTest extends GroovyTestCase {
     void testCollectEntriesIterator() {
         def itr = ['a','bb','ccc'].iterator()
         def map = itr.collectEntries { [(it): it.size()] }
-        assert map == [a:1, bb:2, ccc:3]
+        assert map.collectEntries() == [a:1, bb:2, ccc:3]
     }
 
     void testCollectEntriesListReturn() {

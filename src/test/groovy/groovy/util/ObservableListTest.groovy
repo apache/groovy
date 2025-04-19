@@ -276,8 +276,8 @@ class ObservableListTest extends GroovyTestCase {
 
     void testListIterator() {
         def list = [1, 2, 3, 4, 5] as ObservableList
-        assert list.listIterator(2).collect { it } == [3, 4, 5]
-        assert list.listIterator().collect { it } == [1, 2, 3, 4, 5]
+        assert list.listIterator(2).collect() == [3, 4, 5]
+        assert list.listIterator().collect() == [1, 2, 3, 4, 5]
     }
 
         void testRetainAllBugGroovy4699() {
