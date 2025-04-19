@@ -18,6 +18,7 @@
  */
 package bugs
 
+import org.apache.groovy.util.JavaShell
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -113,5 +114,90 @@ final class Groovy4721 {
             }
             assert 'foo' == new MyClass().myMethod()
         '''
+    }
+
+    @Test
+    void testAccessingVariableInFinallyBlock_6() {
+        def declareClass = { String lang ->
+            """
+            import java.util.List;
+            import java.util.ArrayList;
+            import java.util.function.Function;
+            public class TryFinally${lang}Test {
+                public String test() {
+                    String result = "result: ";
+                    try {
+                        String x = "foo";
+                        result += x;
+                        return result;
+                    } finally {
+                        String y = "bar";
+                        result += y;
+                    }
+                }
+            }
+            """
+        }
+
+        JavaShell js = new JavaShell()
+        final mcn = "tests.TryFinallyJavaTest"
+        js.compile(mcn, "package tests;\n${declareClass('Java')}")
+
+        new GroovyShell(js.getClassLoader()).evaluate """\
+            package tests;
+            import tests.TryFinallyJavaTest
+
+            ${declareClass('Groovy')}
+
+            final groovyResult = new TryFinallyGroovyTest().test()
+            assert 'result: foo' == groovyResult
+            assert new TryFinallyJavaTest().test() == groovyResult
+        """
+    }
+
+    @Test
+    void testAccessingVariableInFinallyBlock_7() {
+        def declareClass = { String lang ->
+            """
+            import java.util.List;
+            import java.util.ArrayList;
+            import java.util.function.Function;
+            public class TryFinally${lang}Test {
+                public List<String> test() {
+                    List<String> resultList = new ArrayList<>();
+                    String result = "result: ";
+                    try {
+                        String x = "foo";
+                        result += x;
+                        resultList.add(result);
+                        Function<String, List<String>> f = (String r) -> {
+                            resultList.add(r);
+                            return resultList;
+                        };
+                        return f.apply(result);
+                    } finally {
+                        String y = "bar";
+                        result += y;
+                        resultList.add(result);
+                    }
+                }
+            }
+            """
+        }
+
+        JavaShell js = new JavaShell()
+        final mcn = "tests.TryFinallyJavaTest"
+        js.compile(mcn, "package tests;\n${declareClass('Java')}")
+
+        new GroovyShell(js.getClassLoader()).evaluate """\
+            package tests;
+            import tests.TryFinallyJavaTest
+
+            ${declareClass('Groovy')}
+
+            final groovyResult = new TryFinallyGroovyTest().test()
+            assert ['result: foo', 'result: foo', 'result: foobar'] == groovyResult
+            assert new TryFinallyJavaTest().test() == groovyResult
+        """
     }
 }
