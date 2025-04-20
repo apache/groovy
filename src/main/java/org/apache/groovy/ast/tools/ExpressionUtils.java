@@ -278,7 +278,7 @@ public final class ExpressionUtils {
                     if (e instanceof ConstantExpression) {
                         return e;
                     }
-                } else if (cn.isResolved()) {
+                }/* else if (cn.isResolved()) { // GROOVY-9530
                     try {
                         var field = cn.getTypeClass().getField(pe.getPropertyAsString());
                         if (field != null) {
@@ -287,7 +287,7 @@ public final class ExpressionUtils {
                     } catch (Exception | LinkageError ignore) {
                         // leave property expression and we will report later
                     }
-                }
+                }*/
             }
         } else if (exp instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) exp;

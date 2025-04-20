@@ -62,6 +62,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.MalformedParameterizedTypeException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.ReflectPermission;
 import java.lang.reflect.Type;
@@ -393,7 +394,7 @@ public class Java8 implements VMPlugin {
             Field[] fields = clazz.getDeclaredFields();
             for (Field f : fields) {
                 ClassNode rt = makeClassNode(compileUnit, f.getGenericType(), f.getType());
-                FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), rt, classNode, null);
+                FieldNode fn = new FieldNode(f.getName(), f.getModifiers(), rt, classNode, getValue(f));
                 setAnnotationMetaData(f.getAnnotations(), fn);
                 classNode.addField(fn);
             }
@@ -438,6 +439,26 @@ public class Java8 implements VMPlugin {
         } catch (GenericSignatureFormatError | MalformedParameterizedTypeException e) {
             throw new RuntimeException(    "Unable to configure " + classNode.getName() + " due to malformed type info" , e);
         }
+    }
+
+    /**
+     * Returns the initial expression for given field.
+     *
+     * @return value expression or null
+     * @since 5.0.0
+     */
+    protected Expression getValue(final Field field) {
+        int modifiers = field.getModifiers();
+        // TODO: read ConstantValue from field attributes
+        if (Modifier.isFinal(modifiers) && Modifier.isStatic(modifiers)
+                && (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers))
+                && (field.getType().isPrimitive() || field.getType().equals(String.class))) {
+            try {
+                return new ConstantExpression(field.get(null), true);
+            } catch (ReflectiveOperationException | LinkageError e) {
+            }
+        }
+        return null;
     }
 
     /**

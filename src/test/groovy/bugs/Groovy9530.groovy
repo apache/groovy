@@ -18,28 +18,29 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-final class Groovy9530 {
+final class Groovy9530 extends AbstractBytecodeTestCase {
 
     static class StaticClass {
         public static final int STATIC_VALUE = getStaticValue()
 
         private static int getStaticValue() {
-            return 'resource from classpath'.length()
+            getClassLoader().getResources('absent thingy').toList().size()
         }
     }
 
-    @Test
     void testConstantInlining() {
-        assertScript """import bugs.Groovy9530.StaticClass
+        def bytecode = compile '''import bugs.Groovy9530.StaticClass
             class C {
                 public static final int VALUE = StaticClass.STATIC_VALUE
             }
-
-            assert C.VALUE == 23
-        """
+        '''
+        assert bytecode.hasSequence([
+            'public final static I VALUE'
+        ])
+        assert !bytecode.hasSequence([
+            'public final static I VALUE = 0' // no initializer should exist!
+        ])
     }
 }
