@@ -140,7 +140,7 @@ dependencies {
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
-    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0'
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
 
     testRuntimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
     testRuntimeOnly(project(':')) {
