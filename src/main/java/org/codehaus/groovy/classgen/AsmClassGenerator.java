@@ -264,10 +264,14 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private final Map<String,ClassNode> referencedClasses = new HashMap<>();
 
+    /**
+     * Add marker in the bytecode to show source-bytecode relationship.
+     */
+    public static final boolean ASM_DEBUG = false;
     public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
-    public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-bytecode relationship
-    public static final String MINIMUM_BYTECODE_VERSION = "_MINIMUM_BYTECODE_VERSION";
+    public static final String  ELIDE_EXPRESSION_VALUE = "_EXPR_VALUE_UNUSED";
+    public static final String  MINIMUM_BYTECODE_VERSION = "_MINIMUM_BYTECODE_VERSION";
 
     private WriterController controller;
     private ASTNode currentASTNode;

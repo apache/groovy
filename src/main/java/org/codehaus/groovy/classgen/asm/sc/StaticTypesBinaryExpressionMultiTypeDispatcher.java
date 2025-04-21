@@ -64,6 +64,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.classgen.AsmClassGenerator.ELIDE_EXPRESSION_VALUE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
@@ -342,7 +343,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             call.visit(controller.getAcg());
             controller.getOperandStack().pop(); // method return value
 
-            if (!Boolean.TRUE.equals(enclosing.getNodeMetaData("GROOVY-11288")))
+            if (!Boolean.TRUE.equals(enclosing.getNodeMetaData(ELIDE_EXPRESSION_VALUE)))
                 rhsValueLoader.visit(controller.getAcg()); // assignment expression value
         }
     }

@@ -48,6 +48,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.asm.CompileStack.BlockRecorder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -632,11 +633,8 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitExpressionStatement: " + expression.getClass().getName());
         writeStatementLabel(statement);
 
-        // TODO: replace with better metadata
-        if (expression instanceof MethodCall)
-            expression.putNodeMetaData("GROOVY-11286", Boolean.TRUE);
-        if (expression instanceof BinaryExpression)
-            expression.putNodeMetaData("GROOVY-11288", Boolean.TRUE);
+        if (expression instanceof MethodCall || expression instanceof BinaryExpression)
+            expression.putNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE, Boolean.TRUE);
 
         var operandStack = controller.getOperandStack();
         int mark = operandStack.getStackLength();

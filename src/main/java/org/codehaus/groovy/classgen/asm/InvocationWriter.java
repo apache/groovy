@@ -238,7 +238,7 @@ public class InvocationWriter {
         operandStack.remove(operandStack.getStackLength() - startDepth); // receiver plus argument(s)
 
         if (isPrimitiveVoid(returnType)) {
-            if (currentCall != null && currentCall.getNodeMetaData("GROOVY-11286") != null) {
+            if (currentCall != null && currentCall.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE) != null) {
                 return true; // do not load value
             }
             returnType = ClassHelper.OBJECT_TYPE;

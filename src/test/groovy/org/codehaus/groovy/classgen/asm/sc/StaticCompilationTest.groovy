@@ -430,6 +430,25 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    // GROOVY-11630
+    void testVoidMethod5() {
+        assert compile(method: 'm', '''@groovy.transform.CompileStatic
+            void m() {
+                def list = [1,2,3]
+                list.shuffle()
+            }
+        ''').hasStrictSequence([
+                'L1',
+                'LINENUMBER 4 L1',
+                'ALOAD 1',
+                'INVOKESTATIC org/codehaus/groovy/runtime/DefaultGroovyMethods.shuffle (Ljava/util/List;)V',
+                // drop: ACONST_NULL, POP
+                'L2',
+                'LINENUMBER 5 L2',
+                'RETURN'
+            ])
+    }
+
     void testIntLeftShift() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
