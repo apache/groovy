@@ -376,7 +376,7 @@ public class BinaryExpressionHelper {
         controller.getInvocationWriter().makeCall(parent, receiver, constX("putAt"), args(index, rhsValueLoader), InvocationWriter.invokeMethod, safe, false, false);
         controller.getOperandStack().pop(); // method return value
 
-        if (!Boolean.TRUE.equals(parent.getNodeMetaData("GROOVY-11288")))
+        if (!Boolean.TRUE.equals(parent.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE)))
             rhsValueLoader.visit(controller.getAcg()); // assignment expression value
     }
 
@@ -401,7 +401,7 @@ public class BinaryExpressionHelper {
         Expression rightExpression = expression.getRightExpression();
         boolean singleAssignment = !(leftExpression instanceof TupleExpression);
         boolean directAssignment = defineVariable && singleAssignment; //def x=y
-        boolean returnRightValue = !Boolean.TRUE.equals(expression.getNodeMetaData("GROOVY-11288"));
+        boolean returnRightValue = !Boolean.TRUE.equals(expression.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE));
 
         // TODO: LHS has not been visited -- it could be a variable in a closure and type chooser is not aware.
         ClassNode lhsType = controller.getTypeChooser().resolveType(leftExpression, controller.getClassNode());

@@ -288,6 +288,9 @@ public class StaticInvocationWriter extends InvocationWriter {
             controller.getOperandStack().remove(argumentList.size());
 
             if (isPrimitiveVoid(returnType)) {
+                if (currentCall != null && currentCall.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE) != null) {
+                    return true; // do not load value
+                }
                 returnType = ClassHelper.OBJECT_TYPE;
                 mv.visitInsn(ACONST_NULL);
             }
@@ -490,7 +493,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             Label allDone = new Label();
             MethodVisitor mv = controller.getMethodVisitor();
             OperandStack operandStack = controller.getOperandStack();
-            boolean produceResultList = origin.getNodeMetaData("GROOVY-11286") == null;
+            boolean produceResultList = origin.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE) == null;
 
             // if (receiver == null)
             tmpReceiver.visit(controller.getAcg());

@@ -380,7 +380,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
             // update operand stack
             operandStack.remove(3);
 
-            if (!Boolean.TRUE.equals(orig.getNodeMetaData("GROOVY-11288")))
+            if (!Boolean.TRUE.equals(orig.getNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE)))
                 rhsValueLoader.visit(asmGenerator); // re-load result value
         } else {
             super.assignToArray(orig, receiver, index, rhsValueLoader, safe);
