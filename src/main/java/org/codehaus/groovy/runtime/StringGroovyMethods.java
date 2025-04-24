@@ -1982,6 +1982,50 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * A variant of next with an integer count parameter; equivalent to calling next() count times.
+     * <pre class="groovyTestCase">
+     * assert 'a'.next(1) == 'a'.next()
+     * assert 'a'.next(4) == 'e'
+     * assert 'a'.next(0) == 'a'
+     * assert 'a'.next(25) == 'z'
+     * assert 'A'.next(32) == 'a'
+     * assert (0..4).collect('a'::next) == 'a'..'e'
+     * assert 'car'.next(2) == 'cat'
+     * </pre>
+     *
+     * @param self a CharSequence
+     * @param n how many times to increment
+     * @see #next(CharSequence)
+     * @return a value obtained by incrementing the toString() of the CharSequence n times
+     *
+     * @since 5.0.0
+     */
+    public static String next(final CharSequence self, int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("A negative value for n is not supported");
+        }
+        if (n == 0) {
+            return self.toString();
+        }
+        StringBuilder buffer = new StringBuilder(self);
+        if (buffer.length() == 0) {
+            buffer.append(Character.MIN_VALUE);
+        } else {
+            char last = buffer.charAt(buffer.length() - 1);
+            for (; n > 0; n--) {
+                if (last == Character.MAX_VALUE) {
+                    buffer.append(Character.MIN_VALUE);
+                    last = Character.MIN_VALUE;
+                } else {
+                    last++;
+                }
+            }
+            buffer.setCharAt(buffer.length() - 1, last);
+        }
+        return buffer.toString();
+    }
+
+    /**
      * Returns a String with linefeeds and carriage returns normalized to linefeeds.
      *
      * @param self a CharSequence object
@@ -2224,6 +2268,54 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
             char next = last;
             next--;
             buffer.setCharAt(buffer.length() - 1, next);
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * A variant of previous with an integer count parameter; equivalent to calling previous() count times.
+     * <pre class="groovyTestCase">
+     * assert 'b'.previous(1) == 'b'.previous()
+     * assert 'e'.previous(4) == 'a'
+     * assert 'a'.previous(0) == 'a'
+     * assert 'z'.previous(25) == 'a'
+     * assert 'a'.previous(32) == 'A'
+     * assert (0..4).collect('z'::previous) == 'z'..'v'
+     * assert 'cat'.previous(2) == 'car'
+     * </pre>
+     *
+     * @param self a CharSequence
+     * @param n how many times to decrement
+     * @see #previous(CharSequence)
+     * @return a value obtained by decrementing the toString() of the CharSequence n times
+     *
+     * @since 5.0.0
+     */
+    public static String previous(final CharSequence self, int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("A negative value for n is not supported");
+        }
+        if (n == 0) {
+            return self.toString();
+        }
+        StringBuilder buffer = new StringBuilder(self);
+        if (buffer.length() == 0) throw new IllegalArgumentException("the string is empty");
+        char last = buffer.charAt(buffer.length() - 1);
+        boolean empty = false;
+        for (; n > 0; n--) {
+            if (empty) throw new IllegalArgumentException("the string became empty while decrementing");
+            if (last == Character.MIN_VALUE) {
+                buffer.deleteCharAt(buffer.length() - 1);
+                empty = buffer.length() == 0;
+                if (!empty) {
+                    last = buffer.charAt(buffer.length() - 1);
+                }
+            } else {
+                last--;
+            }
+        }
+        if (!empty) {
+            buffer.setCharAt(buffer.length() - 1, last);
         }
         return buffer.toString();
     }
