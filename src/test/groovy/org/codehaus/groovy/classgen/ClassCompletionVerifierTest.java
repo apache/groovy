@@ -170,15 +170,21 @@ public final class ClassCompletionVerifierTest {
 
     @Test
     public void shouldDetectIncorrectMethodModifiersInClass() {
-        ClassNode node = new ClassNode("zzz", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
-        node.addMethod(new MethodNode("tr", ACC_TRANSIENT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        node.addMethod(new MethodNode("tr", ACC_TRANSIENT            , ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("xx", ACC_ABSTRACT | ACC_FINAL , ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)); // GROOVY-11634
+        node.addMethod(new MethodNode("yy", ACC_ABSTRACT | ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("zz", ACC_FINAL    | ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
         // can't check volatile here as it doubles up with bridge
         addStaticConstructor(node);
 
         verifier.visitClass(node);
 
-        checkErrorCount(1);
-        checkErrorMessage("The method 'java.lang.Object tr()' has an incorrect modifier transient.");
+        checkErrorCount(3);
+        checkErrorMessage("The method 'void tr()' has an incorrect modifier transient.");
+        checkErrorMessage("The method 'void xx()' can only be one of abstract, static, final.");
+        checkErrorMessage("The method 'void yy()' can only be one of abstract, static, final.");
+      //checkErrorMessage("The method 'void zz()' can only be one of abstract, static, final.");
     }
 
     @Test

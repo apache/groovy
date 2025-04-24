@@ -66,7 +66,6 @@ import static java.lang.reflect.Modifier.isTransient;
 import static java.lang.reflect.Modifier.isVolatile;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
-import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_NATIVE;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
@@ -120,7 +119,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 checkInterfaceMethodVisibility(node);
                 checkAbstractMethodVisibility(node);
                 checkClassForExtendingFinalOrSealed(node);
-                checkMethodsForIncorrectModifiers(node);
                 checkMethodsForIncorrectName(node);
                 checkMethodsForWeakerAccess(node);
                 checkMethodsForOverridingFinal(node);
@@ -411,20 +409,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
     }
 
-    private void checkMethodsForIncorrectModifiers(final ClassNode cn) {
-        if (!cn.isInterface()) return;
-        for (MethodNode method : cn.getMethods()) {
-            if (method.isFinal()) {
-                addError("The " + getDescription(method) + " from " + getDescription(cn) +
-                        " must not be final. It is by definition abstract.", method);
-            }
-            if (method.isStatic() && !method.isStaticConstructor()) {
-                addError("The " + getDescription(method) + " from " + getDescription(cn) +
-                        " must not be static. Only fields may be static in an interface.", method);
-            }
-        }
-    }
-
     private void checkMethodsForWeakerAccess(final ClassNode cn) {
         for (MethodNode method : cn.getMethods()) {
             checkMethodForWeakerAccessPrivileges(method, cn);
@@ -496,7 +480,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkAbstractDeclaration(node);
         checkRepetitiveMethod(node);
         checkOverloadingPrivateAndPublic(node);
-        checkMethodModifiers(node);
+        checkMethodForIncorrectModifiers(node);
         checkGenericsUsage(node, node.getParameters());
         checkGenericsUsage(node, node.getReturnType());
         for (Parameter param : node.getParameters()) {
@@ -507,16 +491,22 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         super.visitMethod(node);
     }
 
-    private void checkMethodModifiers(final MethodNode node) {
-        // don't check volatile here as it overlaps with ACC_BRIDGE
-        // additional modifiers not allowed for interfaces
-        if ((this.currentClass.getModifiers() & ACC_INTERFACE) != 0) {
+    private void checkMethodForIncorrectModifiers(final MethodNode node) {
+        if (node.isFinal() && currentClass.isInterface()) {
+            addError("The " + getDescription(node) + " from " + getDescription(currentClass) + " must not be final. It is by definition abstract.", node);
+        } else if (node.isStatic() && currentClass.isInterface()) {
+            if (!node.isStaticConstructor()) addError("The " + getDescription(node) + " from " + getDescription(currentClass) + " must not be static. Only fields may be static in an interface.", node);
+        } else if (node.isAbstract() && (node.isStatic() || node.isFinal())) {
+            addError("The " + getDescription(node) + " can only be one of abstract, static, final.", node); // GROOVY-11634
+        }
+
+        if (currentClass.isInterface()) {
+            checkMethodForModifier(node, isNative(node.getModifiers()), "native");
             checkMethodForModifier(node, isStrict(node.getModifiers()), "strictfp");
             checkMethodForModifier(node, isSynchronized(node.getModifiers()), "synchronized");
-            checkMethodForModifier(node, isNative(node.getModifiers()), "native");
         }
-        // transient overlaps with varargs but we don't add varargs until AsmClassGenerator
-        // but we might have varargs set from e.g. @Delegate of a varargs method so skip generated
+        // transient overlaps with varargs but we do not add varargs until AsmClassGenerator
+        // but we might have varargs set from @Delegate of varargs method, so skip generated
         if (!AnnotatedNodeUtils.isGenerated(node)) {
             checkMethodForModifier(node, isTransient(node.getModifiers()), "transient");
         }
