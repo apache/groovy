@@ -174,7 +174,7 @@ public class CachedClass {
         @Override
         public Set<CachedClass> initValue() {
             Class[] classes = getTheClass().getInterfaces();
-            Set<CachedClass> res = new HashSet<>(classes.length);
+            Set<CachedClass> res = new LinkedHashSet<>(classes.length);
             for (Class cls : classes) {
                 res.add(ReflectionCache.getCachedClass(cls));
             }

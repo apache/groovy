@@ -2310,24 +2310,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private void setUpProperties(final PropertyDescriptor[] propertyDescriptors) {
         if (theCachedClass.isInterface) {
-            CachedClass superClass = ReflectionCache.OBJECT_CLASS;
-            List<CachedClass> superInterfaces = new ArrayList<>(theCachedClass.getInterfaces());
-            superInterfaces.remove(theCachedClass); // always includes interface theCachedClass
-            // sort interfaces so that we may ensure a deterministic behaviour in case of
-            // ambiguous fields -- class implementing two interfaces using the same field
-            if (superInterfaces.size() > 1) {
-                superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
+            for (CachedClass iface : theCachedClass.getInterfaces()) { // includes theCachedClass
+                classPropertyIndex.computeIfAbsent(iface, x -> {
+                    var index = new LinkedHashMap<String, MetaProperty>();
+                    addConsts(iface, index);
+                    return index;
+                });
             }
-
-            Map<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(theCachedClass, x -> new LinkedHashMap<>());
-            for (CachedClass sInterface : superInterfaces) {
-                Map<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(sInterface, x -> new LinkedHashMap<>());
-                copyNonPrivateFields(sPropertyIndex, iPropertyIndex, null);
-                addFields(sInterface, iPropertyIndex);
-            }
-            addFields(theCachedClass, iPropertyIndex);
-
             applyPropertyDescriptors(propertyDescriptors);
+            CachedClass superClass = ReflectionCache.OBJECT_CLASS;
             applyStrayPropertyMethods(superClass, classPropertyIndex.computeIfAbsent(superClass, x -> new LinkedHashMap<>()), true);
         } else {
             List<CachedClass> superClasses = getSuperClasses();
@@ -2339,7 +2330,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             if (theCachedClass.isArray) { // add the special read-only "length" property
-                LinkedHashMap<String, MetaProperty> map = new LinkedHashMap<>();
+                var map = new LinkedHashMap<String, MetaProperty>();
                 map.put("length", arrayLengthProperty);
                 classPropertyIndex.put(theCachedClass, map);
             }
@@ -2437,12 +2428,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void inheritStaticInterfaceFields(List<CachedClass> superClasses, Iterable<CachedClass> interfaces) {
-        for (CachedClass iclass : interfaces) {
-            LinkedHashMap<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(iclass, k -> new LinkedHashMap<>());
-            addFields(iclass, iPropertyIndex);
+        for (CachedClass iface : interfaces) {
+            LinkedHashMap<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(iface, x -> {
+                var index = new LinkedHashMap<String, MetaProperty>();
+                addConsts(iface, index);
+                return index;
+            });
             for (CachedClass superClass : superClasses) {
-                if (!iclass.getTheClass().isAssignableFrom(superClass.getTheClass())) continue;
-                LinkedHashMap<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(superClass, k -> new LinkedHashMap<>());
+                if (!iface.getTheClass().isAssignableFrom(superClass.getTheClass())) continue;
+                LinkedHashMap<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(superClass, x -> new LinkedHashMap<>());
                 copyNonPrivateFields(iPropertyIndex, sPropertyIndex, null);
             }
         }
@@ -2462,9 +2456,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private static void addFields(CachedClass klass, Map<String, MetaProperty> propertyIndex) {
+    private static void addConsts(final CachedClass iface, final Map<String, MetaProperty> index) {
+        for (CachedClass superInterface : iface.getDeclaredInterfaces()) { // GROOVY-11639
+            addConsts(superInterface, index);
+        }
+        addFields(iface, index);
+    }
+
+    private static void addFields(final CachedClass klass, final Map<String, MetaProperty> index) {
         for (CachedField field : klass.getFields()) {
-            propertyIndex.put(field.getName(), field);
+            index.put(field.getName(), field);
         }
     }
 
