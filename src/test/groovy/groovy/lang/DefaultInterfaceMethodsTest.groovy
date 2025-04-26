@@ -18,7 +18,7 @@
  */
 package groovy.lang
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -56,6 +56,31 @@ final class DefaultInterfaceMethodsTest {
             }
 
             assert new C().m() == 'Bon jour'
+        '''
+    }
+
+    // GROOVY-11639
+    @Test
+    void testDefaultMethodUsesSuperProperty() {
+        assertScript '''
+            interface I {
+                String FOO = 'foo'
+            }
+
+            interface J extends I {
+                default m() {
+                    return FOO + 'bar'
+                }
+            }
+
+            class C implements J {
+                def xx() {
+                    return m() + 'baz'
+                }
+            }
+
+            String result = new C().xx()
+            assert result == 'foobarbaz'
         '''
     }
 }
