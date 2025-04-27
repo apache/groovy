@@ -3717,6 +3717,37 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-11641
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticMethods4(String mode) {
+        assertScript shell, """
+            $mode
+            trait Foo {
+                public static final String BANG = '!'
+            }
+            $mode
+            trait Bar extends Foo {
+                static staticMethod(String string) {
+                    string + BANG
+                }
+            }
+            $mode
+            class Main implements Bar {
+                static test1() {
+                    String result = staticMethod('works')
+                    assert result == 'works!'
+                }
+                void test2() {
+                    String result = staticMethod('works')
+                    assert result == 'works!'
+                }
+            }
+
+            Main.test1()
+            new Main().test2()
+        """
+    }
+
     // GROOVY-9386
     @Test
     void testTraitPropertyInitializedByTap() {
