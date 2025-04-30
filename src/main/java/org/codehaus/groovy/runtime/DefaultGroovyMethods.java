@@ -17043,7 +17043,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // zip
 
     /**
-     * A collection of all the pairs of two Iterables.
+     * A list of all the pairs from two Iterables.
      * If the iterables are of different sizes, the result will have the same
      * size as the shorter one.
      * <p>
@@ -17057,12 +17057,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @param other another Iterable
-     * @return a collection of all the pairs from self and other
+     * @return a list of all the pairs from self and other
      * @see #transpose(List) for zipping more than two lists
      * @since 5.0.0
      */
-    public static <U, V> Collection<Tuple2<U, V>> zip(Iterable<U> self, Iterable<V> other) {
-        Collection<Tuple2<U, V>> result = new ArrayList<>();
+    public static <U, V> List<Tuple2<U, V>> zip(Iterable<U> self, Iterable<V> other) {
+        List<Tuple2<U, V>> result = new ArrayList<>();
         addAll(result, zip(self.iterator(), other.iterator()));
         return result;
     }
