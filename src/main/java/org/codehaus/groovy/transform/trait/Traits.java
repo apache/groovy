@@ -244,7 +244,6 @@ public abstract class Traits {
         return null;
     }
 
-
     /**
      * Converts a class implementing some trait into a target class. If the trait is a dynamic proxy and
      * that the target class is assignable to the target object of the proxy, then the target object is

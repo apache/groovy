@@ -18,17 +18,25 @@
  */
 package org.codehaus.groovy.transform.traitx
 
+import groovy.transform.AnnotationCollector
 import groovy.transform.SelfType
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class TraitASTTransformationTest {
+
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    @AnnotationCollector
+    @interface CompileModesTest { }
 
     private final GroovyShell shell = GroovyShell.withConfig {
         imports {
@@ -477,159 +485,145 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test
-    void testTraitWithGenerics1() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait Provider<T> {
-                    T get() { null }
-                }
-                $mode
-                class StringProvider implements Provider<String> {
-                }
-                $mode
-                void test() {
-                    def c = new StringProvider()
-                    assert c.get() == null
-                }
-                test()
-            """
-        }
+    @CompileModesTest
+    void testTraitWithGenerics1(String mode) {
+        assertScript shell, """
+            $mode
+            trait Provider<T> {
+                T get() { null }
+            }
+            $mode
+            class StringProvider implements Provider<String> {
+            }
+            $mode
+            void test() {
+                def c = new StringProvider()
+                assert c.get() == null
+            }
+            test()
+        """
     }
 
-    @Test
-    void testTraitWithGenerics2() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait Provider<T> {
-                    T get(T t) { t }
-                }
-                $mode
-                class StringProvider implements Provider<String> {
-                }
-                $mode
-                void test() {
-                    def p = new StringProvider()
-                    assert p.get('foo') == 'foo'
-                }
-                test()
-            """
-        }
+    @CompileModesTest
+    void testTraitWithGenerics2(String mode) {
+        assertScript shell, """
+            $mode
+            trait Provider<T> {
+                T get(T t) { t }
+            }
+            $mode
+            class StringProvider implements Provider<String> {
+            }
+            $mode
+            void test() {
+                def p = new StringProvider()
+                assert p.get('foo') == 'foo'
+            }
+            test()
+        """
     }
 
     // GROOVY-9760
-    @Test
-    void testTraitWithGenerics3() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait Provider<T> {
-                    T get(T t) { t }
-                }
-                $mode
-                class UnspecifiedProvider implements Provider {
-                }
-                $mode
-                void test() {
-                    assert new UnspecifiedProvider().get('foo') == 'foo'
-                }
-                test()
-            """
-        }
+    @CompileModesTest
+    void testTraitWithGenerics3(String mode) {
+        assertScript shell, """
+            $mode
+            trait Provider<T> {
+                T get(T t) { t }
+            }
+            $mode
+            class UnspecifiedProvider implements Provider {
+            }
+            $mode
+            void test() {
+                assert new UnspecifiedProvider().get('foo') == 'foo'
+            }
+            test()
+        """
     }
 
     // GROOVY-11012
-    @Test
-    void testTraitWithGenerics4() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait Provider<T> {
-                    T get(T t) { t }
-                }
-                $mode
-                class Supplier<U> implements Provider<U> {
-                }
-                $mode
-                void test() {
-                    def s = new Supplier<Number>()
-                    Number n = s.get(42)
-                    assert n == 42
-                }
-                test()
-            """
-        }
+    @CompileModesTest
+    void testTraitWithGenerics4(String mode) {
+        assertScript shell, """
+            $mode
+            trait Provider<T> {
+                T get(T t) { t }
+            }
+            $mode
+            class Supplier<U> implements Provider<U> {
+            }
+            $mode
+            void test() {
+                def s = new Supplier<Number>()
+                Number n = s.get(42)
+                assert n == 42
+            }
+            test()
+        """
     }
 
-    @Test
-    void testTraitWithGenericProperty1() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait PropertyProvider<T> {
-                    T foo
-                }
-                $mode
-                class StringProperty implements PropertyProvider<String> {
-                }
-                $mode
-                void test() {
-                    def c = new StringProperty()
-                    c.foo = 'foo'
-                    assert c.foo == 'foo'
-                }
-                test()
-            """
-        }
+    @CompileModesTest
+    void testTraitWithGenericProperty1(String mode) {
+        assertScript shell, """
+            $mode
+            trait PropertyProvider<T> {
+                T foo
+            }
+            $mode
+            class StringProperty implements PropertyProvider<String> {
+            }
+            $mode
+            void test() {
+                def c = new StringProperty()
+                c.foo = 'foo'
+                assert c.foo == 'foo'
+            }
+            test()
+        """
     }
 
-    @Test
-    void testTraitWithGenericProperty2() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait PropertyProvider<T> {
-                    List<T> foo
-                }
-                $mode
-                class StringProperty implements PropertyProvider<String> {
-                }
-                $mode
-                void test() {
-                    def c = new StringProperty()
-                    c.foo = ['foo']
-                    assert c.foo == ['foo']
-                }
-                test()
-            """
-        }
+    @CompileModesTest
+    void testTraitWithGenericProperty2(String mode) {
+        assertScript shell, """
+            $mode
+            trait PropertyProvider<T> {
+                List<T> foo
+            }
+            $mode
+            class StringProperty implements PropertyProvider<String> {
+            }
+            $mode
+            void test() {
+                def c = new StringProperty()
+                c.foo = ['foo']
+                assert c.foo == ['foo']
+            }
+            test()
+        """
     }
 
-    @Test
-    void testTraitWithGenericProperty3() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait PropertyProvider<T> {
-                    private T foo
-                    T getFoo() { foo }
-                    void setFoo(T t) { foo = t }
-                }
-                $mode
-                class StringProperty implements PropertyProvider<String> {
-                }
-                $mode
-                void test() {
-                    def c = new StringProperty(foo:'bar')
-                    assert c.getFoo() == 'bar'
-                    c.setFoo('foo')
-                    assert c.getFoo() == 'foo'
-                }
-                test()
-            """
-        }
+    @CompileModesTest
+    void testTraitWithGenericProperty3(String mode) {
+        assertScript shell, """
+            $mode
+            trait PropertyProvider<T> {
+                private T foo
+                T getFoo() { foo }
+                void setFoo(T t) { foo = t }
+            }
+            $mode
+            class StringProperty implements PropertyProvider<String> {
+            }
+            $mode
+            void test() {
+                def c = new StringProperty(foo:'bar')
+                assert c.getFoo() == 'bar'
+                c.setFoo('foo')
+                assert c.getFoo() == 'foo'
+            }
+            test()
+        """
     }
 
     @Test
@@ -1722,105 +1716,99 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-7213, GROOVY-8859
-    @Test
-    void testPrivateMethodInTrait() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait T {
-                    private String secret() { 'secret' }
-                    String foo() { secret() }
-                }
-                $mode
-                class C implements T {
-                }
+    @CompileModesTest
+    void testPrivateMethodInTrait(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private String secret() { 'secret' }
+                String foo() { secret() }
+            }
+            $mode
+            class C implements T {
+            }
 
-                assert new C().foo() == 'secret'
-            """
+            assert new C().foo() == 'secret'
+        """
 
-            shouldFail shell, """
-                $mode
-                trait T {
-                    public String bar() {
-                        'public'
-                    }
-                    private String baz() {
-                        'private'
-                    }
+        shouldFail shell, """
+            $mode
+            trait T {
+                public String bar() {
+                    'public'
                 }
-                $mode
-                class C implements T {
-                    def foo() {
-                        bar() + baz()
-                    }
+                private String baz() {
+                    'private'
                 }
+            }
+            $mode
+            class C implements T {
+                def foo() {
+                    bar() + baz()
+                }
+            }
 
-                assert new C().foo() == 'publicprivate'
-            """
-        }
+            assert new C().foo() == 'publicprivate'
+        """
     }
 
-    @Test
-    void testPrivateMethodInTraitAccessingPrivateField() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait T {
-                    private int x = 0
-                    private int secret() { x += 1 }
-                    int foo() { secret() }
-                }
-                $mode
-                class C implements T {
-                }
+    @CompileModesTest
+    void testPrivateMethodInTraitAccessingPrivateField(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private int x = 0
+                private int secret() { x += 1 }
+                int foo() { secret() }
+            }
+            $mode
+            class C implements T {
+            }
 
-                def c = new C()
-                assert c.foo() == 1
-                assert c.foo() == 2
-            """
+            def c = new C()
+            assert c.foo() == 1
+            assert c.foo() == 2
+        """
 
-            // GROOVY-7214
-            assertScript shell, """
-                $mode
-                trait T {
-                    private static int x = 0
-                    private static initX() {
-                        x = 42
-                    }
-                    static getValue() {
-                        initX()
-                        x
-                    }
+        // GROOVY-7214
+        assertScript shell, """
+            $mode
+            trait T {
+                private static int x = 0
+                private static initX() {
+                    x = 42
                 }
-                $mode
-                class C implements T {
+                static getValue() {
+                    initX()
+                    x
                 }
+            }
+            $mode
+            class C implements T {
+            }
 
-                assert C.value == 42
-            """
-        }
+            assert C.value == 42
+        """
     }
 
-    @Test
-    void testPrivateMethodInTraitAccessingPrivateFieldNoShadowing() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait T {
-                    private int x = 0
-                    private int secret() { x += 1 }
-                    int foo() { secret() }
-                }
-                $mode
-                class C implements T {
-                    int secret() { 666 }
-                }
+    @CompileModesTest
+    void testPrivateMethodInTraitAccessingPrivateFieldNoShadowing(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                private int x = 0
+                private int secret() { x += 1 }
+                int foo() { secret() }
+            }
+            $mode
+            class C implements T {
+                int secret() { 666 }
+            }
 
-                def c = new C()
-                assert c.foo() == 1
-                assert c.foo() == 2
-            """
-        }
+            def c = new C()
+            assert c.foo() == 1
+            assert c.foo() == 2
+        """
     }
 
     @Test
@@ -2017,199 +2005,193 @@ final class TraitASTTransformationTest {
         assert err =~ 'Cannot return value of type java.lang.String for method returning int'
     }
 
-    @Test
-    void testTraitStaticMethod() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait T {
-                    static String foo() { 'static method' }
-                }
-                $mode
-                class C implements T {
-                }
-                $mode
-                class D extends C {
-                }
+    @CompileModesTest
+    void testTraitStaticMethod(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static String foo() { 'static method' }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D extends C {
+            }
 
-                assert C.foo() == 'static method'
-                assert D.foo() == 'static method'
-                assert new C().foo() == 'static method'
-                assert new D().foo() == 'static method'
-            """
+            assert C.foo() == 'static method'
+            assert D.foo() == 'static method'
+            assert new C().foo() == 'static method'
+            assert new D().foo() == 'static method'
+        """
 
-            // GROOVY-7322
-            assertScript shell, """
-                $mode
-                trait T {
-                    static String bar() { 'static method' }
-                    static String foo() { bar() }
-                }
-                $mode
-                class C implements T {
-                }
-                $mode
-                class D extends C {
-                }
+        // GROOVY-7322
+        assertScript shell, """
+            $mode
+            trait T {
+                static String bar() { 'static method' }
+                static String foo() { bar() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D extends C {
+            }
 
-                assert C.foo() == 'static method'
-                assert D.foo() == 'static method'
-                assert new C().foo() == 'static method'
-                assert new D().foo() == 'static method'
-            """
+            assert C.foo() == 'static method'
+            assert D.foo() == 'static method'
+            assert new C().foo() == 'static method'
+            assert new D().foo() == 'static method'
+        """
 
-            // GROOVY-7191
-            assertScript shell, """
-                $mode
-                trait T {
-                    static Number bar() { 1 }
-                           Number foo() { bar() }
-                }
-                $mode
-                class C implements T {
-                }
-                $mode
-                class D extends C {
-                }
+        // GROOVY-7191
+        assertScript shell, """
+            $mode
+            trait T {
+                static Number bar() { 1 }
+                       Number foo() { bar() }
+            }
+            $mode
+            class C implements T {
+            }
+            $mode
+            class D extends C {
+            }
 
-                assert new C().foo() == 1
-                assert new D().foo() == 1
-            """
+            assert new C().foo() == 1
+            assert new D().foo() == 1
+        """
 
-            // GROOVY-8854
-            assertScript shell, """
-                $mode
-                trait T {
-                    boolean passes
-                    void audit() {
-                        if (checkCondition()) {
-                            passes = true
-                        }
-                    }
-                    private static boolean checkCondition() {
-                        true
+        // GROOVY-8854
+        assertScript shell, """
+            $mode
+            trait T {
+                boolean passes
+                void audit() {
+                    if (checkCondition()) {
+                        passes = true
                     }
                 }
-                $mode
-                class C implements T {
-                    String name
+                private static boolean checkCondition() {
+                    true
                 }
-                $mode
-                class D extends C {
-                }
+            }
+            $mode
+            class C implements T {
+                String name
+            }
+            $mode
+            class D extends C {
+            }
 
-                def c = new C(name:'name')
-                c.audit(); assert c.passes
+            def c = new C(name:'name')
+            c.audit(); assert c.passes
 
-                def d = new D(name:'name')
-                d.audit(); assert d.passes
-            """
-        }
+            def d = new D(name:'name')
+            d.audit(); assert d.passes
+        """
     }
 
-    @Test
-    void testTraitStaticField() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait T {
-                    public static int VAL = 123
-                }
-                $mode
-                class C implements T {
-                }
+    @CompileModesTest
+    void testTraitStaticField(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                public static int VAL = 123
+            }
+            $mode
+            class C implements T {
+            }
 
-                assert C.T__VAL == 123
-            """
+            assert C.T__VAL == 123
+        """
 
-            assertScript shell, """
-                $mode
-                trait T {
-                    public static int VAL = 123
-                    public static void update(int x) { VAL = x }
-                }
-                $mode
-                class C implements T {
-                }
+        assertScript shell, """
+            $mode
+            trait T {
+                public static int VAL = 123
+                public static void update(int x) { VAL = x }
+            }
+            $mode
+            class C implements T {
+            }
 
-                assert C.T__VAL == 123
-                C.update(456)
-                assert C.T__VAL == 456
-            """
-        }
+            assert C.T__VAL == 123
+            C.update(456)
+            assert C.T__VAL == 456
+        """
     }
 
-    @Test
-    void testTraitStaticProperty() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait T {
-                    static int VAL = 123
-                    public static void update(int x) { VAL = x }
-                }
-                $mode
-                class C implements T {
-                }
+    @CompileModesTest
+    void testTraitStaticProperty(String mode) {
+        assertScript shell, """
+            $mode
+            trait T {
+                static int VAL = 123
+                public static void update(int x) { VAL = x }
+            }
+            $mode
+            class C implements T {
+            }
 
-                assert C.VAL == 123
-                C.update(456)
-                assert C.VAL == 456
-            """
+            assert C.VAL == 123
+            C.update(456)
+            assert C.VAL == 456
+        """
 
-            // GROOVY-7255
-            assertScript shell, """
-                $mode
-                trait T {
-                    static List stuff = [1,2,3]
+        // GROOVY-7255
+        assertScript shell, """
+            $mode
+            trait T {
+                static List stuff = [1,2,3]
 
-                    static initStuff(List list) {
-                        stuff = stuff + list
-                    }
+                static initStuff(List list) {
+                    stuff = stuff + list
                 }
-                $mode
-                class C implements T {
-                }
+            }
+            $mode
+            class C implements T {
+            }
 
-                C.initStuff([4,5,6])
-                assert C.stuff == [1,2,3,4,5,6]
-            """
+            C.initStuff([4,5,6])
+            assert C.stuff == [1,2,3,4,5,6]
+        """
 
-            assertScript shell, """
-                $mode
-                trait T {
-                    static int p = 1
+        assertScript shell, """
+            $mode
+            trait T {
+                static int p = 1
+            }
+            $mode
+            class C implements T {
+                static int m() {
+                    setP(2)
+                    setP(getP() + 1)
+                    return getP()
                 }
-                $mode
-                class C implements T {
-                    static int m() {
-                        setP(2)
-                        setP(getP() + 1)
-                        return getP()
-                    }
-                }
+            }
 
-                assert C.m() == 3
-            """
+            assert C.m() == 3
+        """
 
-            // GROOVY-9678
-            assertScript shell, """
-                $mode
-                trait T {
-                    static int p = 1
+        // GROOVY-9678
+        assertScript shell, """
+            $mode
+            trait T {
+                static int p = 1
+            }
+            $mode
+            class C implements T {
+                static int m() {
+                    p = 2
+                    p += 1
+                    return p
                 }
-                $mode
-                class C implements T {
-                    static int m() {
-                        p = 2
-                        p += 1
-                        return p
-                    }
-                }
+            }
 
-                assert C.m() == 3
-            """
-        }
+            assert C.m() == 3
+        """
     }
 
     @Test
@@ -3243,7 +3225,7 @@ final class TraitASTTransformationTest {
 
         System.setProperty('spock.iKnowWhatImDoing.disableGroovyVersionCheck','true')
         assertScript shell, """
-            @Grab('org.spockframework:spock-core:2.4-M5-groovy-4.0')
+            @Grab('org.spockframework:spock-core:2.4-M6-groovy-4.0')
             @GrabExclude('org.apache.groovy:*')
             import spock.lang.Specification
 
@@ -3442,32 +3424,30 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-8731
-    @Test
-    void testStaticMethodsIgnoredWhenExistingInstanceMethodsFound() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait StaticFooBarBaz {
-                    static int foo() { 100 }
-                    static int baz() { 200 }
-                    static int bar() { 300 }
-                }
-                $mode
-                trait InstanceBar {
-                    int bar() { -10 }
-                }
-                $mode
-                class FooBarBaz implements StaticFooBarBaz, InstanceBar {
-                    int baz() { -20 }
-                }
+    @CompileModesTest
+    void testStaticMethodsIgnoredWhenExistingInstanceMethodsFound(String mode) {
+        assertScript shell, """
+            $mode
+            trait StaticFooBarBaz {
+                static int foo() { 100 }
+                static int baz() { 200 }
+                static int bar() { 300 }
+            }
+            $mode
+            trait InstanceBar {
+                int bar() { -10 }
+            }
+            $mode
+            class FooBarBaz implements StaticFooBarBaz, InstanceBar {
+                int baz() { -20 }
+            }
 
-                assert FooBarBaz.foo() == 100
-                new FooBarBaz().with {
-                    assert bar() == -10
-                    assert baz() == -20
-                }
-            """
-        }
+            assert FooBarBaz.foo() == 100
+            new FooBarBaz().with {
+                assert bar() == -10
+                assert baz() == -20
+            }
+        """
     }
 
     // GROOVY-6716
@@ -3627,122 +3607,145 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-8954
-    @Test
-    void testTraitWithPropertyAlsoFromInterface() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                interface DomainProp {
-                    boolean isNullable()
-                }
-                $mode
-                abstract class OrderedProp implements DomainProp {
-                }
-                $mode
-                trait Nullable {
-                    boolean nullable = true
-                }
-                $mode
-                abstract class CustomProp extends OrderedProp implements Nullable {
-                }
+    @CompileModesTest
+    void testTraitWithPropertyAlsoFromInterface(String mode) {
+        assertScript shell, """
+            $mode
+            interface DomainProp {
+                boolean isNullable()
+            }
+            $mode
+            abstract class OrderedProp implements DomainProp {
+            }
+            $mode
+            trait Nullable {
+                boolean nullable = true
+            }
+            $mode
+            abstract class CustomProp extends OrderedProp implements Nullable {
+            }
 
-                assert new CustomProp() {}
-            """
-        }
+            assert new CustomProp() {}
+        """
     }
 
     // GROOVY-8272
-    @Test
-    void testTraitAccessToInheritedStaticMethods() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait Foo {
-                    static String go() {
-                        'Go!'
-                    }
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticMethods(String mode) {
+        assertScript shell, """
+            $mode
+            trait Foo {
+                static String go() {
+                    'Go!'
                 }
-                $mode
-                trait Bar extends Foo {
-                    String test() {
-                        go().toUpperCase()
-                    }
+            }
+            $mode
+            trait Bar extends Foo {
+                String test() {
+                    go().toUpperCase()
                 }
-                $mode
-                class Main implements Bar {
-                }
+            }
+            $mode
+            class Main implements Bar {
+            }
 
-                assert new Main().test() == 'GO!'
-            """
-        }
+            assert new Main().test() == 'GO!'
+        """
     }
 
     // GROOVY-10312
-    @Test
-    void testTraitAccessToInheritedStaticMethods2() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                trait Foo {
-                    static String staticMethod(String string) {
-                        return string
-                    }
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticMethods2(String mode) {
+        assertScript shell, """
+            $mode
+            trait Foo {
+                static String staticMethod(String string) {
+                    return string
                 }
-                $mode
-                trait Bar extends Foo {
-                    static String staticMethodWithDefaultArgument(String string = 'works') {
-                        staticMethod(string) // MissingMethodException
-                    }
+            }
+            $mode
+            trait Bar extends Foo {
+                static String staticMethodWithDefaultArgument(String string = 'works') {
+                    staticMethod(string) // MissingMethodException
                 }
-                $mode
-                class Main implements Bar {
-                    static test1() {
-                        String result = staticMethodWithDefaultArgument()
-                        assert result == 'works'
-                    }
-                    void test2() {
-                        String result = staticMethodWithDefaultArgument()
-                        assert result == 'works'
-                    }
+            }
+            $mode
+            class Main implements Bar {
+                static test1() {
+                    String result = staticMethodWithDefaultArgument()
+                    assert result == 'works'
                 }
+                void test2() {
+                    String result = staticMethodWithDefaultArgument()
+                    assert result == 'works'
+                }
+            }
 
-                Main.test1()
-                new Main().test2()
-            """
-        }
+            Main.test1()
+            new Main().test2()
+        """
     }
 
     // GROOVY-10312
-    @Test
-    void testTraitAccessToInheritedStaticMethods3() {
-        for (mode in ['','@TypeChecked','@CompileStatic']) {
-            assertScript shell, """
-                $mode
-                interface Foo {
-                    public static final String BANG = '!'
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticMethods3(String mode) {
+        assertScript shell, """
+            $mode
+            interface Foo {
+                public static final String BANG = '!'
+            }
+            $mode
+            trait Bar implements Foo {
+                static String staticMethodWithDefaultArgument(String string = 'works') {
+                    string + BANG
                 }
-                $mode
-                trait Bar implements Foo {
-                    static String staticMethodWithDefaultArgument(String string = 'works') {
-                        string + BANG
-                    }
+            }
+            $mode
+            class Main implements Bar {
+                static test1() {
+                    String result = staticMethodWithDefaultArgument()
+                    assert result == 'works!'
                 }
-                $mode
-                class Main implements Bar {
-                    static test1() {
-                        String result = staticMethodWithDefaultArgument()
-                        assert result == 'works!'
-                    }
-                    void test2() {
-                        String result = staticMethodWithDefaultArgument()
-                        assert result == 'works!'
-                    }
+                void test2() {
+                    String result = staticMethodWithDefaultArgument()
+                    assert result == 'works!'
                 }
+            }
 
-                Main.test1()
-                new Main().test2()
-            """
-        }
+            Main.test1()
+            new Main().test2()
+        """
+    }
+
+    // GROOVY-11641
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticMethods4(String mode) {
+        assertScript shell, """
+            $mode
+            trait Foo {
+                public static final String BANG = '!'
+            }
+            $mode
+            trait Bar extends Foo {
+                static staticMethod(String string) {
+                    string + BANG
+                }
+            }
+            $mode
+            class Main implements Bar {
+                static test1() {
+                    String result = staticMethod('works')
+                    assert result == 'works!'
+                }
+                void test2() {
+                    String result = staticMethod('works')
+                    assert result == 'works!'
+                }
+            }
+
+            Main.test1()
+            new Main().test2()
+        """
     }
 
     // GROOVY-9386

@@ -285,8 +285,8 @@ public abstract class Selector {
     private static class PropertySelector extends MethodSelector {
         private boolean insertName;
 
-        public PropertySelector(CacheableCallSite callSite, Class<?> sender, String methodName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
-            super(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+        public PropertySelector(CacheableCallSite callSite, Class<?> sender, String propertyName, CallType callType, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
+            super(callSite, sender, propertyName, callType, safeNavigation, thisCall, spreadCall, arguments);
         }
 
         /**
