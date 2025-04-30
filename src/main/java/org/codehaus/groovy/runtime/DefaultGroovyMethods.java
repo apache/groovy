@@ -1947,7 +1947,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p>
      * Example usage:
      * <pre class="groovyTestCase">
-     * def shape = Iterators.iterate(1, n {@code ->} n + 2).take(10).plus([3] * 3)
+     * def trunk = [3, 3, 3].iterator()
+     * def shape = Iterators.iterate(1, n {@code ->} n + 2).take(10).plus(trunk)
      * def tree = ['*']
      *     .repeat()
      *     .chop(true, shape)
@@ -11134,22 +11135,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new PlusIterator<>(left, right);
     }
 
-    /**
-     * Appends an iterator and an iterable.
-     *
-     * <pre class="groovyTestCase">
-     * assert [1, 2].iterator().plus([3, 4]).toList() == 1..4
-     * </pre>
-     *
-     * @param left  an Iterator
-     * @param right an Iterable
-     * @return an iterator of all the items from first then second
-     * @since 5.0.0
-     */
-    public static <T> Iterator<T> plus(Iterator<T> left, Iterable<T> right) {
-        return plus(left, right.iterator());
-    }
-
     private static final class PlusIterator<E> implements Iterator<E> {
         private final Iterator<E> first;
         private final Iterator<E> second;
@@ -17100,27 +17085,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return new ZipIterator<>(self, other);
     }
 
-    /**
-     * An iterator of all the pairs from this iterator and the iterable.
-     * If the sources are of different sizes, the result will have the same
-     * size as the shorter one.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def small = [1, 2, 3].iterator()
-     * def large = [100, 200, 300]
-     * assert [101, 202, 303] == small.zip(large).collect{ a, b {@code ->} a + b }
-     * </pre>
-     *
-     * @param self an Iterator
-     * @param other an Iterable
-     * @return an iterator of all the pairs from self and other
-     * @since 5.0.0
-     */
-    public static <U, V> Iterator<Tuple2<U, V>> zip(Iterator<U> self, Iterable<V> other) {
-        return zip(self, other.iterator());
-    }
-
     private static final class ZipIterator<U, V> implements Iterator<Tuple2<U, V>> {
         private final Iterator<U> delegate;
         private final Iterator<V> other;
@@ -17197,29 +17161,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <U, V> Iterator<Tuple2<U, V>> zipAll(Iterator<U> left, Iterator<V> right, U leftDefault, V rightDefault) {
         return new ZipAllIterator<>(left, right, leftDefault, rightDefault);
-    }
-
-    /**
-     * An iterator of all the pairs of an Iterator and an Iterable with potentially different numbers of elements.
-     * If the iterables are of different sizes, the result will have the same
-     * size as the longer one with values completed using the provided default.
-     * <p>
-     * Example:
-     * <pre class="groovyTestCase">
-     * def ab = ['a', 'b'].iterator()
-     * def abcd = ('a'..'d').iterator()
-     * def nums = (1..3)
-     * assert ['a1', 'b2', 'unknown3'] == ab.zipAll(nums, 'unknown', 0).collect{ a, b {@code ->} a + b }
-     * assert ['a1', 'b2', 'c3', 'd0'] == abcd.zipAll(nums, 'unknown', 0).collect{ a, b {@code ->} a + b }
-     * </pre>
-     *
-     * @param left an Iterator
-     * @param right an Iterable
-     * @return an iterator of all the pairs from left and right
-     * @since 5.0.0
-     */
-    public static <U, V> Iterator<Tuple2<U, V>> zipAll(Iterator<U> left, Iterable<V> right, U leftDefault, V rightDefault) {
-        return zipAll(left, right.iterator(), leftDefault, rightDefault);
     }
 
     private static final class ZipAllIterator<U, V> implements Iterator<Tuple2<U, V>> {
