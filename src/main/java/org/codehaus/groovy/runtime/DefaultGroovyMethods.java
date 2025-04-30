@@ -2544,7 +2544,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A variant of collectEntries for Iterators.
-     *
+     * <pre class="groovyTestCase">
+     * assert Iterators.iterate(0, Integer::next).take(4).collectEntries { n ->
+     *     ['a'.next(n), n]
+     * } == [a:0, b:1, c:2, d:3]
+     * </pre>
      * @param self      an Iterator
      * @param transform the closure used for transforming, which has an item from self as the parameter and
      *                  should return a Map.Entry, a Map or a two-element list containing the resulting key and value
