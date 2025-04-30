@@ -1085,6 +1085,118 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // column
+
+    /**
+     * Select a column from a 2D array.
+     * <pre class="groovyTestCase">
+     * double[][] nums = [[1.0d, 2.0d], [10.0d, 20.0d]]
+     * assert nums.column(0) == [1.0d, 10.0d] as double[]
+     * assert nums.column(1) == [2.0d, 20.0d] as double[]
+     * </pre>
+     *
+     * @param self a double[][]
+     * @return a double[]
+     */
+    public static double[] column(double[][] self, int col) {
+        Objects.requireNonNull(self);
+        int rows = self.length;
+        if (rows == 0) {
+            return new double[0];
+        }
+        validateCol(self[0].length, col);
+        final double[] result = new double[rows];
+        for (int row = 0; row < rows; row++) {
+            result[row] = self[row][col];
+        }
+        return result;
+    }
+
+    /**
+     * Select a column from a 2D array.
+     * <pre class="groovyTestCase">
+     * float[][] nums = [[1.0f, 2.0f], [10.0f, 20.0f]]
+     * assert nums.column(0) == [1.0f, 10.0f] as float[]
+     * assert nums.column(1) == [2.0f, 20.0f] as float[]
+     * </pre>
+     *
+     * @param self a float[][]
+     * @return a float[]
+     */
+    public static float[] column(float[][] self, int col) {
+        Objects.requireNonNull(self);
+        int rows = self.length;
+        if (rows == 0) {
+            return new float[0];
+        }
+        validateCol(self[0].length, col);
+        final float[] result = new float[rows];
+        for (int row = 0; row < rows; row++) {
+            result[row] = self[row][col];
+        }
+        return result;
+    }
+
+    /**
+     * Select a column from a 2D array.
+     * <pre class="groovyTestCase">
+     * int[][] nums = [[1, 2], [10, 20]]
+     * assert nums.column(0) == [1, 10] as int[]
+     * assert nums.column(1) == [2, 20] as int[]
+     * </pre>
+     *
+     * @param self an int[][]
+     * @return an int[]
+     */
+    public static int[] column(int[][] self, int col) {
+        Objects.requireNonNull(self);
+        int rows = self.length;
+        if (rows == 0) {
+            return new int[0];
+        }
+        validateCol(self[0].length, col);
+        final int[] result = new int[rows];
+        for (int row = 0; row < rows; row++) {
+            result[row] = self[row][col];
+        }
+        return result;
+    }
+
+    /**
+     * Select a column from a 2D array.
+     * <pre class="groovyTestCase">
+     * long[][] nums = [[1L, 2L], [10L, 20L]]
+     * assert nums.column(0) == [1L, 10L] as long[]
+     * assert nums.column(1) == [2L, 20L] as long[]
+     * </pre>
+     *
+     * @param self a long[][]
+     * @return a long[]
+     */
+    public static long[] column(long[][] self, int col) {
+        Objects.requireNonNull(self);
+        int rows = self.length;
+        if (rows == 0) {
+            return new long[0];
+        }
+        validateCol(self[0].length, col);
+        final long[] result = new long[rows];
+        for (int row = 0; row < rows; row++) {
+            result[row] = self[row][col];
+        }
+        return result;
+    }
+
+    private static void validateCol(int size, int col) {
+        if (col < 0) {
+            throw new IllegalArgumentException("Expected column value of " + col + " to be 0 or greater");
+        }
+        if (col >= size) {
+            throw new IllegalArgumentException("Expected column value of " + col + " to be less than " + size);
+        }
+    }
+
+    //--------------------------------------------------------------------------
     // columns
 
     /**
@@ -1851,6 +1963,81 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void eachByte(Byte[] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         each(self, closure);
+    }
+
+    //--------------------------------------------------------------------------
+    // eachColumn
+
+    /**
+     * Process the columns of the array.
+     * <pre class="groovyTestCase">
+     * double[][] nums = [[1.0d, 2.0d], [10.0d, 20.0d]]
+     * nums.eachColumn {
+     *     assert it[0] * 10.0d == it[1]
+     * }
+     * </pre>
+     *
+     * @param self a double[][]
+     * @param closure the closure applied on each array column
+     * @return the self array
+     */
+    public static double[][] eachColumn(double[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        DefaultGroovyMethods.each(new DoubleDoubleArrayColumnIterator(self), closure);
+        return self;
+    }
+
+    /**
+     * Process the columns of the array.
+     * <pre class="groovyTestCase">
+     * double[][] nums = [[1.0f, 2.0f], [10.0f, 20.0f]]
+     * nums.eachColumn {
+     *     assert it[0] * 10.0f == it[1]
+     * }
+     * </pre>
+     *
+     * @param self a float[][]
+     * @param closure the closure applied on each array column
+     * @return the self array
+     */
+    public static float[][] eachColumn(float[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        DefaultGroovyMethods.each(new FloatFloatArrayColumnIterator(self), closure);
+        return self;
+    }
+
+    /**
+     * Process the columns of the array.
+     * <pre class="groovyTestCase">
+     * double[][] nums = [[1, 2], [10, 20]]
+     * nums.eachColumn {
+     *     assert it[0] * 10 == it[1]
+     * }
+     * </pre>
+     *
+     * @param self an int[][]
+     * @param closure the closure applied on each array column
+     * @return the self array
+     */
+    public static int[][] eachColumn(int[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        DefaultGroovyMethods.each(new IntIntArrayColumnIterator(self), closure);
+        return self;
+    }
+
+    /**
+     * Process the columns of the array.
+     * <pre class="groovyTestCase">
+     * double[][] nums = [[1L, 2L], [10L, 20L]]
+     * nums.eachColumn {
+     *     assert it[0] * 10L == it[1]
+     * }
+     * </pre>
+     *
+     * @param self a long[][]
+     * @param closure the closure applied on each array column
+     * @return the self array
+     */
+    public static long[][] eachColumn(long[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
+        DefaultGroovyMethods.each(new LongLongArrayColumnIterator(self), closure);
+        return self;
     }
 
     //--------------------------------------------------------------------------
