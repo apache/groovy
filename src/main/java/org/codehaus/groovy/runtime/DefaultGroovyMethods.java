@@ -5102,7 +5102,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object find(Object self, Closure closure) {
         BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+        for (Iterator<Object> iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
             if (bcw.call(value)) {
                 return value;
