@@ -57,7 +57,7 @@ import org.codehaus.groovy.tools.groovydoc.SimpleGroovyProgramElementDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,9 +65,9 @@ import java.util.Optional;
 public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
     private final List<LinkArgument> links;
     private SimpleGroovyClassDoc currentClassDoc = null;
-    private Map<String, GroovyClassDoc> classDocs = new HashMap<>();
+    private Map<String, GroovyClassDoc> classDocs = new LinkedHashMap<>();
     private String packagePath;
-    private final Map<String, String> aliases = new HashMap<>();
+    private final Map<String, String> aliases = new LinkedHashMap<>();
     private List<String> imports = new ArrayList<>();
     private static final String FS = "/";
 

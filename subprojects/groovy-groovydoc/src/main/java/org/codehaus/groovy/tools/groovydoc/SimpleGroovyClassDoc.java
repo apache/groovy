@@ -34,7 +34,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -113,7 +112,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         interfaceNames = new ArrayList<>();
         interfaceClasses = new ArrayList<>();
         nested = new ArrayList<>();
-        resolvedExternalClassesCache = new HashMap<>();
+        resolvedExternalClassesCache = new LinkedHashMap<>();
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, Map<String, String> aliases, String name) {

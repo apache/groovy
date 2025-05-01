@@ -24,7 +24,6 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     private final Map<String, GroovyClassDoc> classDocs;
     private final Map<String, String> equivalentPackageImports;
     private List<GroovyClassDoc> classDocValues = null;
-    private final Map<String, GroovyClassDoc> cachedResolvedClasses = new HashMap<>();
+    private final Map<String, GroovyClassDoc> cachedResolvedClasses = new LinkedHashMap<>();
     private final ClassNamedCache classNamedCache;
 
     private String description = "";
@@ -50,7 +49,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         super(name);
         packageDocs = new LinkedHashMap<>();
         classDocs = new LinkedHashMap<>();
-        equivalentPackageImports = new HashMap<>();
+        equivalentPackageImports = new LinkedHashMap<>();
         classNamedCache = new ClassNamedCache(classDocs);
     }
 
@@ -175,7 +174,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
     private static final class ClassNamedCache {
         private final Map<String, GroovyClassDoc> classDocs;
-        private final Map<Entry, GroovyClassDoc> store = new HashMap<>();
+        private final Map<Entry, GroovyClassDoc> store = new LinkedHashMap<>();
 
         private ClassNamedCache(final Map<String, GroovyClassDoc> classDocs) {
             this.classDocs = classDocs;
