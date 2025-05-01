@@ -1334,7 +1334,7 @@ class ClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             assert items1.findIndexValues { String s -> s.startsWith('ba') } == [1, 2]
             def items2 = ['foo','bar','baz']
             assert items2.findIndexValues { it.startsWith('ba') } == [1, 2]
-            assert items2.iterator().findIndexValues { it.startsWith('ba') } == [1, 2]
+            assert items2.iterator().findIndexValues { it.startsWith('ba') }.toList() == [1, 2]
         '''
     }
 

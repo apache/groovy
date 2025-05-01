@@ -2810,7 +2810,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<Number> findIndexValues(T[] self, Number startIndex, @ClosureParams(FirstParam.Component.class) Closure<?> condition) {
-        return DefaultGroovyMethods.findIndexValues(new ArrayIterator<>(self), startIndex, condition);
+        return DefaultGroovyMethods.toList(DefaultGroovyMethods.findIndexValues(new ArrayIterator<>(self), startIndex, condition));
     }
 
     //--------------------------------------------------------------------------
