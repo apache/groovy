@@ -5544,7 +5544,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * <pre class="groovyTestCase">
      * def letters = Iterators.iterate('A', String::next).take(26).plus(Iterators.iterate('a', String::next).take(26))
-     * assert letters.findingAll{ it.toUpperCase() < 'D' }.toList() == ['A', 'B', 'C', 'a', 'b', 'c']
+     * assert letters.findingAll{ it.toUpperCase() &lt; 'D' }.toList() == ['A', 'B', 'C', 'a', 'b', 'c']
      * </pre>
      *
      * @param self      a source Iterator
