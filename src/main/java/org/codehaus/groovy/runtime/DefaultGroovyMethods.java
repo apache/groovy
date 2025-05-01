@@ -5500,7 +5500,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.2
      */
     public static List<Number> findIndexValues(Object self, Number startIndex, Closure condition) {
-        return findIndexValues(InvokerHelper.asIterator(self), startIndex, condition);
+        return toList(findIndexValues(InvokerHelper.asIterator(self), startIndex, condition));
     }
 
     /**
@@ -5510,10 +5510,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      an Iterator
      * @param condition the matching condition
      * @return a list of numbers corresponding to the index values of all matched objects
+     * @deprecated
      * @since 2.5.0
      */
-    public static <T> List<Number> findIndexValues(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexValues(self, 0, condition);
+    @Deprecated
+    public static <T> List<Number> findIndexValues$$bridge(Iterator<T> self, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return toList(findIndexValues(self, 0, condition));
     }
 
     /**
@@ -5525,23 +5527,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param startIndex start matching from this index
      * @param condition  the matching condition
      * @return a list of numbers corresponding to the index values of all matched objects
+     * @deprecated
      * @since 2.5.0
      */
-    public static <T> List<Number> findIndexValues(Iterator<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        List<Number> result = new ArrayList<>();
-        long count = 0;
-        long startCount = startIndex.longValue();
-        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
-        while (self.hasNext()) {
-            Object value = self.next();
-            if (count++ < startCount) {
-                continue;
-            }
-            if (bcw.call(value)) {
-                result.add(count - 1);
-            }
-        }
-        return result;
+    @Deprecated
+    public static <T> List<Number> findIndexValues$$bridge(Iterator<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
+        return toList(findIndexValues(self, startIndex, condition));
     }
 
     /**
@@ -5569,7 +5560,104 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 2.5.0
      */
     public static <T> List<Number> findIndexValues(Iterable<T> self, Number startIndex, @ClosureParams(FirstParam.FirstGenericType.class) Closure condition) {
-        return findIndexValues(self.iterator(), startIndex, condition);
+        return toList(findIndexValues(self.iterator(), startIndex, condition));
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> closure.
+     * <pre class="groovyTestCase">
+     * def letters = ('a'..'z').iterator()
+     * def vowels = 'aeiou'.toSet()
+     * assert letters.findIndexValues{ vowels.contains(it) }.toList() == [0, 4, 8, 14, 20]
+     * </pre>
+     *
+     * @param self       an Iterator
+     * @param transform  the closure used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 5.0.0
+     */
+    public static <T> Iterator<Number> findIndexValues(
+        @DelegatesTo.Target Iterator<T> self,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
+        return findIndexValues(self, 0, transform);
+    }
+
+    /**
+     * Returns an iterator of transformed values from the source iterator using the
+     * <code>transform</code> closure and starting with index <code>startIndex</code>.
+     *
+     * <pre class="groovyTestCase">
+     * def letters = ('a'..'z')
+     * def vowels = 'aeiou'.toSet()
+     * assert letters.iterator().findIndexValues(0){ vowels.contains(it) }.toList() == [0, 4, 8, 14, 20]
+     * assert letters.iterator().findIndexValues(1){ vowels.contains(it) }.toList() == [4, 8, 14, 20]
+     * </pre>
+     *
+     * @param self       an Iterator
+     * @param startIndex start matching from this index
+     * @param transform  the closure used to transform each element
+     * @return an Iterator for the transformed values
+     * @since 5.0.0
+     */
+    public static <T> Iterator<Number> findIndexValues(
+        @DelegatesTo.Target Iterator<T> self,
+        Number startIndex,
+        @DelegatesTo(genericTypeIndex = 0)
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> transform) {
+        return new FindIndexValuesIterator<>(self, startIndex, transform);
+    }
+
+    private static final class FindIndexValuesIterator<T> implements Iterator<Number> {
+        private final Iterator<T> source;
+        private final BooleanClosureWrapper test;
+        private final long startCount;
+        private long count = 0;
+        private Number current;
+        private boolean exhausted;
+
+        private FindIndexValuesIterator(Iterator<T> source, Number startIndex, Closure<?> transform) {
+            this.source = source;
+            this.test = new BooleanClosureWrapper(transform);
+            this.startCount = startIndex.longValue();
+            this.exhausted = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !exhausted;
+        }
+
+        private void advance() {
+            while (source.hasNext()) {
+                Object value = source.next();
+                if (count++ < startCount) {
+                    continue;
+                }
+                if (test.call(value)) {
+                    current = count - 1;
+                    return;
+                }
+            }
+            exhausted = true;
+        }
+
+        @Override
+        public Number next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("FindIndexValuesIterator has been exhausted and contains no more elements");
+            }
+            Number result = current;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     //--------------------------------------------------------------------------
