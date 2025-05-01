@@ -54,8 +54,8 @@ import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -75,7 +75,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private final List<LinkArgument> links;
     private String packagePath;
     private SimpleGroovyClassDoc currentClassDoc = null;
-    private Map<String, GroovyClassDoc> classDocs = new HashMap<>();
+    private Map<String, GroovyClassDoc> classDocs = new LinkedHashMap<>();
     private final Properties properties;
     private static final String FS = "/";
 
@@ -99,7 +99,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     public void visitClass(ClassNode node) {
         boolean isSynthetic = (node.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
         if (isSynthetic || node.isSynthetic()) return;
-        final Map<String, String> aliases = new HashMap<>();
+        final Map<String, String> aliases = new LinkedHashMap<>();
         final List<String> imports = new ArrayList<>();
         for (ImportNode iNode : node.getModule().getImports()) {
             String name = iNode.getClassName();
