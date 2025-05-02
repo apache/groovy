@@ -287,4 +287,185 @@ final class Groovy4721 {
             assert new TryFinallyJavaTest().test() == groovyResult
         """
     }
+
+    @Test
+    void testAccessingVariableInTryCatchFinally_1() {
+        def declareClass = { String lang ->
+            """
+            public class TryFinally${lang}Test {
+                public String test() {
+                    String result = "result: ";
+                    try {
+                        String x = "foo";
+                        result += x;
+                        throw new RuntimeException("expected");
+                    } catch (RuntimeException e) {
+                        result += "caught";
+                        return result;
+                    } finally {
+                        result += "-finally";
+                    }
+                }
+            }
+            """
+        }
+
+        JavaShell js = new JavaShell()
+        final mcn = "tests.TryFinallyJavaTest"
+        js.compile(mcn, "package tests;\n${declareClass('Java')}")
+
+        new GroovyShell(js.getClassLoader()).evaluate """\
+            package tests;
+            import tests.TryFinallyJavaTest
+
+            ${declareClass('Groovy')}
+
+            final groovyResult = new TryFinallyGroovyTest().test()
+            assert 'result: foocaught' == groovyResult
+            assert new TryFinallyJavaTest().test() == groovyResult
+        """
+    }
+
+    @Test
+    void testNestedTryCatchFinally() {
+        assertScript '''\
+            class MyClass {
+                def myMethod() {
+                    String result = "result: "
+                    try {
+                        result += "outer-try;"
+                        try {
+                            result += "inner-try;"
+                            throw new RuntimeException("inner")
+                        } catch (RuntimeException e) {
+                            result += "inner-catch;"
+                        } finally {
+                            result += "inner-finally;"
+                        }
+                        result += "after-inner;"
+                    } finally {
+                        result += "outer-finally"
+                    }
+                    return result
+                }
+            }
+            assert 'result: outer-try;inner-try;inner-catch;inner-finally;after-inner;outer-finally' == new MyClass().myMethod()
+        '''
+    }
+
+    @Test
+    void testFinallyExecutesWithBreak() {
+        assertScript '''\
+            class MyClass {
+                def myMethod() {
+                    String result = "result: "
+                    for (int i = 0; i < 3; i++) {
+                        result += i + "("
+                        try {
+                            result += "try;"
+                            if (i == 1) break
+                            result += "after-break;"
+                        } finally {
+                            result += "finally);"
+                        }
+                    }
+                    return result
+                }
+            }
+            assert 'result: 0(try;after-break;finally);1(try;finally);' == new MyClass().myMethod()
+        '''
+    }
+
+    @Test
+    void testExceptionInFinally() {
+        def declareClass = { String lang ->
+            """
+            public class TryFinally${lang}Test {
+                public String test() {
+                    String result = "result: ";
+                    try {
+                        return (result += "from-try;");
+                    } finally {
+                        throw new RuntimeException(result += "finally-error");
+                    }
+                }
+            }
+            """
+        }
+
+        JavaShell js = new JavaShell()
+        final mcn = "tests.TryFinallyJavaTest"
+        js.compile(mcn, "package tests;\n${declareClass('Java')}")
+
+        new GroovyShell(js.getClassLoader()).evaluate """\
+            package tests;
+            import tests.TryFinallyJavaTest
+
+            ${declareClass('Groovy')}
+
+            final groovyErr = groovy.test.GroovyAssert.shouldFail(RuntimeException) {
+                new TryFinallyGroovyTest().test()
+            }
+            final javaErr = groovy.test.GroovyAssert.shouldFail(RuntimeException) {
+                new TryFinallyJavaTest().test()
+            }
+
+            assert 'result: from-try;finally-error' == groovyErr.message
+            assert javaErr.message == groovyErr.message
+        """
+    }
+
+    @Test
+    void testMultipleCatchBlocks() {
+        def declareClass = { String lang ->
+            """
+            public class TryFinally${lang}Test {
+                public String test(int type) {
+                    String result = "result: ";
+                    try {
+                        result += "try;";
+                        switch (type) {
+                            case 1: throw new IllegalArgumentException("IAE");
+                            case 2: throw new NullPointerException("NPE");
+                            case 3: throw new RuntimeException("RE");
+                        }
+                        result += "no-throw;";
+                    } catch (IllegalArgumentException e) {
+                        result += "catch-IAE;";
+                    } catch (NullPointerException e) {
+                        result += "catch-NPE;";
+                    } catch (Exception e) {
+                        result += "catch-other;";
+                    } finally {
+                        result += "finally";
+                    }
+                    return result;
+                }
+            }
+            """
+        }
+
+        JavaShell js = new JavaShell()
+        js.compile("tests.TryFinallyJavaTest", "package tests;\n${declareClass('Java')}")
+
+        new GroovyShell(js.getClassLoader()).evaluate """\
+            package tests;
+            import tests.TryFinallyJavaTest
+
+            ${declareClass('Groovy')}
+
+            def groovy = new TryFinallyGroovyTest()
+            def java = new TryFinallyJavaTest()
+
+            assert 'result: try;catch-IAE;finally' == groovy.test(1)
+            assert 'result: try;catch-NPE;finally' == groovy.test(2)
+            assert 'result: try;catch-other;finally' == groovy.test(3)
+            assert 'result: try;no-throw;finally' == groovy.test(0)
+
+            assert java.test(1) == groovy.test(1)
+            assert java.test(2) == groovy.test(2)
+            assert java.test(3) == groovy.test(3)
+            assert java.test(0) == groovy.test(0)
+        """
+    }
 }
