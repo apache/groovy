@@ -87,6 +87,9 @@ import java.util.function.IntConsumer;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongConsumer;
 import java.util.function.LongUnaryOperator;
+import java.util.function.IntPredicate;
+import java.util.function.LongPredicate;
+import java.util.function.DoublePredicate;
 
 /**
  * Defines new groovy methods which appear on arrays inside the Groovy environment.
@@ -6574,6 +6577,521 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
             result = Arrays.copyOfRange(result, 0, i);
         }
         return result;
+    }
+
+    //--------------------------------------------------------------------------
+    // partition_point
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as Integer[];
+     * assert arr.partitionPoint(0..arr.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint(0..arr.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static <T> int partitionPoint(T[] self, IntRange intRange, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> condition) {
+        int result = intRange.getFromInt();
+        BooleanClosureWrapper bcw = new BooleanClosureWrapper(condition);
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (bcw.call(self[mid])) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as Integer[];
+     * assert arr.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static <T> int partitionPoint(T[] self, @ClosureParams(FirstParam.FirstGenericType.class) Closure<?> condition) {
+        return partitionPoint(self, new IntRange(0, self.length), condition);
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as char[];
+     * assert arr.partitionPoint(0..arr.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as char[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint(0..arr.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(char[] self, IntRange intRange, IntPredicate condition) {
+        int result = intRange.getFromInt();
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (condition.test(self[mid])) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as char[];
+     * assert arr.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as char[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(char[] self, IntPredicate condition) {
+        return partitionPoint(self, new IntRange(0, self.length), condition);
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as short[];
+     * assert arr.partitionPoint(0..arr.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as short[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint(0..arr.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(short[] self, IntRange intRange, IntPredicate condition) {
+        int result = intRange.getFromInt();
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (condition.test(self[mid])) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as short[];
+     * assert arr.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as short[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(short[] self, IntPredicate condition) {
+        return partitionPoint(self, new IntRange(0, self.length), condition);
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as int[];
+     * assert arr.partitionPoint(0..arr.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as int[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint(0..arr.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(int[] self, IntRange intRange, IntPredicate condition) {
+        int result = intRange.getFromInt();
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (condition.test(self[mid])) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as int[];
+     * assert arr.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as int[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(int[] self, IntPredicate condition) {
+        return partitionPoint(self, new IntRange(0, self.length), condition);
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as long[];
+     * assert arr.partitionPoint(0..arr.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint(0..arr.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(long[] self, IntRange intRange, LongPredicate condition) {
+        int result = intRange.getFromInt();
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (condition.test(self[mid])) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as long[];
+     * assert arr.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(long[] self, LongPredicate condition) {
+        return partitionPoint(self, new IntRange(0, self.length), condition);
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as float[];
+     * assert arr.partitionPoint(0..arr.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as float[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint(0..arr.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(float[] self, IntRange intRange, DoublePredicate condition) {
+        int result = intRange.getFromInt();
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (condition.test(self[mid])) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as float[];
+     * assert arr.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as float[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(float[] self, DoublePredicate condition) {
+        return partitionPoint(self, new IntRange(0, self.length), condition);
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as double[];
+     * assert arr.partitionPoint(0..arr.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as double[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint(0..arr.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(double[] self, IntRange intRange, DoublePredicate condition) {
+        int result = intRange.getFromInt();
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (condition.test(self[mid])) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The arr is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def arr = [7, 15, 3, 5, 4, 12, 6] as long[];
+     * assert arr.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert arr.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert arr.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * //for all match condition
+     * assert arr.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy arr
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static int partitionPoint(double[] self, DoublePredicate condition) {
+        return partitionPoint(self, new IntRange(0, self.length), condition);
     }
 
     //--------------------------------------------------------------------------

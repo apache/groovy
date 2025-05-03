@@ -153,6 +153,7 @@ import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static groovy.lang.groovydoc.Groovydoc.EMPTY_GROOVYDOC;
 
@@ -11045,6 +11046,82 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> SortedSet<T> or(SortedSet<T> left, Iterable<T> right) {
         return plus(left, right);
+    }
+
+    //--------------------------------------------------------------------------
+    // partition_point
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The list is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def list = [7, 15, 3, 5, 4, 12, 6];
+     * assert list.partitionPoint(0..list.size()) { it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert list.partitionPoint(0..list.size()) { it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert list.partitionPoint(0..list.size()) { it <= 4 } == 6
+     * //for all match condition
+     * assert list.partitionPoint(0..list.size()) { it <= 100 } == list.size()
+     * //for all match condition
+     * assert list.partitionPoint(0..list.size()) { it <= 0 } == 0
+     * assert list.partitionPoint(2..list.size()) { it <= 0 } == 2
+     * </pre>
+     *
+     * @param self      a groovy list
+     * @param intRange  the range [l,r) to find data match the condition
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static <T> int partitionPoint(List<T> self, IntRange intRange, Predicate<T> condition) {
+        int result = intRange.getFromInt();
+        int left = intRange.getFromInt(), right = intRange.getToInt() - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (condition.test(self.get(mid))) {
+                result = mid + 1;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns the index of the partition point according to the given predicate
+     * (the index of the first element of the second partition).
+     * The list is assumed to be partitioned according to the given predicate.
+     * <pre class="groovyTestCase">
+     * def list = [7, 15, 3, 5, 4, 12, 6];
+     * assert list.partitionPoint{ it%2 != 0 } == 4
+     * </pre>
+     *
+     * <pre class="groovyTestCase">
+     * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7];
+     * //usage case as lowerBound(cpp), bisect_left(python)
+     * assert list.partitionPoint{ it < 4 } == 4
+     * //usage case as upperBound(cpp), bisect_right(python)
+     * assert list.partitionPoint{ it <= 4 } == 6
+     * //for all match condition
+     * assert list.partitionPoint{ it <= 100 } == list.size()
+     * //for all match condition
+     * assert list.partitionPoint{ it <= 0 } == 0
+     * </pre>
+     *
+     * @param self      a groovy list
+     * @param condition the matching condition
+     * @return an integer that is the index of the first element of the second partition
+     * @since 5.0
+     */
+    public static <T> int partitionPoint(List<T> self, Predicate<T> condition) {
+        return partitionPoint(self, new IntRange(0, self.size()), condition);
     }
 
     //--------------------------------------------------------------------------
