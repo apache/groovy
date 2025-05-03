@@ -6599,8 +6599,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -6642,9 +6643,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * //usage case as upperBound(cpp), bisect_right(python)
      * assert arr.partitionPoint{ it <= 4 } == 6
      * //for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
-     * //for all match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
+     * //for none match condition
+     * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -6673,8 +6674,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -6716,7 +6718,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint{ it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint{ it <= 0 } == 0
      * </pre>
      *
@@ -6746,8 +6748,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -6789,7 +6792,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint{ it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint{ it <= 0 } == 0
      * </pre>
      *
@@ -6821,6 +6824,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
      * //for all match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -6862,7 +6866,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint{ it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint{ it <= 0 } == 0
      * </pre>
      *
@@ -6892,8 +6896,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -6935,7 +6940,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint{ it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint{ it <= 0 } == 0
      * </pre>
      *
@@ -6965,8 +6970,9 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint(0..arr.size()) { it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -7008,7 +7014,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint{ it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint{ it <= 0 } == 0
      * </pre>
      *
@@ -7040,6 +7046,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint(0..arr.size()) { it <= 100 } == arr.size()
      * //for all match condition
      * assert arr.partitionPoint(0..arr.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert arr.partitionPoint(2..arr.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -7081,7 +7088,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert arr.partitionPoint{ it <= 4 } == 6
      * //for all match condition
      * assert arr.partitionPoint{ it <= 100 } == arr.size()
-     * //for all match condition
+     * //for none match condition
      * assert arr.partitionPoint{ it <= 0 } == 0
      * </pre>
      *

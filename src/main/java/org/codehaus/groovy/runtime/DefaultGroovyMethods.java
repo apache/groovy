@@ -11068,8 +11068,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert list.partitionPoint(0..list.size()) { it <= 4 } == 6
      * //for all match condition
      * assert list.partitionPoint(0..list.size()) { it <= 100 } == list.size()
-     * //for all match condition
+     * //for none match condition
      * assert list.partitionPoint(0..list.size()) { it <= 0 } == 0
+     * //for none match condition with range
      * assert list.partitionPoint(2..list.size()) { it <= 0 } == 2
      * </pre>
      *
@@ -11111,7 +11112,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert list.partitionPoint{ it <= 4 } == 6
      * //for all match condition
      * assert list.partitionPoint{ it <= 100 } == list.size()
-     * //for all match condition
+     * //for none match condition
      * assert list.partitionPoint{ it <= 0 } == 0
      * </pre>
      *
