@@ -18,74 +18,185 @@
  */
 package org.codehaus.groovy.antlr
 
-import groovy.test.GroovyTestCase
+import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.InnerClassNode
-import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.ast.stmt.Statement
+import org.codehaus.groovy.control.CompilePhase
+import org.junit.Test
 
-import static org.codehaus.groovy.control.CompilePhase.CONVERSION
+final class AstBuilderTest {
 
-/**
- * Test for AstBuilder.
- */
-class AstBuilderTest extends GroovyTestCase {
+    private static ASTNode buildAST(boolean statementsOnly = false, String source) {
+        List<ASTNode> nodes = new AstBuilder().buildFromString(CompilePhase.CONVERSION, statementsOnly, source)
+        if (statementsOnly) {
+            assert nodes.size() == 1
+            return nodes[0] // stmts
+        }
+        nodes[1] // type
+    }
 
+    @Test
     void testStatementsOnly() {
-        def nodes = new AstBuilder().buildFromString CONVERSION, '''
+        def node = buildAST true, '''
             println 'hello world'
         '''
 
-        assert nodes.size() == 1
-        assert nodes[0] instanceof BlockStatement
-        assert nodes[0].statements[0] instanceof ExpressionStatement
+        assert node instanceof BlockStatement
+        assert node.statements[0] instanceof ExpressionStatement
     }
 
-    void testInnerClassLineNumbers() {
-        def nodes = new AstBuilder().buildFromString CONVERSION, '''
+    @Test
+    void testAnonymousInnerClass() {
+        ClassNode node = buildAST '''\
             new Object() {
 
             }
         '''
 
-        assert nodes[1].getClass() == InnerClassNode
-        assert nodes[1].lineNumber == 2
-        assert nodes[1].lastLineNumber == 4
-        assert nodes[1].columnNumber == 26
-        assert nodes[1].lastColumnNumber == 14
+        node = node.innerClasses.next()
+
+        assert node.lineNumber == 1
+        assert node.columnNumber == 26 // TODO: 13
+        assert node.lastLineNumber == 3
+        assert node.lastColumnNumber == 14
     }
 
-    void testEnumLineNumbers() {
-        def result = new AstBuilder().buildFromString CONVERSION, '''
-            enum Color {
+    // GROOVY-11642
+    @Test
+    void testInnerClass1() {
+        ClassNode outer = buildAST '''\
+            class Outer {
+                protected class Inner {
+                }
+            }
+        '''
+
+        def inner = outer.innerClasses.next()
+
+        assert inner.lineNumber == 2
+        assert inner.columnNumber == 17
+        assert inner.lastLineNumber == 3
+        assert inner.lastColumnNumber == 18
+    }
+
+    // GROOVY-11642
+    @Test
+    void testInnerClass2() {
+        ClassNode outer = buildAST '''\
+            class Outer {
+                @Deprecated class Inner {
+                }
+            }
+        '''
+
+        def inner = outer.innerClasses.next()
+
+        assert inner.lineNumber == 2
+        assert inner.columnNumber == 17
+        assert inner.lastLineNumber == 3
+        assert inner.lastColumnNumber == 18
+    }
+
+    @Test
+    void testClass() {
+        ClassNode node = buildAST '''\
+            public class C {
+            }
+        '''
+
+        assert node.lineNumber == 1
+        assert node.columnNumber == 13
+        assert node.lastLineNumber == 2
+        assert node.lastColumnNumber == 14
+    }
+
+    @Test
+    void testEnum() {
+        ClassNode node = buildAST '''\
+            public enum E {
+            }
+        '''
+
+        assert node.lineNumber == 1
+        assert node.columnNumber == 13
+        assert node.lastLineNumber == 2
+        assert node.lastColumnNumber == 14
+    }
+
+    @Test
+    void testField() {
+        ClassNode node = buildAST '''\
+            class C {
+                @Deprecated
+                protected
+                int f =
+                123
+            }
+        '''
+
+        def field = node.getField('f')
+
+        assert field.lineNumber == 2
+        assert field.columnNumber == 17
+        assert field.lastLineNumber == 5
+        assert field.lastColumnNumber == 20
+    }
+
+    @Test
+    void testMethod() {
+        ClassNode node = buildAST '''\
+            class C {
+                @Deprecated
+                protected
+                void
+                m(){
+                }
+            }
+        '''
+
+        def method = node.getMethod('m')
+
+        assert method.lineNumber == 2
+        assert method.columnNumber == 17
+        assert method.lastLineNumber == 6
+        assert method.lastColumnNumber == 18
+    }
+
+    // GROOVY-8426
+    @Test
+    void testMethodBlock() {
+        ClassNode node = buildAST '''
+            def method() {
+                'return value'
 
             }
         '''
 
-        assert result[1].getClass() == ClassNode
-        assert result[1].lineNumber == 2
-        assert result[1].lastLineNumber == 4
-        assert result[1].columnNumber == 13
-        assert result[1].lastColumnNumber == 14
+        Statement statement = node.getMethod('method').code
+
+        assert statement.lineNumber == 2
+        assert statement.columnNumber == 26
+        assert statement.lastLineNumber == 5
+        assert statement.lastColumnNumber == 14
     }
 
+    @Test
     void testStatementAfterLabel() {
-        def nodes = new AstBuilder().buildFromString CONVERSION, false, '''
+        ClassNode node = buildAST '''
             def method() {
                 label:
                     assert i == 9
             }
         '''
 
-        assert nodes[1].getClass() == ClassNode
-        MethodNode method = nodes[1].getMethods('method')[0]
-        Statement statement = method.code.statements[0]
+        Statement statement = node.getMethod('method').code.statements[0]
+
         assert statement.lineNumber == 4
-        assert statement.lastLineNumber == 4
         assert statement.columnNumber == 21
+        assert statement.lastLineNumber == 4
         assert statement.lastColumnNumber == 34
         assert statement.statementLabels[0] == 'label'
     }
