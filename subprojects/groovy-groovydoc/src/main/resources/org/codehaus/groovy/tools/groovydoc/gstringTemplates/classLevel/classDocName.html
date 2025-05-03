@@ -527,7 +527,7 @@ if (classDoc.isInterface() && classDoc.interfaces()) {
                     buffer << """
                         <tr class="${i%2==0?'altColor':'rowColor'}">
                             <td class="colFirst"><code>${c.typeSourceDescription} ${linkable(c)}</code></td>
-                            <td class="colLast"><code>${list.join(', ')}</code></td>
+                            <td class="colLast"><code>${list.sort().join(', ')}</code></td>
                         </tr>"""
                 }
             }

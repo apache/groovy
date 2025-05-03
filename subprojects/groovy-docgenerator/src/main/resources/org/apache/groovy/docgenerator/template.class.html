@@ -91,13 +91,16 @@
                                 </tbody>
                             </table>
                         </li>
-                        <% docType.inheritedMethods.each { inhDocType, inhDocMethods -> %>
+                        <%
+                            docType.inheritedMethods.each { inhDocType, inhDocMethods ->
+                            inhDocTypeName = inhDocType.fullyQualifiedClassName.replace('.', '/')
+                        %>
                         <ul class="blockList">
                             <li class="blockList">
                             <h4>Methods inherited from ${inhDocType.interface ? 'interface' : 'class'} ${inhDocType.packageName}.${docType.linkAnchor(inhDocType)}</h4>
                                 <p>
-                                    <%= inhDocMethods.findAll { !it.static }.collect { docMethod ->
-                                        """<code><strong><a href="${pathPref}${inhDocType.fullyQualifiedClassName.replace('.', '/')}.html#${docMethod.name}(${docMethod.parametersSignature})">${docMethod.name}</a></strong></code>"""
+                                    <%= inhDocMethods.findAll { !it.static }.collect { docMethod -> [docMethod.name + "(" + docMethod.parametersSignature + ")", docMethod.name] }.sort{ it[0] }.collect { sig, name ->
+                                        """<code><strong><a href="${pathPref}${inhDocTypeName}.html#$sig">$name</a></strong></code>"""
                                     }.join(", ") %>
                                 </p>
                             </li>
