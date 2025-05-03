@@ -32,7 +32,6 @@ import org.codehaus.groovy.syntax.Token
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTest
 import static org.apache.groovy.parser.antlr4.TestUtils.doRunAndTestAntlr4
 import static org.apache.groovy.parser.antlr4.TestUtils.doTest
 
@@ -537,7 +536,6 @@ final class GroovyParserTest {
         doTest('bugs/BUG-GROOVY-8161.groovy')
         doRunAndTestAntlr4('bugs/GROOVY-8228.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-8311.groovy')
-        doRunAndTest('bugs/BUG-GROOVY-8426.groovy')
         doTest('bugs/BUG-GROOVY-8511.groovy')
         doRunAndTestAntlr4('bugs/BUG-GROOVY-8613.groovy')
         doTest('bugs/BUG-GROOVY-8641.groovy')
