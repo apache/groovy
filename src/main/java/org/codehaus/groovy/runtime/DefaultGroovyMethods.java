@@ -4094,6 +4094,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // drain
+
+    /**
+     * Drain the queue of elements, returning them as a list.
+     * <pre class="groovyTestCase">
+     * def letters = new PriorityQueue(String.CASE_INSENSITIVE_ORDER)
+     * letters.addAll(['Z', 'y', 'X', 'a', 'B', 'c'])
+     * assert letters.toList() == ['a', 'B', 'c', 'Z', 'X', 'y']
+     * assert letters.drain() == ['a', 'B', 'c', 'X', 'y', 'Z']
+     * assert letters.empty
+     * </pre>
+     *
+     * @param self a Queue
+     * @return a List of elements removed from the head of the queue
+     * @since 5.0.0
+     */
+    public static <T> List<T> drain(Queue<T> self) {
+        List<T> answer = new ArrayList<>();
+        while (!self.isEmpty()) {
+            answer.add(self.poll());
+        }
+        return answer;
+    }
+
+    //--------------------------------------------------------------------------
     // drop
 
     /**
