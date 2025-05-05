@@ -1191,7 +1191,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else if (asBoolean(ctx.classDeclaration())) {
             ctx.classDeclaration().putNodeMetaData(TYPE_DECLARATION_MODIFIERS, this.visitModifiersOpt(ctx.modifiersOpt()));
             ctx.classDeclaration().putNodeMetaData(CLASS_DECLARATION_CLASS_NODE, classNode);
-            this.visitClassDeclaration(ctx.classDeclaration());
+            configureAST(this.visitClassDeclaration(ctx.classDeclaration()), ctx);
         }
 
         return null;
