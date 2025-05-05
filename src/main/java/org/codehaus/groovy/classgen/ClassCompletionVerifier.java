@@ -533,8 +533,10 @@ out:        for (ClassNode sc : superTypes) {
         inConstructor = false;
         inStaticConstructor = node.isStaticConstructor();
         checkAbstractDeclaration(node);
-        checkRepetitiveMethod(node);
-        checkOverloadingPrivateAndPublic(node);
+        if (!inStaticConstructor) {
+            checkRepetitiveMethod(node);
+            checkOverloadingPrivateAndPublic(node);
+        }
         checkMethodForIncorrectModifiers(node);
         checkGenericsUsage(node, node.getParameters());
         checkGenericsUsage(node, node.getReturnType());
@@ -586,26 +588,28 @@ out:        for (ClassNode sc : superTypes) {
     }
 
     private void checkOverloadingPrivateAndPublic(final MethodNode node) {
-        if (node.isStaticConstructor()) return;
-        boolean hasPrivate = node.isPrivate();
-        boolean hasPublic = node.isPublic();
-        for (MethodNode method : currentClass.getMethods(node.getName())) {
-            if (method == node) continue;
-            if (!method.getDeclaringClass().equals(node.getDeclaringClass())) continue;
-            if (method.isPublic() || method.isProtected()) {
-                hasPublic = true;
-            } else {
-                hasPrivate = true;
+        boolean mixed = false;
+        if (node.isPublic()) {
+            for (MethodNode mn : currentClass.getDeclaredMethods(node.getName())) {
+                if (mn != node && !(mn.isPublic() || mn.isProtected())) {
+                    mixed = true;
+                    break;
+                }
             }
-            if (hasPrivate && hasPublic) break;
+        } else if (node.isPrivate()) {
+            for (MethodNode mn : currentClass.getDeclaredMethods(node.getName())) {
+                if (mn != node && (mn.isPublic() || mn.isProtected())) {
+                    mixed = true;
+                    break;
+                }
+            }
         }
-        if (hasPrivate && hasPublic) {
+        if (mixed) { // GROOVY-5193
             addError("Mixing private and public/protected methods of the same name causes multimethods to be disabled and is forbidden to avoid surprising behaviour. Renaming the private methods will solve the problem.", node);
         }
     }
 
     private void checkRepetitiveMethod(final MethodNode node) {
-        if (node.isStaticConstructor()) return;
         for (MethodNode method : currentClass.getMethods(node.getName())) {
             if (method == node) continue;
             if (!method.getDeclaringClass().equals(node.getDeclaringClass())) continue;

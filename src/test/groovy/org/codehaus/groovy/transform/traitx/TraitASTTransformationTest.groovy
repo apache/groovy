@@ -1811,6 +1811,7 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-5193
     @Test
     void testMixPrivatePublicMethodsOfSameName() {
         def err = shouldFail shell, '''
@@ -1822,8 +1823,7 @@ final class TraitASTTransformationTest {
             class C implements T {
             }
 
-            def c = new C()
-            assert c.foo() == 'SECRET'
+            assert new C().foo() == 'SECRET'
         '''
         assert err =~ 'Mixing private and public/protected methods of the same name causes multimethods to be disabled'
     }
