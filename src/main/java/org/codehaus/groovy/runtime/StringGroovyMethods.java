@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Function;
@@ -1875,6 +1876,77 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static StringBuilder leftShift(final StringBuilder self, final Object value) {
         self.append(value);
         return self;
+    }
+
+    //--------------------------------------------------------------------------
+    // make StringBuilder behaves like a stack of chars
+
+    /**
+     * Since StringBuilder is a basic dynamic container of chars, sometimes it should
+     * behave like a stack of chars at the same time.
+     * stack's methods should have: push(), peek(), pop(), size(), isEmpty()
+     * <pre class="groovyTestCase">
+     * def st = new StringBuilder()
+     * // stack in cases:
+     * st.push('B')
+     * assert st.toString() == 'B'
+     * st.push('a')
+     * assert st.toString() == 'Ba'
+     * st.push('r')
+     * assert st.toString() == 'Bar'
+     * assert st.size() == 3
+     * assert st.isEmpty() == false
+     * // stack out cases:
+     * assert st.peek() == 'r' as char
+     * assert st.pop() == 'r' as char
+     * assert st.toString() == 'Ba'
+     * assert st.peek() == 'a' as char
+     * assert st.pop() == 'a' as char
+     * assert st.toString() == 'B'
+     * assert st.size() == 1
+     * assert st.isEmpty() == false
+     * assert st.pop() == 'B' as char
+     * assert st.isEmpty() == true
+     * </pre>
+     *
+     * @param self a StringBuilder obj
+     * @param ch   a char to push in
+     * @return the StringBuilder obj self
+     * @since 5.0.0
+     */
+    public static StringBuilder push(final StringBuilder self, final char ch) {
+        Objects.requireNonNull(self);
+        self.append(ch);
+        return self;
+    }
+
+    public static StringBuilder push(final StringBuilder self, final String ch) {
+        Objects.requireNonNull(self);
+        self.append(ch);
+        return self;
+    }
+
+    public static StringBuilder push(final StringBuilder self, final GString ch) {
+        Objects.requireNonNull(self);
+        self.append(ch);
+        return self;
+    }
+
+    public static char peek(final StringBuilder self) {
+        Objects.requireNonNull(self);
+        assert self.length() > 0;
+        return self.charAt(self.length() - 1);
+    }
+
+    public static char pop(final StringBuilder self) {
+        char last = peek(self);
+        self.setLength(self.length() - 1);
+        return last;
+    }
+
+    public static int size(final StringBuilder self) {
+        Objects.requireNonNull(self);
+        return self.length();
     }
 
     /**
