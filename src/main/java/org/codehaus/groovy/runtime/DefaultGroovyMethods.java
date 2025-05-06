@@ -13455,7 +13455,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self       the Iterable to be sorted
-     * @param mutate     false will always cause a new list to be created, true will mutate lists in place
+     * @param mutate     false causes a new list to be created, true will mutate lists in place
      * @param comparator a Comparator used for the comparison
      * @return a sorted List
      * @since 2.2.0
@@ -13464,6 +13464,78 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List<T> list = mutate ? asList(self) : toList(self);
         list.sort(comparator);
         return list;
+    }
+
+    /**
+     * Sorts elements in the given index range using the given Closure to determine the ordering.
+     * If mutate is true, it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned, leaving the original List unchanged.
+     *
+     * <pre class="groovyTestCase">
+     * // a list with some odd then even numbers
+     * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     *
+     * // sort odds ascending, evens descending
+     * assert nums.sort(0..4, false) { it }.sort(5..9, false) { -it }
+     *  == [1, 3, 5, 7, 9, 8, 6, 4, 2, 0]
+     * // sort odds descending, evens descending
+     * assert nums.sort(0..&lt;5, false) { -it }.sort(4&lt;..&lt;10, false) { -it }
+     *  == [9, 7, 5, 3, 1, 8, 6, 4, 2, 0]
+     * // sort odds descending, evens ascending
+     * assert nums.sort(0..&lt;5, false) { -it }.sort(5..-1, false) { it }
+     *  == [9, 7, 5, 3, 1, 0, 2, 4, 6, 8]
+     * // leave first and last numbers, sort remaining odds ascending, remaining evens descending
+     * assert nums.sort(1..4, false) { it }.sort(5..-2, false) { -it }
+     *  == [5, 1, 3, 7, 9, 8, 6, 4, 0, 2]
+     * // leave first and last numbers, sort remaining odds descending, remaining evens ascending
+     * assert nums.sort(1..4, false) { -it }.sort(5..-2, false) { it }
+     *  == [5, 9, 7, 3, 1, 0, 4, 6, 8, 2]
+     * // leave first and last odds and evens, sort remaining odds ascending, remaining evens descending
+     * assert nums.sort(0&lt;..&lt;4, false) { it }.sort(5&lt;..&lt;9, false) { -it }
+     *  == [5, 1, 7, 9, 3, 4, 8, 6, 0, 2]
+     * // leave first and last odds and evens, sort remaining odds descending, remaining evens ascending
+     * assert nums.sort(0&lt;..&lt;4, false) { -it }.sort(5&lt;..&lt;-1, false) { it }
+     *  == [5, 9, 7, 1, 3, 4, 0, 6, 8, 2]
+     * </pre>
+     *
+     * @param self    the List to be sorted
+     * @param range   the inclusive range of index values over which to sort
+     * @param mutate  false causes a new list to be created, true will mutate lists in place
+     * @param closure a Closure used to determine the correct ordering
+     * @return a sorted List
+     * @since 5.0.0
+     */
+    public static <T> List<T> sort(List<T> self, IntRange range, boolean mutate, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        RangeInfo info = range.subListBorders(self.size());
+        Objects.checkFromToIndex(info.from, info.to, self.size());
+        T[] a = (T[]) self.toArray();
+        Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        Arrays.sort(a, info.from, info.to, c);
+        if (!mutate) {
+            return Arrays.asList(a);
+        }
+        ListIterator<T> i = self.listIterator();
+        for (T e : a) {
+            i.next();
+            i.set(e);
+        }
+        return self;
+    }
+
+    /**
+     * A sort variant that takes an index range and always mutates the original list.
+     * <pre class="groovyTestCase">
+     * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     * nums.sort(0..4) { it }
+     * assert nums == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
+     * </pre>
+     *
+     * @see #sort(List, IntRange, boolean, Closure)
+     * @return the sorted list
+     */
+    public static <T> List<T> sort(List<T> self, IntRange range, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        return sort(self, range, true, closure);
     }
 
     /**
@@ -15225,6 +15297,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(closure) : new ClosureComparator<>(
             closure);
         return toSorted(self, comparator);
+    }
+
+    /**
+     * A sort variant that takes an index range and never modifies the original list.
+     * <pre class="groovyTestCase">
+     * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     * assert nums.toSorted(0..4) { it } == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
+     * </pre>
+     *
+     * @see #sort(List, IntRange, boolean, Closure)
+     * @return the sorted list
+     */
+    public static <T> List<T> toSorted(List<T> self, IntRange range, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        return sort(self, range, false, closure);
     }
 
     /**
