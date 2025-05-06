@@ -132,7 +132,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.AbstractList;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -11050,7 +11049,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
-    // binaryPartitionPoint
+    // partitionPoint
 
     /**
      * Returns the index of the partition point according to the given predicate
@@ -11058,21 +11057,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The list is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def list = [7, 15, 3, 5, 4, 12, 6]
-     * assert list.binaryPartitionPoint(0..<list.size()) { it%2 != 0 } == 4
+     * assert list.partitionPoint(0..<list.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
      * //usage case as lowerBound(cpp), bisect_left(python)
-     * assert list.binaryPartitionPoint(0..<list.size()) { it < 4 } == 4
+     * assert list.partitionPoint(0..<list.size()) { it < 4 } == 4
      * //usage case as upperBound(cpp), bisect_right(python)
-     * assert list.binaryPartitionPoint(0..<list.size()) { it <= 4 } == 6
+     * assert list.partitionPoint(0..<list.size()) { it <= 4 } == 6
      * //for all match condition
-     * assert list.binaryPartitionPoint(0..<list.size()) { it <= 100 } == list.size()
+     * assert list.partitionPoint(0..<list.size()) { it <= 100 } == list.size()
      * //for none match condition
-     * assert list.binaryPartitionPoint(0..<list.size()) { it <= 0 } == 0
+     * assert list.partitionPoint(0..<list.size()) { it <= 0 } == 0
      * //for none match condition with range
-     * assert list.binaryPartitionPoint(2..<list.size()) { it <= 0 } == 2
+     * assert list.partitionPoint(2..<list.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy list
@@ -11081,7 +11080,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an integer that is the index of the first element of the second partition
      * @since 5.0
      */
-    public static <T> int binaryPartitionPoint(AbstractList<T> self, IntRange intRange, Predicate<T> condition) {
+    public static <T> int partitionPoint(List<T> self, IntRange intRange, Predicate<T> condition) {
         Objects.requireNonNull(self);
         assert !intRange.isReverse();
         Objects.checkFromToIndex(intRange.getFromInt(),intRange.getToInt(), self.size());
@@ -11105,22 +11104,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The list is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def list = [7, 15, 3, 5, 4, 12, 6]
-     * assert list.binaryPartitionPoint{ it%2 != 0 } == 4
+     * assert list.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
      * //usage case as lowerBound(cpp), bisect_left(python)
-     * assert list.binaryPartitionPoint{ it < 4 } == 4
+     * assert list.partitionPoint{ it < 4 } == 4
      * //usage case as upperBound(cpp), bisect_right(python)
-     * assert list.binaryPartitionPoint{ it <= 4 } == 6
+     * assert list.partitionPoint{ it <= 4 } == 6
      * //for all match condition
-     * assert list.binaryPartitionPoint{ it <= 100 } == list.size()
+     * assert list.partitionPoint{ it <= 100 } == list.size()
      * //for none match condition
-     * assert list.binaryPartitionPoint{ it <= 0 } == 0
-     * //reverse logic test:
-     * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].binaryPartitionPoint{ it > 4 } == 3
-     * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].binaryPartitionPoint{ it >= 4 } == 5
+     * assert list.partitionPoint{ it <= 0 } == 0
+     * //predicate of reverse logic examples:
+     * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it > 4 } == 3
+     * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it >= 4 } == 5
      * </pre>
      *
      * @param self      a groovy list
@@ -11128,8 +11127,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an integer that is the index of the first element of the second partition
      * @since 5.0
      */
-    public static <T> int binaryPartitionPoint(AbstractList<T> self, Predicate<T> condition) {
-        return binaryPartitionPoint(self, new IntRange(0, self.size() - 1), condition);
+    public static <T> int partitionPoint(List<T> self, Predicate<T> condition) {
+        return partitionPoint(self, new IntRange(0, self.size() - 1), condition);
     }
 
     //--------------------------------------------------------------------------
