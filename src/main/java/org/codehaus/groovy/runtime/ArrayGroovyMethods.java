@@ -7261,6 +7261,405 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // putAt
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * Integer[] from = [70, 80, 90]
+     * Integer[] nums = [1, 2, 3, 4, 5]
+     * nums[1..3] = from
+     * assert nums == [1, 70, 80, 90, 5]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static <T> void putAt(T[] self, IntRange range, T[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Null will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [70, 80, 90]
+     * Integer[] nums = [1, 2, 3, 4, 5]
+     * nums[1..3] = from
+     * assert nums == [1, 70, 80, 90, 5]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static <T> void putAt(T[] self, IntRange range, Iterable<T> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<T> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            T next = iter.hasNext() ? iter.next() : null;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * boolean[] from = [true, true, true]
+     * boolean[] to = [false, false, false, false, false]
+     * to[1..3] = from
+     * assert to == [false, true, true, true, false]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(boolean[] self, IntRange range, boolean[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * False will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [true, true, true]
+     * boolean[] to = [false, false, false, false, false]
+     * to[1..3] = from
+     * assert to == [false, true, true, true, false]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(boolean[] self, IntRange range, Iterable<Boolean> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Boolean> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            boolean next = iter.hasNext() ? iter.next() : false;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * byte[] from = [1, 1, 1]
+     * byte[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(byte[] self, IntRange range, byte[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1, 1, 1]
+     * byte[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(byte[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            byte next = iter.hasNext() ? iter.next().byteValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * char[] from = 'XYZ'.chars
+     * char[] to = 'abcde'.chars
+     * to[1..3] = from
+     * assert to == 'aXYZe'.chars
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(char[] self, IntRange range, char[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * The null character, \0, will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = 'XYZ'.chars.toList()
+     * char[] to = 'abcde'.chars
+     * to[1..3] = from
+     * assert to == 'aXYZe'.chars
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(char[] self, IntRange range, Iterable<Character> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Character> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            char next = iter.hasNext() ? iter.next() : '\0';
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * short[] from = [1, 1, 1]
+     * short[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(short[] self, IntRange range, short[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1, 1, 1]
+     * short[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(short[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            short next = iter.hasNext() ? iter.next().shortValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * int[] from = [1, 1, 1]
+     * int[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(int[] self, IntRange range, int[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1, 1, 1]
+     * int[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(int[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            int next = iter.hasNext() ? iter.next().intValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * long[] from = [1L, 1L, 1L]
+     * long[] to = [0L, 0L, 0L, 0L, 0L]
+     * to[1..3] = from
+     * assert to == [0L, 1L, 1L, 1L, 0L]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(long[] self, IntRange range, long[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1L, 1L, 1L]
+     * long[] to = [0L, 0L, 0L, 0L, 0L]
+     * to[1..3] = from
+     * assert to == [0L, 1L, 1L, 1L, 0L]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(long[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            long next = iter.hasNext() ? iter.next().longValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * float[] from = [1f, 1f, 1f]
+     * float[] to = [0f, 0f, 0f, 0f, 0f]
+     * to[1..3] = from
+     * assert to == [0f, 1f, 1f, 1f, 0f]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(float[] self, IntRange range, float[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1f, 1f, 1f]
+     * float[] to = [0f, 0f, 0f, 0f, 0f]
+     * to[1..3] = from
+     * assert to == [0f, 1f, 1f, 1f, 0f]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(float[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            float next = iter.hasNext() ? iter.next().floatValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * double[] from = [1d, 1d, 1d]
+     * double[] to = [0d, 0d, 0d, 0d, 0d]
+     * to[1..3] = from
+     * assert to == [0d, 1d, 1d, 1d, 0d]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(double[] self, IntRange range, double[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1d, 1d, 1d]
+     * double[] to = [0d, 0d, 0d, 0d, 0d]
+     * to[1..3] = from
+     * assert to == [0d, 1d, 1d, 1d, 0d]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(double[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            double next = iter.hasNext() ? iter.next().doubleValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    //--------------------------------------------------------------------------
     // reverse
 
     /**
