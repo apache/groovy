@@ -11062,30 +11062,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * <pre class="groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
-     * //usage case as lowerBound(cpp), bisect_left(python)
+     * // usage case as lower_bound(cpp), bisect_left(python)
      * assert list.partitionPoint(0..<list.size()) { it < 4 } == 4
-     * //usage case as upperBound(cpp), bisect_right(python)
+     * // usage case as upper_bound(cpp), bisect_right(python)
      * assert list.partitionPoint(0..<list.size()) { it <= 4 } == 6
-     * //for all match condition
-     * assert list.partitionPoint(0..<list.size()) { it <= 100 } == list.size()
-     * //for none match condition
+     * // for all match condition
+     * assert list.partitionPoint(0..<list.size()) { it <= 20 } == list.size()
+     * // for no match condition
      * assert list.partitionPoint(0..<list.size()) { it <= 0 } == 0
-     * //for none match condition with range
+     * // for all match condition with range
+     * assert list.partitionPoint(0..<4) { it <= 20 } == 4
+     * // for no match condition with range
      * assert list.partitionPoint(2..<list.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy list
-     * @param intRange  the range [l,r] to find data match the condition
+     * @param range  the range [l,r] to find data match the condition
      * @param condition the matching condition
      * @return an integer that is the index of the first element of the second partition
-     * @since 5.0
+     * @since 5.0.0
      */
-    public static <T> int partitionPoint(List<T> self, IntRange intRange, Predicate<T> condition) {
+    public static <T> int partitionPoint(List<T> self, IntRange range, Predicate<T> condition) {
         Objects.requireNonNull(self);
-        assert !intRange.isReverse();
-        Objects.checkFromToIndex(intRange.getFromInt(),intRange.getToInt(), self.size());
-        int result = intRange.getFromInt();
-        int left = intRange.getFromInt(), right = intRange.getToInt();
+        RangeInfo info = range.subListBorders(self.size());
+        Objects.checkFromToIndex(info.from, info.to, self.size());
+        int result = info.from;
+        int left = info.from, right = info.to - 1;
         while (left <= right) {
             int mid = left + (right - left) / 2;
             if (condition.test(self.get(mid))) {
@@ -11103,21 +11105,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * (the index of the first element of the second partition).
      * The list is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
-     * def list = [7, 15, 3, 5, 4, 12, 6]
+     * def list = [7, 15, 3, 5, 4, 12, 6] // partitioned into odds then evens
      * assert list.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
-     * //usage case as lowerBound(cpp), bisect_left(python)
+     * // usage case as lower_bound(cpp), bisect_left(python)
      * assert list.partitionPoint{ it < 4 } == 4
-     * //usage case as upperBound(cpp), bisect_right(python)
+     * // usage case as upper_bound(cpp), bisect_right(python)
      * assert list.partitionPoint{ it <= 4 } == 6
-     * //for all match condition
+     * // for all match condition
      * assert list.partitionPoint{ it <= 100 } == list.size()
-     * //for none match condition
+     * // for no match condition
      * assert list.partitionPoint{ it <= 0 } == 0
-     * //predicate of reverse logic examples:
+     * // predicate of reverse logic examples:
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it > 4 } == 3
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it >= 4 } == 5
      * </pre>
@@ -11125,10 +11127,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      a groovy list
      * @param condition the matching condition
      * @return an integer that is the index of the first element of the second partition
-     * @since 5.0
+     * @since 5.0.0
      */
     public static <T> int partitionPoint(List<T> self, Predicate<T> condition) {
-        return partitionPoint(self, new IntRange(0, self.size() - 1), condition);
+        return partitionPoint(self, new IntRange(true, 0, self.size() - 1), condition);
     }
 
     //--------------------------------------------------------------------------
