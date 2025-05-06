@@ -8107,7 +8107,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Modifies this array so that its elements are in sorted order as determined by the given comparator.
+     * Sorts the elements from this array into sorted order as determined by the given comparator.
      * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
      * array is returned and the original array remains unchanged.
      * <pre class="groovyTestCase">
@@ -8151,7 +8151,26 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Modifies this array so that its elements are in sorted order using the Closure to determine the correct ordering.
+     * Sorts the elements from this array with index values in the given index range
+     * into a newly created array using the Closure to determine the correct ordering.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     *
+     * @param self the array containing the elements to be sorted
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted array
+     * @since 5.0.0
+     */
+    public static <T> T[] sort(T[] self, IntRange range, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        return sort(self, range, false, closure);
+    }
+
+    /**
+     * Sorts the elements from this array into sorted order using the Closure to determine the correct ordering.
      * If mutate is false, a new array is returned and the original array remains unchanged.
      * Otherwise, the original array is sorted in place and returned.
      * <p>
@@ -8170,7 +8189,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self    the array to be sorted
-     * @param mutate  false will always cause a new array to be created, true will mutate arrays in place
+     * @param mutate  false causes a new array to be created, true will mutate arrays in place
      * @param closure a Closure used to determine the correct ordering
      * @return the sorted array
      * @since 1.8.1
@@ -8179,6 +8198,61 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         if (!mutate) self = self.clone();
         Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
         Arrays.sort(self, c);
+        return self;
+    }
+
+    /**
+     * Sorts the elements with index values in the given index range
+     * into sorted order using the Closure to determine the correct ordering.
+     * If mutate is false, a new array is returned and the original array remains unchanged.
+     * Otherwise, the original array is sorted in place and returned.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     * <pre class="groovyTestCase">
+     * // an array with some odd then even numbers
+     * Integer[] nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     *
+     * // sort odds ascending, evens descending
+     * assert nums.sort(0..4, false) { it }.sort(5..9, false) { -it }
+     *  == [1, 3, 5, 7, 9, 8, 6, 4, 2, 0]
+     * // sort odds descending, evens descending
+     * assert nums.sort(0..&lt;5, false) { -it }.sort(4&lt;..&lt;10, false) { -it }
+     *  == [9, 7, 5, 3, 1, 8, 6, 4, 2, 0]
+     * // sort odds descending, evens ascending
+     * assert nums.sort(0..&lt;5, false) { -it }.sort(5..-1, false) { it }
+     *  == [9, 7, 5, 3, 1, 0, 2, 4, 6, 8]
+     * // leave first and last numbers, sort remaining odds ascending, remaining evens descending
+     * assert nums.sort(1..4, false) { it }.sort(5..-2, false) { -it }
+     *  == [5, 1, 3, 7, 9, 8, 6, 4, 0, 2]
+     * // leave first and last numbers, sort remaining odds descending, remaining evens ascending
+     * assert nums.sort(1..4, false) { -it }.sort(5..-2, false) { it }
+     *  == [5, 9, 7, 3, 1, 0, 4, 6, 8, 2]
+     * // leave first and last odds and evens, sort remaining odds ascending, remaining evens descending
+     * assert nums.sort(0&lt;..&lt;4, false) { it }.sort(5&lt;..&lt;9, false) { -it }
+     *  == [5, 1, 7, 9, 3, 4, 8, 6, 0, 2]
+     * // leave first and last odds and evens, sort remaining odds descending, remaining evens ascending
+     * assert nums.sort(0&lt;..&lt;4, false) { -it }.sort(5&lt;..&lt;-1, false) { it }
+     *  == [5, 9, 7, 1, 3, 4, 0, 6, 8, 2]
+     * </pre>
+     *
+     * @param self    the array to be sorted
+     * @param range   the inclusive range of index values over which to sort
+     * @param mutate  false causes a new array to be created, true will mutate arrays in place
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted array
+     * @since 5.0.0
+     */
+    public static <T> T[] sort(T[] self, IntRange range, boolean mutate, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        RangeInfo info = range.subListBorders(self.length);
+        Objects.checkFromToIndex(info.from, info.to, self.length);
+        if (!mutate) self = self.clone();
+        Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        Arrays.sort(self, info.from, info.to, c);
         return self;
     }
 
