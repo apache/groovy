@@ -122,7 +122,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                     propertyExpression.getProperty().setSourcePosition(exp);
                     return propertyExpression;
                 }
-            } else if (accessedVariable instanceof DynamicVariable && !inClosure) { // GROOVY-9386
+            } else if (accessedVariable instanceof DynamicVariable && !inClosure) { // GROOVY-8049, GROOVY-9386
                 PropertyExpression propertyExpression = propX(varX(weaved), vexp.getName());
                 propertyExpression.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                 propertyExpression.getProperty().setSourcePosition(exp);

@@ -40,6 +40,10 @@ class PropertyExpressionTransformer {
     }
 
     Expression transformPropertyExpression(final PropertyExpression pe) {
+        if (pe.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
+            return pe.transformExpression(scTransformer); // GROOVY-11641, etc.
+        }
+
         MethodNode dmct = pe.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET);
         // NOTE: BinaryExpressionTransformer handles the setter
         if (dmct != null && dmct.getParameters().length == 0) {

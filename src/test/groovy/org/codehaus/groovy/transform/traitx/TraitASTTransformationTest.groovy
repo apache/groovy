@@ -3749,43 +3749,73 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-9386
-    @Test
-    void testTraitPropertyInitializedByTap() {
-        assertScript shell, '''
+    @CompileModesTest
+    void testTraitPropertyInitializedByTap(String mode) {
+        assertScript shell, """
             class P {
                 int prop
             }
+            $mode
             trait T {
                 P pogo = new P().tap {
                     prop = 42 // MissingPropertyException: No such property: prop for class: C
                 }
             }
+            $mode
             class C implements T {
             }
 
             def pogo = new C().pogo
             assert pogo.prop == 42
-        '''
+        """
     }
 
     // GROOVY-9386
-    @Test
-    void testTraitPropertyInitializedByWith() {
-        assertScript shell, '''
+    @CompileModesTest
+    void testTraitPropertyInitializedByWith(String mode) {
+        assertScript shell, """
             class P {
                 int prop
             }
+            $mode
             trait T {
                 P pogo = new P().with {
                     prop = 42 // MissingPropertyException: No such property: prop for class: C
                     return it
                 }
             }
+            $mode
             class C implements T {
             }
+
             def pogo = new C().pogo
             assert pogo.prop == 42
-        '''
+        """
+    }
+
+    // GROOVY-8049
+    @CompileModesTest
+    void testTraitPropertyAsReceiverForWith(String mode) {
+        assertScript shell, """
+            interface I {
+              String getJay()
+            }
+            $mode
+            trait T {
+              abstract I getEye()
+              String m() {
+                eye.with {
+                  jay.toUpperCase()
+                }
+              }
+            }
+            $mode
+            class C implements T {
+              I eye = { -> 'works' }
+            }
+
+            assert new C().m() == 'WORKS'
+        """
     }
 
     // GROOVY-8000
