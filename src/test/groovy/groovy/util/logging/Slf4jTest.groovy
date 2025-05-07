@@ -24,9 +24,12 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.LoggingEvent
 import ch.qos.logback.core.OutputStreamAppender
 import ch.qos.logback.core.layout.EchoLayout
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import groovy.test.NotYetImplemented
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.slf4j.LoggerFactory
 
 import java.lang.reflect.Modifier
@@ -60,7 +63,7 @@ final class Slf4jTest {
     private LogbackInterceptingAppender appender
     private Logger logger
 
-    @Before
+    @BeforeEach
     void setUp() {
         appender = new LogbackInterceptingAppender()
         appender.outputStream = new ByteArrayOutputStream()
@@ -74,7 +77,7 @@ final class Slf4jTest {
         logger.level = Level.ALL
     }
 
-    @After
+    @AfterEach
     void tearDown() {
         logger.detachAppender(appender)
     }
@@ -293,7 +296,8 @@ final class Slf4jTest {
         assert events[ind].message == 'trace called'
     }
 
-    @Test // GROOVY-6373
+    // GROOVY-6373
+    @Test
     void testLogWithInnerClasses() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Slf4j('logger')
@@ -323,7 +327,8 @@ final class Slf4jTest {
         assert events[ind].message == 'inner called'
     }
 
-    @Test // GROOVY-6834
+    // GROOVY-6834
+    @Test
     void testLogTransformInteractionWithAnonInnerClass() {
         assertScript '''
             @groovy.util.logging.Slf4j
@@ -344,7 +349,8 @@ final class Slf4jTest {
         '''
     }
 
-    @Test // GROOVY-6873
+    // GROOVY-6873
+    @Test
     void testLogTransformInteractionWithAnonInnerClass2() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Slf4j
@@ -365,6 +371,29 @@ final class Slf4jTest {
                 }
             }
         ''')
+    }
+
+    // GROOVY-7439
+    @NotYetImplemented
+    @ParameterizedTest
+    @ValueSource(strings=[
+        'log', // Cannot find matching method Object#debug(String)
+        '((org.slf4j.Logger) log)' // No such property: log for class: C
+    ])
+    void testLogTrait(String log) {
+        assertScript """
+            @groovy.transform.CompileStatic
+            @groovy.util.logging.Slf4j
+            trait T {
+                void test() {
+                    ${log}.debug('trace')
+                }
+            }
+            class C implements T {
+            }
+
+            new C().test()
+        """
     }
 
     @Test
