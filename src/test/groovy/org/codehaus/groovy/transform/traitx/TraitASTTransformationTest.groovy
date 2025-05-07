@@ -2509,21 +2509,17 @@ final class TraitASTTransformationTest {
     @Test
     void testUseStaticFieldInTraitBody() {
         assertScript shell, '''
-            import java.util.logging.Logger
-
             trait Loggable {
-
-                static def LOGGER = Logger.getLogger(this.class.name)
-
+                private static LOGGER = java.util.logging.Logger.getLogger(this.class.name)
                 void info(String msg) {
                     LOGGER.info(msg)
                 }
             }
+            class C implements Loggable {
+            }
 
-            class Test implements Loggable {}
-
-            def t = new Test()
-            t.info('foo')
+            def pogo = new C()
+            pogo.info('foo')
         '''
     }
 
@@ -2531,21 +2527,19 @@ final class TraitASTTransformationTest {
     void testUpdateStaticFieldInTraitBody() {
         assertScript shell, '''
             trait Loggable {
-
                 static int CALLS = 0
-
                 int call() {
                     CALLS += 1
                     CALLS
                 }
             }
+            class C implements Loggable {
+            }
 
-            class Test implements Loggable {}
-
-            def t = new Test()
-            assert t.call() == 1
-            assert t.call() == 2
-            assert Test.CALLS == 2
+            def pogo = new C()
+            assert pogo.call() == 1
+            assert pogo.call() == 2
+            assert pogo.CALLS  == 2
         '''
     }
 
