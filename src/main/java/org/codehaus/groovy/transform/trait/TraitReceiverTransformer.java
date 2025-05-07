@@ -55,7 +55,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isInstanceOfX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 
 /**
  * This expression transformer is used internally by the {@link org.codehaus.groovy.transform.trait.TraitASTTransformation
@@ -124,7 +123,6 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
                 }
             } else if (accessedVariable instanceof DynamicVariable && !inClosure) { // GROOVY-8049, GROOVY-9386
                 PropertyExpression propertyExpression = propX(varX(weaved), vexp.getName());
-                propertyExpression.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                 propertyExpression.getProperty().setSourcePosition(exp);
                 return propertyExpression;
             }

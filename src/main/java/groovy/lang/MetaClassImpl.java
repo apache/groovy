@@ -110,7 +110,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
-import java.util.regex.Pattern;
 
 import static groovy.lang.Tuple.tuple;
 import static java.lang.Character.isUpperCase;
@@ -145,11 +144,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
     private static final Comparator<CachedClass> CACHED_CLASS_NAME_COMPARATOR = Comparator.comparing(CachedClass::getName);
     private static final boolean PERMISSIVE_PROPERTY_ACCESS = SystemUtil.getBooleanSafe("groovy.permissive.property.access");
-    private static final Pattern TRAIT_FIELD;
-    static {
-        final var identifier = "[\\p{javaJavaIdentifierStart}&&[^_$]][\\p{javaJavaIdentifierPart}&&[^_$]]*"; // _ and $ are special
-        TRAIT_FIELD = Pattern.compile("(?:" + identifier + "_)*" + identifier + "(?:\\$" + identifier + ")*__(" + identifier + ")");
-    }
     private static final VMPlugin VM_PLUGIN = VMPluginFactory.getPlugin();
 
     protected final Class theClass;
@@ -2366,12 +2360,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             if (prop != null) {
                 staticPropertyIndex.put(name, prop);
-                if (!name.startsWith("$") && name.contains("__")) {
-                    var matcher = TRAIT_FIELD.matcher(name);
-                    if (matcher.matches()) { // GROOVY-11641
-                        staticPropertyIndex.putIfAbsent(matcher.group(1), prop);
-                    }
-                }
             }
         };
 
