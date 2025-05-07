@@ -2796,6 +2796,48 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Provides a {@code getLength} alias for {@code length} for {@link StringBuilder},
+     * supporting assignment arithmetic operator expressions involving
+     * the otherwise write-only length property.
+     *
+     * <pre class="groovyTestCase">
+     * def sb = new StringBuilder()
+     * sb << 'foobar'
+     * sb.length -= 3
+     * assert sb.toString() == 'foo'
+     * </pre>
+     *
+     * @param self a StringBuilder
+     * @return the length of the StringBuilder
+     *
+     * @since 5.0.0
+     */
+    public static int getLength(final StringBuilder self) {
+        return self.length();
+    }
+
+    /**
+     * Provides a {@code getLength} alias for {@code length} for {@link StringBuffer},
+     * supporting assignment arithmetic operator expressions involving
+     * the otherwise write-only length property.
+     *
+     * <pre class="groovyTestCase">
+     * def sb = new StringBuffer()
+     * sb << 'foobar'
+     * sb.length -= 3
+     * assert sb.toString() == 'foo'
+     * </pre>
+     *
+     * @param self a StringBuffer
+     * @return the length of the StringBuffer
+     *
+     * @since 5.0.0
+     */
+    public static int getLength(final StringBuffer self) {
+        return self.length();
+    }
+
+    /**
      * Provides the standard Groovy {@code size()} method for {@code Matcher}.
      *
      * @param self a matcher object
