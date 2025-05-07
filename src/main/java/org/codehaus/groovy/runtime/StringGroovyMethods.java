@@ -1885,6 +1885,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * Since StringBuilder is a basic dynamic container of chars, sometimes it should
      * behave like a stack of chars at the same time.
      * stack's methods should have: push(), peek(), pop(), size(), isEmpty()
+     * here just need to add:  push(), peek() and pop()
      * <pre class="groovyTestCase">
      * def st = new StringBuilder()
      * // stack in cases:
@@ -1920,13 +1921,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
-    public static StringBuilder push(final StringBuilder self, final String ch) {
-        Objects.requireNonNull(self);
-        self.append(ch);
-        return self;
-    }
-
-    public static StringBuilder push(final StringBuilder self, final GString ch) {
+    public static StringBuilder push(final StringBuilder self, final CharSequence ch) {
         Objects.requireNonNull(self);
         self.append(ch);
         return self;
@@ -1942,11 +1937,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         char last = peek(self);
         self.setLength(self.length() - 1);
         return last;
-    }
-
-    public static int size(final StringBuilder self) {
-        Objects.requireNonNull(self);
-        return self.length();
     }
 
     /**
