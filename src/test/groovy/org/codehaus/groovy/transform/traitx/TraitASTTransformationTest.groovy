@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -431,21 +432,19 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test
+    @RepeatedTest(10)
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParent() {
-        10.times {
-            assertScript shell, '''
-                trait Top { String methodFromA() { 'A' } }
-                trait Bottom extends Top {
-                    String methodFromA() { 'B' }
-                    String methodFromB() { 'B' }
-                }
-                class Foo implements Bottom {}
-                def f = new Foo()
-                assert f.methodFromA() == 'B'
-                assert f.methodFromB() == 'B'
-            '''
-        }
+        assertScript shell, '''
+            trait Top { String methodFromA() { 'A' } }
+            trait Bottom extends Top {
+                String methodFromA() { 'B' }
+                String methodFromB() { 'B' }
+            }
+            class Foo implements Bottom {}
+            def f = new Foo()
+            assert f.methodFromA() == 'B'
+            assert f.methodFromB() == 'B'
+        '''
     }
 
     @Test
@@ -3714,7 +3713,7 @@ final class TraitASTTransformationTest {
     // GROOVY-11641
     @CompileModesTest
     void testTraitAccessToInheritedStaticMethods4(String mode) {
-        assertScript shell, """
+        shouldFail shell, """
             $mode
             trait Foo {
                 public static final String BANG = '!'
@@ -3722,7 +3721,7 @@ final class TraitASTTransformationTest {
             $mode
             trait Bar extends Foo {
                 static staticMethod(String string) {
-                    string + BANG
+                    string + BANG // requires qualifier
                 }
             }
             $mode
