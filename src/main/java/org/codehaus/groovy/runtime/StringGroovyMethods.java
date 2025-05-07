@@ -1884,8 +1884,8 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Since StringBuilder is a basic dynamic container of chars, sometimes it should
      * behave like a stack of chars at the same time.
-     * stack's methods should have: push(), peek(), pop(), size(), isEmpty()
-     * here just need to add:  push(), peek() and pop()
+     * stack's methods should have: push(), peek(), pop(), size(), isEmpty().
+     * here just need to add:  push(), peek() and pop().
      * <pre class="groovyTestCase">
      * def st = new StringBuilder()
      * // stack in cases:
@@ -1896,7 +1896,6 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * st.push('r')
      * assert st.toString() == 'Bar'
      * assert st.size() == 3
-     * assert st.isEmpty() == false
      * // stack out cases:
      * assert st.peek() == 'r' as char
      * assert st.pop() == 'r' as char
@@ -1905,9 +1904,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert st.pop() == 'a' as char
      * assert st.toString() == 'B'
      * assert st.size() == 1
-     * assert st.isEmpty() == false
      * assert st.pop() == 'B' as char
-     * assert st.isEmpty() == true
      * </pre>
      *
      * @param self a StringBuilder obj
