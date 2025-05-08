@@ -250,6 +250,19 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
             def list = Arrays.asList()
             assert list.size() == 0
         '''
+
+        // GROOVY-11616:
+        assertScript '''
+            class A {}
+            class B extends A {}
+            class C extends B {}
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.toString(false) == 'java.util.List<A>'
+            })
+            def list = Arrays.asList(new A(), new B(), new C())
+            assert list.size() == 3
+        '''
     }
 
     // GROOVY-10062

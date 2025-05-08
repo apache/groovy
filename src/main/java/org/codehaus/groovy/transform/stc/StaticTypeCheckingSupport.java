@@ -1951,7 +1951,14 @@ public abstract class StaticTypeCheckingSupport {
         // GROOVY-11028, et al.: empty list / map for gt1 or gt2?
         if (gt2.isPlaceholder() && gt2.getName().startsWith("#")) return gt1;
         if (gt1.isPlaceholder() && gt1.getName().startsWith("#")) return gt2;
-        // GROOVY-10315, GROOVY-10317, GROOVY-10339, ...
+        // GROOVY-10315, GROOVY-10317, GROOVY-10339, GROOVY-11616
+        if (!gt1.isPlaceholder() && !gt1.isWildcard()
+                && !gt2.isPlaceholder() && !gt2.isWildcard()) {
+            ClassNode lub = lowestUpperBound(gt1.getType(), gt2.getType());
+            if (!(lub instanceof WideningCategories.LowestUpperBoundClassNode)) {
+                return new GenericsType(lub);
+            }
+        }
         ClassNode cn1 = GenericsUtils.makeClassSafe0(CLASS_Type, gt1);
         ClassNode cn2 = GenericsUtils.makeClassSafe0(CLASS_Type, gt2);
         ClassNode lub = lowestUpperBound(cn1, cn2);
