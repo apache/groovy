@@ -375,13 +375,13 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
     /**
      * Copies annotations from the trait to the helper, excluding non-applicable
-     * items such as {@link Trait @Trait} and {@link Sealed @Sealed}.
+     * items such as {@link Trait @Trait}, {@link Sealed @Sealed} and logging transforms.
      */
     private static void copyClassAnnotations(final ClassNode helper) {
         for (AnnotationNode annotation : helper.getOuterClass().getAnnotations()) {
             ClassNode annotationType = annotation.getClassNode();
-            if (!annotationType.equals(Traits.TRAIT_CLASSNODE)
-                    && !annotationType.equals(SEALED_TYPE)) {
+            if (!annotationType.equals(Traits.TRAIT_CLASSNODE) && !annotationType.equals(SEALED_TYPE)
+                    && !annotationType.getName().startsWith("groovy.util.logging.")) { // GROOVY-7439
                 helper.addAnnotation(annotation);
             }
         }

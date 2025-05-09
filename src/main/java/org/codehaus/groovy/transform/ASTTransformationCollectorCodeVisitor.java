@@ -280,21 +280,24 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         if (!ASTTransformation.class.isAssignableFrom(transformClass)) {
             String error = "Not an ASTTransformation: " + transformClass.getName() + " declared by " + annotation.getClassNode().getName();
             source.getErrorCollector().addError(new SimpleMessage(error, source));
+            return;
         }
 
         GroovyASTTransformation transformationClass = transformClass.getAnnotation(GroovyASTTransformation.class);
         if (transformationClass == null) {
             String error = "AST transformation implementation classes must be annotated with " + GroovyASTTransformation.class.getName() + ". " + transformClass.getName() + " lacks this annotation.";
             source.getErrorCollector().addError(new SimpleMessage(error, source));
+            return;
         }
 
         CompilePhase specifiedCompilePhase = transformationClass.phase();
         if (specifiedCompilePhase.getPhaseNumber() < CompilePhase.SEMANTIC_ANALYSIS.getPhaseNumber()) {
             String error = annotation.getClassNode().getName() + " is defined to be run in compile phase " + specifiedCompilePhase + ". Local AST transformations must run in SEMANTIC_ANALYSIS or later!";
             source.getErrorCollector().addError(new SimpleMessage(error, source));
+            return;
         }
 
-        if (!Traits.isTrait(classNode) || transformClass == TraitASTTransformation.class || transformClass == SealedASTTransformation.class) {
+        if (!Traits.isTrait(classNode) || transformClass == TraitASTTransformation.class || transformClass == SealedASTTransformation.class || transformClass == LogASTTransformation.class) {
             classNode.addTransform((Class<? extends ASTTransformation>) transformClass, annotation);
         }
     }

@@ -56,14 +56,24 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class BuilderASTTransformation extends AbstractASTTransformation implements CompilationUnitAware, TransformWithPriority {
 
-    private static final Class MY_CLASS = Builder.class;
+    private static final Class<?> MY_CLASS = Builder.class;
     private static final ClassNode MY_TYPE = make(MY_CLASS);
     public static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode RECORD_TYPE = make(RecordBase.class, false);
     public static final ClassNode[] NO_EXCEPTIONS = ClassNode.EMPTY_ARRAY;
     public static final Parameter[] NO_PARAMS = Parameter.EMPTY_ARRAY;
 
+    @Override
+    public int priority() {
+        return -5;
+    }
+
     private CompilationUnit compilationUnit;
+
+    @Override
+    public void setCompilationUnit(final CompilationUnit unit) {
+        this.compilationUnit = unit;
+    }
 
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -99,11 +109,6 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             if (strategy == null) return;
             strategy.build(this, parent, anno);
         }
-    }
-
-    @Override
-    public int priority() {
-        return -5;
     }
 
     public interface BuilderStrategy {
@@ -294,10 +299,5 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             addError("Can't load builderStrategy '" + className + "' " + e, anno);
             return null;
         }
-    }
-
-    @Override
-    public void setCompilationUnit(final CompilationUnit unit) {
-        this.compilationUnit = unit;
     }
 }

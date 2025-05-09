@@ -113,7 +113,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         // only descend if we have annotations to look for
         Map<Class<? extends ASTTransformation>, Set<ASTNode>> baseTransforms = classNode.getTransforms(phase);
         if (!baseTransforms.isEmpty()) {
-            final Map<Class<? extends ASTTransformation>, ASTTransformation> transformInstances = new HashMap<Class<? extends ASTTransformation>, ASTTransformation>();
+            final Map<Class<? extends ASTTransformation>, ASTTransformation> transformInstances = new HashMap<>();
             for (Class<? extends ASTTransformation> transformClass : baseTransforms.keySet()) {
                 try {
                     transformInstances.put(transformClass, transformClass.getDeclaredConstructor().newInstance());
@@ -121,13 +121,13 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     source.getErrorCollector().addError(
                             new SimpleMessage(
                                     "Could not instantiate Transformation Processor " + transformClass
-                                    , //+ " declared by " + annotation.getClassNode().getName(),
+                                    /*+ " declared by " + annotation.getClassNode().getName()*/,
                                     source));
                 }
             }
 
             // invert the map, is now one to many
-            transforms = new HashMap<ASTNode, List<ASTTransformation>>();
+            transforms = new HashMap<>();
             for (Map.Entry<Class<? extends ASTTransformation>, Set<ASTNode>> entry : baseTransforms.entrySet()) {
                 for (ASTNode node : entry.getValue()) {
                     List<ASTTransformation> list = transforms.computeIfAbsent(node, k -> new ArrayList<>());
@@ -136,7 +136,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            targetNodes = new LinkedList<ASTNode[]>();
+            targetNodes = new LinkedList<>();
 
             // first pass, collect nodes
             super.visitClass(classNode);
@@ -395,15 +395,15 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
     private static class PriorityComparator implements Comparator<Tuple2<ASTTransformation, ASTNode[]>> {
         @Override
         public int compare(Tuple2<ASTTransformation, ASTNode[]> o1, Tuple2<ASTTransformation, ASTNode[]> o2) {
-            Integer i1 = 0;
-            Integer i2 = 0;
+            int i1 = 0;
+            int i2 = 0;
             if (o1.getV1() instanceof TransformWithPriority) {
                 i1 = ((TransformWithPriority) o1.getV1()).priority();
             }
             if (o2.getV1() instanceof TransformWithPriority) {
                 i2 = ((TransformWithPriority) o2.getV1()).priority();
             }
-            return i2.compareTo(i1);
+            return Integer.compare(i2, i1);
         }
     }
 }

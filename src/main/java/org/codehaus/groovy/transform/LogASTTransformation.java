@@ -56,7 +56,7 @@ import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
  * This class provides an AST Transformation to add a log field to a class.
  */
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
-public class LogASTTransformation extends AbstractASTTransformation implements CompilationUnitAware {
+public class LogASTTransformation extends AbstractASTTransformation implements CompilationUnitAware, TransformWithPriority {
 
     /**
      * This is just a dummy value used because String annotations values can not be null.
@@ -65,6 +65,11 @@ public class LogASTTransformation extends AbstractASTTransformation implements C
     public static final String DEFAULT_CATEGORY_NAME = "##default-category-name##";
 
     public static final String DEFAULT_ACCESS_MODIFIER = "private";
+
+    @Override
+    public int priority() {
+        return 1; // GROOVY-7439
+    }
 
     private CompilationUnit compilationUnit;
 
