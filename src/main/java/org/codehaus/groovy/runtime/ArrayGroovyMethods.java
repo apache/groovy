@@ -4664,7 +4664,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ["1: 10", "2: 20", "3: 30"] == nums.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
      * </pre>
      *
-     * @param self   an Iterable
+     * @param self   an int array
      * @param offset an index to start from
      * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
      * @see DefaultGroovyMethods#indexed(Iterable, int)
@@ -4683,7 +4683,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert [5: 10L, 6: 20L, 7: 30L] == nums.indexed(5)
      * </pre>
      *
-     * @param self   a long[]
+     * @param self   a long array
      * @param offset an index to start from
      * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
      * @see DefaultGroovyMethods#indexed(Iterable, int)
@@ -4729,6 +4729,42 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map<Integer, Double> indexed(double[] self, int offset) {
         return DefaultGroovyMethods.indexed(new DoubleArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips an object array with indices in (index, value) order starting from index 0.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = 'A'..'C'
+     * assert [0: 'A', 1: 'B', 2: 'C'] == letters.indexed()
+     * </pre>
+     *
+     * @see #indexed(Object[], int)
+     * @since 5.0.0
+     */
+    public static <T> Map<Integer, T> indexed(T[] self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an object array with indices in (index, value) order starting from a given index.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = 'A'..'C'
+     * assert [5: 'A', 6: 'B', 7: 'C'] == letters.indexed(5)
+     * assert ["1: A", "2: B", "3: C"] == letters.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
+     * </pre>
+     *
+     * @param self   an Object array
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see DefaultGroovyMethods#indexed(Iterable, int)
+     * @since 5.0.0
+     */
+    public static <T> Map<Integer, T> indexed(T[] self, int offset) {
+        return DefaultGroovyMethods.indexed(new ArrayIterable<>(self), offset);
     }
 
     //--------------------------------------------------------------------------
@@ -10683,6 +10719,44 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List<Tuple2<Double, Integer>> withIndex(double[] self, int offset) {
         return DefaultGroovyMethods.withIndex(new DoubleArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips an object array with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'z']
+     * assert [['a', 0], ['z', 1]] == letters.withIndex()
+     * </pre>
+     *
+     * @param self an object array
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static <T> List<Tuple2<T, Integer>> withIndex(T[] self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips an object array with indices in (value, index) order starting from a given index.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'z']
+     * assert [['a', 5], ['z', 6]] == letters.withIndex(5)
+     * assert ["5: a", "6: z"] == letters.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self an object array
+     * @param offset an index to start from
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable, int)
+     * @since 5.0.0
+     */
+    public static <T> List<Tuple2<T, Integer>> withIndex(T[] self, int offset) {
+        return DefaultGroovyMethods.withIndex(new ArrayIterable<>(self), offset);
     }
 
     //--------------------------------------------------------------------------
