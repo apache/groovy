@@ -39,9 +39,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.getInstancePropertyFiel
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
 
-@org.codehaus.groovy.transform.GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
-public class ExternalizeVerifierASTTransformation extends org.codehaus.groovy.transform.AbstractASTTransformation {
-    static final Class MY_CLASS = ExternalizeVerifier.class;
+@GroovyASTTransformation(phase = CompilePhase.CLASS_GENERATION)
+public class ExternalizeVerifierASTTransformation extends AbstractASTTransformation {
+
+    static final Class<?> MY_CLASS = ExternalizeVerifier.class;
     static final ClassNode MY_TYPE = make(MY_CLASS);
     static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode EXTERNALIZABLE_TYPE = make(Externalizable.class);

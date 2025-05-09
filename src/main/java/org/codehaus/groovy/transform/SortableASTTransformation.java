@@ -84,8 +84,8 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
  * Injects a set of Comparators and sort methods.
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-
 public class SortableASTTransformation extends AbstractASTTransformation {
+
     private static final ClassNode MY_TYPE = make(Sortable.class);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode COMPARABLE_TYPE = makeClassSafe(Comparable.class);
