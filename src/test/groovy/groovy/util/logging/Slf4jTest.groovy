@@ -24,7 +24,6 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.classic.spi.LoggingEvent
 import ch.qos.logback.core.OutputStreamAppender
 import ch.qos.logback.core.layout.EchoLayout
-import groovy.test.NotYetImplemented
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -374,7 +373,6 @@ final class Slf4jTest {
     }
 
     // GROOVY-7439
-    @NotYetImplemented
     @ParameterizedTest
     @ValueSource(strings=[
         'log', // Cannot find matching method Object#debug(String)
