@@ -5620,7 +5620,7 @@ trying: for (ClassNode[] signature : signatures) {
                         }
 
                         connections.forEach((gtn, gt) -> resolvedPlaceholders.merge(gtn, gt, (gt1, gt2) -> {
-                            // GROOVY-10339: incorporate another witness
+                            // GROOVY-10339, GROOVY-11616: incorporate another type witness
                             return getCombinedGenericsType(gt1, gt2);
                         }));
                     }
