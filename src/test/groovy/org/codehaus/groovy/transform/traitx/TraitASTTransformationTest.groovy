@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ListExpression
 import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -431,21 +432,19 @@ final class TraitASTTransformationTest {
         '''
     }
 
-    @Test
+    @RepeatedTest(10)
     void testSimpleTraitInheritanceWithTraitOverridingMethodFromParent() {
-        10.times {
-            assertScript shell, '''
-                trait Top { String methodFromA() { 'A' } }
-                trait Bottom extends Top {
-                    String methodFromA() { 'B' }
-                    String methodFromB() { 'B' }
-                }
-                class Foo implements Bottom {}
-                def f = new Foo()
-                assert f.methodFromA() == 'B'
-                assert f.methodFromB() == 'B'
-            '''
-        }
+        assertScript shell, '''
+            trait Top { String methodFromA() { 'A' } }
+            trait Bottom extends Top {
+                String methodFromA() { 'B' }
+                String methodFromB() { 'B' }
+            }
+            class Foo implements Bottom {}
+            def f = new Foo()
+            assert f.methodFromA() == 'B'
+            assert f.methodFromB() == 'B'
+        '''
     }
 
     @Test
@@ -2509,21 +2508,17 @@ final class TraitASTTransformationTest {
     @Test
     void testUseStaticFieldInTraitBody() {
         assertScript shell, '''
-            import java.util.logging.Logger
-
             trait Loggable {
-
-                static def LOGGER = Logger.getLogger(this.class.name)
-
+                private static LOGGER = java.util.logging.Logger.getLogger(this.class.name)
                 void info(String msg) {
                     LOGGER.info(msg)
                 }
             }
+            class C implements Loggable {
+            }
 
-            class Test implements Loggable {}
-
-            def t = new Test()
-            t.info('foo')
+            def pogo = new C()
+            pogo.info('foo')
         '''
     }
 
@@ -2531,21 +2526,19 @@ final class TraitASTTransformationTest {
     void testUpdateStaticFieldInTraitBody() {
         assertScript shell, '''
             trait Loggable {
-
                 static int CALLS = 0
-
                 int call() {
                     CALLS += 1
                     CALLS
                 }
             }
+            class C implements Loggable {
+            }
 
-            class Test implements Loggable {}
-
-            def t = new Test()
-            assert t.call() == 1
-            assert t.call() == 2
-            assert Test.CALLS == 2
+            def pogo = new C()
+            assert pogo.call() == 1
+            assert pogo.call() == 2
+            assert pogo.CALLS  == 2
         '''
     }
 
@@ -3720,7 +3713,7 @@ final class TraitASTTransformationTest {
     // GROOVY-11641
     @CompileModesTest
     void testTraitAccessToInheritedStaticMethods4(String mode) {
-        assertScript shell, """
+        shouldFail shell, """
             $mode
             trait Foo {
                 public static final String BANG = '!'
@@ -3728,7 +3721,7 @@ final class TraitASTTransformationTest {
             $mode
             trait Bar extends Foo {
                 static staticMethod(String string) {
-                    string + BANG
+                    string + BANG // requires qualifier
                 }
             }
             $mode
@@ -3749,43 +3742,73 @@ final class TraitASTTransformationTest {
     }
 
     // GROOVY-9386
-    @Test
-    void testTraitPropertyInitializedByTap() {
-        assertScript shell, '''
+    @CompileModesTest
+    void testTraitPropertyInitializedByTap(String mode) {
+        assertScript shell, """
             class P {
                 int prop
             }
+            $mode
             trait T {
                 P pogo = new P().tap {
                     prop = 42 // MissingPropertyException: No such property: prop for class: C
                 }
             }
+            $mode
             class C implements T {
             }
 
             def pogo = new C().pogo
             assert pogo.prop == 42
-        '''
+        """
     }
 
     // GROOVY-9386
-    @Test
-    void testTraitPropertyInitializedByWith() {
-        assertScript shell, '''
+    @CompileModesTest
+    void testTraitPropertyInitializedByWith(String mode) {
+        assertScript shell, """
             class P {
                 int prop
             }
+            $mode
             trait T {
                 P pogo = new P().with {
                     prop = 42 // MissingPropertyException: No such property: prop for class: C
                     return it
                 }
             }
+            $mode
             class C implements T {
             }
+
             def pogo = new C().pogo
             assert pogo.prop == 42
-        '''
+        """
+    }
+
+    // GROOVY-8049
+    @CompileModesTest
+    void testTraitPropertyAsReceiverForWith(String mode) {
+        assertScript shell, """
+            interface I {
+              String getJay()
+            }
+            $mode
+            trait T {
+              abstract I getEye()
+              String m() {
+                eye.with {
+                  jay.toUpperCase()
+                }
+              }
+            }
+            $mode
+            class C implements T {
+              I eye = { -> 'works' }
+            }
+
+            assert new C().m() == 'WORKS'
+        """
     }
 
     // GROOVY-8000

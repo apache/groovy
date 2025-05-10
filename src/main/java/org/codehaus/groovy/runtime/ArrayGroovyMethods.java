@@ -4664,7 +4664,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ["1: 10", "2: 20", "3: 30"] == nums.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
      * </pre>
      *
-     * @param self   an Iterable
+     * @param self   an int array
      * @param offset an index to start from
      * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
      * @see DefaultGroovyMethods#indexed(Iterable, int)
@@ -4683,7 +4683,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert [5: 10L, 6: 20L, 7: 30L] == nums.indexed(5)
      * </pre>
      *
-     * @param self   a long[]
+     * @param self   a long array
      * @param offset an index to start from
      * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
      * @see DefaultGroovyMethods#indexed(Iterable, int)
@@ -4729,6 +4729,42 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map<Integer, Double> indexed(double[] self, int offset) {
         return DefaultGroovyMethods.indexed(new DoubleArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips an object array with indices in (index, value) order starting from index 0.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = 'A'..'C'
+     * assert [0: 'A', 1: 'B', 2: 'C'] == letters.indexed()
+     * </pre>
+     *
+     * @see #indexed(Object[], int)
+     * @since 5.0.0
+     */
+    public static <T> Map<Integer, T> indexed(T[] self) {
+        return indexed(self, 0);
+    }
+
+    /**
+     * Zips an object array with indices in (index, value) order starting from a given index.
+     * <p>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = 'A'..'C'
+     * assert [5: 'A', 6: 'B', 7: 'C'] == letters.indexed(5)
+     * assert ["1: A", "2: B", "3: C"] == letters.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
+     * </pre>
+     *
+     * @param self   an Object array
+     * @param offset an index to start from
+     * @return a Map (since the keys/indices are unique) containing the elements from the iterable zipped with indices
+     * @see DefaultGroovyMethods#indexed(Iterable, int)
+     * @since 5.0.0
+     */
+    public static <T> Map<Integer, T> indexed(T[] self, int offset) {
+        return DefaultGroovyMethods.indexed(new ArrayIterable<>(self), offset);
     }
 
     //--------------------------------------------------------------------------
@@ -6589,21 +6625,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The arr is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as Integer[]
-     * assert arr.partitionPoint(0..<arr.size()) { it%2 != 0 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..<arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6667,21 +6703,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The arr is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as char[]
-     * assert arr.partitionPoint(0..<arr.size()) { it%2 != 0 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as char[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..<arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6745,21 +6781,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The arr is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as short[]
-     * assert arr.partitionPoint(0..<arr.size()) { it%2 != 0 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as short[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..<arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6823,21 +6859,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The arr is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as int[]
-     * assert arr.partitionPoint(0..<arr.size()) { it%2 != 0 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as int[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..<arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6901,21 +6937,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The arr is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as long[]
-     * assert arr.partitionPoint(0..<arr.size()) { it%2 != 0 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..<arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6979,21 +7015,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The arr is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as float[]
-     * assert arr.partitionPoint(0..<arr.size()) { it%2 != 0 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as float[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..<arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -7057,21 +7093,21 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The arr is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as double[]
-     * assert arr.partitionPoint(0..<arr.size()) { it%2 != 0 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as double[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
      * // for all match condition
-     * assert arr.partitionPoint(0..<arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..<arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
      * </pre>
      *
      * @param self      a groovy array
@@ -7258,6 +7294,405 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         T[] result = Arrays.copyOf(left, left.length + 1);
         result[left.length] = (T) DefaultTypeTransformation.castToType(right, left.getClass().getComponentType());
         return result;
+    }
+
+    //--------------------------------------------------------------------------
+    // putAt
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * Integer[] from = [70, 80, 90]
+     * Integer[] nums = [1, 2, 3, 4, 5]
+     * nums[1..3] = from
+     * assert nums == [1, 70, 80, 90, 5]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static <T> void putAt(T[] self, IntRange range, T[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Null will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [70, 80, 90]
+     * Integer[] nums = [1, 2, 3, 4, 5]
+     * nums[1..3] = from
+     * assert nums == [1, 70, 80, 90, 5]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static <T> void putAt(T[] self, IntRange range, Iterable<T> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<T> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            T next = iter.hasNext() ? iter.next() : null;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * boolean[] from = [true, true, true]
+     * boolean[] to = [false, false, false, false, false]
+     * to[1..3] = from
+     * assert to == [false, true, true, true, false]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(boolean[] self, IntRange range, boolean[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * False will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [true, true, true]
+     * boolean[] to = [false, false, false, false, false]
+     * to[1..3] = from
+     * assert to == [false, true, true, true, false]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(boolean[] self, IntRange range, Iterable<Boolean> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Boolean> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            boolean next = iter.hasNext() ? iter.next() : false;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * byte[] from = [1, 1, 1]
+     * byte[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(byte[] self, IntRange range, byte[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1, 1, 1]
+     * byte[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(byte[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            byte next = iter.hasNext() ? iter.next().byteValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * char[] from = 'XYZ'.chars
+     * char[] to = 'abcde'.chars
+     * to[1..3] = from
+     * assert to == 'aXYZe'.chars
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(char[] self, IntRange range, char[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * The null character, \0, will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = 'XYZ'.chars.toList()
+     * char[] to = 'abcde'.chars
+     * to[1..3] = from
+     * assert to == 'aXYZe'.chars
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(char[] self, IntRange range, Iterable<Character> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Character> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            char next = iter.hasNext() ? iter.next() : '\0';
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * short[] from = [1, 1, 1]
+     * short[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(short[] self, IntRange range, short[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1, 1, 1]
+     * short[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(short[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            short next = iter.hasNext() ? iter.next().shortValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * int[] from = [1, 1, 1]
+     * int[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(int[] self, IntRange range, int[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1, 1, 1]
+     * int[] to = [0, 0, 0, 0, 0]
+     * to[1..3] = from
+     * assert to == [0, 1, 1, 1, 0]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(int[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            int next = iter.hasNext() ? iter.next().intValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * long[] from = [1L, 1L, 1L]
+     * long[] to = [0L, 0L, 0L, 0L, 0L]
+     * to[1..3] = from
+     * assert to == [0L, 1L, 1L, 1L, 0L]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(long[] self, IntRange range, long[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1L, 1L, 1L]
+     * long[] to = [0L, 0L, 0L, 0L, 0L]
+     * to[1..3] = from
+     * assert to == [0L, 1L, 1L, 1L, 0L]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(long[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            long next = iter.hasNext() ? iter.next().longValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * float[] from = [1f, 1f, 1f]
+     * float[] to = [0f, 0f, 0f, 0f, 0f]
+     * to[1..3] = from
+     * assert to == [0f, 1f, 1f, 1f, 0f]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(float[] self, IntRange range, float[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1f, 1f, 1f]
+     * float[] to = [0f, 0f, 0f, 0f, 0f]
+     * to[1..3] = from
+     * assert to == [0f, 1f, 1f, 1f, 0f]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(float[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            float next = iter.hasNext() ? iter.next().floatValue() : 0;
+            self[i] = next;
+        }
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * <pre class="groovyTestCase">
+     * double[] from = [1d, 1d, 1d]
+     * double[] to = [0d, 0d, 0d, 0d, 0d]
+     * to[1..3] = from
+     * assert to == [0d, 1d, 1d, 1d, 0d]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @throws IndexOutOfBoundsException if the source doesn't have sufficient elements or the IntRange is too big for the self array
+     * @since 5.0.0
+     */
+    public static void putAt(double[] self, IntRange range, double[] source) {
+        RangeInfo info = range.subListBorders(self.length);
+        System.arraycopy(source, 0, self, info.from, info.to - info.from);
+    }
+
+    /**
+     * A helper method to allow arrays to be set with subscript operators.
+     * Zero will be used if the source iterable has insufficient elements.
+     * <pre class="groovyTestCase">
+     * def from = [1d, 1d, 1d]
+     * double[] to = [0d, 0d, 0d, 0d, 0d]
+     * to[1..3] = from
+     * assert to == [0d, 1d, 1d, 1d, 0d]
+     * </pre>
+     *
+     * @param self   an array
+     * @param range  the subset of the array to set
+     * @param source the source array from which new values will come
+     * @since 5.0.0
+     */
+    public static void putAt(double[] self, IntRange range, Iterable<Number> source) {
+        RangeInfo info = range.subListBorders(self.length);
+        Iterator<Number> iter = source.iterator();
+        for (int i = info.from; i < info.to; i++) {
+            double next = iter.hasNext() ? iter.next().doubleValue() : 0;
+            self[i] = next;
+        }
     }
 
     //--------------------------------------------------------------------------
@@ -8107,7 +8542,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Modifies this array so that its elements are in sorted order as determined by the given comparator.
+     * Sorts the elements from this array into sorted order as determined by the given comparator.
      * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
      * array is returned and the original array remains unchanged.
      * <pre class="groovyTestCase">
@@ -8151,7 +8586,26 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Modifies this array so that its elements are in sorted order using the Closure to determine the correct ordering.
+     * Sorts the elements from this array with index values in the given index range
+     * into a newly created array using the Closure to determine the correct ordering.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     *
+     * @param self the array containing the elements to be sorted
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted array
+     * @since 5.0.0
+     */
+    public static <T> T[] sort(T[] self, IntRange range, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        return sort(self, range, false, closure);
+    }
+
+    /**
+     * Sorts the elements from this array into sorted order using the Closure to determine the correct ordering.
      * If mutate is false, a new array is returned and the original array remains unchanged.
      * Otherwise, the original array is sorted in place and returned.
      * <p>
@@ -8170,7 +8624,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self    the array to be sorted
-     * @param mutate  false will always cause a new array to be created, true will mutate arrays in place
+     * @param mutate  false causes a new array to be created, true will mutate arrays in place
      * @param closure a Closure used to determine the correct ordering
      * @return the sorted array
      * @since 1.8.1
@@ -8179,6 +8633,61 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         if (!mutate) self = self.clone();
         Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
         Arrays.sort(self, c);
+        return self;
+    }
+
+    /**
+     * Sorts the elements with index values in the given index range
+     * into sorted order using the Closure to determine the correct ordering.
+     * If mutate is false, a new array is returned and the original array remains unchanged.
+     * Otherwise, the original array is sorted in place and returned.
+     * <p>
+     * If the closure has two parameters it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer, zero, or a positive integer when the
+     * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
+     * which is then used for further comparison.
+     * <pre class="groovyTestCase">
+     * // an array with some odd then even numbers
+     * Integer[] nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     *
+     * // sort odds ascending, evens descending
+     * assert nums.sort(0..4, false) { it }.sort(5..9, false) { -it }
+     *  == [1, 3, 5, 7, 9, 8, 6, 4, 2, 0]
+     * // sort odds descending, evens descending
+     * assert nums.sort(0..&lt;5, false) { -it }.sort(4&lt;..&lt;10, false) { -it }
+     *  == [9, 7, 5, 3, 1, 8, 6, 4, 2, 0]
+     * // sort odds descending, evens ascending
+     * assert nums.sort(0..&lt;5, false) { -it }.sort(5..-1, false) { it }
+     *  == [9, 7, 5, 3, 1, 0, 2, 4, 6, 8]
+     * // leave first and last numbers, sort remaining odds ascending, remaining evens descending
+     * assert nums.sort(1..4, false) { it }.sort(5..-2, false) { -it }
+     *  == [5, 1, 3, 7, 9, 8, 6, 4, 0, 2]
+     * // leave first and last numbers, sort remaining odds descending, remaining evens ascending
+     * assert nums.sort(1..4, false) { -it }.sort(5..-2, false) { it }
+     *  == [5, 9, 7, 3, 1, 0, 4, 6, 8, 2]
+     * // leave first and last odds and evens, sort remaining odds ascending, remaining evens descending
+     * assert nums.sort(0&lt;..&lt;4, false) { it }.sort(5&lt;..&lt;9, false) { -it }
+     *  == [5, 1, 7, 9, 3, 4, 8, 6, 0, 2]
+     * // leave first and last odds and evens, sort remaining odds descending, remaining evens ascending
+     * assert nums.sort(0&lt;..&lt;4, false) { -it }.sort(5&lt;..&lt;-1, false) { it }
+     *  == [5, 9, 7, 1, 3, 4, 0, 6, 8, 2]
+     * </pre>
+     *
+     * @param self    the array to be sorted
+     * @param range   the inclusive range of index values over which to sort
+     * @param mutate  false causes a new array to be created, true will mutate arrays in place
+     * @param closure a Closure used to determine the correct ordering
+     * @return the sorted array
+     * @since 5.0.0
+     */
+    public static <T> T[] sort(T[] self, IntRange range, boolean mutate, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
+        Objects.requireNonNull(self);
+        RangeInfo info = range.subListBorders(self.length);
+        Objects.checkFromToIndex(info.from, info.to, self.length);
+        if (!mutate) self = self.clone();
+        Comparator<T> c = closure.getMaximumNumberOfParameters() == 1 ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        Arrays.sort(self, info.from, info.to, c);
         return self;
     }
 
@@ -10210,6 +10719,44 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List<Tuple2<Double, Integer>> withIndex(double[] self, int offset) {
         return DefaultGroovyMethods.withIndex(new DoubleArrayIterable(self), offset);
+    }
+
+    /**
+     * Zips an object array with indices in (value, index) order.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'z']
+     * assert [['a', 0], ['z', 1]] == letters.withIndex()
+     * </pre>
+     *
+     * @param self an object array
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable)
+     * @since 5.0.0
+     */
+    public static <T> List<Tuple2<T, Integer>> withIndex(T[] self) {
+        return withIndex(self, 0);
+    }
+
+    /**
+     * Zips an object array with indices in (value, index) order starting from a given index.
+     * <p/>
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * String[] letters = ['a', 'z']
+     * assert [['a', 5], ['z', 6]] == letters.withIndex(5)
+     * assert ["5: a", "6: z"] == letters.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
+     * </pre>
+     *
+     * @param self an object array
+     * @param offset an index to start from
+     * @return a zipped list with indices
+     * @see DefaultGroovyMethods#withIndex(Iterable, int)
+     * @since 5.0.0
+     */
+    public static <T> List<Tuple2<T, Integer>> withIndex(T[] self, int offset) {
+        return DefaultGroovyMethods.withIndex(new ArrayIterable<>(self), offset);
     }
 
     //--------------------------------------------------------------------------
