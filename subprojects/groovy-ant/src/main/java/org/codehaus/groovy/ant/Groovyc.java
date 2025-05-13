@@ -48,7 +48,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -1255,7 +1254,7 @@ public class Groovyc extends MatchingTask {
 
     private String[] makeCommandLine(List<String> commandLineList) {
         String[] commandLine = commandLineList.toArray(String[]::new);
-        log.info("Compilation arguments:\n" + String.join("\n", commandLine));
+        log.verbose("Compilation arguments:\n" + String.join("\n", commandLine)); // GROOVY-11658
         return commandLine;
     }
 
@@ -1313,9 +1312,9 @@ public class Groovyc extends MatchingTask {
                 // unwrap to the real exception
                 t = e.getCause();
             }
-            Writer writer = new StringBuilderWriter();
+            var writer = new StringBuilderWriter();
             new ErrorReporter(t, false).write(new PrintWriter(writer));
-            String message = writer.toString();
+            log.error(writer.toString());
 
             taskSuccess = false;
             if (errorProperty != null) {
@@ -1323,10 +1322,7 @@ public class Groovyc extends MatchingTask {
             }
 
             if (failOnError) {
-                log.error(message);
                 throw new BuildException("Compilation Failed", t, getLocation());
-            } else {
-                log.error(message);
             }
         }
     }
@@ -1409,7 +1405,7 @@ public class Groovyc extends MatchingTask {
 
         ClassLoader loader = getClass().getClassLoader();
         if (loader instanceof AntClassLoader) {
-            AntClassLoader antLoader = (AntClassLoader) loader;
+            @SuppressWarnings("resource") AntClassLoader antLoader = (AntClassLoader) loader;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator, -1);
             List<String> classpath = configuration.getClasspath();
             /*
