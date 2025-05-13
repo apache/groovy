@@ -3710,10 +3710,10 @@ final class TraitASTTransformationTest {
         """
     }
 
-    // GROOVY-11641
+    // GROOVY-11641, GROOVY-11663
     @CompileModesTest
     void testTraitAccessToInheritedStaticMethods4(String mode) {
-        shouldFail shell, """
+        var err = shouldFail shell, """
             $mode
             trait Foo {
                 public static final String BANG = '!'
@@ -3739,6 +3739,11 @@ final class TraitASTTransformationTest {
             Main.test1()
             new Main().test2()
         """
+        if (mode.endsWith('Dynamic')) {
+            assert err =~ /MissingPropertyException/
+        } else {
+            assert err =~ /\[Static type checking\] - No such property: BANG for Class or static property for class: Bar/
+        }
     }
 
     // GROOVY-9386
