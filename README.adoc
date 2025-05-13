@@ -189,7 +189,8 @@ The official CI server runs {groovy-ci}[here] and is sponsored by https://www.je
 Groovy core team tunes performance through YourKit Java Profiler, which is sponsored by https://www.yourkit.com[YourKit].
 
 == Friends of Groovy Open Collective
-As an independent initiative, we have set up an open collective for Groovy:
+
+As an independent initiative, community members have set up an open collective for Groovy:
 
 https://opencollective.com/friends-of-groovy
 
