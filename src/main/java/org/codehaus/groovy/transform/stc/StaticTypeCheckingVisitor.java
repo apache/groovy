@@ -763,28 +763,39 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitPropertyExpression(final PropertyExpression expression) {
-        if (existsProperty(expression, !typeCheckingContext.isTargetOfEnclosingAssignment(expression))) return;
-
-        if (!extension.handleUnresolvedProperty(expression)) {
-            var objectExpression = expression.getObjectExpression();
-            var objectExpressionType = (objectExpression instanceof ClassExpression
-                    ? objectExpression.getType() : wrapTypeIfNecessary(getType(objectExpression)));
-            objectExpressionType = findCurrentInstanceOfClass(objectExpression, objectExpressionType);
-            addStaticTypeError("No such property: " + expression.getPropertyAsString() + " for class: " + prettyPrintTypeName(objectExpressionType), expression);
+        boolean readOnly = !typeCheckingContext.isTargetOfEnclosingAssignment(expression);
+        if (existsProperty(expression, readOnly)
+                || extension.handleUnresolvedProperty(expression)) {
+            return; // resolved or excused
         }
+        recordMissingProperty(expression);
     }
 
     @Override
     public void visitAttributeExpression(final AttributeExpression expression) {
-        if (existsProperty(expression, true)) return;
-
-        if (!extension.handleUnresolvedAttribute(expression)) {
-            var objectExpression = expression.getObjectExpression();
-            var objectExpressionType = (objectExpression instanceof ClassExpression
-                    ? objectExpression.getType() : wrapTypeIfNecessary(getType(objectExpression)));
-            objectExpressionType = findCurrentInstanceOfClass(objectExpression, objectExpressionType);
-            addStaticTypeError("No such attribute: " + expression.getPropertyAsString() + " for class: " + prettyPrintTypeName(objectExpressionType), expression);
+        boolean readOnly = true;
+        if (existsProperty(expression, readOnly)
+                || extension.handleUnresolvedAttribute(expression)) {
+            return; // resolved or excused
         }
+        recordMissingProperty(expression);
+    }
+
+    private void recordMissingProperty(final PropertyExpression expression) {
+        var objectExpression = expression.getObjectExpression();
+        var objectExpressionType = findCurrentInstanceOfClass(objectExpression, getType(objectExpression));
+
+        String pattern;
+        if (!isClassClassNodeWrappingConcreteType(objectExpressionType)) {
+            pattern = "No such {0,choice,1#attribute|2#property}: {1} for class: {2}";
+        } else {
+            objectExpressionType = objectExpressionType.getGenericsTypes()[0].getType();
+            pattern = "No such {0,choice,1#attribute|2#property}: {1} for Class or static {0,choice,1#field|2#property} for class: {2}";
+        }
+
+        String error = java.text.MessageFormat.format(pattern, expression instanceof AttributeExpression ? 1 : 2, expression.getPropertyAsString(), prettyPrintTypeName(wrapTypeIfNecessary(objectExpressionType)));
+        ASTNode node = expression.getLineNumber() > 0 ? expression : expression.getProperty(); // GROOVY-11663
+        addStaticTypeError(error, node);
     }
 
     @Override
