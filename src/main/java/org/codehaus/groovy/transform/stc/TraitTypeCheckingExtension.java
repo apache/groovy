@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.MethodCall;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.trait.TraitASTTransformation;
 import org.codehaus.groovy.transform.trait.Traits;
 
@@ -92,5 +94,35 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
         }
 
         return Collections.emptyList();
+    }
+
+    @Override
+    public boolean handleUnresolvedProperty(final PropertyExpression pexp) {
+        var objectExpression = pexp.getObjectExpression();
+        if (objectExpression instanceof VariableExpression
+                && objectExpression.getText().endsWith(Traits.THIS_OBJECT)) {
+            String propertyName = pexp.getPropertyAsString();
+            if (propertyName != null) {
+                ClassNode objectExpressionType = getType(objectExpression);
+                if (isClassClassNodeWrappingConcreteType(objectExpressionType)) {
+                    objectExpressionType = objectExpressionType.getGenericsTypes()[0].getType();
+                }
+                for (ClassNode trait : Traits.findTraits(objectExpressionType)) {
+                    if (propertyName.startsWith(trait.getName().replace('.', '_') + "__")) {
+                        ClassNode staticFieldHelper = Traits.findStaticFieldHelper(trait);
+                        if (staticFieldHelper != null) {
+                            MethodNode getter = staticFieldHelper.getDeclaredMethod(propertyName + "$get", Parameter.EMPTY_ARRAY);
+                            if (getter != null) { // GROOVY-11663: resolve "$self.pack_Type__name" to a static field access method
+                                ClassNode returnType = typeCheckingVisitor.inferReturnTypeGenerics(objectExpressionType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
+                                pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
+                                storeType(pexp, returnType);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
