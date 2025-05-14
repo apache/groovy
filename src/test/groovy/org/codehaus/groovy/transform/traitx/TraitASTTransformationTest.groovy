@@ -1997,7 +1997,7 @@ final class TraitASTTransformationTest {
     void testShouldCompileTraitMethodStatically() {
         def err = shouldFail shell, '''
             @CompileStatic
-            trait Foo {
+            trait T {
                 int foo() { 1+'foo'}
             }
         '''
@@ -2018,10 +2018,13 @@ final class TraitASTTransformationTest {
             class D extends C {
             }
 
-            assert C.foo() == 'static method'
-            assert D.foo() == 'static method'
-            assert new C().foo() == 'static method'
-            assert new D().foo() == 'static method'
+            $mode void m() {
+                assert C.foo() == 'static method'
+                assert D.foo() == 'static method'
+                assert new C().foo() == 'static method'
+                assert new D().foo() == 'static method'
+            }
+            m()
         """
 
         // GROOVY-7322
@@ -2038,10 +2041,13 @@ final class TraitASTTransformationTest {
             class D extends C {
             }
 
-            assert C.foo() == 'static method'
-            assert D.foo() == 'static method'
-            assert new C().foo() == 'static method'
-            assert new D().foo() == 'static method'
+            $mode void m() {
+                assert C.foo() == 'static method'
+                assert D.foo() == 'static method'
+                assert new C().foo() == 'static method'
+                assert new D().foo() == 'static method'
+            }
+            m()
         """
 
         // GROOVY-7191
@@ -2058,8 +2064,11 @@ final class TraitASTTransformationTest {
             class D extends C {
             }
 
-            assert new C().foo() == 1
-            assert new D().foo() == 1
+            $mode void m() {
+                assert new C().foo() == 1
+                assert new D().foo() == 1
+            }
+            m()
         """
 
         // GROOVY-8854
@@ -2084,11 +2093,14 @@ final class TraitASTTransformationTest {
             class D extends C {
             }
 
-            def c = new C(name:'name')
-            c.audit(); assert c.passes
+            $mode void m() {
+                def c = new C(name:'name')
+                c.audit(); assert c.passes
 
-            def d = new D(name:'name')
-            d.audit(); assert d.passes
+                def d = new D(name:'name')
+                d.audit(); assert d.passes
+            }
+            m()
         """
     }
 
@@ -2103,7 +2115,10 @@ final class TraitASTTransformationTest {
             class C implements T {
             }
 
-            assert C.T__VAL == 123
+            $mode void m() {
+                assert C.T__VAL == 123
+            }
+            m()
         """
 
         assertScript shell, """
@@ -2116,9 +2131,12 @@ final class TraitASTTransformationTest {
             class C implements T {
             }
 
-            assert C.T__VAL == 123
-            C.update(456)
-            assert C.T__VAL == 456
+            $mode void m() {
+                assert C.T__VAL == 123
+                C.update(456)
+                assert C.T__VAL == 456
+            }
+            m()
         """
     }
 
@@ -2134,9 +2152,12 @@ final class TraitASTTransformationTest {
             class C implements T {
             }
 
-            assert C.VAL == 123
-            C.update(456)
-            assert C.VAL == 456
+            $mode void m() {
+                assert C.VAL == 123
+                C.update(456)
+                assert C.VAL == 456
+            }
+            m()
         """
 
         // GROOVY-7255
@@ -2153,8 +2174,11 @@ final class TraitASTTransformationTest {
             class C implements T {
             }
 
-            C.initStuff([4,5,6])
-            assert C.stuff == [1,2,3,4,5,6]
+            $mode void m() {
+                C.initStuff([4,5,6])
+                assert C.stuff == [1,2,3,4,5,6]
+            }
+            m()
         """
 
         assertScript shell, """
@@ -2171,7 +2195,10 @@ final class TraitASTTransformationTest {
                 }
             }
 
-            assert C.m() == 3
+            $mode void m() {
+                assert C.m() == 3
+            }
+            m()
         """
 
         // GROOVY-9678
@@ -2189,7 +2216,10 @@ final class TraitASTTransformationTest {
                 }
             }
 
-            assert C.m() == 3
+            $mode void m() {
+                assert C.m() == 3
+            }
+            m()
         """
     }
 
@@ -3744,6 +3774,39 @@ final class TraitASTTransformationTest {
         } else {
             assert err =~ /\[Static type checking\] - No such property: BANG for Class or static property for class: Bar/
         }
+    }
+
+    // GROOVY-11663
+    @CompileModesTest
+    void testTraitAccessToInheritedStaticConstant(String mode) {
+        assertScript shell, """
+            $mode
+            trait A {
+                public static final String BANG = '!'
+            }
+            $mode
+            trait B extends A {
+                static one(String string) {
+                    string// + A__BANG
+                }
+                Object two(String string) {
+                    string// + A__BANG
+                }
+            }
+            $mode
+            class C implements B {
+                static test1() {
+                    assert A__BANG + one('works') == '!works'
+                }
+                void test2() {
+                    assert A__BANG + one('works') == '!works'
+                    assert A__BANG + two('works') == '!works'
+                }
+            }
+
+            C.test1()
+            new C().test2()
+        """
     }
 
     // GROOVY-9386
