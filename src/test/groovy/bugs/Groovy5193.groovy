@@ -21,6 +21,7 @@ package bugs
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy5193 {
@@ -53,5 +54,30 @@ final class Groovy5193 {
             }
         '''
         assert err.message.contains('Mixing private and public/protected methods of the same name causes multimethods to be disabled')
+    }
+
+    @Test
+    void testMixingMethodsWithPrivatePublicAccessInSameClass3() {
+        assertScript '''
+            class A {
+                def f(x) { g(x) }
+                def g(x) {"object case"}
+            }
+            class B extends A {
+                private g(String x) {"string case"}
+            }
+
+            def a = new A()
+            assert a.f(null) == "object case"
+            assert a.g(null) == "object case"
+            assert a.f("xx") == "object case"
+            assert a.g("xx") == "object case"
+
+            def b = new B()
+            assert b.f(null) == "object case"
+            assert b.g(null) == "object case"
+            assert b.f("xx") == "object case"
+            assert b.g("xx") == "string case"
+        '''
     }
 }

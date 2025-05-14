@@ -446,50 +446,48 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private void removeMultimethodsOverloadedWithPrivateMethods() {
-        MethodIndexAction mia = new MethodIndexAction() {
+        var mia = new MethodIndexAction() {
             @Override
             public boolean skipClass(final Class<?> clazz) {
                 return clazz == theClass;
             }
 
             @Override
-            public void methodNameAction(final Class<?> clazz, final MetaMethodIndex.Cache e) {
-                if (e.methods == null)
-                    return;
+            public void methodNameAction(final Class<?> clazz, final MetaMethodIndex.Cache entry) {
+                if (hasPrivateInMethods(clazz, entry)) { // GROOVY-5193, etc.
+                    // We have private methods for that name, so remove the
+                    // multimethods. That is the same as in our index for
+                    // super, so just copy the list from there. It is not
+                    // possible to use a pointer here because the methods
+                    // in the index for super are replaced later by MOP
+                    // methods like super$5$foo
+                    Object o = entry.methodsForSuper;
+                    if (o instanceof FastArray) {
+                        entry.methods = ((FastArray) o).copy();
+                    } else {
+                        entry.methods = o;
+                    }
+                }
+            }
 
-                boolean hasPrivate = false;
-                if (e.methods instanceof FastArray) {
-                    FastArray methods = (FastArray) e.methods;
-                    final int len = methods.size();
-                    final Object[] data = methods.getArray();
-                    for (int i = 0; i != len; ++i) {
+            private boolean hasPrivateInMethods(final Class<?> clazz, final MetaMethodIndex.Cache entry) {
+                if (entry.methods instanceof FastArray) {
+                    FastArray methods = (FastArray) entry.methods;
+                    int size = methods.size();
+                    var data = methods.getArray();
+                    for (int i = 0; i != size; ++i) {
                         MetaMethod method = (MetaMethod) data[i];
-                        if (method.isPrivate() && clazz == method.getDeclaringClass().getTheClass()) {
-                            hasPrivate = true;
-                            break;
+                        if (method.isPrivate() && method.getDeclaringClass().getTheClass() == clazz) {
+                            return true;
                         }
                     }
-                } else {
-                    MetaMethod method = (MetaMethod) e.methods;
-                    if (method.isPrivate() && clazz == method.getDeclaringClass().getTheClass()) {
-                        hasPrivate = true;
+                } else if (entry.methods instanceof MetaMethod) {
+                    MetaMethod method = (MetaMethod) entry.methods;
+                    if (method.isPrivate() && method.getDeclaringClass().getTheClass() == clazz) {
+                        return true;
                     }
                 }
-
-                if (!hasPrivate) return;
-
-                // We have private methods for that name, so remove the
-                // multimethods. That is the same as in our index for
-                // super, so just copy the list from there. It is not
-                // possible to use a pointer here, because the methods
-                // in the index for super are replaced later by MOP
-                // methods like super$5$foo
-                final Object o = e.methodsForSuper;
-                if (o instanceof FastArray) {
-                    e.methods = ((FastArray) o).copy();
-                } else {
-                    e.methods = o;
-                }
+                return false;
             }
         };
         mia.iterate();
