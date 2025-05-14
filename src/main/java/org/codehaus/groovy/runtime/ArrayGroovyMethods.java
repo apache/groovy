@@ -852,7 +852,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self          an array
      * @param size          the length of each sub-list in the returned list
-     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists; otherwise, they are discarded
      * @return a List containing the array elements collated into sub-lists
      * @see DefaultGroovyMethods#collate(Iterable, int, boolean)
      * @since 2.5.0
@@ -867,31 +867,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self          an array
      * @param size          the length of each sub-list in the returned list
      * @param step          the number of elements to step through for each sub-list
-     * @param keepRemainder if true, any remaining elements are returned as sub-lists.  Otherwise they are discarded
+     * @param keepRemainder if true, any remaining elements are returned as sub-lists; otherwise, they are discarded
      * @return a List containing the array elements collated into sub-lists
      * @since 2.5.0
      */
     public static <T> List<List<T>> collate(T[] self, int size, int step, boolean keepRemainder) {
-        final List<List<T>> answer;
-        if (size <= 0) {
-            answer = new ArrayList<>(1);
-            answer.add(Arrays.asList(self));
-        } else {
-            if (step == 0) throw new IllegalArgumentException("step cannot be zero");
-            final int selfSize = self.length;
-            answer = new ArrayList<>(step < 0 ? 1 : (selfSize / step + 1));
-            for (int pos = 0; pos < selfSize && pos > -1; pos += step) {
-                if (!keepRemainder && pos > selfSize - size) {
-                    break;
-                }
-                List<T> element = new ArrayList<>(size);
-                for (int offs = pos; offs < pos + size && offs < selfSize; offs++) {
-                    element.add(self[offs]);
-                }
-                answer.add(element);
-            }
-        }
-        return answer;
+        return DefaultGroovyMethods.collate(new ArrayIterable<>(self), size, step, keepRemainder);
     }
 
     //--------------------------------------------------------------------------
@@ -1101,6 +1082,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a double[][]
      * @return a double[]
+     * @since 5.0.0
      */
     public static double[] column(double[][] self, int col) {
         Objects.requireNonNull(self);
@@ -1126,6 +1108,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a float[][]
      * @return a float[]
+     * @since 5.0.0
      */
     public static float[] column(float[][] self, int col) {
         Objects.requireNonNull(self);
@@ -1151,6 +1134,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an int[][]
      * @return an int[]
+     * @since 5.0.0
      */
     public static int[] column(int[][] self, int col) {
         Objects.requireNonNull(self);
@@ -1176,6 +1160,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a long[][]
      * @return a long[]
+     * @since 5.0.0
      */
     public static long[] column(long[][] self, int col) {
         Objects.requireNonNull(self);
@@ -1946,6 +1931,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a double[][]
      * @param closure the closure applied on each array column
      * @return the self array
+     * @since 5.0.0
      */
     public static double[][] eachColumn(double[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         DefaultGroovyMethods.each(new DoubleDoubleArrayColumnIterator(self), closure);
@@ -1964,6 +1950,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a float[][]
      * @param closure the closure applied on each array column
      * @return the self array
+     * @since 5.0.0
      */
     public static float[][] eachColumn(float[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         DefaultGroovyMethods.each(new FloatFloatArrayColumnIterator(self), closure);
@@ -1982,6 +1969,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an int[][]
      * @param closure the closure applied on each array column
      * @return the self array
+     * @since 5.0.0
      */
     public static int[][] eachColumn(int[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         DefaultGroovyMethods.each(new IntIntArrayColumnIterator(self), closure);
@@ -2000,6 +1988,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a long[][]
      * @param closure the closure applied on each array column
      * @return the self array
+     * @since 5.0.0
      */
     public static long[][] eachColumn(long[][] self, @ClosureParams(FirstParam.Component.class) Closure<?> closure) {
         DefaultGroovyMethods.each(new LongLongArrayColumnIterator(self), closure);
@@ -10076,6 +10065,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an array
      * @return the unique items from the array
+     * @since 2.4.0
      */
     public static <T> T[] toUnique(T[] self) {
         return toUnique(self, (Comparator<T>) null);
@@ -10098,6 +10088,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param comparator a Comparator used to determine unique (equal) items
      *        If {@code null}, the Comparable natural ordering of the elements will be used.
      * @return the unique items from the array
+     * @since 2.4.0
      */
     public static <T> T[] toUnique(T[] self, Comparator<? super T> comparator) {
         Collection<T> items = DefaultGroovyMethods.toUnique(new ArrayIterable<>(self), comparator);
@@ -10355,6 +10346,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a double[][]
      * @return the iterator
+     * @since 5.0.0
      */
     public static Iterator<double[]> transposing(double[][] self) {
         return new DoubleDoubleArrayColumnIterator(self);
@@ -10369,6 +10361,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a float[][]
      * @return the iterator
+     * @since 5.0.0
      */
     public static Iterator<float[]> transposing(float[][] self) {
         return new FloatFloatArrayColumnIterator(self);
@@ -10384,6 +10377,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an int[][]
      * @return the iterator
+     * @since 5.0.0
      */
     public static Iterator<int[]> transposing(int[][] self) {
         return new IntIntArrayColumnIterator(self);
@@ -10399,6 +10393,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a long[][]
      * @return the iterator
+     * @since 5.0.0
      */
     public static Iterator<long[]> transposing(long[][] self) {
         return new LongLongArrayColumnIterator(self);
@@ -10773,6 +10768,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a double[]
      * @param other another double[]
      * @return a list of all the pairs from self and other
+     * @since 5.0.0
      */
     public static List<Tuple2<Double, Double>> zip(double[] self, double[] other) {
         return DefaultGroovyMethods.zip(new DoubleArrayIterable(self), new DoubleArrayIterable(other));
@@ -10789,6 +10785,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a double[]
      * @param other another double[]
      * @return an iterator of all the pairs from self and other
+     * @since 5.0.0
      */
     public static Iterator<Tuple2<Double, Double>> zipping(double[] self, double[] other) {
         return DefaultGroovyMethods.zip(new DoubleArrayIterator(self), new DoubleArrayIterator(other));
@@ -10805,6 +10802,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a float[]
      * @param other another float[]
      * @return a list of all the pairs from self and other
+     * @since 5.0.0
      */
     public static List<Tuple2<Float, Float>> zip(float[] self, float[] other) {
         return DefaultGroovyMethods.zip(new FloatArrayIterable(self), new FloatArrayIterable(other));
@@ -10821,6 +10819,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a float[]
      * @param other another float[]
      * @return an iterator of all the pairs from self and other
+     * @since 5.0.0
      */
     public static Iterator<Tuple2<Float, Float>> zipping(float[] self, float[] other) {
         return DefaultGroovyMethods.zip(new FloatArrayIterator(self), new FloatArrayIterator(other));
@@ -10838,6 +10837,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an int[]
      * @param other another int[]
      * @return a list of all the pairs from self and other
+     * @since 5.0.0
      */
     public static List<Tuple2<Integer, Integer>> zip(int[] self, int[] other) {
         return DefaultGroovyMethods.zip(new IntArrayIterable(self), new IntArrayIterable(other));
@@ -10855,6 +10855,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an int[]
      * @param other another int[]
      * @return an iterator of all the pairs from self and other
+     * @since 5.0.0
      */
     public static Iterator<Tuple2<Integer, Integer>> zipping(int[] self, int[] other) {
         return DefaultGroovyMethods.zip(new IntArrayIterator(self), new IntArrayIterator(other));
@@ -10872,6 +10873,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a long[]
      * @param other another long[]
      * @return a list of all the pairs from self and other
+     * @since 5.0.0
      */
     public static List<Tuple2<Long, Long>> zip(long[] self, long[] other) {
         return DefaultGroovyMethods.zip(new LongArrayIterable(self), new LongArrayIterable(other));
@@ -10889,6 +10891,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a long[]
      * @param other another long[]
      * @return an iterator of all the pairs from self and other
+     * @since 5.0.0
      */
     public static Iterator<Tuple2<Long, Long>> zipping(long[] self, long[] other) {
         return DefaultGroovyMethods.zip(new LongArrayIterator(self), new LongArrayIterator(other));
