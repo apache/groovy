@@ -1262,7 +1262,7 @@ public class Groovyc extends MatchingTask {
 
     private String[] makeCommandLine(List<String> commandLineList) {
         String[] commandLine = commandLineList.toArray(EMPTY_STRING_ARRAY);
-        log.info("Compilation arguments:\n" + String.join("\n", commandLine));
+        log.verbose("Compilation arguments:\n" + String.join("\n", commandLine)); // GROOVY-11658
         return commandLine;
     }
 
@@ -1322,7 +1322,7 @@ public class Groovyc extends MatchingTask {
             }
             Writer writer = new StringBuilderWriter();
             new ErrorReporter(t, false).write(new PrintWriter(writer));
-            String message = writer.toString();
+            log.error(writer.toString());
 
             taskSuccess = false;
             if (errorProperty != null) {
@@ -1330,10 +1330,7 @@ public class Groovyc extends MatchingTask {
             }
 
             if (failOnError) {
-                log.error(message);
                 throw new BuildException("Compilation Failed", t, getLocation());
-            } else {
-                log.error(message);
             }
         }
     }
