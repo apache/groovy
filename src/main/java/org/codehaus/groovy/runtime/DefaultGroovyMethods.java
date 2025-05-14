@@ -12587,6 +12587,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an Iterable
      * @param count the (non-negative) number of times to repeat
      * @return a collection containing the repeated elements
+     * @since 5.0.0
      */
     public static <T> Collection<T> repeat(Iterable<T> self, int count) {
         Collection<T> result = self instanceof Collection ? createSimilarCollection((Collection<T>) self, Math.max(count, 0)) : new ArrayList<>();
@@ -12603,6 +12604,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return an iterator containing the (infinite) repeated elements
+     * @since 5.0.0
      */
     public static <T> Iterator<T> repeat(Iterable<T> self) {
         return repeat(self.iterator());
@@ -12618,6 +12620,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self an Iterator
      * @param count the (non-negative) number of times to repeat
      * @return an iterator containing the repeated elements
+     * @since 5.0.0
      */
     public static <T> Iterator<T> repeat(Iterator<T> self, int count) {
         return new RepeatIterator<>(self, count);
@@ -12632,6 +12635,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Iterable
      * @return an iterator containing the (infinite) repeated elements
+     * @since 5.0.0
      */
     public static <T> Iterator<T> repeat(Iterator<T> self) {
         return new RepeatIterator<>(self);
