@@ -1810,21 +1810,24 @@ final class TraitASTTransformationTest {
         """
     }
 
-    // GROOVY-5193
+    // GROOVY-5193, GROOVY-11627
     @Test
     void testMixPrivatePublicMethodsOfSameName() {
-        def err = shouldFail shell, '''
+        assertScript shell, '''
+            @CompileStatic
             trait T {
-                private String secret(String s) { s.toUpperCase() }
-                String secret() { 'public' }
-                String foo() { secret('secret') }
+                private String f(String s) { s.toUpperCase() }
+                public  String f(Object o) { 'default value' }
+                public  String f(        ) { 'unknown value' }
+                def m() {
+                    f('secret')
+                }
             }
             class C implements T {
             }
 
-            assert new C().foo() == 'SECRET'
+            assert new C().m() == 'SECRET'
         '''
-        assert err =~ 'Mixing private and public/protected methods of the same name causes multimethods to be disabled'
     }
 
     @Test

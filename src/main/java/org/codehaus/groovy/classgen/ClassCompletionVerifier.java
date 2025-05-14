@@ -74,6 +74,7 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.buildWildcardType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -538,8 +539,8 @@ out:        for (ClassNode sc : superTypes) {
             checkOverloadingPrivateAndPublic(node);
         }
         checkMethodForIncorrectModifiers(node);
-        checkGenericsUsage(node, node.getParameters());
         checkGenericsUsage(node, node.getReturnType());
+        checkGenericsUsage(node, node.getParameters());
         for (Parameter param : node.getParameters()) {
             if (ClassHelper.isPrimitiveVoid(param.getType())) {
                 addError("The " + getDescription(param) + " in " +  getDescription(node) + " has invalid type void", param);
@@ -588,6 +589,7 @@ out:        for (ClassNode sc : superTypes) {
     }
 
     private void checkOverloadingPrivateAndPublic(final MethodNode node) {
+        if (isStaticallyCompiled(currentClass)) return; // GROOVY-11627
         boolean mixed = false;
         if (node.isPublic()) {
             for (MethodNode mn : currentClass.getDeclaredMethods(node.getName())) {
