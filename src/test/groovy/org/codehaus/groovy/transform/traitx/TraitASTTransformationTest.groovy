@@ -3787,20 +3787,20 @@ final class TraitASTTransformationTest {
             $mode
             trait B extends A {
                 static one(String string) {
-                    string// + A__BANG
+                    string + A__BANG
                 }
                 Object two(String string) {
-                    string// + A__BANG
+                    string + A__BANG
                 }
             }
             $mode
             class C implements B {
                 static test1() {
-                    assert A__BANG + one('works') == '!works'
+                    assert A__BANG + one('works') == '!works!'
                 }
                 void test2() {
-                    assert A__BANG + one('works') == '!works'
-                    assert A__BANG + two('works') == '!works'
+                    assert A__BANG + one('works') == '!works!'
+                    assert A__BANG + two('works') == '!works!'
                 }
             }
 
