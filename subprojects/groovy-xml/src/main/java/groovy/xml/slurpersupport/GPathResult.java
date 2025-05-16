@@ -88,18 +88,25 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
      */
     @Override
     public void setMetaClass(final MetaClass metaClass) {
-        final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
+        super.setMetaClass(new DelegatingMetaClass(metaClass) {
             @Override
             public Object getAttribute(final Object object, final String attribute) {
                 return GPathResult.this.getProperty("@" + attribute);
+            }
+            @Override
+            public Object getAttribute(final Class sender, final Object object, final String attribute, final boolean isSuper) {
+                return this.getAttribute(object, attribute);
             }
 
             @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
                 GPathResult.this.setProperty("@" + attribute, newValue);
             }
-        };
-        super.setMetaClass(newMetaClass);
+            @Override
+            public void setAttribute(final Class sender, final Object object, final String attribute, final Object newValue, final boolean isSuper, final boolean isInner) {
+                this.setAttribute(object, attribute, newValue);
+            }
+        });
     }
 
     /**
