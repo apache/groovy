@@ -21,7 +21,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.52.0'
     id 'io.github.goooler.osgi' version '0.8.6'
     id 'com.github.jk1.dependency-license-report' version '2.9'
-    id 'org.sonarqube' version '6.1.0.5360'
+    id 'org.sonarqube' version '6.2.0.5505'
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
     id 'org.apache.groovy-jacoco-aggregation'
