@@ -2802,7 +2802,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * <pre class="groovyTestCase">
      * def sb = new StringBuilder()
-     * sb << 'foobar'
+     * {@code sb << 'foobar'}
      * sb.length -= 3
      * assert sb.toString() == 'foo'
      * </pre>
@@ -2823,7 +2823,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * <pre class="groovyTestCase">
      * def sb = new StringBuffer()
-     * sb << 'foobar'
+     * {@code sb << 'foobar'}
      * sb.length -= 3
      * assert sb.toString() == 'foo'
      * </pre>

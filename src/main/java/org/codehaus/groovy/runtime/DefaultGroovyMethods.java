@@ -11082,23 +11082,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The list is assumed to be partitioned according to the given predicate.
      * <pre class="groovyTestCase">
      * def list = [7, 15, 3, 5, 4, 12, 6]
-     * assert list.partitionPoint(0..<list.size()) { it%2 != 0 } == 4
+     * assert list.partitionPoint(0..&lt;list.size()) { it%2 != 0 } == 4
      * </pre>
      *
      * <pre class="groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
      * // usage case as lower_bound(cpp), bisect_left(python)
-     * assert list.partitionPoint(0..<list.size()) { it < 4 } == 4
+     * assert list.partitionPoint(0..&lt;list.size()) { it &lt; 4 } == 4
      * // usage case as upper_bound(cpp), bisect_right(python)
-     * assert list.partitionPoint(0..<list.size()) { it <= 4 } == 6
+     * assert list.partitionPoint(0..&lt;list.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert list.partitionPoint(0..<list.size()) { it <= 20 } == list.size()
+     * assert list.partitionPoint(0..&lt;list.size()) { it &lt;= 20 } == list.size()
      * // for no match condition
-     * assert list.partitionPoint(0..<list.size()) { it <= 0 } == 0
+     * assert list.partitionPoint(0..&lt;list.size()) { it &lt;= 0 } == 0
      * // for all match condition with range
-     * assert list.partitionPoint(0..<4) { it <= 20 } == 4
+     * assert list.partitionPoint(0..&lt;4) { it &lt;= 20 } == 4
      * // for no match condition with range
-     * assert list.partitionPoint(2..<list.size()) { it <= 0 } == 2
+     * assert list.partitionPoint(2..&lt;list.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy list
@@ -11137,13 +11137,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def list = [1, 2, 3, 3, 4, 4, 5, 6, 7]
      * // usage case as lower_bound(cpp), bisect_left(python)
-     * assert list.partitionPoint{ it < 4 } == 4
+     * assert list.partitionPoint{ it &lt; 4 } == 4
      * // usage case as upper_bound(cpp), bisect_right(python)
-     * assert list.partitionPoint{ it <= 4 } == 6
+     * assert list.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert list.partitionPoint{ it <= 100 } == list.size()
+     * assert list.partitionPoint{ it &lt;= 100 } == list.size()
      * // for no match condition
-     * assert list.partitionPoint{ it <= 0 } == 0
+     * assert list.partitionPoint{ it &lt;= 0 } == 0
      * // predicate of reverse logic examples:
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it > 4 } == 3
      * assert [7, 6, 5, 4, 4, 3, 3, 2, 1].partitionPoint{ it >= 4 } == 5

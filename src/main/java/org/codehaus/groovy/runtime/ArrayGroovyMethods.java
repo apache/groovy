@@ -6620,15 +6620,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6668,13 +6668,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint{ it < 4 } == 4
+     * assert arr.partitionPoint{ it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint{ it <= 4 } == 6
+     * assert arr.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint{ it &lt;= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -6698,15 +6698,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as char[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6746,13 +6746,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as char[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint{ it < 4 } == 4
+     * assert arr.partitionPoint{ it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint{ it <= 4 } == 6
+     * assert arr.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint{ it &lt;= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -6776,15 +6776,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as short[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6824,13 +6824,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as short[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint{ it < 4 } == 4
+     * assert arr.partitionPoint{ it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint{ it <= 4 } == 6
+     * assert arr.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint{ it &lt;= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -6854,15 +6854,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as int[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 100 } == arr.size()
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6902,13 +6902,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as int[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint{ it < 4 } == 4
+     * assert arr.partitionPoint{ it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint{ it <= 4 } == 6
+     * assert arr.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint{ it &lt;= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -6932,15 +6932,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -6980,13 +6980,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint{ it < 4 } == 4
+     * assert arr.partitionPoint{ it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint{ it <= 4 } == 6
+     * assert arr.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint{ it &lt;= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7010,15 +7010,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as float[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy arr
@@ -7058,13 +7058,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as float[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint{ it < 4 } == 4
+     * assert arr.partitionPoint{ it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint{ it <= 4 } == 6
+     * assert arr.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint{ it &lt;= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr
@@ -7088,15 +7088,15 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as double[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it < 4 } == 4
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 4 } == 6
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 100 } == arr.size()
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 100 } == arr.size()
      * // for all match condition
-     * assert arr.partitionPoint(0..&lt;arr.size()) { it <= 0 } == 0
+     * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt;= 0 } == 0
      * // for no match condition with range
-     * assert arr.partitionPoint(2..&lt;arr.size()) { it <= 0 } == 2
+     * assert arr.partitionPoint(2..&lt;arr.size()) { it &lt;= 0 } == 2
      * </pre>
      *
      * @param self      a groovy array
@@ -7136,13 +7136,13 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as double[]
      * // usage case like lower_bound(cpp), bisect_left(python)
-     * assert arr.partitionPoint{ it < 4 } == 4
+     * assert arr.partitionPoint{ it &lt; 4 } == 4
      * // usage case like upper_bound(cpp), bisect_right(python)
-     * assert arr.partitionPoint{ it <= 4 } == 6
+     * assert arr.partitionPoint{ it &lt;= 4 } == 6
      * // for all match condition
-     * assert arr.partitionPoint{ it <= 100 } == arr.size()
+     * assert arr.partitionPoint{ it &lt;= 100 } == arr.size()
      * // for no match condition
-     * assert arr.partitionPoint{ it <= 0 } == 0
+     * assert arr.partitionPoint{ it &lt;= 0 } == 0
      * </pre>
      *
      * @param self      a groovy arr

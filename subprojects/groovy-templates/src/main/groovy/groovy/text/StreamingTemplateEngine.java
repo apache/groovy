@@ -102,7 +102,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <br />
  * <h3>StreamingTemplateEngine as a servlet engine</h3>
  * The template engine can also be used as the engine for
- * {@link groovy.servlet.TemplateServlet} by placing the following in your
+ * {@code groovy.servlet.TemplateServlet} by placing the following in your
  * <code>web.xml</code> file (plus a corresponding servlet-mapping element):
  * <pre>
  *
