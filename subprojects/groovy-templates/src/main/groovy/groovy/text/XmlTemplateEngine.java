@@ -92,7 +92,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * How are you today?
  * &lt;/document&gt;
  * </pre>
- * The XML template engine can also be used as the engine for {@link groovy.servlet.TemplateServlet} by placing the
+ * The XML template engine can also be used as the engine for {@code groovy.servlet.TemplateServlet} by placing the
  * following in your web.xml file (plus a corresponding servlet-mapping element):
  * <pre>
  * &lt;servlet&gt;

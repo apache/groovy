@@ -79,7 +79,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * The conference committee.
  * </pre>
- * The template engine can also be used as the engine for {@link groovy.servlet.TemplateServlet} by placing the
+ * The template engine can also be used as the engine for {@code groovy.servlet.TemplateServlet} by placing the
  * following in your <code>web.xml</code> file (plus a corresponding servlet-mapping element):
  * <pre>
  * &lt;servlet&gt;
