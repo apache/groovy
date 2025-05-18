@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.StaticJavaParser;
 import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
@@ -25,6 +27,8 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,7 +59,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
         link.setPackages("java.,org.xml.,javax.,org.xml.");
         links.add(link);
 
-        htmlTool = makeHtmltool(links, new Properties());
+        htmlTool = makeHtmltool(links, null, new Properties());
+    }
+
+    public void tearDown() {
+        StaticJavaParser.getParserConfiguration().setLanguageLevel(null);
     }
 
     private GroovyDocTool makeXmlTool(ArrayList<LinkArgument> links, Properties props) {
@@ -70,11 +78,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
                 links,
+     null,
                 props
         );
     }
 
-    private GroovyDocTool makeHtmltool(ArrayList<LinkArgument> links, Properties props) {
+    private GroovyDocTool makeHtmltool(ArrayList<LinkArgument> links, String javaVersion, Properties props) {
         return new GroovyDocTool(
                 new FileSystemResourceManager("src/main/resources"), // template storage
                 new String[] {"src/test/groovy", "../../src/test/groovy"}, // source file dirs
@@ -82,6 +91,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
                 links,
+                javaVersion,
                 props
         );
     }
@@ -435,7 +445,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     private void testPropertiesFromGetterSetter(String fileName, String assertMessage,String expected,boolean isTrue) throws Exception {
-        htmlTool = makeHtmltool(new ArrayList<>(), new Properties());
+        htmlTool = makeHtmltool(new ArrayList<>(), null, new Properties());
         List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/";
         srcList.add(base + fileName + ".groovy");
@@ -450,7 +460,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     private void testVisibility(Properties props, boolean a, boolean b, boolean c, boolean d) throws Exception {
-        htmlTool = makeHtmltool(new ArrayList<>(), props);
+        htmlTool = makeHtmltool(new ArrayList<>(), null, props);
         List<String> srcList = new ArrayList<>();
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles/ExampleVisibility";
         srcList.add(base + "G.groovy");
@@ -531,6 +541,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[0],
                 new String[0],
                 new ArrayList<>(),
+     null,
                 props);
 
         assertEquals("'fileEncoding' falls back to 'charset' if not provided", expectedCharset, tool.properties.getProperty("fileEncoding"));
@@ -549,6 +560,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[0],
                 new String[0],
                 new ArrayList<>(),
+                null,
                 props);
 
         assertEquals("'charset' falls back to 'fileEncoding' if not provided", expectedCharset, tool.properties.getProperty("charset"));
@@ -565,6 +577,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[0],
                 new String[0],
                 new ArrayList<>(),
+                null,
                 new Properties());
 
         assertEquals("'charset' falls back to the default charset", expectedCharset, tool.properties.getProperty("charset"));
@@ -1024,6 +1037,63 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The Groovy derived class declaration header should match in:\n" + groovyDerivedClass, derivedClass.matcher(groovyDerivedClass).find());
     }
 
+    public void testLanguageLevelNotSupported() throws Exception {
+        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), ParserConfiguration.LanguageLevel.JAVA_1_4.name(), new Properties());
+
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+
+        PrintStream originalSystemErr = System.err;
+        ByteArrayOutputStream systemErr = new ByteArrayOutputStream();
+        try {
+            System.setErr(new PrintStream(systemErr));
+            htmlTool.add(Arrays.asList(
+                base + "/Java.java"
+            ));
+        }
+        finally {
+            System.setErr(originalSystemErr);
+        }
+        final String errorMessage = systemErr.toString();
+        System.err.println(errorMessage);
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+        assertNull("Javadoc should be null since language level is not supported", javadoc);
+
+        assertTrue("Expected to find Java file in error message", errorMessage.contains("org/codehaus/groovy/tools/groovydoc/testfiles/generics/Java.java"));
+        assertTrue("Expected to find language level not supported", errorMessage.contains("Pay attention that this feature is supported starting from"));
+    }
+
+    public void testLanguageLevelSupported() throws Exception {
+        htmlTool = makeHtmltool(new ArrayList<LinkArgument>(), ParserConfiguration.LanguageLevel.JAVA_5.name(), new Properties());
+
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
+
+        PrintStream originalSystemErr = System.err;
+        ByteArrayOutputStream systemErr = new ByteArrayOutputStream();
+        try {
+            System.setErr(new PrintStream(systemErr));
+            htmlTool.add(Arrays.asList(
+                base + "/Java.java"
+            ));
+        }
+        finally {
+            System.setErr(originalSystemErr);
+        }
+        final String errorMessage = systemErr.toString();
+        System.err.println(errorMessage);
+
+        final MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
+        assertNotNull("Javadoc should not be null since language level is supported", javadoc);
+
+        assertTrue("Expected no error output", errorMessage.isEmpty());
+    }
+
     public void testJavaGenericsTitle() throws Exception {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
         htmlTool.add(List.of(base + "/Java.java"));
@@ -1154,7 +1224,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/anno";
         Properties props = new Properties();
         props.put("phaseOverride", "7");
-        htmlTool = makeHtmltool(new ArrayList<>(), props);
+        htmlTool = makeHtmltool(new ArrayList<>(), null, props);
         htmlTool.add(Arrays.asList(
                 base + "/Groovy.groovy",
                 base + "/Java.java"
@@ -1422,7 +1492,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // -noscript case
         Properties props = new Properties();
         props.put("processScripts", "false");
-        htmlTool = makeHtmltool(new ArrayList<>(), props);
+        htmlTool = makeHtmltool(new ArrayList<>(), null, props);
         htmlTool.add(srcList);
         output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
@@ -1432,7 +1502,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // -nomainforscript case
         props = new Properties();
         props.put("includeMainForScripts", "false");
-        htmlTool = makeHtmltool(new ArrayList<>(), props);
+        htmlTool = makeHtmltool(new ArrayList<>(), null, props);
         htmlTool.add(srcList);
         output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);

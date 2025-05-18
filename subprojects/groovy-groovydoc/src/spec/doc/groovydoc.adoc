@@ -70,7 +70,12 @@ separated by platform path separator)
 |-verbose| |Enable verbose output
 | |--version|Display the version
 |-windowtitle <text>| |Browser window title for the documentation
+|-javaversion <version> | | The version of the Java source files
 |=======================================================================
+
+=== Java Versions
+
+The supported Java Versions for `groovydoc` are defined by the JavaParser library's link:https://www.javadoc.io/doc/com.github.javaparser/javaparser-core/{javaParserVersion}/com/github/javaparser/ParserConfiguration.LanguageLevel.html[LanguageLevel] class.
 
 [[Groovydoc-Ant]]
 == The groovydoc Ant task
@@ -110,6 +115,7 @@ wildcard). |No
 |overview |Read overview documentation from HTML file. |No
 |private |Show all classes and members (i.e. including private ones) if
 set to ``true''. |No
+|javaversion |The version of the Java source files. |No
 |=======================================================================
 
 [[ThegroovydocAnttask-groovydocNestedElements]]
