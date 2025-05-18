@@ -267,13 +267,15 @@ tasks.withType(Checkstyle).configureEach {chk ->
         }
     }
     finalizedBy {
-        // we use a closure here as a workaround, to preserve task configuration laziness
-        tasks.register("${name}Report", CheckstyleHtmlReport) {
-            dependsOn chk
-            source.from(chk.source)
-            configFile = rootProject.file('config/checkstyle/checkstyle-report.groovy')
-            checkstyleReportFile = reportFile
-            outputFile = layout.buildDirectory.file("reports/checkstyle/${chk.name}.html")
+        if (chk.source.size()) {
+            // we use a closure here as a workaround, to preserve task configuration laziness
+            tasks.register("${name}Report", CheckstyleHtmlReport) {
+                dependsOn chk
+                source.from(chk.source)
+                configFile = rootProject.file('config/checkstyle/checkstyle-report.groovy')
+                checkstyleReportFile = reportFile
+                outputFile = layout.buildDirectory.file("reports/checkstyle/${chk.name}.html")
+            }
         }
     }
 }
