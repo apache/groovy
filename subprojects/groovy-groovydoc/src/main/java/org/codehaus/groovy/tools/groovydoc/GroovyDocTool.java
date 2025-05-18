@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.StaticJavaParser;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
@@ -26,12 +28,15 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Predicate;
 
 public class GroovyDocTool {
     private final Logger log = Logger.create(GroovyDocTool.class);
     private final GroovyRootDocBuilder rootDocBuilder;
     private final GroovyDocTemplateEngine templateEngine;
+    private final ParserConfiguration.LanguageLevel javaLanguageLevel;
 
     protected Properties properties;
 
@@ -45,11 +50,24 @@ public class GroovyDocTool {
     }
 
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String classTemplate) {
-        this(resourceManager, sourcepaths, new String[]{}, new String[]{}, new String[]{classTemplate}, new ArrayList<LinkArgument>(), new Properties());
+        this(resourceManager, sourcepaths, new String[]{}, new String[]{}, new String[]{classTemplate}, new ArrayList<LinkArgument>(), null, new Properties());
     }
 
-    public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {
+    /**
+     * Constructs a GroovyDocTool instance with the specified parameters.
+     *
+     * @param resourceManager  the resource manager for handling resources, or null if not required
+     * @param sourcepaths      the paths to the source files to be processed
+     * @param docTemplates     the templates for generating documentation
+     * @param packageTemplates the templates for generating package-level documentation
+     * @param classTemplates   the templates for generating class-level documentation
+     * @param links            a list of link arguments for external references
+     * @param javaVersion      the Java version to be used for parsing and processing Java source files
+     * @param properties       additional properties to be used when generating the groovydoc
+     */
+    public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, String javaVersion, Properties properties) {
         rootDocBuilder = new GroovyRootDocBuilder(sourcepaths, links, properties);
+        javaLanguageLevel = calculateLanguageLevel(javaVersion);
 
         String defaultCharset = Charset.defaultCharset().name();
 
@@ -71,12 +89,42 @@ public class GroovyDocTool {
         }
     }
 
+    private ParserConfiguration.LanguageLevel calculateLanguageLevel(String javaVersion) {
+        String version = Optional.ofNullable(javaVersion)
+            .map(String::trim)
+            .map(s -> s.toUpperCase())
+            .filter(s -> !s.isEmpty())
+            .orElse(null);
+
+        if (version == null) {
+            return null;
+        }
+
+        try {
+            return ParserConfiguration.LanguageLevel.valueOf(version);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unsupported Java Version: " + javaVersion);
+        }
+    }
+
     public void add(List<String> filenames) throws IOException {
         if (templateEngine != null) {
             // only print out if we are being used for template generation
             log.debug("Loading source files for " + filenames);
         }
-        rootDocBuilder.buildTree(filenames);
+
+        ParserConfiguration.LanguageLevel previousLanguageLevel = StaticJavaParser.getParserConfiguration().getLanguageLevel();
+        try {
+            if(javaLanguageLevel != null) {
+                StaticJavaParser.getParserConfiguration().setLanguageLevel(javaLanguageLevel);
+            }
+            rootDocBuilder.buildTree(filenames);
+        }
+        finally {
+            if(javaLanguageLevel != null) {
+                StaticJavaParser.getParserConfiguration().setLanguageLevel(previousLanguageLevel);
+            }
+        }
     }
 
     public GroovyRootDoc getRootDoc() {

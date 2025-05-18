@@ -73,6 +73,7 @@ asciidoctor {
             'groovy-patch-version': patch,
             'groovy-full-version': groovyVersion,
             'groovy-short-version': "${major}.${minor}",
+            'javaParserVersion': versions.javaParser,
             doctype: 'book',
             revnumber: groovyVersion,
             icons: 'font',
