@@ -59,6 +59,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.extractPlaceholders;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe0;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersCompatible;
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
@@ -116,10 +117,16 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
                 Map<MethodNode,MethodNode> bridgeMethods = typeOrTargetRefType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS);
                 if (bridgeMethods != null) methodRefMethod = bridgeMethods.getOrDefault(methodRefMethod, methodRefMethod); // bridge may not have been generated
             }
+            if (methodRefMethod == null && isClassExpression) {
+                var classValue = varX("_class_", typeOrTargetRefType);
+                var classClass = makeClassSafe0(ClassHelper.CLASS_Type, new GenericsType(typeOrTargetRefType));
+                methodRefMethod = findMethodRefMethod(methodRefName, parametersWithExactType, classValue, classClass);
+                if (methodRefMethod != null) methodRefMethod = addSyntheticMethodForClassReference(methodRefMethod, typeOrTargetRefType);
+            }
         }
 
         validate(methodReferenceExpression, typeOrTargetRefType, methodRefName, methodRefMethod, parametersWithExactType,
-                resolveClassNodeGenerics(extractPlaceholders(functionalType), null, abstractMethod.getReturnType()));
+                    resolveClassNodeGenerics(extractPlaceholders(functionalType), null, abstractMethod.getReturnType()));
 
         if (isBridgeMethod(methodRefMethod)) {
             targetIsArgument = true; // GROOVY-11301, GROOVY-11365
@@ -238,6 +245,21 @@ public class StaticTypesMethodReferenceExpressionWriter extends MethodReferenceE
         String methodName = "dgsm$$" + mn.getParameters()[0].getType().getName().replace('.', '$') + "$$" + mn.getName();
 
         MethodNode delegateMethod = addSyntheticMethod(methodName, mn.getReturnType(), methodCall, parameters, mn.getExceptions());
+        delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
+        return delegateMethod;
+    }
+
+    private MethodNode addSyntheticMethodForClassReference(final MethodNode mn, final ClassNode classType) {
+        MethodCallExpression methodCall = callX(classX(classType), mn.getName(), new ArgumentListExpression(mn.getParameters()));
+        methodCall.setImplicitThis(false);
+        methodCall.setMethodTarget(mn);
+        methodCall.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, mn);
+
+        String methodName = "class$" + classType.getNameWithoutPackage() + "$" + mn.getName() + "$" + System.nanoTime();
+
+        ClassNode returnType = resolveClassNodeGenerics(Map.of(new GenericsType.GenericsTypeName("T"), new GenericsType(classType)), null, mn.getReturnType());
+
+        MethodNode delegateMethod = addSyntheticMethod(methodName, returnType, methodCall, mn.getParameters(), mn.getExceptions());
         delegateMethod.putNodeMetaData(StaticCompilationMetadataKeys.STATIC_COMPILE_NODE, Boolean.TRUE);
         return delegateMethod;
     }

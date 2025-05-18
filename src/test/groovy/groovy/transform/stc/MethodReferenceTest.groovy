@@ -918,6 +918,33 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-11669
+    @Test // class::classMethod
+    void testFunctionCC1() {
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                [1,2,3].stream().map(Number::cast).collect(Collectors.toList())
+            }
+
+            test()
+        '''
+    }
+
+    // GROOVY-11669
+    @Test // class::classMethod
+    void testFunctionCC2() {
+        def err = shouldFail shell, '''
+            @CompileStatic
+            void test() {
+                [1,2,3].stream().map(String::cast).collect(Collectors.toList())
+            }
+
+            test()
+        '''
+        assert err =~ /ClassCastException: Cannot cast java.lang.Integer to java.lang.String/
+    }
+
     @Test // class::new
     void testFunctionCN1() {
         assertScript shell, '''
@@ -1422,13 +1449,23 @@ final class MethodReferenceTest {
 
             test()
         '''
+        assertScript shell, '''
+            @CompileStatic
+            void test() {
+                Supplier<String> s = Object::toString
+                def result = s.get()
+                assert result == 'class java.lang.Object'
+            }
+
+            test()
+        '''
         def err = shouldFail shell, '''
             @CompileStatic
             void test() {
-                Supplier<String> s = Object::toString // all options require an object
+                BinaryOperator<String> s = Object::toString
             }
         '''
-        assert err.message.contains("Failed to find class method 'toString()' for the type: java.lang.Object")
+        assert err.message.contains("Failed to find class method 'toString(java.lang.String,java.lang.String)' or instance method 'toString(java.lang.String)' for the type: java.lang.Object")
     }
 
     // GROOVY-10859
