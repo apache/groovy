@@ -64,6 +64,7 @@ public class Groovydoc extends Task {
     private boolean includeNoSourcePackages;
     private Boolean noTimestamp;
     private Boolean noVersionStamp;
+    private String javaVersion;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
     private final List<LinkArgument> links = new ArrayList<>();
@@ -142,6 +143,15 @@ public class Groovydoc extends Task {
      */
     public void setNoVersionStamp(boolean noVersionStamp) {
         this.noVersionStamp = noVersionStamp;
+    }
+
+    /**
+     * Defaults to a popular Java version defined by the JavaParser library. Otherwise, override here for a specific expected source file version.
+     *
+     * @param javaVersion the expected source level of any Java files that may be parsed; i.e. JAVA_11
+     */
+    public void setJavaVersion(String javaVersion) {
+        this.javaVersion = javaVersion;
     }
 
     /**
@@ -466,6 +476,7 @@ public class Groovydoc extends Task {
                 getPackageTemplates(),
                 getClassTemplates(),
                 links,
+                javaVersion,
                 properties
         );
 

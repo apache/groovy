@@ -91,7 +91,7 @@ function _picocli_groovydoc() {
 
   COMMANDS=""
   FLAG_OPTS="-h -help --help --version -verbose -quiet --debug -classpath -cp --classpath -author -noscripts -nomainforscripts -notimestamp -noversionstamp -public -protected -package -private"
-  ARG_OPTS="-d --destdir -overview -charset -fileEncoding -windowtitle -doctitle -header -footer -exclude -stylesheetfile -sourcepath"
+  ARG_OPTS="-d --destdir -overview -charset -fileEncoding -windowtitle -doctitle -header -footer -exclude -stylesheetfile -sourcepath -javaversion"
 
   COMPREPLY=( $(compgen -W "${FLAG_OPTS} ${ARG_OPTS} ${COMMANDS}" -- ${CURR_WORD}) )
 }

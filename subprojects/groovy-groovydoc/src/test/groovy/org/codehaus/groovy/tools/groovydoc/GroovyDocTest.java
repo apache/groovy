@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.CharsetToolkit;
+import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.BuildFileRule;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.junit.After;
@@ -82,6 +83,43 @@ public class GroovyDocTest {
         List<String> lines = ResourceGroovyMethods.readLines(documentedClassHtmlDoc);
         assertTrue("\"<title>DocumentedClass</title>\" not in: " + lines, lines.contains("<title>DocumentedClass</title>"));
         assertTrue("\"This is a custom class template.\" not in: " + lines, lines.contains("This is a custom class template."));
+    }
+
+    @Test
+    public void testSupportedJavadocVersion() throws Exception {
+        rule.executeTarget("supportedGroovyDocJava");
+
+        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
+        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
+
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
+        assertEquals(1, list.length);
+        File documentedClass = new File(testfilesPackageDir, list[0]);
+        assertTrue("Java.html not found: " + documentedClass.getAbsolutePath(), documentedClass.exists());
+
+        List<String> lines = ResourceGroovyMethods.readLines(documentedClass);
+        assertTrue("\"<title>Java</title>\" not in: " + lines, lines.contains("<title>Java</title>"));
+    }
+
+    @Test
+    public void testUnsupportedJavadocVersion() throws Exception {
+        rule.executeTarget("unsupportedGroovyDocJava");
+
+        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
+        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
+
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
+        assertEquals("Files unexpectedly found when not expecting to parse",0, list.length);
+    }
+
+    @Test
+    public void testInvalidJavaVersion() throws Exception {
+        try {
+            rule.executeTarget("invalidJavaVersion");
+        }
+        catch(BuildException e) {
+            assertEquals("java.lang.IllegalArgumentException: Unsupported Java Version: DNE", e.getMessage());
+        }
     }
 
     @Test

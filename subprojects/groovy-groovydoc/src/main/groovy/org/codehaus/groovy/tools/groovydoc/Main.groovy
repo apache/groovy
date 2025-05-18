@@ -51,6 +51,7 @@ class Main {
     private static Boolean protectedScope
     private static Boolean debug = false
     private static String[] sourcepath
+    private static String javaVersion
     private static List<String> sourceFilesToDoc
     private static List<String> remainingArgs
     private static List<String> exclusions
@@ -90,6 +91,7 @@ class Main {
         cli.exclude(args:1, argName: 'pkglist', messages['cli.option.exclude.description'])
         cli.stylesheetfile(args:1, argName: 'path', messages['cli.option.stylesheetfile.description'])
         cli.sourcepath(args:1, argName: 'pathlist', messages['cli.option.sourcepath.description'])
+        cli.javaVersion(args: 1, argName: 'javaVersion', messages['cli.option.javaVersion.description'])
 
         def options = cli.parse(args)
 
@@ -125,6 +127,7 @@ class Main {
             sourcepath = list.toArray()
         }
 
+        javaVersion = options.javaVersion
         author = Boolean.valueOf(options.author) ?: false
         noScripts = Boolean.valueOf(options.noscripts) ?: false
         noMainForScripts = Boolean.valueOf(options.nomainforscripts) ?: false
@@ -204,7 +207,6 @@ class Main {
         String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override")
         if (phaseOverride) properties.put("phaseOverride", phaseOverride)
 
-
         def links = new ArrayList<LinkArgument>();
         collectSourceFileNames(remainingArgs, sourcepath, exclusions)
         GroovyDocTool htmlTool = new GroovyDocTool(
@@ -214,6 +216,7 @@ class Main {
                 GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
                 links,
+                javaVersion,
                 properties
         )
 
