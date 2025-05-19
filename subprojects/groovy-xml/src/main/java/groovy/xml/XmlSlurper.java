@@ -86,9 +86,9 @@ import static groovy.xml.XmlUtil.setFeatureQuietly;
 public class XmlSlurper extends DefaultHandler {
     private final XMLReader reader;
     private Node currentNode = null;
-    private final Stack<Node> stack = new Stack<Node>();
+    private final Stack<Node> stack = new Stack<>();
     private final StringBuilder charBuffer = new StringBuilder();
-    private final Map<String, String> namespaceTagHints = new HashMap<String, String>();
+    private final Map<String, String> namespaceTagHints = new HashMap<>();
     private boolean keepIgnorableWhitespace = false;
     private boolean namespaceAware = false;
 
@@ -104,7 +104,7 @@ public class XmlSlurper extends DefaultHandler {
 
     /**
      * Creates a <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
-     * 
+     *
      * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
      * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
      *
@@ -117,7 +117,7 @@ public class XmlSlurper extends DefaultHandler {
 
     /**
      * Creates a <code>XmlSlurper</code>.
-     * 
+     *
      * @param validating <code>true</code> if the parser should validate documents as they are parsed; false otherwise.
      * @param namespaceAware <code>true</code> if the parser should provide support for XML namespaces; <code>false</code> otherwise.
      * @param allowDocTypeDeclaration <code>true</code> if the parser should provide support for DOCTYPE declarations; <code>false</code> otherwise.
@@ -395,7 +395,7 @@ public class XmlSlurper extends DefaultHandler {
         final Map<String, String> attributeNamespaces = new HashMap<String, String>();
 
         for (int i = atts.getLength() - 1; i != -1; i--) {
-            if (atts.getURI(i).length() == 0) {
+            if (atts.getURI(i).isEmpty()) {
                 attributes.put(atts.getQName(i), atts.getValue(i));
             } else {
                 String key = new QName(atts.getURI(i), atts.getLocalName(i)).toString();
@@ -406,7 +406,7 @@ public class XmlSlurper extends DefaultHandler {
 
         final Node newElement;
 
-        if (namespaceURI.length() == 0) {
+        if (namespaceURI.isEmpty()) {
             newElement = new Node(currentNode, qName, attributes, attributeNamespaces, namespaceURI);
         } else {
             newElement = new Node(currentNode, localName, attributes, attributeNamespaces, namespaceURI);
@@ -462,7 +462,7 @@ public class XmlSlurper extends DefaultHandler {
             //
             final String cdata = charBuffer.toString();
             charBuffer.setLength(0);
-            if (keepIgnorableWhitespace || cdata.trim().length() != 0) {
+            if (keepIgnorableWhitespace || !cdata.trim().isEmpty()) {
                 currentNode.addChild(cdata);
             }
         }
