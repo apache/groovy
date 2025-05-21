@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompileStatic;
+import groovy.transform.LineNumber;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -32,6 +33,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
@@ -53,6 +55,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -109,6 +112,8 @@ public abstract class TraitComposer {
         }
     }
 
+    private static final ClassNode LINE_NUMBER_TYPE = ClassHelper.make(LineNumber.class);
+
     private static void checkTraitAllowed(final ClassNode bottomTrait, final SourceUnit unit) {
         ClassNode superClass = bottomTrait.getSuperClass();
         if (superClass == null || ClassHelper.isObjectType(superClass)) return;
@@ -123,7 +128,9 @@ public abstract class TraitComposer {
         ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
         Map<String, ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(trait, GenericsUtils.createGenericsSpec(cNode));
 
-        for (MethodNode methodNode : helperClassNode.getMethods()) {
+        List<MethodNode> hMethods = helperClassNode.getMethods();
+        hMethods.sort(Comparator.comparingInt(TraitComposer::getLineNumber).thenComparing(MethodNode::getName));
+        for (MethodNode methodNode : hMethods) {
             String name = methodNode.getName();
             Parameter[] helperMethodParams = methodNode.getParameters();
             int nParams = helperMethodParams.length;
@@ -172,7 +179,11 @@ public abstract class TraitComposer {
             // implementation of methods
             List<MethodNode> declaredMethods = new LinkedList<>();
             int pos = 0; // keep direct getters at start but in declaration order
-            for (MethodNode declaredMethod : fieldHelperClassNode.getMethods()) {
+            List<MethodNode> fhMethods = fieldHelperClassNode.getMethods();
+            if (!fhMethods.isEmpty()) {
+                fhMethods.sort(Comparator.comparingInt(TraitComposer::getLineNumber).thenComparing(MethodNode::getName));
+            }
+            for (MethodNode declaredMethod : fhMethods) {
                 if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
                     declaredMethods.add(pos++, declaredMethod);
                 } else {
@@ -181,7 +192,11 @@ public abstract class TraitComposer {
             }
 
             if (staticFieldHelperClassNode != null) {
-                for (MethodNode declaredMethod : staticFieldHelperClassNode.getMethods()) {
+                List<MethodNode> sfhMethods = staticFieldHelperClassNode.getMethods();
+                if (!sfhMethods.isEmpty()) {
+                    sfhMethods.sort(Comparator.comparingInt(TraitComposer::getLineNumber).thenComparing(MethodNode::getName));
+                }
+                for (MethodNode declaredMethod : sfhMethods) {
                     if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
                         declaredMethods.add(pos++, declaredMethod);
                     } else {
@@ -300,6 +315,18 @@ public abstract class TraitComposer {
         cNode.addObjectInitializerStatements(stmt(
                 callX(classX(helperClassNode), Traits.INIT_METHOD, varX("this"))
         ));
+    }
+
+    private static int getLineNumber(MethodNode mn) {
+        List<AnnotationNode> annotations = mn.getAnnotations(LINE_NUMBER_TYPE);
+        int line = -1;
+        if (!annotations.isEmpty()) {
+            ASTNode lineNumber = annotations.get(0).getMember("value");
+            if (lineNumber instanceof ConstantExpression) {
+                line = (int) ((ConstantExpression) lineNumber).getValue();
+            }
+        }
+        return line;
     }
 
     private static void createForwarderMethod(

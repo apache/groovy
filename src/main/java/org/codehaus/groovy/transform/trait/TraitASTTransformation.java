@@ -19,10 +19,12 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompilationUnitAware;
+import groovy.transform.LineNumber;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
@@ -54,8 +56,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -185,7 +187,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
 
         // prepare fields
         List<FieldNode> fields = new ArrayList<>();
-        Set<String> fieldNames = new HashSet<>();
+        Set<String> fieldNames = new LinkedHashSet<>();
         boolean hasStatic = false;
         for (FieldNode field : cNode.getFields()) {
             if (!"metaClass".equals(field.getName()) && (!field.isSynthetic() || field.getName().indexOf('$') < 0)) {
@@ -239,6 +241,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                     if (methodNode.isStaticConstructor()) {
                         staticInitStatements = getCodeAsBlock(newMethod).getStatements();
                     } else {
+                        addLineNumberAnnotation(newMethod, methodNode);
                         // add non-abstract methods; abstract methods covered from trait interface
                         helper.addMethod(newMethod);
                     }
@@ -302,6 +305,14 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             }
         }
         return helper;
+    }
+
+    private static void addLineNumberAnnotation(MethodNode mNode, ASTNode sourceNode) {
+        if (mNode.getAnnotations(LINE_NUMBER_TYPE).isEmpty()) {
+            AnnotationNode annotation = new AnnotationNode(LINE_NUMBER_TYPE);
+            annotation.addMember("value", constX(sourceNode.getLineNumber()));
+            mNode.addAnnotation(annotation);
+        }
     }
 
     private void resolveHelperClassIfNecessary(final ClassNode helperClass) {
@@ -424,18 +435,19 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
 
         int methodModifiers = adjustPropertyModifiersForMethod(node); // GROOVY-3726
-
         if (getterBlock != null) {
             MethodNode getter = new MethodNode(getterName, methodModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
             // copyAnnotations(cNode, getter);
             addGeneratedMethod(cNode, getter);
+            addLineNumberAnnotation(getter, node);
 
             if (node.getGetterName() == null && isPrimitiveBoolean(node.getType())) {
                 getter = new MethodNode("is" + capitalize(name), methodModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 getter.setSynthetic(true);
                 // copyAnnotations(cNode, getter);
                 addGeneratedMethod(cNode, getter);
+                addLineNumberAnnotation(getter, node);
             }
         }
         if (setterBlock != null) {
@@ -447,6 +459,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             setter.setSynthetic(true);
             // copyAnnotations(cNode, setter);
             addGeneratedMethod(cNode, setter);
+            addLineNumberAnnotation(setter, node);
         }
     }
 
@@ -459,6 +472,8 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         if ((mNode.getModifiers() & ACC_FINAL) != 0) return false;
         return true;
     }
+
+    private static final ClassNode LINE_NUMBER_TYPE = ClassHelper.make(LineNumber.class);
 
     private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer,
                               final ClassNode fieldHelper, final ClassNode helper, final ClassNode staticFieldHelper, final ClassNode trait,
@@ -487,6 +502,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         returnS(initCode.getExpression())
                 );
                 helper.addMethod(fieldInitializer);
+                addLineNumberAnnotation(fieldInitializer, field);
             } else {
                 BlockStatement code = (BlockStatement) selectedMethod.getCode();
                 MethodCallExpression mce;
@@ -515,23 +531,25 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                 code.addStatement(stmt(mce));
             }
         }
-        // define setter/getter helper methods (setter added even for final fields for legacy compatibility)
-        addGeneratedMethod(target,
-                Traits.helperSetterName(field),
-                ACC_PUBLIC | ACC_ABSTRACT,
-                field.getOriginType(),
-                new Parameter[]{new Parameter(field.getOriginType(), "val")},
-                ClassNode.EMPTY_ARRAY,
-                null
+        // define getter/setter helper methods (setter added even for final fields for legacy compatibility)
+        MethodNode accessor = addGeneratedMethod(target,
+            Traits.helperGetterName(field),
+            ACC_PUBLIC | ACC_ABSTRACT,
+            field.getOriginType(),
+            Parameter.EMPTY_ARRAY,
+            ClassNode.EMPTY_ARRAY,
+            null
         );
-        addGeneratedMethod(target,
-                Traits.helperGetterName(field),
-                ACC_PUBLIC | ACC_ABSTRACT,
-                field.getOriginType(),
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                null
+        addLineNumberAnnotation(accessor, field);
+        accessor = addGeneratedMethod(target,
+            Traits.helperSetterName(field),
+            ACC_PUBLIC | ACC_ABSTRACT,
+            field.getOriginType(),
+            new Parameter[]{new Parameter(field.getOriginType(), "val")},
+            ClassNode.EMPTY_ARRAY,
+            null
         );
+        addLineNumberAnnotation(accessor, field);
 
         // dummy fields are only used to carry annotations if instance field
         // and to differentiate from static fields otherwise
@@ -589,6 +607,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         } else {
             methodNode.addAnnotation(new AnnotationNode(Traits.IMPLEMENTED_CLASSNODE));
+            addLineNumberAnnotation(methodNode, methodNode);
         }
         methodNode.setCode(null);
 
