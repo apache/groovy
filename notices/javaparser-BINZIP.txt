@@ -1,0 +1,2 @@
+This product bundles the JavaParser jar (javaparser.org)
+which is available under the terms of the Apache License 2.0
