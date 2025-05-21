@@ -13537,6 +13537,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @see #sort(List, IntRange, boolean, Closure)
      * @return the sorted list
+     * @since 5.0.0
      */
     public static <T> List<T> sort(List<T> self, IntRange range, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
         return sort(self, range, true, closure);
