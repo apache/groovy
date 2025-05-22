@@ -211,8 +211,6 @@ class GroovyLibraryExtension {
                 'Bundle-Vendor'         : 'The Apache Software Foundation',
                 'Bundle-Version'        : groovyBundleVersion,
                 'Bundle-License'        : 'Apache-2.0',
-                'DynamicImport-Package' : '*',
-                'Eclipse-BuddyPolicy'   : 'dependent',
                 'Specification-Title'   : 'Groovy: a powerful, multi-faceted language for the JVM',
                 'Specification-Vendor'  : 'The Apache Software Foundation',
                 'Specification-Version' : groovyBundleVersion,
@@ -221,7 +219,11 @@ class GroovyLibraryExtension {
                 'Implementation-Version': groovyBundleVersion
             )
             if (projectName == 'groovy') {
-                attributes('Main-Class': 'groovy.ui.GroovyMain')
+                attributes(
+                    'DynamicImport-Package': '*', // GROOVY-3192
+                    'Eclipse-BuddyPolicy'  : 'dependent', // GROOVY-5571
+                    'Main-Class'           : 'groovy.ui.GroovyMain'
+                )
             }
         }
     }
