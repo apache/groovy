@@ -13471,6 +13471,59 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts the Iterable using the given Comparator over the given index range. If the Iterable is a List and mutate
+     * is true, it is sorted in place and returned. Otherwise, the elements are first placed
+     * into a new list which is then sorted and returned - leaving the original Iterable unchanged.
+     * <pre class="groovyTestCase">
+     * def orig = ['hello', 'hi', 'Hey', 'a']
+     * def sorted = orig.sort(0..2, false, String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ['hello', 'hi', 'Hey', 'a']
+     * assert sorted == ['hello', 'Hey', 'hi', 'a']
+     * </pre>
+     *
+     * @param self       the Iterable to be sorted
+     * @param range      the inclusive range of index values over which to sort
+     * @param mutate     false causes a new list to be created, true will mutate lists in place
+     * @param comparator a Comparator used for the comparison
+     * @return a sorted List
+     * @since 5.0.0
+     */
+    public static <T> List<T> sort(List<T> self, IntRange range, boolean mutate, Comparator<? super T> comparator) {
+        Objects.requireNonNull(self);
+        RangeInfo info = range.subListBorders(self.size());
+        Objects.checkFromToIndex(info.from, info.to, self.size());
+        T[] a = (T[]) self.toArray();
+        Arrays.sort(a, info.from, info.to, comparator);
+        if (!mutate) {
+            return Arrays.asList(a);
+        }
+        ListIterator<T> i = self.listIterator();
+        for (T e : a) {
+            i.next();
+            i.set(e);
+        }
+        return self;
+    }
+
+    /**
+     * Sorts the Iterable using the given Comparator over the given index range.
+     * <pre class="groovyTestCase">
+     * def orig = ['hello', 'hi', 'Hey', 'a']
+     * orig.sort(0..2, String.CASE_INSENSITIVE_ORDER)
+     * assert orig == ['hello', 'Hey', 'hi', 'a']
+     * </pre>
+     *
+     * @param self       the Iterable to be sorted
+     * @param range      the inclusive range of index values over which to sort
+     * @param comparator a Comparator used for the comparison
+     * @return a sorted List
+     * @since 5.0.0
+     */
+    public static <T> List<T> sort(List<T> self, IntRange range, Comparator<? super T> comparator) {
+        return sort(self, range, true, comparator);
+    }
+
+    /**
      * Sorts elements in the given index range using the given Closure to determine the ordering.
      * If mutate is true, it is sorted in place and returned. Otherwise, the elements are first placed
      * into a new list which is then sorted and returned, leaving the original List unchanged.
@@ -13541,6 +13594,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> sort(List<T> self, IntRange range, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
         return sort(self, range, true, closure);
+    }
+
+    /**
+     * A mutating sort variant that takes an index range.
+     * <pre class="groovyTestCase">
+     * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     * nums.sort(0..4)
+     * assert nums == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
+     * </pre>
+     *
+     * @see #sort(List, IntRange, boolean, Closure)
+     * @return the sorted list
+     * @since 5.0.0
+     */
+    public static <T> List<T> sort(List<T> self, IntRange range) {
+        return sort(self, range, true, new NumberAwareComparator<>());
     }
 
     /**
@@ -15311,12 +15380,54 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert nums.toSorted(0..4) { it } == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
      * </pre>
      *
+     * @param self    the Iterable to be sorted
+     * @param range   the inclusive range of index values over which to sort
+     * @param closure a Closure used for the comparison
      * @see #sort(List, IntRange, boolean, Closure)
      * @return the sorted list
      * @since 5.0.0
      */
     public static <T> List<T> toSorted(List<T> self, IntRange range, @ClosureParams(value=FromString.class,options={"T","T,T"}) Closure<?> closure) {
         return sort(self, range, false, closure);
+    }
+
+    /**
+     * Returns a list, sorted over the given range
+     * using a {@link NumberAwareComparator}, leaving the original list unmodified.
+     * <pre class="groovyTestCase">
+     * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     * assert nums.toSorted(0..4, Comparator.reverseOrder()) == [9, 7, 5, 3, 1, 4, 8, 6, 0, 2]
+     * assert nums.toSorted(5..-1, Comparator.reverseOrder()) == [5, 9, 1, 7, 3, 8, 6, 4, 2, 0]
+     * </pre>
+     *
+     * @param self       the List to be sorted
+     * @param range      the inclusive range of index values over which to sort
+     * @param comparator a Comparator used for the comparison
+     * @see #sort(List, IntRange, boolean, Comparator)
+     * @return the sorted list
+     * @since 5.0.0
+     */
+    public static <T> List<T> toSorted(List<T> self, IntRange range, Comparator<? super T> comparator) {
+        return sort(self, range, false, comparator);
+    }
+
+    /**
+     * Returns a list, sorted over the given range
+     * using a {@link NumberAwareComparator}, leaving the original list unmodified.
+     * <pre class="groovyTestCase">
+     * def nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
+     * assert nums.toSorted(0..4) == [1, 3, 5, 7, 9, 4, 8, 6, 0, 2]
+     * assert nums.toSorted(5..-1) == [5, 9, 1, 7, 3, 0, 2, 4, 6, 8]
+     * </pre>
+     *
+     * @param self       the List to be sorted
+     * @param range      the inclusive range of index values over which to sort
+     * @see #toSorted(List, IntRange, Closure)
+     * @return the sorted list
+     * @since 5.0.0
+     */
+    public static <T> List<T> toSorted(List<T> self, IntRange range) {
+        return toSorted(self, range, new NumberAwareComparator<>());
     }
 
     /**
