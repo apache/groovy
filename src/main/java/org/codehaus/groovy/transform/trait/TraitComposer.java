@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform.trait;
 
 import groovy.transform.CompileStatic;
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -53,6 +54,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -123,7 +125,11 @@ public abstract class TraitComposer {
         ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
         Map<String, ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(trait, GenericsUtils.createGenericsSpec(cNode));
 
-        for (MethodNode methodNode : helperClassNode.getMethods()) {
+        List<MethodNode> hMethods = helperClassNode.getMethods();
+        if (!hMethods.isEmpty()) {
+            hMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
+        }
+        for (MethodNode methodNode : hMethods) {
             String name = methodNode.getName();
             Parameter[] helperMethodParams = methodNode.getParameters();
             int nParams = helperMethodParams.length;
@@ -172,7 +178,11 @@ public abstract class TraitComposer {
             // implementation of methods
             List<MethodNode> declaredMethods = new LinkedList<>();
             int pos = 0; // keep direct getters at start but in declaration order
-            for (MethodNode declaredMethod : fieldHelperClassNode.getMethods()) {
+            List<MethodNode> fhMethods = fieldHelperClassNode.getMethods();
+            if (!fhMethods.isEmpty()) {
+                fhMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
+            }
+            for (MethodNode declaredMethod : fhMethods) {
                 if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
                     declaredMethods.add(pos++, declaredMethod);
                 } else {
@@ -181,7 +191,11 @@ public abstract class TraitComposer {
             }
 
             if (staticFieldHelperClassNode != null) {
-                for (MethodNode declaredMethod : staticFieldHelperClassNode.getMethods()) {
+                List<MethodNode> sfhMethods = staticFieldHelperClassNode.getMethods();
+                if (!sfhMethods.isEmpty()) {
+                    sfhMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
+                }
+                for (MethodNode declaredMethod : sfhMethods) {
                     if (declaredMethod.getName().endsWith(Traits.DIRECT_GETTER_SUFFIX)) {
                         declaredMethods.add(pos++, declaredMethod);
                     } else {
