@@ -18,14 +18,13 @@
  */
 package bugs
 
-import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class Groovy9779 {
+
     @Test
     void testCallOperatorOnDynamicProperties1() {
         assertScript '''
@@ -73,7 +72,7 @@ final class Groovy9779 {
             }
             C.x()
         '''
-        assert err.message.contains('No signature of method: B.call() is applicable')
+        assert err.message.contains('No signature of method: call for class: B is applicable')
     }
 
     @Test // don't chain call properties together
@@ -90,7 +89,7 @@ final class Groovy9779 {
             }
             assert new C() + 1 == 42
         '''
-        assert err.message.contains('No signature of method: C.plus() is applicable')
+        assert err.message.contains('No signature of method: plus for class: C is applicable')
     }
 
     @Test

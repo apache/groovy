@@ -18,9 +18,12 @@
  */
 package typing
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StaticCompilationIntroTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class StaticCompilationIntroTest {
 
     private static String TYPESAFE_PROGRAM = '''
         // tag::intro_typesafe[]
@@ -66,7 +69,7 @@ class StaticCompilationIntroTest extends GroovyTestCase {
 
     private static final String RUN = '''
         test()
-'''
+    '''
 
     private static final String RUNTIME_MAGIC = '''
         // tag::intro_typesafe_magic[]
@@ -74,23 +77,19 @@ class StaticCompilationIntroTest extends GroovyTestCase {
         // end::intro_typesafe_magic[]
     '''
 
+    @Test
     void testTypeSafeProgram() {
-        def shell = new GroovyShell()
-        shell.evaluate(TYPESAFE_PROGRAM+RUN)
+        assertScript(TYPESAFE_PROGRAM+RUN)
     }
 
+    @Test
     void testTypeSafeProgramBroken() {
-        def shell = new GroovyShell()
-        try {
-            shell.evaluate(TYPESAFE_PROGRAM+RUNTIME_MAGIC+RUN)
-            assert false
-        } catch (MissingMethodException e) {
-            assert e.message.contains('No signature of method: Computer.compute() is applicable for argument types: (Date)')
-        }
+        def e = shouldFail(MissingMethodException, TYPESAFE_PROGRAM+RUNTIME_MAGIC+RUN)
+        assert e.message.contains('No signature of method: compute for class: Computer is applicable for argument types: (Date)')
     }
 
+    @Test
     void testTypeSafeProgramFixedWithCompileStatic() {
-        def shell = new GroovyShell()
-        shell.evaluate(TYPESAFE_COMPILESTATIC_PROGRAM+RUNTIME_MAGIC+RUN)
+        assertScript(TYPESAFE_COMPILESTATIC_PROGRAM+RUNTIME_MAGIC+RUN)
     }
 }

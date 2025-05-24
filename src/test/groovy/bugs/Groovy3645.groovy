@@ -18,20 +18,20 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3645Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy3645 {
+    @Test
     void testMethodCallOnSuperInAStaticMethod() {
-        try{
-            assertScript """
-                class Foo3645 {
-                    static main(args) {
-                        super.bar()
-                    }
+        def err = shouldFail MissingMethodException, '''
+            class Foo3645 {
+                static main(args) {
+                    super.bar()
                 }
-            """
-        } catch(MissingMethodException ex) {
-            assertTrue ex.message.contains("No signature of method: static java.lang.Object.bar()")
-        }
+            }
+        '''
+        assert err.message.contains('No signature of static method: bar for class: java.lang.Object')
     }
 }

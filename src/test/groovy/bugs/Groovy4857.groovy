@@ -18,36 +18,35 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4857Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy4857 {
+
+    @Test
     void testMissingMethodNotUnsupportedOperation() {
-        try {
-            new GroovyShell().evaluate """
-                interface A { def getValue() }
+        def err = shouldFail MissingMethodException, '''
+            interface A { def getValue() }
 
-                class B { }
+            class B { }
 
-                def test = [ getValue: { 'getValue() called' } ] as A
+            def test = [ getValue: { 'getValue() called' } ] as A
 
-                def b = new B()
+            def b = new B()
 
-                b.call(test)
-            """
-            fail('The compilation should have failed with No signature of method: B.call()')
-        } catch (e) {
-            assert e.message.contains('No signature of method: B.call()')
-            assert e.class.name == 'groovy.lang.MissingMethodException'
-        }
+            b.call(test)
+        '''
+        assert err.message.contains('No signature of method: call for class: B')
     }
 
+    @Test
     void testTrygveAmundsensExample() {
-        def val = new GroovyShell().evaluate """
+        def val = new GroovyShell().evaluate '''
             [run: {}] as Runnable
-        """
+        '''
 
         assert val.toString()
         assert val instanceof Runnable
     }
 }
-
