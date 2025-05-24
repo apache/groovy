@@ -1516,7 +1516,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
      * the time "? super Bar" was resolved but is present in type's redirect now.
      */
     private static void resolveWildcardBounding(final GenericsType[] typeArguments, final ClassNode type) {
-        for (int i = 0, n = typeArguments.length; i < n; i += 1) { GenericsType argument= typeArguments[i];
+        for (int i = 0, n = typeArguments.length; i < n; i += 1) {
+            GenericsType argument = typeArguments[i];
             if (!argument.isWildcard() || argument.getUpperBounds() != null) continue;
             GenericsType[] parameters = type.redirect().getGenericsTypes();
             if (parameters != null && i < parameters.length) {
