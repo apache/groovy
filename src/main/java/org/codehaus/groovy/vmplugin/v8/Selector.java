@@ -323,10 +323,11 @@ public abstract class Selector {
 
             selectionBase = sender;
             if (sender != mci.getTheClass()) {
+                final Class<?> thisType;
                 if (GroovyCategorySupport.hasCategoryInCurrentThread()) { // slow path for category property
                     selectionBase = mci.getTheClass();
-                } else if (getThisType(sender).isInstance(receiver)) { // GROOVY-5438 for private property
-                    selectionBase = getThisType(sender);
+                } else if ((thisType = getThisType(sender)).isInstance(receiver)) { // GROOVY-5438 for private property
+                    selectionBase = thisType;
                 }
             }
             if (LOG_ENABLED) LOG.info("selectionBase set to " + selectionBase);
