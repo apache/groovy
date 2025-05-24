@@ -19,7 +19,7 @@
 package groovy
 
 import groovy.test.NotYetImplemented
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -235,7 +235,7 @@ final class ThisAndSuperTest {
             }
             new C().test()
         '''
-        assert err =~ /No signature of method: java\.lang\.Object\.whatever\(\) is applicable for argument types: \(\) values: \[\]/
+        assert err =~ /No signature of method: whatever for class: java\.lang\.Object is applicable for argument types: \(\) values: \[\]/
     }
 
     // GROOVY-9615
@@ -254,7 +254,7 @@ final class ThisAndSuperTest {
             }
             new Outer.Inner(new Outer()).test()
         '''
-        assert err =~ /No signature of method: java\.lang\.Object\.whatever\(\) is applicable for argument types: \(\) values: \[\]/
+        assert err =~ /No signature of method: whatever for class: java\.lang\.Object is applicable for argument types: \(\) values: \[\]/
     }
 
     // GROOVY-6001

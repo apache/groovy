@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -79,87 +79,86 @@ final class Groovy8678 {
     @Test
     void testMissingPropertyOrMethod() {
         def x = new WithMethods()
-        def throwable = shouldFail () -> x.'42'
-        assert throwable.class == MissingPropertyException.class
+
+        def throwable = shouldFail(MissingPropertyException) { x.'42' }
         assert throwable.message.startsWith('No such property: 42 for class: bugs.Groovy8678$WithMethods')
-        throwable = shouldFail () -> x.'42d'
-        assert throwable.class == MissingPropertyException.class
+
+        throwable = shouldFail(MissingPropertyException) { x.'42d' }
         assert throwable.message.startsWith('No such property: 42d for class: bugs.Groovy8678$WithMethods')
-        throwable = shouldFail () -> x.'84'()
-        assert throwable.class == MissingMethodException.class
-        assert throwable.message.startsWith('No signature of method: bugs.Groovy8678$WithMethods.84() is applicable for argument types: () values: []')
-        throwable = shouldFail () -> x.'84f'()
-        assert throwable.class == MissingMethodException.class
-        assert throwable.message.startsWith('No signature of method: bugs.Groovy8678$WithMethods.84f() is applicable for argument types: () values: []')
+
+        throwable = shouldFail(MissingMethodException) { x.'84'() }
+        assert throwable.message.startsWith('No signature of method: 84 for class: bugs.Groovy8678$WithMethods is applicable for argument types: () values: []')
+
+        throwable = shouldFail(MissingMethodException) { x.'84f'() }
+        assert throwable.message.startsWith('No signature of method: 84f for class: bugs.Groovy8678$WithMethods is applicable for argument types: () values: []')
     }
 
     @Test
-    @SuppressWarnings("all")
     void testCompilationFailure() {
         shouldNotCompile('\'42\'', '\'FortyTwo\'', '42',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: WithMethods.call() is applicable for argument types: (BigDecimal) values: [0.42]'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: WithMethods is applicable for argument types: (BigDecimal) values: [0.42]'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.42\''))
         shouldNotCompile('\'42\'', '\'FortyTwo\'', '42()',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: java.math.BigDecimal.call() is applicable for argument types: () values: []'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: java.math.BigDecimal is applicable for argument types: () values: []'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.42\''))
         shouldNotCompile('\'42d\'', '\'FortyTwo\'', '42d',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: WithMethods.call() is applicable for argument types: (Double) values: [0.42]'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: WithMethods is applicable for argument types: (Double) values: [0.42]'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.42d\''))
         shouldNotCompile('\'42d\'', '\'FortyTwo\'', '42d()',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: java.lang.Double.call() is applicable for argument types: () values: []'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: java.lang.Double is applicable for argument types: () values: []'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.42d\''))
         shouldNotCompile('get84', '\'EightyFour\'', '84',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: WithMethods.call() is applicable for argument types: (BigDecimal) values: [0.84]'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: WithMethods is applicable for argument types: (BigDecimal) values: [0.84]'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.84\''))
         shouldNotCompile('get84', '\'EightyFour\'', '84()',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: java.math.BigDecimal.call() is applicable for argument types: () values: []'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: java.math.BigDecimal is applicable for argument types: () values: []'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.84\''))
         shouldNotCompile('get84f', '\'EightyFourEff\'', '84f',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: WithMethods.call() is applicable for argument types: (Float) values: [0.84]'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: WithMethods is applicable for argument types: (Float) values: [0.84]'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.84f\''))
         shouldNotCompile('get84f', '\'EightyFourEff\'', '84f()',
                 // after GROOVY-8678
-                cls -> cls == MissingMethodException.class,
-                msg -> msg.startsWith('No signature of method: java.lang.Float.call() is applicable for argument types: () values: []'))
+                MissingMethodException,
+                msg -> msg.startsWith('No signature of method: call for class: java.lang.Float is applicable for argument types: () values: []'))
                 // before GROOVY-8678
-                // cls -> cls == MultipleCompilationErrorsException.class,
+                // MultipleCompilationErrorsException,
                 // msg -> msg.contains('Unexpected input: \'x.84f\''))
     }
 
     private static void shouldNotCompile(String methodName,
                                  String returnValue,
                                  String expression,
-                                 Closure<Class<? extends Exception>> exceptionAssertion,
+                                 Class<? extends Exception> exceptionType,
                                  Closure<String> messageAssertion) {
-        def throwable = shouldFail """
+        def throwable = shouldFail exceptionType, """
             class WithMethods {
                 def ${methodName}() {
                     ${returnValue}
@@ -168,7 +167,6 @@ final class Groovy8678 {
             def x = new WithMethods()
             x.${expression}
         """.stripIndent()
-        assert exceptionAssertion(throwable.class)
         assert messageAssertion(throwable.message)
     }
 

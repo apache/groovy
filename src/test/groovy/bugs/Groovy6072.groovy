@@ -18,16 +18,19 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6072Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy6072 {
+    @Test
     void testShouldNotChangeBinExpToClassExp() {
-        assertScript '''import groovy.transform.ASTTest
+        def err = shouldFail MissingMethodException, '''
+            import groovy.transform.ASTTest
             import org.codehaus.groovy.ast.expr.BinaryExpression
 
             class OhNo {}
 
-            try {
             @ASTTest(phase=CANONICALIZATION, value={
                 def right = node.rightExpression
                 assert right instanceof BinaryExpression
@@ -39,10 +42,7 @@ class Groovy6072Bug extends GroovyTestCase {
                 assert right instanceof BinaryExpression
             })
             def expr2 = OhNo | []
-            } catch (MissingMethodException ex) {
-                assert ex.message.contains('or()')
-                // alright, what we wanted to test has gone
-            }
         '''
+        assert err.message.contains('No signature of static method: or for class: OhNo')
     }
 }
