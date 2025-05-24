@@ -48,8 +48,9 @@ import java.util.stream.Stream;
  * methods and classes.
  */
 public class IndyInterface {
-    private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 10_000L);
-    private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 10_000L);
+    private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 1_000L);
+    private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 1_000L);
+    private static final long INDY_FALLBACK_CUTOFF = SystemUtil.getLongSafe("groovy.indy.fallback.cutoff", 100L);
 
     /**
      * flags for method and property calls
@@ -327,8 +328,15 @@ public class IndyInterface {
         }
 
         if (mhw.isCanSetTarget() && (callSite.getTarget() != mhw.getTargetMethodHandle()) && (mhw.getLatestHitCount() > INDY_OPTIMIZE_THRESHOLD)) {
-            callSite.setTarget(mhw.getTargetMethodHandle());
-            if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
+            if (callSite.getFallbackRound().get() > INDY_FALLBACK_CUTOFF) {
+                if (callSite.getTarget() != callSite.getDefaultTarget()) {
+                    // reset the call site target to default forever to avoid JIT deoptimization storm further
+                    callSite.setTarget(callSite.getDefaultTarget());
+                }
+            } else {
+                callSite.setTarget(mhw.getTargetMethodHandle());
+                if (LOG_ENABLED) LOG.info("call site target set, preparing outside invocation");
+            }
 
             mhw.resetLatestHitCount();
         }
