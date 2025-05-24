@@ -18,24 +18,29 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Testing BuilderSupport and reveal how calling methods on it result in implementation callbacks.
  * Using the SpoofBuilder (see below) to call it in various ways and analyze the "spoofed" logs.
  * This is especially useful when designing subclasses of BuilderSupport.
  */
-class BuilderSupportTest extends GroovyTestCase{
+final class BuilderSupportTest {
+
+    @Test
     void testSimpleNode() {
         def b = new SpoofBuilder()
         assert b.log == []
         def node = b.foo()
         assert b.log == [  'create_with_name','foo',
-                           'node_completed',null, node, 
+                           'node_completed',null, node,
                            'post_node_completion',null, node
                         ]
     }
 
+    @Test
     void testSimpleNodeWithValue() {
         def b = new SpoofBuilder()
         def node = b.foo('value')
@@ -45,17 +50,19 @@ class BuilderSupportTest extends GroovyTestCase{
                         ]
     }
 
+    @Test
     void testSimpleNodeWithOneAttribute() {
         def b = new SpoofBuilder()
         def node = b.foo(name:'value')
         assert b.log == [
-                           'create_with_name_and_map','foo', 
-                           'name','value', 
+                           'create_with_name_and_map','foo',
+                           'name','value',
                            'node_completed',null,'x',
                            'post_node_completion',null, 'x'
                         ]
     }
 
+    @Test
     void testSimpleNodeWithClosure() {
         def b = new SpoofBuilder()
         b.foo(){
@@ -72,66 +79,75 @@ class BuilderSupportTest extends GroovyTestCase{
             ]
     }
 
+    @Test
     void testSimpleNodeWithOneAttributeAndValue() {
         def b = new SpoofBuilder()
         def node = b.foo(bar:'baz', 'value')
         assert b.log == [
-                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value',
                           'node_completed',null,node,
                           'post_node_completion',null, node
                         ]
     }
 
+    @Test
     void testSimpleNodeWithValueAndOneAttribute() {
         def b = new SpoofBuilder()
         def node = b.foo('value', bar:'baz')
         assert b.log == [
-                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value',
                           'node_completed',null,node,
                           'post_node_completion',null, node
                         ]
     }
 
+    @Test
     void testSimpleNodeWithOneAttributeAndValueAndClosure() {
         def b = new SpoofBuilder()
         def node = b.foo(bar:'baz', 'value') { 1 }
         assert b.log == [
-                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value',
                           'node_completed',null,node,
                           'post_node_completion',null, node
                         ]
     }
 
+    @Test
     void testSimpleNodeWithValueAndOneAttributeAndClosure() {
         def b = new SpoofBuilder()
         def node = b.foo('value', bar:'baz') { 1 }
         assert b.log == [
-                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 
+                          'create_with_name_map_and_value', 'foo', 'bar', 'baz','value',
                           'node_completed',null,node,
                           'post_node_completion',null, node
                         ]
     }
 
+    @Test
     void testSimpleNodeTwoValues() {
         def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2')})
     }
 
+    @Test
     void testSimpleNodeTwoValuesClosure() {
         def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2') { 1 } })
     }
 
+    @Test
     void testSimpleNodeThreeValues() {
         def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2', 'arg3') })
     }
 
+    @Test
     void testSimpleNodeFourValues() {
         def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2', 'arg3', 'arg4') })
     }
 
+    @Test
     void testNestedMethodCallsResolution() {
         def b = new SpoofBuilder()
         b.outest {
@@ -139,7 +155,7 @@ class BuilderSupportTest extends GroovyTestCase{
                 nestedBuilderCall(b)
             }
         }
-        assert b.log.contains('inner') 
+        assert b.log.contains('inner')
     }
 
     void nestedBuilderCall(builder) {
@@ -147,49 +163,50 @@ class BuilderSupportTest extends GroovyTestCase{
     }
 
     // GROOVY-3341
+    @Test
     void testSimpleNodeWithClosureThatThrowsAMissingMethodException() {
       def builder = new SpoofBuilder()
-      String errorMessage = shouldFail(MissingMethodException, {
+      String errorMessage = shouldFail(MissingMethodException) {
           builder.a {
               b {
                   error('xy'.foo())
               }
           }
-      })
-      assert errorMessage.contains('No signature of method: java.lang.String.foo()')
+      }
+      assert errorMessage.contains('No signature of method: foo for class: java.lang.String')
   }
 }
 
 /**
-    The SpoofBuilder is a sample instance of the abstract BuilderSupport class
-    that does nothing but logging how it was called, returning 'x' for each node.
-**/
-class SpoofBuilder extends BuilderSupport{
+ * The SpoofBuilder is a sample instance of the abstract BuilderSupport class
+ * that does nothing but logging how it was called, returning 'x' for each node.
+ */
+class SpoofBuilder extends BuilderSupport {
     def log = []
 
-    protected void setParent(Object parent, Object child){
+    protected void setParent(Object parent, Object child) {
         log << "set_parent"
         log << parent
         log << child
     }
-    protected Object createNode(Object name){
+    protected Object createNode(Object name) {
         log << 'create_with_name'
         log <<  name
         return 'x'
     }
-    protected Object createNode(Object name, Object value){
+    protected Object createNode(Object name, Object value) {
         log << 'create_with_name_and_value'
         log << name
         log << value
         return 'x'
     }
-    protected Object createNode(Object name, Map attributes){
+    protected Object createNode(Object name, Map attributes) {
         log << 'create_with_name_and_map'
         log << name
         attributes.each{entry -> log << entry.key; log << entry.value}
         return 'x'
     }
-    protected Object createNode(Object name, Map attributes, Object value){
+    protected Object createNode(Object name, Map attributes, Object value) {
         log << 'create_with_name_map_and_value'
         log << name
         attributes.each{entry -> log << entry.key; log << entry.value}
@@ -201,7 +218,6 @@ class SpoofBuilder extends BuilderSupport{
         log << parent
         log << node
     }
-
     protected Object postNodeCompletion(Object parent, Object node) {
         log << 'post_node_completion'
         log << parent
