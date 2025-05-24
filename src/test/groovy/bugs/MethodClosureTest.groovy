@@ -81,7 +81,7 @@ final class MethodClosureTest {
         '''
     }
 
-    // GROOVY-9140
+    // GROOVY-9140, GROOVY-11676
     @Test
     void testMethodClosureWithoutThis() {
         String base = '''
@@ -96,13 +96,15 @@ final class MethodClosureTest {
             assert result == 11
         '''
 
-        shouldFail MissingMethodException, base + '''
+        def err = shouldFail MissingMethodException, base + '''
             closure()
         '''
+        assert err =~ /No signature of method: m for class: C is applicable for argument types: \(\) values: \[\]/
 
-        shouldFail MissingMethodException, base + '''
+        /**/err = shouldFail MissingMethodException, base + '''
             closure("")
         '''
+        assert err =~ /No signature of method: m for class: C is applicable for argument types: \(String\) values: \[\]/
     }
 
     @Test
