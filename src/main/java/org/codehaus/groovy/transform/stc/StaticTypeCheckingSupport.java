@@ -1537,6 +1537,14 @@ public abstract class StaticTypeCheckingSupport {
                 }
                 return true; // incompatible
             }
+            if (!fixedPlaceHolders.contains(entry.getKey())
+                    && !resolved.isPlaceholder() && !resolved.isWildcard()
+                    && !candidate.isPlaceholder() && !candidate.isWildcard()) {
+                // resolved "T=Object" and candidate "T=Object" or "T=String"; or
+                // GROOVY-11664: resolved "T=Class<A>" and candidate "T=Class<B>"
+                ClassNode oldT = resolved.getType(), newT = candidate.getType();
+                resolvedMethodGenerics.put(entry.getKey(), new GenericsType(lowestUpperBound(oldT, newT)));
+            }
         }
 
         connections.keySet().removeAll(fixedPlaceHolders); // GROOVY-10337
