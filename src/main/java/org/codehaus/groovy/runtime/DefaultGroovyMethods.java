@@ -14008,6 +14008,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // subList
+
+    /**
+     * Returns a view of the portion of this list given by the specified range.
+     * <pre class="groovyTestCase">
+     * def nums = [0, 1, 2, 3, 4]
+     * assert nums.subList(1..3) == 1..3
+     * assert nums.subList(0<..<-1) == 1..3
+     * nums.subList(1..3).clear()
+     * assert nums == [0, 4]
+     * </pre>
+     *
+     * @param self  a List
+     * @param range a range
+     * @return a view of the specified range within this list
+     * @since 5.0.0
+     */
+    public static <T> List<T> subList(List<T> self, IntRange range) {
+        Objects.requireNonNull(self);
+        RangeInfo info = range.subListBorders(self.size());
+        Objects.checkFromToIndex(info.from, info.to, self.size());
+        return self.subList(info.from, info.to);
+    }
+
+    //--------------------------------------------------------------------------
     // subMap
 
     /**
