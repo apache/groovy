@@ -488,28 +488,36 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
 
         private Position start;
         private Position end;
-        private int delimeterSize;
+        private int delimiterSize;
 
         public MultiLineRun(int start, int end) throws BadLocationException {
             this(start, end, 2);
         }
 
-        public MultiLineRun(int start, int end, int delimeterSize) throws BadLocationException {
+        public MultiLineRun(int start, int end, int delimiterSize) throws BadLocationException {
             if (start > end) {
                 String msg = "Start offset is after end: ";
                 throw new BadLocationException(msg, start);
             }
-            if (delimeterSize < 1) {
-                String msg = "Delimiters be at least size 1: " + delimeterSize;
+            if (delimiterSize < 1) {
+                String msg = "Delimiters be at least size 1: " + delimiterSize;
                 throw new IllegalArgumentException(msg);
             }
             this.start = styledDocument.createPosition(start);
             this.end = styledDocument.createPosition(end);
-            this.delimeterSize = delimeterSize;
+            this.delimiterSize = delimiterSize;
         }
 
+        public int getDelimiterSize() {
+            return delimiterSize;
+        }
+
+        /**
+         * @deprecated use {@link #getDelimiterSize()} instead
+         */
+        @Deprecated
         public int getDelimeterSize() {
-            return delimeterSize;
+            return getDelimiterSize();
         }
 
         public int end() {
