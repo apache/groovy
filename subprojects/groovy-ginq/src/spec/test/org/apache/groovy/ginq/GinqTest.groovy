@@ -4401,8 +4401,8 @@ class GinqTest {
         }.ast
 
         MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
-        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
-        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ExpressionStatement declareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = declareStatement.getExpression()
         ClosureExpression closureException = declarationExpression.rightExpression
 
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
@@ -4445,8 +4445,8 @@ class GinqTest {
         }.ast
 
         MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
-        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
-        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ExpressionStatement declareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = declareStatement.getExpression()
         ClosureExpression closureException = declarationExpression.rightExpression
 
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
@@ -4489,8 +4489,8 @@ class GinqTest {
         }.ast
 
         MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
-        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
-        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ExpressionStatement declareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = declareStatement.getExpression()
         ClosureExpression closureException = declarationExpression.rightExpression
 
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
@@ -4547,8 +4547,8 @@ class GinqTest {
         }.ast
 
         MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
-        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
-        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ExpressionStatement declareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = declareStatement.getExpression()
         ClosureExpression closureException = declarationExpression.rightExpression
 
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
@@ -4589,8 +4589,8 @@ class GinqTest {
         }.ast
 
         MethodNode methodNode = ast.classes[0].methods.grep(e -> e.name == 'hello')[0]
-        ExpressionStatement delcareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
-        DeclarationExpression declarationExpression = delcareStatement.getExpression()
+        ExpressionStatement declareStatement = ((BlockStatement) methodNode.getCode()).getStatements()[0]
+        DeclarationExpression declarationExpression = declareStatement.getExpression()
         ClosureExpression closureException = declarationExpression.rightExpression
 
         GinqAstBuilder ginqAstBuilder = new GinqAstBuilder(sourceUnit)
