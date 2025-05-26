@@ -476,7 +476,7 @@ public class JavaStubGenerator {
 
                 // GROOVY-5150, GROOVY-10902, GROOVY-10928, GROOVY-11019: dummy value that prevents inlining
                 if (isPrimitiveType(type) || isStringType(type)) {
-                    out.print("new " + getWrapper(type) + "(");
+                    out.print(getWrapper(type) + ".valueOf(");
                     printValue(out, type, defaultValueX(type));
                     out.print(')');
                 } else {

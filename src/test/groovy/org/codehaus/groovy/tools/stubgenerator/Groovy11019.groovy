@@ -44,7 +44,7 @@ final class Groovy11019 extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         String stub = stubJavaSourceFor('G')
-        assert stub.contains("public static final java.lang.String STATIC_STRING = new java.lang.String((java.lang.String)null);")
+        assert stub.contains("public static final java.lang.String STATIC_STRING = java.lang.String.valueOf((java.lang.String)null);")
 
         Object pojo = loader.loadClass('J').getDeclaredConstructor().newInstance()
         assert pojo.m() == 'hello world'

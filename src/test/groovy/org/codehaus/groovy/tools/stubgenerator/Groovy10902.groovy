@@ -26,12 +26,16 @@ final class Groovy10902 extends StringSourcesStubTestCase {
             'G.groovy': '''
                 class G {
                     public static final int DYNAMIC_CONSTANT = (9.9).intValue()
+                    public static final String DYNAMIC_STRING = "a" + "b".toUpperCase()
                 }
             ''',
             'J.java': '''
                 public class J {
                     int m() {
                         return G.DYNAMIC_CONSTANT;
+                    }
+                    String n() {
+                        return G.DYNAMIC_STRING;
                     }
                 }
             ''',
@@ -41,9 +45,11 @@ final class Groovy10902 extends StringSourcesStubTestCase {
     @Override
     void verifyStubs() {
         String stub = stubJavaSourceFor('G')
-        assert stub.contains("public static final int DYNAMIC_CONSTANT = new java.lang.Integer(0);")
+        assert stub.contains("public static final int DYNAMIC_CONSTANT = java.lang.Integer.valueOf(0);")
+        assert stub.contains("public static final java.lang.String DYNAMIC_STRING = java.lang.String.valueOf((java.lang.String)null);")
 
         Object pojo = loader.loadClass('J').getDeclaredConstructor().newInstance()
         assert pojo.m() == 9
+        assert pojo.n() == 'aB'
     }
 }
