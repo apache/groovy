@@ -38,7 +38,7 @@ public class Dates {
     }
 
     private static Date internalDate(TimeZone tz, int year, int month, int day, int hour,
-                                     int minute, int second, int miliseconds) {
+                                     int minute, int second, int milliseconds) {
 
         Calendar calendar = Calendar.getInstance();
 
@@ -48,7 +48,7 @@ public class Dates {
         calendar.set(Calendar.HOUR_OF_DAY, hour);
         calendar.set(Calendar.MINUTE, minute);
         calendar.set(Calendar.SECOND, second);
-        calendar.set(Calendar.MILLISECOND, miliseconds);
+        calendar.set(Calendar.MILLISECOND, milliseconds);
 
         calendar.setTimeZone(tz);
 
@@ -61,8 +61,8 @@ public class Dates {
     }
 
     public static Date toDate(TimeZone tz, int year, int month, int day,
-                              int hour, int minute, int second, int miliseconds) {
-        return internalDate(tz, year, month, day, hour, minute, second, miliseconds);
+                              int hour, int minute, int second, int milliseconds) {
+        return internalDate(tz, year, month, day, hour, minute, second, milliseconds);
     }
 
     static final int SHORT_ISO_8601_TIME_LENGTH = "1994-11-05T08:15:30Z".length();
@@ -109,11 +109,11 @@ public class Dates {
 
                 int second = CharScanner.parseIntFromTo(charArray, from + 17, from + 19);
 
-                int miliseconds = CharScanner.parseIntFromTo(charArray, from + 20, from + 23);
+                int milliseconds = CharScanner.parseIntFromTo(charArray, from + 20, from + 23);
 
                 TimeZone tz = TimeZone.getTimeZone("GMT");
 
-                return toDate(tz, year, month, day, hour, minute, second, miliseconds);
+                return toDate(tz, year, month, day, hour, minute, second, milliseconds);
             } else {
                 return null;
             }
