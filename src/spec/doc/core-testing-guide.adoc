@@ -630,7 +630,7 @@ that exists in the background:
 class SearchTests extends geb.junit4.GebTest {
 
     @Test
-    void executeSeach() {
+    void executeSearch() {
         go 'http://somehost/mayapp/search'              // <1>
         $('#searchField').text = 'John Doe'             // <2>
         $('#searchButton').click()                      // <3>
