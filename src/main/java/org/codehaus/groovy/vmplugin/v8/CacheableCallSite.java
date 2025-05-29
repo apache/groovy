@@ -41,12 +41,13 @@ import java.util.logging.Logger;
  * @since 3.0.0
  */
 public class CacheableCallSite extends MutableCallSite {
-    private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 4);
+    private static final int CACHE_SIZE = SystemUtil.getIntegerSafe("groovy.indy.callsite.cache.size", 8);
     private static final float LOAD_FACTOR = 0.75f;
     private static final int INITIAL_CAPACITY = (int) Math.ceil(CACHE_SIZE / LOAD_FACTOR) + 1;
     private final MethodHandles.Lookup lookup;
     private volatile SoftReference<MethodHandleWrapper> latestHitMethodHandleWrapperSoftReference = null;
     private final AtomicLong fallbackCount = new AtomicLong();
+    private final AtomicLong fallbackRound = new AtomicLong();
     private MethodHandle defaultTarget;
     private MethodHandle fallbackTarget;
     private final Map<String, SoftReference<MethodHandleWrapper>> lruCache =
@@ -119,6 +120,11 @@ public class CacheableCallSite extends MutableCallSite {
 
     public void resetFallbackCount() {
         fallbackCount.set(0);
+        fallbackRound.incrementAndGet();
+    }
+
+    public AtomicLong getFallbackRound() {
+        return fallbackRound;
     }
 
     public MethodHandle getDefaultTarget() {
