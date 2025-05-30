@@ -59,6 +59,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.NamedVariantASTTransformation.createNamedParam;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
@@ -180,6 +181,9 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
 
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
         createConstructors(cNode, modifiers, map, body, noArg && !properties.isEmpty()/* && !specialNamedArgsCase*/);
+        for (PropertyNode pNode : properties) {
+            map.addAnnotation(createNamedParam(pNode.getName(), pNode.getType(), false));
+        }
     }
 
     private static void createConstructors(final ClassNode cNode, final int mods, final Parameter args, final Statement body, final boolean noArg) {

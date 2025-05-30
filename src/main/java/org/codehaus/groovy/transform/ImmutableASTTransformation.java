@@ -74,11 +74,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.isTrueX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.neX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.orX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.transform.NamedVariantASTTransformation.createNamedParam;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -303,13 +305,18 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
                 varX("this", cNode)
         )));
 
+        Parameter map = param(ClassHelper.MAP_TYPE.getPlainNodeReference(), "map");
         addGeneratedMethod(cNode,
             "copyWith",
             ACC_PUBLIC | ACC_FINAL,
             cNode.getPlainNodeReference(),
-            params(new Parameter(new ClassNode(Map.class), "map")),
+            params(map),
             null,
             body);
+
+        for (PropertyNode pNode : pList) {
+            map.addAnnotation(createNamedParam(pNode.getName(), pNode.getType(), false));
+        }
     }
 
     /**
