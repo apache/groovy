@@ -1062,14 +1062,14 @@ type of the dynamic call is a `Robot`, subsequent calls will be done statically!
 
 Some would wonder why the static compiler doesn't do this by default without an extension. It is a design decision:
 
-* if the code is statically compiled, we normally want type safety and best performance
-* so if unrecognized variables/method calls are made dynamic, you loose type safety, but also all support for typos at
-compile time!
+* if the code is statically compiled, we normally want type safety and the best performance
+* if unrecognized variables/method calls are made dynamic, you lose type safety, but also all support for catching typos
+at compile time!
 
 In short, if you want to have mixed mode compilation, it *has* to be explicit, through a type checking extension, so
 that the compiler, and the designer of the DSL, are totally aware of what they are doing.
 
-`makeDynamic` can be used on 3 kind of AST nodes:
+`makeDynamic` can be used on 3 kinds of AST nodes:
 
 * a method node (`MethodNode`)
 * a variable (`VariableExpression`)
