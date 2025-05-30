@@ -1150,4 +1150,34 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
             assert result > 2.5066
         '''
     }
+
+    // GROOVY-11684
+    void testImmutableCopyWith() {
+        shouldFailWithMessages '''
+            import groovy.transform.Immutable
+            @Immutable(copyWith = true)
+            class Person {
+                String name
+                int age
+            }
+            def p1 = new Person(name: 'Frank', age: 21)
+            def p2 = p1.copyWith(first: 'Bruce')
+        ''',
+            '[Static type checking] - unexpected named arg: first'
+    }
+
+    // GROOVY-11684
+    void testMapConstructor() {
+        shouldFailWithMessages '''
+            import groovy.transform.Immutable
+            @Immutable
+            class Person {
+                String name
+                int age
+            }
+            new Person(last: 'Spencer')
+        ''',
+            '[Static type checking] - unexpected named arg: last'
+    }
+
 }
