@@ -51,7 +51,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -62,6 +61,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Vector;
@@ -387,7 +387,7 @@ public class Groovy extends Java {
                         File file = ((FileResource) src).getFile();
                         createClasspath().add(new Path(getProject(), file.getParentFile().getCanonicalPath()));
                         if (encoding != null && !encoding.isEmpty()) {
-                            reader = new LineNumberReader(new InputStreamReader(new FileInputStream(file), encoding));
+                            reader = new LineNumberReader(new InputStreamReader(Files.newInputStream(file.toPath()), encoding));
                         } else {
                             reader = new CharsetToolkit(file).getReader();
                         }

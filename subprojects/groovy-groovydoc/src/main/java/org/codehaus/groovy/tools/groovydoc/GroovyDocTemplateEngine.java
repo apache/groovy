@@ -27,11 +27,12 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -153,7 +154,7 @@ public class GroovyDocTemplateEngine {
             OutputStream outputStream = null;
             try {
                 InputStream inputStream = ((ClasspathResourceManager) resourceManager).getInputStream(template);
-                outputStream = new FileOutputStream(destFileName);
+                outputStream = Files.newOutputStream(Paths.get(destFileName));
                 IOGroovyMethods.leftShift(outputStream, inputStream);
             } catch (IOException e) {
                 System.err.println("Resource " + template + " skipped due to: " + e.getMessage());

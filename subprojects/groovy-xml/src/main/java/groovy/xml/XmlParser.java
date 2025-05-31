@@ -37,11 +37,11 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -179,7 +179,7 @@ public class XmlParser implements ContentHandler {
      *                      supplied by the application.
      */
     public Node parse(File file) throws IOException, SAXException {
-        InputSource input = new InputSource(new FileInputStream(file));
+        InputSource input = new InputSource(Files.newInputStream(file.toPath()));
         input.setSystemId("file://" + file.getAbsolutePath());
         getXMLReader().parse(input);
         return parent;

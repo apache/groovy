@@ -21,13 +21,12 @@ package groovy.servlet;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import groovy.text.TemplateEngine;
-
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,6 +34,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Date;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -302,7 +302,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         //
         if (template == null) {
             try {
-                template = createAndStoreTemplate(key, new FileInputStream(file), file);
+                template = createAndStoreTemplate(key, Files.newInputStream(file.toPath()), file);
             } catch (Exception e) {
                 throw new ServletException("Creation of template failed: " + e, e);
             }

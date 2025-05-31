@@ -23,13 +23,13 @@ import groovy.util.CharsetToolkit;
 import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 
 /**
  * A template engine is a factory for creating a Template instance for a given text input.
@@ -63,7 +63,7 @@ public abstract class TemplateEngine {
      * Creates a template from the File contents using the given charset encoding.
      */
     public Template createTemplate(File file, Charset cs) throws CompilationFailedException, ClassNotFoundException, IOException {
-        try (Reader reader = new InputStreamReader(new FileInputStream(file), cs)) {
+        try (Reader reader = new InputStreamReader(Files.newInputStream(file.toPath()), cs)) {
             return createTemplate(reader);
         }
     }
