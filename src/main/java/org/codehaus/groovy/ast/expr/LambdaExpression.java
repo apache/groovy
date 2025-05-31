@@ -49,7 +49,7 @@ public class LambdaExpression extends ClosureExpression {
     @Override
     public String getText() {
         String paramText = AstToTextHelper.getParametersText(this.getParameters());
-        if (paramText.length() > 0) {
+        if (!paramText.isEmpty()) {
             return "(" + paramText + ") -> { ... }";
         } else {
             return "() -> { ... }";

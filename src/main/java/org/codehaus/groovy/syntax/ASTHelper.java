@@ -67,7 +67,7 @@ public class ASTHelper {
 
     public PackageNode setPackage(String packageName, List<AnnotationNode> annotations) {
         this.packageName = packageName;
-        if (packageName != null && packageName.length() > 0) {
+        if (packageName != null && !packageName.isEmpty()) {
             packageName += '.';
         }
         PackageNode packageNode = new PackageNode(packageName);
@@ -102,7 +102,7 @@ public class ASTHelper {
      * @param name typically a simple unqualified class name
      */
     public static String dot(String base, String name) {
-        if (base != null && base.length() > 0) {
+        if (base != null && !base.isEmpty()) {
             return base + "." + name;
         }
         return name;

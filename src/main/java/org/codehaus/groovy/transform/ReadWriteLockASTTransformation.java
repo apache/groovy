@@ -102,7 +102,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
     }
 
     private FieldNode determineLock(String value, ClassNode targetClass, boolean isStatic, String myTypeName) {
-        if (value != null && value.length() > 0 && !value.equalsIgnoreCase(DEFAULT_INSTANCE_LOCKNAME)) {
+        if (value != null && !value.isEmpty() && !value.equalsIgnoreCase(DEFAULT_INSTANCE_LOCKNAME)) {
             FieldNode existingLockField = targetClass.getDeclaredField(value);
             if (existingLockField == null) {
                 addError("Error during " + myTypeName + " processing: lock field with name '" + value + "' not found in class " + targetClass.getName(), targetClass);

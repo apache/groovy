@@ -87,7 +87,7 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
 
     private boolean hasAnnotation(MethodNode methodNode, ClassNode annotation) {
         List annots = methodNode.getAnnotations(annotation);
-        return annots != null && annots.size() > 0;
+        return annots != null && !annots.isEmpty();
     }
 
     private void transformToIteration(MethodNode method, SourceUnit source) {

@@ -68,7 +68,7 @@ public class SourceText {
                 lineOffsets.add(countLeadingWhitespace(lineText));
 
             lineText = lineText.trim();
-            if (line != stat.getLastLineNumber() && lineText.length() > 0)
+            if (line != stat.getLastLineNumber() && !lineText.isEmpty())
                 lineText += ' ';
             normalizedTextBuffer.append(lineText);
             textOffsets.add(normalizedTextBuffer.length());

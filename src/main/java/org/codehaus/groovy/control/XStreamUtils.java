@@ -29,7 +29,7 @@ import java.net.URI;
 public abstract class XStreamUtils {
 
     public static void serialize(final String name, final Object ast) {
-        if (name == null || name.length() == 0) return;
+        if (name == null || name.isEmpty()) return;
 
         XStream xstream = new XStream(new StaxDriver());
         FileWriter astFileWriter = null;

@@ -1242,7 +1242,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * Either the first or second letter must be upperCase for that to be true.
      */
     private static boolean isPropertyName(String name) {
-        return ((name.length() > 0) && Character.isUpperCase(name.charAt(0))) || ((name.length() > 1) && Character.isUpperCase(name.charAt(1)));
+        return ((!name.isEmpty()) && Character.isUpperCase(name.charAt(0))) || ((name.length() > 1) && Character.isUpperCase(name.charAt(1)));
     }
 
     /**
@@ -1253,7 +1253,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @return True if it is a javabean property method
      */
     private boolean isGetter(String name, CachedClass[] args) {
-        if (name == null || name.length() == 0 || args == null) return false;
+        if (name == null || name.isEmpty() || args == null) return false;
         if (args.length != 0) return false;
 
         if (name.startsWith("get")) {
@@ -1274,7 +1274,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @return The property name equivalent
      */
     private String getPropertyForGetter(String getterName) {
-        if (getterName == null || getterName.length() == 0) return null;
+        if (getterName == null || getterName.isEmpty()) return null;
 
         if (getterName.startsWith("get")) {
             String prop = getterName.substring(3);
@@ -1294,7 +1294,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * @return The property name equivalent
      */
     public String getPropertyForSetter(String setterName) {
-        if (setterName == null || setterName.length() == 0) return null;
+        if (setterName == null || setterName.isEmpty()) return null;
 
         if (setterName.startsWith("set")) {
             String prop = setterName.substring(3);
@@ -1304,7 +1304,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     public boolean isSetter(String name, CachedClass[] args) {
-        if (name == null || name.length() == 0 || args == null) return false;
+        if (name == null || name.isEmpty() || args == null) return false;
 
         if (name.startsWith("set")) {
             if (args.length != 1) return false;

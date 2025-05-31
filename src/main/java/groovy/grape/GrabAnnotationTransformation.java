@@ -243,7 +243,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 for (AnnotationNode node : grabResolverAnnotations) {
                     Map<String, Object> grabResolverMap = new HashMap<String, Object>();
                     String sval = getMemberStringValue(node, "value");
-                    if (sval != null && sval.length() > 0) {
+                    if (sval != null && !sval.isEmpty()) {
                         for (String s : GRABRESOLVER_REQUIRED) {
                             String mval = getMemberStringValue(node, s);
                             if (mval != null && mval.isEmpty()) mval = null;

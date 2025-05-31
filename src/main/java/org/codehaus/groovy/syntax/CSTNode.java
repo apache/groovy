@@ -406,7 +406,7 @@ public abstract class CSTNode {
             }
         }
 
-        if (indent.length() > 0) {
+        if (!indent.isEmpty()) {
             writer.println(")");
         } else {
             writer.print(")");

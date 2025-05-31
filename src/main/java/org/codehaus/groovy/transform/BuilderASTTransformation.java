@@ -162,7 +162,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
                 }
             }
             if (memberValue != null) {
-                String message = extraMessage.length() == 0 ? "" : " " + extraMessage;
+                String message = extraMessage.isEmpty() ? "" : " " + extraMessage;
                 transform.addError("Error during " + MY_TYPE_NAME + " processing: Annotation attribute '" + memberName + "' not supported by " + getClass().getName() + message, anno);
                 return true;
             }

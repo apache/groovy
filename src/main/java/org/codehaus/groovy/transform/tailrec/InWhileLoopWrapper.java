@@ -54,7 +54,7 @@ public class InWhileLoopWrapper {
 
         WhileStatement whileLoop = new WhileStatement(boolX(constX(true)), block(new VariableScope(method.getVariableScope()), tryCatchStatement));
         List<Statement> whileLoopStatements = ((BlockStatement) whileLoop.getLoopBlock()).getStatements();
-        if (whileLoopStatements.size() > 0) whileLoopStatements.get(0).setStatementLabel(LOOP_LABEL);
+        if (!whileLoopStatements.isEmpty()) whileLoopStatements.get(0).setStatementLabel(LOOP_LABEL);
         BlockStatement newBody = block(new VariableScope(method.getVariableScope()));
         newBody.addStatement(whileLoop);
         method.setCode(newBody);

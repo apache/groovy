@@ -883,6 +883,6 @@ public class Node implements Serializable, Cloneable {
 
     private boolean textIsEmptyOrNull() {
         String t = text();
-        return null == t || 0 == t.length();
+        return null == t || t.isEmpty();
     }
 }

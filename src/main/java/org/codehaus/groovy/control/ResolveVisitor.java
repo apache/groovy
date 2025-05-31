@@ -1061,7 +1061,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private static boolean testVanillaNameForClass(final String name) {
-        if (name == null || name.length() == 0) return false;
+        if (name == null || name.isEmpty()) return false;
         return !Character.isLowerCase(name.charAt(0));
     }
 

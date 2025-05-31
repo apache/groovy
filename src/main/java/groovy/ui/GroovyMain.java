@@ -283,7 +283,7 @@ public class GroovyMain {
 
             main.processSockets = port != null;
             if (main.processSockets) {
-                String p = port.trim().length() > 0 ? port : "1960"; // default port to listen to
+                String p = !port.trim().isEmpty() ? port : "1960"; // default port to listen to
                 main.port = Integer.parseInt(p);
             }
 

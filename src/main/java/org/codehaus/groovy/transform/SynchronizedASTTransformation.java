@@ -77,7 +77,7 @@ public class SynchronizedASTTransformation extends AbstractASTTransformation {
 
     private String determineLock(String value, ClassNode cNode, MethodNode mNode) {
         boolean isStatic = mNode.isStatic();
-        if (value != null && value.length() > 0 && !"$lock".equalsIgnoreCase(value)) {
+        if (value != null && !value.isEmpty() && !"$lock".equalsIgnoreCase(value)) {
             if (cNode.getDeclaredField(value) == null) {
                 addError("Error during " + MY_TYPE_NAME + " processing: lock field with name '" + value + "' not found in class " + cNode.getName(), mNode);
                 return null;

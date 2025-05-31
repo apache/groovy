@@ -168,7 +168,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 
     static boolean isSpecialNamedArgCase(final List<PropertyNode> list, final boolean checkSize) {
         if (checkSize && list.size() != 1) return false;
-        if (list.size() == 0) return false;
+        if (list.isEmpty()) return false;
         ClassNode firstParamType = list.get(0).getField().getType();
         if (firstParamType.equals(ClassHelper.MAP_TYPE)) {
             return true;

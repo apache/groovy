@@ -113,7 +113,7 @@ public class LoaderConfiguration {
                 line = line.trim();
                 lineNumber++;
 
-                if (line.startsWith("#") || line.length() == 0) continue;
+                if (line.startsWith("#") || line.isEmpty()) continue;
 
                 if (line.startsWith(LOAD_PREFIX)) {
                     String loadPath = line.substring(LOAD_PREFIX.length()).trim();
@@ -204,7 +204,7 @@ public class LoaderConfiguration {
         int index = propertyIndexEnd + 1;
         if (index < str.length() && str.charAt(index) == '/' &&
                 propertyValue.endsWith("/") &&
-                propertyValue.length() > 0) {
+                !propertyValue.isEmpty()) {
             propertyValue = propertyValue.substring(0, propertyValue.length() - 1);
         }
         return propertyValue;

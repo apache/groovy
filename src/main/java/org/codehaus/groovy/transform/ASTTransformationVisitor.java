@@ -293,7 +293,7 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                     Set<String> disabledGlobalTransforms = compilationUnit.getConfiguration().getDisabledGlobalASTTransformations();
                     if (disabledGlobalTransforms == null) disabledGlobalTransforms = Collections.emptySet();
                     while (className != null) {
-                        if (!className.startsWith("#") && className.length() > 0) {
+                        if (!className.startsWith("#") && !className.isEmpty()) {
                             if (!disabledGlobalTransforms.contains(className)) {
                                 if (transformNames.containsKey(className)) {
                                     try {

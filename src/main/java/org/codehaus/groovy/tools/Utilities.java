@@ -63,14 +63,14 @@ public abstract class Utilities
      * Tells if the given string is a valid Java identifier.
      */
     public static boolean isJavaIdentifier(String name) {
-        if (name.length() == 0 || INVALID_JAVA_IDENTIFIERS.contains(name)) return false;
+        if (name.isEmpty() || INVALID_JAVA_IDENTIFIERS.contains(name)) return false;
         char[] chars = name.toCharArray();
         if (!Character.isJavaIdentifierStart(chars[0])) return false;
         for (int i = 1; i < chars.length; i++ ) {
             if (!Character.isJavaIdentifierPart(chars[i])) return false;
         }
         return true;
-    }    
+    }
 
     private static String eol = System.lineSeparator();
 

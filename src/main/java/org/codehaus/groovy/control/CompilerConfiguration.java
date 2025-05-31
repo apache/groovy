@@ -903,7 +903,7 @@ public class CompilerConfiguration {
     }
 
     private void setTargetDirectorySafe(final String directory) {
-        if (directory != null && directory.length() > 0) {
+        if (directory != null && !directory.isEmpty()) {
             this.targetDirectory = new File(directory);
         } else {
             this.targetDirectory = null;

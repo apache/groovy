@@ -37,7 +37,7 @@ public class GrapeUtil {
         if (parts.length > 3) result.put("classifier", parts[3]);
         if (parts.length > 2) result.put("version", parts[2]);
         else result.put("version", "*");
-        if (ext.length() > 0) result.put("ext", ext);
+        if (!ext.isEmpty()) result.put("ext", ext);
         if (parts.length > 1) result.put("module", parts[1]);
         if (parts.length > 0) result.put("group", parts[0]);
         return result;

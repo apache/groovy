@@ -179,7 +179,7 @@ public class QName implements Serializable {
 
         } else if (o instanceof String) {
             final String string = (String)o;
-            if (string.length() == 0) return false;
+            if (string.isEmpty()) return false;
             int lastColonIndex = string.lastIndexOf(':');
             if (lastColonIndex < 0 || lastColonIndex == string.length() - 1) return false;
             final String stringPrefix = string.substring(0,lastColonIndex);
@@ -219,10 +219,10 @@ public class QName implements Serializable {
             return localPart.equals(qName.localPart) || "*".equals(localPart) || "*".equals(qName.localPart);
         } else if (o instanceof String) {
             final String string = (String)o;
-            if (string.length() == 0) return false;
+            if (string.isEmpty()) return false;
             // try matching against 'prefix:localname'
             int lastColonIndex = string.lastIndexOf(':');
-            if (lastColonIndex < 0 && prefix.length() == 0) return string.equals(localPart);
+            if (lastColonIndex < 0 && prefix.isEmpty()) return string.equals(localPart);
             if (lastColonIndex < 0 || lastColonIndex == string.length() - 1) return false;
             final String stringPrefix = string.substring(0,lastColonIndex);
             final String stringLocalPart = string.substring(lastColonIndex + 1);

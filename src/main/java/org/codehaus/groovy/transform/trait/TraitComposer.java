@@ -574,7 +574,7 @@ public abstract class TraitComposer {
         if (!getter && params.length!=1) {
             return false;
         }
-        if (propertyName.length()==0) {
+        if (propertyName.isEmpty()) {
             return false;
         }
         propertyName = MetaClassHelper.convertPropertyName(propertyName);

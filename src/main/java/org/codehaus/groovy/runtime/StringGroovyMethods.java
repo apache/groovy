@@ -3098,7 +3098,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String stripMargin(final CharSequence self, final CharSequence marginChar) {
         String mc = marginChar.toString();
-        if (mc.length() == 0) return stripMargin(self, '|');
+        if (mc.isEmpty()) return stripMargin(self, '|');
         // TODO IllegalArgumentException for marginChar.length() > 1 ? Or support String as marker?
         return stripMargin(self, mc.charAt(0));
     }

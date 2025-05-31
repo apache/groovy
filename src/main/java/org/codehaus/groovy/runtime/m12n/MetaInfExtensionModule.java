@@ -83,7 +83,7 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
         for (String extensionClass : extensionClasses) {
             try {
                 extensionClass = extensionClass.trim();
-                if (extensionClass.length() > 0) {
+                if (!extensionClass.isEmpty()) {
                     instanceClasses.add(loader.loadClass(extensionClass));
                 }
             } catch (ClassNotFoundException | NoClassDefFoundError | UnsupportedClassVersionError e) {

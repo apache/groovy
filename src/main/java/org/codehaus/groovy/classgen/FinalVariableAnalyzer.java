@@ -448,7 +448,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             return false;
         }
         BlockStatement bs = (BlockStatement) block;
-        if (bs.getStatements().size() == 0) {
+        if (bs.getStatements().isEmpty()) {
             return false;
         }
         Statement last = DefaultGroovyMethods.last(bs.getStatements());
@@ -469,7 +469,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             return false;
         }
         BlockStatement block = (BlockStatement) statement; // currently only possibility
-        if (block.getStatements().size() == 0) {
+        if (block.getStatements().isEmpty()) {
             return true;
         }
         Statement last = DefaultGroovyMethods.last(block.getStatements());
