@@ -95,9 +95,9 @@ import static org.codehaus.groovy.ast.tools.ClosureUtils.getParametersSafe;
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // note: BigInteger and BigDecimal are also imported by default
-    // `java.util` is used much frequently than other two java packages(`java.io` and `java.net`), so place java.util before the two packages
-    public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.util.", "java.io.", "java.net.", "groovy.lang.", "groovy.util."};
-    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    // `java.util` is used much frequently, so place it before `java.io`, et al.
+    public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.util.", "java.io.", "java.net.", "java.time.", "groovy.lang.", "groovy.util."};
+    public static final String[] EMPTY_STRING_ARRAY = {};
     public static final String QUESTION_MARK = "?";
 
     private final CompilationUnit compilationUnit;
