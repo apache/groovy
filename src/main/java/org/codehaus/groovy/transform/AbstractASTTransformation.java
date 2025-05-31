@@ -279,57 +279,57 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
     }
 
     public static boolean shouldSkipOnDescriptorUndefinedAware(boolean checkReturn, Map genericsSpec, MethodNode mNode,
-                                                  List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
+                                                               List<ClassNode> excludeTypes, List<ClassNode> includeTypes) {
         String descriptor = mNode.getTypeDescriptor();
         String descriptorNoReturn = MethodNodeUtils.methodDescriptorWithoutReturnType(mNode);
-        if (excludeTypes != null) {
-            for (ClassNode cn : excludeTypes) {
-                List<ClassNode> remaining = new LinkedList<>();
-                remaining.add(cn);
-                Map updatedGenericsSpec = new HashMap(genericsSpec);
-                while (!remaining.isEmpty()) {
-                    ClassNode next = remaining.remove(0);
-                    if (!isObjectType(next)) {
-                        updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
-                        for (MethodNode mn : next.getMethods()) {
-                            MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
-                            if (checkReturn) {
-                                String md = correctedMethodNode.getTypeDescriptor();
-                                if (md.equals(descriptor)) return true;
-                            } else {
-                                String md = MethodNodeUtils.methodDescriptorWithoutReturnType(correctedMethodNode);
-                                if (md.equals(descriptorNoReturn)) return true;
-                            }
-                        }
-                        remaining.addAll(Arrays.asList(next.getInterfaces()));
-                    }
-                }
-            }
+
+        // Check excludes first - if any match is found, we should skip
+        if (excludeTypes != null && hasMatchingMethodDescriptor(checkReturn, genericsSpec, descriptor, descriptorNoReturn, excludeTypes)) {
+            return true;
         }
-        if (includeTypes == null) return false;
-        for (ClassNode cn : includeTypes) {
+
+        // Then check includes - if any defined but none match, we should skip
+        if (includeTypes != null && !hasMatchingMethodDescriptor(checkReturn, genericsSpec, descriptor, descriptorNoReturn, includeTypes)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static boolean hasMatchingMethodDescriptor(boolean checkReturn, Map genericsSpec, String descriptor,
+                                                       String descriptorNoReturn, List<ClassNode> types) {
+        for (ClassNode cn : types) {
             List<ClassNode> remaining = new LinkedList<>();
             remaining.add(cn);
             Map updatedGenericsSpec = new HashMap(genericsSpec);
+
             while (!remaining.isEmpty()) {
                 ClassNode next = remaining.remove(0);
                 if (!isObjectType(next)) {
                     updatedGenericsSpec = GenericsUtils.createGenericsSpec(next, updatedGenericsSpec);
                     for (MethodNode mn : next.getMethods()) {
                         MethodNode correctedMethodNode = GenericsUtils.correctToGenericsSpec(updatedGenericsSpec, mn);
+                        String md;
+                        String compareTo;
+
                         if (checkReturn) {
-                            String md = correctedMethodNode.getTypeDescriptor();
-                            if (md.equals(descriptor)) return false;
+                            md = correctedMethodNode.getTypeDescriptor();
+                            compareTo = descriptor;
                         } else {
-                            String md = MethodNodeUtils.methodDescriptorWithoutReturnType(correctedMethodNode);
-                            if (md.equals(descriptorNoReturn)) return false;
+                            md = MethodNodeUtils.methodDescriptorWithoutReturnType(correctedMethodNode);
+                            compareTo = descriptorNoReturn;
+                        }
+
+                        if (md.equals(compareTo)) {
+                            return true; // Found a match
                         }
                     }
                     remaining.addAll(Arrays.asList(next.getInterfaces()));
                 }
             }
         }
-        return true;
+
+        return false; // No match found
     }
 
     protected boolean checkIncludeExcludeUndefinedAware(AnnotationNode node, List<String> excludes, List<String> includes, String typeName) {
