@@ -429,6 +429,23 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11685
+    void testCollect3() {
+        assertScript '''
+            List<Number> test(List<String> strings) {
+                List<Number> numbers = []
+                if (true) {
+                    numbers = strings.collect { string ->
+                        if (!string.isNumber()) return
+                        (Number) Integer.parseInt(string)
+                    }
+                }
+                numbers
+            }
+            assert test(['1','2','3','x']) == [1,2,3,null]
+        '''
+    }
+
     void testWithIntReturnType() {
         assertScript '''
             class Test {
