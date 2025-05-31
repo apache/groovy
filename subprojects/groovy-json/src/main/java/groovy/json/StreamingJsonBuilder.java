@@ -386,7 +386,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             writer.write(JsonOutput.COLON);
             writer.write(generator.toJson(value));
         }
-        StreamingJsonDelegate.cloneDelegateAndGetContent(writer, callable, map.size() == 0, generator);
+        StreamingJsonDelegate.cloneDelegateAndGetContent(writer, callable, map.isEmpty(), generator);
         writer.write(DOUBLE_CLOSE_BRACKET);
     }
 

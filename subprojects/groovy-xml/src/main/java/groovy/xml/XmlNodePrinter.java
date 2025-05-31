@@ -303,7 +303,7 @@ public class XmlNodePrinter {
                         ctx.registerNamespacePrefix(prefix, namespaceUri);
                         out.print(" ");
                         out.print("xmlns");
-                        if (prefix.length() > 0) {
+                        if (!prefix.isEmpty()) {
                             out.print(":");
                             out.print(prefix);
                         }
@@ -344,7 +344,7 @@ public class XmlNodePrinter {
         if (!node.children().isEmpty()) {
             return false;
         }
-        return node.text().length() == 0;
+        return node.text().isEmpty();
     }
 
     protected String getName(Object object) {

@@ -258,7 +258,7 @@ public final class FindReplaceUtility {
         backwards = backwards ? !reverse : reverse;
 
         String pattern = (String) FIND_FIELD.getSelectedItem();
-        if (pattern != null && pattern.length() > 0) {
+        if (pattern != null && !pattern.isEmpty()) {
             try {
                 Document doc = textComponent.getDocument();
                 doc.getText(0, doc.getLength(), SEGMENT);

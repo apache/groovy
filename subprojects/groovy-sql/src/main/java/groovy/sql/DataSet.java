@@ -363,8 +363,8 @@ public class DataSet extends Sql {
         if (where != null) {
             whereClaus += getSqlWhereVisitor().getWhere();
         }
-        if (parentClaus.length() == 0) return whereClaus;
-        if (whereClaus.length() == 0) return parentClaus;
+        if (parentClaus.isEmpty()) return whereClaus;
+        if (whereClaus.isEmpty()) return parentClaus;
         return parentClaus + " and " + whereClaus;
     }
 
@@ -375,13 +375,13 @@ public class DataSet extends Sql {
             parentClaus = parent.getSqlOrderBy();
         }
         if (reversed) {
-            if (parentClaus.length() > 0) parentClaus += " DESC";
+            if (!parentClaus.isEmpty()) parentClaus += " DESC";
         }
         if (sort != null) {
             sortByClaus += getSqlOrderByVisitor().getOrderBy();
         }
-        if (parentClaus.length() == 0) return sortByClaus;
-        if (sortByClaus.length() == 0) return parentClaus;
+        if (parentClaus.isEmpty()) return sortByClaus;
+        if (sortByClaus.isEmpty()) return parentClaus;
         return parentClaus + ", " + sortByClaus;
     }
 
@@ -389,11 +389,11 @@ public class DataSet extends Sql {
         if (sql == null) {
             sql = "select * from " + table;
             String whereClaus = getSqlWhere();
-            if (whereClaus.length() > 0) {
+            if (!whereClaus.isEmpty()) {
                 sql += " where " + whereClaus;
             }
             String orderByClaus = getSqlOrderBy();
-            if (orderByClaus.length() > 0) {
+            if (!orderByClaus.isEmpty()) {
                 sql += " order by " + orderByClaus;
             }
         }

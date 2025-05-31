@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Predicate;
 
 public class GroovyDocTool {
     private final Logger log = Logger.create(GroovyDocTool.class);
@@ -74,11 +73,11 @@ public class GroovyDocTool {
         String fileEncoding = properties.getProperty("fileEncoding");
         String charset = properties.getProperty("charset");
 
-        if (fileEncoding == null || fileEncoding.length() == 0) fileEncoding = charset;
-        if (charset == null || charset.length() == 0) charset = fileEncoding;
+        if (fileEncoding == null || fileEncoding.isEmpty()) fileEncoding = charset;
+        if (charset == null || charset.isEmpty()) charset = fileEncoding;
 
-        properties.setProperty("fileEncoding", fileEncoding != null && fileEncoding.length() != 0 ? fileEncoding : defaultCharset);
-        properties.setProperty("charset", charset != null && charset.length() != 0 ? charset : defaultCharset);
+        properties.setProperty("fileEncoding", fileEncoding != null && !fileEncoding.isEmpty() ? fileEncoding : defaultCharset);
+        properties.setProperty("charset", charset != null && !charset.isEmpty() ? charset : defaultCharset);
 
         this.properties = properties;
 

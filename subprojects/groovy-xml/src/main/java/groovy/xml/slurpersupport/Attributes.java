@@ -83,7 +83,7 @@ public class Attributes extends NodeChildren {
                         String attributeKey = Attributes.this.attributeName;
                         if (Attributes.this.namespacePrefix != null &&
                                 !"*".equals(Attributes.this.namespacePrefix) &&
-                                Attributes.this.namespacePrefix.length() > 0) {
+                            !Attributes.this.namespacePrefix.isEmpty()) {
                             attributeKey = new QName(Attributes.this.lookupNamespace(Attributes.this.namespacePrefix), Attributes.this.attributeName).toString();
                         }
                         final String value = (String) ((Node) next).attributes().get(attributeKey);

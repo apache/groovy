@@ -153,7 +153,7 @@ public class DomToGroovy {
         printIndent();
 
         String prefix = element.getPrefix();
-        boolean hasPrefix = prefix != null && prefix.length() > 0;
+        boolean hasPrefix = prefix != null && !prefix.isEmpty();
         String localName = getLocalName(element);
         boolean isKeyword = checkEscaping(localName);
         if (isKeyword || hasPrefix) print(qt);
@@ -229,7 +229,7 @@ public class DomToGroovy {
 
     protected void printComment(Comment comment, boolean endWithComma) {
         String text = comment.getData().trim();
-        if (text.length() >0) {
+        if (!text.isEmpty()) {
             printIndent();
             print("/* ");
             print(text);
@@ -239,7 +239,7 @@ public class DomToGroovy {
 
     protected void printText(Text node, boolean endWithComma) {
         String text = getTextNodeData(node);
-        if (text.length() > 0) {
+        if (!text.isEmpty()) {
             printIndent();
             if (inMixed) print("mkp.yield ");
             printQuoted(text);
@@ -254,7 +254,7 @@ public class DomToGroovy {
     protected Map defineNamespaces(Element element, Map namespaces) {
         Map answer = null;
         String prefix = element.getPrefix();
-        if (prefix != null && prefix.length() > 0 && !namespaces.containsKey(prefix)) {
+        if (prefix != null && !prefix.isEmpty() && !namespaces.containsKey(prefix)) {
             answer = new HashMap(namespaces);
             defineNamespace(answer, prefix, element.getNamespaceURI());
         }
@@ -263,7 +263,7 @@ public class DomToGroovy {
         for (int i = 0; i < length; i++) {
             Attr attribute = (Attr) attributes.item(i);
             prefix = attribute.getPrefix();
-            if (prefix != null && prefix.length() > 0 && !namespaces.containsKey(prefix)) {
+            if (prefix != null && !prefix.isEmpty() && !namespaces.containsKey(prefix)) {
                 if (answer == null) {
                     answer = new HashMap(namespaces);
                 }
@@ -310,7 +310,7 @@ public class DomToGroovy {
 
     protected void printAttributeWithPrefix(Attr attribute, StringBuffer buffer) {
         String prefix = attribute.getPrefix();
-        if (prefix != null && prefix.length() > 0 && !"xmlns".equals(prefix)) {
+        if (prefix != null && !prefix.isEmpty() && !"xmlns".equals(prefix)) {
             if (buffer.length() > 0) {
                 buffer.append(", ");
             }
@@ -330,7 +330,7 @@ public class DomToGroovy {
 
     protected boolean printAttributeWithoutPrefix(Attr attribute, boolean hasAttribute) {
         String prefix = attribute.getPrefix();
-        if (prefix == null || prefix.length() == 0) {
+        if (prefix == null || prefix.isEmpty()) {
             if (!hasAttribute) {
                 hasAttribute = true;
             } else {
@@ -364,7 +364,7 @@ public class DomToGroovy {
                 hasElement = true;
             } else if (node instanceof Text) {
                 String text = getTextNodeData((Text) node);
-                if (text.length() > 0) {
+                if (!text.isEmpty()) {
                     hasText = true;
                 }
             }

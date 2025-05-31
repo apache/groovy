@@ -244,7 +244,7 @@ public class XmlTemplateEngine extends TemplateEngine {
                 // check uri and for legacy cases just check prefix name (not recommended)
                 if ("http://groovy.codehaus.org/2005/gsp".equals(qn.getNamespaceURI()) || "gsp".equals(qn.getPrefix())) {
                     String s = qn.getLocalPart();
-                    if (s.length() == 0) {
+                    if (s.isEmpty()) {
                         throw new RuntimeException("No local part after 'gsp:' given in node " + node);
                     }
                     printGroovyTag(s, node.text());

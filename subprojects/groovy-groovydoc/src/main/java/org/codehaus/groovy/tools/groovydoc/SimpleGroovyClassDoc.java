@@ -560,7 +560,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     private static String buildUrl(String relativeRoot, String[] target, String shortClassName) {
-        if (relativeRoot.length() > 0 && !relativeRoot.endsWith("/")) {
+        if (!relativeRoot.isEmpty() && !relativeRoot.endsWith("/")) {
             relativeRoot += "/";
         }
         String url = relativeRoot + target[0].replace('.', '/').replace('$', '.') + ".html" + (target.length > 1 ? "#" + target[1] : "");

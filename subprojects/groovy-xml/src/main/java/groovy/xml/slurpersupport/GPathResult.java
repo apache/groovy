@@ -364,7 +364,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
     private boolean textIsEmptyOrNull() {
         String t = text();
-        return null == t || 0 == t.length();
+        return null == t || t.isEmpty();
     }
 
     /**

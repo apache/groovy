@@ -242,7 +242,7 @@ public class Node implements Writable {
                 }
             };
 
-            if (this.namespaceURI.length() == 0 && this.attributeNamespaces.isEmpty()) {
+            if (this.namespaceURI.isEmpty() && this.attributeNamespaces.isEmpty()) {
                 builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
             } else {
                 final List newTags = new LinkedList();
@@ -292,11 +292,11 @@ public class Node implements Writable {
                 // we have to declare the namespace - choose a tag
                 tag = findNamespaceTag(local, namespaceURI);  // If the namespace has been declared in the GPath expression use that tag
 
-                if (tag == null || tag.length() == 0) {
+                if (tag == null || tag.isEmpty()) {
                     tag = findNamespaceTag(tagHints, namespaceURI);  // If the namespace has been used in the parse document use that tag
                 }
 
-                if (tag == null || tag.length() == 0) { // otherwise make up a new tag and check it has not been used before
+                if (tag == null || tag.isEmpty()) { // otherwise make up a new tag and check it has not been used before
                     int suffix = 0;
                     do {
                         final String possibleTag = "tag" + suffix++;

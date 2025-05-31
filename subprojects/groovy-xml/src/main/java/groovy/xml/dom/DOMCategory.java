@@ -21,8 +21,8 @@ package groovy.xml.dom;
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
-import groovy.xml.DOMBuilder;
 import groovy.namespace.QName;
+import groovy.xml.DOMBuilder;
 import org.apache.groovy.xml.extensions.XmlExtensions;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.w3c.dom.Attr;
@@ -462,10 +462,10 @@ public class DOMCategory {
                 }
             } else if (node.getNodeType() == Node.TEXT_NODE) {
                 String value = node.getNodeValue();
-                if ((!isGlobalKeepIgnorableWhitespace() && value.trim().length() == 0) || isGlobalTrimWhitespace()) {
+                if ((!isGlobalKeepIgnorableWhitespace() && value.trim().isEmpty()) || isGlobalTrimWhitespace()) {
                     value = value.trim();
                 }
-                if ("*".equals(elementName) && value.length() > 0) {
+                if ("*".equals(elementName) && !value.isEmpty()) {
                     node.setNodeValue(value);
                     result.add(node);
                 }

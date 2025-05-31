@@ -358,7 +358,7 @@ public class Groovy extends Java {
             }
         }
 
-        if (src == null && command.length() == 0) {
+        if (src == null && command.isEmpty()) {
             throw new BuildException("Source does not exist!", getLocation());
         }
 
@@ -381,7 +381,7 @@ public class Groovy extends Java {
 
                 // if there are no groovy statements between the enclosing Groovy tags
                 // then read groovy statements in from a resource using the src attribute
-                if (command == null || command.trim().length() == 0) {
+                if (command == null || command.trim().isEmpty()) {
                     Reader reader;
                     if (src instanceof FileResource) {
                         File file = ((FileResource) src).getFile();
@@ -726,7 +726,7 @@ public class Groovy extends Java {
             return fr.getFile().getAbsolutePath();
         } else {
             String name = PREFIX;
-            if (getLocation().getFileName().length() > 0)
+            if (!getLocation().getFileName().isEmpty())
                 name += getLocation().getFileName().replaceAll("[^\\w_\\.]", "_").replaceAll("[\\.]", "_dot_");
             else
                 name += SUFFIX;

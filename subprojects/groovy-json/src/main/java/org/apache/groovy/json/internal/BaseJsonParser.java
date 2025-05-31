@@ -157,7 +157,7 @@ public abstract class BaseJsonParser implements JsonParser {
     public Object parse(File file, String charset) {
         Reader reader = null;
         try {
-            if (charset == null || charset.length() == 0) {
+            if (charset == null || charset.isEmpty()) {
                 reader = ResourceGroovyMethods.newReader(file);
             } else {
                 reader = ResourceGroovyMethods.newReader(file, charset);

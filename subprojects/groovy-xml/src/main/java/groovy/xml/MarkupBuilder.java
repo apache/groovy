@@ -327,7 +327,7 @@ public class MarkupBuilder extends BuilderSupport {
             Object attributeValue = entry.getValue();
             boolean skipNull = attributeValue == null && omitNullAttributes;
             boolean skipEmpty = attributeValue != null && omitEmptyAttributes &&
-                    attributeValue.toString().length() == 0;
+                    attributeValue.toString().isEmpty();
             if (!skipNull && !skipEmpty) {
                 out.print(" ");
                 // Output the attribute name,

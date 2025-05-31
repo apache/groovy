@@ -457,9 +457,9 @@ public class XmlParser implements ContentHandler {
         String text = bodyText.toString();
         if (!trimWhitespace && keepIgnorableWhitespace) {
             parent.children().add(text);
-        } else if (!trimWhitespace && text.trim().length() > 0) {
+        } else if (!trimWhitespace && !text.trim().isEmpty()) {
             parent.children().add(text);
-        } else if (text.trim().length() > 0) {
+        } else if (!text.trim().isEmpty()) {
             parent.children().add(text.trim());
         }
         bodyText = new StringBuilder();
@@ -492,13 +492,13 @@ public class XmlParser implements ContentHandler {
     protected Object getElementName(String namespaceURI, String localName, String qName) {
         String name = localName;
         String prefix = "";
-        if ((name == null) || (name.length() < 1)) {
+        if ((name == null) || (name.isEmpty())) {
             name = qName;
         }
         if (namespaceURI == null || namespaceURI.length() <= 0) {
             return name;
         }
-        if (qName != null && qName.length() > 0 && namespaceAware) {
+        if (qName != null && !qName.isEmpty() && namespaceAware) {
             int index = qName.lastIndexOf(':');
             if (index > 0) {
                 prefix = qName.substring(0, index);

@@ -24,8 +24,8 @@ import groovy.util.IFileNameFinder;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.apache.groovy.test.ScriptTestAdapter;
+import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,7 +108,7 @@ public class AllTestSuite extends TestSuite {
 
     public static Test suite(String basedir, String pattern, String excludesPattern) {
         AllTestSuite suite = new AllTestSuite();
-        List<String> filenames = excludesPattern.length() > 0
+        List<String> filenames = !excludesPattern.isEmpty()
                 ? finder.getFileNames(basedir, pattern, excludesPattern)
                 : finder.getFileNames(basedir, pattern);
         for (String filename : filenames) {

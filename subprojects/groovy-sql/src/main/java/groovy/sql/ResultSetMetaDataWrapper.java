@@ -67,7 +67,7 @@ public class ResultSetMetaDataWrapper extends GroovyObjectSupport {
     }
 
     private String getPropertyGetterName(String prop) {
-        if (prop == null || prop.length() < 1) {
+        if (prop == null || prop.isEmpty()) {
             throw new MissingPropertyException(prop, target.getClass());
         }
         return "get" + prop.substring(0, 1).toUpperCase() + prop.substring(1);

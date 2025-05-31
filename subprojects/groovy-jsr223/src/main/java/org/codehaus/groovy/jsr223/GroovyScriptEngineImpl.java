@@ -143,7 +143,7 @@ public class GroovyScriptEngineImpl extends AbstractScriptEngine implements Comp
         try {
             String val = (String) ctx.getAttribute("#jsr223.groovy.engine.keep.globals", ScriptContext.ENGINE_SCOPE);
             ReferenceBundle bundle = ReferenceBundle.getHardBundle();
-            if (val != null && val.length() > 0) {
+            if (val != null && !val.isEmpty()) {
                 if ("soft".equalsIgnoreCase(val)) {
                     bundle = ReferenceBundle.getSoftBundle();
                 } else if ("weak".equalsIgnoreCase(val)) {
