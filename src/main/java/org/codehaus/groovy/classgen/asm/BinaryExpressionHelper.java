@@ -110,21 +110,16 @@ import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_EQUAL;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED;
 import static org.codehaus.groovy.syntax.Types.RIGHT_SHIFT_UNSIGNED_EQUAL;
-import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
-import static org.objectweb.asm.Opcodes.DCONST_0;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP_X1;
-import static org.objectweb.asm.Opcodes.FCONST_0;
 import static org.objectweb.asm.Opcodes.GOTO;
-import static org.objectweb.asm.Opcodes.ICONST_0;
 import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
-import static org.objectweb.asm.Opcodes.LCONST_0;
 import static org.objectweb.asm.Opcodes.POP;
 
 public class BinaryExpressionHelper {
@@ -413,24 +408,13 @@ public class BinaryExpressionHelper {
         }
 
         // evaluate RHS and store its value
-
         if (lhsType.isArray() && rightExpression instanceof ListExpression) { // array = [ ... ]
             Expression array = new ArrayExpression(lhsType.getComponentType(), ((ListExpression) rightExpression).getExpressions());
             array.setSourcePosition(rightExpression);
             array.setType(lhsType);
             array.visit(acg);
         } else if (rightExpression instanceof EmptyExpression) { // define field
-            /*  */ if (ClassHelper.isPrimitiveDouble(lhsType)) {
-                mv.visitInsn(DCONST_0);
-            } else if (ClassHelper.isPrimitiveFloat(lhsType)) {
-                mv.visitInsn(FCONST_0);
-            } else if (ClassHelper.isPrimitiveLong(lhsType)) {
-                mv.visitInsn(LCONST_0);
-            } else if (ClassHelper.isPrimitiveType(lhsType)) {
-                mv.visitInsn(ICONST_0);
-            } else {
-                mv.visitInsn(ACONST_NULL);
-            }
+            CompileStack.pushInitValue(lhsType, mv);
             operandStack.push(lhsType);
         } else {
             rightExpression.visit(acg);

@@ -661,8 +661,8 @@ public class CompileStack {
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
 
-    private static void pushInitValue(final ClassNode type, final MethodVisitor mv) {
-        /*  */ if (ClassHelper.isPrimitiveDouble(type)) {
+    static void pushInitValue(final ClassNode type, final MethodVisitor mv) {
+        if (ClassHelper.isPrimitiveDouble(type)) {
             mv.visitInsn(DCONST_0);
         } else if (ClassHelper.isPrimitiveFloat(type)) {
             mv.visitInsn(FCONST_0);
