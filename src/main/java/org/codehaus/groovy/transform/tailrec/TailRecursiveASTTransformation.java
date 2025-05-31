@@ -203,19 +203,8 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
     private void replaceRecursiveReturnsOutsideClosures(final MethodNode method, final Map<Integer, Map<String, Object>> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = new Closure<Boolean>(this, this) {
             public Boolean doCall(Statement statement, boolean inClosure) {
-                if (inClosure) return false;
-                if (!(statement instanceof ReturnStatement)) {
-                    return false;
-                }
-
-                Expression inner = ((ReturnStatement) statement).getExpression();
-                if (!(inner instanceof MethodCallExpression) && !(inner instanceof StaticMethodCallExpression)) {
-                    return false;
-                }
-
-                return isRecursiveIn(inner, method);
+                return !inClosure && isRecursiveReturnStatement(statement, method);
             }
-
         };
         Closure<Statement> replaceWithContinueBlock = new Closure<Statement>(this, this) {
             public Statement doCall(ReturnStatement statement) {
@@ -226,21 +215,24 @@ public class TailRecursiveASTTransformation extends AbstractASTTransformation {
         replacer.replaceIn(method.getCode());
     }
 
+    private boolean isRecursiveReturnStatement(Statement statement, MethodNode method) {
+        if (!(statement instanceof ReturnStatement)) {
+            return false;
+        }
+
+        Expression inner = ((ReturnStatement) statement).getExpression();
+        if (!(inner instanceof MethodCallExpression) && !(inner instanceof StaticMethodCallExpression)) {
+            return false;
+        }
+
+        return isRecursiveIn(inner, method);
+    }
+
     @SuppressWarnings("Instanceof")
     private void replaceRecursiveReturnsInsideClosures(final MethodNode method, final Map<Integer, Map<String, Object>> positionMapping) {
         Closure<Boolean> whenRecursiveReturn = new Closure<Boolean>(this, this) {
             public Boolean doCall(Statement statement, boolean inClosure) {
-                if (!inClosure) return false;
-                if (!(statement instanceof ReturnStatement)) {
-                    return false;
-                }
-
-                Expression inner = ((ReturnStatement) statement).getExpression();
-                if (!(inner instanceof MethodCallExpression) && !(inner instanceof StaticMethodCallExpression)) {
-                    return false;
-                }
-
-                return isRecursiveIn(inner, method);
+                return inClosure && isRecursiveReturnStatement(statement, method);
             }
         };
         Closure<Statement> replaceWithThrowLoopException = new Closure<Statement>(this, this) {
