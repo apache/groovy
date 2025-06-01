@@ -1061,7 +1061,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     } catch (MissingMethodException ignore) {}
                 }
 
-                return invokeMissingMethod(object, method, arguments);
+                try {
+                    return invokeMissingMethod(object, method, arguments);
+                } catch (MissingMethodException mme) { // GROOVY-11676: owner class
+                    mme = new MissingMethodException(method, ownerClass, arguments);
+                    mme.addSuppressed(e);
+                    throw mme;
+                }
             }
         }
     }
