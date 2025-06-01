@@ -3137,13 +3137,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private void checkNamedParamsAnnotation(final Parameter param, final MapExpression args) {
         if (!isOrImplements(param.getType(), MAP_TYPE)) return;
         List<MapEntryExpression> entryExpressions = args.getMapEntryExpressions();
-        Map<Object, Expression> entries = new LinkedHashMap<>();
+        Map<Object, MapEntryExpression> entries = new LinkedHashMap<>();
         for (MapEntryExpression entry : entryExpressions) {
             Object key = entry.getKeyExpression();
             if (key instanceof ConstantExpression) {
                 key = ((ConstantExpression) key).getValue();
             }
-            entries.put(key, entry.getValueExpression());
+            entries.put(key, entry);
         }
         List<String> collectedNames = new ArrayList<>();
         List<AnnotationNode> annotations = param.getAnnotations(NAMED_PARAMS_CLASSNODE);
@@ -3177,21 +3177,22 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
         if (!collectedNames.isEmpty()) {
-            for (Map.Entry<Object, Expression> entry : entries.entrySet()) {
-                if (!collectedNames.contains(entry.getKey())) {
-                    addStaticTypeError("unexpected named arg: " + entry.getKey(), args);
+            for (Map.Entry<Object, MapEntryExpression> entry : entries.entrySet()) {
+                Object name = entry.getKey();
+                if (!collectedNames.contains(name)) {
+                    addStaticTypeError("unexpected named arg: " + name, entry.getValue());
                 }
             }
         }
     }
 
-    private void processNamedParam(final AnnotationConstantExpression value, final Map<Object, Expression> entries, final Expression expression, final List<String> collectedNames) {
+    private void processNamedParam(final AnnotationConstantExpression value, final Map<Object, MapEntryExpression> entries, final MapExpression args, final List<String> collectedNames) {
         AnnotationNode namedParam = (AnnotationNode) value.getValue();
         if (!namedParam.getClassNode().getName().equals(NamedParam.class.getName())) return;
-        processNamedParam(namedParam, entries, expression, collectedNames);
+        processNamedParam(namedParam, entries, args, collectedNames);
     }
 
-    private void processNamedParam(final AnnotationNode namedParam, final Map<Object, Expression> entries, final Expression expression, final List<String> collectedNames) {
+    private void processNamedParam(final AnnotationNode namedParam, final Map<Object, MapEntryExpression> entries, final MapExpression args, final List<String> collectedNames) {
         String name = null;
         boolean required = false;
         ClassNode expectedType = null;
@@ -3210,12 +3211,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
         if (!entries.containsKey(name)) {
             if (required) {
-                addStaticTypeError("required named param '" + name + "' not found.", expression);
+                addStaticTypeError("required named param '" + name + "' not found.", args);
             }
         } else if (expectedType != null) {
-            ClassNode argumentType = getDeclaredOrInferredType(entries.get(name));
+            MapEntryExpression entry = entries.get(name);
+            ClassNode argumentType = getDeclaredOrInferredType(entry.getValueExpression());
             if (!isAssignableTo(argumentType, expectedType)) {
-                addStaticTypeError("argument for named param '" + name + "' has type '" + prettyPrintType(argumentType) + "' but expected '" + prettyPrintType(expectedType) + "'.", expression);
+                addStaticTypeError("argument for named param '" + name + "' has type '" + prettyPrintType(argumentType) + "' but expected '" + prettyPrintType(expectedType) + "'.", entry);
             }
         }
     }
