@@ -21,6 +21,7 @@ package org.codehaus.groovy.transform;
 import groovy.lang.Delegate;
 import groovy.lang.Lazy;
 import groovy.lang.Reference;
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -40,6 +41,7 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -164,7 +166,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             if (!checkPropertyOrMethodList(delegate.type, delegate.excludes, "excludes", node, MY_TYPE_NAME)) return;
             if (!checkPropertyOrMethodList(delegate.type, delegate.includes, "includes", node, MY_TYPE_NAME)) return;
 
-            final Iterable<MethodNode> ownerMethods = getAllMethods(delegate.owner);
+            final List<MethodNode> ownerMethods = getAllMethods(delegate.owner);
+            if (ownerMethods.size() > 1) {
+                ownerMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
+            }
             final Iterable<MethodNode> delegateMethods = filterMethods(collectMethods(delegate.type), delegate, allNames, includeDeprecated);
 
             for (MethodNode mn : delegateMethods) {
@@ -214,7 +219,8 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
     }
 
     private static Collection<MethodNode> collectMethods(final ClassNode type) {
-        List<MethodNode> methods = new java.util.LinkedList<>(getAllMethods(type));
+        List<MethodNode> methods = getAllMethods(type);
+
         // GROOVY-4320, GROOVY-4516
         for (ListIterator<MethodNode> it = methods.listIterator(); it.hasNext();) {
             MethodNode next = it.next();
@@ -247,6 +253,10 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
         for (ClassNode face : type.getAllInterfaces()) {
             methods.addAll(face.getMethods());
+        }
+
+        if (methods.size() > 1) {
+            methods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
         }
 
         return methods;
