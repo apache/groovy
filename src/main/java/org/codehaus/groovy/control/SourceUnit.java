@@ -281,10 +281,10 @@ public class SourceUnit extends ProcessingUnit {
             if (column > 0) {
                 String marker = Utilities.repeatString(" ", column - 1) + "^";
 
-                if (column > 40) {
-                    int start = column - 30 - 1;
+                if (column > 60) {
+                    int start = column - 45 - 1;
                     int length = text.length();
-                    int end = (column + 10 > length ? length : column + 10 - 1);
+                    int end = (column + 25 > length ? length : column + 25 - 1);
                     if (start >= length || end < start)
                         return null; // can happen with CR only files GROOVY-10676
                     sample = "   " + text.substring(start, end) + Utilities.eol() + "   " + marker.substring(start);
