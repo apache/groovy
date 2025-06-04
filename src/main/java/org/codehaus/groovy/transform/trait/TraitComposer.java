@@ -126,7 +126,7 @@ public abstract class TraitComposer {
         Map<String, ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(trait, GenericsUtils.createGenericsSpec(cNode));
 
         List<MethodNode> hMethods = new ArrayList<>(helperClassNode.getMethods());
-        if (!hMethods.isEmpty()) {
+        if (hMethods.size() > 1) {
             hMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
         }
         for (MethodNode methodNode : hMethods) {
@@ -179,7 +179,7 @@ public abstract class TraitComposer {
             List<MethodNode> declaredMethods = new LinkedList<>();
             int pos = 0; // keep direct getters at start but in declaration order
             List<MethodNode> fhMethods = new ArrayList<>(fieldHelperClassNode.getMethods());
-            if (!fhMethods.isEmpty()) {
+            if (fhMethods.size() > 1) {
                 fhMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
             }
             for (MethodNode declaredMethod : fhMethods) {
@@ -192,7 +192,7 @@ public abstract class TraitComposer {
 
             if (staticFieldHelperClassNode != null) {
                 List<MethodNode> sfhMethods = new ArrayList<>(staticFieldHelperClassNode.getMethods());
-                if (!sfhMethods.isEmpty()) {
+                if (sfhMethods.size() > 1) {
                     sfhMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
                 }
                 for (MethodNode declaredMethod : sfhMethods) {
