@@ -890,7 +890,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * @see #eachFile(Path, groovy.io.FileType, groovy.lang.Closure)
      * @since 2.3.0
      */
-    public static void eachFile(final Path self, final Closure closure) throws IOException {
+    public static void eachFile(final Path self, @ClosureParams(value = SimpleType.class, options = "java.nio.file.Path") final Closure closure) throws IOException {
         eachFile(self, FileType.ANY, closure);
     }
 
