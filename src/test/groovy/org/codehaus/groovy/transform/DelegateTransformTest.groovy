@@ -72,7 +72,7 @@ final class DelegateTransformTest {
             }
             new C(numbers:[1,2,3])
         '''
-        assert err =~ /The return type of java.lang.Number remove\(int\) in C is incompatible with java.lang.String in java.util.ArrayList/
+        assert err =~ /The return type of java.lang.Number get\(int\) in C is incompatible with java.lang.String in java.util.ArrayList/
 
         err = shouldFail '''
             class C extends ArrayList<String> {
