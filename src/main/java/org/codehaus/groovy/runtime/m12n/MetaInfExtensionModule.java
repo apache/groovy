@@ -87,7 +87,7 @@ public class MetaInfExtensionModule extends SimpleExtensionModule {
                     instanceClasses.add(loader.loadClass(extensionClass));
                 }
             } catch (ClassNotFoundException | NoClassDefFoundError | UnsupportedClassVersionError e) {
-                errors.add(extensionClass);
+                errors.add(e.getMessage());
             }
         }
     }
