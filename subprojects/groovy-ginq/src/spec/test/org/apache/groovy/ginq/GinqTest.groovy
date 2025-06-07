@@ -6362,6 +6362,21 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - switch - 6"() {
+        assertGinqScript '''
+            assert [[4, 1], [1, 2], [3, 1]] == GQ {
+                from n in [1, 1, 3, 4]
+                groupby n as g
+                orderby switch (g) {
+                    case 4 -> 0
+                    default -> g
+                }
+                select g, count()
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinqMethod - GQ - 0"() {
         assertScript '''
 // tag::ginq_method_01[]

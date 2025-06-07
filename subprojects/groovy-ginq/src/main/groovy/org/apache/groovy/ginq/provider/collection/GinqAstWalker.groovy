@@ -45,12 +45,14 @@ import org.apache.groovy.ginq.provider.collection.runtime.ValueBound
 import org.apache.groovy.ginq.provider.collection.runtime.WindowDefinition
 import org.apache.groovy.util.Maps
 import org.codehaus.groovy.GroovyBugError
+import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CodeVisitorSupport
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.ArgumentListExpression
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.CastExpression
+import org.codehaus.groovy.ast.expr.ClosureExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
@@ -1199,9 +1201,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         // The synthetic lambda parameter `__t` represents the element from the result datasource of joining, e.g. `n1` innerJoin `n2`
         // The element from first datasource(`n1`) is referenced via `_t.v1`
         // and the element from second datasource(`n2`) is referenced via `_t.v2`
-        expr = ((ListExpression) (new ListExpression(Collections.singletonList(expr)).transformExpression(new ExpressionTransformer() {
+        expr = ((ListExpression) (new ListExpression(Collections.singletonList(expr)).transformExpression(new ClassCodeExpressionTransformer() {
             @Override
             Expression transform(Expression expression) {
+                if (expression instanceof ClosureExpression) {
+                    expression.visit(this)
+                    return expression
+                }
                 Expression transformedExpression = correctVars(dataSourceExpression, lambdaParamName, expression)
                 if (null == transformedExpression) {
                     return expression
@@ -1211,6 +1217,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 }
 
                 return expression.transformExpression(this)
+            }
+
+            @Override
+            SourceUnit getSourceUnit() {
+                return sourceUnit;
             }
         }))).getExpression(0)
 
