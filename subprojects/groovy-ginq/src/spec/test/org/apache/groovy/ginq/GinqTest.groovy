@@ -6305,6 +6305,48 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - switch - 2"() {
+        assertGinqScript '''
+            assert [4, 1, 2, 3] == GQ {
+                from n in [1, 2, 3, 4]
+                orderby switch (n) {
+                    case 4 -> 0
+                    default -> n
+                }
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - switch - 3"() {
+        assertGinqScript '''
+            assert [[1, 2], [2, 1], [3, 1]] == GQ {
+                from n in [1, 2, 3, 4]
+                groupby switch (n) {
+                    case 4 -> 1
+                    default -> n
+                } as g
+                select g, count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - switch - 4"() {
+        assertGinqScript '''
+            assert [2, 3] == GQ {
+                from n in [1, 2, 3, 4]
+                where switch (n) {
+                    case 4 -> 1
+                    default -> n
+                } > 1
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinqMethod - GQ - 0"() {
         assertScript '''
 // tag::ginq_method_01[]
