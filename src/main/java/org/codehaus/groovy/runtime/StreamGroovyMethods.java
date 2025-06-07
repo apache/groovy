@@ -568,6 +568,24 @@ public class StreamGroovyMethods {
         return Arrays.stream(self);
     }
 
+    /**
+     * Return the size of this stream.
+     * This is a terminal operator and care should be taken
+     * with stream pipelines that have side effects or infinite streams.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].stream().size() == 3
+     * </pre>
+     *
+     * @param self A stream
+     * @return the count of elements in this stream
+     * @see Stream#count()
+     *
+     * @since 5.0.0
+     */
+    public static <T> long size(final Stream<T> self) {
+        return self.count();
+    }
+
     //--------------------------------------------------------------------------
 
     /**
