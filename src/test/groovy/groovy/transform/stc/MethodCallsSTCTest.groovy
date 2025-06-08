@@ -104,6 +104,14 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testStaticMethodCallThroughInstance() {
+        assertScript '''
+            A a = new A()
+            String echo = a.echo 'echo'
+            assert echo == 'echo'
+        '''
+    }
+
     void testStaticMethodCallWithInheritance() {
         assertScript '''
             String echo = B.echo 'echo'
@@ -111,11 +119,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    void testStaticMethodCallThroughInstance() {
+    // GROOVY-11694
+    void testStaticMethodCallWithInheritance2() {
         assertScript '''
-            A a = new A()
-            String echo = a.echo 'echo'
-            assert echo == 'echo'
+            class D extends C {
+                def m() { protect() }
+            }
+            assert new D().m() != null
         '''
     }
 
@@ -2067,7 +2077,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         T[] identity(T... args) { args }
     }
 
-    static class MyMethodCallTestClass3 extends MyMethodCallTestClass2<String> {}
+    static class MyMethodCallTestClass3 extends MyMethodCallTestClass2<String> {
+        protected static String protect() { '' }
+    }
 
     static class GroovyPage {
         final void printHtmlPart(int partNumber) {}

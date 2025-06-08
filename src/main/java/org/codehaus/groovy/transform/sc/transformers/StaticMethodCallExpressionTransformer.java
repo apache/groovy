@@ -35,10 +35,15 @@ class StaticMethodCallExpressionTransformer {
     }
 
     Expression transformStaticMethodCallExpression(final StaticMethodCallExpression smce) {
-        Object target = smce.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
+        var target = smce.getNodeMetaData(DIRECT_METHOD_CALL_TARGET);
         if (target instanceof MethodNode) {
-            ClassExpression receiver = new ClassExpression(smce.getOwnerType().getPlainNodeReference());
-            MethodCallExpression mce = new MethodCallExpression(receiver, smce.getMethod(), smce.getArguments());
+            var receiver = new ClassExpression(smce.getOwnerType().getPlainNodeReference());
+            receiver.setLineNumber(smce.getLineNumber());
+            receiver.setColumnNumber(smce.getColumnNumber());
+            receiver.setLastLineNumber(receiver.getLineNumber());
+            receiver.setLastColumnNumber(receiver.getColumnNumber());
+
+            var mce = new MethodCallExpression(receiver, smce.getMethod(), smce.getArguments());
             mce.setMethodTarget((MethodNode) target);
             mce.setSourcePosition(smce);
             mce.copyNodeMetaData(smce);
