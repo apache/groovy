@@ -198,6 +198,7 @@
             <trusting group="org.apache.ivy"/>
          </trusted-key>
          <trusted-key id="CF17E92C9FFA55316B5DB83901D734EE5EE9C3F8" group="org.eclipse.sisu"/>
+         <trusted-key id="D5F46BC0B86AF5DC56DF58F05E975CB00C643DBF" group="com.google.inject" name="guice" version="5.1.0"/>
          <trusted-key id="D790F72EA8FD39551012B62DCF9F3090CE4CB752" group="org.abego.treelayout" name="org.abego.treelayout.core" version="1.0.3"/>
          <trusted-key id="DBD744ACE7ADE6AA50DD591F66B50994442D2D40" group="^com[.]squareup($|([.].*))" regex="true"/>
          <trusted-key id="E3A9F95079E84CE201F7CF60BEDE11EAF1164480" group="org.hamcrest"/>
@@ -1306,6 +1307,11 @@
             <pgp value="416952B945B78A34C6C7678562EBFC78FE4156D1"/>
          </artifact>
       </component>
+      <component group="org.jspecify" name="jspecify" version="1.0.0">
+         <artifact name="jspecify-1.0.0.jar">
+            <pgp value="41CD49B4EF5876F9E9F691DABAC30622339994C4"/>
+         </artifact>
+      </component>
       <component group="org.junit.vintage" name="junit-vintage-engine" version="5.12.0">
          <artifact name="junit-vintage-engine-5.12.0.jar">
             <pgp value="FF6E2C001948C5F2F38B0CC385911F425EC61B51"/>
@@ -1323,6 +1329,11 @@
       </component>
       <component group="org.junit.vintage" name="junit-vintage-engine" version="5.13.0">
          <artifact name="junit-vintage-engine-5.13.0.jar">
+            <pgp value="FF6E2C001948C5F2F38B0CC385911F425EC61B51"/>
+         </artifact>
+      </component>
+      <component group="org.junit.vintage" name="junit-vintage-engine" version="5.13.1">
+         <artifact name="junit-vintage-engine-5.13.1.jar">
             <pgp value="FF6E2C001948C5F2F38B0CC385911F425EC61B51"/>
          </artifact>
       </component>
