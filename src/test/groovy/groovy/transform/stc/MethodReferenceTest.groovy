@@ -353,6 +353,23 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-11683
+    @Test // class::instanceMethod
+    void testFunctionCI12() {
+        assertScript shell, '''import java.util.stream.Stream
+            @CompileStatic
+            List<Integer> test(List<String> strings) {
+                Stream.of(strings).flatMap(List::stream).map(Integer::valueOf).toList()
+                //                                           ^^^^^^^^^^^^^^^^
+                // Failed to find class method 'valueOf(Object)' or instance method 'valueOf()'
+            }
+
+            def numbers = test(['1','2','3'])
+            assert numbers.size() == 3
+            assert numbers == [1,2,3]
+        '''
+    }
+
     // GROOVY-9974
     @Test // class::instanceMethod
     void testPredicateCI1() {
