@@ -128,6 +128,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isFloatingCategor
 import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asList;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
@@ -1037,6 +1038,10 @@ public abstract class StaticTypeCheckingSupport {
         boolean duckType = receiver instanceof UnionTypeClassNode;
         if (methods.size() > 1 && !methods.iterator().next().isConstructor())
             methods = removeCovariantsAndInterfaceEquivalents(methods, duckType);
+
+        if (argumentTypes == null) {
+            return asList(methods); // GROOVY-11683: no covariants or equivalents
+        }
 
         Set<MethodNode> bestMethods = new HashSet<>(); // choose best method(s) for each possible receiver
         for (ClassNode rcvr : duckType ? ((UnionTypeClassNode) receiver).getDelegates() : new ClassNode[]{receiver}) {

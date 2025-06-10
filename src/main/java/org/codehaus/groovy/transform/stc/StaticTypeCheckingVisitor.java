@@ -2756,7 +2756,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     private List<MethodNode> filterMethodCandidates(final List<MethodNode> candidates, final Expression objectOrType, /*@Nullable*/ ClassNode[] signature) {
         List<MethodNode> result = filterMethodsByVisibility(candidates, typeCheckingContext.getEnclosingClassNode());
         // assignment or parameter target type may help reduce the list
-        if (result.size() > 1 && signature != null) {
+        if (result.size() > 1) {
             ClassNode type = getType(objectOrType);
             if (!isClassClassNodeWrappingConcreteType(type)) {
                 result = chooseBestMethod(type, result, signature);
@@ -2767,7 +2767,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 result = new ArrayList<>(result.size());
                 result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.TRUE), signature));
                 if (result.isEmpty() && !staticAndNonStatic.get(Boolean.FALSE).isEmpty()) { // GROOVY-11009
-                    if (signature.length > 0) signature= Arrays.copyOfRange(signature, 1, signature.length);
+                    if (asBoolean(signature)) signature= Arrays.copyOfRange(signature, 1, signature.length);
                     result.addAll(chooseBestMethod(type, staticAndNonStatic.get(Boolean.FALSE), signature));
                 }
             }
