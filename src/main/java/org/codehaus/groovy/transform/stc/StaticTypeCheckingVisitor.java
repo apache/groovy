@@ -2583,7 +2583,8 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 candidates.stream()
                         .map(candidate -> {
                             ClassNode returnType = candidate.getReturnType();
-                            if (!candidate.isStatic() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                            if (!isStaticInContext(candidate) // GROOVY-11683
+                                    && GenericsUtils.hasUnresolvedGenerics(returnType)) {
                                 Map<GenericsTypeName, GenericsType> spec = new HashMap<>(); // GROOVY-11364
                                 extractGenericsConnections(spec, ownerType, candidate.getDeclaringClass());
                                 returnType = applyGenericsContext(spec, returnType);
