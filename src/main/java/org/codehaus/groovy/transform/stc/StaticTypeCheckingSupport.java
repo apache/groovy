@@ -1774,7 +1774,7 @@ public abstract class StaticTypeCheckingSupport {
                     extractGenericsConnections(spec, type, type.redirect());
                 } else if (type.redirect().getGenericsTypes() != null) {
                     for (GenericsType tp : type.redirect().getGenericsTypes()) {
-                        spec.put(new GenericsTypeName(tp.getName()), new GenericsType(getCombinedBoundType(tp))); //GROOVY-10651
+                        spec.put(new GenericsTypeName(tp.getName()), new GenericsType(extractType(tp))); //GROOVY-10651
                     }
                 }
                 superClass = applyGenericsContext(spec, superClass);

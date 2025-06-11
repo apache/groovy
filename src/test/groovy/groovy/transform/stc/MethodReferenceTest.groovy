@@ -359,8 +359,8 @@ final class MethodReferenceTest {
         assertScript shell, '''import java.util.stream.Stream
             @CompileStatic
             List<Integer> test(List<String> strings) {
-                Stream.of(strings).flatMap(List::stream).map(Integer::valueOf).toList()
-                //                                           ^^^^^^^^^^^^^^^^
+                Stream.of(strings).flatMap(List<String>::stream).map(Integer::valueOf).toList()
+                //                                                   ^^^^^^^^^^^^^^^^
                 // Failed to find class method 'valueOf(Object)' or instance method 'valueOf()'
             }
 
