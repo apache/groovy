@@ -2675,7 +2675,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
             if (!candidates.isEmpty()) {
                 ClassNode[] arguments = expression.getNodeMetaData(CLOSURE_ARGUMENTS);
-                if (asBoolean(arguments) && asBoolean(receiverType.redirect().getGenericsTypes())
+                if (asBoolean(arguments) && missesGenericsTypes(receiverType) // GROOVY-10984
                                          && expression.getExpression() instanceof ClassExpression) {
                     receiverType = GenericsUtils.parameterizeType(arguments[0], receiverType); // GROOVY-11241
                 }
@@ -2685,7 +2685,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                         .peek(candidate -> checkOrMarkPrivateAccess(expression, candidate)) // GROOVY-11365
                         .map (candidate -> {
                             ClassNode returnType = candidate.getReturnType();
-                            if (!candidate.isStatic() && GenericsUtils.hasUnresolvedGenerics(returnType)) {
+                            if (!isStaticInContext(candidate) // GROOVY-11683
+                                    && GenericsUtils.hasUnresolvedGenerics(returnType)) {
                                 Map<GenericsTypeName, GenericsType> spec = new HashMap<>(); // GROOVY-11364
                                 extractGenericsConnections(spec, ownerType, candidate.getDeclaringClass());
                                 returnType = applyGenericsContext(spec, returnType);

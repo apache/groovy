@@ -1347,6 +1347,37 @@ final class MethodReferenceTest {
         '''
     }
 
+    // GROOVY-11683
+    @Test // class::instanceGroovyMethod
+    void testFunctionCI_DGM2() {
+        String head = '''\
+            import static org.codehaus.groovy.control.CompilePhase.*
+            import static org.codehaus.groovy.transform.stc.StaticTypesMarker.*
+
+            @CompileStatic
+            void test(Iterable<String> iterable) {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    Object type = node.getNodeMetaData(INFERRED_TYPE)
+                    assert type.toString(false) == 'java.util.Optional<java.util.Collection<java.lang.String>>'
+                })
+        '''
+        String tail = '''\
+            }
+
+            test()
+        '''
+
+        assertScript shell, head + '''
+            def optional = Optional.ofNullable(iterable).map(Iterable::asCollection)
+            assert optional.isEmpty()
+        ''' + tail
+
+        assertScript shell, head + '''
+            def optional = Optional.empty().map(Iterable<String>::asCollection)
+            assert optional.isEmpty()
+        ''' + tail
+    }
+
     @Test // class::staticGroovyMethod
     void testFunctionCS_DGSM() {
         assertScript shell, '''
