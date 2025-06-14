@@ -568,6 +568,89 @@ public class StreamGroovyMethods {
         return Arrays.stream(self);
     }
 
+    /**
+     * An alias for {@code count}. Returns the count of elements for this stream.
+     * This is a terminal operator and, depending on the underlying stream, may invoke
+     * the stream pipeline, leaving it empty after this call.
+     * Care should be taken with stream pipelines that have side effects.
+     * This method should not be called on an infinite stream.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].stream().size() == 3
+     * </pre>
+     *
+     * @param self A Stream
+     * @return the count of elements in this stream
+     * @see Stream#count()
+     *
+     * @since 5.0.0
+     */
+    public static long size(final Stream<?> self) {
+        return self.count();
+    }
+
+    /**
+     * An alias for {@code count}. Returns the count of elements for this stream.
+     * This is a terminal operator and, depending on the underlying stream, may invoke
+     * the stream pipeline, leaving it empty after this call.
+     * Care should be taken with stream pipelines that have side effects.
+     * This method should not be called on an infinite stream.
+     * <pre class="groovyTestCase">
+     * int[] nums = [1, 2, 3]
+     * assert nums.intStream().size() == 3
+     * </pre>
+     *
+     * @param self An IntStream
+     * @return the count of elements in this stream
+     * @see IntStream#count()
+     *
+     * @since 5.0.0
+     */
+    public static long size(final IntStream self) {
+        return self.count();
+    }
+
+    /**
+     * An alias for {@code count}. Returns the count of elements for this stream.
+     * This is a terminal operator and, depending on the underlying stream, may invoke
+     * the stream pipeline, leaving it empty after this call.
+     * Care should be taken with stream pipelines that have side effects.
+     * This method should not be called on an infinite stream.
+     * <pre class="groovyTestCase">
+     * long[] nums = [1, 2, 3]
+     * assert nums.longStream().size() == 3
+     * </pre>
+     *
+     * @param self A LongStream
+     * @return the count of elements in this stream
+     * @see LongStream#count()
+     *
+     * @since 5.0.0
+     */
+    public static long size(final LongStream self) {
+        return self.count();
+    }
+
+    /**
+     * An alias for {@code count}. Returns the count of elements for this stream.
+     * This is a terminal operator and, depending on the underlying stream, may invoke
+     * the stream pipeline, leaving it empty after this call.
+     * Care should be taken with stream pipelines that have side effects.
+     * This method should not be called on an infinite stream.
+     * <pre class="groovyTestCase">
+     * double[] nums = [1.0d, 2.0d, 3.0d]
+     * assert nums.doubleStream().size() == 3
+     * </pre>
+     *
+     * @param self A DoubleStream
+     * @return the count of elements in this stream
+     * @see DoubleStream#count()
+     *
+     * @since 5.0.0
+     */
+    public static long size(final DoubleStream self) {
+        return self.count();
+    }
+
     //--------------------------------------------------------------------------
 
     /**
