@@ -114,11 +114,7 @@ public class TableSorter extends TableMap {
         String s2 = v2.toString();
         int result = s1.compareTo(s2);
 
-        if (result < 0)
-            return -1;
-        if (result > 0)
-            return 1;
-        return 0;
+        return Integer.compare(result, 0);
     }
 
     private static int compareBooleans(TableModel data, int row1, int column, int row2) {
@@ -137,11 +133,7 @@ public class TableSorter extends TableMap {
         String s2 = (String) data.getValueAt(row2, column);
         int result = s1.compareTo(s2);
 
-        if (result < 0)
-            return -1;
-        if (result > 0)
-            return 1;
-        return 0;
+        return Integer.compare(result, 0);
     }
 
     private static int compareDates(TableModel data, int row1, int column, int row2) {
@@ -150,11 +142,7 @@ public class TableSorter extends TableMap {
         Date d2 = (Date) data.getValueAt(row2, column);
         long n2 = d2.getTime();
 
-        if (n1 < n2)
-            return -1;
-        if (n1 > n2)
-            return 1;
-        return 0;
+        return Long.compare(n1, n2);
     }
 
     private static int compareNumbers(TableModel data, int row1, int column, int row2) {
@@ -163,11 +151,7 @@ public class TableSorter extends TableMap {
         Number n2 = (Number) data.getValueAt(row2, column);
         double d2 = n2.doubleValue();
 
-        if (d1 < d2)
-            return -1;
-        if (d1 > d2)
-            return 1;
-        return 0;
+        return Double.compare(d1, d2);
     }
 
     public int compare(int row1, int row2) {
