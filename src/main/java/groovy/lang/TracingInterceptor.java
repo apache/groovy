@@ -87,11 +87,7 @@ public class TracingInterceptor implements Interceptor {
         return true;
     }
     private String indent(){
-        StringBuilder result = new StringBuilder();
-        for (int i=0; i<indent;i++){
-            result.append("  ");
-        }
-        return result.toString();
+        return "  ".repeat(Math.max(0, indent));
     }
 
     protected void write(Object object, String methodName, Object[] arguments, final String origin) {

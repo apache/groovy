@@ -220,9 +220,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
                 buffer.delete(0, buffer.length());
                 buffer.append('\n');
                 if (index > -1) {
-                    for (int i = 0; i < index + 4; i++) {
-                        buffer.append(' ');
-                    }
+                    buffer.append(" ".repeat(index + 4));
                 }
                 try {
                     doc.insertString(offset, buffer.toString(),

@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.tools;
 
+import org.codehaus.groovy.runtime.StringGroovyMethods;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,23 +39,13 @@ public abstract class Utilities
    /**
     *  Returns a string made up of repetitions of the specified string.
     */
-
-    public static String repeatString( String pattern, int repeats )
-    {
-        StringBuilder buffer = new StringBuilder( pattern.length() * repeats );
-        for( int i = 0; i < repeats; i++ )
-        {
-            buffer.append( pattern );
-        }
-
-        return new String( buffer );
+    public static String repeatString(String pattern, int repeats) {
+        return StringGroovyMethods.multiply(pattern, repeats);
     }
-
 
    /**
     *  Returns the end-of-line marker.
     */
-
     public static String eol()
     {
         return eol;

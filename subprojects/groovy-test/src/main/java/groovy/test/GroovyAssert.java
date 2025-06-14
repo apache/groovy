@@ -301,7 +301,7 @@ public class GroovyAssert {
         int level = 0;
         while (th != null) {
             if (level > 1) {
-                for (int i = 0; i < level - 1; i++) sb.append("   ");
+                sb.append("   ".repeat(level - 1));
             }
             if (level > 0) sb.append("-> ");
             if (level > MAX_NESTED_EXCEPTIONS) {

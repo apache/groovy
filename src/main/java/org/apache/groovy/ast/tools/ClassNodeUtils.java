@@ -83,9 +83,7 @@ public class ClassNodeUtils {
             }
             StringBuilder sb = new StringBuilder(cn.getName().length() + (2 * dim));
             sb.append(formatTypeName(cn));
-            for (int i = 0; i < dim; i += 1) {
-                sb.append("[]");
-            }
+            sb.append("[]".repeat(dim));
             return sb.toString();
         }
         return cNode.isGenericsPlaceHolder() ? cNode.getUnresolvedName() : cNode.getName();

@@ -1940,16 +1940,9 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String multiply(final CharSequence self, final Number factor) {
         int size = factor.intValue();
-        if (size == 0)
-            return "";
-        else if (size < 0) {
-            throw new IllegalArgumentException("multiply() should be called with a number of 0 or greater not: " + size);
-        }
-        StringBuilder answer = new StringBuilder(self);
-        for (int i = 1; i < size; i++) {
-            answer.append(self);
-        }
-        return answer.toString();
+        if (size == 0) return "";
+        if (size < 0) throw new IllegalArgumentException("multiply() should be called with a number of 0 or greater not: " + size);
+        return String.valueOf(self).repeat(size);
     }
 
     /**

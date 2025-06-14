@@ -78,9 +78,7 @@ public class CallSiteWriter {
         }
         if (sig[numberOfArguments] == null) {
             StringBuilder sb = new StringBuilder("(");
-            for (int i = 0; i != numberOfArguments; ++i) {
-                sb.append("Ljava/lang/Object;");
-            }
+            sb.append("Ljava/lang/Object;".repeat(numberOfArguments));
             sb.append(")[Ljava/lang/Object;");
             sig[numberOfArguments] = sb.toString();
         }

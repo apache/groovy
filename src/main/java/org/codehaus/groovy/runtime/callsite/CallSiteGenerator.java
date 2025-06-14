@@ -123,11 +123,10 @@ public class CallSiteGenerator {
     public static void genCallWithFixedParams(ClassWriter cw, String name, final String superClass, CachedMethod cachedMethod, String receiverType ) {
         if (cachedMethod.getParamsCount() > 4) return;
 
-        StringBuilder pdescb = new StringBuilder();
         final int pc = cachedMethod.getParamsCount();
-        for (int i = 0; i != pc; ++i) pdescb.append("Ljava/lang/Object;");
+        final String pdescb = "Ljava/lang/Object;".repeat(pc);
 
-        writeMethod(cw,name,pc+2,superClass,cachedMethod,receiverType,pdescb.toString(),false);
+        writeMethod(cw, name, pc + 2, superClass, cachedMethod, receiverType, pdescb, false);
     }
 
     public static void genCallXxxWithArray(ClassWriter cw, final String name, final String superClass, CachedMethod cachedMethod, String receiverType) {

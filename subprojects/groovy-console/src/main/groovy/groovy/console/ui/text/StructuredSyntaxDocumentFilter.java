@@ -69,9 +69,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
         int checked = checking.indexOf('(');
         if (checked > -1) {
             StringBuilder msg = new StringBuilder("Only non-capturing groups allowed:\r\n" + regexp + "\r\n");
-            for (int i = 0; i < checked; i++) {
-                msg.append(" ");
-            }
+            msg.append(" ".repeat(checked));
             msg.append("^");
             throw new IllegalArgumentException(msg.toString());
         }
