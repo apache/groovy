@@ -254,18 +254,28 @@ final class RegularExpressionsTest {
 
         switch ("cheesefoo") {
             case ~"cheesecheese":
-                assert false;
-                break;
+                assert false
+                break
             case ~"(cheese)(foo)":
-                def m = Matcher.getLastMatcher();
+                def m = Matcher.getLastMatcher()
                 assert m.group(0) == "cheesefoo"
                 assert m.group(1) == "cheese"
                 assert m.group(2) == "foo"
                 assert m.groupCount() == 2
-                break;
+                break
             default:
                 assert false
         }
+    }
+
+    @Test
+    void testNamedCategoryGroups() {
+        def issueRegex = /(?<project>\w*)-(?<number>\d+)/
+        def m = 'GROOVY-11701' =~ issueRegex
+        assert m[0][1] == 'GROOVY'
+        assert m[0]['project'] == 'GROOVY'
+        assert m[0].number == '11701'
+
     }
 
     @Test
@@ -388,7 +398,7 @@ final class RegularExpressionsTest {
     @Test
     void testFifth() {
         def matcher = "\$abc." =~ "\\\$(.*)\\."
-        matcher.matches();                   // must be invoked
+        matcher.matches()                    // must be invoked
         assert matcher.group(1) == "abc"     // is one, not zero
         assert matcher[0] == ["\$abc.", "abc"]
         assert matcher[0][1] == "abc"
@@ -398,7 +408,7 @@ final class RegularExpressionsTest {
     void testSixth() {
         def matcher = "\$abc." =~ /\$(.*)\./    // no need to double-escape!
         assert "\\\$(.*)\\." == /\$(.*)\./
-        matcher.matches();                      // must be invoked
+        matcher.matches()                       // must be invoked
         assert matcher.group(1) == "abc"        // is one, not zero
         assert matcher[0] == ["\$abc.", "abc"]
         assert matcher[0][1] == "abc"

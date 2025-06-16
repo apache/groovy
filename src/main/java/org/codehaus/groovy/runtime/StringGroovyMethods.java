@@ -47,6 +47,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -1547,6 +1548,146 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         return list;
     }
 
+    // stateful matcher API is not very extensible; care should be taken if using the matcher directly as it will potentially be mutated
+    // this mostly provides an efficient list delegate but will less efficiently recalculates matches for named groups
+    static class GroupList implements List<String> {
+        private final Matcher matcher;
+        private final int count;
+        private final List<String> delegate;
+
+        public GroupList(Matcher matcher, int count) {
+            this.matcher = matcher;
+            this.count = count;
+            this.delegate = getGroups(matcher);
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegate.isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return delegate.contains(o);
+        }
+
+        @Override
+        public Iterator<String> iterator() {
+            return delegate.iterator();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return delegate.toArray();
+        }
+
+        @Override
+        public boolean add(String s) {
+            throw new UnsupportedOperationException("Can't add to a Matcher result");
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException("Can't remove a Matcher result");
+        }
+
+        @Override
+        public boolean addAll(Collection c) {
+            throw new UnsupportedOperationException("Can't addAll to a Matcher result");
+        }
+
+        @Override
+        public boolean addAll(int index, Collection c) {
+            throw new UnsupportedOperationException("Can't addAll to a Matcher result");
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException("Can't clear a Matcher result");
+        }
+
+        @Override
+        public String get(int index) {
+            return delegate.get(index);
+        }
+
+        public String get(String name) {
+            matcher.reset();
+            for (int i = 0; i <= count; i++) {
+                matcher.find();
+            }
+            return matcher.group(name);
+        }
+
+        public String getAt(String name) {
+            return matcher.group(name);
+        }
+
+        @Override
+        public String set(int index, String element) {
+            throw new UnsupportedOperationException("Can't set a Matcher result");
+        }
+
+        @Override
+        public void add(int index, String element) {
+            throw new UnsupportedOperationException("Can't add to a Matcher result");
+        }
+
+        @Override
+        public String remove(int index) {
+            throw new UnsupportedOperationException("Can't remove a Matcher result");
+        }
+
+        @Override
+        public int indexOf(Object o) {
+            return delegate.indexOf(o);
+        }
+
+        @Override
+        public int lastIndexOf(Object o) {
+            return delegate.lastIndexOf(o);
+        }
+
+        @Override
+        public ListIterator<String> listIterator() {
+            return delegate.listIterator();
+        }
+
+        @Override
+        public ListIterator<String> listIterator(int index) {
+            return delegate.listIterator(index);
+        }
+
+        @Override
+        public List<String> subList(int fromIndex, int toIndex) {
+            return delegate.subList(fromIndex, toIndex);
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            return delegate.retainAll(c);
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException("Can't remove from a Matcher result");
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            return delegate.containsAll(c);
+        }
+
+        @Override
+        public Object[] toArray(Object[] a) {
+            return delegate.toArray(a);
+        }
+    }
     /**
      * Checks whether a Matcher contains a group or not.
      *
@@ -1778,6 +1919,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
         self.reset();
         return new Iterator() {
             private boolean done, found;
+            private int count;
 
             @Override
             public boolean hasNext() {
@@ -1804,7 +1946,7 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
 
                 if (hasGroup(self)) {
                     // yes, so return the specified group list
-                    return getGroups(self);
+                    return new GroupList(self, count++);
                 } else {
                     // not using groups, so return the nth
                     // occurrence of the pattern
