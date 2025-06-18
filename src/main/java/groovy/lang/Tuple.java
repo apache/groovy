@@ -22,13 +22,15 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.Serializable;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.RandomAccess;
 
 /**
  * Represents a list of Objects.
  */
-public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable, Comparable<Tuple<E>> {
+public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable, Comparable<Tuple<E>>, RandomAccess {
     private static final long serialVersionUID = -6707770506387821031L;
     private final E[] contents;
 
@@ -52,9 +54,25 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
         return contents.length;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public E[] toArray() {
-        return contents;
+        int size = size();
+        E[] copy = (E[]) new Object[size];
+        System.arraycopy(contents, 0, copy, 0, size);
+        return copy;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T[] toArray(T[] a) {
+        int size = size();
+        if (a.length < size)
+            a = (T[]) new Object[size];
+
+        System.arraycopy(contents, 0, a, 0, size);
+        Arrays.fill(a, size, a.length, null);
+        return a;
     }
 
     @SuppressWarnings("unchecked")
