@@ -594,21 +594,32 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-8409, GROOVY-10067
+    // GROOVY-8409, GROOVY-10067, GROOVY-10074, etc.
     void testReturnTypeInferenceWithMethodGenerics15() {
         shouldFailWithMessages '''
-            List<CharSequence> list = ['x'].collect() // GROOVY-10074
+            List<CharSequence> list = ['x'].collect()
         ''',
         'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
 
         shouldFailWithMessages '''
-            List<CharSequence> list = ['x'].stream().toList() // TODO: fix type param bound of StreamGroovyMethods#toList(Stream<T>)
+            List<CharSequence> list = ['x'].stream().toList()
+        ''',
+        'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
+
+        shouldFailWithMessages '''
+            import static java.util.stream.Collectors.toList
+            List<CharSequence> list = ['x'].stream().collect(toList())
         ''',
         'Incompatible generic argument types. Cannot assign java.util.List<java.lang.String> to: java.util.List<java.lang.CharSequence>'
 
         assertScript '''
             import static java.util.stream.Collectors.toList
-            List<CharSequence> list = ['x'].stream().collect(toList())
+            List<? extends CharSequence> list = ['x'].stream().collect(toList())
+        '''
+
+        assertScript '''
+            import static java.util.stream.Collectors.toList
+            List<String> list = ['x'].stream().collect(toList())
         '''
     }
 
