@@ -14015,7 +14015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">
      * def nums = [0, 1, 2, 3, 4]
      * assert nums.subList(1..3) == 1..3
-     * assert nums.subList(0<..<-1) == 1..3
+     * assert nums.subList(0&lt;..&lt;-1) == 1..3
      * nums.subList(1..3).clear()
      * assert nums == [0, 4]
      * </pre>
