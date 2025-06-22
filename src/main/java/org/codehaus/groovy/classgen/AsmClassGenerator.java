@@ -1127,8 +1127,8 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression objectExpression = pexp.getObjectExpression();
 
         ClassNode type = objectExpression.getType();
-        if (objectExpression instanceof ClassExpression && !type.isInterface()
-                && ("this".equals(propertyName) || "super".equals(propertyName))) {
+        if (objectExpression instanceof ClassExpression
+                && ("this".equals(propertyName) || ("super".equals(propertyName) && !type.isInterface()))) {
             // we have something like A.B.this and need to make it
             // into this.this$0.this$0, where this.this$0 produces
             // A.B and this.this$0.this$0 produces A.

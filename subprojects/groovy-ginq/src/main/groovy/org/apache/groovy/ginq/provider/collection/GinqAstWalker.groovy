@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection
 
+import groovy.transform.CompileStatic
 import org.apache.groovy.ginq.GinqGroovyMethods
 import org.apache.groovy.ginq.dsl.GinqAstBaseVisitor
 import org.apache.groovy.ginq.dsl.GinqAstBuilder
@@ -108,6 +109,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
  *
  * @since 4.0.0
  */
+@CompileStatic
 class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable {
 
     GinqAstWalker(SourceUnit sourceUnit) {
@@ -129,12 +131,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         DataSourceExpression resultDataSourceExpression
         MethodCallExpression resultMethodCallReceiver
 
-        FromExpression fromExpression = getCurrentGinqExpression().fromExpression
+        FromExpression fromExpression = currentGinqExpression.fromExpression
         resultDataSourceExpression = fromExpression
         MethodCallExpression fromMethodCallExpression = visitFromExpression(fromExpression)
         resultMethodCallReceiver = fromMethodCallExpression
 
-        for (JoinExpression joinExpression : getCurrentGinqExpression().joinExpressionList) {
+        for (JoinExpression joinExpression : currentGinqExpression.joinExpressionList) {
             joinExpression.putNodeMetaData(__METHOD_CALL_RECEIVER, resultMethodCallReceiver)
             joinExpression.dataSourceExpression = resultDataSourceExpression
 
@@ -142,7 +144,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             resultMethodCallReceiver = visitJoinExpression(joinExpression)
         }
 
-        WhereExpression whereExpression = getCurrentGinqExpression().whereExpression
+        WhereExpression whereExpression = currentGinqExpression.whereExpression
         if (whereExpression) {
             whereExpression.dataSourceExpression = resultDataSourceExpression
             whereExpression.putNodeMetaData(__METHOD_CALL_RECEIVER, resultMethodCallReceiver)
@@ -151,7 +153,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         addDummyGroupExpressionIfNecessary()
-        GroupExpression groupExpression = getCurrentGinqExpression().groupExpression
+        GroupExpression groupExpression = currentGinqExpression.groupExpression
         if (groupExpression) {
             groupExpression.dataSourceExpression = resultDataSourceExpression
             groupExpression.putNodeMetaData(__METHOD_CALL_RECEIVER, resultMethodCallReceiver)
@@ -159,7 +161,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             resultMethodCallReceiver = groupMethodCallExpression
         }
 
-        OrderExpression orderExpression = getCurrentGinqExpression().orderExpression
+        OrderExpression orderExpression = currentGinqExpression.orderExpression
         if (orderExpression) {
             orderExpression.dataSourceExpression = resultDataSourceExpression
             orderExpression.putNodeMetaData(__METHOD_CALL_RECEIVER, resultMethodCallReceiver)
@@ -167,7 +169,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             resultMethodCallReceiver = orderMethodCallExpression
         }
 
-        LimitExpression limitExpression = getCurrentGinqExpression().limitExpression
+        LimitExpression limitExpression = currentGinqExpression.limitExpression
         if (limitExpression) {
             limitExpression.dataSourceExpression = resultDataSourceExpression
             limitExpression.putNodeMetaData(__METHOD_CALL_RECEIVER, resultMethodCallReceiver)
@@ -175,7 +177,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
             resultMethodCallReceiver = limitMethodCallExpression
         }
 
-        SelectExpression selectExpression = getCurrentGinqExpression().selectExpression
+        SelectExpression selectExpression = currentGinqExpression.selectExpression
         selectExpression.putNodeMetaData(__METHOD_CALL_RECEIVER, resultMethodCallReceiver)
         selectExpression.dataSourceExpression = resultDataSourceExpression
         MethodCallExpression selectMethodCallExpression = visitSelectExpression(selectExpression)
@@ -280,12 +282,12 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private void addDummyGroupExpressionIfNecessary() {
-        if (getCurrentGinqExpression().groupExpression) {
+        if (currentGinqExpression.groupExpression) {
             return
         }
 
         boolean hasAggFunctionInSelect = false
-        SelectExpression selectExpression = getCurrentGinqExpression().selectExpression
+        SelectExpression selectExpression = currentGinqExpression.selectExpression
         selectExpression.projectionExpr.visit(new GinqAstBaseVisitor() {
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
@@ -306,7 +308,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         })
 
         if (hasAggFunctionInSelect) {
-            getCurrentGinqExpression().groupExpression =
+            currentGinqExpression.groupExpression =
                     new GroupExpression(
                             new ArgumentListExpression(
                                     Collections.singletonList(
@@ -672,7 +674,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     @Override
     MethodCallExpression visitSelectExpression(SelectExpression selectExpression) {
-        getCurrentGinqExpression().putNodeMetaData(__VISITING_SELECT, true)
+        currentGinqExpression.putNodeMetaData(__VISITING_SELECT, true)
         Expression selectMethodReceiver = selectExpression.getNodeMetaData(__METHOD_CALL_RECEIVER)
         DataSourceExpression dataSourceExpression = selectExpression.dataSourceExpression
         Expression projectionExpr = selectExpression.getProjectionExpr()
@@ -824,13 +826,13 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         List<Expression> extra = []
         if (enableCount || rowNumberUsed) {
-            getCurrentGinqExpression().putNodeMetaData(__RN_USED, true)
+            currentGinqExpression.putNodeMetaData(__RN_USED, true)
             extra << callX(varX(rowNumberName), 'getAndIncrement')
         }
 
         def selectMethodCallExpression = callXWithLambda(selectMethodReceiver, "select", dataSourceExpression, parallel, lambdaCode, extra, param(dynamicType(), getWindowQueryableName()))
 
-        getCurrentGinqExpression().putNodeMetaData(__VISITING_SELECT, false)
+        currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
 
         return selectMethodCallExpression
     }
@@ -977,11 +979,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private int windowQueryableNameSeq
     private String getWindowQueryableName() {
-        String name = (String) getCurrentGinqExpression().getNodeMetaData(__WINDOW_QUERYABLE_NAME)
+        String name = (String) currentGinqExpression.getNodeMetaData(__WINDOW_QUERYABLE_NAME)
 
         if (!name) {
             name = "${__WINDOW_QUERYABLE_NAME}${windowQueryableNameSeq++}"
-            getCurrentGinqExpression().putNodeMetaData(__WINDOW_QUERYABLE_NAME, name)
+            currentGinqExpression.putNodeMetaData(__WINDOW_QUERYABLE_NAME, name)
         }
 
         return name
@@ -1074,7 +1076,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         }
 
         def nameListExpression = new ListExpression(nameExpressionList)
-        getCurrentGinqExpression().putNodeMetaData(metaDataKey, nameListExpression)
+        currentGinqExpression.putNodeMetaData(metaDataKey, nameListExpression)
 
         ConstructorCallExpression namedRecordCtorCallExpression =
                 ctorX(NAMED_RECORD_TYPE,
@@ -1088,11 +1090,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private int metaDataMapNameSeq
     private String getMetaDataMapName() {
-        String name = (String) getCurrentGinqExpression().getNodeMetaData(__META_DATA_MAP_NAME_PREFIX)
+        String name = (String) currentGinqExpression.getNodeMetaData(__META_DATA_MAP_NAME_PREFIX)
 
         if (!name) {
             name = "${__META_DATA_MAP_NAME_PREFIX}${metaDataMapNameSeq++}"
-            getCurrentGinqExpression().putNodeMetaData(__META_DATA_MAP_NAME_PREFIX, name)
+            currentGinqExpression.putNodeMetaData(__META_DATA_MAP_NAME_PREFIX, name)
         }
 
         return name
@@ -1100,11 +1102,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private int rowNumberNameSeq
     private String getRowNumberName() {
-        String name = (String) getCurrentGinqExpression().getNodeMetaData(__ROW_NUMBER_NAME_PREFIX)
+        String name = (String) currentGinqExpression.getNodeMetaData(__ROW_NUMBER_NAME_PREFIX)
 
         if (!name) {
             name = "${__ROW_NUMBER_NAME_PREFIX}${rowNumberNameSeq++}"
-            getCurrentGinqExpression().putNodeMetaData(__ROW_NUMBER_NAME_PREFIX, name)
+            currentGinqExpression.putNodeMetaData(__ROW_NUMBER_NAME_PREFIX, name)
         }
 
         return name
@@ -1112,11 +1114,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private int supplyAsyncLambdaParamNameSeq
     private String getSupplyAsyncLambdaParamName() {
-        String name = (String) getCurrentGinqExpression().getNodeMetaData(SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX)
+        String name = (String) currentGinqExpression.getNodeMetaData(__SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX)
 
         if (!name) {
-            name = "${SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX}${supplyAsyncLambdaParamNameSeq++}"
-            getCurrentGinqExpression().putNodeMetaData(SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX, name)
+            name = "${__SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX}${supplyAsyncLambdaParamNameSeq++}"
+            currentGinqExpression.putNodeMetaData(__SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX, name)
         }
 
         return name
@@ -1131,11 +1133,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private ListExpression getSelectNameListExpression() {
-        (ListExpression) (getCurrentGinqExpression().getNodeMetaData(MD_SELECT_NAME_LIST) ?: [])
+        (ListExpression) (currentGinqExpression.getNodeMetaData(MD_SELECT_NAME_LIST) ?: [])
     }
 
     private ListExpression getGroupNameListExpression() {
-        (ListExpression) (getCurrentGinqExpression().getNodeMetaData(MD_GROUP_NAME_LIST) ?: [])
+        (ListExpression) (currentGinqExpression.getNodeMetaData(MD_GROUP_NAME_LIST) ?: [])
     }
 
     private List<String> getGroupNameList() {
@@ -1156,8 +1158,8 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private List<String> getDataSourceAliasList() {
         List<DataSourceExpression> dataSourceExpressionList = []
-        dataSourceExpressionList << getCurrentGinqExpression().fromExpression
-        dataSourceExpressionList.addAll(getCurrentGinqExpression().joinExpressionList)
+        dataSourceExpressionList << currentGinqExpression.fromExpression
+        dataSourceExpressionList.addAll(currentGinqExpression.joinExpressionList)
         dataSourceExpressionList.stream().map(e -> e.aliasExpr.text).collect(Collectors.toList())
     }
 
@@ -1496,19 +1498,19 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private boolean isGroupByVisited() {
-        getCurrentGinqExpression().getNodeMetaData(__GROUPBY_VISITED)
+        return currentGinqExpression.getNodeMetaData(__GROUPBY_VISITED)
     }
 
     private boolean isVisitingSelect() {
-        getCurrentGinqExpression().getNodeMetaData(__VISITING_SELECT)
+        currentGinqExpression.getNodeMetaData(__VISITING_SELECT)
     }
 
     private boolean isVisitingWindowFunction() {
-        getCurrentGinqExpression().getNodeMetaData(__VISITING_WINDOW_FUNCTION)
+        currentGinqExpression.getNodeMetaData(__VISITING_WINDOW_FUNCTION)
     }
 
     private boolean isRowNumberUsed() {
-        getCurrentGinqExpression().getNodeMetaData(__RN_USED)
+        currentGinqExpression.getNodeMetaData(__RN_USED)
     }
 
     private static MethodCallExpression callXWithLambda(Expression receiver, String methodName, LambdaExpression lambdaExpression) {
@@ -1523,7 +1525,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     final SourceUnit sourceUnit
 
-    private Map<String,String> configuration
+    private Map<String, String> configuration
     @Override
     Map<String, String> getConfiguration() {
         return configuration
@@ -1534,7 +1536,6 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private final Deque<GinqExpression> ginqExpressionStack = new ArrayDeque<>()
-
     private final Deque<String> visitingAggregateFunctionStack = new ArrayDeque<>()
 
     private static final ClassNode MAPS_TYPE = makeWithoutCaching(Maps.class)
@@ -1589,11 +1590,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String __VISITING_SELECT = "__VISITING_SELECT"
     private static final String __VISITING_WINDOW_FUNCTION = "__VISITING_WINDOW_FUNCTION"
     private static final String __LAMBDA_PARAM_NAME = "__LAMBDA_PARAM_NAME"
-    private static final String  __RN_USED = '__RN_USED'
+    private static final String __RN_USED = '__RN_USED'
     private static final String __META_DATA_MAP_NAME_PREFIX = '__metaDataMap_'
     private static final String __WINDOW_QUERYABLE_NAME = '__wq_'
     private static final String __ROW_NUMBER_NAME_PREFIX = '__rowNumber_'
-    private static final String SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX = "__salp_"
+    private static final String __SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX = "__salp_"
     private static final String __SOURCE_RECORD = "__sourceRecord"
     private static final String __GROUP = "__group"
     private static final String MD_GROUP_NAME_LIST = "groupNameList"
