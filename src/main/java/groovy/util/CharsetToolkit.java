@@ -29,6 +29,7 @@ import java.io.LineNumberReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Utility class to guess the encoding of a given text file.
@@ -98,10 +99,7 @@ public class CharsetToolkit {
      * if an 8-bit <code>Charset</code> is encountered.
      */
     public void setDefaultCharset(Charset defaultCharset) {
-        if (defaultCharset != null)
-            this.defaultCharset = defaultCharset;
-        else
-            this.defaultCharset = getDefaultSystemCharset();
+        this.defaultCharset = Objects.requireNonNullElseGet(defaultCharset, CharsetToolkit::getDefaultSystemCharset);
     }
 
     public Charset getCharset() {

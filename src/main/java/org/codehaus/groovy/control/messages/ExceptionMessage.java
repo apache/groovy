@@ -54,11 +54,7 @@ public class ExceptionMessage extends Message {
         String description = "General error during " + owner.getPhaseDescription() + ": ";
 
         String message = cause.getMessage();
-        if (message != null) {
-            output.println(description + message);
-        } else {
-            output.println(description + cause);
-        }
+        output.println(description + Objects.requireNonNullElse(message, cause));
         output.println();
 
         /*if (debug)*/ cause.printStackTrace(output);

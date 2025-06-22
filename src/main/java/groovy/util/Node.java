@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 
 /**
@@ -393,10 +394,7 @@ public class Node implements Serializable, Cloneable {
             if (sb != null) {
                 return sb.toString();
             } else {
-                if (previousText != null) {
-                    return previousText;
-                }
-                return "";
+                return Objects.requireNonNullElse(previousText, "");
             }
         }
         return "" + value;

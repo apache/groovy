@@ -22,6 +22,8 @@ import groovy.lang.Closure;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+import java.util.Objects;
+
 /**
  * Represents a method pointer on an object such as
  * {@code foo.&bar} which means find the method pointer for the {@code bar} method on the {@code foo} instance.
@@ -41,10 +43,7 @@ public class MethodPointerExpression extends Expression {
     }
 
     public Expression getExpression() {
-        if (expression == null)
-            return VariableExpression.THIS_EXPRESSION;
-        else
-            return expression;
+        return Objects.requireNonNullElse(expression, VariableExpression.THIS_EXPRESSION);
     }
 
     public Expression getMethodName() {
