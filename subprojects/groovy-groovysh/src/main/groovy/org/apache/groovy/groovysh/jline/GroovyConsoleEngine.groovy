@@ -16,21 +16,29 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.commands
+package org.apache.groovy.groovysh.jline
 
-/**
- * Tests for the {@link HelpCommand} class.
- */
-class HelpCommandTest /*extends CommandTestSupport */{
-    void testList() {
-//        shell.execute(HelpCommand.COMMAND_NAME)
+import org.jline.builtins.ConfigurationPath
+import org.jline.console.Printer
+import org.jline.console.ScriptEngine
+import org.jline.console.impl.ConsoleEngineImpl
+
+import java.nio.file.Path
+import java.util.function.Supplier
+
+class GroovyConsoleEngine extends ConsoleEngineImpl {
+    GroovyConsoleEngine(ScriptEngine engine, Printer printer, Supplier<Path> workDir, ConfigurationPath configPath) {
+        super(engine, printer, workDir, configPath)
+        commandNames().each { name ->
+            if (!name.equals('slurp')) {
+                rename(Command."${name.toUpperCase()}", "/$name")
+            }
+        }
+        alias('/slurp', 'slurp')
     }
 
-    void testCommandHelp() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' exit')
-    }
-
-    void testCommandHelpInvalidCommand() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
+    @Override
+    String name() {
+        'Console Commands'
     }
 }

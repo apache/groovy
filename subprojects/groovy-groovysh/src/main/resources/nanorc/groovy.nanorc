@@ -1,0 +1,45 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+syntax "Groovy" "\.(groovy|gradle)$"
+
+TYPE:        "\<(boolean|byte|char|def|double|float|int|it|long|new|short|this|transient|var|void)\>"
+KEYWORD:     "\<(case|catch|default|do|else|finally|for|if|return|switch|throw|try|while)\>"
+KEYWORD:     "\<(abstract|class|extends|final|implements|import|instanceof|interface|native|non-sealed|package)\>"
+KEYWORD:     "\<(permits|private|protected|public|record|sealed|static|strictfp|super|synchronized|throws|trait|volatile)\>"
+PACKAGE:     "(([a-z0-9]{2,}[.]{1}){2,10}([a-z0-9]{2,}){0,1})"
+
+CLASS:       "\<[A-Z]{0,2}([A-Z]{1}[a-z0-9]+){1,}\>"
+# Annotation
+VARIABLE:    "@[A-Za-z]+"
+
+FUNCTION:    "\<(assert|print|println|sleep|from|where|select|as|in)\>"
+FUNCTION:    "\<(join|innerjoin|leftjoin|rightjoin|fulljoin|crossjoin|groupby|orderby|limit)\>"
+FUNCTION:    "\<(innerhashjoin|lefthashjoin|righthashjoin|fullhashjoin|exists|having|distinct)\>"
+FUNCTION:    "\<(over|partitionby|rows|range|asc|desc|nullsfirst|nullslast)\>"
+JUMP:        "\<(break|continue)\>"
+NULL:        "\<(null)\>"
+BOOLEAN:     "\<(true|false)\>"
+CONSTANT:    "\<[A-Z]+([_]{1}[A-Z]+){0,}\>"
+OPERATOR:    "[-+/*=<>?:!~%&|]"
+~NUMBER:     "\b-?(([1-9][0-9_]*)|0)\.[0-9_e]+[dfg]?\b" "\b-?([1-9][0-9_]*)?[0-9][ilg]?\b" "\b0[0-7_]*[ilg]?\b" "\b0x([1-9a-f][0-9a-f_]*)?[0-9a-f][lg]?\b" "\b0b([01][01_]*)?[01]\b"
+#STRING:      "['][^']*[^\\][']" "[']{3}.*[^\\][']{3}"
+$BALANCED_DELIMITERS:  """", ''', ', ""
+$LINE_COMMENT:         "//"
+$BLOCK_COMMENT:        "/*, */"
+REGEXP:      "~/[^/]*/"
+
+WHITESPACE: "[[:space:]]+$"
+WARNING:    "	+ +| +	+"

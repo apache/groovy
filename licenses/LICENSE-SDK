@@ -223,10 +223,21 @@ BSD license.  For details, see licenses/hamcrest-license.txt.
 
 ------------------------------------------------------------------------
 
-JLine2 License (optional dependency used with groovysh)
+JLine3 License
 
-This product bundles the JLine2 jar, which is available under a
-BSD License.  For details, see licenses/jline2-license.txt.
+The following source files within this product:
+
+    org/apache/groovy/groovysh/jline/GroovyEngine.java
+    org/apache/groovy/groovysh/jline/ObjectInspector.groovy
+    org/apache/groovy/groovysh/jline/Utils.groovy
+    org/apache/groovy/groovysh/jline/JrtJavaBasePackages.java
+    org/apache/groovy/groovysh/jline/PackageHelper.java
+
+were derived from similarly named files in the JLine3 source repository which
+have a BSD-style license. Details can be found in: licenses/jline3-license.txt
+
+This product bundles several JLine3 jars (optional dependency used with groovysh),
+which are available under a BSD License.  For details, see licenses/jline3-license.txt.
 
 ------------------------------------------------------------------------
 

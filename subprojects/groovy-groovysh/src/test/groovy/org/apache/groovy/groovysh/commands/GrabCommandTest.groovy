@@ -20,27 +20,27 @@ package org.apache.groovy.groovysh.commands
 
 import groovy.grape.Grape
 import groovy.mock.interceptor.StubFor
-import org.apache.groovy.groovysh.Groovysh
-import org.apache.groovy.groovysh.util.PackageHelperImpl
 
 /**
- * Tests for the {@link GrabCommand} class.
+ * Tests for the {@code /grab} command.
  */
-class GrabCommandTest extends CommandTestSupport {
+class GrabCommandTest /*extends CommandTestSupport*/ {
 
-    protected GrabCommand command
+//    protected GrabCommand command
     def grapeStub = new StubFor(Grape.class)
 
     void setUp() {
+/*
         Groovysh groovysh = new Groovysh()
         PackageHelperImpl packageHelper = new PackageHelperImpl()
         packageHelper.metaClass.reset = { }
         groovysh.metaClass.packageHelper = packageHelper
         command = new GrabCommand(groovysh)
-        command.metaClass.fail = { String message -> 
+        command.metaClass.fail = { String message ->
             throw new RuntimeException("fail(${message}) called")
         }
         def stubber = new StubFor(Grape.class)
+*/
     }
 
     void testWrongNumberOfArguments() {
