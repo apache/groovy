@@ -1,4 +1,0 @@
-JLine2 License (optional dependency used with groovysh)
-
-This product bundles the JLine2 jar, which is available under a
-BSD License.  For details, see licenses/jline2-license.txt.

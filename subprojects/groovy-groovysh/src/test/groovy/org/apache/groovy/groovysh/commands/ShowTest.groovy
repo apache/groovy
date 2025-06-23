@@ -19,18 +19,15 @@
 package org.apache.groovy.groovysh.commands
 
 /**
- * Tests for the {@link HelpCommand} class.
+ * Tests for the /show command.
  */
-class HelpCommandTest /*extends CommandTestSupport */{
-    void testList() {
-//        shell.execute(HelpCommand.COMMAND_NAME)
-    }
-
-    void testCommandHelp() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' exit')
-    }
-
-    void testCommandHelpInvalidCommand() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
+class ShowTest extends ConsoleTestSupport {
+    void testShowVariable() {
+        assert !console.hasVariable('foo')
+        console.execute('dummyName', "foo = 'bar'")
+        assert console.hasVariable('foo')
+        assert console.getVariable('foo') == 'bar'
+        console.invoke(session, '/show')
+        assert printer.output.any{it == '[foo:bar]' }
     }
 }

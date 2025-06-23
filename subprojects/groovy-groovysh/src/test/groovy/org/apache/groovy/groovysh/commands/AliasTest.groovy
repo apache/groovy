@@ -19,18 +19,17 @@
 package org.apache.groovy.groovysh.commands
 
 /**
- * Tests for the {@link HelpCommand} class.
+ * Tests for the {@code /alias} command.
  */
-class HelpCommandTest /*extends CommandTestSupport */{
-    void testList() {
-//        shell.execute(HelpCommand.COMMAND_NAME)
-    }
+class AliasTest extends ConsoleTestSupport {
 
-    void testCommandHelp() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' exit')
-    }
+    void testAliasAndUnalias() {
+        assert !console.hasAlias('foo')
+        console.invoke(session, '/alias', 'foo', '/history')
+        assert console.hasAlias('foo')
+        assert console.getAlias('foo') == '/history'
 
-    void testCommandHelpInvalidCommand() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
+        console.invoke(session, '/unalias', 'foo')
+        assert !console.hasAlias('foo')
     }
 }

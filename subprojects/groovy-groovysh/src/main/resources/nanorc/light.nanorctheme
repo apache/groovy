@@ -1,0 +1,75 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+PLAIN       black
+FUNCTION    green
+STRING      cyan
+REGEXP      magenta
+COMMENT     brightcyan
+DOC_COMMENT cyan
+TYPE        brightblue
+BOOLEAN     brightblack
+NULL        cyan
+NUMBER      blue
+VARIABLE    brightyellow
+PACKAGE     green,faint
+CLASS       green
+CONSTANT    yellow
+OPERATOR    yellow
+COMMAND     green
+OPTION      yellow
+KEYWORD     brightblack
+JUMP        cyan
+SECTION     green
+ATTRIBUTE   green
+PATH        brightblue
+EXECUTABLE  green
+LINK        cyan
+TITLE       brightblue
+ESCAPE      black,cyan
+DEBUG       brightmagenta
+ERROR       red
+TODO        brightwhite,cyan
+WARNING     ,lightred
+WHITESPACE  ,lightgreen
+HEADER      bold,!blue,~grey70,underline
+ROW_NUMBER  bold,!blue,~grey70
+ROW_STYLE   ,~grey82
+LIST_BACKGROUND ,~grey70
+LIST_GROUP      yellow
+RAINBOW1    brightmagenta
+RAINBOW2    brightcyan
+RAINBOW3    brightblue
+RAINBOW4    brightyellow
+RAINBOW5    brightgreen
+RAINBOW6    brightred
+RAINBOW7    magenta
+RAINBOW8    cyan
+RAINBOW9    blue
+RAINBOW10   yellow
+RAINBOW11   green
+RAINBOW12   red
+#
+# mixin
+#
++FUNCTION           FUNCTION: "[A-Za-z_][A-Za-z0-9_]*[[:space:]]*[(]" \n PLAIN:    "[(]"
++LINT               WHITESPACE: "[[:space:]]+$" \n WARNING: "\t*"
++LONG_LINE_WARNING  WARNING: "^.{121,}$"
+#
+# parser
+#
+$LINE_COMMENT           COMMENT \n TODO: "FIXME|TODO|XXX"
+$BLOCK_COMMENT          COMMENT \n DOC_COMMENT: startWith=/** \n TODO: "FIXME|TODO|XXX"
+$BALANCED_DELIMITERS    STRING  \n VARIABLE: continueAs=\s*:

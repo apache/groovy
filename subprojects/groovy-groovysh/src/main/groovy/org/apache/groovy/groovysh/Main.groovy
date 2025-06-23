@@ -18,256 +18,318 @@
  */
 package org.apache.groovy.groovysh
 
-import groovy.cli.internal.CliBuilderInternal
-import groovy.cli.internal.OptionAccessor
-import groovy.transform.AutoFinal
-import groovy.transform.CompileDynamic
-import groovy.transform.CompileStatic
-import jline.TerminalFactory
-import jline.UnixTerminal
-import jline.UnsupportedTerminal
-import jline.WindowsTerminal
-import org.apache.groovy.groovysh.util.SecurityManagerUtil
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.tools.shell.IO
-import org.codehaus.groovy.tools.shell.util.Logger
+import org.apache.groovy.groovysh.jline.GroovyBuiltins
+import org.apache.groovy.groovysh.jline.GroovyCommands
+import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
+import org.apache.groovy.groovysh.jline.GroovyEngine
+import org.apache.groovy.groovysh.jline.GroovySystemRegistry
+import org.apache.groovy.groovysh.util.DocFinder
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.fusesource.jansi.Ansi
-import org.fusesource.jansi.AnsiConsole
+import org.jline.builtins.ClasspathResourceUtil
+import org.jline.builtins.ConfigurationPath
+import org.jline.builtins.Options
+import org.jline.builtins.SyntaxHighlighter
+import org.jline.console.CommandInput
+import org.jline.console.CommandMethods
+import org.jline.console.CommandRegistry
+import org.jline.console.ConsoleEngine
+import org.jline.console.Printer
+import org.jline.console.impl.DefaultPrinter
+import org.jline.console.impl.JlineCommandRegistry
+import org.jline.console.impl.SystemHighlighter
+import org.jline.keymap.KeyMap
+import org.jline.reader.Binding
+import org.jline.reader.EndOfFileException
+import org.jline.reader.LineReader
+import org.jline.reader.LineReader.Option
+import org.jline.reader.LineReaderBuilder
+import org.jline.reader.Reference
+import org.jline.reader.UserInterruptException
+import org.jline.reader.impl.DefaultParser
+import org.jline.reader.impl.DefaultParser.Bracket
+import org.jline.terminal.Size
+import org.jline.terminal.Terminal
+import org.jline.terminal.Terminal.Signal
+import org.jline.terminal.TerminalBuilder
+import org.jline.utils.InfoCmp.Capability
+import org.jline.utils.OSUtils
+import org.jline.widget.TailTipWidgets
+import org.jline.widget.TailTipWidgets.TipType
+import org.jline.widget.Widgets
 
-import static org.apache.groovy.util.SystemUtil.setSystemPropertyFrom
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.function.Function
+import java.util.function.Supplier
+
+import static org.jline.jansi.AnsiRenderer.render
 
 /**
- * A Main instance has a Groovysh member representing the shell,
- * and a startGroovysh() method to run an interactive shell.
- * Subclasses should preferably extend createIO() or configure the shell
- * via getShell prior to invoking startGroovysh.
- * Clients may use configureAndStartGroovysh to provide the same CLI params
- * but a different Groovysh implementation (implementing getIO() and run()).
- *
- * The class also has static utility methods to manipulate the
- * static ansi state using the jAnsi library.
- *
- * Main CLI entry-point for <tt>groovysh</tt>.
+ * Groovy Repo modelled on JLine3 Groovy Repl demo
  */
-@AutoFinal @CompileStatic
 class Main {
-    final Groovysh groovysh
+    private static final MessageSource messages = new MessageSource(Main)
+    public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
 
-    /**
-     * @param io: may just be new IO(), which is the default
-     */
-    Main(IO io) {
-        Logger.io = io
-        groovysh = new Groovysh(io)
-    }
+    @SuppressWarnings("resource")
+    protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
+        private LineReader reader
+        private final Supplier<Path> workDir
 
-    /**
-     * @param io: may just be new IO(), which is the default
-     */
-    Main(IO io, CompilerConfiguration configuration) {
-        Logger.io = io
-        groovysh = new Groovysh(io, configuration)
-    }
-
-    /**
-     * create a Main instance, configures it according to CLI arguments, and starts the shell.
-     * @param main must have a Groovysh member that has an IO member.
-     */
-    @CompileDynamic
-    static void main(String[] args) {
-        MessageSource messages = new MessageSource(Main)
-        def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
-                header: messages['cli.option.header'])
-        cli.with {
-            _(names: ['-cp', '-classpath', '--classpath'], messages['cli.option.classpath.description'])
-            h(longOpt: 'help', messages['cli.option.help.description'])
-            V(longOpt: 'version', messages['cli.option.version.description'])
-            v(longOpt: 'verbose', messages['cli.option.verbose.description'])
-            q(longOpt: 'quiet', messages['cli.option.quiet.description'])
-            d(longOpt: 'debug', messages['cli.option.debug.description'])
-            e(longOpt: 'evaluate', args: 1, argName: 'CODE', optionalArg: false, messages['cli.option.evaluate.description'])
-            C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
-            D(longOpt: 'define', type: Map, argName: 'name=value', messages['cli.option.define.description'])
-            T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
-            pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
-            pr(longOpt: 'enable-preview', messages['cli.option.enable.preview.description'])
-        }
-        OptionAccessor options = cli.parse(args)
-
-        if (options == null) {
-            // CliBuilder prints error, but does not exit
-            System.exit(22) // Invalid Args
+        ExtraConsoleCommands(Supplier<Path> workDir) {
+            super()
+            this.workDir = workDir
+            registerCommands([
+                '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
+                '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
+                "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
+            ])
         }
 
-        if (options.h) {
-            cli.usage()
-            System.exit(0)
+        @Override
+        String name() {
+            'Console Commands'
         }
 
-        if (options.V) {
-            System.out.println(messages.format('cli.info.version', GroovySystem.version))
-            System.exit(0)
+        void setLineReader(LineReader reader) {
+            this.reader = reader
         }
 
-        boolean suppressColor = false
-        if (options.hasOption('C')) {
-            def value = options.getOptionValue('C')
-            if (value != null) {
-                suppressColor = !Boolean.valueOf(value).booleanValue() // For JDK 1.4 compat
-            }
+        private Terminal terminal() {
+            return reader.terminal
         }
 
-        String type = TerminalFactory.AUTO
-        if (options.hasOption('T')) {
-            type = options.getOptionValue('T')
-        }
-        try {
-            setTerminalType(type, suppressColor)
-        } catch (IllegalArgumentException e) {
-            System.err.println(e.getMessage())
-            cli.usage()
-            System.exit(22) // Invalid Args
-        }
-
-        // IO must be constructed AFTER calling setTerminalType()/AnsiConsole.systemInstall(),
-        // else wrapped System.out does not work on Windows.
-        IO io = new IO()
-
-        if (options.hasOption('D')) {
-            options.Ds.each { k, v -> System.setProperty(k, v) }
-        }
-
-        if (options.v) {
-            io.verbosity = IO.Verbosity.VERBOSE
-        }
-
-        if (options.d) {
-            io.verbosity = IO.Verbosity.DEBUG
-        }
-
-        if (options.q) {
-            io.verbosity = IO.Verbosity.QUIET
-        }
-
-        String evalString = null
-        if (options.e) {
-            evalString = options.getOptionValue('e')
-        }
-
-        start(io, evalString, options.arguments(), options.hasOption('pa'))
-    }
-
-    private static void start(IO io, String evalString, List<String> filenames, boolean parameters) {
-        def configuration = new CompilerConfiguration(System.getProperties())
-        configuration.setParameters(parameters)
-        Main main = new Main(io, configuration)
-        main.startGroovysh(evalString, filenames)
-    }
-
-    /**
-     * @param evalString commands that will be executed at startup after loading files given with filenames param
-     * @param filenames files that will be loaded at startup
-     */
-    protected void startGroovysh(String evalString, List<String> filenames) {
-        int code
-        Groovysh shell = getGroovysh()
-
-        // Add a hook to display some status when shutting down...
-        addShutdownHook {
-            //
-            // FIXME: We need to configure JLine to catch CTRL-C for us... Use gshell-io's InputPipe
-            //
-
-            if (code == null) {
-                // Give the user a warning when the JVM shutdown abnormally, normal shutdown
-                // will set an exit code through the proper channels
-
-                println('WARNING: Abnormal JVM shutdown detected')
-            }
-
-            if (shell.history) {
-                shell.history.flush()
-            }
-        }
-
-        SecurityManagerUtil sm = new SecurityManagerUtil()
-
-        try {
-            code = shell.run(evalString, filenames)
-        }
-        finally {
-            sm.close()
-        }
-
-        // Force the JVM to exit at this point, since shell could have created threads or
-        // popped up Swing components that will cause the JVM to linger after we have been
-        // asked to shutdown
-
-        System.exit(code)
-    }
-
-    /**
-     * @param type: one of 'auto', 'unix', ('win', 'windows'), ('false', 'off', 'none')
-     * @param suppressColor only has effect when ansi is enabled
-     */
-    @AutoFinal(enabled=false)
-    static void setTerminalType(String type, boolean suppressColor) {
-        assert type != null
-
-        type = type.toLowerCase()
-        boolean enableAnsi = true
-        switch (type) {
-            case TerminalFactory.AUTO:
-                type = null
-                break
-            case TerminalFactory.UNIX:
-                type = UnixTerminal.canonicalName
-                break
-            case TerminalFactory.WIN:
-            case TerminalFactory.WINDOWS:
-                type = WindowsTerminal.canonicalName
-                break
-            case TerminalFactory.FALSE:
-            case TerminalFactory.OFF:
-            case TerminalFactory.NONE:
-                type = UnsupportedTerminal.canonicalName
-                // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
-                enableAnsi = false
-                break
-            default:
-                // Should never happen
-                throw new IllegalArgumentException("Invalid Terminal type: $type")
-        }
-
-        Ansi.enabled = false
-        if (enableAnsi) {
+        private void clear(CommandInput input) {
+            final String[] usage = [
+                "/clear -  clear terminal",
+                "Usage: /clear",
+                "  -? --help                       Displays command help"
+            ]
             try {
-                installAnsi() // must be called before IO(), since it modifies System.in
-                Ansi.enabled = !suppressColor
-            } catch (Throwable t) {
-                LOGGER.warning("ansi will be disabled because an error occurred while installing ansi: " + t.getMessage())
+                parseOptions(usage, input.args())
+                terminal().puts(Capability.clear_screen)
+                terminal().flush()
+            } catch (Exception e) {
+                saveException(e)
             }
         }
 
-        if (type != null) {
-            System.setProperty(TerminalFactory.JLINE_TERMINAL, type)
+        private void echo(CommandInput input) {
+            final String[] usage = [
+                "/echo - echos a value",
+                "Usage:  /echo [-h] <args>",
+                "  -? --help                        Displays command help",
+            ]
+            try {
+                Options opt = parseOptions(usage, input.args())
+                if (!opt.args().isEmpty()) {
+                    terminal().writer().println(String.join(" ", opt.args()))
+                }
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
+        private static void executeCommand(List<String> args) throws Exception {
+            def sout = new StringBuilder(), serr = new StringBuilder()
+            def command = OSUtils.IS_WINDOWS ? ['cmd.exe', '/c'] : ['sh', '-c']
+            def proc = new ProcessBuilder().command(command + args.join(' ')).start()
+            proc.consumeProcessOutput(sout, serr)
+            int exitCode = proc.waitFor()
+            if (sout.size()) print sout
+            if (exitCode != 0) {
+                if (serr.size()) print serr
+                throw new Exception("Error occurred in shell!")
+            }
+        }
+
+        private void shell(CommandInput input) {
+            final String[] usage = [
+                "/!<command> -  execute shell command",
+                "Usage: /!<command>",
+                "  -? --help                       Displays command help"
+            ]
+            if (input.args().length == 1 && (input.args()[0].equals("-?") || input.args()[0].equals("--help"))) {
+                try {
+                    parseOptions(usage, input.args())
+                } catch (Exception e) {
+                    saveException(e)
+                }
+            } else {
+                List<String> argv = input.args().toList()
+                if (!argv.isEmpty()) {
+                    try {
+                        executeCommand(argv)
+                    } catch (Exception e) {
+                        saveException(e)
+                    }
+                }
+            }
+        }
+
+    }
+
+
+    static String getUserStateDirectory() {
+        def userHome = new File(System.getProperty('user.home'))
+        new File(userHome, '.groovy').canonicalPath
+    }
+
+    static void main(String[] args) {
+        try {
+            Supplier<Path> workDir = () -> Paths.get(System.getProperty('user.dir'))
+            DefaultParser parser = new DefaultParser(
+                regexCommand: /\/?[a-zA-Z!]+\S*/,
+                eofOnUnclosedQuote: true
+            )
+            parser.blockCommentDelims(new DefaultParser.BlockCommentDelims('/*', '*/'))
+                .lineCommentDelims(new String[]{'//'})
+                .setEofOnUnclosedBracket(Bracket.CURLY, Bracket.ROUND, Bracket.SQUARE)
+            Terminal terminal = TerminalBuilder.builder().build()
+            if (terminal.width == 0 || terminal.height == 0) {
+                terminal.size = new Size(120, 40) // hard-coded terminal size when redirecting
+            }
+            Thread executeThread = Thread.currentThread()
+            terminal.handle(Signal.INT, signal -> executeThread.interrupt())
+
+            def rootURL = Main.getResource('/nanorc')
+            Path root = ClasspathResourceUtil.getResourcePath(rootURL)
+            ConfigurationPath configPath = new ConfigurationPath(root, Path.of(userStateDirectory))
+
+            // ScriptEngine and command registries
+            GroovyEngine scriptEngine = new GroovyEngine()
+            scriptEngine.put('ROOT', rootURL.toString())
+            scriptEngine.put('CONSOLE_OPTIONS', [:])
+            def interpreterMode = Boolean.parseBoolean(System.getProperty("groovysh.interpreterMode", "true"))
+            scriptEngine.put('GROOVYSH_OPTIONS', [interpreterMode: interpreterMode])
+            Printer printer = new DefaultPrinter(scriptEngine, configPath)
+            ConsoleEngine consoleEngine = new GroovyConsoleEngine(scriptEngine, printer, workDir, configPath)
+            consoleEngine.setConsoleOption('docs', new DocFinder())
+
+            CommandRegistry builtins = new GroovyBuiltins(scriptEngine, workDir, configPath, (String fun) ->
+                new ConsoleEngine.WidgetCreator(consoleEngine, fun)
+            )
+            def extra = new ExtraConsoleCommands(workDir)
+
+            // Command line highlighter
+            scriptEngine.put(GroovyEngine.NANORC_VALUE, rootURL.toString())
+            Path jnanorc = root.resolve('jnanorc')
+            def commandHighlighter = SyntaxHighlighter.build(jnanorc, "COMMAND")
+            def argsHighlighter = SyntaxHighlighter.build(jnanorc, "ARGS")
+            def groovyHighlighter = SyntaxHighlighter.build(jnanorc, "Groovy")
+
+            CommandRegistry groovy = new GroovyCommands(scriptEngine, workDir, printer, groovyHighlighter)
+            GroovySystemRegistry systemRegistry = new GroovySystemRegistry(parser, terminal, workDir, configPath).tap {
+                groupCommandsInHelp(false)
+                setCommandRegistries(extra, consoleEngine, builtins, groovy)
+                addCompleter(scriptEngine.scriptCompleter)
+                setScriptDescription(scriptEngine::scriptDescription)
+                // sys registry doesn't support rename/alias, so for now invoke as user alias
+/*
+                renameLocal 'exit', '/exit'
+                renameLocal 'help', '/help'
+                invoke '/alias', '/x', '/exit'
+                invoke '/alias', '/q', '/exit'
+                invoke '/alias', '/h', '/help'
+*/
+                invoke '/alias', '/exit', 'exit'
+                invoke '/alias', '/help', 'help'
+                invoke '/alias', '/x', 'exit'
+                invoke '/alias', '/q', 'exit'
+                invoke '/alias', '/h', 'help'
+            }
+
+            def highlighter = new SystemHighlighter(commandHighlighter, argsHighlighter, groovyHighlighter).tap {
+                if (!OSUtils.IS_WINDOWS) {
+                    setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
+                }
+                addFileHighlight('/nano', '/less', 'slurp', '/load', '/save')
+                addFileHighlight('/classloader', null, ['-a', '--add'])
+                addExternalHighlighterRefresh(printer::refresh)
+                addExternalHighlighterRefresh(scriptEngine::refresh)
+            }
+
+            // LineReader
+            LineReader reader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .completer(systemRegistry.completer())
+                .parser(parser)
+                .highlighter(highlighter)
+                .variable(LineReader.SECONDARY_PROMPT_PATTERN, "%M%P > ")
+                .variable(LineReader.INDENTATION, 2)
+                .variable(LineReader.LIST_MAX, 100)
+                .variable(LineReader.HISTORY_FILE, configPath.getUserConfig('groovysh_history', true))
+                .option(Option.INSERT_BRACKET, true)
+                .option(Option.EMPTY_WORD_OPTIONS, false)
+                .option(Option.USE_FORWARD_SLASH, true)
+                .option(Option.DISABLE_EVENT_EXPANSION, true)
+                .build()
+            if (OSUtils.IS_WINDOWS) {
+                reader.setVariable(
+                    LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
+            }
+
+            // complete command registries
+            consoleEngine.setLineReader(reader)
+            builtins.setLineReader(reader)
+            extra.setLineReader(reader)
+
+            // widgets and console initialization
+            new TailTipWidgets(reader, systemRegistry::commandDescription, 5, TipType.COMPLETER)
+            KeyMap<Binding> keyMap = reader.keyMaps.get("main")
+            keyMap.bind(new Reference(Widgets.TAILTIP_TOGGLE), KeyMap.alt("s"))
+            def init = configPath.getUserConfig('groovysh_init')
+            if (init) {
+                systemRegistry.initialize(configPath.getUserConfig('groovysh_init').toFile())
+            }
+
+            println render(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version'], terminal.type))
+            println render(messages['startup_banner.1'])
+            println '-' * (terminal.width - 1)
+// for debugging
+//            def index = 0
+//            def lines = ['def x = [5, 6]', 'y = [7, 8]',
+//                         '/q']
+            // REPL-loop
+            while (true) {
+                try {
+                    systemRegistry.cleanUp() // delete temporary variables and reset output streams
+                    String line = reader.readLine("groovy> ")
+//                    String line = lines[index++]
+                    line = parser.getCommand(line).startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
+                    if (line.startsWith(':')) {
+                        def maybeCmd = line.split()[0].replaceFirst(':', '/')
+                        if (systemRegistry.hasCommand(maybeCmd) || systemRegistry.isCommandAlias(maybeCmd)) {
+                            line = line.replaceFirst(':', '/')
+                        }
+                    }
+                    Object result = systemRegistry.execute(line)
+                    consoleEngine.println(result?.toString())
+//                    consoleEngine.println([(Printer.OBJECT_TO_STRING): [(Object) : {  o -> o.toString() }] ], result)
+                } catch (UserInterruptException e) {
+                    // Ignore
+                } catch (EndOfFileException e) {
+                    String pl = e.getPartialLine()
+                    if (pl != null) { // execute last line from redirected file (required for Windows)
+                        try {
+                            consoleEngine.println(systemRegistry.execute(pl))
+                        } catch (Exception e2) {
+                            systemRegistry.trace(e2)
+                        }
+                    }
+                    break
+                } catch (Exception | Error e) {
+                    systemRegistry.trace(e) // print exception and save it to console variable
+                }
+            }
+            systemRegistry.close() // persist pipeline completer names etc
+
+            boolean groovyRunning = Thread.getAllStackTraces().keySet().any { it.name.startsWith("AWT-Shut") }
+            if (groovyRunning) {
+                consoleEngine.println("Please, close Groovy Consoles/Object Browsers!")
+            }
+        } catch (Throwable t) {
+            t.printStackTrace()
         }
     }
-
-    static void installAnsi() {
-        // Install the system adapters, replaces System.out and System.err
-        // Must be called before using IO(), because IO stores refs to System.out and System.err
-        AnsiConsole.systemInstall()
-
-        // Register jline ansi detector
-        Ansi.setDetector(new AnsiDetector())
-    }
-
-    @Deprecated
-    static void setSystemProperty(String nameValue) {
-        setSystemPropertyFrom(nameValue)
-    }
-
-    private static final java.util.logging.Logger LOGGER = java.util.logging.Logger.getLogger(Main.class.getName());
 }
