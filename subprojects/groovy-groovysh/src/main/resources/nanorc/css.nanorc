@@ -1,0 +1,46 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+syntax "css" "\.s?css$"
+
+# Selectors
+TYPE:     "\<(a|abbr|address|area|article|aside|audio|b|base|bdo|blockquote|body|br|button|canvas|caption|cite|code|col|colgroup|command|datalist|dd|del|details|dfn|div|dl|dt|em|embed|eventsource|fieldset|figcaption|figure|footer|form|h1|h2|h3|h4|h5|h6|head|header|hgroup|hr|html|i|iframe|img|input|ins|kbd|keygen|label|legend|li|link|mark|map|menu|meta|meter|nav|noscript|object|ol|optgroup|option|output|p|param|pre|progress|q|ruby|rp|rt|samp|script|section|select|small|source|span|strong|style|sub|summary|sup|table|tbody|td|textarea|tfoot|th|thead|time|title|tr|ul|var|video|wbr)\>"
+OPERATOR: "[>+~*]"
+VARIABLE: "[.#][A-Za-z_][A-Za-z0-9_-]*"
+OPERATOR: ":(active|focus|hover|link|visited|first-child|lang|valid|invalid|not|selection)\>"
+OPERATOR: ":(after|before|first-line|first-letter|root|target)\>"
+STRING:   "\[[^\[]*\]"
+PLAIN:    start="\{" end="\}"
+
+SECTION:  "(^|[[:space:]])@(include|mixin)\>"
+VARIABLE: "\$[A-Za-z0-9_-]+"
+
+SECTION:  "(^|[[:space:]])@(charset|font-face|media|page|import)\>"
+OPERATOR: "[*]"
+BOOLEAN:  "\<(above|absolute|always|armenian|auto|avoid|baseline|behind|below|bidi-override|blink|block|bolder|bold|bottom|capitalize|center-left|center-right|center|circle|cjk-ideographic|close-quote|collapse|compact|condensed|continuous|crop|crosshair|cross|cue-after|cue-before|cursive|dashed|decimal|decimal-leading-zero|default|digits|disc|dotted|double|embed|e-resize|expanded|extra-condensed|extra-expanded|fantasy|far-left|far-right|faster|fast|fixed|fixed|georgian|groove|hebrew|help|hide|higher|high|hiragana-iroha|hiragana|inherit|inline|inline-block|inline-table|inset|inside|invert|italic|justify|katakana-iroha|katakana|landscape|large|larger|left|left-side|leftwards|level|lighter|line-through|list-item|loud|lower-alpha|lowercase|lower-greek|lower-latin|lower-roman|lower|low|ltr|marker|medium|medium|middle|mix|monospace|move|narrower|ne-resize|no-close-quote|none|no-open-quote|no-repeat|normal|nowrap|n-resize|nw-resize|oblique|once|open-quote|outset|outside|overline|pointer|portait|relative|repeat-x|repeat-y|repeat|ridge|right-side|right|rightwards|rlt|run-in|sans-serif|scroll|scroll|semi-condensed|semi-expanded|separate|se-resize|serif|show|silent|slower|slow|small-caps|smaller|small|soft|solid|spell-out|square|s-resize|static|sub|super|sw-resize|table-caption|table-cell|table-column-group|table-column|table-footer-group|table-header-group|table-row-group|table-row|text-bottom|text|text-top|thick|thin|top|top|transparent|ultra-condensed|ultra-expanded|underline|upper-alpha|uppercase|upper-latin|upper-roman|visible|wait|wider|w-resize|x-fast|x-high|x-large|x-loud|x-low|x-slow|x-small|x-soft|xx-large|xx-small|pre-wrap|break-word)([[:space:];,]|$)"
+VARIABLE: ":[[:space:]]*(code|hidden|table|pre)\>"
+KEYWORD:  "\<(background-attachment|background-clip|background-color|background-image|background-position|background-repeat|background|border-bottom-color|border-bottom-style|border-bottom-width|border-bottom|border-collapse|border-color|border-left-color|border-left-style|border-left-width|border-left|border-radius|border-right-color|border-right-style|border-right-width|border-right|border-spacing|border-style|border-top-color|border-top-style|border-top-width|border-top|border-width|border|bottom|box-shadow|box-sizing|caption-side|clear|clip|color|content|counter-increment|counter-reset|cue-after|cue-before|cue|cursor|direction|display|elevation|empty-cells|float|font-family|font-size-adjust|font-size|font-style|font-variant|font-weight|font|height|left|letter-spacing|line-height|list-style-image|list-style-position|list-style-type|list-style|margin-bottom|margin-left|margin-right|margin-top|margin|marker-offset|marks|max-height|max-width|min-height|min-width|opacity|orphans|outline-color|outline-style|outline-width|outline|overflow|overflow-x|overflow-y|padding-bottom|padding-left|padding-right|padding-top|padding|page-break-after|page-break-before|page-break-inside|page|pause-after|pause-before|pause|pitch-range|pitch|play-during|position|quotes|richness|right|size|speak-header|speak-numerical|speak-punctuation|speak|speech-rate|stress|table-layout|text-align|text-decoration|text-indent|text-shadow|text-transform|top|transition|unicode-bidi|vertical-align|visibility|voice-family|volume|white-space|widows|width|word-spacing|word-wrap|z-index)[[:space:]]*:"
+WARNING:  "-(ms|moz|apple|khtml|wap|webkit|o|xv)-[a-z][a-z-]+"
+PLAIN:    "[:;,]"
+NUMBER:   "\<(0|[\+-]?[1-9][0-9]*)"
+NUMBER:   "[\+-]?([0-9]+|[0-9]*\.[0-9]+)(%|e(m|x)|p(x|t|c)|in|ft|(m|c)m|k?Hz|deg|g?rad|m?s)"
+NUMBER:   "#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})\>"
+OPERATOR: "\!important\>"
+FUNCTION: "[a-z-]*(-[a-z]+)?\(" "\(|\)"
+STRING:   ""(\\.|[^"])*"|'(\\.|[^'])*'"
+COMMENT:  "(^|[[:space:]])//.*"
+COMMENT:  start="/\*" end="\*/"
+WHITESPACE: "[[:space:]]+$"
+WARNING:    "	+ +| +	+"

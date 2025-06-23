@@ -27,8 +27,7 @@ import java.util.prefs.PreferenceChangeListener;
 /**
  * Container for shell preferences.
  */
-public class Preferences
-{
+public class Preferences {
     private static final java.util.prefs.Preferences STORE = java.util.prefs.Preferences.userRoot().node("/org/codehaus/groovy/tools/shell");
 
     public static IO.Verbosity verbosity;

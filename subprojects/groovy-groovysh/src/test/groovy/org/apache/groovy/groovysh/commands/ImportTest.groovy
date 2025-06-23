@@ -19,18 +19,14 @@
 package org.apache.groovy.groovysh.commands
 
 /**
- * Tests for the {@link HelpCommand} class.
+ * Tests for the {@code /imports} command.
  */
-class HelpCommandTest /*extends CommandTestSupport */{
-    void testList() {
-//        shell.execute(HelpCommand.COMMAND_NAME)
-    }
-
-    void testCommandHelp() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' exit')
-    }
-
-    void testCommandHelpInvalidCommand() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
+class ImportTest extends SystemTestSupport {
+    void testImport() {
+        system.execute('/imports')
+        assert !printer.output.join().contains('import java.awt.TextField')
+        system.execute('import java.awt.TextField')
+        system.execute('/imports')
+        assert printer.output.join().contains('import java.awt.TextField')
     }
 }

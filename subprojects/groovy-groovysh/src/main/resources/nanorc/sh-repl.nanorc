@@ -1,0 +1,31 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+syntax "SH-REPL"
+
+# keywords:
+KEYWORD:  "\<(case|do|done|elif|else|esac|fi|for|function|if|in|select|then|time|until|while)\>"
+OPERATOR: "(\{|\}|\(|\)|\;|\]|\[|`|\\|\$|<|>|!|=|&|\|)"
+OPTION:   "-[Lldefgrtuwx]+\>"
+OPERATOR: "-(eq|ne|gt|lt|ge|le|s|n|z)\>"
+# builtins:
+FUNCTION: "\<(alias|bg|bind|break|builtin|caller|cd|command|compgen|complete|compopt|continue|declare|dirs|disown|echo|enable|eval|exec|exit|export|false|fc|fg|getopts|hash|help|history|jobs|kill|let|local|logout|mapfile|popd|printf|pushd|pwd|read|readarray|readonly|return|set|shift|shopt|source|suspend|test|times|trap|true|type|typeset|ulimit|umask|unalias|unset|wait)\>"
+# not builtins:
+FUNCTION: "\<(cat|chmod|chown|cp|env|grep|install|ln|make|mkdir|mv|rm|sed|tar|touch|ls)\>"
+~FUNCTION: "^\s+[0-9A-Z_]+\s+\(\)"
+~VARIABLE: "\$\{?[0-9A-Z_!@#$*?-]+\}?"
+COMMENT:  "^([[:space:]])*#.*$"
+$BLOCK_COMMENT:       "/*, */"
+$BALANCED_DELIMITERS: "", '"

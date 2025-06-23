@@ -26,6 +26,7 @@ tasks.register('updateLicenses') {
     ext.licenseDocGeneratorFile = "${projectDir}/subprojects/groovy-docgenerator/LICENSE"
     ext.licenseGroovyDocFile = "${projectDir}/subprojects/groovy-groovydoc/LICENSE"
     ext.licenseJsr223File = "${projectDir}/subprojects/groovy-jsr223/LICENSE"
+    ext.licenseJLine3File = "${projectDir}/subprojects/groovy-groovysh/LICENSE"
     ext.licenseBinZipFile = "${licensesDir}/LICENSE-BINZIP"
     ext.licenseDocFile = "${licensesDir}/LICENSE-DOC"
     ext.licenseJarJarFile = "${licensesDir}/LICENSE-JARJAR"
@@ -45,6 +46,7 @@ tasks.register('updateLicenses') {
         def docgeneratorFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-docgenerator.txt')
         def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
         def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
+        def jline3Files = fileTree(licensesDir).include('jline3-BINZIP-SRC.txt')
         def licenseHdr = '\n\n------------------------------------------------------------------------\n\n'
         [
             (licenseBinZipFile)      : binzipFiles,
@@ -54,6 +56,7 @@ tasks.register('updateLicenses') {
             (licenseDocGeneratorFile): docgeneratorFiles,
             (licenseGroovyDocFile)   : groovydocFiles,
             (licenseJsr223File)      : jsr223Files,
+            (licenseJLine3File)      : jline3Files,
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
                 writer << ([file(licenseBaseFile)] + inFiles).collect {

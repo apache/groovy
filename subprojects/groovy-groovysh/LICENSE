@@ -203,26 +203,6 @@
 
 ------------------------------------------------------------------------
 
-ANTLR 4 License
-
-Antlr4 is released under a BSD 3-clause license.
-See licenses/antlr4-license.txt for details.
-
-------------------------------------------------------------------------
-
-ASM License
-
-ASM uses a 3-clause BSD license. For details, see licenses/asm-license.txt.
-
-------------------------------------------------------------------------
-
-Hamcrest License (needed when using optional JUnit dependency)
-
-This product bundles the Hamcrest jar, which is available under a
-BSD license.  For details, see licenses/hamcrest-license.txt.
-
-------------------------------------------------------------------------
-
 JLine3 License
 
 The following source files within this product:
@@ -238,51 +218,3 @@ have a BSD-style license. Details can be found in: licenses/jline3-license.txt
 
 This product bundles several JLine3 jars (optional dependency used with groovysh),
 which are available under a BSD License.  For details, see licenses/jline3-license.txt.
-
-------------------------------------------------------------------------
-
-JSR166y License (optionally used by the optional GPars dependency)
-
-This product bundles the jsr166y jar (containing works from
-the JSR-166 EG, Doug Lea, and Jason T. Greene) made available in
-the public domain.  For details, see licenses/jsr166y-license.txt.
-
-------------------------------------------------------------------------
-
-JSR223 License
-
-The following classes within this product:
-
-    org.codehaus.groovy.jsr223.GroovyCompiledScript
-    org.codehaus.groovy.jsr223.GroovyScriptEngineFactory
-    org.codehaus.groovy.jsr223.GroovyScriptEngineImpl
-
-were derived from reference implementation files developed by Sun in
-collaboration with the Groovy community. The reference implementation
-has a BSD-style license. Details can be found in: licenses/jsr223-license.txt
-
-------------------------------------------------------------------------
-
-JUnit Licenses (optional dependencies when using Groovy for testing)
-
-This product bundles the JUnit 4 jar, which is available under the
-Eclipse Public License v1.0.  For details, see licenses/junit4-license.txt.
-
-This product bundles several JUnit 5 jars, which are available under the
-Eclipse Public License v2.0.  For details, see licenses/junit5-license.txt.
-
-------------------------------------------------------------------------
-
-normalize.css License
-
-The stylesheet.css file (originally normalize.css) is used by the
-groovydoc and docgenerator components for groovy-jdk/gapi documentation.
-It is made available under a MIT License:
-licenses/normalize-stylesheet-license.txt
-
-------------------------------------------------------------------------
-
-XStream License (optional dependency when serializing AST as XML)
-
-This product bundles the XStream jar, which is available under a
-"3-clause BSD" license.  For details, see licenses/xstream-license.txt.
