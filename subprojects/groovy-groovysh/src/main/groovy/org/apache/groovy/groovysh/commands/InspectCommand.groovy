@@ -19,107 +19,164 @@
 package org.apache.groovy.groovysh.commands
 
 import groovy.console.ui.ObjectBrowser
-import jline.console.completer.Completer
-import org.apache.groovy.groovysh.CommandSupport
-import org.apache.groovy.groovysh.Groovysh
-import org.apache.groovy.groovysh.util.SimpleCompleter
+import org.apache.groovy.groovysh.jline.GroovyEngine
+import org.apache.groovy.groovysh.jline.ObjectInspector
+import org.jline.builtins.Completers.OptDesc
+import org.jline.builtins.Completers.OptionCompleter
+import org.jline.console.CmdDesc
+import org.jline.console.CommandInput
+import org.jline.console.CommandMethods
+import org.jline.console.Printer
+import org.jline.reader.Completer
+import org.jline.reader.impl.completer.ArgumentCompleter
+import org.jline.reader.impl.completer.NullCompleter
+import org.jline.reader.impl.completer.StringsCompleter
+import org.jline.utils.AttributedString
 
-import javax.swing.*
-import java.awt.*
-import java.util.List
+class InspectCommand {
+    private static final String DEFAULT_NANORC_VALUE = "classpath:/nanorc/gron.nanorc"
+    private final GroovyEngine engine
+    private final Printer printer
+    private boolean consoleUi
 
-/**
- * The 'inspect' command.
- */
-class InspectCommand extends CommandSupport {
-    public static final String COMMAND_NAME = ':inspect'
-
-    InspectCommand(final Groovysh shell) {
-        super(shell, COMMAND_NAME, ':n')
-    }
-
-    def lafInitialized = false
-    def headless
-
-    @Override
-    protected List<Completer> createCompleters() {
-        return [
-                new InspectCommandCompleter(binding),
-                null
-        ]
-    }
-
-    @Override
-    Object execute(final List<String> args) {
-        assert args != null
-
-        log.debug("Inspecting w/args: $args")
-
-        if (args.size() > 1) {
-            fail(messages.format('error.unexpected_args', args.join(' ')))
+    InspectCommand(GroovyEngine engine, Printer printer) {
+        this.engine = engine
+        this.printer = printer
+        try {
+            Class.forName("groovy.console.ui.ObjectBrowser")
+            consoleUi = true
+        } catch (Exception e) {
+            // ignore
         }
 
-        def subject
+        commandExecute.put(Command.INSPECT, new CommandMethods(this::inspect, this::inspectCompleter));
+        commandExecute.put(Command.CONSOLE, new CommandMethods(this::console, this::defaultCompleter));
+        commandExecute.put(Command.GRAB, new CommandMethods(this::grab, this::defaultCompleter));
+        commandExecute.put(Command.CLASSLOADER, new CommandMethods(this::classLoader, this::classloaderCompleter));
+        registerCommands(commandName, commandExecute);
+        commandDescs.put(Command.INSPECT, inspectCmdDesc());
+        commandDescs.put(Command.CONSOLE, consoleCmdDesc());
+        commandDescs.put(Command.GRAB, grabCmdDesc());
+        commandDescs.put(Command.CLASSLOADER, classLoaderCmdDesc());
+    }
 
-        if (args.size() == 1) {
-            subject = binding.variables[args[0]]
-        } else {
-            subject = binding.variables['_']
+    Object inspect(CommandInput input) {
+        if (input.xargs().length == 0) {
+            return null;
         }
-
-        if (!subject) {
-            io.out.println('Subject is null, false or empty; nothing to inspect') // TODO: i18n
-        } else {
-            // Only set LAF once.
-            if (!lafInitialized) {
-                lafInitialized = true
-                try {
-                    UIManager.setLookAndFeel(UIManager.systemLookAndFeelClassName)
-
-                    // The setLAF doesn't throw a HeadlessException on Mac.
-                    // So try really creating a frame.
-                    new java.awt.Frame().dispose()
-
-                    headless = false
-                } catch (HeadlessException he) {
-                    headless = true
-                }
+        if (input.args().length > 2) {
+            throw new IllegalArgumentException("Wrong number of command parameters: " + input.args().length);
+        }
+        int idx = optionIdx(input.args())
+        String option = idx < 0 ? "--info" : input.args()[idx]
+        if (option.equals("-?") || option.equals("--help")) {
+            printer.println(helpDesc(Command.INSPECT))
+            return null
+        }
+        int id = 0;
+        if (idx >= 0) {
+            id = idx == 0 ? 1 : 0
+        }
+        if (input.args().length < id + 1) {
+            throw new IllegalArgumentException("Wrong number of command parameters: " + input.args().length)
+        }
+        try {
+            Object obj = input.xargs()[id]
+            ObjectInspector inspector = new ObjectInspector(obj)
+            Object out = null
+            Map<String, Object> options = new HashMap<>()
+            if (option.equals("-m") || option.equals("--methods")) {
+                out = inspector.methods()
+                options.put(Printer.COLUMNS, ObjectInspector.METHOD_COLUMNS)
+            } else if (option.equals("-n") || option.equals("--metaMethods")) {
+                out = inspector.metaMethods()
+                options.put(Printer.COLUMNS, ObjectInspector.METHOD_COLUMNS)
+            } else if (option.equals("-i") || option.equals("--info")) {
+                out = inspector.properties()
+                options.put(Printer.VALUE_STYLE, engine.groovyOption(GroovyEngine.NANORC_VALUE, DEFAULT_NANORC_VALUE))
+            } else if (consoleUi && (option.equals("-g") || option.equals("--gui"))) {
+                ObjectBrowser.inspect(obj)
+            } else {
+                throw new IllegalArgumentException("Unknown option: " + option)
             }
-
-            if (headless) {
-                io.err.println("@|red ERROR:|@ Running in AWT Headless mode, 'inspect' is not available.")
-                return
-            }
-
-            if (io.verbose) {
-                io.out.println("Launching object browser to inspect: $subject") // TODO: i18n
-            }
-
-            ObjectBrowser.inspect(subject)
+            options.put(Printer.SKIP_DEFAULT_OPTIONS, true)
+            options.put(Printer.MAX_DEPTH, 1)
+            options.put(Printer.INDENTION, 4)
+            printer.println(options, out)
+        } catch (Exception e) {
+            saveException(e)
         }
-    }
-}
-
-/**
- * Completer for the 'inspect' command.
- */
-class InspectCommandCompleter extends SimpleCompleter {
-    private final Binding binding
-
-    InspectCommandCompleter(final Binding binding) {
-        assert binding
-        this.setWithBlank(false)
-        this.binding = binding
+        return null
     }
 
-    @Override
-    SortedSet<String> getCandidates() {
-        SortedSet<String> set = new TreeSet<String>()
-
-        binding.variables.keySet().each {
-            set << it
+    private CmdDesc inspectCmdDesc() {
+        def optDescs = [:]
+        optDescs.put("-? --help", doDescription("Displays command help"))
+        if (consoleUi) {
+            optDescs.put("-g --gui", doDescription("Launch object browser"))
         }
+        optDescs.put("-i --info", doDescription("Object class info"))
+        optDescs.put("-m --methods", doDescription("List object methods"))
+        optDescs.put("-n --metaMethods", doDescription("List object metaMethods"))
+        CmdDesc out = new CmdDesc(new ArrayList<>(), optDescs)
+        List<AttributedString> mainDesc = new ArrayList<>()
+        List<String> info = new ArrayList<>()
+        info.add("Display object info on terminal/in browser")
+        commandInfos.put(Command.INSPECT, info)
+        mainDesc.add(new AttributedString("inspect [OPTION] OBJECT"))
+        out.setMainDesc(mainDesc)
+        out.setHighlighted(false)
+        return out
+    }
 
-        return set
+    private List<AttributedString> doDescription(String description) {
+        [new AttributedString(description)]
+    }
+
+    private int optionIdx(String[] args) {
+        int out = 0
+        for (String a : args) {
+            if (a.startsWith("-")) {
+                return out
+            }
+            out++
+        }
+        return -1
+    }
+
+    private List<String> variables() {
+        engine.find(null).keySet().collect{'$' + it }
+    }
+
+    private List<OptDesc> compileOptDescs(String command) {
+        List<OptDesc> out = new ArrayList<>()
+//        Command cmd = Command.valueOf(command.toUpperCase());
+        for (Map.Entry<String, List<AttributedString>> entry :
+                commandDescs.get(cmd).getOptsDesc().entrySet()) {
+            String[] option = entry.getKey().split("\\s+");
+            String desc = entry.getValue().get(0).toString();
+            if (option.length == 2) {
+                out.add(new OptDesc(option[0], option[1], desc));
+            } else if (option[0].charAt(1) == '-') {
+                out.add(new OptDesc(null, option[0], desc));
+            } else {
+                out.add(new OptDesc(option[0], null, desc));
+            }
+        }
+        return out;
+    }
+
+    private List<Completer> inspectCompleter(String command) {
+        [new ArgumentCompleter(
+            NullCompleter.INSTANCE,
+            new OptionCompleter(
+                Arrays.asList(new StringsCompleter(this::variables), NullCompleter.INSTANCE),
+                this::compileOptDescs,
+                1))]
+    }
+
+    private List<Completer> defaultCompleter(String command) {
+        [new ArgumentCompleter(
+                NullCompleter.INSTANCE, new OptionCompleter(NullCompleter.INSTANCE, this::compileOptDescs, 1))]
     }
 }

@@ -18,8 +18,11 @@
  */
 package org.apache.groovy.groovysh.util
 
-import jline.console.completer.Completer
 import org.codehaus.groovy.runtime.FormatHelper
+import org.jline.reader.Candidate
+import org.jline.reader.Completer
+import org.jline.reader.LineReader
+import org.jline.reader.ParsedLine
 
 /**
  * Support for simple completers.
@@ -86,9 +89,10 @@ class SimpleCompleter implements Completer {
         return null
     }
 
+
     @Override
-    int complete(final String buffer, final int cursor, final List<CharSequence> clist) {
-        String start = (buffer == null) ? '' : buffer
+    void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
+/*        String start = (buffer == null) ? '' : buffer
 
         SortedSet<String> matches = getCandidates().tailSet(start)
 
@@ -117,7 +121,7 @@ class SimpleCompleter implements Completer {
         }
 
         // the index of the completion is always from the beginning of the buffer.
-        return (clist.size() == 0) ? (-1) : 0
+        return (clist.size() == 0) ? (-1) : 0*/
     }
 
     void setCandidates(final SortedSet<String> candidates) {

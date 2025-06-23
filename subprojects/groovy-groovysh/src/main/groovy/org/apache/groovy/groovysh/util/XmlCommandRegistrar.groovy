@@ -40,6 +40,7 @@ import org.codehaus.groovy.tools.shell.util.Logger
    <command>org.codehaus.groovy.tools.shell.commands.LoadCommand</command>
    <command>org.codehaus.groovy.tools.shell.commands.SaveCommand</command>
    <command>org.codehaus.groovy.tools.shell.commands.RecordCommand</command>
+   <command>org.codehaus.groovy.tools.shell.commands.ResetCommand</command>
    <command>org.codehaus.groovy.tools.shell.commands.HistoryCommand</command>
    <command>org.codehaus.groovy.tools.shell.commands.AliasCommand</command>
    <command>org.codehaus.groovy.tools.shell.commands.SetCommand</command>

@@ -23,9 +23,6 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
-import jline.Terminal
-import jline.WindowsTerminal
-import jline.console.history.FileHistory
 import org.apache.groovy.groovysh.commands.LoadCommand
 import org.apache.groovy.groovysh.commands.RecordCommand
 import org.apache.groovy.groovysh.util.DefaultCommandsRegistrar
@@ -44,11 +41,14 @@ import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.fusesource.jansi.AnsiRenderer
+import org.jline.reader.History
+import org.jline.reader.impl.history.DefaultHistory
+import org.jline.terminal.Terminal
 
 import java.util.regex.Pattern
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT
+import static org.jline.jansi.AnsiRenderer.render
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -92,7 +92,7 @@ class Groovysh extends Shell {
 
     InteractiveShellRunner runner
 
-    FileHistory history
+    History history
 
     boolean historyFull // used as a workaround for GROOVY-2177
 
@@ -340,19 +340,10 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
      * The code will always assume you want the line number in the prompt. To
      * implement differently overhead the render prompt variable.
      */
-    private String buildPrompt() {
+    private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
-
-        def groovyshellProperty = System.getProperty('groovysh.prompt')
-        if (groovyshellProperty) {
-            return "@|bold ${groovyshellProperty}:|@${lineNum}@|bold >|@ "
-        }
-        def groovyshellEnv = System.getenv('GROOVYSH_PROMPT')
-        if (groovyshellEnv) {
-            return  "@|bold ${groovyshellEnv}:|@${lineNum}@|bold >|@ "
-        }
-        return "@|bold groovy:|@${lineNum}@|bold >|@ "
-
+        def prompt = System.getProperty('groovysh.prompt') ?: System.getenv('GROOVYSH_PROMPT') ?: 'groovy'
+        render("@|bold $prompt:|@$lineNum@|bold >|@ ")
     }
 
     /**
@@ -377,16 +368,11 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         return ' ' * Math.max(curlyIndent, 0)
     }
 
-    String renderPrompt() {
-        return AnsiRenderer.render(buildPrompt())
-    }
-
     /**
      * Format the given number suitable for rendering as a line number column.
      */
     protected String formatLineNumber(int num) {
         assert num >= 0
-
         // Make a %03d-like string for the line number
         return num.toString().padLeft(3, '0')
     }
@@ -469,7 +455,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         if (showLastResult) {
             // avoid String.valueOf here because it bypasses pretty-printing of Collections,
             // e.g. String.valueOf( ['a': 42] ) != ['a': 42].toString()
-            io.out.println("@|bold ===>|@ ${FormatHelper.toString(result)}")
+            io.out.println(render("@|bold ===>|@ ${FormatHelper.toString(result)}"))
         }
     }
 
@@ -492,7 +478,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
         if (log.debug || ! (cause instanceof CompilationFailedException)) {
             // For CompilationErrors, the Exception Class is usually not useful to the user
-            io.err.println("@|bold,red ERROR|@ ${cause.getClass().name}:")
+            io.err.println(render("@|bold,red ERROR|@ ${cause.getClass().name}:"))
         }
 
         if (cause instanceof MultipleCompilationErrorsException) {
@@ -507,9 +493,9 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
                     writer.println()
                 }
             }
-            io.err.println("@|bold,red ${data.toString()}|@")
+            io.err.println(render("@|bold,red ${data.toString()}|@"))
         } else {
-            io.err.println("@|bold,red ${cause.message}|@")
+            io.err.println(render("@|bold,red ${cause.message}|@"))
 
             maybeRecordError(cause)
 
@@ -535,19 +521,16 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
                         doBreak = true
                     }
 
-                    buff << "        @|bold at|@ ${e.className}.${e.methodName} (@|bold "
+                    def target = (e.nativeMethod ? 'Native Method' :
+                        (e.fileName != null && e.lineNumber != -1 ? "${e.fileName}:${e.lineNumber}" :
+                            (e.fileName != null ? e.fileName : 'Unknown Source')))
 
-                    buff << (e.nativeMethod ? 'Native Method' :
-                            (e.fileName != null && e.lineNumber != -1 ? "${e.fileName}:${e.lineNumber}" :
-                                    (e.fileName != null ? e.fileName : 'Unknown Source')))
-
-                    buff << '|@)'
-
+                    buff << render("        @|bold at|@ ${e.className}.${e.methodName}(@|bold $target|@)")
                     io.err.println(buff)
 
                     buff.setLength(0) // Reset the buffer
                     if (doBreak) {
-                        io.err.println('        @|bold ...|@')
+                        io.err.println(render('        @|bold ...|@'))
                         break
                     }
                 }
@@ -568,7 +551,7 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         }
         if (cause instanceof MissingPropertyException) {
             if (cause.type && cause.type.canonicalName == Interpreter.SCRIPT_FILENAME) {
-                io.err.println("@|bold,red Unknown property|@: " + cause.property)
+                io.err.println(render("@|bold,red Unknown property|@: " + cause.property))
                 return
             }
         }
@@ -612,8 +595,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
 
             // Setup the history
             File histFile = new File(userStateDirectory, 'groovysh.history')
-            history = new FileHistory(histFile)
-            runner.setHistory(history)
+            history = new DefaultHistory(/*histFile*/)
+//            runner.setHistory(history)
 
             // Setup the error handler
             runner.errorHandler = this.&displayError
@@ -650,15 +633,15 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
         Terminal term = runner.reader.terminal
         if (log.debug) {
             log.debug("Terminal ($term)")
-            log.debug("    Supported:  $term.supported")
-            log.debug("    ECHO:       (enabled: $term.echoEnabled)")
+//            log.debug("    Supported:  $term.supported")
+//            log.debug("    ECHO:       (enabled: $term.echoEnabled)")
             log.debug("    H x W:      ${term.getHeight()} x ${term.getWidth()}")
-            log.debug("    ANSI:       ${term.isAnsiSupported()}")
+//            log.debug("    ANSI:       ${term.isAnsiSupported()}")
 
-            if (term instanceof WindowsTerminal) {
-                WindowsTerminal winterm = (WindowsTerminal) term
-                log.debug("    Direct:     ${winterm.directConsole}")
-            }
+//            if (term instanceof WindowsTerminal) {
+//                WindowsTerminal winterm = (WindowsTerminal) term
+//                log.debug("    Direct:     ${winterm.directConsole}")
+//            }
         }
 
         // Display the welcome banner
@@ -670,8 +653,8 @@ try {$COLLECTED_BOUND_VARS_MAP_VARNAME[\"$varname\"] = $varname;
                 width = 80
             }
 
-            io.out.println(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version']))
-            io.out.println(messages['startup_banner.1'])
+            io.out.println(render(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version'])))
+            io.out.println(render(messages['startup_banner.1'].toString()))
             io.out.println('-' * (width - 1))
         }
     }

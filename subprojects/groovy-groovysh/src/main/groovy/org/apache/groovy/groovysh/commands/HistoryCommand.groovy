@@ -18,10 +18,12 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import jline.console.history.History
+import org.jline.reader.History
 import org.apache.groovy.groovysh.ComplexCommandSupport
 import org.apache.groovy.groovysh.Groovysh
 import org.apache.groovy.groovysh.util.SimpleCompleter
+
+import static org.jline.jansi.AnsiRenderer.render
 
 /**
  * The 'history' command.
@@ -71,7 +73,7 @@ class HistoryCommand extends ComplexCommandSupport {
         while (histIt.hasNext()) {
             History.Entry next = histIt.next()
             if (next) {
-                io.out.println(" @|bold ${next.index().toString().padLeft(3, ' ')}|@  ${next.value()}")
+                io.out.println(render(" @|bold ${next.index().toString().padLeft(3, ' ')}|@  ${next.value()}"))
             }
         }
     }

@@ -125,7 +125,7 @@
             <trusting group="com.thoughtworks.xstream"/>
             <trusting group="io.github.x-stream"/>
          </trusted-key>
-         <trusted-key id="073F7A9345756F3B40CDB99E6C70A3B7599C5736" group="org.fusesource.jansi" name="jansi" version="2.4.1"/>
+         <trusted-key id="073F7A9345756F3B40CDB99E6C70A3B7599C5736" group="org.fusesource.jansi" name="jansi" version="2.4.2"/>
          <trusted-key id="077E8893A6DCC33DD4A4D5B256E73BA9A0B592D0" group="org.apache.logging.log4j"/>
          <trusted-key id="0785B3EFF60B1B1BEA94E0BB7C25280EAE63EBE5" group="^org[.]apache[.]httpcomponents($|([.].*))" regex="true"/>
          <trusted-key id="0A123C1ED3F13A6A0140E166C71FB765CD9DE313" group="org.apache.ant"/>

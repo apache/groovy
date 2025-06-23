@@ -18,9 +18,10 @@
  */
 package org.apache.groovy.groovysh.completion
 
-import jline.console.completer.Completer
-
-import static jline.internal.Preconditions.checkNotNull
+import org.jline.reader.Candidate
+import org.jline.reader.Completer
+import org.jline.reader.LineReader
+import org.jline.reader.ParsedLine
 
 /**
  * A completer within compatible strings (single/double quotes, single/double triple quotes)
@@ -30,14 +31,22 @@ import static jline.internal.Preconditions.checkNotNull
  * @since 2.4.13
  */
 class BackslashEscapeCompleter implements Completer {
-    private static final List<String> VALID_ESCAPEES = ['r (return)', 'n (newline)', 't (tab)',
-                                                        '\\ (backslash)', "' (single quote)", '" (double quote)',
-                                                        'b (backspace)', 'f (formfeed)', 'uXXXX (unicode)']
+    private static final Map<String, String> VALID_ESCAPEES = [
+        r: 'return', n: 'newline', t: 'tab',
+        '\\': 'backslash', "'": 'single quote', '"': 'double quote',
+        b: 'backspace', f: 'formfeed']
+    private static final GROUP = 'Escape Sequences'
 
     @Override
-    int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
-        checkNotNull(candidates)
-        candidates.addAll(VALID_ESCAPEES)
-        return cursor
+    void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
+        String buffer = line.line().substring(0, line.cursor())
+        if (!buffer.endsWith('\\')) {
+            return
+        }
+
+        VALID_ESCAPEES.each { k, v ->
+            candidates.add(new Candidate(k, "$k ($v)", GROUP, null, null, null, true))
+        }
+        candidates.add(new Candidate('u', "$uXXXX (unicode)", GROUP, 'Complete with a 4-digit hex code', null, null, false))
     }
 }

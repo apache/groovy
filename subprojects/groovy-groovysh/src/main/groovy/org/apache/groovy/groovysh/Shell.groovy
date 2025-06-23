@@ -22,9 +22,8 @@ import org.codehaus.groovy.runtime.FormatHelper
 import org.apache.groovy.groovysh.util.CommandArgumentParser
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
-import org.fusesource.jansi.Ansi
 
-import static org.fusesource.jansi.Ansi.ansi
+import static org.jline.jansi.AnsiRenderer.render
 
 /**
  * A simple shell for invoking commands from a command-line.
@@ -46,8 +45,6 @@ class Shell
     Shell() {
         this(new IO())
     }
-
-
 
     /**
      * @param line the line to parse
@@ -102,7 +99,7 @@ class Shell
             try {
                 result = command.execute(args)
             } catch (CommandException e) {
-                io.err.println(ansi().a(Ansi.Attribute.INTENSITY_BOLD).fg(Ansi.Color.RED).a(e.message).reset())
+                io.err.println(render("'@|bold,red $e.message|@"))
             }
             log.debug("Result: ${FormatHelper.toString(result)}")
         }

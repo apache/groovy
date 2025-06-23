@@ -16,18 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh
+package org.apache.groovy.groovysh.commands
 
-import groovy.transform.CompileStatic
-import jline.TerminalFactory
+import org.apache.groovy.groovysh.CommandSupport
+import org.apache.groovy.groovysh.Groovysh
 
-import java.util.concurrent.Callable
+/**
+ * The 'reset' command.
+ */
+class ResetCommand extends CommandSupport {
+    public static final String COMMAND_NAME = ':reset'
 
-@CompileStatic
-class AnsiDetector implements Callable<Boolean>
-{
+    ResetCommand(final Groovysh shell) {
+        super(shell, COMMAND_NAME, ':R')
+    }
+
     @Override
-    Boolean call() throws Exception {
-        return TerminalFactory.create().isAnsiSupported()
+    Object execute(final List<String> args) {
+        assertNoArguments(args)
+        buffer.clear()
+        if (io.verbose) {
+            io.out.println('Buffer cleared') //  TODO: i18n
+        }
     }
 }

@@ -18,9 +18,10 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import jline.console.history.FileHistory
 import org.apache.groovy.groovysh.CompleterTestSupport
 import org.apache.groovy.groovysh.Groovysh
+import org.jline.reader.History
+import org.jline.reader.impl.history.DefaultHistory
 
 /**
  * Tests for the {@link HistoryCommand} class.
@@ -55,7 +56,7 @@ class HistoryCommandIntegrationTest extends CompleterTestSupport {
     }
 
     void testShowEmpty() {
-        FileHistory history = new FileHistory(filemock)
+        History history = new DefaultHistory(/*filemock*/)
         groovyshMocker.demand.getHistory(1) {history}
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -66,7 +67,7 @@ class HistoryCommandIntegrationTest extends CompleterTestSupport {
     }
 
     void testShowLines() {
-        FileHistory history = new FileHistory(filemock)
+        History history = new DefaultHistory(/*filemock*/)
         history.add('test1')
         history.add('test2')
         assert 2 == history.size()
@@ -81,7 +82,7 @@ class HistoryCommandIntegrationTest extends CompleterTestSupport {
     }
 
     void testClear() {
-        FileHistory history = new FileHistory(filemock)
+        History history = new DefaultHistory(/*filemock*/)
         history.add('test1')
         history.add('test2')
         groovyshMocker.demand.getHistory(1) {history}
@@ -94,7 +95,7 @@ class HistoryCommandIntegrationTest extends CompleterTestSupport {
     }
 
     void testRecall() {
-        FileHistory history = new FileHistory(filemock)
+        History history = new DefaultHistory(/*filemock*/)
         history.add('test1')
         history.add('test2')
         groovyshMocker.demand.getHistoryFull(1) {false}
@@ -115,7 +116,7 @@ class HistoryCommandIntegrationTest extends CompleterTestSupport {
     }
 
     void testRecallHistoryFull() {
-        FileHistory history = new FileHistory(filemock)
+        History history = new DefaultHistory(/*filemock*/)
         history.add('test1')
         history.add('test2')
         groovyshMocker.demand.getHistoryFull(1) {true}

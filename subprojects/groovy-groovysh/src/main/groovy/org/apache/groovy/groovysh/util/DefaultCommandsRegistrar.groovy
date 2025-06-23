@@ -21,9 +21,9 @@ package org.apache.groovy.groovysh.util
 import org.apache.groovy.groovysh.Command
 import org.apache.groovy.groovysh.Shell
 import org.apache.groovy.groovysh.commands.AliasCommand
-import org.apache.groovy.groovysh.commands.ClearCommand
+
 import org.apache.groovy.groovysh.commands.DisplayCommand
-import org.apache.groovy.groovysh.commands.DocCommand
+//import org.apache.groovy.groovysh.commands.DocCommand
 import org.apache.groovy.groovysh.commands.EditCommand
 import org.apache.groovy.groovysh.commands.ExitCommand
 import org.apache.groovy.groovysh.commands.GrabCommand
@@ -35,6 +35,7 @@ import org.apache.groovy.groovysh.commands.LoadCommand
 import org.apache.groovy.groovysh.commands.PurgeCommand
 import org.apache.groovy.groovysh.commands.RecordCommand
 import org.apache.groovy.groovysh.commands.RegisterCommand
+import org.apache.groovy.groovysh.commands.ResetCommand
 import org.apache.groovy.groovysh.commands.SaveCommand
 import org.apache.groovy.groovysh.commands.SetCommand
 import org.apache.groovy.groovysh.commands.ShowCommand
@@ -57,7 +58,8 @@ class DefaultCommandsRegistrar {
             new ExitCommand(shell),
             new ImportCommand(shell),
             new DisplayCommand(shell),
-            new ClearCommand(shell),
+            new ResetCommand(shell),
+//            new ClearCommand(shell),
             new ShowCommand(shell),
             new InspectCommand(shell),
             new PurgeCommand(shell),
@@ -72,9 +74,9 @@ class DefaultCommandsRegistrar {
             new RegisterCommand(shell),
         ]
 
-        if (!Boolean.getBoolean('groovysh.disableDocCommand')) {
-            commands.add(new DocCommand(shell))
-        }
+//        if (!Boolean.getBoolean('groovysh.disableDocCommand')) {
+//            commands.add(new DocCommand(shell))
+//        }
 
         for (command in commands) {
             shell.register(command)

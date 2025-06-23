@@ -16,17 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.commands
+package org.apache.groovy.groovysh.jline
 
-/**
- * Tests for the {@link ClearCommand} class.
- */
-class ClearCommandTest extends CommandTestSupport {
-    void testClear() {
-        shell.execute(ClearCommand.COMMAND_NAME)
+import org.jline.builtins.ConfigurationPath
+import org.jline.console.impl.Builtins
+import org.jline.reader.Widget
+
+import java.nio.file.Path
+import java.util.function.Function
+import java.util.function.Supplier
+
+class GroovyBuiltins extends Builtins {
+    GroovyBuiltins(Supplier<Path> workDir, ConfigurationPath configPath, Function<String, Widget> widgetCreator) {
+        super(workDir, configPath, widgetCreator)
+        commandNames().each{ name ->
+            rename(Command."${name.toUpperCase()}", "/$name")
+        }
     }
 
-    void testClearWithArgs() {
-        shell.execute(ClearCommand.COMMAND_NAME + ' foo')
+    @Override
+    String name() {
+        'Console Commands'
     }
 }

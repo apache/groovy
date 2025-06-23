@@ -18,10 +18,10 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import jline.console.completer.Completer
-import jline.console.completer.FileNameCompleter
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Groovysh
+import org.jline.builtins.Completers
+import org.jline.reader.Completer
 
 /**
  * The 'save' command.
@@ -36,7 +36,7 @@ class SaveCommand extends CommandSupport {
     @Override
     protected List<Completer> createCompleters() {
         return [
-            new FileNameCompleter(),
+            new Completers.FileNameCompleter(),
             null
         ]
     }

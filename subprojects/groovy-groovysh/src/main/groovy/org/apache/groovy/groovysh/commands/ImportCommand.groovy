@@ -19,10 +19,13 @@
 package org.apache.groovy.groovysh.commands
 
 import groovy.transform.CompileStatic
-import jline.console.completer.AggregateCompleter
-import jline.console.completer.Completer
-import jline.console.completer.NullCompleter
-import jline.console.completer.StringsCompleter
+import org.jline.reader.Candidate
+import org.jline.reader.Completer
+import org.jline.reader.LineReader
+import org.jline.reader.ParsedLine
+import org.jline.reader.impl.completer.AggregateCompleter
+import org.jline.reader.impl.completer.NullCompleter
+import org.jline.reader.impl.completer.StringsCompleter
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Evaluator
 import org.apache.groovy.groovysh.Groovysh
@@ -58,7 +61,7 @@ class ImportCommand extends CommandSupport {
         // need a different completer setup due to static import
         Completer impCompleter = new StringsCompleter(name + ' ', shortcut + ' ')
         Completer asCompleter = new StringsCompleter('as ')
-        Completer nullCompleter = new NullCompleter()
+        Completer nullCompleter = NullCompleter.INSTANCE
         PackageHelper packageHelper = shell.packageHelper
         Interpreter interp = shell.interp
         Completer nonStaticCompleter = new StricterArgumentCompleter([
@@ -93,7 +96,7 @@ class ImportCommand extends CommandSupport {
         assert args != null
 
         if (args.isEmpty()) {
-            fail('Command \'import\' requires one or more arguments') // TODO: i18n
+            fail("@|red Invalid arguments.|@ Command @|cyan 'import'|@ requires one or more arguments. Use @|magenta :show imports|@ to show existing imports.")
         }
 
         def importSpec = args.join(' ')
@@ -106,7 +109,7 @@ class ImportCommand extends CommandSupport {
         // intelligent if someone could figure out why that is happening or could write a nicer batch of regex to
         // solve the problem
         if (!(importSpec.matches(IMPORTED_ITEM_PATTERN))) {
-            def msg = "Invalid import definition: '${importSpec}'" // TODO: i18n
+            def msg = "Invalid import definition: '${importSpec}'"
             log.debug(msg)
             fail(msg)
         }
@@ -200,19 +203,21 @@ class ImportCompleter implements Completer {
 
     @Override
     @CompileStatic
-    int complete(final String buffer, final int cursor, final List<CharSequence> result) {
+    void complete(LineReader reader, ParsedLine line, List<Candidate> result) {
+        def buffer = reader.buffer
+        def cursor = line.cursor()
         String currentImportExpression = buffer ? buffer.substring(0, cursor) : ''
         if (staticImport) {
             if (!(currentImportExpression.matches(PACK_OR_CLASS_OR_METHODNAME_PATTERN))) {
-                return -1
+                return
             }
         } else {
             if (!(currentImportExpression.matches(PACK_OR_SIMPLE_CLASSNAME_PATTERN))) {
-                return -1
+                return
             }
         }
         if (currentImportExpression.contains('..')) {
-            return -1
+            return
         }
 
         if (currentImportExpression.endsWith('.')) {
@@ -221,25 +226,25 @@ class ImportCompleter implements Completer {
                 Set<String> classnames = packageHelper.getContents(currentImportExpression[0..-2])
                 if (classnames) {
                     if (staticImport) {
-                        result.addAll(classnames.collect({ String it -> it + '.' }))
+                        addAll(result, classnames.collect{ String it -> it + '.' })
                     } else {
-                        result.addAll(classnames.collect({ String it -> addDotOrBlank(it) }))
+                        addAll(result, classnames.collect({ String it -> addDotOrBlank(it) }))
                     }
                 }
                 if (!staticImport) {
-                    result.add('* ')
+                    add(result, '* ')
                 }
-                return currentImportExpression.length()
+                return //currentImportExpression.length()
             } else if (staticImport && currentImportExpression.matches(QUALIFIED_CLASS_DOT_PATTERN)) {
                 Class clazz = interpreter.evaluate([currentImportExpression[0..-2]]) as Class
                 if (clazz != null) {
                     Collection<ReflectionCompletionCandidate> members = ReflectionCompleter.getPublicFieldsAndMethods(clazz, '')
-                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
+                    addAll(result, members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
                 }
-                result.add('* ')
-                return currentImportExpression.length()
+                add(result, '* ')
+                return //currentImportExpression.length()
             }
-            return -1
+            return
         } // endif startswith '.', we have a prefix
 
         String prefix
@@ -258,29 +263,39 @@ class ImportCompleter implements Completer {
                 // At least give standard package completion, else static keyword is highly annoying
                 Collection<String> standards = ResolveVisitor.DEFAULT_IMPORTS.findAll({ String it -> it.startsWith(currentImportExpression) })
                 if (standards) {
-                    result.addAll(standards)
-                    return 0
+                    addAll(result, standards)
+                    return //0
                 }
-                return -1
+                return
             }
 
             log.debug(prefix)
             Collection<String> matches = candidates.findAll({ String it -> it.startsWith(prefix) })
             if (matches) {
-                result.addAll(matches.collect({ String it -> addDotOrBlank(it) }))
-                return lastDot <= 0 ? 0 : lastDot + 1
+                addAll(result, matches.collect({ String it -> addDotOrBlank(it) }))
+                return //lastDot <= 0 ? 0 : lastDot + 1
             }
         } else if (staticImport) {
             Class clazz = interpreter.evaluate([baseString]) as Class
             if (clazz != null) {
                 Collection<ReflectionCompletionCandidate> members = ReflectionCompleter.getPublicFieldsAndMethods(clazz, prefix)
                 if (members) {
-                    result.addAll(members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
-                    return lastDot <= 0 ? 0 : lastDot + 1
+                    addAll(result, members.collect({ ReflectionCompletionCandidate it -> it.value.replace('(', '').replace(')', '') + ' ' }))
+                    return //lastDot <= 0 ? 0 : lastDot + 1
                 }
             }
         }
-        return -1
+        return
+    }
+
+    private static void addAll(List<Candidate> result, List<String> strings) {
+        for (String s : strings) {
+            result.add(new Candidate(s))
+        }
+    }
+
+    private static void add(List<Candidate> result, String s) {
+        result.add(new Candidate(s))
     }
 
     private static String addDotOrBlank(final String it) {

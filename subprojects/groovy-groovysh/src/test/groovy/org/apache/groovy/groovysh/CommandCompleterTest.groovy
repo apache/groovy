@@ -19,7 +19,7 @@
 package org.apache.groovy.groovysh
 
 import org.apache.groovy.groovysh.commands.AliasCommand
-import org.apache.groovy.groovysh.commands.ClearCommand
+
 import org.apache.groovy.groovysh.commands.SaveCommand
 import org.apache.groovy.groovysh.commands.SetCommand
 import org.apache.groovy.groovysh.commands.ShowCommand
@@ -28,14 +28,14 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class CommandCompleterTest extends CompleterTestSupport {
 
     void testEmpty() {
-        CommandsMultiCompleter completer = new CommandsMultiCompleter()
+//        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         assert -1 == completer.complete('', 0, [])
         assert -1 == completer.complete('i', 2, [])
         assert -1 == completer.complete('imp', 4, [])
     }
 
     void testAlias() {
-        CommandsMultiCompleter completer = new CommandsMultiCompleter()
+//        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         CommandRegistry registry = new CommandRegistry()
         groovyshMocker.use {
@@ -56,7 +56,7 @@ class CommandCompleterTest extends CompleterTestSupport {
     }
 
     void testSet() {
-        CommandsMultiCompleter completer = new CommandsMultiCompleter()
+//        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.demand.getINTERPRETER_MODE_PREFERENCE_KEY(1){'interpreterMode'}
         groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}
@@ -85,7 +85,7 @@ class CommandCompleterTest extends CompleterTestSupport {
     }
 
     void testSave() {
-        CommandsMultiCompleter completer = new CommandsMultiCompleter()
+//        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
@@ -102,15 +102,15 @@ class CommandCompleterTest extends CompleterTestSupport {
     }
 
     void testClear() {
-        CommandsMultiCompleter completer = new CommandsMultiCompleter()
+//        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.use {
             Groovysh groovyshMock = new Groovysh()
-            completer.add(new ClearCommand(groovyshMock))
+//            completer.add(new ClearCommand(groovyshMock))
             completer.refresh()
 
             assert 0 == completer.complete(':c', ':c'.length(), candidates)
-            assert [':c', ClearCommand.COMMAND_NAME] == candidates
+//            assert [':c', ClearCommand.COMMAND_NAME] == candidates
             candidates = []
             assert -1 == completer.complete(':c ', ':c '.length(), candidates)
             assert [] == candidates
@@ -120,7 +120,7 @@ class CommandCompleterTest extends CompleterTestSupport {
     }
 
     void testSaveSetShow() {
-        CommandsMultiCompleter completer = new CommandsMultiCompleter()
+//        CommandsMultiCompleter completer = new CommandsMultiCompleter()
         def candidates = []
         groovyshMocker.demand.getINTERPRETER_MODE_PREFERENCE_KEY(1){'interpreterMode'}
         groovyshMocker.demand.getAUTOINDENT_PREFERENCE_KEY(1){'autoindent'}

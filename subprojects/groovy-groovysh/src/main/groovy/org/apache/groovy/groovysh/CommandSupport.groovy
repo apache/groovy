@@ -18,21 +18,21 @@
  */
 package org.apache.groovy.groovysh
 
-import jline.console.completer.Completer
-import jline.console.completer.NullCompleter
-import jline.console.completer.StringsCompleter
-import jline.console.history.FileHistory
+import org.jline.reader.Completer
+import org.jline.reader.impl.completer.NullCompleter
+import org.jline.reader.impl.completer.StringsCompleter
+import org.jline.reader.History
 import org.apache.groovy.groovysh.completion.StricterArgumentCompleter
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 
+import static org.jline.jansi.AnsiRenderer.render
+
 /**
  * Support for {@link Command} instances.
  */
-abstract class CommandSupport
-    implements Command
-{
+abstract class CommandSupport implements Command {
     protected static final String NEWLINE = System.lineSeparator()
 
     /** Instance logger for the command, initialized late to include the command name. */
@@ -46,6 +46,9 @@ abstract class CommandSupport
 
     /** The shortcut switch */
     final String shortcut
+
+    /** A description */
+    private String description
 
     /** The owning shell. */
     protected final Groovysh shell
@@ -62,7 +65,7 @@ abstract class CommandSupport
     /** Flag to indicate if the command should be hidden or not. */
     boolean hidden = false
 
-    protected CommandSupport(final Groovysh shell, final String name, final String shortcut) {
+    protected CommandSupport(final Groovysh shell, final String name, final String shortcut, final String description = null) {
         assert shell != null
         assert name
         assert shortcut
@@ -72,6 +75,7 @@ abstract class CommandSupport
         this.io = shell.io
         this.name = name
         this.shortcut = shortcut
+        this.description = description
 
         //
         // NOTE: Registry will be added once registered.
@@ -80,11 +84,15 @@ abstract class CommandSupport
 
     @Override
     String getDescription() {
-        try {
-            return messages.getMessage('command.description')
-        } catch (MissingResourceException) {
-            return 'No description'
+        if (!this.description) {
+
         }
+        try {
+            this.description = messages.getMessage('command.description')
+        } catch (MissingResourceException) {
+            this.description = 'No description'
+        }
+        description
     }
 
     @Override
@@ -158,11 +166,11 @@ abstract class CommandSupport
                 if (it) {
                     list << it
                 } else {
-                    list << new NullCompleter()
+                    list << NullCompleter.INSTANCE
                 }
             }
         } else {
-            list << new NullCompleter()
+            list << NullCompleter.INSTANCE
         }
 
 
@@ -178,11 +186,11 @@ abstract class CommandSupport
     }
 
     protected void fail(final String msg) {
-        throw new CommandException(this, msg)
+        throw new CommandException(this, render(msg))
     }
 
     protected void fail(final String msg, final Throwable cause) {
-        throw new CommandException(this, msg, cause)
+        throw new CommandException(this, render(msg), cause)
     }
 
     protected void assertNoArguments(final List<String> args) {
@@ -217,7 +225,7 @@ abstract class CommandSupport
         return binding.variables
     }
 
-    protected FileHistory getHistory() {
+    protected History getHistory() {
         return shell.history
     }
 

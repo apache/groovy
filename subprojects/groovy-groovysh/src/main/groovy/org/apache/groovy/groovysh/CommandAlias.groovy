@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.groovysh
 
-import jline.console.completer.Completer
+import org.jline.reader.Completer
 
 /**
  * Provides simple command aliasing.

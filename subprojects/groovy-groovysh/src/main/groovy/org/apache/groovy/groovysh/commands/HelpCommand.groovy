@@ -18,16 +18,18 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import jline.console.completer.Completer
+import org.jline.reader.Completer
 import org.apache.groovy.groovysh.Command
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Groovysh
 import org.apache.groovy.groovysh.completion.CommandNameCompleter
 
+import static org.jline.jansi.AnsiRenderer.render
+
 /**
  * The 'help' command.
  */
-class HelpCommand extends CommandSupport {
+class HelpCommand extends CommandSupport { // TODO for this file: further i18n
 
     public static final String COMMAND_NAME = ':help'
 
@@ -65,11 +67,11 @@ class HelpCommand extends CommandSupport {
 
         Command command = registry.find(name)
         if (!command) {
-            fail("No such command: $name") // TODO: i18n
+            fail("No such command: $name")
         }
 
         io.out.println()
-        io.out.println("usage: @|bold ${command.name}|@ $command.usage") // TODO: i18n
+        io.out.println(render("usage: @|bold ${command.name}|@ $command.usage"))
         io.out.println()
         io.out.println(command.help)
         io.out.println()
@@ -78,7 +80,7 @@ class HelpCommand extends CommandSupport {
     private void list() {
         // Figure out the max command name and shortcut length dynamically
         int maxName = 0
-        int maxShortcut
+        int maxShortcut = 0
 
         for (Command command in registry.commands()) {
             if (command.hidden) {
@@ -95,12 +97,11 @@ class HelpCommand extends CommandSupport {
         }
 
         io.out.println()
-        io.out.println('For information about @|green Groovy|@, visit:') // TODO: i18n
-        io.out.println('    @|cyan http://groovy-lang.org|@ ') // FIXME: parsing freaks out if end tok is at the last char...
+        io.out.println(render('For information about @|green Groovy|@, visit:'))
+        io.out.println(render('    @|cyan http://groovy-lang.org|@'))
         io.out.println()
 
-        // List the commands we know about
-        io.out.println('Available commands:') // TODO: i18n
+        io.out.println('Available commands:')
 
         for (Command command in registry.commands()) {
             if (command.hidden) {
@@ -109,20 +110,14 @@ class HelpCommand extends CommandSupport {
 
             def n = command.name.padRight(maxName, ' ')
             def s = command.shortcut.padRight(maxShortcut, ' ')
-
-            //
-            // TODO: Wrap description if needed
-            //
-
             def d = command.description
 
-            io.out.println("  @|bold ${n}|@  (@|bold ${s}|@) $d")
+            io.out.println(render("  @|bold ${n}|@  (@|bold ${s}|@) $d"))
         }
 
         io.out.println()
-        io.out.println('For help on a specific command type:') // TODO: i18n
-        io.out.println('    :help @|bold command|@ ')
+        io.out.println('For help on a specific command type:')
+        io.out.println(render('    :help @|bold command|@ '))
         io.out.println()
     }
 }
-

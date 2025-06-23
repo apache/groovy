@@ -16,29 +16,29 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.util
+package org.apache.groovy.groovysh.jline
 
-class SecurityManagerUtil {
-    private final SecurityManager saved
+import org.jline.builtins.ConfigurationPath
+import org.jline.console.Printer
+import org.jline.console.ScriptEngine
+import org.jline.console.impl.ConsoleEngineImpl
 
-    SecurityManagerUtil() {
-        if (explicitlyEnabled() || autoEnabledUntilJDK17()) {
-            saved = System.getSecurityManager()
-            System.setSecurityManager(new NoExitSecurityManager())
-        } else {
-            saved = null;
+import java.nio.file.Path
+import java.util.function.Supplier
+
+class GroovyConsoleEngine extends ConsoleEngineImpl {
+    GroovyConsoleEngine(ScriptEngine engine, Printer printer, Supplier<Path> workDir, ConfigurationPath configPath) {
+        super(engine, printer, workDir, configPath)
+        commandNames().each { name ->
+            if (!name.equals('slurp')) {
+                rename(Command."${name.toUpperCase()}", "/$name")
+            }
         }
+        alias('/slurp', 'slurp')
     }
 
-    private static boolean autoEnabledUntilJDK17() {
-        return Runtime.version().feature() < 18;
-    }
-
-    private static boolean explicitlyEnabled() {
-        System.getProperty('java.security.manager', 'disallow') == 'allow'
-    }
-
-    void close() {
-        System.setSecurityManager(saved)
+    @Override
+    String name() {
+        'Console Commands'
     }
 }

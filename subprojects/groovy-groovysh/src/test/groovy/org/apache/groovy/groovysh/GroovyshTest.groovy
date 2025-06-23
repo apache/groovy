@@ -25,7 +25,6 @@ import org.apache.groovy.groovysh.completion.TokenUtilTest
 import org.codehaus.groovy.GroovyException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.shell.IO
-import org.fusesource.jansi.AnsiOutputStream
 
 class GroovyshTest extends GroovyTestCase {
 
@@ -551,9 +550,9 @@ ReflectionCompleter.getPublicFieldsAndMethods(new Foo(), '')
         if (str == null) return ''
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream()
-            AnsiOutputStream aos = new AnsiOutputStream(baos)
-            aos.write(str.toString().bytes)
-            aos.flush()
+//            AnsiOutputStream aos = new AnsiOutputStream(baos)
+//            aos.write(str.toString().bytes)
+//            aos.flush()
             return baos.toString()
         } catch (IOException e) {
             return str

@@ -19,7 +19,7 @@
 package org.apache.groovy.groovysh.commands
 
 import groovy.grape.Grape
-import jline.console.completer.Completer
+import org.jline.reader.Completer
 import org.codehaus.groovy.tools.GrapeUtil
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Groovysh
@@ -30,6 +30,7 @@ import org.apache.groovy.groovysh.Groovysh
 class GrabCommand extends CommandSupport {
 
     public static final String COMMAND_NAME = ':grab'
+    //private Printer printer
 
     GrabCommand(Groovysh shell) {
         super(shell, COMMAND_NAME, ':g')
@@ -38,13 +39,23 @@ class GrabCommand extends CommandSupport {
     @Override protected List<Completer> createCompleters() { [ null ] }
 
     @Override Object execute(List<String> args) {
+        if (args.size() == 1 && args[0] in ['-l', '--list']) {
+            // TODO use printer
+            Grape.instance.enumerateGrapes().each { group, nv ->
+                shell.runner.reader.terminal.println group
+                nv.each {name, versions ->
+                    shell.runner.reader.terminal.println "    $name:${versions[0]}"
+                }
+            }
+            return
+        }
         validate(args)
         grab(dependency(args))
         shell.packageHelper.reset()
     }
 
     private void validate(List<String> args) {
-        if ( args?.size() != 1 || 
+        if ( args?.size() != 1 ||
              !( args[0] ==~ /^(\w|\.|-)+:(\w|\.|-)+(\w|\.|-)(:+(\w|\.|-|\*)+){0,2}$/ ) ) {
             fail("usage: @|bold ${COMMAND_NAME}|@ ${usage}")
         }

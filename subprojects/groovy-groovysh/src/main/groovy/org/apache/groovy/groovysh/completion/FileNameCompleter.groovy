@@ -19,9 +19,10 @@
 package org.apache.groovy.groovysh.completion
 
 import groovy.transform.PackageScope
-import jline.internal.Configuration
-
-import static jline.internal.Preconditions.checkNotNull
+import org.jline.reader.Candidate
+import org.jline.reader.Completer
+import org.jline.reader.LineReader
+import org.jline.reader.ParsedLine
 
 /**
  * A file name completer takes the buffer and issues a list of
@@ -41,8 +42,8 @@ import static jline.internal.Preconditions.checkNotNull
  *
  * @since 2.3
  */
-class FileNameCompleter extends jline.console.completer.FileNameCompleter {
-    private static final boolean OS_IS_WINDOWS = Configuration.isWindows()
+class FileNameCompleter implements Completer/*extends jline.console.completer.FileNameCompleter*/ {
+    private static final boolean OS_IS_WINDOWS = false//Configuration.isWindows()
     private final GroovyShell gs = new GroovyShell()
 
     FileNameCompleter(boolean printSpaceAfterFullCompletion = true, boolean escapeBackslash = false,
@@ -75,8 +76,8 @@ class FileNameCompleter extends jline.console.completer.FileNameCompleter {
     private String separator
 
     @Override
-    int complete(String buffer, final int cursor, final List<CharSequence> candidates) {
-        checkNotNull(candidates)
+    void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
+/*//        checkNotNull(candidates)
 
         buffer = buffer ?: ""
         String translated = buffer
@@ -121,7 +122,8 @@ class FileNameCompleter extends jline.console.completer.FileNameCompleter {
 
         File[] entries = (dir == null) ? new File[0] : dir.listFiles()
 
-        return matchFiles(buffer, translated, entries, candidates)
+        matchFiles(buffer, translated, entries, candidates)
+        */
     }
 
     private static String canonicalForm(String raw) {

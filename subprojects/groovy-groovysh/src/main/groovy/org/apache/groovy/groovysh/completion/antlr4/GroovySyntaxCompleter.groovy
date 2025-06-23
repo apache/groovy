@@ -19,8 +19,6 @@
 package org.apache.groovy.groovysh.completion.antlr4
 
 import groovy.transform.TupleConstructor
-import jline.console.completer.Completer
-import jline.internal.Configuration
 import org.antlr.v4.runtime.CharStream
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -32,6 +30,10 @@ import org.apache.groovy.groovysh.completion.BackslashEscapeCompleter
 import org.apache.groovy.groovysh.completion.FileNameCompleter
 import org.apache.groovy.parser.antlr4.GroovyLangLexer
 import org.codehaus.groovy.tools.shell.util.Logger
+import org.jline.reader.Candidate
+import org.jline.reader.Completer
+import org.jline.reader.LineReader
+import org.jline.reader.ParsedLine
 
 import static org.apache.groovy.parser.antlr4.GroovyLexer.AS
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral
@@ -76,7 +78,7 @@ class GroovySyntaxCompleter implements Completer {
     private final Completer windowsFilenameCompleter
     private final Completer instringFilenameCompleter
     private final Completer backslashCompleter
-    private static final boolean isWin = Configuration.isWindows()
+    private static final boolean isWin = false//Configuration.isWindows()
     private final GroovyShell gs = new GroovyShell()
 
     static enum CompletionCase {
@@ -107,19 +109,21 @@ class GroovySyntaxCompleter implements Completer {
     }
 
     @Override
-    int complete(final String bufferLine, final int cursor, final List<CharSequence> candidates) {
+    void complete(LineReader reader, ParsedLine line, List<Candidate> candidates) {
+        String bufferLine = line.line().substring(0, line.cursor())
+//    int complete(final String bufferLine, final int cursor, final List<CharSequence> candidates) {
         if (!bufferLine) {
-            return -1
+            return
         }
         if (isCommand(bufferLine, shell.registry)) {
-            return -1
+            return
         }
         // complete given the context of the whole buffer, not just last line
         // Build a single string for the lexer
         List<Token> tokens = []
         try {
-            if (!tokenizeBuffer(bufferLine.substring(0, cursor), shell.buffers.current(), tokens)) {
-                return -1
+            if (!tokenizeBuffer(bufferLine.substring(0, line.cursor()), shell.buffers.current(), tokens)) {
+                //return -1
             }
         } catch (InStringException ise) {
             int completionStart = ise.column + ise.openDelim.size()
@@ -138,34 +142,34 @@ class GroovySyntaxCompleter implements Completer {
                             gs.evaluate("'${remainder.substring(0, remainder.size() - 1)}'")
                             // only get here if there is an unescaped backslash at the end of the buffer
                             // ignore the result since it is only informational
-                            return backslashCompleter.complete(remainder, cursor, candidates)
+                            //return backslashCompleter.complete(remainder, cursor, candidates)
                         } catch (Exception ex2) {
                         }
                     }
                 }
             }
-            int completionResult = completer.complete(remainder, cursor - completionStart, candidates)
+            int completionResult = completer.complete(remainder, line.cursor() - completionStart, candidates)
             if (completionResult >= 0) {
-                return completionStart + completionResult
+                //return completionStart + completionResult
             }
-            return completionResult
+            //return completionResult
         }
 
         CompletionCase completionCase = getCompletionCase(tokens)
         if (completionCase == CompletionCase.NO_COMPLETION) {
-            return -1
+            //return -1
         }
         if (completionCase == CompletionCase.SECOND_IDENT) {
             if (infixCompleter.complete(tokens, candidates)) {
-                return tokens.last().startIndex
+                //return tokens.last().startIndex
             }
-            return -1
+           // return -1
         }
         if (completionCase == CompletionCase.INSTANCEOF) {
             if (classnameCompleter.complete(tokens, candidates)) {
-                return tokens.last().startIndex
+                //return tokens.last().startIndex
             }
-            return -1
+            //return -1
         }
 
 
@@ -185,7 +189,7 @@ class GroovySyntaxCompleter implements Completer {
                 throw new RuntimeException("Unknown Completion case: $completionCase")
 
         }
-        return result
+        //return result
     }
 
     static CompletionCase getCompletionCase(final List<Token> tokens) {

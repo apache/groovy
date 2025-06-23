@@ -1,0 +1,51 @@
+#
+# This file describes a default scheme for nanorc syntax highlighting for terminals with light background.
+#
+
+PLAIN       black
+FUNCTION    green
+STRING      cyan
+COMMENT     brightcyan
+DOC_COMMENT cyan
+TYPE        brightblue
+BOOLEAN     brightblack
+NULL        cyan
+NUMBER      blue
+VARIABLE    brightyellow
+PACKAGE     green,faint
+CLASS       green
+CONSTANT    yellow
+OPERATOR    yellow
+COMMAND     green
+OPTION      yellow
+KEYWORD     brightblack
+JUMP        cyan
+SECTION     green
+ATTRIBUTE   green
+PATH        brightblue
+EXECUTABLE  green
+LINK        cyan
+TITLE       brightblue
+ESCAPE      black,cyan
+DEBUG       brightmagenta
+ERROR       red
+TODO        brightwhite,cyan
+WARNING     ,lightred
+WHITESPACE  ,lightgreen
+HEADER      bold,!blue,~grey70,underline
+ROW_NUMBER  bold,!blue,~grey70
+ROW_STYLE   ,~grey82
+LIST_BACKGROUND ,~grey70
+LIST_GROUP      yellow
+#
+# mixin
+#
++FUNCTION           FUNCTION: "[A-Za-z_][A-Za-z0-9_]*[[:space:]]*[(]" \n PLAIN:    "[(]"
++LINT               WHITESPACE: "[[:space:]]+$" \n WARNING: "\t*"
++LONG_LINE_WARNING  WARNING: "^.{121,}$"
+#
+# parser
+#
+$LINE_COMMENT           COMMENT \n TODO: "FIXME|TODO|XXX"
+$BLOCK_COMMENT          COMMENT \n DOC_COMMENT: startWith=/** \n TODO: "FIXME|TODO|XXX"
+$BALANCED_DELIMITERS    STRING  \n VARIABLE: continueAs=\s*:

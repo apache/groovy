@@ -23,17 +23,16 @@ import groovy.cli.internal.OptionAccessor
 import groovy.transform.AutoFinal
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import jline.TerminalFactory
-import jline.UnixTerminal
-import jline.UnsupportedTerminal
-import jline.WindowsTerminal
-import org.apache.groovy.groovysh.util.SecurityManagerUtil
+//import jline.TerminalFactory
+//import jline.UnixTerminal
+//import jline.UnsupportedTerminal
+//import jline.WindowsTerminal
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.shell.IO
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.fusesource.jansi.Ansi
-import org.fusesource.jansi.AnsiConsole
+//import org.fusesource.jansi.Ansi
+//import org.fusesource.jansi.AnsiConsole
 
 import static org.apache.groovy.util.SystemUtil.setSystemPropertyFrom
 
@@ -118,7 +117,7 @@ class Main {
             }
         }
 
-        String type = TerminalFactory.AUTO
+        String type = ''//TerminalFactory.AUTO
         if (options.hasOption('T')) {
             type = options.getOptionValue('T')
         }
@@ -187,17 +186,17 @@ class Main {
             }
 
             if (shell.history) {
-                shell.history.flush()
+                shell.history.save()
             }
         }
 
-        SecurityManagerUtil sm = new SecurityManagerUtil()
+        //SecurityManagerUtil sm = new SecurityManagerUtil()
 
         try {
             code = shell.run(evalString, filenames)
         }
         finally {
-            sm.close()
+//            sm.close()
         }
 
         // Force the JVM to exit at this point, since shell could have created threads or
@@ -217,7 +216,7 @@ class Main {
 
         type = type.toLowerCase()
         boolean enableAnsi = true
-        switch (type) {
+/*        switch (type) {
             case TerminalFactory.AUTO:
                 type = null
                 break
@@ -238,30 +237,20 @@ class Main {
             default:
                 // Should never happen
                 throw new IllegalArgumentException("Invalid Terminal type: $type")
-        }
-
-        Ansi.enabled = false
-        if (enableAnsi) {
-            try {
-                installAnsi() // must be called before IO(), since it modifies System.in
-                Ansi.enabled = !suppressColor
-            } catch (Throwable t) {
-                LOGGER.warning("ansi will be disabled because an error occurred while installing ansi: " + t.getMessage())
-            }
-        }
+        }*/
 
         if (type != null) {
-            System.setProperty(TerminalFactory.JLINE_TERMINAL, type)
+//            System.setProperty(TerminalFactory.JLINE_TERMINAL, type)
         }
     }
 
     static void installAnsi() {
         // Install the system adapters, replaces System.out and System.err
         // Must be called before using IO(), because IO stores refs to System.out and System.err
-        AnsiConsole.systemInstall()
+//        AnsiConsole.systemInstall()
 
         // Register jline ansi detector
-        Ansi.setDetector(new AnsiDetector())
+//        Ansi.setDetector(new AnsiDetector())
     }
 
     @Deprecated

@@ -47,7 +47,7 @@ class FileNameCompleterTest extends GroovyTestCase {
             testFolder.create()
 
             FileNameCompleter completer = new FileNameCompleter() {
-                @Override
+//                @Override
                 protected File getUserDir() {
                     return testFolder.getRoot()
                 }

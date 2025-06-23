@@ -24,6 +24,11 @@ plugins {
     id 'org.apache.groovy-asciidoctor'
 }
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 docAggregation {
     excludeFromJavadoc '**/*.html',
             '**/*.groovy',

@@ -18,12 +18,12 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import jline.console.completer.Completer
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Groovysh
 import org.apache.groovy.groovysh.util.PackageHelper
 import org.apache.groovy.groovysh.util.SimpleCompleter
 import org.codehaus.groovy.tools.shell.util.Preferences
+import org.jline.reader.Completer
 
 /**
  * The 'set' command, used to set preferences.

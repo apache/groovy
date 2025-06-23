@@ -25,8 +25,8 @@ import org.apache.groovy.groovysh.completion.ReflectionCompletionCandidate
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.Preferences
-import org.fusesource.jansi.Ansi
-import org.fusesource.jansi.AnsiRenderer
+//import org.fusesource.jansi.Ansi
+//import org.fusesource.jansi.AnsiRenderer
 
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -447,7 +447,7 @@ class ReflectionCompleter {
             // Arrays are special, these public members cannot be found via Reflection
             for (String member : ['length', 'clone()']) {
                 if (member.startsWith(prefix)) {
-                    rv.add(new ReflectionCompletionCandidate(member, Ansi.Attribute.INTENSITY_BOLD.name()))
+                    rv.add(new ReflectionCompletionCandidate(member/*, Ansi.Attribute.INTENSITY_BOLD.name()*/))
                 }
             }
         }
@@ -456,7 +456,7 @@ class ReflectionCompleter {
         if (showInstance) {
             Set<String> candidates = new HashSet<String>()
             PROPERTIES_COMPLETER.addCompletions(instance, prefix, candidates)
-            rv.addAll(candidates.collect({ String it -> new ReflectionCompletionCandidate(it, AnsiRenderer.Code.MAGENTA.name()) }))
+            rv.addAll(candidates.collect({ String it -> new ReflectionCompletionCandidate(it/*, AnsiRenderer.Code.MAGENTA.name()*/) }))
         }
 
         return rv.sort()
@@ -689,7 +689,7 @@ class ReflectionCompleter {
                             ReflectionCompletionCandidate fieldCandidate = new ReflectionCompletionCandidate(fieldname)
                             if (!rv.contains(fieldCandidate)) {
                                 if (!Modifier.isStatic(modifiers) && renderBold) {
-                                    fieldCandidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
+//                                    fieldCandidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
                                 }
 
                                 rv.add(fieldCandidate)
@@ -700,7 +700,7 @@ class ReflectionCompleter {
                 if (!fieldnameSuggested && acceptName(name, prefix)) {
                     ReflectionCompletionCandidate candidate = new ReflectionCompletionCandidate(name + (methIt.parameterTypes.length == 0 ? '()' : '('))
                     if (!Modifier.isStatic(modifiers) && renderBold) {
-                        candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
+//                        candidate.jAnsiCodes.add(Ansi.Attribute.INTENSITY_BOLD.name())
                     }
                     rv.add(candidate)
                 }

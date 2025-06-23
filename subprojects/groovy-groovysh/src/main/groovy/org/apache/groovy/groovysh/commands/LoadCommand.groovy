@@ -18,8 +18,7 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import jline.console.completer.Completer
-import jline.internal.Configuration
+import org.jline.reader.Completer
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Groovysh
 import org.apache.groovy.groovysh.completion.FileNameCompleter
@@ -29,7 +28,7 @@ import org.apache.groovy.groovysh.completion.FileNameCompleter
  */
 class LoadCommand extends CommandSupport {
     public static final String COMMAND_NAME = ':load'
-    private static final boolean isWin = Configuration.isWindows()
+//    private static final boolean isWin = Configuration.isWindows()
 
     LoadCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':l')
@@ -51,9 +50,9 @@ class LoadCommand extends CommandSupport {
 
         for (source in args) {
             URL url
-            if (isWin) {
-                source = source.replaceAll('\\\\ ', ' ')
-            }
+//            if (isWin) {
+//                source = source.replaceAll('\\\\ ', ' ')
+//            }
             log.debug("Attempting to load: \"$source\"")
             try {
                 url = new URL("$source")

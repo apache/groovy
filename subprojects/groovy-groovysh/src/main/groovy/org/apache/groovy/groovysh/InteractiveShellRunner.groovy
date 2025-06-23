@@ -21,17 +21,44 @@ package org.apache.groovy.groovysh
 import groovy.transform.AutoFinal
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import jline.console.ConsoleReader
-import jline.console.completer.AggregateCompleter
-import jline.console.completer.CandidateListCompletionHandler
-import jline.console.completer.Completer
-import jline.console.completer.CompletionHandler
-import jline.console.history.FileHistory
 import org.apache.groovy.groovysh.completion.FileNameCompleter
+import org.apache.groovy.groovysh.completion.antlr4.CustomClassSyntaxCompleter
+import org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter
+import org.apache.groovy.groovysh.completion.antlr4.IdentifierCompleter
+import org.apache.groovy.groovysh.completion.antlr4.ImportsSyntaxCompleter
+import org.apache.groovy.groovysh.completion.antlr4.KeywordSyntaxCompleter
+
+//import jline.console.completer.AggregateCompleter
+//import jline.console.completer.CandidateListCompletionHandler
+//import jline.console.completer.Completer
+//import jline.console.completer.CompletionHandler
+//import jline.console.history.FileHistory
+import org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter
+import org.apache.groovy.groovysh.completion.antlr4.VariableSyntaxCompleter
 import org.apache.groovy.groovysh.util.WrappedInputStream
 import org.codehaus.groovy.tools.shell.IO
-import org.codehaus.groovy.tools.shell.util.Logger
+//import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.Preferences
+import org.jline.builtins.Completers
+import org.jline.builtins.ConfigurationPath
+import org.jline.builtins.SyntaxHighlighter
+import org.jline.console.impl.SystemHighlighter
+import org.jline.reader.History
+import org.jline.reader.LineReader
+import org.jline.reader.LineReaderBuilder
+import org.jline.reader.impl.DefaultHighlighter
+import org.jline.reader.impl.history.DefaultHistory
+import org.jline.terminal.Terminal
+import org.jline.terminal.TerminalBuilder
+import org.jline.utils.OSUtils
+
+import javax.swing.JRootPane
+import java.nio.file.Path
+import java.nio.file.Paths
+
+import static org.jline.builtins.SyntaxHighlighter.DEFAULT_NANORC_FILE
+import static org.jline.console.ConsoleEngine.VAR_NANORC
+
 
 /**
  * Support for running a {@link Shell} interactively using the JLine library.
@@ -39,52 +66,105 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 @AutoFinal @CompileStatic
 class InteractiveShellRunner extends ShellRunner implements Runnable {
 
-    ConsoleReader reader
+    LineReader reader
+    private final Terminal terminal
+    private History history
     final Closure prompt
-    final CommandsMultiCompleter completer
+//    final CommandsMultiCompleter completer
     WrappedInputStream  wrappedInputStream
+    private static final String DEFAULT_NANORC_VALUE = "classpath:/nanorc/groovy.nanorc";
 
     @CompileDynamic
     InteractiveShellRunner(Groovysh shell, Closure prompt) {
         super(shell)
-
+        this.history = new DefaultHistory()
         this.prompt = prompt
         this.wrappedInputStream = new WrappedInputStream(shell.io.inputStream)
-        this.reader = new ConsoleReader(wrappedInputStream, shell.io.outputStream)
+        this.terminal = TerminalBuilder.builder()
+            .system(true)
+            .name("Groovysh")
+            .build()
+//        this.reader = new ConsoleReader(wrappedInputStream, shell.io.outputStream)
 
-        CompletionHandler currentCompletionHandler = reader.getCompletionHandler()
-        if (currentCompletionHandler instanceof CandidateListCompletionHandler) {
-            currentCompletionHandler.setStripAnsi(true)
-            currentCompletionHandler.setPrintSpaceAfterFullCompletion(false)
-        }
+//        CompletionHandler currentCompletionHandler = reader.getCompletionHandler()
+//        if (currentCompletionHandler instanceof CandidateListCompletionHandler) {
+//            currentCompletionHandler.setStripAnsi(true)
+//            currentCompletionHandler.setPrintSpaceAfterFullCompletion(false)
+//        }
 
-        // expand events ia an advanced feature of JLine that clashes with Groovy syntax (e.g. invoke "2!=3")
-        reader.expandEvents = false
+        def reflectionCompleter = new ReflectionCompleter(shell)
 
-        // complete groovysh commands, display, import, ... as first word in line
-        completer = new CommandsMultiCompleter()
+        def classnameCompleter = new CustomClassSyntaxCompleter(shell)
 
-        def reflectionCompleter = new org.apache.groovy.groovysh.completion.antlr4.ReflectionCompleter(shell)
-
-        def classnameCompleter = new org.apache.groovy.groovysh.completion.antlr4.CustomClassSyntaxCompleter(shell)
-
-        List<org.apache.groovy.groovysh.completion.antlr4.IdentifierCompleter> identifierCompleters = [
-            new org.apache.groovy.groovysh.completion.antlr4.KeywordSyntaxCompleter(),
-            new org.apache.groovy.groovysh.completion.antlr4.VariableSyntaxCompleter(shell),
+        List<IdentifierCompleter> identifierCompleters = [
+            new KeywordSyntaxCompleter(),
+            new VariableSyntaxCompleter(shell),
             classnameCompleter,
-            new org.apache.groovy.groovysh.completion.antlr4.ImportsSyntaxCompleter(shell)
+            new ImportsSyntaxCompleter(shell)
         ]
 
-        def filenameCompleter = new FileNameCompleter(false)
+        String jnanorcName = 'jnanorc'
+        String root = '/Users/paulk/Projects/groovy/subprojects/groovy-groovysh/build/resources/main/nanorc/'
+        println "root = $root"
+//        File file = new File(InteractiveShellRunner.protectionDomain.codeSource.location.toURI().path)
+//        String root = file.canonicalPath.replace('classes', '').normalize()
+        ConfigurationPath configPath = new ConfigurationPath(Paths.get(root), Paths.get(root))
+        Path jnanorc = configPath.getConfig(jnanorcName)
+//        String root = base.canonicalPath.replace('classes', '').normalize()
+//        println "root = $root"
+//        ConfigurationPath configPath = new ConfigurationPath(Paths.get(root), Paths.get(root))
+//        Path nanorc = configPath.getConfig('nanorc')
+//        println "nanorc = $nanorc"
+//        scriptEngine.put(VAR_NANORC, nanorc.toString())
+        SyntaxHighlighter commandHighlighter = SyntaxHighlighter.build(jnanorc, "command")
+        println "commandHighlighter = ${commandHighlighter.properties}"
+        SyntaxHighlighter argsHighlighter = SyntaxHighlighter.build(jnanorc, "args")
+        println "argsHighlighter = ${argsHighlighter.properties}"
+        SyntaxHighlighter groovyHighlighter = SyntaxHighlighter.build(jnanorc, 'groovy')
+        println "groovyHighlighter = ${groovyHighlighter.properties}"
+        SystemHighlighter highlighter = new SystemHighlighter(commandHighlighter, argsHighlighter, groovyHighlighter)
+//        if (!OSUtils.IS_WINDOWS) {
+//            highlighter.setSpecificHighlighter("!", SyntaxHighlighter.build(nanorc, "SH-REPL"))
+//        }
+//        highlighter.addFileHighlight("nano", "less", "slurp")
+//        highlighter.addFileHighlight("groovy", "classloader", Arrays.asList("-a", "--add"))
+//        highlighter.addExternalHighlighterRefresh(printer::refresh)
+//        highlighter.addExternalHighlighterRefresh(scriptEngine::refresh)
+//        def filenameCompleter = new Completers.FileNameCompleter()
+        def filenameCompleter = new FileNameCompleter()
+        def groovyCompleter = new GroovySyntaxCompleter(shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter)
 
-        reader.addCompleter(completer)
-        reader.addCompleter(new org.apache.groovy.groovysh.completion.antlr4.GroovySyntaxCompleter(
-                shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter))
+        this.reader = LineReaderBuilder.builder()
+            .terminal(this.terminal)
+            .highlighter(highlighter)
+//            .parser(parser)
+            .history(this.history)
+//            .completer(new MyGroovyCompleterJLine3Adapter(/* pass necessary GroovySH context */))
+        // .highlighter(new MyGroovyHighlighter()) // Optional
+        // .variable(LineReader.HISTORY_FILE, historyFile) // Another way to set history file
+            .option(LineReader.Option.HISTORY_IGNORE_DUPS, true)
+            .option(LineReader.Option.HISTORY_IGNORE_SPACE, true)
+            .completer(groovyCompleter)
+            .build()
+
+        // expand events ia an advanced feature of JLine that clashes with Groovy syntax (e.g. invoke "2!=3")
+//        reader.expandEvents = false
+
+        // complete groovysh commands, display, import, ... as first word in line
+
+//        completer = new CommandsMultiCompleter()
+
+
+
+//        reader.addCompleter(completer)
+//        reader.addCompleter(new GroovySyntaxCompleter(
+//                shell, reflectionCompleter, classnameCompleter, identifierCompleters, filenameCompleter))
+
     }
 
     @Override
     void run() {
-        for (command in shell.registry.commands()) {
+/*        for (command in shell.registry.commands()) {
             completer.add(command)
         }
 
@@ -92,7 +172,7 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         completer.refresh()
 
         // And then actually run
-        adjustHistory()
+        adjustHistory()*/
         super.run()
     }
 
@@ -105,7 +185,7 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
                     wrappedInputStream.insert(((Groovysh) shell).indentPrefix)
                 }
             }
-            return reader.readLine(prompt.call() as String)
+            return reader.readLine(prompt())
         } catch (StringIndexOutOfBoundsException e) {
             log.debug('HACK: Try and work around GROOVY-2152 for now', e)
             reader.println()
@@ -129,7 +209,7 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
 
     private void adjustHistory() {
         // we save the evicted line in case someone wants to use it with history recall
-        if (shell instanceof Groovysh) {
+/*        if (shell instanceof Groovysh) {
             def history = shell.history
             shell.historyFull = history != null && history.size() >= history.maxSize
             if (shell.isHistoryFull()) {
@@ -138,10 +218,10 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
                     shell.evictedLine = first.value()
                 }
             }
-        }
+        }*/
     }
 
-    void setHistory(FileHistory history) {
+/*    void setHistory(FileHistory history) {
         reader.history = history
         def dir = history.file.parentFile
 
@@ -152,12 +232,13 @@ class InteractiveShellRunner extends ShellRunner implements Runnable {
         }
 
         log.debug("Using history file: $history.file")
-    }
+    }*/
 }
 
 /**
  * Completer for interactive shells.
  */
+/*
 @AutoFinal @CompileStatic
 class CommandsMultiCompleter extends AggregateCompleter {
 
@@ -210,3 +291,4 @@ class CommandsMultiCompleter extends AggregateCompleter {
         return super.complete(buffer, pos, cand)
     }
 }
+*/

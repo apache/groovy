@@ -18,9 +18,9 @@
  */
 package org.apache.groovy.groovysh
 
-import jline.console.completer.Completer
 import org.apache.groovy.groovysh.commands.ImportCommand
 import org.apache.groovy.groovysh.util.PackageHelper
+import org.jline.reader.Completer
 
 final class ImportCompleterTest extends CompleterTestSupport {
 

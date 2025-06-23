@@ -1,0 +1,86 @@
+#
+# This file describes a default scheme for nanorc syntax highlighting for terminals with dark background
+#
+# Lines that start with a # character are comments.
+# Comments are ignored. Empty lines are ignored too.  Leading/trailing white
+# space characters are removed before theme file is processed.
+#
+# Each line of the theme file describes a token type and how this token type
+# should be colored (highlighted).  The first word on each line is the name
+# of the token type. After the name of the token type at least one white space
+# character must follow, and then a text and background color
+# for the highlighting must be specified, separated by a comma.  No spaces
+# are allowed inside color definition (that is, color definition is considered
+# a single word, despite a possible comma).
+#
+# Background color can be omitted (in which case default background color
+# of the terminal will be used).  If you are omitting the background color,
+# a comma may be omitted also.  Likewise, a text color can be omitted,
+# but comma must be present in this case.
+#
+# Author:  Yuri Sakhno
+#          ysakhno at gmail dot com
+#
+# https://github.com/YSakhno/nanorc/
+#
+
+PLAIN       white
+FUNCTION    brightgreen
+STRING      brightcyan
+REGEXP      magenta
+COMMENT     cyan
+DOC_COMMENT brightcyan
+TYPE        brightblue
+BOOLEAN     brightwhite
+NULL        cyan
+NUMBER      peach
+VARIABLE    brightyellow
+PACKAGE     green,faint
+CLASS       green
+CONSTANT    yellow
+OPERATOR    yellow
+COMMAND     brightgreen
+OPTION      yellow
+KEYWORD     brightwhite
+JUMP        brightcyan
+SECTION     brightgreen
+ATTRIBUTE   green
+PATH        brightblue
+EXECUTABLE  green
+LINK        cyan
+TITLE       brightblue
+ESCAPE      black,cyan
+DEBUG       brightmagenta
+ERROR       red
+TODO        brightwhite,cyan
+WARNING     ,red
+WHITESPACE  ,green
+HEADER      bold,!blue,~grey7,underline
+ROW_NUMBER  bold,!blue,~grey7
+ROW_STYLE   ,~grey15
+LIST_BACKGROUND ,~grey42
+LIST_GROUP      yellow
+RAINBOW1    brightmagenta
+RAINBOW2    brightcyan
+RAINBOW3    brightblue
+RAINBOW4    brightyellow
+RAINBOW5    brightgreen
+RAINBOW6    brightred
+RAINBOW7    magenta
+RAINBOW8    cyan
+RAINBOW9    blue
+RAINBOW10   yellow
+RAINBOW11   green
+RAINBOW12   red
+#
+# mixin
+#
++FUNCTION           FUNCTION: "[A-Za-z_][A-Za-z0-9_]*[[:space:]]*[(]" \n PLAIN:    "[(]"
++LINT               WHITESPACE: "[[:space:]]+$" \n WARNING: "\t*"
++LONG_LINE_WARNING  WARNING: "^.{121,}$"
+#
+# parser
+#
+$LINE_COMMENT           COMMENT \n TODO: "FIXME|TODO|XXX"
+$BLOCK_COMMENT          COMMENT \n DOC_COMMENT: startWith=/** \n TODO: "FIXME|TODO|XXX"
+$BALANCED_DELIMITERS    STRING  \n VARIABLE: continueAs=\s*:

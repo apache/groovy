@@ -30,17 +30,12 @@ class ExitCommand extends CommandSupport {
 
     ExitCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':x')
-
         alias(':quit', ':q')
     }
 
     @Override
     Object execute(final List<String> args) {
         assertNoArguments(args)
-
-        //
-        // TODO: Maybe support a single arg for the code?
-        //
 
         if (io.verbose) {
             io.out.println(messages['info.bye'])

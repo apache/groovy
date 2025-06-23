@@ -19,14 +19,13 @@
 package org.apache.groovy.groovysh
 
 import groovy.transform.CompileStatic
-import jline.console.completer.Completer
+import org.jline.reader.Completer
 
 /**
  * Provides the interface required for command extensions.
  */
 @CompileStatic
-interface Command
-{
+interface Command {
     String getName()
 
     String getShortcut()

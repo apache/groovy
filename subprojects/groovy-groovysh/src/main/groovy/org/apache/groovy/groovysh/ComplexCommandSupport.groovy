@@ -18,8 +18,8 @@
  */
 package org.apache.groovy.groovysh
 
-import jline.console.completer.Completer
 import org.apache.groovy.groovysh.util.SimpleCompleter
+import org.jline.reader.Completer
 
 /**
  * Support for more complex commands.

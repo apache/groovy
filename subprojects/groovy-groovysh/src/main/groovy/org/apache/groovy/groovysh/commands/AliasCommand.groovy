@@ -18,11 +18,13 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import jline.console.completer.Completer
 import org.apache.groovy.groovysh.Command
 import org.apache.groovy.groovysh.CommandSupport
 import org.apache.groovy.groovysh.Groovysh
 import org.apache.groovy.groovysh.completion.CommandNameCompleter
+import org.jline.reader.Completer
+
+import static org.jline.jansi.AnsiRenderer.render
 
 /**
  * The 'alias' command.
@@ -104,7 +106,7 @@ class AliasTargetProxyCommand
 
     @Override
     String getDescription() {
-        return "User defined alias to: @|bold ${args.join(' ')}|@"
+        return render("User defined alias to: @|bold ${args.join(' ')}|@")
     }
 
     @Override
