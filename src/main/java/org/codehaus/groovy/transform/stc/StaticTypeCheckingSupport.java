@@ -666,7 +666,7 @@ public abstract class StaticTypeCheckingSupport {
             if (GeneralUtils.isOrImplements(right, Collection_TYPE)) {
                 var elementType = GenericsUtils.parameterizeType(right, Collection_TYPE).getGenericsTypes()[0];
                 return isObjectType(leftItemType) // Object[] can accept any collection element type(s)
-                    || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), leftItemType));
+                    || (elementType.getLowerBound() == null && isCovariant(extractType(elementType), getWrapper(leftItemType)));
                     //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ GROOVY-8984: "? super T" is only compatible with an Object[] target
             }
             if (GeneralUtils.isOrImplements(right, BaseStream_TYPE)) {
