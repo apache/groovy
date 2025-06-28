@@ -781,6 +781,19 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11659
+    void testShouldAllowArrayAssignment7() {
+        assertScript '''
+            Integer[] objects = 1..10
+            int [] primitives = 1..10 // TODO: long[]
+
+            assert objects.length == 10
+            assert objects[0] instanceof Integer i && i == 1
+            assert primitives.length == 10
+            assert primitives[0] == 1 && primitives[9] == 10
+        '''
+    }
+
     // GROOVY-11070
     void testNumberArrayGet() {
         String array = 'int[] array = [0, 1, 2, 3]'
