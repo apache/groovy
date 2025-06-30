@@ -24,7 +24,6 @@ import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.jline.builtins.ClasspathResourceUtil
 import org.jline.builtins.ConfigurationPath
-import org.jline.console.CommandInput
 import org.jline.console.CommandRegistry
 import org.jline.console.ConsoleEngine
 import org.jline.console.Printer
