@@ -17,14 +17,18 @@
  *  under the License.
  */
 package org.apache.groovy.groovysh.commands
-
 /**
- * Tests for the {@link AliasCommand} class.
+ * Tests for the {@code /alias} command.
  */
-class AliasCommandTest extends CommandTestSupport {
-    void testAlias() {
-        shell.execute(AliasCommand.COMMAND_NAME)
-        shell.execute(AliasCommand.COMMAND_NAME + ' foo bar')
-        shell.execute(AliasCommand.COMMAND_NAME + ' history foo') // cannot rebind
+class AliasCommandTest extends ConsoleTestSupport {
+
+    void testAliasAndUnalias() {
+        assert !console.hasAlias('foo')
+        console.invoke(session, '/alias', 'foo', '/history')
+        assert console.hasAlias('foo')
+        assert console.getAlias('foo') == '/history'
+
+        console.invoke(session, '/unalias', 'foo')
+        assert !console.hasAlias('foo')
     }
 }

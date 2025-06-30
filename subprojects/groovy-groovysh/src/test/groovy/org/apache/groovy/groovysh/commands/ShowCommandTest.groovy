@@ -19,10 +19,15 @@
 package org.apache.groovy.groovysh.commands
 
 /**
- * Tests for the {@link ShowCommand} class.
+ * Tests for the /show command.
  */
-class ShowCommandTest extends CommandTestSupport {
+class ShowCommandTest extends ConsoleTestSupport {
     void testShow() {
-        shell.execute(ShowCommand.COMMAND_NAME + ' nocommandhere')
+        assert !console.hasVariable('foo')
+        console.execute('dummyName', "foo = 'bar'")
+        assert console.hasVariable('foo')
+        assert console.getVariable('foo') == 'bar'
+        console.invoke(session, '/show')
+        assert output.any{it == '[foo:bar]' }
     }
 }
