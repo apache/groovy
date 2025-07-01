@@ -20,10 +20,8 @@ package org.apache.groovy.groovysh.util
 
 import org.apache.groovy.groovysh.Command
 import org.apache.groovy.groovysh.Shell
-import org.apache.groovy.groovysh.commands.AliasCommand
 
 import org.apache.groovy.groovysh.commands.DisplayCommand
-//import org.apache.groovy.groovysh.commands.DocCommand
 import org.apache.groovy.groovysh.commands.EditCommand
 import org.apache.groovy.groovysh.commands.ExitCommand
 import org.apache.groovy.groovysh.commands.GrabCommand
@@ -60,15 +58,14 @@ class DefaultCommandsRegistrar {
             new DisplayCommand(shell),
             new ResetCommand(shell),
 //            new ClearCommand(shell),
-            new ShowCommand(shell),
-            new InspectCommand(shell),
+//            new ShowCommand(shell),
+//            new InspectCommand(shell),
             new PurgeCommand(shell),
             new EditCommand(shell),
             new LoadCommand(shell),
             new SaveCommand(shell),
             new RecordCommand(shell),
             new HistoryCommand(shell),
-            new AliasCommand(shell),
             new SetCommand(shell),
             new GrabCommand(shell),
             new RegisterCommand(shell),

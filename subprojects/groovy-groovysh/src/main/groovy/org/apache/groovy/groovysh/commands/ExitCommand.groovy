@@ -30,7 +30,7 @@ class ExitCommand extends CommandSupport {
 
     ExitCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':x')
-        alias(':quit', ':q')
+//        alias(':quit', ':q')
     }
 
     @Override

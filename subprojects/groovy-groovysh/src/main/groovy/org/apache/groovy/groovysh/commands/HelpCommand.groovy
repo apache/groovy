@@ -36,7 +36,7 @@ class HelpCommand extends CommandSupport { // TODO for this file: further i18n
     HelpCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':h')
 
-        alias('?', ':?')
+//        alias('?', ':?')
     }
 
     protected List<Completer> createCompleters() {

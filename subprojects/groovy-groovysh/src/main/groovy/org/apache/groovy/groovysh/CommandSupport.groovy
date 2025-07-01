@@ -181,10 +181,6 @@ abstract class CommandSupport implements Command {
     // Helpers
     //
 
-    protected void alias(final String name, final String shortcut) {
-        aliases << new CommandAlias(shell, name, shortcut, this.name)
-    }
-
     protected void fail(final String msg) {
         throw new CommandException(this, render(msg))
     }

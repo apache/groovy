@@ -22,7 +22,7 @@ package org.apache.groovy.groovysh.commands
  * Tests for the /show command.
  */
 class ShowCommandTest extends ConsoleTestSupport {
-    void testShow() {
+    void testShowVariable() {
         assert !console.hasVariable('foo')
         console.execute('dummyName', "foo = 'bar'")
         assert console.hasVariable('foo')

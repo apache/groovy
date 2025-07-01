@@ -17,18 +17,19 @@
  *  under the License.
  */
 package org.apache.groovy.groovysh.commands
+
 /**
- * Tests for the {@code /alias} command.
+ * Tests for the {@code /classloader} command.
  */
-class AliasCommandTest extends ConsoleTestSupport {
-
-    void testAliasAndUnalias() {
-        assert !console.hasAlias('foo')
-        console.invoke(session, '/alias', 'foo', '/history')
-        assert console.hasAlias('foo')
-        assert console.getAlias('foo') == '/history'
-
-        console.invoke(session, '/unalias', 'foo')
-        assert !console.hasAlias('foo')
+class ClassloaderTest extends GroovyCommandTestSupport {
+    void testAddThenPurgeClass() {
+        assert groovy.hasCommand('/classloader')
+        assert !engine.loader.loadedClasses*.name.contains('Foo')
+        engine.execute("class Foo { }")
+        assert engine.loader.loadedClasses*.name.contains('Foo')
+        groovy.invoke(session, '/classloader', '-v')
+        assert output.find{ it.startsWith('loadedClasses=') }.contains('class Foo')
+        groovy.invoke(session, '/classloader', '-d', 'Foo')
+        assert !engine.loader.loadedClasses*.name.contains('Foo')
     }
 }

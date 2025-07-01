@@ -32,7 +32,7 @@ class LoadCommand extends CommandSupport {
 
     LoadCommand(final Groovysh shell) {
         super(shell, COMMAND_NAME, ':l')
-        alias('.', ':.')
+//        alias('.', ':.')
     }
 
     @Override

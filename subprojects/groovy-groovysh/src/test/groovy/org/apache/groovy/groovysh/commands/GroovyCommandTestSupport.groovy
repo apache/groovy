@@ -19,38 +19,24 @@
 package org.apache.groovy.groovysh.commands
 
 import groovy.test.GroovyTestCase
-import org.apache.groovy.groovysh.Main2
-import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
+import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyEngine
-import org.jline.builtins.ClasspathResourceUtil
-import org.jline.builtins.ConfigurationPath
 import org.jline.console.CommandRegistry
-import org.jline.console.ConsoleEngine
 import org.jline.console.Printer
-import org.jline.reader.LineReaderBuilder
-import org.jline.reader.impl.DefaultParser
-
-import java.nio.file.Path
 
 /**
- * Support for testing {@link ConsoleEngine} instances.
+ * Support for testing commands from {@link GroovyCommands}.
  */
-abstract class ConsoleTestSupport extends GroovyTestCase {
-    protected GroovyEngine engine = new GroovyEngine()
-    private URL rootURL = Main2.getResource('/nanorc')
-    private Path root = ClasspathResourceUtil.getResourcePath(rootURL)
-    private Path temp = File.createTempDir().toPath()
-    private ConfigurationPath configPath = new ConfigurationPath(root, temp)
+abstract class GroovyCommandTestSupport extends GroovyTestCase {
+    protected GroovyEngine engine = new GroovyEngine() {
+        def getLoader() {
+            classLoader
+        }
+    }
     protected List<String> output = []
     protected Printer printer = new DummyPrinter(output)
-    protected ConsoleEngine console = new GroovyConsoleEngine(engine, printer, null, configPath)
+    protected CommandRegistry groovy = new GroovyCommands(engine, printer)
     protected CommandRegistry.CommandSession session = new CommandRegistry.CommandSession()
-
-    @Override
-    void setUp() {
-        super.setUp()
-        console.lineReader = LineReaderBuilder.builder().parser(new DefaultParser()).build()
-    }
 
     static class DummyPrinter implements Printer {
         DummyPrinter(List<String> output) {
@@ -60,6 +46,14 @@ abstract class ConsoleTestSupport extends GroovyTestCase {
 
         @Override
         void println(Map<String, Object> options, Object object) {
+            // a bit ugly to partially replicate the logic from
+            // DefaultPrinter here, but it isn't easy to mock out
+            if (object instanceof GroovyEngine.EngineClassLoader) {
+                options?.columns?.each { col ->
+                    output << "$col=" + object."$col"
+                }
+                return
+            }
             output << object.toString()
         }
 

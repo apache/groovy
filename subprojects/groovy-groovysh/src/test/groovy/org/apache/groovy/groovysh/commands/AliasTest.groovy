@@ -17,28 +17,18 @@
  *  under the License.
  */
 package org.apache.groovy.groovysh.commands
-
 /**
- * Tests for the {@link PurgeCommand} class.
+ * Tests for the {@code /alias} command.
  */
-class PurgeCommandTest extends CommandTestSupport {
-    void testPurgeVariables() {
-        shell.execute(PurgeCommand.COMMAND_NAME + ' variables')
-    }
+class AliasTest extends ConsoleTestSupport {
 
-    void testPurgeClasses() {
-        shell.execute(PurgeCommand.COMMAND_NAME + ' classes')
-    }
+    void testAliasAndUnalias() {
+        assert !console.hasAlias('foo')
+        console.invoke(session, '/alias', 'foo', '/history')
+        assert console.hasAlias('foo')
+        assert console.getAlias('foo') == '/history'
 
-    void testPurgeImports() {
-        shell.execute(PurgeCommand.COMMAND_NAME + ' imports')
-    }
-
-    void testPurgePreferences() {
-        shell.execute(PurgeCommand.COMMAND_NAME + ' preferences')
-    }
-
-    void testPurgeAll() {
-        shell.execute(PurgeCommand.COMMAND_NAME + ' all')
+        console.invoke(session, '/unalias', 'foo')
+        assert !console.hasAlias('foo')
     }
 }
