@@ -18,16 +18,27 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.apache.groovy.groovysh.jline.GroovySystemRegistry
+import org.jline.terminal.Terminal
+import org.jline.terminal.TerminalBuilder
+
+import java.util.function.Supplier
+
 /**
- * Tests for the /show command.
+ * Support for testing commands involving {@link GroovySystemRegistry}.
  */
-class ShowCommandTest extends ConsoleTestSupport {
-    void testShowVariable() {
-        assert !console.hasVariable('foo')
-        console.execute('dummyName', "foo = 'bar'")
-        assert console.hasVariable('foo')
-        assert console.getVariable('foo') == 'bar'
-        console.invoke(session, '/show')
-        assert output.any{it == '[foo:bar]' }
+abstract class SystemTestSupport extends ConsoleTestSupport {
+
+    protected GroovySystemRegistry system
+
+    @Override
+    void setUp() {
+        super.setUp()
+        Supplier workDir = { configPath.getUserConfig('.') }
+        Terminal terminal = TerminalBuilder.builder().build()
+        system = new GroovySystemRegistry(reader.parser, terminal, workDir, configPath).tap {
+            setCommandRegistries(console, groovy)
+        }
     }
+
 }

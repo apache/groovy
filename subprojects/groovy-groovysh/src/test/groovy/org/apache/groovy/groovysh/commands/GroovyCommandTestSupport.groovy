@@ -21,6 +21,7 @@ package org.apache.groovy.groovysh.commands
 import groovy.test.GroovyTestCase
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyEngine
+import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.jline.console.CommandRegistry
 import org.jline.console.Printer
 

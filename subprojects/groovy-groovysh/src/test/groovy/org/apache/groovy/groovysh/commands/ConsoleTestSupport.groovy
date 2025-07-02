@@ -20,13 +20,15 @@ package org.apache.groovy.groovysh.commands
 
 import groovy.test.GroovyTestCase
 import org.apache.groovy.groovysh.Main2
+import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
 import org.jline.builtins.ClasspathResourceUtil
 import org.jline.builtins.ConfigurationPath
 import org.jline.console.CommandRegistry
 import org.jline.console.ConsoleEngine
-import org.jline.console.Printer
+import org.jline.console.impl.DefaultPrinter
+import org.jline.reader.LineReader
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.impl.DefaultParser
 
@@ -40,23 +42,30 @@ abstract class ConsoleTestSupport extends GroovyTestCase {
     private URL rootURL = Main2.getResource('/nanorc')
     private Path root = ClasspathResourceUtil.getResourcePath(rootURL)
     private Path temp = File.createTempDir().toPath()
-    private ConfigurationPath configPath = new ConfigurationPath(root, temp)
-    protected List<String> output = []
-    protected Printer printer = new DummyPrinter(output)
+    protected ConfigurationPath configPath = new ConfigurationPath(root, temp)
+    protected DummyPrinter printer = new DummyPrinter(configPath)
+    protected CommandRegistry groovy = new GroovyCommands(engine, printer)
     protected ConsoleEngine console = new GroovyConsoleEngine(engine, printer, null, configPath)
     protected CommandRegistry.CommandSession session = new CommandRegistry.CommandSession()
+    protected LineReader reader
 
     @Override
     void setUp() {
         super.setUp()
-        console.lineReader = LineReaderBuilder.builder().parser(new DefaultParser()).build()
+        reader = LineReaderBuilder.builder().parser(new DefaultParser(regexCommand: /\/?[a-zA-Z!]+\S*/)).build()
+        console.lineReader = reader
     }
 
-    static class DummyPrinter implements Printer {
-        DummyPrinter(List<String> output) {
-            this.output = output
+    static class DummyPrinter extends DefaultPrinter {
+        DummyPrinter(ConfigurationPath configPath) {
+            super(configPath)
         }
-        private List<String> output
+        List<String> output = []
+
+        @Override
+        void println(Object object) {
+            println(defaultPrntOptions(false), object)
+        }
 
         @Override
         void println(Map<String, Object> options, Object object) {
