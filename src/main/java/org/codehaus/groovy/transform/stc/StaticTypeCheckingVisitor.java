@@ -5162,21 +5162,18 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (variable instanceof Parameter) {
                 Parameter parameter = (Parameter) variable;
-                ClassNode type = null;
-                // check if param part of control structure - but not if inside instanceof
-                List<ClassNode> temporaryTypesForExpression = getTemporaryTypesForExpression(vexp);
-                if (temporaryTypesForExpression == null || temporaryTypesForExpression.isEmpty()) {
-                    type = typeCheckingContext.controlStructureVariables.get(parameter);
+                if (getTemporaryTypesForExpression(vexp).isEmpty()) { // not instanceof
+                    // check if the parameter is part of a control structure (for, catch, closure)
+                    ClassNode type = typeCheckingContext.controlStructureVariables.get(parameter);
+                    if (type == null) { // else check closure metadata
+                        type = getTypeFromClosureArguments(parameter);
+                    }
+                    if (type != null) {
+                        storeType(vexp, type);
+                        return type;
+                    }
                 }
-                // now check for closure override
-                if (type == null && temporaryTypesForExpression == null) {
-                    type = getTypeFromClosureArguments(parameter);
-                }
-                if (type != null) {
-                    storeType(vexp, type);
-                    return type;
-                }
-                return getType((Parameter) variable);
+                return getType(parameter);
             }
             return vexp.getOriginType();
         }
