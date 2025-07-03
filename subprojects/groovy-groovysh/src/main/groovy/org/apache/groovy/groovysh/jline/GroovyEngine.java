@@ -106,10 +106,16 @@ public class GroovyEngine implements ScriptEngine {
     private static final String REGEX_VAR = "[a-zA-Z_]+[a-zA-Z0-9_]*";
     private static final Pattern PATTERN_FUNCTION_DEF = Pattern.compile(
             "^def\\s+(" + REGEX_VAR + ")\\s*\\(([a-zA-Z0-9_ ,]*)\\)\\s*\\{(.*)?}(|\n)$", Pattern.DOTALL);
+    private static final Pattern PATTERN_CLASSLIKE_DEF =
+            Pattern.compile("^(class|record|interface|trait)\\s+(" + REGEX_VAR + ")\\s*(.*?\\{.*?})(|\n)$", Pattern.DOTALL);
     private static final Pattern PATTERN_CLASS_DEF =
             Pattern.compile("^class\\s+(" + REGEX_VAR + ")\\s*(.*?\\{.*?})(|\n)$", Pattern.DOTALL);
     private static final Pattern PATTERN_TRAIT_DEF =
-            Pattern.compile("^trait\\s+(" + REGEX_VAR + ")\\s*(\\{.*?})(|\n)$", Pattern.DOTALL);
+            Pattern.compile("^trait\\s+(" + REGEX_VAR + ")\\s*(.*?\\{.*?})(|\n)$", Pattern.DOTALL);
+    private static final Pattern PATTERN_INTERFACE_DEF =
+            Pattern.compile("^interface\\s+(" + REGEX_VAR + ")\\s*(.*?\\{.*?})(|\n)$", Pattern.DOTALL);
+    private static final Pattern PATTERN_RECORD_DEF =
+            Pattern.compile("^record\\s+(" + REGEX_VAR + ")\\s*(.*?\\{.*?})(|\n)$", Pattern.DOTALL);
     private static final String REGEX_CLASS = "(.*?)\\.([A-Z_].*)";
     private static final Pattern PATTERN_CLASS = Pattern.compile(REGEX_CLASS);
     private static final String REGEX_PACKAGE = "([a-z][a-z_0-9]*\\.)*";
@@ -121,6 +127,7 @@ public class GroovyEngine implements ScriptEngine {
             "java.util.*",
             "java.io.*",
             "java.net.*",
+            "java.time.*",
             "groovy.lang.*",
             "groovy.util.*",
             "java.math.BigInteger",
@@ -131,7 +138,9 @@ public class GroovyEngine implements ScriptEngine {
     private final Map<String, String> imports = new HashMap<>();
     private final Map<String, String> methods = new HashMap<>();
     private final Map<String, String> classes = new HashMap<>();
+    private final Map<String, String> interfaces = new HashMap<>();
     private final Map<String, String> traits = new HashMap<>();
+    private final Map<String, String> records = new HashMap<>();
     private final Map<String, Class<?>> nameClass;
     private Cloner objectCloner = new ObjectCloner();
     protected final EngineClassLoader classLoader;
@@ -334,23 +343,37 @@ public class GroovyEngine implements ScriptEngine {
     @Override
     public Object execute(String statement) throws Exception {
         Object out = null;
-        if (statement.matches("import\\s+(([^;\\s])+)\\s*(;)?")) {
+        if (statement.matches("import\\s+(static\\s+)?(([^;\\s])+)\\s*(;)?")) {
             String[] p = statement.split("\\s+");
-            String classname = p[1].replaceAll(";", "");
+            int classIdx = 1;
+            boolean isStatic = p[1].equals("static");
+            if (isStatic) {
+                classIdx++;
+            }
+            String classname = p[classIdx].replaceAll(";", "");
+            addToNameClass(classname);
+            if (isStatic) {
+                classname = "static " + classname;
+            }
             executeStatement(shell, imports, statement);
             imports.put(classname, statement);
-            addToNameClass(classname);
         } else if (statement.equals("import")) {
-            out = new ArrayList<>(imports.keySet());
+            List<String> allImports = new ArrayList<>(imports.keySet());
+            allImports.addAll(DEFAULT_IMPORTS);
+            out = allImports;
         } else if (functionDef(statement)) {
             // do nothing
         } else if (statement.equals("def")) {
             out = methods;
         } else if (statement.equals("class")) {
             out = classes;
-        } else if (statement.equals("traits")) {
+        } else if (statement.equals("record")) {
+            out = records;
+        } else if (statement.equals("trait")) {
             out = traits;
-        } else if (statement.matches("(def|class|trait)\\s+" + REGEX_VAR)) {
+        } else if (statement.equals("interface")) {
+            out = interfaces;
+        } else if (statement.matches("(def|class|trait|interface|record)\\s+" + REGEX_VAR)) {
             String name = statement.split("\\s+")[1];
             if (statement.startsWith("def") && methods.containsKey(name)) {
                 out = "def " + name + methods.get(name);
@@ -358,6 +381,10 @@ public class GroovyEngine implements ScriptEngine {
                 out = "class " + name + " " + classes.get(name);
             } else if (statement.startsWith("trait") && traits.containsKey(name)) {
                 out = "trait " + name + " " + traits.get(name);
+            } else if (statement.startsWith("record") && records.containsKey(name)) {
+                out = "record " + name + " " + records.get(name);
+            } else if (statement.startsWith("interface") && interfaces.containsKey(name)) {
+                out = "interface " + name + " " + interfaces.get(name);
             }
         } else {
             out = executeStatement(shell, imports, statement);
@@ -371,6 +398,17 @@ public class GroovyEngine implements ScriptEngine {
                 Matcher matcher = PATTERN_TRAIT_DEF.matcher(statement);
                 matcher.matches();
                 traits.put(matcher.group(1), matcher.group(2));
+                addToNameClass(matcher.group(1));
+            } else if (PATTERN_INTERFACE_DEF.matcher(statement).matches()) {
+                Matcher matcher = PATTERN_INTERFACE_DEF.matcher(statement);
+                matcher.matches();
+                interfaces.put(matcher.group(1), matcher.group(2));
+                addToNameClass(matcher.group(1));
+            } else if (PATTERN_RECORD_DEF.matcher(statement).matches()) {
+                Matcher matcher = PATTERN_RECORD_DEF.matcher(statement);
+                matcher.matches();
+                records.put(matcher.group(1), matcher.group(2));
+                addToNameClass(matcher.group(1));
             }
         }
         return out;
@@ -415,7 +453,7 @@ public class GroovyEngine implements ScriptEngine {
             e.append(entry.getValue()).append("\n");
         }
         e.append(statement);
-        if (classOrTraitDef(statement)) {
+        if (classLikeDef(statement)) {
             e.append("; null");
         }
         return shell.evaluate(e.toString());
@@ -468,9 +506,8 @@ public class GroovyEngine implements ScriptEngine {
         return out;
     }
 
-    private static boolean classOrTraitDef(String statement) {
-        return PATTERN_CLASS_DEF.matcher(statement).matches()
-                || PATTERN_TRAIT_DEF.matcher(statement).matches();
+    private static boolean classLikeDef(String statement) {
+        return PATTERN_CLASSLIKE_DEF.matcher(statement).matches();
     }
 
     private void refreshNameClass() {
@@ -501,6 +538,12 @@ public class GroovyEngine implements ScriptEngine {
             methods.remove(var);
         } else if (classes.containsKey(var)) {
             classes.remove(var);
+            classLoader.purgeClassCache(var + "(\\$.*)?");
+        } else if (interfaces.containsKey(var)) {
+            interfaces.remove(var);
+            classLoader.purgeClassCache(var + "(\\$.*)?");
+        } else if (records.containsKey(var)) {
+            records.remove(var);
             classLoader.purgeClassCache(var + "(\\$.*)?");
         } else if (traits.containsKey(var)) {
             traits.remove(var);
@@ -607,6 +650,10 @@ public class GroovyEngine implements ScriptEngine {
                 new StringsCompleter("class"), new StringsCompleter(classes::keySet), NullCompleter.INSTANCE));
         completers.add(new ArgumentCompleter(
                 new StringsCompleter("trait"), new StringsCompleter(traits::keySet), NullCompleter.INSTANCE));
+        completers.add(new ArgumentCompleter(
+                new StringsCompleter("interface"), new StringsCompleter(interfaces::keySet), NullCompleter.INSTANCE));
+        completers.add(new ArgumentCompleter(
+                new StringsCompleter("record"), new StringsCompleter(records::keySet), NullCompleter.INSTANCE));
         completers.add(new ArgumentCompleter(
                 new StringsCompleter("import"),
                 new PackageCompleter(CandidateType.PACKAGE, this),
