@@ -108,9 +108,7 @@ public class TracingInterceptor implements Interceptor {
         String argumentTypes = java.util.stream.Stream.of(arguments)
                 .map(arg -> arg != null ? arg.getClass().getName() : "java.lang.Object") // GROOVY-10009
                 .collect(java.util.stream.Collectors.joining(", "));
-        StringBuilder result = new StringBuilder(aClass.getName());
-        result.append('.').append(methodName).append('(');
-        result.append(argumentTypes).append(')');
-        writer.write(result.toString());
+        String result = aClass.getName() + '.' + methodName + '(' + argumentTypes + ')';
+        writer.write(result);
     }
 }

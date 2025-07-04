@@ -77,10 +77,8 @@ public class CallSiteWriter {
                         SIG_ARRAY_LENGTH, numberOfArguments));
         }
         if (sig[numberOfArguments] == null) {
-            StringBuilder sb = new StringBuilder("(");
-            sb.append("Ljava/lang/Object;".repeat(numberOfArguments));
-            sb.append(")[Ljava/lang/Object;");
-            sig[numberOfArguments] = sb.toString();
+            String sb = "(" + "Ljava/lang/Object;".repeat(numberOfArguments) + ")[Ljava/lang/Object;";
+            sig[numberOfArguments] = sb;
         }
         return sig[numberOfArguments];
     }
