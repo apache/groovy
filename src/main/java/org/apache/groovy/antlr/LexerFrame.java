@@ -152,7 +152,7 @@ public class LexerFrame extends JFrame implements ActionListener {
         try {
             int start = scriptPane.getLineStartOffset(token.getLine() - 1) + getColumn(token);
             String text = token.getText();
-            scriptPane.select(start, "".equals(text.trim()) ? start : start + text.length());
+            scriptPane.select(start, text.trim().isEmpty() ? start : start + text.length());
             scriptPane.requestFocus();
         } catch (BadLocationException ex) {
             // IGNORE
