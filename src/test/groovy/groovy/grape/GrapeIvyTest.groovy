@@ -540,7 +540,7 @@ final class GrapeIvyTest {
             """
 
             assertScript '''
-                @Grab('net.jqwik:jqwik:1.9.2')
+                @Grab('net.jqwik:jqwik:1.9.3')
                 import net.jqwik.api.ForAll
                 import net.jqwik.api.Property
 

@@ -210,7 +210,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     // GROOVY-9154
     void testTypeAnnotationsForMethod4() {
         def bytecode = compile(classNamePattern: 'Foo', method: 'sizeZeroOrPositive', '''\
-            @Grab("net.jqwik:jqwik:1.9.2")
+            @Grab("net.jqwik:jqwik:1.9.3")
             import net.jqwik.api.ForAll
             import net.jqwik.api.Property
             import net.jqwik.api.constraints.IntRange
