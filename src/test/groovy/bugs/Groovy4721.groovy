@@ -468,4 +468,17 @@ final class Groovy4721 {
             assert java.test(0) == groovy.test(0)
         """
     }
+
+    @Test
+    void testFinallyWithThrowExceptionInTry() {
+        def err = shouldFail '''
+            try {
+                def msg = "from-try"
+                throw new RuntimeException(msg)
+            } finally {
+                throw new RuntimeException("from-finally")
+            }
+        '''
+        assert err =~ /from-finally/
+    }
 }
