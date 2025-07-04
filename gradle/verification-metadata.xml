@@ -1449,6 +1449,11 @@
             <pgp value="FF6E2C001948C5F2F38B0CC385911F425EC61B51"/>
          </artifact>
       </component>
+      <component group="org.junit.vintage" name="junit-vintage-engine" version="5.13.3">
+         <artifact name="junit-vintage-engine-5.13.3.jar">
+            <pgp value="FF6E2C001948C5F2F38B0CC385911F425EC61B51"/>
+         </artifact>
+      </component>
       <component group="org.jvnet.staxex" name="stax-ex" version="1.8.1">
          <artifact name="stax-ex-1.8.1.jar">
             <pgp value="04543577D6A9CC626239C50C7ECBD740FF06AEB5"/>
