@@ -704,7 +704,6 @@ originalForControl
 
 forInit
     :   localVariableDeclaration
-    |   expressionList[false]
     ;
 
 forUpdate
