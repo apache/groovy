@@ -38,6 +38,9 @@ class VariableExpressionTransformer {
     Expression transformVariableExpression(final VariableExpression ve) {
         Expression xe = tryTransformImplicitReceiver(ve);
         if (xe == null) {
+            xe = tryTransformEnumConstantAccess(ve);
+        }
+        if (xe == null) {
             xe = tryTransformPrivateFieldAccess(ve);
         }
         if (xe == null) {
@@ -74,6 +77,19 @@ class VariableExpressionTransformer {
         }
         pe.removeNodeMetaData(StaticTypesMarker.IMPLICIT_RECEIVER);
 
+        return pe;
+    }
+
+    private static Expression tryTransformEnumConstantAccess(final VariableExpression ve) {
+        ClassNode enumType = ve.getNodeMetaData(StaticTypesMarker.SWITCH_CONDITION_EXPRESSION_TYPE);
+        if (enumType == null) {
+            return null;
+        }
+
+        // GROOVY-8444, GROOVY-11614: replace "CONST" expression with an "EnumType.CONST" expression
+        PropertyExpression pe = propX(classX(enumType), ve.getText());
+        pe.putNodeMetaData(StaticTypesMarker.INFERRED_TYPE, enumType);
+        pe.getProperty().setSourcePosition(ve);
         return pe;
     }
 

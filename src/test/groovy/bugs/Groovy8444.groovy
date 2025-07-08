@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -224,14 +224,16 @@ final class Groovy8444 {
         '''
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingEnumConstantInSwitchExprCase() {
-        assertScript '''\
+        def shell = GroovyShell.withConfig {
+            ast(groovy.transform.CompileStatic)
+        }
+        assertScript shell, '''\
             enum SomeEnum {
                 A, B
             }
-            @groovy.transform.CompileStatic
             def meth(SomeEnum e) {
                 switch (e) {
                     case A -> 1
@@ -243,8 +245,8 @@ final class Groovy8444 {
         '''
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingEnumConstantInSwitchExprCase2() {
         assertScript '''\
             enum SomeEnum {
@@ -266,8 +268,8 @@ final class Groovy8444 {
         '''
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingEnumConstantInSwitchExprCase3() {
         assertScript '''\
             enum SomeEnum {
@@ -285,8 +287,8 @@ final class Groovy8444 {
         '''
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingNonEnumConstantInSwitchExprCase() {
         def err = shouldFail '''\
             enum SomeEnum {
@@ -307,8 +309,8 @@ final class Groovy8444 {
         assert err.message.contains('@ line 9, column 26.')
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingNonEnumConstantInSwitchExprCase2() {
         def err = shouldFail '''\
             enum SomeEnum {
@@ -329,8 +331,8 @@ final class Groovy8444 {
         assert err.message.contains('@ line 9, column 26.')
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingNonEnumConstantInSwitchExprCase3() {
         def err = shouldFail '''\
             enum SomeEnum {
@@ -351,8 +353,8 @@ final class Groovy8444 {
         assert err.message.contains('@ line 9, column 26.')
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingNonEnumConstantInSwitchExprCase4() {
         def err = shouldFail '''\
             enum SomeEnum {
@@ -373,8 +375,8 @@ final class Groovy8444 {
         assert err.message.contains('@ line 9, column 26.')
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingEnumConstantInNestedSwitchExprCase() {
         assertScript '''\
             enum SomeEnum {
@@ -400,8 +402,8 @@ final class Groovy8444 {
         '''
     }
 
-    @Test
     // GROOVY-11614
+    @Test
     void testAccessingEnumConstantInNestedSwitchExprCase2() {
         assertScript '''\
             enum SomeEnum {
