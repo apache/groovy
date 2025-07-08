@@ -489,8 +489,12 @@ public class GeneralUtils {
 
     private static void addAllInterfaces(final Set<ClassNode> result, final ClassNode source) {
         for (ClassNode in : source.getInterfaces()) {
-            in = GenericsUtils.parameterizeType(source, in);
-            if(result.add(in)) addAllInterfaces(result, in);
+            if (in.getGenericsTypes() != null) { // GROOVY-11707
+                in = GenericsUtils.parameterizeType(source, in);
+            }
+            if (result.add(in)) {
+                addAllInterfaces(result, in);
+            }
         }
         ClassNode sc = source.redirect().getUnresolvedSuperClass(false);
         if (sc != null && !ClassHelper.isObjectType(sc)) {
