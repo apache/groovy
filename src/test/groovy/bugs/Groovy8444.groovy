@@ -19,6 +19,8 @@
 package groovy.bugs
 
 import groovy.transform.CompileStatic
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -29,11 +31,13 @@ final class Groovy8444 {
 
     @Test
     void testAccessingEnumConstantInSwitchCase() {
-        assertScript '''\
+        def shell = new GroovyShell(new CompilerConfiguration().tap {
+            addCompilationCustomizers(new ASTTransformationCustomizer(CompileStatic))
+        })
+        shell.evaluate '''\
             enum SomeEnum {
                 A, B
             }
-            @groovy.transform.CompileStatic
             def meth(SomeEnum e) {
                 switch (e) {
                     case A: return 1
@@ -90,7 +94,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 static final String C = 'C'
             }
             @groovy.transform.CompileStatic
@@ -111,7 +115,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 SomeEnum C = A
             }
             @groovy.transform.CompileStatic
@@ -132,7 +136,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 static SomeEnum C = A
             }
             @groovy.transform.CompileStatic
@@ -153,7 +157,7 @@ final class Groovy8444 {
         def err = shouldFail '''\
             enum SomeEnum {
                 A, B
-                
+
                 static final SomeEnum C = A
             }
             @groovy.transform.CompileStatic
@@ -178,7 +182,7 @@ final class Groovy8444 {
             @groovy.transform.CompileStatic
             def meth(SomeEnum e) {
                 switch (e) {
-                    case A: 
+                    case A:
                         switch(e) {
                             case A: return 1.1
                             case B: return 1.2
@@ -207,7 +211,7 @@ final class Groovy8444 {
             @groovy.transform.CompileStatic
             def meth(SomeEnum e, OtherEnum e2) {
                 switch (e) {
-                    case A: 
+                    case A:
                         switch(e2) {
                             case C: return 1.1
                             case D: return 1.2
@@ -225,6 +229,4 @@ final class Groovy8444 {
             assert 2.2 == meth(SomeEnum.B, OtherEnum.D)
         '''
     }
-
-
 }
