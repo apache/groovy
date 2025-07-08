@@ -57,6 +57,16 @@ final class InterfaceTest extends CompilableTestSupport {
         assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> and I<java.lang.Number>')
     }
 
+    // GROOVY-11707
+    void testReImplementsInterface3() {
+        shouldCompile '''
+            abstract class A implements Comparable {
+            }
+            abstract class B extends A implements Comparable {
+            }
+        '''
+    }
+
     // GROOVY-10060
     void testPrivateInterfaceMethod() {
         assertScript '''
