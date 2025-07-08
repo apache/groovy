@@ -1408,24 +1408,23 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     public void visitClass(final ClassNode node) {
-        ClassNode oldNode = currentClass;
-
-        currentClass = node;
-
+        ClassNode oldNode = currentClass; currentClass = node;
+        Map<GenericsTypeName, GenericsType> outerNames = null;
         if (node instanceof InnerClassNode) {
-            if (Modifier.isStatic(node.getModifiers())) {
-                genericParameterNames = new HashMap<>();
+            outerNames = genericParameterNames;
+            genericParameterNames = new HashMap<>();
+            if (!Modifier.isStatic(node.getModifiers())) {
+                genericParameterNames.putAll(outerNames); // outer names visible
             }
-
-            InnerClassNode innerClassNode = (InnerClassNode) node;
-            if (innerClassNode.isAnonymous()) {
-                MethodNode enclosingMethod = innerClassNode.getEnclosingMethod();
-                if (null != enclosingMethod) {
+            InnerClassNode innerClass = (InnerClassNode) node;
+            if (innerClass.isAnonymous()) {
+                MethodNode enclosingMethod = innerClass.getEnclosingMethod();
+                if (enclosingMethod != null) {
                     resolveGenericsHeader(enclosingMethod.getGenericsTypes());
                 }
             }
         } else {
-            genericParameterNames = new HashMap<>();
+            genericParameterNames.clear(); // outer class: new generic namespace
         }
 
         resolveGenericsHeader(node.getGenericsTypes());
@@ -1492,6 +1491,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         super.visitClass(node);
 
         resolveOuterNestedClassFurther(node);
+
+        if (outerNames != null) // GROOVY-11711
+            genericParameterNames = outerNames;
 
         currentClass = oldNode;
     }

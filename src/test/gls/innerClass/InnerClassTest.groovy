@@ -1133,12 +1133,31 @@ final class InnerClassTest {
         assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
     }
 
+    // GROOVY-11711
+    @Test
+    void testUsageOfOuterType6() {
+        assertScript '''
+            class Foo<T> {
+                static class Bar {
+                }
+                /*non-static*/ class Baz
+                    implements java.util.concurrent.Callable<T> {
+                    T call() {
+                    }
+                }
+            }
+            def foo = new Foo<Short>()
+            def baz = new Foo.Baz(foo)
+            assert baz.call() == null
+        '''
+    }
+
     @Test
     void testClassOutputOrdering() {
         // this does actually not do much, but before this
         // change the inner class was tried to be executed
         // because a class ordering bug. The main method
-        // makes the Foo class executeable, but Foo$Bar is
+        // makes the Foo class executable, but Foo$Bar is
         // not. So if Foo$Bar is returned, asserScript will
         // fail. If Foo is returned, asserScript will not
         // fail.
