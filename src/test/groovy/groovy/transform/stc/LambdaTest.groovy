@@ -927,6 +927,22 @@ final class LambdaTest {
         '''
     }
 
+    // GROOVY-11681
+    @Test
+    void testFunctionalInterface10() {
+        assertScript shell, '''
+            def executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+            try {
+                def future = executor.submit(() -> {
+                    return 'works'
+                })
+                assert future.get() == 'works'
+            } finally {
+                executor.shutdown()
+            }
+        '''
+    }
+
     @Test
     void testFunctionWithUpdatingLocalVariable() {
         for (mode in ['','static']) {

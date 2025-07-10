@@ -915,6 +915,21 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11681
+    void testSAMsInMethodSelection9() {
+        assertScript '''
+            def executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+            try {
+                def future = executor.submit { ->
+                    return 'works'
+                }
+                assert future.get() == 'works'
+            } finally {
+                executor.shutdown()
+            }
+        '''
+    }
+
     // GROOVY-6238
     void testDirectMethodCallOnClosureExpression() {
         assertScript '''
