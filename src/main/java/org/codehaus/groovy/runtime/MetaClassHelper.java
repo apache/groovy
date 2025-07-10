@@ -282,20 +282,20 @@ public class MetaClassHelper {
             // by any means could let it look like a direct match
             // we want to add one, because there is an interface between
             // the interface we search for and the interface we are in.
-            if (sub != -1) sub++;
+            if (sub != -1) sub += 1;
             // we are interested in the longest path only
             max = Math.max(max, sub);
         }
         // we do not add one for super classes, only for interfaces
         int superClassMax = getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass);
-        if (superClassMax != -1) superClassMax++;
+        if (superClassMax != -1) superClassMax += 1;
         return Math.max(max, superClassMax);
     }
 
     private static int getParameterCount(final Class<?> closureOrLambdaClass) {
         int parameterCount = -2;
-        if (GeneratedClosure.class.isAssignableFrom(closureOrLambdaClass)) {
-            // determine parameter count from generated "doCall" method(s)
+        if (isClosureLiteral(closureOrLambdaClass)) {
+            // determine parameter count from generated "doCall" methods
             for (Method m : closureOrLambdaClass.getDeclaredMethods()) {
                 if ("doCall".equals(m.getName())) {
                     if (parameterCount != -2) {
@@ -309,6 +309,10 @@ public class MetaClassHelper {
         return parameterCount;
     }
 
+    private static boolean isClosureLiteral(final Class<?> candidate) {
+        return candidate != null && GeneratedClosure.class.isAssignableFrom(candidate);
+    }
+
     private static long calculateParameterDistance(final Class<?> argument, final CachedClass parameter) {
         /*
          * note: when shifting with 32 bit, you should only shift on a long. If you do
@@ -317,13 +321,13 @@ public class MetaClassHelper {
          */
 
         Class<?> parameterClass = parameter.getTheClass();
-        if (parameterClass == argument) {
+        if (parameterClass == argument || (parameterClass == Closure.class && isClosureLiteral(argument))) { // GROOVY-10714, GROOVY-11681
             return 0; // exact match
         }
 
         if (parameter.isInterface()) {
-            long dist = getMaximumInterfaceDistance(argument, parameterClass);
-            if (dist >= 0 || (argument != null && !Closure.class.isAssignableFrom(argument))) {
+            long dist = argument == null ? 2 : getMaximumInterfaceDistance(argument, parameterClass);
+            if (dist >= 0 || !Closure.class.isAssignableFrom(argument)) {
                 return dist << INTERFACE_SHIFT;
             }
         }
@@ -370,8 +374,6 @@ public class MetaClassHelper {
             return 0; // exact match -- GROOVY-9367
         } else if (parameterClass == Object.class) {
             return 1; // tight match
-        } else if (parameterClass.isInterface()) {
-            return 2L << INTERFACE_SHIFT;
         } else {
             // compute the distance to Object
             for (Class<?> c = parameterClass; c != null && c != Object.class; c = c.getSuperclass()) {

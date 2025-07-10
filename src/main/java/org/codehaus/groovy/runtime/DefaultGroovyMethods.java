@@ -151,6 +151,9 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -14079,6 +14082,31 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    //--------------------------------------------------------------------------
+    // submit
+
+    /**
+     * Submits a value-returning task for execution and returns a {@link Future}
+     * representing the pending results of the task.
+     *
+     * <pre class="groovyTestCase">
+     * def executor = java.util.concurrent.Executors.newSingleThreadExecutor()
+     * try {
+     *   def future = executor.submit {
+     *     return 'works'
+     *   }
+     *   assert future.get() == 'works'
+     * } finally {
+     *   executor.shutdown()
+     * }
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public static <T> Future<T> submit(ExecutorService self, Closure<T> task) {
+        return self.submit((Callable<T>) task);
     }
 
     //--------------------------------------------------------------------------
