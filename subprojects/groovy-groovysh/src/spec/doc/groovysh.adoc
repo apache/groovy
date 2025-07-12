@@ -601,8 +601,6 @@ where the `Stats` class is a class extending the `org.apache.groovy.groovysh.Com
 
 [source,groovy]
 ----
-import org.apache.groovy.groovysh.CommandSupport
-import org.apache.groovy.groovysh.Groovysh
 
 class Stats extends CommandSupport {
     protected Stats(final Groovysh shell) {

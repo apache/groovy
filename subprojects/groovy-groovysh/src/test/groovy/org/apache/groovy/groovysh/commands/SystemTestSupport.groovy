@@ -18,19 +18,27 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.apache.groovy.groovysh.jline.GroovySystemRegistry
+import org.jline.terminal.Terminal
+import org.jline.terminal.TerminalBuilder
+
+import java.util.function.Supplier
+
 /**
- * Tests for the {@link HelpCommand} class.
+ * Support for testing commands involving {@link GroovySystemRegistry}.
  */
-class HelpCommandTest /*extends CommandTestSupport */{
-    void testList() {
-//        shell.execute(HelpCommand.COMMAND_NAME)
+abstract class SystemTestSupport extends ConsoleTestSupport {
+
+    protected GroovySystemRegistry system
+
+    @Override
+    void setUp() {
+        super.setUp()
+        Supplier workDir = { configPath.getUserConfig('.') }
+        Terminal terminal = TerminalBuilder.builder().build()
+        system = new GroovySystemRegistry(reader.parser, terminal, workDir, configPath).tap {
+            setCommandRegistries(console, groovy)
+        }
     }
 
-    void testCommandHelp() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' exit')
-    }
-
-    void testCommandHelpInvalidCommand() {
-//        shell.execute(HelpCommand.COMMAND_NAME + ' no-such-command')
-    }
 }

@@ -20,14 +20,27 @@ plugins {
     id 'org.apache.groovy-library'
 }
 
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 dependencies {
     implementation rootProject
     implementation projects.groovyConsole
     implementation projects.groovyTemplates
     implementation projects.groovyXml
+    implementation projects.groovyJson
     testImplementation projects.groovyTest
-    implementation("jline:jline:${versions.jline}") {
-        exclude(group: 'junit', module: 'junit')
+    implementation 'net.java.dev.jna:jna:5.17.0'
+    implementation "org.jline:jansi:${versions.jline}"
+    implementation "org.jline:jline-reader:${versions.jline}"
+    implementation "org.jline:jline-console:${versions.jline}"
+    implementation "org.jline:jline-terminal-jni:${versions.jline}"
+    implementation "org.jline:jline-terminal-jansi:${versions.jline}"
+    implementation "org.jline:jline-terminal-jna:${versions.jline}"
+    implementation("org.jline:jline-terminal:${versions.jline}") {
+//        exclude(group: 'junit', module: 'junit')
     }
 }
 
@@ -35,4 +48,12 @@ plugins.withId('eclipse') {
     eclipse.classpath.file.whenMerged {
         entries.removeAll { entry -> entry.path in ['/groovy-xml', '/groovy-swing', '/groovy-templates'] }
     }
+}
+
+tasks.named('rat') {
+    excludes << '**/jline/GroovyEngine.java' // BSD license as per NOTICE/LICENSE files
+    excludes << '**/jline/ObjectInspector.groovy' // BSD license as per NOTICE/LICENSE files
+    excludes << '**/jline/Utils.groovy' // BSD license as per NOTICE/LICENSE files
+    excludes << '**/jline/JrtJavaBasePackages.java' // BSD license as per NOTICE/LICENSE files
+    excludes << '**/jline/PackageHelper.java' // BSD license as per NOTICE/LICENSE files
 }
