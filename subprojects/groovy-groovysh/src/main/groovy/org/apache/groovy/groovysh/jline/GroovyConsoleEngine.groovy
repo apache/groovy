@@ -27,14 +27,21 @@ import java.nio.file.Path
 import java.util.function.Supplier
 
 class GroovyConsoleEngine extends ConsoleEngineImpl {
+    private final Printer printer
+
     GroovyConsoleEngine(ScriptEngine engine, Printer printer, Supplier<Path> workDir, ConfigurationPath configPath) {
         super(engine, printer, workDir, configPath)
+        this.printer = printer
         commandNames().each { name ->
             if (!name.equals('slurp')) {
                 rename(Command."${name.toUpperCase()}", "/$name")
             }
         }
         alias('/slurp', 'slurp')
+    }
+
+    void println(Map<String, Object> options, Object object) {
+        printer.println(options, object)
     }
 
     @Override

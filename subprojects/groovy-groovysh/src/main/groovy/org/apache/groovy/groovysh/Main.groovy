@@ -283,15 +283,15 @@ class Main {
             println render(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version'], terminal.type))
             println render(messages['startup_banner.1'])
             println '-' * (terminal.width - 1)
-            def index = 0
-            def lines = ['def boo() { 6/3 }', 'boo()']
-
+// for debugging
+//            def index = 0
+//            def lines = ['GQ { from n in [1, 2, 3] innerjoin m in [2, 3, 4] on m = n select m, n }',
+//                         '/q']
             // REPL-loop
             while (true) {
                 try {
                     systemRegistry.cleanUp() // delete temporary variables and reset output streams
                     String line = reader.readLine("groovy> ")
-//                    String line = 'trait U{}\ntrait T{}\ntrait'
 //                    String line = lines[index++]
                     line = parser.getCommand(line).startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
                     if (line.startsWith(':')) {
@@ -301,7 +301,8 @@ class Main {
                         }
                     }
                     Object result = systemRegistry.execute(line)
-                    consoleEngine.println(result)
+                    consoleEngine.println(result?.toString())
+//                    consoleEngine.println([(Printer.OBJECT_TO_STRING): [(Object) : {  o -> o.toString() }] ], result)
                 } catch (UserInterruptException e) {
                     // Ignore
                 } catch (EndOfFileException e) {
