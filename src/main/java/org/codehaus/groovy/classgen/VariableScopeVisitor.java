@@ -377,8 +377,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         String name = expression.getPropertyAsString();
         if (name == null || "class".equals(name)) return;
         Variable member = findClassMember(currentClass, name);
-        if (member == null) return;
-        checkVariableContextAccess(member, expression);
+        if (member != null) checkVariableContextAccess(member, expression);
     }
 
     private void checkVariableContextAccess(final Variable variable, final Expression expression) {
@@ -710,9 +709,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitFieldExpression(final FieldExpression expression) {
         String name = expression.getFieldName();
-        //TODO: change that to get the correct scope
+        // TODO: change that to get the correct scope
         Variable variable = findVariableDeclaration(name);
-        checkVariableContextAccess(variable, expression);
+        if (variable != null) checkVariableContextAccess(variable, expression);
     }
 
     @Override
