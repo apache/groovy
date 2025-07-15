@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -283,6 +284,10 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
 
         if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
             AnnotationNode tupleConstructor = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
+            if (pList.size() == 1 && pList.get(0).getType().equals(MAP_TYPE)
+                    && memberHasValue(tupleConstructor, "namedVariant", Boolean.TRUE)) {
+                tupleConstructor.setMember("namedVariant", ConstantExpression.PRIM_FALSE); // GROOVY-11644: conflicts
+            }
             if (unsupportedTupleAttribute(tupleConstructor, "excludes")) return;
             if (unsupportedTupleAttribute(tupleConstructor, "includes")) return;
             if (unsupportedTupleAttribute(tupleConstructor, "includeProperties")) return;
