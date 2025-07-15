@@ -180,7 +180,8 @@ class Main {
             Supplier<Path> workDir = () -> Paths.get(System.getProperty('user.dir'))
             DefaultParser parser = new DefaultParser(
                 regexCommand: /\/?[a-zA-Z!]+\S*/,
-                eofOnUnclosedQuote: true
+                eofOnUnclosedQuote: true,
+                eofOnEscapedNewLine: true
             )
             parser.blockCommentDelims(new DefaultParser.BlockCommentDelims('/*', '*/'))
                 .lineCommentDelims(new String[]{'//'})
@@ -288,14 +289,22 @@ class Main {
             println '-' * (terminal.width - 1)
 // for debugging
 //            def index = 0
-//            def lines = ['def x = [5, 6]', 'y = [7, 8]',
+//            def lines = ['println \\', 'new Date()',
 //                         '/q']
             // REPL-loop
             while (true) {
                 try {
                     systemRegistry.cleanUp() // delete temporary variables and reset output streams
-                    String line = reader.readLine("groovy> ")
+// for debugging
 //                    String line = lines[index++]
+                    String line = reader.readLine("groovy> ")
+                    line = line.readLines().collect{ s ->
+                        // remove Groovy continuation character for repl not Groovy's sake
+                        s.endsWith(' \\') ? s[0..-3] : s
+                    }.collect {s ->
+                        // repl command parsing assumes whitespace around '='
+                        s.matches(/[a-zA-Z0-9.]*=\S.*/) ? s.replaceFirst('=', ' = ') : s
+                    }.join('\n')
                     line = parser.getCommand(line).startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
                     if (line.startsWith(':')) {
                         def maybeCmd = line.split()[0].replaceFirst(':', '/')
