@@ -208,8 +208,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         if (pre != null) {
             superInPre = copyStatementsWithSuperAdjustment(pre, preBody);
             if (superInPre && callSuper) {
-                xform.addError("Error during " + MY_TYPE_NAME + " processing, can't have a super call in 'pre' " +
-                        "closure and also 'callSuper' enabled", cNode);
+                xform.addError("Error during " + MY_TYPE_NAME + " processing, can't have a super call in 'pre' closure and also 'callSuper' enabled", cNode);
             }
         }
 
@@ -268,7 +267,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
 
         int modifiers = getVisibility(anno, cNode, ConstructorNode.class, ACC_PUBLIC);
-        Parameter[] signature = params.toArray(Parameter.EMPTY_ARRAY);
+        Parameter[] signature = params.toArray(Parameter[]::new);
         if (cNode.getDeclaredConstructor(signature) != null) {
             if (sourceUnit != null) {
                 String warning = String.format(
@@ -287,15 +286,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             if (namedVariant) {
                 BlockStatement inner = new BlockStatement();
                 Parameter mapParam = param(ClassHelper.MAP_TYPE.getPlainNodeReference(), NAMED_ARGS);
-                List<Parameter> genParams = new ArrayList<>();
-                genParams.add(mapParam);
                 ArgumentListExpression args = new ArgumentListExpression();
                 List<String> propNames = new ArrayList<>();
                 Map<Parameter, Expression> seen = new HashMap<>();
                 for (Parameter p : params) {
                     if (!processImplicitNamedParam(xform, tupleCtor, mapParam, inner, args, propNames, p, false, seen)) return;
                 }
-                NamedVariantASTTransformation.createMapVariant(xform, tupleCtor, anno, mapParam, genParams, cNode, inner, args, propNames);
+                NamedVariantASTTransformation.createMapVariant(xform, tupleCtor, anno, mapParam, List.of(mapParam), cNode, inner, args, propNames);
             }
 
             if (sourceUnit != null && !body.isEmpty()) {
