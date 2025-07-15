@@ -28,7 +28,9 @@ import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
@@ -36,6 +38,15 @@ import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.Assume.assumeTrue
 
 final class RecordTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            star 'groovy.transform'
+            staticStar 'java.lang.reflect.Modifier'
+            staticMember 'groovy.test.GroovyAssert', 'shouldFail'
+            staticMember 'org.codehaus.groovy.ast.ClassHelper', 'make'
+        }
+    }
 
     @Test
     void testNativeRecordOnJDK16_groovy() {
@@ -104,7 +115,7 @@ final class RecordTest {
                 import java.lang.annotation.*;
                 import java.util.*;
 
-                public record Person(@NotNull @NotNull2 @NotNull3 String name, int age, @NotNull2 @NotNull3 List<String> locations, String[] titles) {}
+                record Person(@NotNull @NotNull2 @NotNull3 String name, int age, @NotNull2 @NotNull3 List<String> locations, String[] titles) {}
 
                 @Retention(RetentionPolicy.RUNTIME)
                 @Target({ElementType.RECORD_COMPONENT})
@@ -210,17 +221,6 @@ final class RecordTest {
         } finally {
             sourceDir.deleteDir()
             config.targetDirectory.deleteDir()
-        }
-    }
-
-    //--------------------------------------------------------------------------
-
-    private final GroovyShell shell = GroovyShell.withConfig {
-        imports {
-            star 'groovy.transform'
-            staticStar 'java.lang.reflect.Modifier'
-            staticMember 'groovy.test.GroovyAssert', 'shouldFail'
-            staticMember 'org.codehaus.groovy.ast.ClassHelper', 'make'
         }
     }
 
@@ -524,45 +524,73 @@ final class RecordTest {
         '''
     }
 
+    @ParameterizedTest @CsvSource([
+        'RecordType, defaults=false',
+        'TupleConstructor, defaults=false',
+        'RecordType, defaultsMode=DefaultsMode.OFF',
+        'TupleConstructor, defaultsMode=DefaultsMode.OFF'
+    ])
+    void testTupleConstructor(String type, String mode) {
+        assertScript shell, """
+            @$type($mode, namedVariant=false)
+            record Person(String name, Date dob) {
+                //Person(String,Date)
+                //Person(String)  no!
+                //Person(Map)     no!
+                //Person()        no!
+
+                public Person { // implies @TupleConstructor(pre={...})
+                    assert name.length() > 1
+                }
+
+                Person(Person that) {
+                    this(that.name(), that.dob())
+                }
+
+                //getAt(int i)
+                //toList()
+                //toMap()
+            }
+
+            assert Person.declaredConstructors.length == 2 // copy and tuple
+
+            def person = new Person('Frank Grimes', new Date())
+            def doppel = new Person(person)
+            shouldFail {
+                new Person(name:'Frank Grimes', dob:null)
+            }
+            shouldFail {
+                new Person('Frank Grimes')
+            }
+            shouldFail {
+                new Person()
+            }
+        """
+    }
+
     @Test
-    void testTupleConstructor() {
-        for (pair in [['RecordType', 'TupleConstructor'], ['defaults=false', 'defaultsMode=DefaultsMode.OFF']].combinations()) {
-            assertScript shell, """
-                @${pair[0]}(${pair[1]}, namedVariant=false)
-                record Person(String name, Date dob) {
-                    //Person(String,Date)
-                    //Person(String)  no!
-                    //Person(Map)     no!
-                    //Person()        no!
+    void testMapConstructor() {
+        assertScript shell, '''import static java.time.Month.NOVEMBER as NOV
 
-                    public Person { // implies @TupleConstructor(pre={...})
-                        assert name.length() > 1
-                    }
-
-                    Person(Person that) {
-                        this(that.name(), that.dob())
-                    }
-
-                    //getAt(int i)
-                    //toList()
-                    //toMap()
+            record Person(String name, LocalDate born) {
+                Person {
+                    assert name.length() > 1
                 }
+            }
 
-                assert Person.declaredConstructors.length == 2 // copy and tuple
+            def person = new Person(name: 'Frank Grimes', born: LocalDate.of(1955,11,5))
+            assert person.name() == 'Frank Grimes'
+            assert person.born().dayOfMonth == 5
+            assert person.born().month == NOV
+            assert person.born().year == 1955
 
-                def person = new Person('Frank Grimes', new Date())
-                def doppel = new Person(person)
-                shouldFail {
-                    new Person(name:'Frank Grimes', dob:null)
-                }
-                shouldFail {
-                    new Person('Frank Grimes')
-                }
-                shouldFail {
-                    new Person()
-                }
-            """
-        }
+            shouldFail {
+                new Person(name:'', born:LocalDate.now())
+            }
+            shouldFail {
+                new Person(name:'John Doe')
+            }
+        '''
     }
 
     @Test

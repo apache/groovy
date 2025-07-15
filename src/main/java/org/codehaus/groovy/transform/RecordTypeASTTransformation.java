@@ -212,17 +212,17 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
             isAtLeastJDK16 = isAtLeast(targetBytecode, CompilerConfiguration.JDK16);
             message = "Expecting JDK16+ but found " + targetBytecode;
         }
+        List<PropertyNode> pList = Collections.unmodifiableList(getInstanceProperties(cNode));
         boolean isNative = (isAtLeastJDK16 && mode != RecordTypeMode.EMULATE);
         if (isNative) {
-            String sName = cNode.getUnresolvedSuperClass().getName();
+            String scName = cNode.getUnresolvedSuperClass().getName();
             // don't expect any parent to be set at this point but we only check at grammar
             // level when using the record keyword so do a few more sanity checks here
-            if (!sName.equals(OBJECT) && !sName.equals(RECORD_CLASS_NAME)) {
-                addError("Invalid superclass for native record found: " + sName, cNode);
+            if (!scName.equals(OBJECT) && !scName.equals(RECORD_CLASS_NAME)) {
+                addError("Invalid superclass for native record found: " + scName, cNode);
             }
             cNode.setSuperClass(compilationUnit.getClassNodeResolver().resolveName(RECORD_CLASS_NAME, compilationUnit).getClassNode());
             cNode.setModifiers(cNode.getModifiers() | Opcodes.ACC_RECORD);
-            final List<PropertyNode> pList = getInstanceProperties(cNode);
             if (!pList.isEmpty()) {
                 cNode.setRecordComponents(new ArrayList<>());
             }
@@ -246,18 +246,18 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         makeClassFinal(this, cNode);
         makeInnerRecordStatic(cNode);
 
-        final List<PropertyNode> pList = getInstanceProperties(cNode);
         for (PropertyNode pNode : pList) {
             adjustPropertyForShallowImmutability(cNode, pNode, handler);
             pNode.setModifiers(pNode.getModifiers() | ACC_FINAL);
         }
-        final List<FieldNode> fList = cNode.getFields();
+        List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             ensureNotPublic(this, cName, fNode);
         }
+
         // 0L serialVersionUID by default
         if (cNode.getDeclaredField("serialVersionUID") == null) {
-            cNode.addField("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, long_TYPE, constX(0L));
+            cNode.addField("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, long_TYPE, constX(0L, true));
         }
 
         if (!hasAnnotation(cNode, ToStringASTTransformation.MY_TYPE)) {
@@ -282,11 +282,11 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
         }
 
         if (hasAnnotation(cNode, TupleConstructorASTTransformation.MY_TYPE)) {
-            AnnotationNode tupleCons = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
-            if (unsupportedTupleAttribute(tupleCons, "excludes")) return;
-            if (unsupportedTupleAttribute(tupleCons, "includes")) return;
-            if (unsupportedTupleAttribute(tupleCons, "includeProperties")) return;
-            if (unsupportedTupleAttribute(tupleCons, "includeSuperFields")) return;
+            AnnotationNode tupleConstructor = cNode.getAnnotations(TupleConstructorASTTransformation.MY_TYPE).get(0);
+            if (unsupportedTupleAttribute(tupleConstructor, "excludes")) return;
+            if (unsupportedTupleAttribute(tupleConstructor, "includes")) return;
+            if (unsupportedTupleAttribute(tupleConstructor, "includeProperties")) return;
+            if (unsupportedTupleAttribute(tupleConstructor, "includeSuperFields")) return;
         }
 
         if (options != null && memberHasValue(options, COPY_WITH, Boolean.TRUE) && !hasDeclaredMethod(cNode, COPY_WITH, 1)) {
