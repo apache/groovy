@@ -29,6 +29,8 @@ import java.util.function.Supplier
 class GroovySystemRegistry extends SystemRegistryImpl {
     GroovySystemRegistry(Parser parser, Terminal terminal, Supplier<Path> workDir, ConfigurationPath configPath) {
         super(parser, terminal, workDir, configPath)
+        rename(Pipe.AND, '/&&')
+        rename(Pipe.OR, '/||')
     }
 
     @Override
