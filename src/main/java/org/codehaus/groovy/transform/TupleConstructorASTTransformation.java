@@ -60,10 +60,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static groovy.transform.DefaultsMode.OFF;
 import static groovy.transform.DefaultsMode.ON;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.IntStream.rangeClosed;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.hasExplicitConstructor;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.checkPropNamesS;
@@ -284,8 +286,15 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
                 tupleCtor.putNodeMetaData("_SKIPPABLE_ANNOTATIONS", Boolean.TRUE);
             }
             if (namedVariant) {
+                var pType = ClassHelper.MAP_TYPE.getPlainNodeReference();
+                // GROOVY-11644: check if named-param constructor would clash
+                if (cNode.getDeclaredConstructor(params(param(pType, "map"))) != null
+                        || variants(signature).anyMatch(types -> types.length == 1 && types[0].equals(pType))) {
+                    xform.addError(String.format("%s(namedVariant=true) specifies duplicate constructor: %s(%s)",
+                            xform.getAnnotationName(), cNode.getNameWithoutPackage(), ClassNodeUtils.formatTypeName(pType)), anno.getLineNumber() > 0 ? anno : cNode);
+                }
                 BlockStatement inner = new BlockStatement();
-                Parameter mapParam = param(ClassHelper.MAP_TYPE.getPlainNodeReference(), NAMED_ARGS);
+                Parameter mapParam = param(pType, NAMED_ARGS);
                 ArgumentListExpression args = new ArgumentListExpression();
                 List<String> propNames = new ArrayList<>();
                 Map<Parameter, Expression> seen = new HashMap<>();
@@ -397,5 +406,24 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
             }
         }
         return null;
+    }
+
+    private static Stream<ClassNode[]> variants(final Parameter[] parameters) {
+        int n = (int) Stream.of(parameters).filter(Parameter::hasInitialExpression).count();
+
+        return rangeClosed(0, n).mapToObj(i -> {
+            // drop parameters with value from right to left
+            ClassNode[] signature = new ClassNode[parameters.length - i];
+            int j = 1, index = 0;
+            for (Parameter parameter : parameters) {
+                if (j > n - i && parameter.hasInitialExpression()) {
+                    // skip parameter with default argument
+                } else {
+                    signature[index++] = parameter.getType();
+                }
+                if (parameter.hasInitialExpression()) j += 1;
+            }
+            return signature;
+        });
     }
 }

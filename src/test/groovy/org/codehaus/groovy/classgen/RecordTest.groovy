@@ -591,6 +591,28 @@ final class RecordTest {
                 new Person(name:'John Doe')
             }
         '''
+
+        // GROOVY-11644
+        assertScript shell, '''
+            record Person(@NamedParam(value='name', required=true) Map map) {
+                Person {
+                    assert map.name instanceof String
+                        && map.name.trim().size() > 1
+                }
+                String getName() {
+                    return map.get('name')
+                }
+            }
+
+            def person = new Person(name:'Frank Grimes', hair:'brown')
+            assert person.name == 'Frank Grimes'
+            shouldFail {
+                new Person([:])
+            }
+            shouldFail {
+                new Person()
+            }
+        '''
     }
 
     @Test
