@@ -179,7 +179,7 @@ may also create their own aliases.
 ==== Recognized Commands
 
 [[GroovyShell-help]]
-===== `help`
+===== `/help`
 
 Display the list of commands (and aliases) or the help text for specific command.
 
@@ -187,90 +187,145 @@ Display the list of commands (and aliases) or the help text for specific command
 The Command List
 
 ----------------------------------------------------------------------------------
-groovy:000> :help
-
-For information about Groovy, visit:
-    http://groovy-lang.org
-
-Available commands:
-  :help      (:h ) Display this help message
-  ?          (:? ) Alias to: :help
-  :exit      (:x ) Exit the shell
-  :quit      (:q ) Alias to: :exit
-  import     (:i ) Import a class into the namespace
-  :display   (:d ) Display the current buffer
-  :clear     (:c ) Clear the buffer and reset the prompt counter
-  :show      (:S ) Show variables, classes or imports
-  :inspect   (:n ) Inspect a variable or the last result with the GUI object browser
-  :purge     (:p ) Purge variables, classes, imports or preferences
-  :edit      (:e ) Edit the current buffer
-  :load      (:l ) Load a file or URL into the buffer
-  .          (:. ) Alias to: :load
-  :save      (:s ) Save the current buffer to a file
-  :record    (:r ) Record the current session to a file
-  :history   (:H ) Display, manage and recall edit-line history
-  :alias     (:a ) Create an alias
-  :set       (:= ) Set (or list) preferences
-  :grab      (:g ) Add a dependency to the shell environment
-  :register  (:rc) Register a new command with the shell
-  :doc       (:D ) Open a browser window displaying the doc for the argument
-
-For help on a specific command type:
-    :help <command>
+groovy> /help
+    /!           execute shell command
+    /alias       create command alias
+    /classloader display/manage Groovy classLoader data
+    /clear       clear terminal
+    /colors      view 256-color table and ANSI-styles
+    /console     launch Groovy console
+    /del         delete console variables, methods, classes and imports
+    /doc         open document on browser
+    /echo        echos a value
+    /grab        add maven repository dependencies to classpath
+    /highlighter manage nanorc theme system
+    /history     list history of commands
+    /imports     show/delete import statements
+    /inspect     display/browse object info on terminal/object browser
+    /keymap      manipulate keymaps
+    /less        file pager
+    /load        load a file into the buffer
+    /methods     show/delete methods
+    /nano        edit files
+    /pipe        create/delete pipe operator
+    /prnt        print object
+    /reset       clear the buffer
+    /save        save the buffer to a file
+    /setopt      set options
+    /setvar      set lineReader variable value
+    /show        list console variables
+    /ttop        display and update sorted information about threads
+    /types       show/delete types
+    /unalias     remove command alias
+    /unsetopt    unset options
+    /vars        show/delete variable declarations
+    /widget      manipulate widgets
+    /exit         exit from app/script
+    /help         command help
+    /slurp        slurp file or string variable context to object
 ----------------------------------------------------------------------------------
 
 [[GroovyShell-HelpforaCommand]]
 Help for a Command
 
 While in the interactive shell, you can ask for help for any command to
-get more details about its syntax or function. Here is an example of
-what happens when you ask for help for the `help` command:
+get more details about its syntax or function. You can use `/help <command>`
+or `<command> --help`. Here is an example of
+what happens when you ask for help for the `/help` command:
 
 ------------------------------------------------------------
-groovy:000> :help :help
-
-usage: :help [<command>]
-
-Display the list of commands or the help text for <command>.
+groovy> /help /help
+help -  command help
+Usage: help [TOPIC...]
+  -? --help                      Displays command help
+     --groups                    Commands are grouped by registries
+  -i --info                      List commands with a short command info
 ------------------------------------------------------------
 
 [[GroovyShell-exit]]
-===== `exit`
+===== `/exit`
 
 Exit the shell.
 
-This is the *only* way to exit the shell. Well, you can still `CTRL-C`,
-but the shell will complain about an abnormal shutdown of the JVM.
+This is the *only* way to exit the shell. Well, you can still `CTRL-Z` on unix platforms,
+but things like `CTRL_C` are trapped. (See JLine3 documentation for more details.)
+
+[[GroovyShell-echo]]
 
 [[GroovyShell-import]]
 ===== `import`
 
 Add a custom import which will be included for all shell evaluations.
 
+[source,jshell]
+--------------
+groovy> import java.util.concurrent.BlockingDeque
+--------------
+
 This command can be given at any time to add new imports.
 
+Completion is available and prompts a level at a time using the package structure of all known classes.
+
+[source,jshell]
+--------------
+groovy> import java.util.concurrent.<TAB>
+others
+atomic                        locks
+Classes
+AbstractExecutorService       ConcurrentSkipListMap         ForkJoinPool
+ArrayBlockingQueue            ConcurrentSkipListSet         ForkJoinTask
+...
+--------------
+
+[[GroovyShell-imports]]
+===== `/imports`
+
+You can use this to list and delete existing imports.
+
+[source,jshell]
+--------------
+groovy> /imports
+import java.util.concurrent.BlockingQueue
+--------------
+
 [[GroovyShell-grab]]
-===== `grab`
+===== `/grab`
 
 Grab a dependency (Maven, Ivy, etc.) from Internet sources or cache,
 and add it to the Groovy Shell environment.
 
+[source,jshell]
 ----
-groovy:000> :grab 'com.google.guava:guava:19.0'
-groovy:000> import com.google.common.collect.BiMap
-===> com.google.common.collect.BiMap
+groovy> /grab org.apache.commons:commons-collections4:4.5.0
+groovy> import org.apache.commons.collections4.bidimap.TreeBidiMap
+groovy> TreeBidiMap t = [apple: 'red']
+{apple=red}
+groovy> t.inverseBidiMap()
+{red=apple}
+----
+
+Completion is available. Currently, completion options are populated
+by known artifacts in the local Maven repository (~/.m2). Expect this to change in the future.
+
+[source,jshell]
+----
+groovy> /grab org.apache.commons:commons-<TAB>
+org.apache.commons:commons-collections4:     org.apache.commons:commons-exec:
+org.apache.commons:commons-compress:         org.apache.commons:commons-imaging:
+org.apache.commons:commons-configuration2:   org.apache.commons:commons-lang3:
+org.apache.commons:commons-crypto:           org.apache.commons:commons-math3:
+org.apache.commons:commons-csv:              org.apache.commons:commons-parent:
+org.apache.commons:commons-dbcp2:            org.apache.commons:commons-pool2:
+org.apache.commons:commons-digester3:        org.apache.commons:commons-text:
+org.apache.commons:commons-email:
 ----
 
 This command can be given at any time to add new dependencies.
 
 [[GroovyShell-display]]
-===== `display`
+===== `/less`
 
-Display the contents of the current buffer.
-
-This only displays the buffer of an incomplete expression. Once the
-expression is complete, the buffer is reset. The prompt will update to
-show the size of the current buffer as well.
+Display the contents of all existing import, type, method and variable snippets.
 
 [[GroovyShell-Example]]
 Example
