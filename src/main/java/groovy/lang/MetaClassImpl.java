@@ -138,9 +138,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
 
-    private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
-    private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
-    private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
+    private static final Class<?>[] GETTER_MISSING_ARGS = {String.class};
+    private static final Class<?>[] SETTER_MISSING_ARGS = {String.class,Object.class};
+    private static final Class<?>[] METHOD_MISSING_ARGS = {String.class,Object.class};
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
     private static final Comparator<CachedClass> CACHED_CLASS_NAME_COMPARATOR = Comparator.comparing(CachedClass::getName);
     private static final boolean PERMISSIVE_PROPERTY_ACCESS = SystemUtil.getBooleanSafe("groovy.permissive.property.access");
@@ -265,9 +265,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public List<MetaMethod> respondsTo(final Object obj, final String name) {
-        final Object o = getMethods(getTheClass(), name, false);
+        Object o = getMethods(getTheClass(), name, false);
         if (o instanceof FastArray) {
-            return ((FastArray) o).toList();
+            @SuppressWarnings("unchecked")
+            List<MetaMethod> l = ((FastArray) o).toList();
+            return l;
         }
         return Collections.singletonList((MetaMethod) o);
     }
@@ -974,7 +976,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return The value in the case of a getter or a MissingPropertyException
      */
     protected Object invokeStaticMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
-        MetaClass mc = instance instanceof Class ? registry.getMetaClass((Class) instance) : this;
+        MetaClass mc = instance instanceof Class ? registry.getMetaClass((Class<?>) instance) : this;
         if (isGetter) {
             MetaMethod propertyMissing = mc.getMetaMethod(STATIC_PROPERTY_MISSING, GETTER_MISSING_ARGS);
             if (propertyMissing != null) {
@@ -988,7 +990,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (instance instanceof Class) {
-            throw new MissingPropertyException(propertyName, (Class) instance);
+            throw new MissingPropertyException(propertyName, (Class<?>) instance);
         }
         throw new MissingPropertyException(propertyName, theClass);
     }
@@ -2089,7 +2091,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Object#getClass and Map#isEmpty
      */
     private boolean isSpecialProperty(final String name) {
-        return "class".equals(name) || (isMap && ("empty".equals(name)));
+        return "class".equals(name) || (isMap && "empty".equals(name));
     }
 
     private boolean isVisibleProperty(final MetaProperty field, final MetaMethod method, final Class<?> sender) {
@@ -2107,7 +2109,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return !owner.isAssignableFrom(method.getDeclaringClass().getTheClass()) && !method.getDeclaringClass().isInterface();
     }
 
-    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class sender, final String name, final boolean useSuper, final boolean isStatic) {
+    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class<?> sender, final String name, final boolean useSuper, final boolean isStatic) {
         MetaMethod method = null;
         MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
         if ((mp == null || mp instanceof CachedField) && !name.isEmpty() && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name) && !"MetaClass".equals(name)) {

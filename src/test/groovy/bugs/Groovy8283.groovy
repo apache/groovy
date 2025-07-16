@@ -331,12 +331,10 @@ final class Groovy8283 {
                     assert fooB == null
                 }
                 void test2() {
-                    /* TODO
                     this.foo = null
                     assert !setter
                     assert fooA != null
                     assert fooB == null
-                    */
                 }
                 void test3() {
                     this.@foo = null
@@ -352,14 +350,12 @@ final class Groovy8283 {
                 }
                 void test5() {
                     def that = new E()
-                    /* TODO
                     that.foo = null
                     assert !that.setter
                     assert that.fooA != null
                     assert that.fooB == null
 
                     that = new E()
-                    */
                     that.@foo = null
                     assert !that.setter
                     assert that.fooA != null
