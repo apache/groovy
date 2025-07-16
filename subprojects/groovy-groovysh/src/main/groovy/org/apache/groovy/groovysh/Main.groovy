@@ -303,7 +303,7 @@ class Main {
                         s.endsWith(' \\') ? s[0..-3] : s
                     }.collect {s ->
                         // repl command parsing assumes whitespace around '='
-                        s.matches(/[a-zA-Z0-9.]*=\S.*/) ? s.replaceFirst('=', ' = ') : s
+                        s.matches(/[a-zA-Z0-9._]*=\S.*/) ? s.replaceFirst('=', ' = ') : s
                     }.join('\n')
                     line = parser.getCommand(line).startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
                     if (line.startsWith(':')) {
