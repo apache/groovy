@@ -115,7 +115,7 @@ public class GroovyEngine implements ScriptEngine {
     private static final String MODIFIERS = "(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\\s+)*";
     private static final String BODY = "\\s*(.*?\\{.*?})(|;|\n)$";
     private static final Pattern PATTERN_METHOD_DEF = Pattern.compile(
-            "(?ms)" + ANNOTATIONS + MODIFIERS + REGEX_VAR + "\\s+(" + METHOD_REGEX_VAR + "\\s*\\(([a-zA-Z0-9_ ,]*)\\))" + BODY);
+            "(?ms)" + ANNOTATIONS + MODIFIERS + REGEX_VAR + "\\s+(" + METHOD_REGEX_VAR + "\\s*\\(([\\p{L}\\p{N}_ ,]*)\\))" + BODY);
     private static final Pattern PATTERN_VAR_DEF = Pattern.compile("^\\s*" + ANNOTATIONS + BASE_REGEX_VAR + "\\s*" + REGEX_VAR + "\\s*=[^=~].*");
     private static final Pattern PATTERN_TYPE_DEF =
             Pattern.compile("(?ms)" + ANNOTATIONS + MODIFIERS + "(\\bclass|@?\\binterface|\\benum|\\btrait|\\brecord)\\s+" + REGEX_VAR + BODY);
@@ -405,12 +405,10 @@ public class GroovyEngine implements ScriptEngine {
         } else if (methodDef(statement)) {
             // do nothing
         } else {
-            Map<String, String> vars = new LinkedHashMap<>();
-            Map<String, Object> opts = (Map) get("GROOVYSH_OPTIONS");
-            if (opts != null && (boolean)opts.get(Main.INTERPRETER_MODE_PREFERENCE_KEY)) {
-                vars.putAll(variables);
-            }
-            out = executeStatement(shell, imports, methods, vars, statement);
+            boolean iMode = isInterpreterMode();
+            Map<String, String> vars = iMode ? variables : Collections.emptyMap();
+            Map<String, String> meths = iMode ? methods : Collections.emptyMap();
+            out = executeStatement(shell, imports, meths, vars, statement);
             classLoader.purgeClassCache();
             Matcher matcher = PATTERN_TYPE_DEF.matcher(statement);
             if (matcher.matches()) {
@@ -423,6 +421,11 @@ public class GroovyEngine implements ScriptEngine {
             }
         }
         return out;
+    }
+
+    private boolean isInterpreterMode() {
+        Map<String, Object> opts = (Map) get("GROOVYSH_OPTIONS");
+        return opts != null && (boolean) opts.get(Main.INTERPRETER_MODE_PREFERENCE_KEY);
     }
 
     private static String removeTrailingSemi(String statement) {
@@ -528,9 +531,15 @@ public class GroovyEngine implements ScriptEngine {
         Matcher m = PATTERN_METHOD_DEF.matcher(statement);
         if (m.matches()) {
             out = true;
-            String code = removeTrailingSemi(m.group(0));
             methodNames.add(m.group(3));
-            methods.put(m.group(2), code);
+            if (isInterpreterMode()) {
+                String code = removeTrailingSemi(m.group(0));
+                methods.put(m.group(2), code);
+            } else {
+                String body = m.group(5).substring(1);
+                put(m.group(3), execute("{" + m.group(4) + "->" + body));
+                methods.put(m.group(2), "def " + m.group(3) + "(" + m.group(4) + ")" + "{" + body);
+            }
         }
         return out;
     }
@@ -565,15 +574,20 @@ public class GroovyEngine implements ScriptEngine {
         }
         if (imports.containsKey(var)) {
             removeImport(var);
-        } else if (methodNames.contains(var)) {
+        }
+        if (methodNames.contains(var)) {
             removeMethod(var);
-        } else if (variables.containsKey(var)) {
+        }
+        if (variables.containsKey(var)) {
             removeVariable(var);
-        } else if (sharedData.hasVariable(var)) {
+        }
+        if (sharedData.hasVariable(var)) {
             sharedData.getVariables().remove(var);
-        } else if (types.containsKey(var)) {
+        }
+        if (types.containsKey(var)) {
             removeType(var);
-        } else if (!var.contains(".") && var.contains("*")) {
+        }
+        if (!var.contains(".") && var.contains("*")) {
             for (String v : internalFind(var)) {
                 if (sharedData.hasVariable(v) && !v.equals("_") && !v.matches(REGEX_SYSTEM_VAR)) {
                     sharedData.getVariables().remove(v);
@@ -589,7 +603,7 @@ public class GroovyEngine implements ScriptEngine {
             methodNames.remove(prefix);
         } else {
             methodNames.remove(name);
-            methods.keySet().removeIf(k -> k.startsWith(name + "("));
+            methods.keySet().removeIf(k -> k.equals(name) || k.startsWith(name + "("));
         }
     }
 
