@@ -52,7 +52,7 @@ The Groovy development team
 image::https://raw.githubusercontent.com/groovy/artwork/master/medium.png[]
 image:{jdk-icon}[jdk, link={jdk}]
 image:{apache-license-icon}[Apache License 2, link={apache-license-link}]
-image:{build-icon}[teamcity build status, link={groovy-ci}]
+// image:{build-icon}[teamcity build status, link={groovy-ci}]
 image:{github-build-icon}[github build status, link={github-ci}]
 image:{codecov-icon}[codecov, link={codecov}]
 // image:{sonarcloud-icon}[maintainability rating, link={sonarcloud}]
