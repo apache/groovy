@@ -16,9 +16,9 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.bugs
+package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -60,7 +60,14 @@ final class Groovy8283 {
 
     @Test
     void testReadFieldPropertyShadowing2() {
-        def shell = new GroovyShell()
+        def shell = GroovyShell.withConfig {
+            ast(groovy.transform.TypeChecked)
+            imports {
+                normal 'groovy.transform.ASTTest'
+                staticStar 'org.codehaus.groovy.control.CompilePhase'
+                staticStar 'org.codehaus.groovy.transform.stc.StaticTypesMarker'
+            }
+        }
         shell.parse '''package p
             class A {}
             class B {}
@@ -74,8 +81,8 @@ final class Groovy8283 {
         '''
         assertScript shell, '''import p.*
             class E extends D {
-                @groovy.transform.ASTTest(phase=org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION, value={
-                    def typeof = { label -> lookup(label)[0].getExpression().getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE).toString(false) }
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def typeof = { label -> lookup(label)[0].getExpression().getNodeMetaData(INFERRED_TYPE).getName() }
 
                     assert typeof('implicit'   ) == 'p.B'
                     assert typeof('explicit'   ) == 'p.B'
@@ -86,7 +93,6 @@ final class Groovy8283 {
                     assert typeof('attribute2' ) == 'p.B'
                     assert typeof('methodCall2') == 'p.A'
                 })
-                @groovy.transform.TypeChecked
                 void test() {
                   implicit:
                     def a = foo
@@ -107,14 +113,11 @@ final class Groovy8283 {
                 }
             }
 
-            @groovy.transform.TypeChecked
-            void test() {
-                @groovy.transform.ASTTest(phase=org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION, value={
-                    def type = node.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.INFERRED_TYPE)
-                    assert type.toString(false) == 'p.A'
-                })
-                def a = new E().foo
-            }
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def type = node.getNodeMetaData(INFERRED_TYPE)
+                assert type.getName() == 'p.A'
+            })
+            def a = new E().foo // not the field from this perspective
         '''
     }
 
@@ -205,6 +208,158 @@ final class Groovy8283 {
                     assert that.fooB == null
 
                     that = new E()
+                    that.@foo = null
+                    assert !that.setter
+                    assert that.fooA != null
+                    assert that.fooB == null
+
+                    that = new E()
+                    that.setFoo(null)
+                    assert that.setter
+                    assert that.fooA == null
+                    assert that.fooB != null
+                }
+            }
+
+            new E().test1()
+            new E().test2()
+            new E().test3()
+            new E().test4()
+            new E().test5()
+
+            def e = new E()
+            e.foo = null // not the field from this perspective
+            assert e.setter
+            assert e.fooA == null
+            assert e.fooB != null
+        '''
+    }
+
+    @Test
+    void testWriteFieldPropertyShadowing2() {
+        def shell = GroovyShell.withConfig {
+            ast(groovy.transform.TypeChecked)
+            imports {
+                normal 'groovy.transform.ASTTest'
+                staticStar 'org.codehaus.groovy.control.CompilePhase'
+                staticStar 'org.codehaus.groovy.transform.stc.StaticTypesMarker'
+            }
+        }
+        shell.parse '''package p
+            class A {}
+            class B {}
+            class C {
+                boolean setter
+                protected A foo = new A()
+                A getFooA() { return this.@foo }
+                A setFoo(A a) { setter = true; this.@foo = a }
+            }
+            class D extends C {
+                protected B foo = new B() // hides A#foo; should hide A#setFoo in subclasses
+                B getFooB() { return this.@foo }
+            }
+        '''
+        assertScript shell, '''import p.*
+            class E extends D {
+                @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                    def typeof = { label ->
+                        def expr = lookup(label)[0].getExpression()
+                        try { expr = expr.getLeftExpression() } catch (e) {}
+                        return expr.getNodeMetaData(INFERRED_TYPE).getName()
+                    }
+
+                    assert typeof('implicit'   ) == 'p.B'
+                    assert typeof('explicit'   ) == 'p.B'
+                    assert typeof('attribute'  ) == 'p.B'
+                    assert typeof('methodCall' ) == 'p.A'
+
+                    assert typeof('property'   ) == 'p.B'
+                    assert typeof('attribute2' ) == 'p.B'
+                    assert typeof('methodCall2') == 'p.A'
+                })
+                void test1() {
+                  implicit:
+                    foo = null
+                  explicit:
+                    this.foo = null
+                  attribute:
+                    this.@foo = null
+                  methodCall:
+                    this.setFoo(null)
+
+                    def that = new E()
+                  property:
+                    that.foo = null
+                  attribute2:
+                    that.@foo = null
+                  methodCall2:
+                    that.setFoo(null)
+                }
+            }
+
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                node = node.getRightExpression().getLeftExpression()
+                assert node.getNodeMetaData(INFERRED_TYPE).getName() == 'p.A'
+            })
+            def a = (new E().foo = null) // not the field from this perspective
+        '''
+    }
+
+    @Test
+    void testWriteFieldPropertyShadowing3() {
+        def shell = new GroovyShell()
+        shell.parse '''package p
+            class A {}
+            class B {}
+            class C {
+                boolean setter
+                protected A foo = new A()
+                A getFooA() { return this.@foo }
+                void setFoo(A a) { setter = true; this.@foo = a }
+            }
+            class D extends C {
+                protected B foo = new B() // hides A#foo; should hide A#setFoo in subclasses
+                B getFooB() { return this.@foo }
+            }
+        '''
+        assertScript shell, '''import p.*
+            class E extends D {
+                void test1() {
+                    foo = null
+                    assert !setter
+                    assert fooA != null
+                    assert fooB == null
+                }
+                void test2() {
+                    /* TODO
+                    this.foo = null
+                    assert !setter
+                    assert fooA != null
+                    assert fooB == null
+                    */
+                }
+                void test3() {
+                    this.@foo = null
+                    assert !setter
+                    assert fooA != null
+                    assert fooB == null
+                }
+                void test4() {
+                    this.setFoo(null)
+                    assert setter
+                    assert fooA == null
+                    assert fooB != null
+                }
+                void test5() {
+                    def that = new E()
+                    /* TODO
+                    that.foo = null
+                    assert !that.setter
+                    assert that.fooA != null
+                    assert that.fooB == null
+
+                    that = new E()
+                    */
                     that.@foo = null
                     assert !that.setter
                     assert that.fooA != null
