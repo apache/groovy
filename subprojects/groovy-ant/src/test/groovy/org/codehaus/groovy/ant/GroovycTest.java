@@ -18,10 +18,11 @@
  */
 package org.codehaus.groovy.ant;
 
-import groovy.test.GroovyTestCase;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -36,6 +37,10 @@ import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
 import static groovy.test.GroovyAssert.isAtLeastJdk;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * Unit tests for the {@link Groovyc} ant task.
@@ -44,14 +49,14 @@ import static groovy.test.GroovyAssert.isAtLeastJdk;
  * since that would ruin the whole point of testing compilation by the Ant tasks.  In fact it doesn't
  * matter as the tests remove all class files that should not pre-exist from this directory at each step.
  */
-public class GroovycTest extends GroovyTestCase {
+public final class GroovycTest {
 
     private final File antFile = new File("src/test-resources/org/codehaus/groovy/ant/GroovycTest.xml");
     private Project project;
     private static boolean warned = false;
 
-    @Override
-    protected void setUp() {
+    @Before
+    public void setUp() {
         project = new Project();
         project.init();
         ProjectHelper.getProjectHelper().parse(project, antFile);
@@ -187,52 +192,63 @@ public class GroovycTest extends GroovyTestCase {
 
     //--------------------------------------------------------------------------
 
+    @Test
     public void testGroovycTest1_NoFork_NoClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_NoClasspath");
     }
 
+    @Test
     public void testGroovycTest1_NoFork_WithGroovyClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_WithGroovyClasspath");
     }
 
+    @Test
     public void testGroovycTest1_NoFork_WithJavaClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_WithJavaClasspath");
     }
 
+    @Test
     public void testGroovycTest1_NoFork_WithBothClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_WithBothClasspath");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_NoClasspath() {
         ensureExecutes("GroovycTest1_ForkGroovy_NoClasspath");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_WithGroovyClasspath() {
         ensureExecutes("GroovycTest1_ForkGroovy_WithGroovyClasspath");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_WithJavaClasspath() {
         ensureExecutes("GroovycTest1_ForkGroovy_WithJavaClasspath");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_WithBothClasspath() {
         ensureExecutes("GroovycTest1_ForkGroovy_WithBothClasspath");
     }
 
+    @Test
     public void testGroovycTest1_Joint_NoFork_NoClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_NoClasspath");
     }
 
+    @Test
     public void testGroovycTest1_Joint_NoFork_WithGroovyClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_WithGroovyClasspath");
     }
 
+    @Test
     public void testGroovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath() {
         // capture ant's output so we can verify the effect of passing compilerarg to javac
         ByteArrayOutputStream allOutput = new ByteArrayOutputStream();
@@ -255,57 +271,70 @@ public class GroovycTest extends GroovyTestCase {
         }
     }
 
+    @Test
     public void testGroovycTest1_Joint_NoFork_WithJavaClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_WithJavaClasspath");
     }
 
+    @Test
     public void testGroovycTest1_Joint_NoFork_WithBothClasspath() {
-        if (isAtLeastJdk("18.0")) return; // GROOVY-10479
+        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_WithBothClasspath");
     }
 
+    @Test
     public void testGroovycTest1_Joint_ForkGroovy_NoClasspath() {
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_NoClasspath");
     }
 
+    @Test
     public void testGroovycTest1_Joint_ForkGroovy_WithGroovyClasspath() {
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_WithGroovyClasspath");
     }
 
+    @Test
     public void testGroovycTest1_Joint_ForkGroovy_WithJavaClasspath() {
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_WithJavaClasspath");
     }
 
+    @Test
     public void testGroovycTest1_Joint_ForkGroovy_WithBothClasspath() {
         ensureExecutes("GroovycTest1_Joint_ForkGroovy_WithBothClasspath");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_NoClasspath_WithJavaHome() {
         ensureExecutesWithJavaHome("GroovycTest1_ForkGroovy_NoClasspath_WithJavaHome");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome() {
         ensureExecutesWithJavaHome("GroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome() {
         ensureExecutesWithJavaHome("GroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome() {
         ensureExecutesWithJavaHome("GroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome");
     }
 
+    @Test
     public void testGroovycTest1_ForkGroovy_NoClasspath_Fail() {
         ensureFails("GroovycTest1_ForkGroovy_NoClasspath_Fail");
     }
 
+    @Test
     public void testNoForkWithNoIncludeAntRuntime() {
         ensureFails("noForkNoAntRuntime");
     }
 
     // GROOVY-9197
+    @Test
     public void testJointCompilationPropagatesClasspath() {
         ensureNotPresent("MakesExternalReference");
         project.executeTarget("jointForkedCompilation_ExternalJarOnClasspath");
@@ -313,6 +342,7 @@ public class GroovycTest extends GroovyTestCase {
     }
 
     // GROOVY-11573
+    @Test
     public void testJointCompilationPropagatesParameters() throws Exception {
         ensureNotPresent("ParameterMetadataCheck");
         project.executeTarget("jointForkedCompilation_ParameterMetadataCheck");
@@ -324,8 +354,17 @@ public class GroovycTest extends GroovyTestCase {
     }
 
     // GROOVY-11607
-    public void testPlainForkedCompilation_NestingSrcElementCheck() {
+    @Test
+    public void testPlainCompilationWithNestedSrcElement() {
         ensureExecutes("plainForkedCompilation_NestingSrcElementCheck");
         ensureNotPresent("GroovycTest2"); // excluded from src > fileset
+    }
+
+    // GROOVY-11666
+    @Test
+    public void testRestrictionForIncrementalCompilation() {
+        ensureNotPresent("GroovycTest3");
+        project.executeTarget("incrementalCompilation");
+        ensureResultOK("GroovycTest3");
     }
 }

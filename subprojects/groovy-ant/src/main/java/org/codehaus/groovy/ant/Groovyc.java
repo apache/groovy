@@ -176,8 +176,8 @@ import java.util.StringTokenizer;
  */
 public class Groovyc extends MatchingTask {
 
-    private static final File[] EMPTY_FILE_ARRAY = new File[0];
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final File[] EMPTY_FILE_ARRAY = {};
+    private static final String[] EMPTY_STRING_ARRAY = {};
 
     private final LoggingHelper log = new LoggingHelper(this);
 
@@ -306,12 +306,7 @@ public class Groovyc extends MatchingTask {
      * @param version the bytecode compatibility level
      */
     public void setTargetBytecode(String version) {
-        for (String allowedJdk : CompilerConfiguration.ALLOWED_JDKS) {
-            if (allowedJdk.equals(version)) {
-                this.targetBytecode = version;
-                break;
-            }
-        }
+        targetBytecode = Arrays.asList(CompilerConfiguration.ALLOWED_JDKS).contains(version) ? version : null;
     }
 
     /**
@@ -320,7 +315,7 @@ public class Groovyc extends MatchingTask {
      * @return bytecode compatibility level. Can be one of the values in {@link CompilerConfiguration#ALLOWED_JDKS}.
      */
     public String getTargetBytecode() {
-        return this.targetBytecode;
+        return targetBytecode;
     }
 
     /**
@@ -885,9 +880,8 @@ public class Groovyc extends MatchingTask {
         }
 
         compile();
-        if (updatedProperty != null
-                && taskSuccess
-                && compileList.length != 0) {
+
+        if (taskSuccess && compileList.length > 0 && updatedProperty != null) {
             getProject().setNewProperty(updatedProperty, "true");
         }
     }
@@ -909,21 +903,17 @@ public class Groovyc extends MatchingTask {
      * @param files   An array of filenames
      */
     protected void scanDir(File srcDir, File destDir, String[] files) {
-        GlobPatternMapper m = new GlobPatternMapper();
+        GlobPatternMapper gpm = new GlobPatternMapper();
         SourceFileScanner sfs = new SourceFileScanner(this);
-        File[] newFiles;
         for (String extension : getScriptExtensions()) {
-            m.setFrom("*." + extension);
-            m.setTo("*.class");
-            newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
-            addToCompileList(newFiles);
+            gpm.setFrom("*." + extension);
+            gpm.setTo("*.class");
+            addToCompileList(sfs.restrictAsFiles(files, srcDir, destDir, gpm));
         }
-
         if (jointCompilation) {
-            m.setFrom("*.java");
-            m.setTo("*.class");
-            newFiles = sfs.restrictAsFiles(files, srcDir, destDir, m);
-            addToCompileList(newFiles);
+            gpm.setFrom("*.java");
+            gpm.setTo("*.class");
+            addToCompileList(sfs.restrictAsFiles(files, srcDir, destDir, gpm));
         }
     }
 
@@ -942,26 +932,20 @@ public class Groovyc extends MatchingTask {
      * @return the list of files as an array
      */
     public File[] getFileList() {
-        return Arrays.copyOf(compileList, compileList.length);
+        return compileList.clone();
     }
 
     protected void checkParameters() throws BuildException {
-        if (src == null) {
-            throw new BuildException("srcdir attribute must be set!", getLocation());
-        }
-        if (src.size() == 0) {
+        if (src == null || src.isEmpty()) {
             throw new BuildException("srcdir attribute must be set!", getLocation());
         }
 
         if (destDir != null && !destDir.isDirectory()) {
-            throw new BuildException("destination directory \""
-                    + destDir
-                    + "\" does not exist or is not a directory",
-                    getLocation());
+            throw new BuildException("destination directory \"" + destDir + "\" does not exist or is not a directory", getLocation());
         }
 
         if (encoding != null && !Charset.isSupported(encoding)) {
-            throw new BuildException("encoding \"" + encoding + "\" not supported.");
+            throw new BuildException("encoding \"" + encoding + "\" not supported.", getLocation());
         }
     }
 
@@ -1028,14 +1012,10 @@ public class Groovyc extends MatchingTask {
                     || key.equals("release")
                     || key.equals("source")
                     || key.equals("target")) {
-                switch (key) {
-                    case "nativeheaderdir":
-                        key = "h";
-                        break;
-                    case "release":
-                        key = "-" + key; // to get "--" when passed to javac
-                        break;
-                    default:
+                if (key.equals("nativeheaderdir")) {
+                    key = "h";
+                } else if (key.equals("release")) {
+                    key = "-" + key; // to get "--" when passed to javac
                 }
                 // map "depend", "encoding", etc. to "-Jkey=val"
                 jointOptions.add("-J" + key + "=" + getProject().replaceProperties(e.getValue().toString()));
@@ -1129,7 +1109,7 @@ public class Groovyc extends MatchingTask {
         if (targetBytecode != null) {
             commandLineList.add("-Dgroovy.target.bytecode=" + targetBytecode);
         }
-        if (!"*.groovy".equals(getScriptExtension())) {
+        if (!getScriptExtension().equals("*.groovy")) {
             String tmpExtension = getScriptExtension();
             if (tmpExtension.startsWith("*."))
                 tmpExtension = tmpExtension.substring(1);
@@ -1182,7 +1162,7 @@ public class Groovyc extends MatchingTask {
      * @param classpath
      */
     private void doNormalCommandLineList(List<String> commandLineList, List<String> jointOptions, Path classpath) {
-        if (!fork) {
+        if (!fork && !classpath.isEmpty()) {
             commandLineList.add("--classpath");
             commandLineList.add(classpath.toString());
         }
@@ -1291,8 +1271,7 @@ public class Groovyc extends MatchingTask {
         // hand crank it so we can add our own compiler configuration
         try {
             FileSystemCompiler.CompilationOptions options = new FileSystemCompiler.CompilationOptions();
-            CommandLine parser = FileSystemCompiler.configureParser(options);
-            parser.parseArgs(commandLine);
+            FileSystemCompiler.configureParser(options).parseArgs(commandLine);
             configuration = options.toCompilerConfiguration();
             configuration.setScriptExtensions(getScriptExtensions());
             String tmpExtension = getScriptExtension();
@@ -1303,7 +1282,7 @@ public class Groovyc extends MatchingTask {
                 configuration.setTargetBytecode(targetBytecode);
             }
 
-            // Load the file name list
+            // load the file name list
             String[] fileNames = options.generateFileNames();
             boolean fileNameErrors = (fileNames == null || !FileSystemCompiler.validateFiles(fileNames));
             if (!fileNameErrors) {
@@ -1410,7 +1389,7 @@ public class Groovyc extends MatchingTask {
 
         ClassLoader loader = getClass().getClassLoader();
         if (loader instanceof AntClassLoader) {
-            AntClassLoader antLoader = (AntClassLoader) loader;
+            @SuppressWarnings("resource") AntClassLoader antLoader = (AntClassLoader) loader;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator, -1);
             List<String> classpath = configuration.getClasspath();
             /*
@@ -1441,7 +1420,7 @@ public class Groovyc extends MatchingTask {
             }
         }
 
-        @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
+        @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
         GroovyClassLoader groovyLoader = java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () ->
                 new GroovyClassLoader(loader, configuration));
 
