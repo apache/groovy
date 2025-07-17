@@ -163,7 +163,7 @@
     </target>
 
     <target name="noForkNoAntRuntime">
-        <compile-plain includes="**/GroovycTest1.groovy" fork="false" includeAntRuntime="false"/>
+        <compile-plain includes="**/GroovycTest1.groovy" fork="false" includeantruntime="false"/>
     </target>
 
     <!-- GROOVY-9197 -->
@@ -202,16 +202,16 @@
 
     <!-- GROOVY-11666 -->
     <target name="incrementalCompilation">
-        <compile-plain includes="**/GroovycTest3*.groovy"/>
+        <compile-plain includes="**/GroovycTest3*.groovy" fork="true" includeantruntime="false"/>
 
         <local name="boo"/>
-        <compile-plain includes="**/GroovycTest3.groovy" updatedProperty="boo"/>
+        <compile-plain includes="**/GroovycTest3.groovy" fork="true" includeantruntime="false" updatedProperty="boo"/>
         <fail if="boo" message="GroovycTest3.groovy was re-compiled"/>
 
         <touch file="GroovycTest3.groovy"/>
 
         <local name="yay"/>
-        <compile-plain includes="**/GroovycTest3.groovy" updatedProperty="yay"/>
+        <compile-plain includes="**/GroovycTest3.groovy" fork="true" includeantruntime="false" updatedProperty="yay"/>
         <fail unless="yay" message="GroovycTest3.groovy was not re-compiled"/>
 
         <java classname="org.codehaus.groovy.ant.GroovycTest3"/>

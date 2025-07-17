@@ -1325,6 +1325,9 @@ public class Groovyc extends MatchingTask {
             List<String> jointOptions = extractJointOptions(classpath);
             List<String> commandLineList = new ArrayList<>();
 
+            // GROOVY-11666: add target directory to classpath for incremental compilation
+            if (destDir != null && isIncludeDestClasses()) classpath.setLocation(destDir);
+
             if (fork) doForkCommandLineList(commandLineList, classpath, File.separator);
             doNormalCommandLineList(commandLineList, jointOptions, classpath);
             addSourceFiles(commandLineList);
