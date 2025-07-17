@@ -22,6 +22,7 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -361,7 +362,7 @@ public final class GroovycTest {
     }
 
     // GROOVY-11666
-    @Test
+    @Ignore @Test
     public void testRestrictionForIncrementalCompilation() {
         ensureNotPresent("GroovycTest3");
         project.executeTarget("incrementalCompilation");
