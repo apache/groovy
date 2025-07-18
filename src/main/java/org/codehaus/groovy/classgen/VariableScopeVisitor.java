@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -716,27 +715,25 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitMethodCallExpression(final MethodCallExpression expression) {
-        if (expression.isImplicitThis() && expression.getMethod() instanceof ConstantExpression) {
-            ConstantExpression methodNameConstant = (ConstantExpression) expression.getMethod();
-            String methodName = methodNameConstant.getText();
-
-            if (methodName == null) {
-                throw new GroovyBugError("method name is null");
-            }
-
+        String methodName = expression.getMethodAsString();
+        if (methodName != null && expression.isImplicitThis()) {
+            // GROOVY-3069, GROOVY-11677: variable or parameter call
             Variable variable = findVariableDeclaration(methodName);
-            if (variable != null && !(variable instanceof DynamicVariable)) {
-                checkVariableContextAccess(variable, expression);
-            }
-
+            // if "name" resolves to a variable, replace "name(...)" with "name.call(...)"
             if (variable instanceof VariableExpression || variable instanceof Parameter) {
-                VariableExpression object = new VariableExpression(variable);
-                object.setSourcePosition(methodNameConstant);
+                Expression object = new VariableExpression(variable);
+                object.setSourcePosition(expression.getMethod());
                 expression.setObjectExpression(object);
-                ConstantExpression method = new ConstantExpression("call");
-                method.setSourcePosition(methodNameConstant); // important for GROOVY-4344
                 expression.setImplicitThis(false);
+
+                Expression method = new ConstantExpression("call");
+                // GROOVY-4344: ensure result of "call" for assert
+                method.setSourcePosition(expression.getMethod());
                 expression.setMethod(method);
+
+                checkVariableContextAccess(variable, expression);
+                expression.getArguments().visit(this);
+                return;
             }
         } else if (expression.getGenericsTypes() != null) {
             visitTypeVariables(expression.getGenericsTypes());
