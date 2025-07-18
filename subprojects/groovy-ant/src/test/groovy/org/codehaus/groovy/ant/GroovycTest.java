@@ -22,7 +22,6 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -351,7 +350,7 @@ final class GroovycTest {
     }
 
     // GROOVY-11666
-    @Disabled @Test
+    @Test
     void testRestrictionForIncrementalCompilation() {
         ensureNotPresent("GroovycTest3");
         ensureNotPresent("GroovycTest3Peer");

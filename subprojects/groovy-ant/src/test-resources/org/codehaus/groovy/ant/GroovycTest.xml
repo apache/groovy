@@ -209,6 +209,7 @@
         <fail if="boo" message="GroovycTest3.groovy was re-compiled"/>
 
         <touch file="GroovycTest3.groovy"/>
+        <sleep seconds="3"/>
 
         <local name="yay"/>
         <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest3.groovy" updatedProperty="yay"/>
