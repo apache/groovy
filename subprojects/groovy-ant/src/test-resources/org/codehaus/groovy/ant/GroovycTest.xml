@@ -63,22 +63,22 @@
     </target>
 
     <target name="GroovycTest1_ForkGroovy_NoClasspath">
-        <compile-plain includes="**/GroovycTest1.groovy" fork="true"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_WithGroovyClasspath">
-        <compile-plain includes="**/GroovycTest1.groovy" classpathref="groovyMaterials" fork="true"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy" classpathref="groovyMaterials"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_WithJavaClasspath">
-        <compile-plain includes="**/GroovycTest1.groovy" fork="true"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_WithBothClasspath">
-        <compile-plain includes="**/GroovycTest1.groovy" classpathref="groovyMaterials" fork="true"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy" classpathref="groovyMaterials"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
     </target>
 
@@ -115,62 +115,62 @@
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_NoClasspath">
-        <compile-joint includes="**/GroovycTest1.groovy,**/GroovycTest2.java" fork="true"/>
+        <compile-joint fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy,**/GroovycTest2.java"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest2"/>
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_WithGroovyClasspath">
-        <compile-joint includes="**/GroovycTest1.groovy,**/GroovycTest2.java" fork="true" classpathref="groovyMaterials"/>
+        <compile-joint fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy,**/GroovycTest2.java" classpathref="groovyMaterials"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest2"/>
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_WithJavaClasspath">
-        <compile-joint includes="**/GroovycTest1.groovy,**/GroovycTest2.java" fork="true"/>
+        <compile-joint fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy,**/GroovycTest2.java"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest2" classpathref="groovyMaterials"/>
     </target>
 
     <target name="GroovycTest1_Joint_ForkGroovy_WithBothClasspath">
-        <compile-joint includes="**/GroovycTest1.groovy,**/GroovycTest2.java" fork="true" classpathref="groovyMaterials"/>
+        <compile-joint fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy,**/GroovycTest2.java" classpathref="groovyMaterials"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest2" classpathref="groovyMaterials"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_NoClasspath_WithJavaHome">
-        <compile-plain includes="**/GroovycTest1.groovy" fork="true" javahome="${alt.java.home}"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy" javahome="${alt.java.home}"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome">
-        <compile-plain includes="**/GroovycTest1.groovy" classpathref="groovyMaterials" fork="true" javahome="${alt.java.home}"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy" classpathref="groovyMaterials" javahome="${alt.java.home}"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome">
-        <compile-plain includes="**/GroovycTest1.groovy" fork="true" javahome="${alt.java.home}"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy" javahome="${alt.java.home}"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome">
-        <compile-plain includes="**/GroovycTest1.groovy" classpathref="groovyMaterials" fork="true" javahome="${alt.java.home}"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest1.groovy" classpathref="groovyMaterials" javahome="${alt.java.home}"/>
         <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
     </target>
 
     <target name="GroovycTest1_ForkGroovy_NoClasspath_Fail">
-        <compile-plain includes="**/GroovyTestBad1.groovy" fork="true"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovyTestBad1.groovy"/>
     </target>
 
     <target name="noForkNoAntRuntime">
-        <compile-plain includes="**/GroovycTest1.groovy" fork="false" includeantruntime="false"/>
+        <compile-plain fork="false" includeantruntime="false" includes="**/GroovycTest1.groovy"/>
     </target>
 
     <!-- GROOVY-9197 -->
     <target name="jointForkedCompilation_ExternalJarOnClasspath">
         <path id="the.classpath">
             <path refid="groovyMaterials"/>
-            <fileset file="commons-lang3-3.17.0.jar"/>
+            <fileset file="commons-lang3-3.18.0.jar"/>
         </path>
 
         <compile-joint fork="true" includeantruntime="false" includes="**/MakesExternalReference.java">
@@ -182,13 +182,13 @@
 
     <!-- GROOVY-11573 -->
     <target name="jointForkedCompilation_ParameterMetadataCheck">
-        <compile-joint fork="true" configscript="params.groovy" includes="**/ParameterMetadataCheck.java"/>
+        <compile-joint fork="true" includeantruntime="false" includes="**/ParameterMetadataCheck.java" configscript="params.groovy"/>
         <java classname="org.codehaus.groovy.ant.ParameterMetadataCheck"/>
     </target>
 
     <!-- GROOVY-11607 -->
     <target name="plainForkedCompilation_NestingSrcElementCheck">
-        <groovyc destdir="${destPath}" fork="true">
+        <groovyc destdir="${destPath}" fork="true" includeantruntime="false">
             <src>
                 <fileset dir="${srcPath}">
                     <include name="**/GroovycTest*.*"/>
@@ -202,16 +202,16 @@
 
     <!-- GROOVY-11666 -->
     <target name="incrementalCompilation">
-        <compile-plain includes="**/GroovycTest3*.groovy" fork="true" includeantruntime="false"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest3*.groovy"/>
 
         <local name="boo"/>
-        <compile-plain includes="**/GroovycTest3.groovy" fork="true" includeantruntime="false" updatedProperty="boo"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest3.groovy" updatedProperty="boo"/>
         <fail if="boo" message="GroovycTest3.groovy was re-compiled"/>
 
         <touch file="GroovycTest3.groovy"/>
 
         <local name="yay"/>
-        <compile-plain includes="**/GroovycTest3.groovy" fork="true" includeantruntime="false" updatedProperty="yay"/>
+        <compile-plain fork="true" includeantruntime="false" includes="**/GroovycTest3.groovy" updatedProperty="yay"/>
         <fail unless="yay" message="GroovycTest3.groovy was not re-compiled"/>
 
         <java classname="org.codehaus.groovy.ant.GroovycTest3"/>
