@@ -36,11 +36,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
-import static groovy.test.GroovyAssert.isAtLeastJdk;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Unit tests for the {@link Groovyc} ant task.
@@ -194,25 +192,21 @@ final class GroovycTest {
 
     @Test
     void testGroovycTest1_NoFork_NoClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_NoClasspath");
     }
 
     @Test
     void testGroovycTest1_NoFork_WithGroovyClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_WithGroovyClasspath");
     }
 
     @Test
     void testGroovycTest1_NoFork_WithJavaClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_WithJavaClasspath");
     }
 
     @Test
     void testGroovycTest1_NoFork_WithBothClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_NoFork_WithBothClasspath");
     }
 
@@ -238,13 +232,11 @@ final class GroovycTest {
 
     @Test
     void testGroovycTest1_Joint_NoFork_NoClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_NoClasspath");
     }
 
     @Test
     void testGroovycTest1_Joint_NoFork_WithGroovyClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_WithGroovyClasspath");
     }
 
@@ -273,13 +265,11 @@ final class GroovycTest {
 
     @Test
     void testGroovycTest1_Joint_NoFork_WithJavaClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_WithJavaClasspath");
     }
 
     @Test
     void testGroovycTest1_Joint_NoFork_WithBothClasspath() {
-        assumeFalse(isAtLeastJdk("18.0")); // GROOVY-10479
         ensureExecutes("GroovycTest1_Joint_NoFork_WithBothClasspath");
     }
 
@@ -364,6 +354,7 @@ final class GroovycTest {
     @Disabled @Test
     void testRestrictionForIncrementalCompilation() {
         ensureNotPresent("GroovycTest3");
+        ensureNotPresent("GroovycTest3Peer");
         project.executeTarget("incrementalCompilation");
         ensureResultOK("GroovycTest3");
     }
