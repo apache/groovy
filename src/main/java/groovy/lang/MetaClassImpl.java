@@ -138,9 +138,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
 
-    private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
-    private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
-    private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
+    private static final Class<?>[] GETTER_MISSING_ARGS = {String.class};
+    private static final Class<?>[] SETTER_MISSING_ARGS = {String.class,Object.class};
+    private static final Class<?>[] METHOD_MISSING_ARGS = {String.class,Object.class};
     private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
     private static final Comparator<CachedClass> CACHED_CLASS_NAME_COMPARATOR = Comparator.comparing(CachedClass::getName);
     private static final boolean PERMISSIVE_PROPERTY_ACCESS = SystemUtil.getBooleanSafe("groovy.permissive.property.access");
@@ -265,9 +265,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public List<MetaMethod> respondsTo(final Object obj, final String name) {
-        final Object o = getMethods(getTheClass(), name, false);
+        Object o = getMethods(getTheClass(), name, false);
         if (o instanceof FastArray) {
-            return ((FastArray) o).toList();
+            @SuppressWarnings("unchecked")
+            List<MetaMethod> l = ((FastArray) o).toList();
+            return l;
         }
         return Collections.singletonList((MetaMethod) o);
     }
@@ -974,7 +976,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return The value in the case of a getter or a MissingPropertyException
      */
     protected Object invokeStaticMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
-        MetaClass mc = instance instanceof Class ? registry.getMetaClass((Class) instance) : this;
+        MetaClass mc = instance instanceof Class ? registry.getMetaClass((Class<?>) instance) : this;
         if (isGetter) {
             MetaMethod propertyMissing = mc.getMetaMethod(STATIC_PROPERTY_MISSING, GETTER_MISSING_ARGS);
             if (propertyMissing != null) {
@@ -988,7 +990,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (instance instanceof Class) {
-            throw new MissingPropertyException(propertyName, (Class) instance);
+            throw new MissingPropertyException(propertyName, (Class<?>) instance);
         }
         throw new MissingPropertyException(propertyName, theClass);
     }
@@ -1835,18 +1837,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
+        MetaProperty prop = methodAndProperty.getV2();
 
-        if (method == null || isSpecialProperty(name)) {
+        if (method == null || isSpecialProperty(name) || isVisibleProperty(prop, method, sender)) {
             //------------------------------------------------------------------
             // public field
             //------------------------------------------------------------------
-            MetaProperty mp = methodAndProperty.getV2();
-            if (mp != null && mp.isPublic()) {
+            if (prop != null && prop.isPublic()) {
                 try {
-                    return mp.getProperty(object);
+                    return prop.getProperty(object);
                 } catch (GroovyRuntimeException e) {
                     // can't access the field directly but there may be a getter
-                    mp = null;
+                    prop = null;
                 }
             }
 
@@ -1860,9 +1862,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //------------------------------------------------------------------
             // non-public field
             //------------------------------------------------------------------
-            if (mp != null) {
+            if (prop != null) {
                 try {
-                    return mp.getProperty(object);
+                    return prop.getProperty(object);
                 } catch (GroovyRuntimeException e) {
                 }
             }
@@ -1952,14 +1954,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         Tuple2<MetaMethod, MetaProperty> methodAndProperty = createMetaMethodAndMetaProperty(sender, name, useSuper, isStatic);
         MetaMethod method = methodAndProperty.getV1();
+        MetaProperty prop = methodAndProperty.getV2();
 
-        if (method == null || isSpecialProperty(name)) {
+        if (method == null || isSpecialProperty(name) || isVisibleProperty(prop, method, sender)) {
             //------------------------------------------------------------------
             // public field
             //------------------------------------------------------------------
-            MetaProperty mp = methodAndProperty.getV2();
-            if (mp != null && mp.isPublic()) {
-                return mp;
+            if (prop != null && prop.isPublic()) {
+                return prop;
             }
 
             //------------------------------------------------------------------
@@ -1977,8 +1979,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //------------------------------------------------------------------
             // non-public field
             //------------------------------------------------------------------
-            if (mp != null) {
-                return mp;
+            if (prop != null) {
+                return prop;
             }
         }
 
@@ -2089,10 +2091,25 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Object#getClass and Map#isEmpty
      */
     private boolean isSpecialProperty(final String name) {
-        return "class".equals(name) || (isMap && ("empty".equals(name)));
+        return "class".equals(name) || (isMap && "empty".equals(name));
     }
 
-    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class sender, final String name, final boolean useSuper, final boolean isStatic) {
+    private boolean isVisibleProperty(final MetaProperty field, final MetaMethod method, final Class<?> sender) {
+        if (!(field instanceof CachedField)) return false;
+
+        if (field.isPrivate()) return false;
+
+        Class<?> owner = ((CachedField) field).getDeclaringClass();
+        // ensure access originates within the type hierarchy of the field owner
+        if (owner.equals(sender) || !owner.isAssignableFrom(sender)) return false;
+
+        if (!field.isPublic() && !field.isProtected() && !inSamePackage(owner, sender)) return false;
+
+        // GROOVY-8283: non-private field that hides class access method
+        return !owner.isAssignableFrom(method.getDeclaringClass().getTheClass()) && !method.getDeclaringClass().isInterface();
+    }
+
+    private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class<?> sender, final String name, final boolean useSuper, final boolean isStatic) {
         MetaMethod method = null;
         MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
         if ((mp == null || mp instanceof CachedField) && !name.isEmpty() && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name) && !"MetaClass".equals(name)) {
@@ -2741,7 +2758,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // field
         //----------------------------------------------------------------------
-        if (method == null && field != null
+        if (field != null && (method == null || isVisibleProperty(field, method, sender))
                 && (!isMap || isStatic // GROOVY-8065
                     || field.isPublic())) { // GROOVY-11367
             if (!field.isFinal()) {

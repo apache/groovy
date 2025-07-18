@@ -468,7 +468,8 @@ public class ScriptBytecodeAdapter {
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject) {
+            if (receiver instanceof GroovyObject && !receiver.getClass().getMethod("getProperty", String.class).isDefault()) {
+                // TODO: instead of checking for no getProperty specialization, pass senderClass in ThreadLocal or something
                 var groovyObject = (GroovyObject) receiver;
                 return groovyObject.getProperty(messageName);
             } else {
@@ -500,7 +501,7 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
-            if (receiver instanceof GroovyObject) {
+            if (receiver instanceof GroovyObject && !receiver.getClass().getMethod("setProperty", String.class, Object.class).isDefault()) {
                 var groovyObject = (GroovyObject) receiver;
                 groovyObject.setProperty(messageName, messageArgument);
             } else {
@@ -540,14 +541,19 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getGroovyObjectProperty(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
+        Class<?> receiverClass = receiver.getClass();
         try {
-            return receiver.getProperty(messageName);
-        } catch (GroovyRuntimeException gre) {
-            if (gre instanceof MissingPropertyException && senderClass!=receiver.getClass() && senderClass.isInstance(receiver)) {
-                return receiver.getMetaClass().getProperty(senderClass, receiver, messageName, false, false);
+//          if (!receiverClass.getMethod("getProperty", String.class).isDefault()) {
+                return receiver.getProperty(messageName);
+//          }
+        } catch (MissingPropertyException mpe) {
+            if (senderClass == receiverClass || !senderClass.isInstance(receiver)) {
+                throw unwrap(mpe);
             }
+        } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
         }
+        return receiver.getMetaClass().getProperty(senderClass, receiver, messageName, false, false);
     }
 
     public static Object getGroovyObjectPropertySafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
@@ -569,15 +575,20 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static void setGroovyObjectProperty(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
+        Class<?> receiverClass = receiver.getClass();
         try {
-            receiver.setProperty(messageName, messageArgument);
-        } catch (GroovyRuntimeException gre) { // GROOVY-3142: retry with super sender class?
-            if (gre instanceof MissingPropertyException && senderClass != receiver.getClass() && senderClass.isInstance(receiver)) {
-                receiver.getMetaClass().setProperty(senderClass, receiver, messageName, messageArgument, false, false);
+            if (!receiverClass.getMethod("setProperty", String.class, Object.class).isDefault()) {
+                receiver.setProperty(messageName, messageArgument);
                 return;
             }
+        } catch (MissingPropertyException mpe) {
+            if (senderClass == receiverClass || !senderClass.isInstance(receiver)) {
+                throw unwrap(mpe);
+            }
+        } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
         }
+        receiver.getMetaClass().setProperty(senderClass, receiver, messageName, messageArgument, false, false);
     }
 
     public static void setGroovyObjectPropertySafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
