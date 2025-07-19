@@ -179,7 +179,7 @@ class Main {
         try {
             Supplier<Path> workDir = () -> Paths.get(System.getProperty('user.dir'))
             DefaultParser parser = new DefaultParser(
-                regexCommand: /\/?[a-zA-Z!]+\S*/,
+                regexCommand: /\/?[a-zA-Z!]\S*/,
                 eofOnUnclosedQuote: true,
                 eofOnEscapedNewLine: true
             )
@@ -288,22 +288,25 @@ class Main {
             println render(messages['startup_banner.1'])
             println '-' * (terminal.width - 1)
 // for debugging
-//            def index = 0
-//            def lines = ['println \\', 'new Date()',
-//                         '/q']
+            def index = 0
+            def lines = ['/slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
+                         'println _',
+                         'x = /slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
+                        'println x',
+                         '/q']
             // REPL-loop
             while (true) {
                 try {
                     systemRegistry.cleanUp() // delete temporary variables and reset output streams
 // for debugging
-//                    String line = lines[index++]
-                    String line = reader.readLine("groovy> ")
+                    String line = lines[index++]
+//                    String line = reader.readLine("groovy> ")
                     line = line.readLines().collect{ s ->
                         // remove Groovy continuation character for repl not Groovy's sake
                         s.endsWith(' \\') ? s[0..-3] : s
                     }.collect {s ->
                         // repl command parsing assumes whitespace around '='
-                        s.matches(/[a-zA-Z0-9._]*=\S.*/) ? s.replaceFirst('=', ' = ') : s
+                        s.matches(/[a-zA-Z][a-zA-Z0-9_]* = \S.*/) ? s.replaceFirst(' = ', '=') : s
                     }.join('\n')
                     line = parser.getCommand(line).startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
                     if (line.startsWith(':')) {
