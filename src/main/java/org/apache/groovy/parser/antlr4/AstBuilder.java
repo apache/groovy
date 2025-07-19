@@ -139,6 +139,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -4231,6 +4232,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public Map<String, Expression> visitElementValuePairs(final ElementValuePairsContext ctx) {
         return ctx.elementValuePair().stream()
                 .map(this::visitElementValuePair)
+                .sorted(Comparator.comparing(Tuple2::getV1)) // GROOVY-11715, sort for reproducible builds
                 .collect(Collectors.toMap(
                         Tuple2::getV1,
                         Tuple2::getV2,

@@ -127,12 +127,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
@@ -2222,11 +2222,10 @@ public class AsmClassGenerator extends ClassGenerator {
      * @param av the visitor to use
      */
     public void visitAnnotationAttributes(final AnnotationNode an, final AnnotationVisitor av) {
-        // GROOVY-11715 TODO If we can determine what was causing the issues mentioned on that ticket, we should change these back to LinkedHashMap
-        Map<String, Object> constantAttrs = new TreeMap<>();
-        Map<String, PropertyExpression> enumAttrs = new TreeMap<>();
-        Map<String, Object> atAttrs = new TreeMap<>();
-        Map<String, ListExpression> arrayAttrs = new TreeMap<>();
+        Map<String, Object> constantAttrs = new LinkedHashMap<>();
+        Map<String, PropertyExpression> enumAttrs = new LinkedHashMap<>();
+        Map<String, Object> atAttrs = new LinkedHashMap<>();
+        Map<String, ListExpression> arrayAttrs = new LinkedHashMap<>();
 
         for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
             String name = member.getKey();
