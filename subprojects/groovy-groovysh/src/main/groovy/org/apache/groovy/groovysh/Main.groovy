@@ -288,19 +288,19 @@ class Main {
             println render(messages['startup_banner.1'])
             println '-' * (terminal.width - 1)
 // for debugging
-            def index = 0
-            def lines = ['/slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
-                         'println _',
-                         'x = /slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
-                        'println x',
-                         '/q']
+//            def index = 0
+//            def lines = ['/slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
+//                         'println _',
+//                         'x = /slurp /Users/paulk/Projects/groovy/subprojects/groovy-json/src/test/resources/groovy9802.json',
+//                        'println x',
+//                         '/q']
             // REPL-loop
             while (true) {
                 try {
                     systemRegistry.cleanUp() // delete temporary variables and reset output streams
 // for debugging
-                    String line = lines[index++]
-//                    String line = reader.readLine("groovy> ")
+//                    String line = lines[index++]
+                    String line = reader.readLine("groovy> ")
                     line = line.readLines().collect{ s ->
                         // remove Groovy continuation character for repl not Groovy's sake
                         s.endsWith(' \\') ? s[0..-3] : s
