@@ -1575,7 +1575,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         enclosingTypes.addAll(enclosingTypes.iterator().next().getOuterClasses());
 
         if (objectExpression instanceof ClassExpression) {
-            if ("this".equals(propertyName)) {
+            if (propertyName.equals("this")) {
                 // handle "Outer.this" for any level of nesting
                 ClassNode outer = getType(objectExpression).getGenericsTypes()[0].getType();
 
@@ -1590,7 +1590,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     storeType(pexp, outer);
                     return true;
                 }
-            } else if ("super".equals(propertyName)) {
+            } else if (propertyName.equals("super")) {
                 // GROOVY-8299: handle "Iface.super" for interface default methods
                 ClassNode enclosingType = typeCheckingContext.getEnclosingClassNode();
                 ClassNode accessingType = getType(objectExpression).getGenericsTypes()[0].getType();
@@ -1614,7 +1614,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
 
-            if (receiverType.isArray() && "length".equals(propertyName)) {
+            if (receiverType.isArray() && propertyName.equals("length")) {
                 pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE);
                 storeType(pexp, int_TYPE);
                 if (visitor != null) {
@@ -1685,14 +1685,16 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 else if (field != null && enclosingTypes.contains(current) && storeField(field, pexp, receiverType, visitor, receiver.getData(), !readMode)) {
                     return true;
                 }
+                // GROOVY-8283: accessible field shadows getter of super class; GROOVY-11381: inaccessible field stops the loop, so search supers for getter
+                boolean checkUp = field != null && !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), field.getDeclaringClass(), field.getModifiers());
 
-                MethodNode getter = current.getGetterMethod(isserName);
+                MethodNode getter = getGetterMethod(current, isserName, checkUp);
                 getter = allowStaticAccessToMember(getter, staticOnly);
                 if (getter == null) {
-                    getter = current.getGetterMethod(getterName);
+                    getter = getGetterMethod(current, getterName, checkUp);
                     getter = allowStaticAccessToMember(getter, staticOnly);
                 }
-                if (getter != null && ((publicOnly && (!getter.isPublic() || "class".equals(propertyName) || "empty".equals(propertyName)))
+                if (getter != null && ((publicOnly && (!getter.isPublic() || propertyName.equals("class") || propertyName.equals("empty")))
                         // GROOVY-11319:
                         || !hasAccessToMember(typeCheckingContext.getEnclosingClassNode(), getter.getDeclaringClass(), getter.getModifiers()))) {
                     getter = null;
@@ -1702,8 +1704,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
                 PropertyNode property = current.getProperty(propertyName);
                 property = allowStaticAccessToMember(property, staticOnly);
-                // prefer explicit getter or setter over property if receiver is not 'this'
-                if (property == null || !enclosingTypes.contains(receiverType)) {
+                // prefer explicit getter/setter for out-of-scope references
+                if (property == null || !enclosingTypes.contains(current)) {
                     if (readMode) {
                         if (getter != null) {
                             ClassNode returnType = inferReturnTypeGenerics(receiverType, getter, ArgumentListExpression.EMPTY_ARGUMENTS);
@@ -1716,7 +1718,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             return true;
                         }
                     } else {
-                        if (!setters.isEmpty()) {
+                        if (!setters.isEmpty() && (checkUp || setters.stream().map(MethodNode::getDeclaringClass).anyMatch(current::equals))) {
                             if (visitor != null) {
                                 for (MethodNode setter : setters) {
                                     // visiting setter will not infer the property type since return type is void, so visit a dummy field instead
@@ -1725,10 +1727,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                                     visitor.visitField(virtual);
                                 }
                             }
-                            SetterInfo info = new SetterInfo(current, setterName, setters);
                             BinaryExpression enclosingBinaryExpression = typeCheckingContext.getEnclosingBinaryExpression();
                             if (enclosingBinaryExpression != null) {
-                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), info);
+                                putSetterInfo(enclosingBinaryExpression.getLeftExpression(), new SetterInfo(receiverType, setterName, setters));
                             }
                             String delegationData = receiver.getData();
                             if (delegationData != null) {
@@ -1736,7 +1737,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                             }
                             pexp.removeNodeMetaData(READONLY_PROPERTY);
                             return true;
-                        } else if (getter != null && (field == null || field.isFinal())) {
+                        } else if (getter != null && (field == null || field.isFinal()) && setters.isEmpty()) {
                             pexp.putNodeMetaData(READONLY_PROPERTY, Boolean.TRUE); // GROOVY-9127
                         }
                     }
@@ -1847,6 +1848,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         }
 
         return foundGetterOrSetter;
+    }
+
+    private static MethodNode getGetterMethod(final ClassNode classNode, final String getterName, final boolean searchSupers) {
+        MethodNode getter = classNode.getGetterMethod(getterName, searchSupers);
+        if (getter != null && (getter.getModifiers() & Opcodes.ACC_BRIDGE) != 0) getter = null; // GROOVY-11341
+        return getter;
     }
 
     private static boolean hasAccessToMember(final ClassNode accessor, final ClassNode receiver, final int modifiers) {
@@ -2742,7 +2749,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     node.setDeclaringClass(pn.getDeclaringClass());
                     node.setSynthetic(true);
                     return node;
-                } else if (name.equals(pn.getSetterNameOrDefault()) && !Modifier.isFinal(pn.getModifiers())) {
+                } else if (name.equals(pn.getSetterNameOrDefault()) && !pn.isFinal()) {
                     MethodNode node = new MethodNode(name, Opcodes.ACC_PUBLIC | (pn.isStatic() ? Opcodes.ACC_STATIC : 0), VOID_TYPE, new Parameter[]{new Parameter(pn.getType(), pn.getName())}, ClassNode.EMPTY_ARRAY, null);
                     node.setDeclaringClass(pn.getDeclaringClass());
                     node.setSynthetic(true);
