@@ -226,7 +226,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         assert bytecode.hasSequence([
             'public sizeZeroOrPositive(Ljava/util/List;)Z',
             '@Lnet/jqwik/api/Property;()',
-            '@Lnet/jqwik/api/constraints/IntRange;(max=10, min=0) : METHOD_FORMAL_PARAMETER 0, 0;',
+            '@Lnet/jqwik/api/constraints/IntRange;(min=0, max=10) : METHOD_FORMAL_PARAMETER 0, 0;',
             '// annotable parameter count: 1 (visible)',
             '@Lnet/jqwik/api/ForAll;() // parameter 0'
         ])

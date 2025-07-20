@@ -2222,63 +2222,53 @@ public class AsmClassGenerator extends ClassGenerator {
      * @param av the visitor to use
      */
     public void visitAnnotationAttributes(final AnnotationNode an, final AnnotationVisitor av) {
-        // GROOVY-11715 TODO If we can determine what was causing the issues mentioned on that ticket, we should change these back to LinkedHashMap
-        Map<String, Object> constantAttrs = new TreeMap<>();
-        Map<String, PropertyExpression> enumAttrs = new TreeMap<>();
-        Map<String, Object> atAttrs = new TreeMap<>();
-        Map<String, ListExpression> arrayAttrs = new TreeMap<>();
-
         for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
             String name = member.getKey();
             Expression expr = member.getValue();
             if (expr instanceof AnnotationConstantExpression) {
-                atAttrs.put(name, ((AnnotationConstantExpression) expr).getValue());
+                AnnotationNode atNode = (AnnotationNode) ((AnnotationConstantExpression) expr).getValue();
+                visitAnnotationConstAttr(av, name, atNode);
             } else if (expr instanceof ConstantExpression) {
-                constantAttrs.put(name, ((ConstantExpression) expr).getValue());
+                visitConstantAttr(av, name, ((ConstantExpression) expr).getValue());
             } else if (expr instanceof ClassExpression) {
-                constantAttrs.put(name, Type.getType(BytecodeHelper.getTypeDescription((expr.getType()))));
+                visitConstantAttr(av, name, Type.getType(BytecodeHelper.getTypeDescription((expr.getType()))));
             } else if (expr instanceof PropertyExpression) {
-                enumAttrs.put(name, (PropertyExpression) expr);
+                visitEnumAttr(av, name, (PropertyExpression) expr);
             } else if (expr instanceof ListExpression) {
-                arrayAttrs.put(name, (ListExpression) expr);
+                visitArrayAttr(av, name, (ListExpression) expr);
             } else if (expr instanceof ClosureExpression) {
                 ClassNode closureClass = controller.getClosureWriter().getOrAddClosureClass((ClosureExpression) expr, ACC_PUBLIC);
-                constantAttrs.put(name, Type.getType(BytecodeHelper.getTypeDescription(closureClass)));
+                visitConstantAttr(av, name, Type.getType(BytecodeHelper.getTypeDescription(closureClass)));
             }
         }
-
-        for (Map.Entry<String, Object> entry : constantAttrs.entrySet()) {
-            av.visit(entry.getKey(), entry.getValue());
-        }
-        for (Map.Entry<String, PropertyExpression> entry : enumAttrs.entrySet()) {
-            PropertyExpression propExp = entry.getValue();
-            av.visitEnum(entry.getKey(),
-                    BytecodeHelper.getTypeDescription(propExp.getObjectExpression().getType()),
-                    String.valueOf(((ConstantExpression) propExp.getProperty()).getValue()));
-        }
-        for (Map.Entry<String, Object> entry : atAttrs.entrySet()) {
-            AnnotationNode atNode = (AnnotationNode) entry.getValue();
-            AnnotationVisitor av2 = av.visitAnnotation(entry.getKey(),
-                    BytecodeHelper.getTypeDescription(atNode.getClassNode()));
-            visitAnnotationAttributes(atNode, av2);
-            av2.visitEnd();
-        }
-        visitArrayAttributes(an, arrayAttrs, av);
     }
 
-    private void visitArrayAttributes(final AnnotationNode an, final Map<String, ListExpression> arrayAttr, final AnnotationVisitor av) {
-        if (arrayAttr.isEmpty()) return;
-        for (Map.Entry<String, ListExpression> entry : arrayAttr.entrySet()) {
-            AnnotationVisitor av2 = av.visitArray(entry.getKey());
-            List<Expression> values = entry.getValue().getExpressions();
-            if (!values.isEmpty()) {
-                int arrayElementType = determineCommonArrayType(values);
-                for (Expression exprChild : values) {
-                    visitAnnotationArrayElement(exprChild, arrayElementType, av2);
-                }
+    private void visitAnnotationConstAttr(AnnotationVisitor av, String key, AnnotationNode atNode) {
+        AnnotationVisitor av2 = av.visitAnnotation(key, BytecodeHelper.getTypeDescription(atNode.getClassNode()));
+        visitAnnotationAttributes(atNode, av2);
+        av2.visitEnd();
+    }
+
+    private static void visitEnumAttr(AnnotationVisitor av, String key, PropertyExpression propExp) {
+        av.visitEnum(key,
+            BytecodeHelper.getTypeDescription(propExp.getObjectExpression().getType()),
+            String.valueOf(((ConstantExpression) propExp.getProperty()).getValue()));
+    }
+
+    private static void visitConstantAttr(AnnotationVisitor av, String key, Object value) {
+        av.visit(key, value);
+    }
+
+    private void visitArrayAttr(AnnotationVisitor av, String key, ListExpression value) {
+        AnnotationVisitor av2 = av.visitArray(key);
+        List<Expression> values = value.getExpressions();
+        if (!values.isEmpty()) {
+            int arrayElementType = determineCommonArrayType(values);
+            for (Expression exprChild : values) {
+                visitAnnotationArrayElement(exprChild, arrayElementType, av2);
             }
-            av2.visitEnd();
         }
+        av2.visitEnd();
     }
 
     private void visitAnnotationArrayElement(final Expression expr, final int arrayElementType, final AnnotationVisitor av) {
