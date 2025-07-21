@@ -20,6 +20,7 @@ package org.apache.groovy.groovysh.jline
 
 import groovy.console.ui.Console
 import groovy.console.ui.ObjectBrowser
+import org.apache.groovy.groovysh.Main
 import org.jline.builtins.Completers
 import org.jline.builtins.Completers.OptDesc
 import org.jline.builtins.Completers.OptionCompleter
@@ -175,8 +176,13 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     }
 
     void save(CommandInput input) {
-        checkArgCount(input, [1, 2])
+        checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/save')) return
+        if (input.args().length == 0) {
+            def out = new File(Main.userStateDirectory, 'groovysh.ser')
+            out.text = engine.toJson(engine.sharedData)
+            return
+        }
         boolean overwrite = false
         String arg = input.args()[0]
         if (arg == '-o' || arg == '--overwrite') {
@@ -198,8 +204,15 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     }
 
     void load(CommandInput input) {
-        checkArgCount(input, [1, 2])
+        checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/load')) return
+        if (input.args().length == 0) {
+            def ser = new File(Main.userStateDirectory, 'groovysh.ser')
+            def map = engine.sharedData.variables
+            map.clear()
+            map.putAll(engine.deserialize(ser.text).variables)
+            return
+        }
         boolean merge = false
         String arg = input.args()[0]
         if (arg == '-m' || arg == '--merge') {
