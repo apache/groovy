@@ -60,8 +60,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         '/imports'     : new Tuple4<>(this::importsCommand, this::importsCompleter, this::nameDeleteCmdDesc, ['show/delete import statements']),
         '/vars'        : new Tuple4<>(this::varsCommand, this::varsCompleter, this::nameDeleteCmdDesc, ['show/delete variable declarations']),
         '/reset'       : new Tuple4<>(this::reset, this::defCompleter, this::defCmdDesc, ['clear the buffer']),
-        '/load'        : new Tuple4<>(this::load, this::loadCompleter, this::loadCmdDesc, ['load a file into the buffer']),
-        '/save'        : new Tuple4<>(this::save, this::saveCompleter, this::defCmdDesc, ['save the buffer to a file']),
+        '/load'        : new Tuple4<>(this::load, this::loadCompleter, this::loadCmdDesc, ['load state/a file into the buffer']),
+        '/save'        : new Tuple4<>(this::save, this::saveCompleter, this::saveCmdDesc, ['save state/the buffer to a file']),
         '/types'       : new Tuple4<>(this::typesCommand, this::typesCompleter, this::nameDeleteCmdDesc, ['show/delete types']),
         '/methods'     : new Tuple4<>(this::methodsCommand, this::methodsCompleter, this::nameDeleteCmdDesc, ['show/delete methods'])
     ]
@@ -471,7 +471,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private CmdDesc grabCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name [OPTIONS] <group>:<artifact>:<version>"),
+            new AttributedString("$name [options] <group>:<artifact>:<version>"),
             new AttributedString("$name --list")
         ], [], [
             '-? --help'     : doDescription('Displays command help'),
@@ -499,10 +499,21 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private CmdDesc loadCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name filename"),
+            new AttributedString("$name"),
+            new AttributedString("$name [options] filename")
         ], [], [
             '-? --help'     : doDescription('Displays command help'),
             '-m --merge'     : doDescription('Merge into existing buffer')
+        ])
+    }
+
+    private CmdDesc saveCmdDesc(String name) {
+        new CmdDesc([
+            new AttributedString("$name"),
+            new AttributedString("$name [options] filename")
+        ], [], [
+            '-? --help'     : doDescription('Displays command help'),
+            '-o --overwrite'     : doDescription('Overwrite existing file')
         ])
     }
 
