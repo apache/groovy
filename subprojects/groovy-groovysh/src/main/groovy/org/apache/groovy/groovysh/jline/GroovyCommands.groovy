@@ -499,21 +499,19 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private CmdDesc loadCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name"),
-            new AttributedString("$name [options] filename")
+            new AttributedString("$name [options] [filename]")
         ], [], [
             '-? --help'     : doDescription('Displays command help'),
-            '-m --merge'     : doDescription('Merge into existing buffer')
+            '-m --merge'    : doDescription('Merge into existing buffer')
         ])
     }
 
     private CmdDesc saveCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name"),
-            new AttributedString("$name [options] filename")
+            new AttributedString("$name [options] [filename]")
         ], [], [
-            '-? --help'     : doDescription('Displays command help'),
-            '-o --overwrite'     : doDescription('Overwrite existing file')
+            '-? --help'       : doDescription('Displays command help'),
+            '-o --overwrite'  : doDescription('Overwrite existing file')
         ])
     }
 
