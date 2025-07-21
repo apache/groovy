@@ -1279,7 +1279,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (!Modifier.isStatic(node.getModifiers()))
                 genericParameterNames.putAll(outerNames); // outer names visible
         } else {
-            genericParameterNames.clear(); // outer class: new generic namespace
+            genericParameterNames = new HashMap<>(); // outer class: new generic namespace
         }
         resolveGenericsHeader(node.getGenericsTypes());
         switch (phase) { // GROOVY-9866, GROOVY-10466
