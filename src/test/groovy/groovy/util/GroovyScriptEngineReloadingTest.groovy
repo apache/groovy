@@ -72,9 +72,9 @@ final class GroovyScriptEngineReloadingTest {
         gse.@time += i
     }
 
-    private void execute(intervall, sleepTime, expected) {
-        gse.config.minimumRecompilationInterval = intervall
-        sleep intervall
+    private void execute(interval, sleepTime, expected) {
+        gse.config.minimumRecompilationInterval = interval
+        sleep interval
 
         Binding binding = new Binding()
         int val = 0
@@ -152,8 +152,8 @@ final class GroovyScriptEngineReloadingTest {
         execute(1000, 10000, 2)
     }
 
-    @Test // ensures new source is ignored till minimumRecompilationIntervall is passed
-    void testRecompilationIntervall() {
+    @Test // ensures new source is ignored till minimumRecompilationInterval is passed
+    void testRecompilationInterval() {
         execute(100000, 10000, 1)
         execute(100000, 10000, 1)
         execute(100000, 200000, 2)
@@ -178,8 +178,37 @@ final class GroovyScriptEngineReloadingTest {
 
         // make a change to the sub-class so that it gets recompiled
         MapFileSystem.instance.modFile('SubClass.groovy', subClassText + '\n', gse.@time)
-        gse.loadScriptByName('SubClass.groovy')
 
+        gse.loadScriptByName('SubClass.groovy')
+    }
+
+    // GROOVY-9526, GROOVY-11719
+    @Test
+    void testRecompilingWithGenerics2() {
+        MapFileSystem.instance.modFile('BaseClass.groovy', 'class BaseClass<T> {}', gse.@time)
+
+        MapFileSystem.instance.modFile('SomeClass.groovy', '''
+            class SomeClass {
+                public static final String CONSTANT = String.valueOf("")
+            }
+        ''', gse.@time)
+
+        def subClassText = '''
+            class SubClass extends BaseClass<String> {
+                public static final String CONSTANT = SomeClass.CONSTANT
+            }
+        '''
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText, gse.@time)
+
+        MapFileSystem.instance.modFile('subClassUsage.groovy', 'SubClass.CONSTANT', gse.@time)
+
+        gse.loadScriptByName('subClassUsage.groovy')
+        sleep 1000
+
+        // make a change to the sub-class so that it gets recompiled
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText + '\n', gse.@time)
+
+        gse.loadScriptByName('subClassUsage.groovy')
     }
 
     @Test
@@ -380,7 +409,8 @@ final class GroovyScriptEngineReloadingTest {
         assert aScript instanceof CustomBaseClass
     }
 
-    @Test // GROOVY-3893
+    // GROOVY-3893
+    @Test
     void testGSEWithNoScriptRoots() {
         shouldFail ResourceException, {
             String[] emptyScriptRoots = []
@@ -389,7 +419,8 @@ final class GroovyScriptEngineReloadingTest {
         }
     }
 
-    @Test // GROOVY-6203
+    // GROOVY-6203
+    @Test
     void testGSEBaseClass() {
         gse.config = new org.codehaus.groovy.control.CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
 
@@ -401,7 +432,8 @@ final class GroovyScriptEngineReloadingTest {
         assert script instanceof CustomBaseClass
     }
 
-    @Test // GROOVY-4013
+    // GROOVY-4013
+    @Test
     void testGSENoCachingOfInnerClasses() {
         MapFileSystem.instance.modFile('Groovy4013Helper.groovy', '''
             import java.awt.event.*
@@ -424,7 +456,8 @@ final class GroovyScriptEngineReloadingTest {
         assert klazz.name == 'Groovy4013Helper' // we should still get the outer class, not inner one
     }
 
-    @Test // GROOVY-4234
+    // GROOVY-4234
+    @Test
     void testGSERunningAScriptThatHasMultipleClasses() {
         MapFileSystem.instance.modFile('Groovy4234Helper.groovy', '''
             class Foo4234 {
@@ -443,7 +476,8 @@ final class GroovyScriptEngineReloadingTest {
         gse.run('Groovy4234Helper.groovy', new Binding())
     }
 
-    @Test // GROOVY-2811, GROOVY-4286
+    // GROOVY-2811, GROOVY-4286
+    @Test
     void testReloadingInterval() {
         gse.config.minimumRecompilationInterval = 1500
         def binding = new Binding([:])

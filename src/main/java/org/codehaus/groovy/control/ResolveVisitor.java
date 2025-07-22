@@ -95,7 +95,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // note: BigInteger and BigDecimal are also imported by default
     // `java.util` is used much frequently than other two java packages(`java.io` and `java.net`), so place java.util before the two packages
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.util.", "java.io.", "java.net.", "groovy.lang.", "groovy.util."};
-    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    public static final String[] EMPTY_STRING_ARRAY = {};
     public static final String QUESTION_MARK = "?";
 
     private final CompilationUnit compilationUnit;
@@ -269,13 +269,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
             genericParameterNames = Collections.emptyMap();
         }
-
-        if (!fieldTypesChecked.contains(node)) {
-            resolveOrFail(node.getType(), node);
+        try {
+            if (!fieldTypesChecked.contains(node)) {
+                resolveOrFail(node.getType(), node);
+            }
+            super.visitField(node);
+        } finally {
+            genericParameterNames = oldNames;
         }
-        super.visitField(node);
-
-        genericParameterNames = oldNames;
     }
 
     @Override
@@ -284,13 +285,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
             genericParameterNames = Collections.emptyMap();
         }
+        try {
+            resolveOrFail(node.getType(), node);
+            fieldTypesChecked.add(node.getField());
 
-        resolveOrFail(node.getType(), node);
-        fieldTypesChecked.add(node.getField());
-
-        super.visitProperty(node);
-
-        genericParameterNames = oldNames;
+            super.visitProperty(node);
+        } finally {
+            genericParameterNames = oldNames;
+        }
     }
 
     private static boolean canSeeTypeVars(final int mods, final ClassNode node) {
@@ -299,38 +301,38 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        MethodNode oldMethod = currentMethod;
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
         genericParameterNames =
                 canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())
                     ? new HashMap<>(genericParameterNames) : new HashMap<>();
+        try {
+            resolveGenericsHeader(node.getGenericsTypes());
 
-        resolveGenericsHeader(node.getGenericsTypes());
-
-        resolveOrFail(node.getReturnType(), node);
-        for (Parameter p : node.getParameters()) {
-            p.setInitialExpression(transform(p.getInitialExpression()));
-            ClassNode t = p.getType();
-            resolveOrFail(t, t);
-            visitAnnotations(p);
-        }
-        if (node.getExceptions() != null) {
-            for (ClassNode t : node.getExceptions()) {
+            resolveOrFail(node.getReturnType(), node);
+            for (Parameter p : node.getParameters()) {
+                p.setInitialExpression(transform(p.getInitialExpression()));
+                ClassNode t = p.getType();
                 resolveOrFail(t, t);
+                visitAnnotations(p);
             }
+            if (node.getExceptions() != null) {
+                for (ClassNode t : node.getExceptions()) {
+                    resolveOrFail(t, t);
+                }
+            }
+
+            checkGenericsCyclicInheritance(node.getGenericsTypes());
+
+            currentMethod = node;
+            super.visitConstructorOrMethod(node, isConstructor);
+        } finally {
+            genericParameterNames = oldNames;
+            currentMethod = oldMethod;
+            currentScope = oldScope;
         }
-
-        checkGenericsCyclicInheritance(node.getGenericsTypes());
-
-        MethodNode oldCurrentMethod = currentMethod;
-        currentMethod = node;
-
-        super.visitConstructorOrMethod(node, isConstructor);
-
-        currentMethod = oldCurrentMethod;
-        genericParameterNames = oldNames;
-        currentScope = oldScope;
     }
 
     private void resolveOrFail(final ClassNode type, final ASTNode node) {
@@ -1047,7 +1049,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private static boolean testVanillaNameForClass(final String name) {
-        if (name == null || name.length() == 0) return false;
+        if (name == null || name.isEmpty()) return false;
         return !Character.isLowerCase(name.charAt(0));
     }
 
@@ -1229,106 +1231,110 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     public void visitClass(final ClassNode node) {
-        ClassNode oldNode = currentClass;
-        currentClass = node;
-
-        ModuleNode module = node.getModule();
-        if (!module.hasImportsResolved()) {
-            for (ImportNode importNode : module.getImports()) {
-                currentImport = importNode;
-                ClassNode type = importNode.getType();
-                if (resolve(type, false, false, true)) {
-                    currentImport = null;
-                    continue;
-                }
-                currentImport = null;
-                addError("unable to resolve class " + type.getName(), type);
-            }
-            for (ImportNode importNode : module.getStarImports()) {
-                if (importNode.getLineNumber() > 0) {
-                    currentImport = importNode;
-                    String importName = importNode.getPackageName();
-                    importName = importName.substring(0, importName.length()-1);
-                    ClassNode type = ClassHelper.makeWithoutCaching(importName);
-                    if (resolve(type, false, false, true)) {
-                        importNode.setType(type);
-                    }
-                    currentImport = null;
-                }
-            }
-            for (ImportNode importNode : module.getStaticImports().values()) {
-                ClassNode type = importNode.getType();
-                if (!resolve(type, true, true, true))
-                    addError("unable to resolve class " + type.getName(), type);
-            }
-            for (ImportNode importNode : module.getStaticStarImports().values()) {
-                ClassNode type = importNode.getType();
-                if (!resolve(type, true, true, true))
-                    addError("unable to resolve class " + type.getName(), type);
-            }
-
-            module.setImportsResolved(true);
-        }
-
-        //
-
+        ClassNode oldNode = currentClass; currentClass = node;
         Map<GenericsTypeName, GenericsType> outerNames = null;
-        if (node instanceof InnerClassNode) {
-            outerNames = genericParameterNames;
-            genericParameterNames = new HashMap<>();
-            if (!Modifier.isStatic(node.getModifiers()))
-                genericParameterNames.putAll(outerNames); // outer names visible
-        } else {
-            genericParameterNames.clear(); // outer class: new generic namespace
-        }
-        resolveGenericsHeader(node.getGenericsTypes());
-        switch (phase) { // GROOVY-9866, GROOVY-10466
-          case 0:
-          case 1:
-            ClassNode sn = node.getUnresolvedSuperClass();
-            if (sn != null) {
-                resolveOrFail(sn, "", node, true);
-            }
-            for (ClassNode in : node.getInterfaces()) {
-                resolveOrFail(in, "", node, true);
-            }
-
-            if (sn != null) checkCyclicInheritance(node, sn);
-            for (ClassNode in : node.getInterfaces()) {
-                checkCyclicInheritance(node, in);
-            }
-            checkGenericsCyclicInheritance(node.getGenericsTypes());
-          case 2:
-            // VariableScopeVisitor visits anon. inner class body inline, so resolve now
-            for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
-                InnerClassNode cn = it.next();
-                if (cn.isAnonymous()) {
-                    MethodNode enclosingMethod = cn.getEnclosingMethod();
-                    if (enclosingMethod != null) {
-                        resolveGenericsHeader(enclosingMethod.getGenericsTypes()); // GROOVY-6977
+        try {
+            ModuleNode module = node.getModule();
+            if (!module.hasImportsResolved()) {
+                for (ImportNode importNode : module.getImports()) {
+                    currentImport = importNode;
+                    try {
+                        ClassNode type = importNode.getType();
+                        if (!resolve(type, false, false, true)) {
+                            addError("unable to resolve class " + type.getName(), type);
+                        }
+                    } finally {
+                        currentImport = null;
                     }
-                    resolveOrFail(cn.getUnresolvedSuperClass(false), cn); // GROOVY-9642
                 }
+                for (ImportNode importNode : module.getStarImports()) {
+                    if (importNode.getLineNumber() > 0) {
+                        currentImport = importNode;
+                        try {
+                            String importName = importNode.getPackageName();
+                            importName = importName.substring(0, importName.length()-1);
+                            ClassNode type = ClassHelper.makeWithoutCaching(importName);
+                            if (resolve(type, false, false, true)) {
+                                importNode.setType(type);
+                            }
+                        } finally {
+                            currentImport = null;
+                        }
+                    }
+                }
+                for (ImportNode importNode : module.getStaticImports().values()) {
+                    ClassNode type = importNode.getType();
+                    if (!resolve(type, true, true, true))
+                        addError("unable to resolve class " + type.getName(), type);
+                }
+                for (ImportNode importNode : module.getStaticStarImports().values()) {
+                    ClassNode type = importNode.getType();
+                    if (!resolve(type, true, true, true))
+                        addError("unable to resolve class " + type.getName(), type);
+                }
+
+                module.setImportsResolved(true);
             }
-            if (phase == 1) break; // resolve other class headers before members, et al.
 
-            // initialize scopes/variables now that imports and super types are resolved
-            new VariableScopeVisitor(source).visitClass(node);
+            //
 
-            visitPackage(node.getPackage());
-            visitImports(node.getModule());
+            if (node instanceof InnerClassNode) {
+                outerNames = genericParameterNames;
+                genericParameterNames = new HashMap<>();
+                if (!Modifier.isStatic(node.getModifiers()))
+                    genericParameterNames.putAll(outerNames); // outer names visible
+            } else {
+                genericParameterNames.clear(); // outer class: new generic namespace
+            }
+            resolveGenericsHeader(node.getGenericsTypes());
+            switch (phase) { // GROOVY-9866, GROOVY-10466
+              case 0:
+              case 1:
+                ClassNode sn = node.getUnresolvedSuperClass();
+                if (sn != null) {
+                    resolveOrFail(sn, "", node, true);
+                }
+                for (ClassNode in : node.getInterfaces()) {
+                    resolveOrFail(in, "", node, true);
+                }
 
-            node.visitContents(this);
-            visitObjectInitializerStatements(node);
-            visitAnnotations(node); // GROOVY-10750, GROOVY-11206
+                if (sn != null) checkCyclicInheritance(node, sn);
+                for (ClassNode in : node.getInterfaces()) {
+                    checkCyclicInheritance(node, in);
+                }
+                checkGenericsCyclicInheritance(node.getGenericsTypes());
+              case 2:
+                // VariableScopeVisitor visits anon. inner class body inline, so resolve now
+                for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
+                    InnerClassNode cn = it.next();
+                    if (cn.isAnonymous()) {
+                        MethodNode enclosingMethod = cn.getEnclosingMethod();
+                        if (enclosingMethod != null) {
+                            resolveGenericsHeader(enclosingMethod.getGenericsTypes()); // GROOVY-6977
+                        }
+                        resolveOrFail(cn.getUnresolvedSuperClass(false), cn); // GROOVY-9642
+                    }
+                }
+                if (phase == 1) break; // resolve other class headers before members, et al.
+
+                // initialize scopes/variables now that imports and super types are resolved
+                new VariableScopeVisitor(source).visitClass(node);
+
+                visitPackage(node.getPackage());
+                visitImports(node.getModule());
+
+                node.visitContents(this);
+                visitObjectInitializerStatements(node);
+                visitAnnotations(node); // GROOVY-10750, GROOVY-11206
+            }
+        } finally {
+            if (outerNames != null) genericParameterNames = outerNames;
+            currentClass = oldNode;
         }
-        if (outerNames != null) genericParameterNames = outerNames;
-        currentClass = oldNode;
     }
 
-    private void checkGenericsCyclicInheritance(GenericsType[] genericsTypes) {
+    private void checkGenericsCyclicInheritance(final GenericsType[] genericsTypes) {
         if (genericsTypes == null) return;
-
         for (GenericsType gt : genericsTypes) {
             if (gt == null) continue;
             ClassNode[] upperBounds = gt.getUpperBounds();
@@ -1390,8 +1396,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitBlockStatement(final BlockStatement block) {
         VariableScope oldScope = currentScope;
         currentScope = block.getVariableScope();
-        super.visitBlockStatement(block);
-        currentScope = oldScope;
+        try {
+            super.visitBlockStatement(block);
+        } finally {
+            currentScope = oldScope;
+        }
     }
 
     private boolean resolveGenericsTypes(final GenericsType[] types) {
