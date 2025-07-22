@@ -30,14 +30,9 @@ class GroovyConsoleEngine extends ConsoleEngineImpl {
     private final Printer printer
 
     GroovyConsoleEngine(ScriptEngine engine, Printer printer, Supplier<Path> workDir, ConfigurationPath configPath) {
-        super(engine, printer, workDir, configPath)
+        super(Command.values().toSet() - Command.SLURP, engine, printer, workDir, configPath)
         this.printer = printer
-        commandNames().each { name ->
-            if (!name.equals('slurp')) {
-                rename(Command."${name.toUpperCase()}", "/$name")
-            }
-        }
-        alias('/slurp', 'slurp')
+        commandNames().each{ name -> rename(Command."${name.toUpperCase()}", "/$name") }
     }
 
     void println(Map<String, Object> options, Object object) {

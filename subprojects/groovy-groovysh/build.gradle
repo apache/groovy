@@ -31,6 +31,9 @@ dependencies {
     implementation projects.groovyTemplates
     implementation projects.groovyXml
     implementation projects.groovyJson
+    implementation projects.groovyToml
+    implementation projects.groovyNio
+    implementation projects.groovyYaml
     testImplementation projects.groovyTest
     implementation 'net.java.dev.jna:jna:5.17.0'
     implementation "org.jline:jansi:${versions.jline}"

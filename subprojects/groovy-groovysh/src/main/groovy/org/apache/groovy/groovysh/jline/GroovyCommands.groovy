@@ -20,6 +20,9 @@ package org.apache.groovy.groovysh.jline
 
 import groovy.console.ui.Console
 import groovy.console.ui.ObjectBrowser
+import groovy.toml.TomlSlurper
+import groovy.xml.XmlParser
+import groovy.yaml.YamlSlurper
 import org.apache.groovy.groovysh.Main
 import org.jline.builtins.Completers
 import org.jline.builtins.Completers.OptDesc
@@ -30,14 +33,22 @@ import org.jline.console.CommandInput
 import org.jline.console.CommandMethods
 import org.jline.console.CommandRegistry
 import org.jline.console.Printer
+import org.jline.console.ScriptEngine
 import org.jline.console.impl.JlineCommandRegistry
+import org.jline.reader.Candidate
 import org.jline.reader.Completer
+import org.jline.reader.LineReader
+import org.jline.reader.ParsedLine
+import org.jline.reader.impl.completer.AggregateCompleter
 import org.jline.reader.impl.completer.ArgumentCompleter
 import org.jline.reader.impl.completer.NullCompleter
 import org.jline.reader.impl.completer.StringsCompleter
 import org.jline.utils.AttributedString
 
 import java.awt.event.ActionListener
+import java.lang.reflect.Method
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.Path
@@ -62,6 +73,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         '/reset'       : new Tuple4<>(this::reset, this::defCompleter, this::defCmdDesc, ['clear the buffer']),
         '/load'        : new Tuple4<>(this::load, this::loadCompleter, this::loadCmdDesc, ['load state/a file into the buffer']),
         '/save'        : new Tuple4<>(this::save, this::saveCompleter, this::saveCmdDesc, ['save state/the buffer to a file']),
+        '/slurp'       : new Tuple4<>(this::slurpcmd, this::slurpCompleter, this::slurpCmdDesc, ['slurp file or string variable context to object']),
         '/types'       : new Tuple4<>(this::typesCommand, this::typesCompleter, this::nameDeleteCmdDesc, ['show/delete types']),
         '/methods'     : new Tuple4<>(this::methodsCommand, this::methodsCompleter, this::nameDeleteCmdDesc, ['show/delete methods'])
     ]
@@ -222,6 +234,95 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         loadFile(engine, new File(arg), merge)
     }
 
+    void slurpcmd(CommandInput input) {
+        checkArgCount(input, [0, 1, 2, 3, 4])
+        if (maybePrintHelp(input, '/slurp')) return
+        Charset encoding = StandardCharsets.UTF_8
+        String format = null
+        def out = null
+        def args = input.args()
+        int index = 0
+        int optionIndex = optionIdx(args, index)
+        while (optionIndex > -1) {
+            index++
+            def option = args[optionIndex]
+            def arg = null
+            if (option.contains('=')) {
+                arg = option.substring(option.indexOf('=') + 1)
+                option = option.substring(0, option.indexOf('='))
+            } else if (optionIndex + 1 < args.length) {
+                arg = args[optionIndex + 1]
+                index++
+            }
+            if (option in ['-e', '--encoding'] && arg) {
+                encoding = Charset.forName(arg)
+            }
+            if (option in ['-f', '--format'] && arg) {
+                format = arg
+            }
+            optionIndex = optionIdx(args, index)
+        }
+        Object arg = args[index]
+        if (!(arg instanceof String)) {
+            throw new IllegalArgumentException("Invalid parameter type: " + arg.getClass().simpleName)
+        }
+        try {
+            Path path = Paths.get(arg)
+            if (Files.exists(path)) {
+                if (!format) {
+                    def ext = path.extension
+                    if (ext.equalsIgnoreCase('json')) {
+                        format = 'JSON'
+                    } else if (ext.equalsIgnoreCase('yaml') || ext.equalsIgnoreCase('yml')) {
+                        format = 'YAML'
+                    } else if (ext.equalsIgnoreCase('xml') || ext.equalsIgnoreCase('rdf')) {
+                        format = 'XML'
+                    } else if (ext.equalsIgnoreCase('groovy')) {
+                        format = 'GROOVY'
+                    } else if (ext.equalsIgnoreCase('toml')) {
+                        format = 'TOML'
+                    } else if (ext.equalsIgnoreCase('txt') || ext.equalsIgnoreCase('text')) {
+                        format = 'TEXT'
+                    }
+                }
+                if (format == 'TEXT') {
+                    out = Files.readAllLines(path, encoding)
+                } else if (format in engine.deserializationFormats) {
+                    byte[] encoded = Files.readAllBytes(path)
+                    out = engine.deserialize(new String(encoded, encoding), format)
+                } else if (format == 'XML') {
+                    out = new XmlParser().parse(path.toFile())
+                } else if (format == 'TOML') {
+                    out = new TomlSlurper().parse(path)
+                } else if (format == 'YAML') {
+                    out = new YamlSlurper().parse(path)
+                } else {
+                    out = engine.deserialize(Files.readString(path, encoding), 'NONE')
+                }
+            } else {
+                if (format == 'TEXT') {
+                    out = arg.readLines()
+                } else if (format in engine.deserializationFormats) {
+                    out = engine.deserialize(arg, format)
+                } else if (format == 'XML') {
+                    out = new XmlParser().parseText(arg)
+                } else if (format == 'TOML') {
+                    out = new TomlSlurper().parseText(arg)
+                } else if (format == 'YAML') {
+                    out = new YamlSlurper().parseText(arg)
+                } else {
+                    out = engine.deserialize(arg, 'NONE')
+                }
+            }
+        } catch (Exception ignore) {
+            println ignore.message
+            ignore.printStackTrace()
+            out = engine.deserialize(arg, format)
+        }
+        engine.put("_", out)
+        printer.println(out)
+    }
+
     static void loadFile(GroovyEngine engine, File file, boolean merge = false) {
         if (!file) {
             throw new IllegalArgumentException('File not found: ' + file.path)
@@ -246,7 +347,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         highlighter.highlight(lines.collect{ ' \b' + it }.join('\n\n')).toAnsi()
     }
 
-    boolean maybePrintHelp(CommandInput input, String name) {
+    private boolean maybePrintHelp(CommandInput input, String name) {
         if (!input.args()) return false
         String arg = input.args()[0]
         if (arg == '-?' || arg == '--help') {
@@ -256,7 +357,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         return false
     }
 
-    boolean maybeRemoveItem(CommandInput input, String name, Map<String, String> aggregate, Closure remove) {
+    private static boolean maybeRemoveItem(CommandInput input, String name, Map<String, String> aggregate, Closure remove) {
         if (input.args().length == 2) {
             if (input.args()[0] == '-d' || input.args()[0] == '--delete') {
                 def toRemove = []
@@ -348,18 +449,10 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     }
 
     def inspect(CommandInput input) {
-        if (!input.xargs()) {
-            return null
-        }
-        if (input.args().length > 2) {
-            throw new IllegalArgumentException('Wrong number of command parameters: ' + input.args().length)
-        }
+        checkArgCount(input, [1, 2])
+        if (maybePrintHelp(input, '/inspect')) return
         int idx = optionIdx(input.args())
         String option = idx < 0 ? '--info' : input.args()[idx]
-        if (option == '-?' || option == '--help') {
-            printer.println(helpDesc('/inspect'))
-            return null
-        }
         int id = 0
         if (idx >= 0) {
             id = idx == 0 ? 1 : 0
@@ -471,12 +564,22 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private CmdDesc grabCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name [options] <group>:<artifact>:<version>"),
+            new AttributedString("$name [OPTIONS] <group>:<artifact>:<version>"),
             new AttributedString("$name --list")
         ], [], [
             '-? --help'     : doDescription('Displays command help'),
             '-l --list'     : doDescription('List the modules in the cache'),
             '-v --verbose'  : doDescription('Report downloads')
+        ])
+    }
+
+    private CmdDesc slurpCmdDesc(String name) {
+        new CmdDesc([
+            new AttributedString("$name [OPTIONS] file|variable")
+        ], [], [
+            '-? --help'               : doDescription('Displays command help'),
+            '-e --encoding=ENCODING'  : doDescription('Encoding (default UTF-8)'),
+            '-f --format=FORMAT'      : doDescription('Serialization format')
         ])
     }
 
@@ -490,7 +593,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private CmdDesc nameDeleteCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name [options] [name]"),
+            new AttributedString("$name [OPTIONS] [name]"),
         ], [], [
             '-? --help'      : doDescription('Displays command help'),
             '-d --delete'    : doDescription('Delete the named item'),
@@ -499,7 +602,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private CmdDesc loadCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name [options] [filename]")
+            new AttributedString("$name [OPTIONS] [filename]")
         ], [], [
             '-? --help'     : doDescription('Displays command help'),
             '-m --merge'    : doDescription('Merge into existing buffer')
@@ -508,7 +611,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private CmdDesc saveCmdDesc(String name) {
         new CmdDesc([
-            new AttributedString("$name [options] [filename]")
+            new AttributedString("$name [OPTIONS] [filename]")
         ], [], [
             '-? --help'       : doDescription('Displays command help'),
             '-o --overwrite'  : doDescription('Overwrite existing file')
@@ -526,7 +629,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             optDescs['-g --gui'] = doDescription('Launch object browser')
         }
         new CmdDesc([
-            new AttributedString("$name [OPTION] OBJECT"),
+            new AttributedString("$name [OPTIONS] OBJECT"),
         ], [], optDescs)
     }
 
@@ -545,15 +648,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         [new AttributedString(description)]
     }
 
-    private int optionIdx(String[] args) {
-        int out = 0
-        for (String a : args) {
-            if (a.startsWith('-')) {
-                return out
-            }
-            out++
-        }
-        return -1
+    private static int optionIdx(String[] args, idx = 0) {
+        args.findIndexOf(idx) { it.startsWith('-') }
     }
 
     private List<String> variables() {
@@ -564,8 +660,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         def tuple = commands[command]
         List<OptDesc> out = []
         for (Map.Entry<String, List<AttributedString>> entry : tuple.v3(command).optsDesc.entrySet() ) {
-            String[] option = entry.getKey().split(/\s+/)
-            String desc = entry.value.get(0).toString()
+            String[] option = entry.key.split(/\s+/)
+            String desc = entry.value[0].toString()
             if (option.length == 2) {
                 out.add(new OptDesc(option[0], option[1], desc))
             } else if (option[0].charAt(1) == '-') {
@@ -593,6 +689,19 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
 
     private List<Completer> saveCompleter(String command) {
         [new ArgumentCompleter(NullCompleter.INSTANCE, new OptionCompleter(new Completers.FilesCompleter(workDir), this::compileOptDescs, 1))]
+    }
+
+    private List<Completer> slurpCompleter(String command) {
+        for (OptDesc o in compileOptDescs(command)) {
+            if (o.shortOption()?.equals('-f')) {
+                o.valueCompleter = new StringsCompleter('JSON', 'GROOVY', 'NONE', 'TEXT', 'YAML', 'TOML', 'XML')
+                break
+            }
+        }
+        [new ArgumentCompleter(
+            NullCompleter.INSTANCE,
+            new OptionCompleter(Arrays.asList(new AggregateCompleter(new Completers.FilesCompleter(workDir),
+                new VariableReferenceCompleter(engine)), NullCompleter.INSTANCE), this::compileOptDescs, 1))]
     }
 
     private List<Completer> importsCompleter(String command) {
@@ -634,5 +743,72 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         [new ArgumentCompleter(NullCompleter.INSTANCE,
                 new OptionCompleter(NullCompleter.INSTANCE,
                         this::compileOptDescs, 1)).tap{strict = false }]
+    }
+
+    // Temporarily mimicking code from ConsoleEngineImpl (remove if a viable extension point to access it emerges)
+    private static class VariableReferenceCompleter implements Completer {
+        private final ScriptEngine engine
+
+        VariableReferenceCompleter(ScriptEngine engine) {
+            this.engine = engine
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        void complete(LineReader reader, ParsedLine commandLine, List<Candidate> candidates) {
+            assert commandLine != null
+            assert candidates != null
+            String word = commandLine.word()
+            try {
+                if (!word.contains('.') && !word.contains('}')) {
+                    for (String v : engine.find().keySet()) {
+                        String c = '${' + v + '}'
+                        candidates.add(new Candidate(AttributedString.stripAnsi(c), c, null, null, null, null, false))
+                    }
+                } else if (word.startsWith('${') && word.contains('}') && word.contains('.')) {
+                    String var = word.substring(2, word.indexOf('}'))
+                    if (engine.hasVariable(var)) {
+                        String curBuf = word.substring(0, word.lastIndexOf('.'))
+                        String objStatement = curBuf.replace('${', ' ').replace('}', '')
+                        Object obj = curBuf.contains('.') ? engine.execute(objStatement) : engine.get(var)
+                        Map<?, ?> map = obj instanceof Map ? (Map<?, ?>) obj : null
+                        Set<String> identifiers = new HashSet<>()
+                        if (map != null
+                            && !map.isEmpty()
+                            && map.keySet().iterator().next() instanceof String) {
+                            identifiers = (Set<String>) map.keySet()
+                        } else if (map == null && obj != null) {
+                            identifiers = getClassMethodIdentifiers(obj.getClass())
+                        }
+                        for (String key : identifiers) {
+                            candidates.add(new Candidate(AttributedString.stripAnsi(curBuf + "." + key), key, null, null, null, null, false))
+                        }
+                    }
+                }
+            } catch (Exception ignore) {
+            }
+        }
+
+        private static Set<String> getClassMethodIdentifiers(Class<?> clazz) {
+            Set<String> out = new HashSet<>()
+            do {
+                for (Method m : clazz.getMethods()) {
+                    if (!m.isSynthetic() && m.getParameterCount() == 0) {
+                        String name = m.getName()
+                        if (name.matches("get[A-Z].*")) {
+                            out.add(convertGetMethod2identifier(name))
+                        }
+                    }
+                }
+                clazz = clazz.getSuperclass()
+            } while (clazz != null)
+            return out
+        }
+
+        private static String convertGetMethod2identifier(String name) {
+            char[] c = name.substring(3).toCharArray()
+            c[0] = Character.toLowerCase(c[0])
+            return new String(c)
+        }
     }
 }
