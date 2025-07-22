@@ -42,6 +42,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -183,7 +184,25 @@ public class XmlParser implements ContentHandler {
         input.setSystemId("file://" + file.getAbsolutePath());
         getXMLReader().parse(input);
         return parent;
+    }
 
+    /**
+     * Parses the content of the file at the given path as XML turning it into a tree
+     * of Nodes.
+     *
+     * @param path the path of the File containing the XML to be parsed
+     * @return the root node of the parsed tree of Nodes
+     * @throws SAXException Any SAX exception, possibly
+     *                      wrapping another exception.
+     * @throws IOException  An IO exception from the parser,
+     *                      possibly from a byte stream or character stream
+     *                      supplied by the application.
+     */
+    public Node parse(Path path) throws IOException, SAXException {
+        InputSource input = new InputSource(Files.newInputStream(path));
+        input.setSystemId("file://" + path.toAbsolutePath());
+        getXMLReader().parse(input);
+        return parent;
     }
 
     /**
