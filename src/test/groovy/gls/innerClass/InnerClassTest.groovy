@@ -1265,25 +1265,6 @@ final class InnerClassTest {
         assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
     }
 
-    // GROOVY-11711
-    @Test
-    void testUsageOfOuterType6() {
-        assertScript '''
-            class Foo<T> {
-                static class Bar {
-                }
-                /*non-static*/ class Baz
-                    implements java.util.concurrent.Callable<T> {
-                    T call() {
-                    }
-                }
-            }
-            def foo = new Foo<Short>()
-            def baz = new Foo.Baz(foo)
-            assert baz.call() == null
-        '''
-    }
-
     @Test
     void testClassOutputOrdering() {
         // this does actually not do much, but before this
