@@ -183,6 +183,39 @@ final class GroovyScriptEngineReloadingTest {
     }
 
     @Test
+    void testRecompilingWithGenericsAndConstants() {
+        MapFileSystem.instance.modFile('BaseClass.groovy', 'class BaseClass<T> {}', gse.@time)
+
+        def tertiaryClassText = '''
+            class NotGeneric {
+                /**
+                 * Not typed on purpose - if typed as String then NotGeneric is no longer a dependency of
+                 * ParameterisedClass for some reason...
+                 */
+                public static final Object CONSTANT = "not generic"
+            }
+        '''
+        MapFileSystem.instance.modFile('NotGeneric.groovy', tertiaryClassText, gse.@time)
+
+        def subClassText = '''
+            class SubClass extends BaseClass<String> {
+                public static final String CONSTANT = NotGeneric.CONSTANT
+            }
+        '''
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText, gse.@time)
+
+        MapFileSystem.instance.modFile('scriptUsingGeneric.groovy', 'SubClass.CONSTANT', gse.@time)
+
+
+        gse.loadScriptByName('scriptUsingGeneric.groovy')
+        sleep 1000
+
+        // make a change to the sub-class so that it gets recompiled
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText + '\n', gse.@time)
+        gse.loadScriptByName('scriptUsingGeneric.groovy')
+    }
+
+    @Test
     void testDeleteDependent() {
         sleep 10000
         MapFileSystem.instance.modFile('ClassA.groovy', 'DependentClass ic = new DependentClass()', gse.@time as long)
