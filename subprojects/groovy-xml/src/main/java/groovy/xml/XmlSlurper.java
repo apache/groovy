@@ -265,6 +265,15 @@ public class XmlSlurper extends DefaultHandler {
         return parse(new InputSource(uri));
     }
 
+    /**
+     * Parses the content of the file at the given path as XML turning it into a GPathResult object
+     *
+     * @param path the path of the File to parse
+     * @return An object which supports GPath expressions
+     * @throws SAXException Any SAX exception, possibly wrapping another exception.
+     * @throws IOException An IO exception from the parser, possibly from a byte stream
+     *         or character stream supplied by the application.
+     */
     public GPathResult parse(final Path path) throws IOException, SAXException {
        return parse(Files.newInputStream(path));
     }
