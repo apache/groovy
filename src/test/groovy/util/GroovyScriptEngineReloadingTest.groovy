@@ -19,6 +19,8 @@
 package groovy.util
 
 import groovy.transform.AutoFinal
+import groovy.transform.Canonical
+import groovy.transform.TupleConstructor
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
@@ -70,24 +72,24 @@ final class GroovyScriptEngineReloadingTest {
         gse.@time += i
     }
 
-    private void execute(intervall, sleepTime, expected) {
-        gse.config.minimumRecompilationInterval = intervall
-        sleep intervall
+    private void execute(interval, sleepTime, expected) {
+        gse.config.minimumRecompilationInterval = interval
+        sleep interval
 
         Binding binding = new Binding()
         int val = 0
-        binding.setVariable("val", val)
-        MapFileSystem.instance.modFile("s_1", "val = 1", gse.@time)
-        gse.run("s_1", binding)
+        binding.setVariable('val', val)
+        MapFileSystem.instance.modFile('s_1', 'val = 1', gse.@time)
+        gse.run('s_1', binding)
 
-        assert binding.getVariable("val") == 1
+        assert binding.getVariable('val') == 1
 
         sleep sleepTime
 
-        MapFileSystem.instance.modFile("s_1", "val = 2", gse.@time)
-        gse.run("s_1", binding)
+        MapFileSystem.instance.modFile('s_1', 'val = 2', gse.@time)
+        gse.run('s_1', binding)
 
-        assert binding.getVariable("val") == expected
+        assert binding.getVariable('val') == expected
     }
 
     /**
@@ -100,16 +102,16 @@ final class GroovyScriptEngineReloadingTest {
      * job.
      */
     private Object instantiate(String className, ClassLoader classLoader) {
-        Class clazz = null;
+        Class clazz = null
         try {
-            clazz = Class.forName(className, true, classLoader);
-        } catch (ClassNotFoundException ex) {
-            throw new RuntimeException("Class.forName failed for  " + className, ex);
+            clazz = Class.forName(className, true, classLoader)
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Class.forName failed for $className", e)
         }
         try {
             return clazz.newInstance();
-        } catch (Exception ex) {
-            throw new RuntimeException("Could not instantiate object of class " + className, ex);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not instantiate object of class $className", e)
         }
     }
 
@@ -150,8 +152,8 @@ final class GroovyScriptEngineReloadingTest {
         execute(1000, 10000, 2)
     }
 
-    @Test // ensures new source is ignored till minimumRecompilationIntervall is passed
-    void testRecompilationIntervall() {
+    @Test // ensures new source is ignored till minimumRecompilationInterval is passed
+    void testRecompilationInterval() {
         execute(100000, 10000, 1)
         execute(100000, 10000, 1)
         execute(100000, 200000, 2)
@@ -176,8 +178,37 @@ final class GroovyScriptEngineReloadingTest {
 
         // make a change to the sub-class so that it gets recompiled
         MapFileSystem.instance.modFile('SubClass.groovy', subClassText + '\n', gse.@time)
-        gse.loadScriptByName('SubClass.groovy')
 
+        gse.loadScriptByName('SubClass.groovy')
+    }
+
+    // GROOVY-9526, GROOVY-11719
+    @Test
+    void testRecompilingWithGenerics2() {
+        MapFileSystem.instance.modFile('BaseClass.groovy', 'class BaseClass<T> {}', gse.@time)
+
+        MapFileSystem.instance.modFile('SomeClass.groovy', '''
+            class SomeClass {
+                public static final String CONSTANT = String.valueOf("")
+            }
+        ''', gse.@time)
+
+        def subClassText = '''
+            class SubClass extends BaseClass<String> {
+                public static final String CONSTANT = SomeClass.CONSTANT
+            }
+        '''
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText, gse.@time)
+
+        MapFileSystem.instance.modFile('subClassUsage.groovy', 'SubClass.CONSTANT', gse.@time)
+
+        gse.loadScriptByName('subClassUsage.groovy')
+        sleep 1000
+
+        // make a change to the sub-class so that it gets recompiled
+        MapFileSystem.instance.modFile('SubClass.groovy', subClassText + '\n', gse.@time)
+
+        gse.loadScriptByName('subClassUsage.groovy')
     }
 
     @Test
@@ -297,63 +328,60 @@ final class GroovyScriptEngineReloadingTest {
     @Test
     void testDynamicInstantiation() {
         MapFileSystem.instance.modFile('script.groovy', '''
-           def obj = dynaInstantiate.instantiate(className, getClass().getClassLoader())
-           obj.modifyWidth(dim, addThis)
-           returnedMessage = obj.message
+            def obj = dynaInstantiate.instantiate(className, this.class.classLoader)
+            obj.modifyWidth(dim, addThis)
+            returnedMessage = obj.message
        ''', 0)
 
         MapFileSystem.instance.modFile('com/company/MakeMeSuper.groovy', '''
             package com.company
             import com.company.util.*
             class MakeMeSuper{
-               private HelperIntf helper = new Helper()
-               def getMessage() {
-                   helper.getMessage()
-               }
+                private HelperIntf helper = new Helper()
+                def getMessage() {
+                    helper.getMessage()
+                }
             }
-          ''', 0)
+        ''', 0)
 
-        MapFileSystem.instance.modFile('com/company/MakeMe.groovy',
-                '''
-              package com.company
-              class MakeMe extends MakeMeSuper{
-                 def modifyWidth(dim, addThis){
+        MapFileSystem.instance.modFile('com/company/MakeMe.groovy', '''
+            package com.company
+            class MakeMe extends MakeMeSuper{
+                def modifyWidth(dim, addThis){
                     dim.width += addThis
-                 }
-              }
-          ''', 0)
+                }
+            }
+        ''', 0)
 
-        MapFileSystem.instance.modFile('com/company/util/HelperIntf.groovy',
-                '''
-              package com.company.util
-              interface HelperIntf{
+        MapFileSystem.instance.modFile('com/company/util/HelperIntf.groovy', '''
+            package com.company.util
+            interface HelperIntf {
                  public String getMessage();
-              }
-          ''', 0)
+            }
+        ''', 0)
 
-        MapFileSystem.instance.modFile('com/company/util/Helper.groovy',
-                '''
-              package com.company.util
-              class Helper implements HelperIntf{
-                 public String getMessage(){
-                       'worked'
-                 }
-              }
-           ''', 0)
+        MapFileSystem.instance.modFile('com/company/util/Helper.groovy', '''
+            package com.company.util
+            class Helper implements HelperIntf {
+                public String getMessage() {
+                    'worked'
+                }
+            }
+        ''', 0)
 
         //Code run in the script will modify this dimension object.
-        MyDimension dim = new MyDimension();
+        MyDimension dim = new MyDimension()
 
-        Binding binding = new Binding();
-        binding.setVariable('dim', dim);
-        binding.setVariable('dynaInstantiate', this);
+        Binding binding = new Binding()
+        binding.setVariable('dim', dim)
+        binding.setVariable('dynaInstantiate', this)
 
-        binding.setVariable('className', 'com.company.MakeMe');
+        binding.setVariable('className', 'com.company.MakeMe')
 
-        int addThis = 3;
-        binding.setVariable('addThis', addThis);
+        int addThis = 3
+        binding.setVariable('addThis', addThis)
 
-        gse.run('script.groovy', binding);
+        gse.run('script.groovy', binding)
 
         //The script instantiated com.company.MakeMe via our own
         //instantiate method.  The instantiated object modified the
@@ -381,7 +409,7 @@ final class GroovyScriptEngineReloadingTest {
         assert aScript instanceof CustomBaseClass
     }
 
-    /** GROOVY-3893 */
+    // GROOVY-3893
     @Test
     void testGSEWithNoScriptRoots() {
         shouldFail ResourceException, {
@@ -391,7 +419,7 @@ final class GroovyScriptEngineReloadingTest {
         }
     }
 
-    /** GROOVY-6203 */
+    // GROOVY-6203
     @Test
     void testGSEBaseClass() {
         gse.config = new org.codehaus.groovy.control.CompilerConfiguration(scriptBaseClass: CustomBaseClass.name)
@@ -404,24 +432,22 @@ final class GroovyScriptEngineReloadingTest {
         assert script instanceof CustomBaseClass
     }
 
-    /** GROOVY-4013 */
+    // GROOVY-4013
     @Test
     void testGSENoCachingOfInnerClasses() {
-        MapFileSystem.instance.modFile('Groovy4013Helper.groovy',
-                '''
-               import java.awt.event.*
-               import java.awt.*
-               class Groovy4013Helper
-               {
-                  def initPanel()
-                  {
-                       def b = new Button('click me')
-                       b.addActionListener( new ActionListener(){
-                           public void actionPerformed(ActionEvent e) {}
-                       })
-                  }
-               }
-           ''', 0)
+        MapFileSystem.instance.modFile('Groovy4013Helper.groovy', '''
+            import java.awt.event.*
+            import java.awt.*
+            class Groovy4013Helper {
+                def initPanel() {
+                    def b = new Button('click me')
+                    b.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                        }
+                    })
+                }
+            }
+        ''', 0)
 
         def klazz = gse.loadScriptByName('Groovy4013Helper.groovy')
         assert klazz.name == 'Groovy4013Helper'
@@ -430,18 +456,18 @@ final class GroovyScriptEngineReloadingTest {
         assert klazz.name == 'Groovy4013Helper' // we should still get the outer class, not inner one
     }
 
-    /** GROOVY-4234 */
+    // GROOVY-4234
     @Test
     void testGSERunningAScriptThatHasMultipleClasses() {
-        MapFileSystem.instance.modFile('Groovy4234Helper.groovy',
-                '''
-              class Foo4234 {
-                  static main(args){
-                      //println 'Running Foo4234 -> main()'
-                  }
-              }
-              class Bar4234 { }
-          ''', 0)
+        MapFileSystem.instance.modFile('Groovy4234Helper.groovy', '''
+            class Foo4234 {
+                static main(args) {
+                    //println 'Running Foo4234 -> main()'
+                }
+            }
+            class Bar4234 {
+            }
+        ''', 0)
 
         //println 'testGSELoadingAScriptThatHasMultipleClasses - Run 1'
         gse.run('Groovy4234Helper.groovy', new Binding())
@@ -450,7 +476,7 @@ final class GroovyScriptEngineReloadingTest {
         gse.run('Groovy4234Helper.groovy', new Binding())
     }
 
-    /** GROOVY-2811 and GROOVY-4286 */
+    // GROOVY-2811, GROOVY-4286
     @Test
     void testReloadingInterval() {
         gse.config.minimumRecompilationInterval = 1500
@@ -479,14 +505,10 @@ final class GroovyScriptEngineReloadingTest {
 
     //--------------------------------------------------------------------------
 
+    @TupleConstructor
     static class MapFileEntry {
         String content
         long lutime
-
-        MapFileEntry(String content, long lutime) {
-            this.content = content
-            this.lutime = lutime
-        }
     }
 
     @Singleton
@@ -585,29 +607,10 @@ final class GroovyScriptEngineReloadingTest {
         void connect() throws IOException {}
     }
 
+    @Canonical
     static class MyDimension {
         int width
         int height
-
-        MyDimension(int x, int y) {
-            width = x
-            height = y
-        }
-
-        MyDimension() {
-            width = 0
-            height = 0
-        }
-
-        @Override
-        boolean equals(o) {
-            o.width == width && o.height == height
-        }
-
-        @Override
-        int hashCode() {
-            width + 13 * height
-        }
     }
 
     static abstract class CustomBaseClass extends Script {

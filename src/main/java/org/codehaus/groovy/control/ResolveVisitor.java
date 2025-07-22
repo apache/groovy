@@ -102,10 +102,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     // note: BigInteger and BigDecimal are also imported by default
     // `java.util` is used much frequently than other two java packages(`java.io` and `java.net`), so place java.util before the two packages
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.util.", "java.io.", "java.net.", "groovy.lang.", "groovy.util."};
-    private static final String BIGINTEGER_STR = "BigInteger";
-    private static final String BIGDECIMAL_STR = "BigDecimal";
-    public static final String QUESTION_MARK = "?";
-    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+    public static final String[] EMPTY_STRING_ARRAY = {};
+    public static final String   QUESTION_MARK = "?";
 
     private ClassNode currentClass;
     private final CompilationUnit compilationUnit;
@@ -273,13 +271,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
             genericParameterNames = Collections.emptyMap();
         }
-
-        if (!fieldTypesChecked.contains(node)) {
-            resolveOrFail(node.getType(), node);
+        try {
+            if (!fieldTypesChecked.contains(node)) {
+                resolveOrFail(node.getType(), node);
+            }
+            super.visitField(node);
+        } finally {
+            genericParameterNames = oldNames;
         }
-        super.visitField(node);
-
-        genericParameterNames = oldNames;
     }
 
     @Override
@@ -288,13 +287,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())) {
             genericParameterNames = Collections.emptyMap();
         }
+        try {
+            resolveOrFail(node.getType(), node);
+            fieldTypesChecked.add(node.getField());
 
-        resolveOrFail(node.getType(), node);
-        fieldTypesChecked.add(node.getField());
-
-        super.visitProperty(node);
-
-        genericParameterNames = oldNames;
+            super.visitProperty(node);
+        } finally {
+            genericParameterNames = oldNames;
+        }
     }
 
     private static boolean canSeeTypeVars(final int mods, final ClassNode node) {
@@ -303,36 +303,36 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
+        MethodNode oldMethod = currentMethod;
         VariableScope oldScope = currentScope;
         currentScope = node.getVariableScope();
         Map<GenericsTypeName, GenericsType> oldNames = genericParameterNames;
         genericParameterNames =
                 canSeeTypeVars(node.getModifiers(), node.getDeclaringClass())
                     ? new HashMap<>(genericParameterNames) : new HashMap<>();
+        try {
+            resolveGenericsHeader(node.getGenericsTypes());
 
-        resolveGenericsHeader(node.getGenericsTypes());
-
-        resolveOrFail(node.getReturnType(), node);
-        for (Parameter p : node.getParameters()) {
-            p.setInitialExpression(transform(p.getInitialExpression()));
-            ClassNode t = p.getType();
-            resolveOrFail(t, t);
-            visitAnnotations(p);
-        }
-        if (node.getExceptions() != null) {
-            for (ClassNode t : node.getExceptions()) {
+            resolveOrFail(node.getReturnType(), node);
+            for (Parameter p : node.getParameters()) {
+                p.setInitialExpression(transform(p.getInitialExpression()));
+                ClassNode t = p.getType();
                 resolveOrFail(t, t);
+                visitAnnotations(p);
             }
+            if (node.getExceptions() != null) {
+                for (ClassNode t : node.getExceptions()) {
+                    resolveOrFail(t, t);
+                }
+            }
+
+            currentMethod = node;
+            super.visitConstructorOrMethod(node, isConstructor);
+        } finally {
+            genericParameterNames = oldNames;
+            currentMethod = oldMethod;
+            currentScope = oldScope;
         }
-
-        MethodNode oldCurrentMethod = currentMethod;
-        currentMethod = node;
-
-        super.visitConstructorOrMethod(node, isConstructor);
-
-        currentMethod = oldCurrentMethod;
-        genericParameterNames = oldNames;
-        currentScope = oldScope;
     }
 
     private void resolveOrFail(final ClassNode type, final ASTNode node) {
@@ -650,11 +650,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (resolveFromDefaultImports(type, DEFAULT_IMPORTS)) {
                 return true;
             }
-            if (BIGINTEGER_STR.equals(typeName)) {
+            if ("BigInteger".equals(typeName)) {
                 type.setRedirect(ClassHelper.BigInteger_TYPE);
                 return true;
             }
-            if (BIGDECIMAL_STR.equals(typeName)) {
+            if ("BigDecimal".equals(typeName)) {
                 type.setRedirect(ClassHelper.BigDecimal_TYPE);
                 return true;
             }
@@ -1155,7 +1155,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private static boolean testVanillaNameForClass(final String name) {
-        if (name == null || name.length() == 0) return false;
+        if (name == null || name.isEmpty()) return false;
         return !Character.isLowerCase(name.charAt(0));
     }
 
@@ -1410,92 +1410,98 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitClass(final ClassNode node) {
         ClassNode oldNode = currentClass; currentClass = node;
         Map<GenericsTypeName, GenericsType> outerNames = null;
-        if (node instanceof InnerClassNode) {
-            outerNames = genericParameterNames;
-            genericParameterNames = new HashMap<>();
-            if (!Modifier.isStatic(node.getModifiers())) {
-                genericParameterNames.putAll(outerNames); // outer names visible
-            }
-            InnerClassNode innerClass = (InnerClassNode) node;
-            if (innerClass.isAnonymous()) {
-                MethodNode enclosingMethod = innerClass.getEnclosingMethod();
-                if (enclosingMethod != null) {
-                    resolveGenericsHeader(enclosingMethod.getGenericsTypes());
+        try {
+            if (node instanceof InnerClassNode) {
+                outerNames = genericParameterNames;
+                genericParameterNames = new HashMap<>();
+                if (!Modifier.isStatic(node.getModifiers())) {
+                    genericParameterNames.putAll(outerNames); // outer names visible
                 }
-            }
-        } else {
-            genericParameterNames.clear(); // outer class: new generic namespace
-        }
-
-        resolveGenericsHeader(node.getGenericsTypes());
-
-        ModuleNode module = node.getModule();
-        if (!module.hasImportsResolved()) {
-            for (ImportNode importNode : module.getImports()) {
-                currImportNode = importNode;
-                ClassNode type = importNode.getType();
-                if (resolve(type, false, false, true)) {
-                    currImportNode = null;
-                    continue;
+                InnerClassNode innerClass = (InnerClassNode) node;
+                if (innerClass.isAnonymous()) {
+                    MethodNode enclosingMethod = innerClass.getEnclosingMethod();
+                    if (enclosingMethod != null) {
+                        resolveGenericsHeader(enclosingMethod.getGenericsTypes());
+                    }
                 }
-                currImportNode = null;
-                addError("unable to resolve class " + type.getName(), type);
+            } else {
+                genericParameterNames.clear(); // outer class: new generic namespace
             }
-            for (ImportNode importNode : module.getStarImports()) {
-                if (importNode.getLineNumber() > 0) {
+
+            resolveGenericsHeader(node.getGenericsTypes());
+
+            ModuleNode module = node.getModule();
+            if (!module.hasImportsResolved()) {
+                for (ImportNode importNode : module.getImports()) {
                     currImportNode = importNode;
-                    String importName = importNode.getPackageName();
-                    importName = importName.substring(0, importName.length()-1);
-                    ClassNode type = ClassHelper.makeWithoutCaching(importName);
-                    if (resolve(type, false, false, true)) {
-                        importNode.setType(type);
-                    }
-                    currImportNode = null;
-                }
-            }
-            for (ImportNode importNode : module.getStaticImports().values()) {
-                ClassNode type = importNode.getType();
-                if (!resolve(type, true, true, true))
-                    addError("unable to resolve class " + type.getName(), type);
-            }
-            for (ImportNode importNode : module.getStaticStarImports().values()) {
-                ClassNode type = importNode.getType();
-                if (!resolve(type, true, true, true))
-                    addError("unable to resolve class " + type.getName(), type);
-            }
-            module.setImportsResolved(true);
-        }
-
-        ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn != null) {
-            resolveOrFail(sn, "", node, true);
-        }
-        for (ClassNode in : node.getInterfaces()) {
-            resolveOrFail(in, "", node, true);
-        }
-
-        if (sn != null) checkCyclicInheritance(node, sn);
-        for (ClassNode in : node.getInterfaces()) {
-            checkCyclicInheritance(node, in);
-        }
-        if (node.getGenericsTypes() != null) {
-            for (GenericsType gt : node.getGenericsTypes()) {
-                if (gt != null && gt.getUpperBounds() != null) {
-                    for (ClassNode variant : gt.getUpperBounds()) {
-                        if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(variant, gt.getType());
+                    try {
+                        ClassNode type = importNode.getType();
+                        if (!resolve(type, false, false, true)) {
+                            addError("unable to resolve class " + type.getName(), type);
+                        }
+                    } finally {
+                        currImportNode = null;
                     }
                 }
+                for (ImportNode importNode : module.getStarImports()) {
+                    if (importNode.getLineNumber() > 0) {
+                        currImportNode = importNode;
+                        try {
+                            String importName = importNode.getPackageName();
+                            importName = importName.substring(0, importName.length()-1);
+                            ClassNode type = ClassHelper.makeWithoutCaching(importName);
+                            if (resolve(type, false, false, true)) {
+                                importNode.setType(type);
+                            }
+                        } finally {
+                            currImportNode = null;
+                        }
+                    }
+                }
+                for (ImportNode importNode : module.getStaticImports().values()) {
+                    ClassNode type = importNode.getType();
+                    if (!resolve(type, true, true, true))
+                        addError("unable to resolve class " + type.getName(), type);
+                }
+                for (ImportNode importNode : module.getStaticStarImports().values()) {
+                    ClassNode type = importNode.getType();
+                    if (!resolve(type, true, true, true))
+                        addError("unable to resolve class " + type.getName(), type);
+                }
+                module.setImportsResolved(true);
             }
+
+            ClassNode sn = node.getUnresolvedSuperClass();
+            if (sn != null) {
+                resolveOrFail(sn, "", node, true);
+            }
+            for (ClassNode in : node.getInterfaces()) {
+                resolveOrFail(in, "", node, true);
+            }
+
+            if (sn != null) checkCyclicInheritance(node, sn);
+            for (ClassNode in : node.getInterfaces()) {
+                checkCyclicInheritance(node, in);
+            }
+            if (node.getGenericsTypes() != null) {
+                for (GenericsType gt : node.getGenericsTypes()) {
+                    if (gt != null && gt.getUpperBounds() != null) {
+                        for (ClassNode variant : gt.getUpperBounds()) {
+                            if (variant.isGenericsPlaceHolder()) checkCyclicInheritance(variant, gt.getType());
+                        }
+                    }
+                }
+            }
+
+            super.visitClass(node);
+
+            resolveOuterNestedClassFurther(node);
+        } finally {
+            if (outerNames != null) // GROOVY-11711
+                genericParameterNames = outerNames;
+
+            currentClass = oldNode;
         }
-
-        super.visitClass(node);
-
-        resolveOuterNestedClassFurther(node);
-
-        if (outerNames != null) // GROOVY-11711
-            genericParameterNames = outerNames;
-
-        currentClass = oldNode;
     }
 
     private void checkCyclicInheritance(final ClassNode node, final ClassNode type) {
@@ -1574,8 +1580,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitBlockStatement(final BlockStatement block) {
         VariableScope oldScope = currentScope;
         currentScope = block.getVariableScope();
-        super.visitBlockStatement(block);
-        currentScope = oldScope;
+        try {
+            super.visitBlockStatement(block);
+        } finally {
+            currentScope = oldScope;
+        }
     }
 
     private boolean resolveGenericsTypes(final GenericsType[] types) {
