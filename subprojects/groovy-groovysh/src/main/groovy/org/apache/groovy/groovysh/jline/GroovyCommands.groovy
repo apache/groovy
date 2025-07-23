@@ -299,7 +299,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                         throw new IllegalArgumentException("$format format requires $parserName to be available")
                     }
                     def parser = engine.execute("${parserName}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
-                    out = parser.parse(path.newReader(encoding.displayName())).toList()
+                    out = parser.parse(path.newReader(encoding.displayName())).toList()*.toMap()
                 } else if (format == 'PROPERTIES') {
                     out = path.withInputStream{ is ->
                         new Properties().tap {load(is) }
