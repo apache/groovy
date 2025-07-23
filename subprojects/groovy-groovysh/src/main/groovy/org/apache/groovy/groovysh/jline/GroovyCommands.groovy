@@ -20,10 +20,8 @@ package org.apache.groovy.groovysh.jline
 
 import groovy.console.ui.Console
 import groovy.console.ui.ObjectBrowser
-import groovy.toml.TomlSlurper
-import groovy.xml.XmlParser
-import groovy.yaml.YamlSlurper
 import org.apache.groovy.groovysh.Main
+import org.apache.groovy.groovysh.util.ClassUtils
 import org.jline.builtins.Completers
 import org.jline.builtins.Completers.OptDesc
 import org.jline.builtins.Completers.OptionCompleter
@@ -80,32 +78,30 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     private boolean consoleUi
     private boolean ivy
     private Supplier<Path> workDir
+    private static Map<String, String> slurpers = [
+        'YAML'     : 'groovy.yaml.YamlSlurper',
+        'XML'      : 'groovy.xml.XmlParser',
+        'TOML'     : 'groovy.toml.TomlSlurper',
+    ]
 
     GroovyCommands(GroovyEngine engine, Supplier<Path> workDir, Printer printer, SyntaxHighlighter highlighter) {
         this.engine = engine
         this.printer = printer
         this.workDir = workDir
         this.highlighter = highlighter
-        try {
-            Class.forName('groovy.console.ui.ObjectBrowser')
-            consoleUi = true
-        } catch (Exception e) {
-            // ignore
-        }
-        try {
-            Class.forName('org.apache.ivy.util.Message')
-            System.setProperty('groovy.grape.report.downloads', 'false')
-            ivy = true
-        } catch (Exception e) {
-            // ignore
-        }
 
+        consoleUi = ClassUtils.lookFor('groovy.console.ui.ObjectBrowser')
         if (!consoleUi) {
             commands.remove('/console')
         }
-        if (!ivy) {
+
+        ivy = ClassUtils.lookFor('org.apache.ivy.util.Message')
+        if (ivy) {
+            System.setProperty('groovy.grape.report.downloads', 'false')
+        } else {
             commands.remove('/grab')
         }
+
         def available = commands.collectEntries { name, tuple ->
             [name, new CommandMethods((Function)tuple.v1, tuple.v2)]
         }
@@ -258,7 +254,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                 encoding = Charset.forName(arg)
             }
             if (option in ['-f', '--format'] && arg) {
-                format = arg
+                format = arg.toUpperCase()
             }
             optionIndex = optionIdx(args, index)
         }
@@ -281,6 +277,10 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                         format = 'GROOVY'
                     } else if (ext.equalsIgnoreCase('toml')) {
                         format = 'TOML'
+                    } else if (ext.equalsIgnoreCase('properties')) {
+                        format = 'PROPERTIES'
+                    } else if (ext.equalsIgnoreCase('csv')) {
+                        format = 'CSV'
                     } else if (ext.equalsIgnoreCase('txt') || ext.equalsIgnoreCase('text')) {
                         format = 'TEXT'
                     }
@@ -290,12 +290,20 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                 } else if (format in engine.deserializationFormats) {
                     byte[] encoded = Files.readAllBytes(path)
                     out = engine.deserialize(new String(encoded, encoding), format)
-                } else if (format == 'XML') {
-                    out = new XmlParser().parse(path.toFile())
-                } else if (format == 'TOML') {
-                    out = new TomlSlurper().parse(path)
-                } else if (format == 'YAML') {
-                    out = new YamlSlurper().parse(path)
+                } else if (format in slurpers.keySet()) {
+                    def parser = getParser(format, slurpers[format])
+                    out = parser.parse(path)
+                } else if (format == 'CSV') {
+                    def parserName = 'org.apache.commons.csv.CSVFormat'
+                    if (!ClassUtils.lookFor(engine, parserName)) {
+                        throw new IllegalArgumentException("$format format requires $parserName to be available")
+                    }
+                    def parser = engine.execute("${parserName}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
+                    out = parser.parse(path.newReader(encoding.displayName())).toList()
+                } else if (format == 'PROPERTIES') {
+                    out = path.withInputStream{ is ->
+                        new Properties().tap {load(is) }
+                    }
                 } else {
                     out = engine.deserialize(Files.readString(path, encoding), 'NONE')
                 }
@@ -304,23 +312,25 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     out = arg.readLines()
                 } else if (format in engine.deserializationFormats) {
                     out = engine.deserialize(arg, format)
-                } else if (format == 'XML') {
-                    out = new XmlParser().parseText(arg)
-                } else if (format == 'TOML') {
-                    out = new TomlSlurper().parseText(arg)
-                } else if (format == 'YAML') {
-                    out = new YamlSlurper().parseText(arg)
+                } else if (format in slurpers.keySet()) {
+                    def parser = getParser(format, slurpers[format])
+                    out = parser.parseText(arg)
                 } else {
                     out = engine.deserialize(arg, 'NONE')
                 }
             }
         } catch (Exception ignore) {
-            println ignore.message
-            ignore.printStackTrace()
-            out = engine.deserialize(arg, format)
+            throw ignore
         }
         engine.put("_", out)
         printer.println(out)
+    }
+
+    Object getParser(String format, String parserName) {
+        if (!ClassUtils.lookFor(parserName)) {
+            throw new IllegalArgumentException("$format format requires $parserName to be available")
+        }
+        engine.execute("new ${parserName}()")
     }
 
     static void loadFile(GroovyEngine engine, File file, boolean merge = false) {
