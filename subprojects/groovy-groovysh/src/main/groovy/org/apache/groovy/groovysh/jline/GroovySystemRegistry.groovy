@@ -33,6 +33,22 @@ class GroovySystemRegistry extends SystemRegistryImpl {
         rename(Pipe.OR, '/||')
     }
 
+    // workaround for: https://github.com/jline/jline3/issues/1361
+    @Override
+    Object execute(String line) throws Exception {
+        def m = line =~ /([a-zA-Z][a-zA-Z0-9_]*)=(\/\S.*)/
+        def target = null
+        if (m.matches()) {
+            (target, line) = m[0][1,2]
+        }
+        super.execute(line)
+        if (target) {
+            consoleEngine().with {
+                putVariable(target, getVariable('_'))
+            }
+        }
+    }
+
     @Override
     boolean isCommandOrScript(String command) {
         return command.startsWith("/!") || super.isCommandOrScript(command)
