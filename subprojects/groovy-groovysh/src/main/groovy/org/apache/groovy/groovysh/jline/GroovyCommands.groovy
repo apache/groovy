@@ -129,6 +129,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/grab')) return
+        def origDownloads = System.getProperty('groovy.grape.report.downloads')
         try {
             String arg = input.args()[0]
             if (arg == '-l' || arg == '--list') {
@@ -172,7 +173,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         } catch (Exception e) {
             saveException(e)
         } finally {
-            System.setProperty('groovy.grape.report.downloads', 'false')
+            System.setProperty('groovy.grape.report.downloads', origDownloads)
         }
         return null
     }
@@ -323,7 +324,6 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             throw ignore
         }
         engine.put("_", out)
-        printer.println(out)
     }
 
     Object getParser(String format, String parserName) {

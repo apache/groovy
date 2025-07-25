@@ -41,12 +41,13 @@ class GroovySystemRegistry extends SystemRegistryImpl {
         if (m.matches()) {
             (target, line) = m[0][1,2]
         }
-        super.execute(line)
+        def result = super.execute(line)
         if (target) {
             consoleEngine().with {
                 putVariable(target, getVariable('_'))
             }
         }
+        result
     }
 
     @Override
