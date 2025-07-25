@@ -26,6 +26,7 @@ import org.jline.reader.ParsedLine
 class MavenCoordinateCompleter implements Completer {
 
     private File mavenRepo = new File(System.getProperty('user.home'), '.m2/repository')
+    private File grapeRepo = new File(System.getProperty('user.home'), '.groovy/grapes')
 
 
     @Override
@@ -47,20 +48,32 @@ class MavenCoordinateCompleter implements Completer {
     }
 
     private void suggestGroupIds(String prefix, List<Candidate> candidates) {
+        Set seen = []
+        grapeRepo.eachDir{ subdir ->
+            def name = subdir.name
+            if (!name.startsWith(prefix)) return
+            def dots = prefix.count('.')
+            def subParts = name.split(/\./)
+            def suggestion = subParts[0..dots].join('.')
+            if (seen.contains(suggestion)) return
+            seen << suggestion
+            def sep = suggestion == name ? ':' : '.'
+            candidates << new Candidate(suggestion + sep, suggestion + sep, null, null, '', null, false)
+        }
+
         boolean endsWithDot = prefix.endsWith('.')
         def parts = prefix ? prefix.split(/\./) : []
         def lastPart = endsWithDot ? '' : (parts ? parts[-1] : '')
         def baseParts = endsWithDot ? parts : (parts.size() > 1 ? parts[0..-2] : [])
-        def baseDir = baseParts.inject(mavenRepo) { dir, part -> new File(dir, part) }
+        def mavenDir = baseParts.inject(mavenRepo) { dir, part -> new File(dir, part) }
 
-        if (!baseDir.exists()) return
-
-        baseDir.eachDir { subdir ->
+        if (!mavenDir) return
+        mavenDir.eachDir { subdir ->
             if (lastPart && !subdir.name.startsWith(lastPart)) return
 
             def suggestionParts = baseParts + [subdir.name]
             def suggestion = suggestionParts.join('.')
-            def candidateFile = new File(baseDir, subdir.name)
+            def candidateFile = new File(mavenDir, subdir.name)
             def childDirs = candidateFile.listFiles().grep(File::isDirectory)
             def hasArtifactChildren = childDirs.any { isVersionDirPresent(it) }
             def hasOnlyArtifactChildren = childDirs.every { isVersionDir(it) }
