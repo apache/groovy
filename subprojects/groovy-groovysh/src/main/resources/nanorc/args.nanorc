@@ -17,7 +17,7 @@ syntax "ARGS"
 
 NUMBER:         "\<[-]?[0-9]*([Ee][+-]?[0-9]+)?\>"  "\<[-]?[0](\.[0-9]+)?\>"
 STRING:         "[a-zA-Z]+[a-zA-Z0-9]*"
-COMMAND:        "\</?(console|grab|inspect|classloader)\>"
+COMMAND:        "\</?(alias|classloader|clear|colors|console|del|doc|echo|exit|grab|help|highlighter|history|imports|inspect|keymap|less|load|methods|nano|pipe|prnt|reset|save|setopt|show|slurp|ttop|types|unalias|unsetopt|vars|widget)\>"
 NULL:           "\<null\>"
 BOOLEAN:        "\<(true|false)\>"
 VARIABLE:       "(\[|,)\s*[a-zA-Z0-9]*\s*:"

@@ -353,8 +353,8 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         println "${merge ? 'Merged' : 'Loaded'}: " + file.path
     }
 
-    private highlight(Collection<String> lines) {
-        highlighter.highlight(lines.collect{ ' \b' + it }.join('\n\n')).toAnsi()
+    private String highlight(Collection<String> lines) {
+        highlighter.highlight(lines.join('\n\n')).toAnsi().readLines().collect{' \b' + it }.join('\n')
     }
 
     private boolean maybePrintHelp(CommandInput input, String name) {

@@ -15,7 +15,7 @@
 
 syntax "COMMAND"
 
-COMMAND:        "/?[a-zA-Z]+[a-zA-Z0-9]*"
+COMMAND:        "/?[a-zA-Z][a-zA-Z0-9]*"
 VARIABLE:       ".*="
 PLAIN:          "(\"|'|\.|=|:|\[|,|\])"
 COMMENT:        "(^|\\s+)#.*$"
