@@ -770,6 +770,259 @@ class GinqTest {
     }
 
     @Test
+    void "testGinq - nested from where select - 0"() {
+        assertGinqScript '''
+            assert [2] == GQ {
+                from n in [1, 2, 3]
+                where n == (from m in [2] select m)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 1"() {
+        assertGinqScript '''
+            assert [2] == GQ {
+                from n in [1, 2, 3]
+                where n == (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 1 - swap operand"() {
+        assertGinqScript '''
+            assert [2] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) == n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 2"() {
+        assertGinqScript '''
+            assert [1, 3] == GQ {
+                from n in [1, 2, 3]
+                where n != (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 2 - swap operand"() {
+        assertGinqScript '''
+            assert [1, 3] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) != n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 3"() {
+        assertGinqScript '''
+            assert [3] == GQ {
+                from n in [1, 2, 3]
+                where n > (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 3 - swap operand"() {
+        assertGinqScript '''
+            assert [3] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) < n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 4"() {
+        assertGinqScript '''
+            assert [2, 3] == GQ {
+                from n in [1, 2, 3]
+                where n >= (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 4 - swap operand"() {
+        assertGinqScript '''
+            assert [2, 3] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) <= n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 5"() {
+        assertGinqScript '''
+            assert [1] == GQ {
+                from n in [1, 2, 3]
+                where n < (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 5 - swap operand"() {
+        assertGinqScript '''
+            assert [1] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) > n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 6"() {
+        assertGinqScript '''
+            assert [1, 2] == GQ {
+                from n in [1, 2, 3]
+                where n <= (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 6 - swap operand"() {
+        assertGinqScript '''
+            assert [1, 2] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) >= n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 7"() {
+        assertGinqScript '''
+            assert [2] == GQ {
+                from n in [1, 2, 3]
+                where n === (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 7 - swap operand"() {
+        assertGinqScript '''
+            assert [2] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) === n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 8"() {
+        assertGinqScript '''
+            assert [1, 3] == GQ {
+                from n in [1, 2, 3]
+                where n !== (from m in [1, 2] select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 8 - swap operand"() {
+        assertGinqScript '''
+            assert [1, 3] == GQ {
+                from n in [1, 2, 3]
+                where ((from m in [1, 2] select max(m)) !== n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 9"() {
+        assertGinqScript '''
+            assert ['123'] == GQ {
+                from n in ['abc', '123', 'a1b2c3']
+                where n ==~ (from m in [/[0-9]+/] select m)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 10"() {
+        assertGinqScript '''
+            assert [/[a-z]+/] == GQ {
+                from n in [/[0-9]+/, /[a-z]+/]
+                where (from m in ['abc'] select m) ==~ n
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 11"() {
+        assertGinqScript '''
+            assert [2] == GQ {
+                from n in [2, 3, 4]
+                where 2 > (from m in [1, 2, 3] where m < n select max(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 11 - swap operand"() {
+        assertGinqScript '''
+            assert [2] == GQ {
+                from n in [2, 3, 4]
+                where ((from m in [1, 2, 3] where m < n select max(m)) < 2)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 12"() {
+        assertGinqScript '''
+            assert [2, 3] == GQ {
+                from n in [2, 3, 4]
+                where n == (from m in [1, 2, 3] where m >= n select min(m))
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - nested from where select - 12 - swap operand"() {
+        assertGinqScript '''
+            assert [2, 3] == GQ {
+                from n in [2, 3, 4]
+                where ((from m in [1, 2, 3] where m >= n select min(m)) == n)
+                select n
+            }.toList()
+        '''
+    }
+
+    @Test
     void "testGinq - nested from select - 0"() {
         assertGinqScript '''
             assert [1, 2, 3] == GQ {
