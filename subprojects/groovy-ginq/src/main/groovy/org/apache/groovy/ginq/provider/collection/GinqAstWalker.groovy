@@ -542,11 +542,20 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 }
 
                 if (expression instanceof BinaryExpression) {
-                    if (expression.operation.type in [Types.KEYWORD_IN, Types.COMPARE_NOT_IN]) {
-                        if (expression.rightExpression instanceof AbstractGinqExpression) {
-                            expression.rightExpression = callX(visit((AbstractGinqExpression) expression.rightExpression), "toList")
-                            return expression
+                    if (expression.operation.type in GinqAstBuilder.FILTER_BINARY_OP_SET) {
+                        boolean containsGinqExpression = false
+                        if (expression.leftExpression instanceof AbstractGinqExpression) {
+                            expression.leftExpression = callSingleValue((AbstractGinqExpression) expression.leftExpression)
+                            containsGinqExpression = true
                         }
+                        if (expression.rightExpression instanceof AbstractGinqExpression) {
+                            expression.rightExpression = expression.operation.type in [Types.KEYWORD_IN, Types.COMPARE_NOT_IN]
+                                                            ? callToList((AbstractGinqExpression) expression.rightExpression)
+                                                            : callSingleValue((AbstractGinqExpression) expression.rightExpression)
+                            containsGinqExpression = true
+                        }
+
+                        if (containsGinqExpression) return expression
                     }
                 }
 
@@ -558,6 +567,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         whereMethodCallExpression.setSourcePosition(whereExpression)
 
         return whereMethodCallExpression
+    }
+
+    private MethodCallExpression callSingleValue(AbstractGinqExpression expression) {
+        return callX(classX(QUERYABLE_HELPER_TYPE), "singleValue", visit(expression))
+    }
+
+    private MethodCallExpression callToList(AbstractGinqExpression expression) {
+        return callX(visit(expression), "toList")
     }
 
     @Override
