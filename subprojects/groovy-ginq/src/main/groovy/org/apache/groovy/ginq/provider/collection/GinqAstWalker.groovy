@@ -263,7 +263,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         if (expr instanceof MethodCallExpression) {
             MethodCallExpression call = (MethodCallExpression) expr
-            if (call.implicitThis && AGG_FUNCTION_NAME_LIST.contains(call.methodAsString)) {
+            if (call.implicitThis && AGG_FUNCTION_NAME_SET.contains(call.methodAsString)) {
                 def argumentCnt = ((ArgumentListExpression) call.getArguments()).getExpressions().size()
                 if (1 == argumentCnt || (FUNCTION_COUNT == call.methodAsString && 0 == argumentCnt)) {
                     return true
@@ -542,12 +542,19 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                 }
 
                 if (expression instanceof BinaryExpression) {
-                    if (expression.operation.type in [Types.KEYWORD_IN, Types.COMPARE_NOT_IN]) {
-                        if (expression.rightExpression instanceof AbstractGinqExpression) {
-                            expression.rightExpression = callX(visit((AbstractGinqExpression) expression.rightExpression), "toList")
-                            return expression
-                        }
+                    boolean containsGinqExpression = false
+                    if (expression.leftExpression instanceof AbstractGinqExpression) {
+                        expression.leftExpression = callSingleValue((AbstractGinqExpression) expression.leftExpression)
+                        containsGinqExpression = true
                     }
+                    if (expression.rightExpression instanceof AbstractGinqExpression) {
+                        expression.rightExpression = expression.operation.type in IN_OP_SET
+                            ? callToList((AbstractGinqExpression) expression.rightExpression)
+                            : callSingleValue((AbstractGinqExpression) expression.rightExpression)
+                        containsGinqExpression = true
+                    }
+
+                    if (containsGinqExpression) return expression
                 }
 
                 return expression.transformExpression(this)
@@ -558,6 +565,14 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         whereMethodCallExpression.setSourcePosition(whereExpression)
 
         return whereMethodCallExpression
+    }
+
+    private MethodCallExpression callSingleValue(AbstractGinqExpression expression) {
+        return callX(classX(QUERYABLE_HELPER_TYPE), "singleValue", visit(expression))
+    }
+
+    private MethodCallExpression callToList(AbstractGinqExpression expression) {
+        return callX(visit(expression), "toList")
     }
 
     @Override
@@ -743,7 +758,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                             def windowFunctionMethodCallExpression = (MethodCallExpression) expression.objectExpression
 
                             Expression result = null
-                            if (windowFunctionMethodCallExpression.methodAsString in WINDOW_FUNCTION_LIST) {
+                            if (windowFunctionMethodCallExpression.methodAsString in WINDOW_FUNCTION_SET) {
                                 def argumentListExpression = (ArgumentListExpression) windowFunctionMethodCallExpression.arguments
                                 List<Expression> argumentExpressionList = []
                                 if (windowFunctionMethodCallExpression.methodAsString !in [FUNCTION_ROW_NUMBER, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_PERCENT_RANK, FUNCTION_CUME_DIST] && argumentListExpression.expressions) {
@@ -1304,7 +1319,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
                     if (FUNCTION_COUNT == methodName && ((TupleExpression) expression.arguments).getExpressions().isEmpty()) { // Similar to count(*) in SQL
                         expression.objectExpression = varX(__GROUP)
                         transformedExpression = expression
-                    } else if (methodName in AGG_FUNCTION_NAME_LIST) {
+                    } else if (methodName in AGG_FUNCTION_NAME_SET) {
                         Expression lambdaCode = ((TupleExpression) expression.arguments).getExpression(0)
                         lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, findRootObjectExpression(lambdaCode).text)
                         transformedExpression =
@@ -1562,7 +1577,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_VAR = 'var'
     private static final String FUNCTION_VARP = 'varp'
     private static final String FUNCTION_AGG = 'agg'
-    private static final List<String> AGG_FUNCTION_NAME_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP, FUNCTION_LIST, FUNCTION_AGG]
+    private static final Set<String> AGG_FUNCTION_NAME_SET = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP, FUNCTION_LIST, FUNCTION_AGG] as HashSet
 
     private static final String FUNCTION_ROW_NUMBER = 'rowNumber'
     private static final String FUNCTION_LEAD = 'lead'
@@ -1575,9 +1590,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String FUNCTION_PERCENT_RANK = 'percentRank'
     private static final String FUNCTION_CUME_DIST = 'cumeDist'
     private static final String FUNCTION_NTILE = 'ntile'
-    private static final List<String> WINDOW_FUNCTION_LIST = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP, FUNCTION_AGG,
-                                                              FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_NTH_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_PERCENT_RANK, FUNCTION_CUME_DIST, FUNCTION_NTILE]
+    private static final Set<String> WINDOW_FUNCTION_SET = [FUNCTION_COUNT, FUNCTION_MIN, FUNCTION_MAX, FUNCTION_SUM, FUNCTION_AVG, FUNCTION_MEDIAN, FUNCTION_STDEV, FUNCTION_STDEVP, FUNCTION_VAR, FUNCTION_VARP, FUNCTION_AGG,
+                                                            FUNCTION_ROW_NUMBER, FUNCTION_LEAD, FUNCTION_LAG, FUNCTION_FIRST_VALUE, FUNCTION_LAST_VALUE, FUNCTION_NTH_VALUE, FUNCTION_RANK, FUNCTION_DENSE_RANK, FUNCTION_PERCENT_RANK, FUNCTION_CUME_DIST, FUNCTION_NTILE] as HashSet
 
+    private static final Set<Integer> IN_OP_SET = [Types.KEYWORD_IN, Types.COMPARE_NOT_IN] as HashSet
     private static final String NAMEDRECORD_CLASS_NAME = NamedRecord.class.name
 
     private static final String USE_WINDOW_FUNCTION = 'useWindowFunction'
