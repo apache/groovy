@@ -53,10 +53,12 @@ import org.codehaus.groovy.syntax.Types;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 
 /**
  * Build the AST for GINQ
@@ -376,12 +378,17 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     public void visitBinaryExpression(BinaryExpression expression) {
         super.visitBinaryExpression(expression);
 
-        final int opType = expression.getOperation().getType();
-        if (opType == Types.KEYWORD_IN || opType == Types.COMPARE_NOT_IN) {
-            if (null != latestGinqExpression && isSelectMethodCallExpression(expression.getRightExpression())) {
+        final Integer opType = expression.getOperation().getType();
+        if (FILTER_BINARY_OP_SET.contains(opType)) {
+            if (null != latestGinqExpression) {
                 // use the nested ginq and clear it
-                expression.setRightExpression(latestGinqExpression);
-                latestGinqExpression = null;
+                if (isSelectMethodCallExpression(expression.getRightExpression())) {
+                    expression.setRightExpression(latestGinqExpression);
+                    latestGinqExpression = null;
+                } else if (isSelectMethodCallExpression(expression.getLeftExpression())) {
+                    expression.setLeftExpression(latestGinqExpression);
+                    latestGinqExpression = null;
+                }
             }
         }
     }
@@ -464,8 +471,12 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         return sourceUnit;
     }
 
-    private static final String __LATEST_GINQ_EXPRESSION_CLAUSE = "__latestGinqExpressionClause";
+    private static final Set<Integer> FILTER_BINARY_OP_SET = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+        Types.KEYWORD_IN, Types.COMPARE_NOT_IN, Types.COMPARE_IDENTICAL, Types.COMPARE_NOT_IDENTICAL,
+        Types.COMPARE_EQUAL, Types.COMPARE_NOT_EQUAL, Types.COMPARE_LESS_THAN, Types.COMPARE_LESS_THAN_EQUAL,
+        Types.COMPARE_GREATER_THAN, Types.COMPARE_GREATER_THAN_EQUAL, Types.MATCH_REGEX)));
 
+    private static final String __LATEST_GINQ_EXPRESSION_CLAUSE = "__latestGinqExpressionClause";
     private static final String KW_WITH = "with"; // reserved keyword
     private static final String KW_FROM = "from";
     private static final String KW_IN = "in";
@@ -483,10 +494,12 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private static final String KW_OVER = "over";
     private static final String KW_AS = "as";
     private static final String KW_SHUTDOWN = "shutdown";
-    private static final Set<String> KEYWORD_SET = new HashSet<>();
+    private static final Set<String> KEYWORD_SET;
     static {
-        KEYWORD_SET.addAll(Arrays.asList(KW_WITH, KW_FROM, KW_IN, KW_ON, KW_WHERE, KW_EXISTS, KW_GROUPBY, KW_HAVING, KW_ORDERBY,
+        Set<String> keywordSet = new HashSet<>();
+        keywordSet.addAll(Arrays.asList(KW_WITH, KW_FROM, KW_IN, KW_ON, KW_WHERE, KW_EXISTS, KW_GROUPBY, KW_HAVING, KW_ORDERBY,
                                          KW_LIMIT, KW_OFFSET, KW_SELECT, KW_DISTINCT, KW_WITHINGROUP, KW_OVER, KW_AS, KW_SHUTDOWN));
-        KEYWORD_SET.addAll(JoinExpression.JOIN_NAME_LIST);
+        keywordSet.addAll(JoinExpression.JOIN_NAME_LIST);
+        KEYWORD_SET = Collections.unmodifiableSet(keywordSet);
     }
 }
