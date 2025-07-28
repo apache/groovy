@@ -57,6 +57,7 @@ import org.jline.widget.TailTipWidgets
 import org.jline.widget.TailTipWidgets.TipType
 import org.jline.widget.Widgets
 
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.Function
@@ -169,10 +170,12 @@ class Main {
 
     }
 
-
-    static String getUserStateDirectory() {
-        def userHome = new File(System.getProperty('user.home'))
-        new File(userHome, '.groovy').canonicalPath
+    static Path getUserStateDirectory() {
+        Path.of(System.getProperty('user.home'), '.groovy').tap { groovyHome ->
+            if (!groovyHome) {
+                Files.createDirectories(groovyHome)
+            }
+        }
     }
 
     static void main(String[] args) {
@@ -195,7 +198,7 @@ class Main {
 
             def rootURL = Main.getResource('/nanorc')
             Path root = ClasspathResourceUtil.getResourcePath(rootURL)
-            ConfigurationPath configPath = new ConfigurationPath(root, Path.of(userStateDirectory))
+            ConfigurationPath configPath = new ConfigurationPath(root, userStateDirectory)
 
             // ScriptEngine and command registries
             GroovyEngine scriptEngine = new GroovyEngine()
@@ -270,10 +273,7 @@ class Main {
                     LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
             }
 
-            // complete command registries
-            consoleEngine.setLineReader(reader)
-            builtins.setLineReader(reader)
-            extra.setLineReader(reader)
+            [consoleEngine, builtins, extra]*.setLineReader(reader)
 
             // widgets and console initialization
             new TailTipWidgets(reader, systemRegistry::commandDescription, 5, TipType.COMPLETER)
@@ -306,7 +306,7 @@ class Main {
                         s.endsWith(' \\') ? s[0..-3] : s
                     }.collect {s ->
                         // repl command parsing assumes no whitespace around '='
-                        s.matches(/[a-zA-Z][a-zA-Z0-9_]* = \S.*/) ? s.replaceFirst(' = ', '=') : s
+                        s.matches(/[a-zA-Z][a-zA-Z0-9_]*\s*=\s*\/\S.*/) ? s.replaceFirst(/\s*=\s*/, '=') : s
                     }.join('\n')
                     line = parser.getCommand(line).startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
                     if (line.startsWith(':')) {

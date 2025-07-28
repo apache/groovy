@@ -33,15 +33,15 @@ dependencies {
     implementation projects.groovyJson
     implementation projects.groovyNio
     testImplementation projects.groovyTest
-    implementation 'net.java.dev.jna:jna:5.17.0'
+//    implementation 'net.java.dev.jna:jna:5.17.0'
     implementation "org.jline:jansi:${versions.jline}"
     implementation "org.jline:jline-reader:${versions.jline}"
     implementation "org.jline:jline-console:${versions.jline}"
-    implementation "org.jline:jline-terminal-jni:${versions.jline}"
+//    implementation "org.jline:jline-terminal-jni:${versions.jline}"
     implementation("org.jline:jline-terminal-jansi:${versions.jline}") {
         exclude(group: 'org.fusesource.jansi', module: 'jansi')
     }
-    implementation "org.jline:jline-terminal-jna:${versions.jline}"
+//    implementation "org.jline:jline-terminal-jna:${versions.jline}"
     implementation("org.jline:jline-terminal:${versions.jline}") {
 //        exclude(group: 'junit', module: 'junit')
     }

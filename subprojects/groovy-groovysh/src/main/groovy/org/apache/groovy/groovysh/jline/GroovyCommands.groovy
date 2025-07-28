@@ -188,7 +188,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/save')) return
         if (input.args().length == 0) {
-            def out = new File(Main.userStateDirectory, 'groovysh.ser')
+            def out = Main.userStateDirectory.resolve('groovysh.ser')
             out.text = engine.toJson(engine.sharedData)
             return
         }
@@ -216,7 +216,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/load')) return
         if (input.args().length == 0) {
-            def ser = new File(Main.userStateDirectory, 'groovysh.ser')
+            def ser = Main.userStateDirectory.resolve('groovysh.ser')
             def map = engine.sharedData.variables
             map.clear()
             map.putAll(engine.deserialize(ser.text).variables)
