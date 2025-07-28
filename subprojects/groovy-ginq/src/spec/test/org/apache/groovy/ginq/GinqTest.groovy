@@ -774,7 +774,7 @@ class GinqTest {
         assertGinqScript '''
             assert [2] == GQ {
                 from n in [1, 2, 3]
-                where n == (from m in [2] select m)
+                where n == (from m in [3, 2, 4] orderby m limit 1 select m)
                 select n
             }.toList()
         '''
