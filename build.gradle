@@ -99,7 +99,7 @@ dependencies {
         transitive = false
     }
 
-    loggingImplementation "org.fusesource.jansi:jansi:${versions.jansi}"
+    loggingImplementation "org.jline:jansi:${versions.jline}"
 
     xstreamAstImplementation "com.thoughtworks.xstream:xstream:${versions.xstream}", {
         exclude group: 'jmock'  , module: 'jmock'

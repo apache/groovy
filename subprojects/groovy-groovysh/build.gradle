@@ -38,7 +38,9 @@ dependencies {
     implementation "org.jline:jline-reader:${versions.jline}"
     implementation "org.jline:jline-console:${versions.jline}"
     implementation "org.jline:jline-terminal-jni:${versions.jline}"
-    implementation "org.jline:jline-terminal-jansi:${versions.jline}"
+    implementation("org.jline:jline-terminal-jansi:${versions.jline}") {
+        exclude(group: 'org.fusesource.jansi', module: 'jansi')
+    }
     implementation "org.jline:jline-terminal-jna:${versions.jline}"
     implementation("org.jline:jline-terminal:${versions.jline}") {
 //        exclude(group: 'junit', module: 'junit')
