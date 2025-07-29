@@ -304,11 +304,7 @@ class Main {
                     line = line.readLines().collect{ s ->
                         // remove Groovy continuation character for repl not Groovy's sake
                         s.endsWith(' \\') ? s[0..-3] : s
-                    }.collect {s ->
-                        // repl command parsing assumes no whitespace around '='
-                        s.matches(/[a-zA-Z][a-zA-Z0-9_]*\s*=\s*\/\S.*/) ? s.replaceFirst(/\s*=\s*/, '=') : s
                     }.join('\n')
-                    line = parser.getCommand(line).startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
                     if (line.startsWith(':')) {
                         def maybeCmd = line.split()[0].replaceFirst(':', '/')
                         if (systemRegistry.hasCommand(maybeCmd) || systemRegistry.isCommandAlias(maybeCmd)) {

@@ -29,22 +29,33 @@ import java.util.function.Supplier
 class GroovySystemRegistry extends SystemRegistryImpl {
     GroovySystemRegistry(Parser parser, Terminal terminal, Supplier<Path> workDir, ConfigurationPath configPath) {
         super(parser, terminal, workDir, configPath)
-        rename(Pipe.AND, '/&&')
-        rename(Pipe.OR, '/||')
+        rename(Pipe.AND, '|&&')
+        rename(Pipe.OR, '|||')
     }
 
     // workaround for: https://github.com/jline/jline3/issues/1361
     @Override
     Object execute(String line) throws Exception {
-        def m = line =~ /([a-zA-Z][a-zA-Z0-9_]*)=(\/\S.*)/
+        def m = line =~ /([a-zA-Z][a-zA-Z0-9_]*)(\s*)=(\s*)(\/?)(\S.*)/
         def target = null
         if (m.matches()) {
-            (target, line) = m[0][1,2]
+            def (_, variable, space1, space2, slash, rhs) = m[0]
+            if (slash) {
+                target = variable
+                line = slash + rhs
+                line = line.startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
+            } else {
+                space1 = space1.size() == 0 ? ' ' : space1
+                space2 = space2.size() == 0 ? ' ' : space2
+                line = "$variable$space1=$space2$rhs"
+            }
         }
         def result = super.execute(line)
         if (target) {
             consoleEngine().with {
-                putVariable(target, getVariable('_'))
+                if (hasVariable('_')) {
+                    putVariable(target, getVariable('_'))
+                }
             }
         }
         result
