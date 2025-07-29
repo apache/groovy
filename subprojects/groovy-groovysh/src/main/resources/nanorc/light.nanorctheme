@@ -24,7 +24,7 @@ BOOLEAN     brightblack
 NULL        cyan
 NUMBER      blue
 VARIABLE    brightyellow
-PACKAGE     green,faint
+PACKAGE     gray,faint
 CLASS       green
 CONSTANT    yellow
 OPERATOR    yellow
@@ -49,18 +49,7 @@ ROW_NUMBER  bold,!blue,~grey70
 ROW_STYLE   ,~grey82
 LIST_BACKGROUND ,~grey70
 LIST_GROUP      yellow
-RAINBOW1    brightmagenta
-RAINBOW2    brightcyan
-RAINBOW3    brightblue
-RAINBOW4    brightyellow
-RAINBOW5    brightgreen
-RAINBOW6    brightred
-RAINBOW7    magenta
-RAINBOW8    cyan
-RAINBOW9    blue
-RAINBOW10   yellow
-RAINBOW11   green
-RAINBOW12   red
+
 #
 # mixin
 #
