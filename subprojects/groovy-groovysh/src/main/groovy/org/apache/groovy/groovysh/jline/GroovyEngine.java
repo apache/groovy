@@ -65,10 +65,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,11 +139,12 @@ public class GroovyEngine implements ScriptEngine {
     private final Map<String, Class<?>> defaultNameClass = new HashMap<>();
     private final GroovyShell shell;
     protected Binding sharedData;
-    private final Map<String, String> imports = new HashMap<>();
-    private final Map<String, String> methods = new HashMap<>();
-    private final Map<String, String> variables = new HashMap<>();
+    private final List<Snippet> snippets = new ArrayList<>();
+    private final Map<String, Integer> imports = new HashMap<>();
+    private final Map<String, Integer> methods = new HashMap<>();
+    private final Map<String, Integer> variables = new HashMap<>();
     private final Set<String> methodNames = new HashSet<>();
-    private final Map<String, String> types = new HashMap<>();
+    private final Map<String, Integer> types = new HashMap<>();
     private final Map<String, Class<?>> nameClass;
     private Cloner objectCloner = new ObjectCloner();
     protected final EngineClassLoader classLoader;
@@ -169,15 +170,36 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public Map<String, String> getTypes() {
-        return DefaultGroovyMethods.asUnmodifiable(types);
+        Map<String, String> out = new HashMap<>();
+        types.forEach((String key, Integer index) -> {
+            Snippet snippet = snippets.get(index);
+            if (snippet.getType() == SnippetType.TYPE) {
+                out.put(key, snippet.getSnippet());
+            }
+        });
+        return out;
     }
 
     public Map<String, String> getVariables() {
-        return DefaultGroovyMethods.asUnmodifiable(variables);
+        Map<String, String> out = new HashMap<>();
+        variables.forEach((String key, Integer index) -> {
+            Snippet snippet = snippets.get(index);
+            if (snippet.getType() == SnippetType.VARIABLE) {
+                out.put(key, snippet.getSnippet());
+            }
+        });
+        return out;
     }
 
     public Map<String, String> getMethods() {
-        return DefaultGroovyMethods.asUnmodifiable(methods);
+        Map<String, String> out = new HashMap<>();
+        methods.forEach((String key, Integer index) -> {
+            Snippet snippet = snippets.get(index);
+            if (snippet.getType() == SnippetType.METHOD) {
+                out.put(key, snippet.getSnippet());
+            }
+        });
+        return out;
     }
 
     public Set<String> getMethodNames() {
@@ -185,7 +207,14 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public Map<String, String> getImports() {
-        return DefaultGroovyMethods.asUnmodifiable(imports);
+        Map<String, String> out = new HashMap<>();
+        imports.forEach((String key, Integer index) -> {
+            Snippet snippet = snippets.get(index);
+            if (snippet.getType() == SnippetType.IMPORT) {
+                out.put(key, snippet.getSnippet());
+            }
+        });
+        return out;
     }
 
     @Override
@@ -316,7 +345,7 @@ public class GroovyEngine implements ScriptEngine {
                 for (String c : classNames) {
                     if (Character.isUpperCase(c.charAt(0))) {
                         try {
-                            out.add(executeStatement(shell, new HashMap<>(), packageName + c + ".class"));
+                            out.add(executeStatement(shell, Collections.emptyList(), EnumSet.noneOf(SnippetType.class), packageName + c + ".class"));
                         } catch (Exception ignore) {
 
                         }
@@ -364,17 +393,11 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public String getBuffer() {
-        List<String> parts = new ArrayList<>();
-        if (!imports.isEmpty()) {
-            parts.add(String.join("\n", imports.values()));
-        }
-        parts.addAll(types.values());
-        parts.addAll(methods.values());
-        Map<String, Object> opts = (Map) get("GROOVYSH_OPTIONS");
-        if (opts != null && (boolean)opts.get(Main.INTERPRETER_MODE_PREFERENCE_KEY)) {
-            parts.addAll(variables.values());
-        }
-        return String.join("\n\n", parts);
+        boolean iMode = isInterpreterMode();
+        EnumSet<SnippetType> filter = iMode
+            ? EnumSet.of(SnippetType.IMPORT, SnippetType.TYPE, SnippetType.VARIABLE, SnippetType.METHOD)
+            : EnumSet.of(SnippetType.IMPORT, SnippetType.TYPE, SnippetType.METHOD);
+        return String.join("\n\n", getSnippets(snippets, filter));
     }
 
     @Override
@@ -399,33 +422,40 @@ public class GroovyEngine implements ScriptEngine {
                     classname = p[p.length - 1].replaceAll(";", "");
                 }
             }
-            executeStatement(shell, imports, statement);
+            executeStatement(shell, snippets, EnumSet.of(SnippetType.IMPORT), statement);
             if (classname != null) {
-                imports.put(classname, statement);
+                imports.put(classname, addSnippet(SnippetType.IMPORT, statement));
             }
         } else if (methodDef(statement)) {
             // do nothing
         } else {
             boolean iMode = isInterpreterMode();
-            Map<String, String> vars = iMode ? variables : Collections.emptyMap();
-            Map<String, String> meths = iMode ? methods : Collections.emptyMap();
-            out = executeStatement(shell, imports, meths, vars, statement);
+            EnumSet<SnippetType> filter = iMode
+                ? EnumSet.of(SnippetType.IMPORT, SnippetType.TYPE, SnippetType.VARIABLE, SnippetType.METHOD)
+                : EnumSet.of(SnippetType.IMPORT, SnippetType.TYPE);
+            out = executeStatement(shell, snippets, filter, statement);
             classLoader.purgeClassCache();
             Matcher matcher = PATTERN_TYPE_DEF.matcher(statement);
             if (matcher.matches()) {
-                types.put(matcher.group(2), removeTrailingSemi(matcher.group(0)));
+                types.put(matcher.group(2), addSnippet(SnippetType.TYPE, removeTrailingSemi(matcher.group(0))));
                 addToNameClass(matcher.group(2));
             }
             matcher = PATTERN_VAR_DEF.matcher(statement);
             if (matcher.matches()) {
-                variables.put(matcher.group(1), removeTrailingSemi(matcher.group(0)));
+                variables.put(matcher.group(1), addSnippet(SnippetType.VARIABLE, removeTrailingSemi(matcher.group(0))));
             }
         }
         return out;
     }
 
+    private Integer addSnippet(SnippetType type, String snippet) {
+        snippets.add(new Snippet(type, snippet));
+        return snippets.size() - 1;
+    }
+
+    @SuppressWarnings("unchecked")
     private boolean isInterpreterMode() {
-        Map<String, Object> opts = (Map) get("GROOVYSH_OPTIONS");
+        Map<String, Object> opts = (Map<String, Object>) get("GROOVYSH_OPTIONS");
         return opts != null && (boolean) opts.get(Main.INTERPRETER_MODE_PREFERENCE_KEY);
     }
 
@@ -436,12 +466,15 @@ public class GroovyEngine implements ScriptEngine {
         return statement;
     }
 
-    private static Object executeStatement(GroovyShell shell, Map<String, String> imports, String statement) throws IOException {
-        return executeStatement(shell, imports, new HashMap<>(), new HashMap<>(), statement);
+    private static Object executeStatement(GroovyShell shell, String statement) throws IOException {
+        return executeStatement(shell, new ArrayList<>(), statement);
     }
 
-    private static Object executeStatement(GroovyShell shell, Map<String, String> imports, Map<String, String> methods, Map<String, String> vars, String statement)
-            throws IOException {
+    private static Object executeStatement(GroovyShell shell, List<Snippet> snippets, EnumSet<SnippetType> filter, String statement) throws IOException {
+        return executeStatement(shell, getSnippets(snippets, filter), statement);
+    }
+
+    private static Object executeStatement(GroovyShell shell, Collection<String> snippets, String statement) throws IOException {
         int idx = statement.indexOf("=") + 1;
         Matcher matcher = PATTERN_LOAD_CLASS.matcher(statement.substring(idx));
         if (matcher.matches()) {
@@ -475,20 +508,24 @@ public class GroovyEngine implements ScriptEngine {
             }
         }
         StringBuilder e = new StringBuilder();
-        for (String importVal : imports.values()) {
-            e.append(importVal).append("\n");
-        }
-        for (String methodVal : methods.values()) {
-            e.append(methodVal).append("\n");
-        }
-        for (String varVal : vars.values()) {
-            e.append(varVal).append("\n");
+        for (String s : snippets) {
+            e.append(s).append("\n");
         }
         e.append(statement);
         if (typeDef(statement)) {
             e.append("\nnull");
         }
         return shell.evaluate(e.toString());
+    }
+
+    private static List<String> getSnippets(List<Snippet> snippets, EnumSet<SnippetType> filter) {
+        List<String> out = new ArrayList<>();
+        for (Snippet s : snippets) {
+            if (s != null && filter.contains(s.getType())) {
+                out.add(s.getSnippet());
+            }
+        }
+        return out;
     }
 
     private static String convertNull(String string) {
@@ -535,11 +572,11 @@ public class GroovyEngine implements ScriptEngine {
             methodNames.add(m.group(3));
             if (isInterpreterMode()) {
                 String code = removeTrailingSemi(m.group(0));
-                methods.put(m.group(2), code);
+                methods.put(m.group(2), addSnippet(SnippetType.METHOD, code));
             } else {
                 String body = m.group(5).substring(1);
                 put(m.group(3), execute("{" + m.group(4) + "->" + body));
-                methods.put(m.group(2), "def " + m.group(3) + "(" + m.group(4) + ")" + "{" + body);
+                methods.put(m.group(2), addSnippet(SnippetType.METHOD, "def " + m.group(3) + "(" + m.group(4) + ")" + "{" + body));
             }
         }
         return out;
@@ -561,6 +598,7 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public void reset() {
+        snippets.clear();
         types.clear();
         methods.clear();
         variables.clear();
@@ -599,17 +637,24 @@ public class GroovyEngine implements ScriptEngine {
 
     public void removeMethod(String name) {
         if (name.contains("(")) {
-            methods.remove(name);
+            Integer gone = methods.remove(name);
+            if (gone != null) snippets.set(gone, null);
             String prefix = name.substring(0, name.indexOf('('));
             methodNames.remove(prefix);
         } else {
             methodNames.remove(name);
-            methods.keySet().removeIf(k -> k.equals(name) || k.startsWith(name + "("));
+            methods.keySet().forEach(k -> {
+                if (k.equals(name) || k.startsWith(name + "(")) {
+                    Integer gone = methods.remove(k);
+                    if (gone != null) snippets.set(gone, null);
+                }
+            });
         }
     }
 
     public void removeImport(String name) {
-        imports.remove(name);
+        Integer gone = imports.remove(name);
+        if (gone != null) snippets.set(gone, null);
         if (name.endsWith(".*")) {
             refreshNameClass();
         } else {
@@ -619,13 +664,15 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public void removeType(String name) {
-        types.remove(name);
+        Integer gone = types.remove(name);
+        if (gone != null) snippets.set(gone, null);
         classLoader.purgeClassCache(name + "(\\$.*)?");
         nameClass.remove(name);
     }
 
     public void removeVariable(String name) {
-        variables.remove(name);
+        Integer gone = variables.remove(name);
+        if (gone != null) snippets.set(gone, null);
     }
 
     @Override
@@ -758,7 +805,7 @@ public class GroovyEngine implements ScriptEngine {
                 out = Class.forName(matcher.group(1) + "." + classname);
             } catch (ClassNotFoundException ex) {
                 try {
-                    out = (Class<?>) executeStatement(shell, new HashMap<>(), classDotName + ".class");
+                    out = (Class<?>) executeStatement(shell, classDotName + ".class");
                 } catch (Exception e) {
                     if (Log.isDebugEnabled()) {
                         ex.printStackTrace();
@@ -767,7 +814,7 @@ public class GroovyEngine implements ScriptEngine {
             }
         } else if (classDotName.matches(REGEX_CLASS_NAME)) {
             try {
-                out = (Class<?>) executeStatement(shell, new HashMap<>(), classDotName + ".class");
+                out = (Class<?>) executeStatement(shell, classDotName + ".class");
             } catch (Exception ignore) {
 
             }
@@ -784,11 +831,11 @@ public class GroovyEngine implements ScriptEngine {
         //
         // groovy source imports require classes to be loaded
         //
-        Iterator<Map.Entry<String, String>> iter = imports.entrySet().iterator();
+        Iterator<String> iter = getSnippets(snippets, EnumSet.of(SnippetType.IMPORT)).iterator();
         while (iter.hasNext()) {
-            Map.Entry<String, String> entry = iter.next();
+            String impValue = iter.next();
             try {
-                executeStatement(shell, new HashMap<>(), entry.getValue());
+                executeStatement(shell, impValue);
             } catch (Exception e) {
                 iter.remove();
             }
@@ -1635,7 +1682,7 @@ public class GroovyEngine implements ScriptEngine {
 
         private final GroovyShell shell;
         protected Binding sharedData = new Binding();
-        private final Map<String, String> imports;
+        private final Collection<String> imports;
         private final Map<String, Class<?>> nameClass;
         private PrintStream nullstream;
         private final boolean canonicalNames;
@@ -1651,7 +1698,7 @@ public class GroovyEngine implements ScriptEngine {
         private final SyntaxHighlighter syntaxHighlighter;
 
         public Inspector(GroovyEngine groovyEngine) {
-            this.imports = groovyEngine.imports;
+            this.imports = groovyEngine.getImports().values();
             this.nameClass = groovyEngine.nameClass;
             this.canonicalNames = groovyEngine.groovyOption(CANONICAL_NAMES, false);
             this.noSyntaxCheck = groovyEngine.groovyOption(NO_SYNTAX_CHECK, false);
@@ -1676,7 +1723,7 @@ public class GroovyEngine implements ScriptEngine {
             } catch (Exception e) {
                 // ignore
             }
-            for (Map.Entry<String, String> entry : groovyEngine.methods.entrySet()) {
+            for (Map.Entry<String, String> entry : groovyEngine.getMethods().entrySet()) {
                 Matcher m = PATTERN_FUNCTION_BODY.matcher(entry.getValue());
                 if (m.matches()
                         && sharedData.hasVariable(entry.getKey())

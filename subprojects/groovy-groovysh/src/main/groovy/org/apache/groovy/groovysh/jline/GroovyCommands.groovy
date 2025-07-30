@@ -398,7 +398,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     void importsCommand(CommandInput input) {
         checkArgCount(input, [0, 1, 2])
         if (maybePrintHelp(input, '/imports')) return
-        if (!input.args()) printer.println(highlight(engine.imports.values()))
+        if (!input.args()) printer.println(highlight(engine.imports.values()))  //getSnippets(EnumSet.of(SnippetType.IMPORT))))
         else {
             String name = input.args()[-1]
             if (maybeRemoveItem(input, name, engine.imports, engine::removeImport)) return
