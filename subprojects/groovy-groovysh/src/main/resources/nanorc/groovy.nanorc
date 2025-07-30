@@ -27,7 +27,7 @@ VARIABLE:    "@[A-Za-z]+"
 
 FUNCTION:    "\<(assert|print|println|sleep|as|in)\>"
 FUNCTION:    "^\s*\<(from|where|select|join|innerjoin|leftjoin|rightjoin|fulljoin|crossjoin|groupby|orderby|limit)\>"
-FUNCTION:    "^\s*\<(innerhashjoin|lefthashjoin|righthashjoin|fullhashjoin|exists|having|distinct)\>"
+FUNCTION:    "^\s*\<(innerhashjoin|lefthashjoin|righthashjoin|fullhashjoin|exists|having|distinct|on)\>"
 FUNCTION:    "\<(over|partitionby|rows|range|asc|desc|nullsfirst|nullslast)\>"
 JUMP:        "\<(break|continue)\>"
 NULL:        "\<(null)\>"
