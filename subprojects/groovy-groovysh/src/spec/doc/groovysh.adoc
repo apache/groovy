@@ -675,9 +675,10 @@ tailtip-toggle (tailtip-toggle)
 tailtip-window (tailtip-window)
 ----
 
-These are available but not enabled by default. You can enable them using the related
-_toggle_ widgets. You can see what key bindings are associated with these widgets by
-using the `/keymap` command.
+These are available but not enabled by default.
+You can enable them using the related _toggle_ widgets. You can see what
+https://jline.org/docs/advanced/key-bindings[key bindings]
+are associated with these widgets by using the `/keymap` command.
 
 [source,shell]
 ----
