@@ -646,6 +646,64 @@ mode.
 
 Edit-line history is stored in this file.
 
+[[GroovyShell-widgets]]
+=== Widgets
+
+JLine provides a powerful widget system that lets you extend the functionality of its line reader.
+A number of builtin widgets are available including `end-of-line`, `beginning-of-line`, `forward-word`, `backward-word`, `kill-word`, `backward-kill-word`, `capitalize-word`, `transpose-words`, and `yank-pop`, just to name a few. You can use the `/keymap` command to see the key bindings for these widgets.
+
+Groovy also includes JLine's _tailtip_ and _autosuggest_ widget functionality.
+You can see the related widgets by using the `/widget -l` command, which lists custom widgets.
+
+[source,shell]
+----
+groovy> /widget -l
+_autosuggest-end-of-line (_autosuggest-end-of-line)
+_autosuggest-forward-char (_autosuggest-forward-char)
+_autosuggest-forward-word (_autosuggest-forward-word)
+_tailtip-accept-line (_tailtip-accept-line)
+_tailtip-backward-delete-char (_tailtip-backward-delete-char)
+_tailtip-delete-char (_tailtip-delete-char)
+_tailtip-expand-or-complete (_tailtip-expand-or-complete)
+_tailtip-kill-line (_tailtip-kill-line)
+_tailtip-kill-whole-line (_tailtip-kill-whole-line)
+_tailtip-redisplay (_tailtip-redisplay)
+_tailtip-self-insert (_tailtip-self-insert)
+autosuggest-toggle (autosuggest-toggle)
+tailtip-toggle (tailtip-toggle)
+tailtip-window (tailtip-window)
+----
+
+These are available but not enabled by default. You can enable them using the related
+_toggle_ widgets. You can see what key bindings are associated with these widgets by
+using the `/keymap` command.
+
+[source,shell]
+----
+groovy> /keymap
+...
+"^[s" tailtip-toggle
+"^[v" autosuggest-toggle
+...
+----
+
+Normally, completions are shown when you hit the 'TAB' key, but with the tailtip widget enabled,
+you can see completions as you type., as well as additional usage information given in the
+tailtip window as seen here for a command:
+
+image:assets/img/widget1.png[Tailtip]
+
+And here for some code:
+
+image:assets/img/widget3.png[Tailtip]
+
+With the autosuggest widget enabled, you can see suggestions for what to type next
+as you type, as seen here:
+
+image:assets/img/widget2.png[Tailtip]
+
+You can accept the entire suggestion or a word at a time. Both widgets can be enabled.
+
 [[GroovyShell-register]]
 === Custom commands
 
@@ -683,13 +741,6 @@ groovy:000>
 ----
 
 Note that the command class must be found on classpath: you cannot define a new command from within the shell.
-
-[[GroovyShell-Troubleshooting]]
-=== Troubleshooting
-
-Please https://issues.apache.org/jira/browse/GROOVY[report] any problems you
-run into. Please be sure to mark the JIRA issue with the `Groovysh`
-component.
 
 [[GroovyShell-PlatformProblems]]
 ==== Platform Problems
