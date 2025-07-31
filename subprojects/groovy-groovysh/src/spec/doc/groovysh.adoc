@@ -649,7 +649,8 @@ Edit-line history is stored in this file.
 [[GroovyShell-widgets]]
 === Widgets
 
-JLine provides a powerful widget system that lets you extend the functionality of its line reader.
+JLine provides a https://jline.org/docs/advanced/widgets/[powerful widget system]
+that lets you extend the functionality of its line reader.
 A number of builtin widgets are available including `end-of-line`, `beginning-of-line`, `forward-word`, `backward-word`, `kill-word`, `backward-kill-word`, `capitalize-word`, `transpose-words`, and `yank-pop`, just to name a few. You can use the `/keymap` command to see the key bindings for these widgets.
 
 Groovy also includes JLine's _tailtip_ and _autosuggest_ widget functionality.
@@ -698,7 +699,7 @@ And here for some code:
 image:assets/img/widget3.png[Tailtip]
 
 With the autosuggest widget enabled, you can see suggestions for what to type next
-as you type, as seen here:
+as you type, based on your history, as seen here:
 
 image:assets/img/widget2.png[Tailtip]
 
