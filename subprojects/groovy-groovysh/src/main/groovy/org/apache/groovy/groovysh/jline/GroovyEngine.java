@@ -598,6 +598,7 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public void reset() {
+        imports.clear();
         snippets.clear();
         types.clear();
         methods.clear();
