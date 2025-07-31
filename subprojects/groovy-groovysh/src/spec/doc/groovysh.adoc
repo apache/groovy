@@ -693,16 +693,16 @@ Normally, completions are shown when you hit the 'TAB' key, but with the tailtip
 you can see completions as you type., as well as additional usage information given in the
 tailtip window as seen here for a command:
 
-image:assets/img/widget1.png[Tailtip]
+image:assets/img/widget1.png[Tailtip, width=80%]
 
 And here for some code:
 
-image:assets/img/widget3.png[Tailtip]
+image:assets/img/widget3.png[Tailtip, width=60%]
 
 With the autosuggest widget enabled, you can see suggestions for what to type next
 as you type, based on your history, as seen here:
 
-image:assets/img/widget2.png[Tailtip]
+image:assets/img/widget2.png[Tailtip,width=80%]
 
 You can accept the entire suggestion or a word at a time. Both widgets can be enabled.
 
