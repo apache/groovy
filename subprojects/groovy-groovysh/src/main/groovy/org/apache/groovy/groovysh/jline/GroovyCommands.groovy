@@ -342,12 +342,12 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
         def unprocessed = []
         file.readLines().each { line ->
+            if (!line.trim()) return
             try {
                 unprocessed << line
                 engine.execute(unprocessed.join('\n'))
                 unprocessed.clear()
             } catch (Exception ignore) {
-                // ignore
             }
         }
         println "${merge ? 'Merged' : 'Loaded'}: " + file.path
