@@ -53,6 +53,7 @@ import org.jline.terminal.Terminal.Signal
 import org.jline.terminal.TerminalBuilder
 import org.jline.utils.InfoCmp.Capability
 import org.jline.utils.OSUtils
+import org.jline.widget.AutosuggestionWidgets
 import org.jline.widget.TailTipWidgets
 import org.jline.widget.TailTipWidgets.TipType
 import org.jline.widget.Widgets
@@ -277,8 +278,10 @@ class Main {
 
             // widgets and console initialization
             new TailTipWidgets(reader, systemRegistry::commandDescription, 5, TipType.COMPLETER)
+            new AutosuggestionWidgets(reader)
             KeyMap<Binding> keyMap = reader.keyMaps.get("main")
             keyMap.bind(new Reference(Widgets.TAILTIP_TOGGLE), KeyMap.alt("s"))
+            keyMap.bind(new Reference(Widgets.AUTOSUGGEST_TOGGLE), KeyMap.alt("v"))
             def init = configPath.getUserConfig('groovysh_init')
             if (init) {
                 systemRegistry.initialize(configPath.getUserConfig('groovysh_init').toFile())
