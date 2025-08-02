@@ -325,7 +325,7 @@ groovy> t.inverseBidiMap()
 ----
 
 Completion is available. Currently, completion options are populated
-by known artifacts in the local Maven repository (~/.m2). Expect this to change in the future.
+by known artifacts in the local Maven (~/.m2) and Grape (~/.groovy/grapes) repositories. In the future, completion from a remote repositories may be supported.
 
 [source,jshell]
 ----
