@@ -99,6 +99,8 @@ complete expression it will compile and evaluate it.
 [[GroovyShell-DefineaClass]]
 ===== Define a Class
 
+You can define all the normal types, e.g. a class:
+
 [source,jshell]
 ---------------------
 groovy> class Foo {
@@ -108,8 +110,7 @@ add: }}>   }
 add: } > }
 ---------------------
 
-[[GroovyShell-UsetheClass]]
-===== Use the Class
+And use it in the normal way.
 
 [source,jshell]
 ---------------
@@ -117,6 +118,12 @@ groovy> foo = new Foo()
 groovy> foo.bar()
 baz
 ---------------
+
+Defined classes are known to the shell and can be used in completion:
+
+image:assets/img/repl_typedef.png[Define Class, width=60%]
+
+[[GroovyShell-VariablesandMethods]]
 
 [[GroovyShell-Variables]]
 ==== Variables
@@ -139,10 +146,10 @@ def foo = "bar"
 
 This behavior can be changed by activating <<GroovyShell-InterpreterMode,interpreter mode>>.
 
-[[GroovyShell-Functions]]
-==== Functions
+[[GroovyShell-Methods]]
+==== Methods
 
-Functions can be defined in the shell, and will be saved for later use.
+Methods can be defined in the shell, and will be saved for later use.
 
 Defining a function is easy:
 
@@ -251,6 +258,15 @@ This is the *only* way to exit the shell. Well, you can still `CTRL-Z` on unix p
 but things like `CTRL_C` are trapped. (See JLine3 documentation for more details.)
 
 [[GroovyShell-echo]]
+===== `/echo`
+
+The `/echo` command outputs its arguments to the console. Arguments are output verbatim,
+but variable expansion is also supported.
+
+image:assets/img/repl_echo.png[Echo, width=60%]
+
+See also the `/prnt` command, which is similar but may perform additional formatting
+on the output(s).
 
 [[GroovyShell-import]]
 ===== `import`
@@ -276,6 +292,10 @@ AbstractExecutorService       ConcurrentSkipListMap         ForkJoinPool
 ArrayBlockingQueue            ConcurrentSkipListSet         ForkJoinTask
 ...
 --------------
+
+Once an import statement has been executed, relevant classes will become available for completion:
+
+image:assets/img/repl_import.png[Import, width=80%]
 
 [[GroovyShell-imports]]
 ===== `/imports`
@@ -341,7 +361,7 @@ groovy:003> :display
 -----------------------
 
 [[GroovyShell-clear]]
-===== `clear`
+===== `/clear`
 
 Clears the current buffer, resetting the prompt counter to 000. Can be used to recover from compilation errors.
 
@@ -371,8 +391,19 @@ Variables:
 [[GroovyShell-showall]]
 `show all`
 
+[[GroovyShell-prnt]]
+===== `/prnt`
+
+The `/prnt` command outputs its argument to the console. Both variable expansion
+and formatting are supported.
+
+image:assets/img/repl_prnt.png[Echo, width=60%]
+
+See also the `/echo` command, which is similar but takes multiple arguments.
+It also supports variable expansion but doesn't support formatting.
+
 [[GroovyShell-inspect]]
-===== `inspect`
+===== `/inspect`
 
 Opens the GUI object browser to inspect a variable or the result of the
 last evaluation.
