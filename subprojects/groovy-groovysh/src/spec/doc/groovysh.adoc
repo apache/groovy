@@ -342,54 +342,28 @@ org.apache.commons:commons-email:
 
 This command can be given at any time to add new dependencies.
 
-[[GroovyShell-display]]
+[[GroovyShell-less]]
 ===== `/less`
 
-Display the contents of all existing import, type, method and variable snippets.
+Display the contents of a file (usually a page at a time).
+Formatting of common file types is supported.
 
-[[GroovyShell-Example]]
-Example
-
------------------------
-groovy:000> class Foo {
-groovy:001> def bar
-groovy:002> def baz() {
-groovy:003> :display
- 001> class Foo {
- 002> def bar
- 003> def baz() {
------------------------
+image:assets/img/repl_less.png[Usage of the /less command, width=85%]
 
 [[GroovyShell-clear]]
 ===== `/clear`
 
-Clears the current buffer, resetting the prompt counter to 000. Can be used to recover from compilation errors.
+Clears the screen.
+
+[[GroovyShell-reset]]
+===== `/reset`
+
+Clears the current buffer and shared variables.
 
 [[GroovyShell-show]]
-===== `show`
+===== `/show`
 
-Show variables, classes or preferences or imports.
-
-[[GroovyShell-showvariables]]
-`show variables`
-
---------------------------
-groovy:000> :show variables
-Variables:
-  _ = true
---------------------------
-
-[[GroovyShell-showclasses]]
-`show classes`
-
-[[GroovyShell-showimports]]
-`show imports`
-
-[[GroovyShell-showpreferences]]
-`show preferences`
-
-[[GroovyShell-showall]]
-`show all`
+Show the shared variables (the binding).
 
 [[GroovyShell-prnt]]
 ===== `/prnt`
@@ -397,7 +371,7 @@ Variables:
 The `/prnt` command outputs its argument to the console. Both variable expansion
 and formatting are supported.
 
-image:assets/img/repl_prnt.png[Echo, width=60%]
+image:assets/img/repl_prnt.png[usage of the /prnt command, width=60%]
 
 See also the `/echo` command, which is similar but takes multiple arguments.
 It also supports variable expansion but doesn't support formatting.
@@ -408,28 +382,13 @@ It also supports variable expansion but doesn't support formatting.
 Opens the GUI object browser to inspect a variable or the result of the
 last evaluation.
 
-[[GroovyShell-purge]]
-===== `purge`
+[[GroovyShell-del]]
+===== `/del`
 
-Purges objects from the shell.
+Deletes objects from the shell.
 
-[[GroovyShell-purgevariables]]
-`purge variables`
-
-[[GroovyShell-purgeclasses]]
-`purge classes`
-
-[[GroovyShell-purgeimports]]
-`purge imports`
-
-[[GroovyShell-purgepreferences]]
-`purge preferences`
-
-[[GroovyShell-purgeall]]
-`purge all`
-
-[[GroovyShell-edit]]
-===== `edit`
+[[GroovyShell-nano]]
+===== `/nano`
 
 Edit the current buffer in an external editor.
 
@@ -437,28 +396,14 @@ Currently only works on UNIX systems which have the `EDITOR` environment
 variable set, or have configured the `editor` preference.
 
 [[GroovyShell-load]]
-===== `load`
+===== `/load`
 
 Load one or more files (or urls) into the buffer.
 
 [[GroovyShell-save]]
-===== `save`
+===== `/save`
 
 Saves the buffer’s contents to a file.
-
-[[GroovyShell-record]]
-===== `record`
-
-Record the current session to a file.
-
-[[GroovyShell-recordstart]]
-`record start`
-
-[[GroovyShell-recordstop]]
-`record stop`
-
-[[GroovyShell-recordstatus]]
-`record status`
 
 [[GroovyShell-history]]
 ===== `history`
