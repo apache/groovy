@@ -431,8 +431,8 @@ public class GroovyEngine implements ScriptEngine {
         } else {
             boolean iMode = isInterpreterMode();
             EnumSet<SnippetType> filter = iMode
-                ? EnumSet.of(SnippetType.IMPORT, SnippetType.TYPE, SnippetType.VARIABLE, SnippetType.METHOD)
-                : EnumSet.of(SnippetType.IMPORT, SnippetType.TYPE);
+                ? EnumSet.of(SnippetType.IMPORT, SnippetType.VARIABLE, SnippetType.METHOD)
+                : EnumSet.of(SnippetType.IMPORT);
             out = executeStatement(shell, snippets, filter, statement);
             classLoader.purgeClassCache();
             Matcher matcher = PATTERN_TYPE_DEF.matcher(statement);
