@@ -111,7 +111,7 @@ public class GroovyEngine implements ScriptEngine {
     private static final String BASE_REGEX_VAR = "[\\p{L}_$][\\p{L}\\p{N}_$]*";
     private static final String REGEX_VAR = "(" + BASE_REGEX_VAR + ")";
     private static final String METHOD_REGEX_VAR = "(" + BASE_REGEX_VAR + "|\"(?:[^\"\\\\]|\\\\.)*\")";
-    private static final String ANNOTATIONS = "((?:@(?!interface)(?:[\\p{L}_$][\\p{L}\\p{N}_$]*\\.)*[\\p{L}_$][\\p{L}\\p{N}_$]*(?:\\([^)]*\\))?\\s*)*\\s+)?";
+    private static final String ANNOTATIONS = "(?:(?:@(?!interface)(?:[\\p{L}_$][\\p{L}\\p{N}_$]*\\.)*[\\p{L}_$][\\p{L}\\p{N}_$]*(?:\\([^)]*\\))?\\s*)*\\s+)?";
     private static final String MODIFIERS = "(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\\s+)*";
     private static final String BODY = "\\s*(.*?\\{.*?})(|;|\n)$";
     private static final String PARAMS = "\\(([\\p{L}\\p{N}_ ,]*)\\)";
@@ -119,7 +119,7 @@ public class GroovyEngine implements ScriptEngine {
             "(?ms)" + ANNOTATIONS + MODIFIERS + "(?!record)" + REGEX_VAR + "\\s+(" + METHOD_REGEX_VAR + "\\s*" + PARAMS + ")" + BODY);
     private static final Pattern PATTERN_VAR_DEF = Pattern.compile("^\\s*" + ANNOTATIONS + BASE_REGEX_VAR + "\\s+" + REGEX_VAR + "\\s*=[^=~].*");
     private static final Pattern PATTERN_TYPE_DEF =
-            Pattern.compile("(?ms)" + ANNOTATIONS + MODIFIERS + "((?:(?:\\bclass|@?\\binterface|\\benum|\\btrait)\\s+" + REGEX_VAR + ")|(?:\\brecord\\s+" + REGEX_VAR + "\\s*" + PARAMS + "))" + BODY);
+            Pattern.compile("(?ms)" + ANNOTATIONS + MODIFIERS + "((?:\\bclass|@?\\binterface|\\benum|\\btrait)\\s+" + REGEX_VAR + "|(?:\\brecord\\s+" + REGEX_VAR + "\\s*" + PARAMS + "))" + BODY);
     private static final String REGEX_CLASS = "(.*?)\\.([A-Z_].*)";
     private static final Pattern PATTERN_CLASS = Pattern.compile(REGEX_CLASS);
     private static final String REGEX_PACKAGE = "([a-z][a-z_0-9]*\\.)*";
