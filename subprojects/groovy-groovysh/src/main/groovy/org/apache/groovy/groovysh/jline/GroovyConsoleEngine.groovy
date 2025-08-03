@@ -69,6 +69,8 @@ class GroovyConsoleEngine extends ConsoleEngineImpl {
         out
     }
 
+    // can be removed if the following PR is merged and released
+    // https://github.com/jline/jline3/pull/1357
     private static String expandName(String name) {
         String regexVar = "[a-zA-Z_][a-zA-Z0-9_-]*"
         String out = name
