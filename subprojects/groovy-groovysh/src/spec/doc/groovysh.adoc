@@ -252,13 +252,22 @@ image:assets/img/repl_alias2.png[More /alias examples, width=60%]
 
 Aliases are persisted in a `.groovysh/aliases.json` file in the user home directory.
 
+[[GroovyShell-classloader]]
+==== `/classloader`
+
+Display and manage the Groovy classloader data.
+
+Let's `/grab` a dependency, define a class using it, and then use the `/classloader` command to see the classloader data:
+
+image:assets/img/repl_classloader.png[Classloader, width=80%]
+
 [[GroovyShell-clear]]
-===== `/clear`
+==== `/clear`
 
 Clears the screen.
 
 [[GroovyShell-del]]
-===== `/del`
+==== `/del`
 
 Deletes objects from the shell.
 
@@ -281,48 +290,8 @@ Exit the shell.
 This is the *only* way to exit the shell. Well, you can still `CTRL-Z` on unix platforms,
 but things like `CTRL_C` are trapped. (See JLine3 documentation for more details.)
 
-[[GroovyShell-import]]
-===== `import`
-
-Add a custom import which will be included for all shell evaluations.
-
-[source,jshell]
---------------
-groovy> import java.util.concurrent.BlockingDeque
---------------
-
-This command can be given at any time to add new imports.
-
-Completion is available and prompts a level at a time using the package structure of all known classes.
-
-[source,jshell]
---------------
-groovy> import java.util.concurrent.<TAB>
-others
-atomic                        locks
-Classes
-AbstractExecutorService       ConcurrentSkipListMap         ForkJoinPool
-ArrayBlockingQueue            ConcurrentSkipListSet         ForkJoinTask
-...
---------------
-
-Once an import statement has been executed, relevant classes will become available for completion:
-
-image:assets/img/repl_import.png[Import, width=80%]
-
-[[GroovyShell-imports]]
-===== `/imports`
-
-You can use this to list and delete existing imports.
-
-[source,jshell]
---------------
-groovy> /imports
-import java.util.concurrent.BlockingQueue
---------------
-
 [[GroovyShell-grab]]
-===== `/grab`
+==== `/grab`
 
 Grab a dependency (Maven, Ivy, etc.) from Internet sources or cache,
 and add it to the Groovy Shell environment.
@@ -355,8 +324,48 @@ org.apache.commons:commons-email:
 
 This command can be given at any time to add new dependencies.
 
+[[GroovyShell-import]]
+==== `import`
+
+Add a custom import which will be included for all shell evaluations.
+
+[source,jshell]
+--------------
+groovy> import java.util.concurrent.BlockingDeque
+--------------
+
+This command can be given at any time to add new imports.
+
+Completion is available and prompts a level at a time using the package structure of all known classes.
+
+[source,jshell]
+--------------
+groovy> import java.util.concurrent.<TAB>
+others
+atomic                        locks
+Classes
+AbstractExecutorService       ConcurrentSkipListMap         ForkJoinPool
+ArrayBlockingQueue            ConcurrentSkipListSet         ForkJoinTask
+...
+--------------
+
+Once an import statement has been executed, relevant classes will become available for completion:
+
+image:assets/img/repl_import.png[Import, width=80%]
+
+[[GroovyShell-imports]]
+==== `/imports`
+
+You can use this to list and delete existing imports.
+
+[source,jshell]
+--------------
+groovy> /imports
+import java.util.concurrent.BlockingQueue
+--------------
+
 [[GroovyShell-less]]
-===== `/less`
+==== `/less`
 
 Display the contents of a file (usually a page at a time).
 Formatting of common file types is supported.
@@ -364,17 +373,12 @@ Formatting of common file types is supported.
 image:assets/img/repl_less.png[Usage of the /less command, width=85%]
 
 [[GroovyShell-reset]]
-===== `/reset`
+==== `/reset`
 
 Clears the current buffer and shared variables.
 
-[[GroovyShell-show]]
-===== `/show`
-
-Show the shared variables (the binding).
-
 [[GroovyShell-prnt]]
-===== `/prnt`
+==== `/prnt`
 
 The `/prnt` command outputs its argument to the console. Both variable expansion
 and formatting are supported.
@@ -385,37 +389,42 @@ See also the `/echo` command, which is similar but takes multiple arguments.
 It also supports variable expansion but doesn't support formatting.
 
 [[GroovyShell-inspect]]
-===== `/inspect`
+==== `/inspect`
 
 Opens the GUI object browser to inspect a variable or the result of the
 last evaluation.
 
-[[GroovyShell-nano]]
-===== `/nano`
-
-Edit the current buffer in an external editor.
-
-Currently only works on UNIX systems which have the `EDITOR` environment
-variable set, or have configured the `editor` preference.
-
 [[GroovyShell-load]]
-===== `/load`
+==== `/load`
 
 Load a file into the buffer.
 
 If no filename is given as an argument, the current shared variables are
 loaded from the `.groovy/groovysh.ser` file in the user home directory.
 
+[[GroovyShell-nano]]
+==== `/nano`
+
+Edit the current buffer in an external editor.
+
+Currently only works on UNIX systems which have the `EDITOR` environment
+variable set, or have configured the `editor` preference.
+
 [[GroovyShell-save]]
-===== `/save`
+==== `/save`
 
 Saves the buffer’s contents to a file.
 
 If no filename is given as an argument, the current shared variables are
 saved into the `.groovy/groovysh.ser` file in the user home directory.
 
+[[GroovyShell-show]]
+==== `/show`
+
+Show the shared variables (the binding).
+
 [[GroovyShell-history]]
-===== `/history`
+==== `/history`
 
 Display, manage and recall edit-line history.
 
@@ -432,7 +441,7 @@ Display, manage and recall edit-line history.
 `history clear`
 
 [[GroovyShell-doc]]
-===== `/doc`
+==== `/doc`
 
 Opens a browser with documentation for the provided class.
 
