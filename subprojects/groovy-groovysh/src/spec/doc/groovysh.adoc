@@ -364,6 +364,12 @@ groovy> /imports
 import java.util.concurrent.BlockingQueue
 --------------
 
+[[GroovyShell-inspect]]
+==== `/inspect`
+
+Opens the GUI object browser to inspect a variable or the result of the
+last evaluation.
+
 [[GroovyShell-less]]
 ==== `/less`
 
@@ -371,28 +377,6 @@ Display the contents of a file (usually a page at a time).
 Formatting of common file types is supported.
 
 image:assets/img/repl_less.png[Usage of the /less command, width=85%]
-
-[[GroovyShell-reset]]
-==== `/reset`
-
-Clears the current buffer and shared variables.
-
-[[GroovyShell-prnt]]
-==== `/prnt`
-
-The `/prnt` command outputs its argument to the console. Both variable expansion
-and formatting are supported.
-
-image:assets/img/repl_prnt.png[usage of the /prnt command, width=60%]
-
-See also the `/echo` command, which is similar but takes multiple arguments.
-It also supports variable expansion but doesn't support formatting.
-
-[[GroovyShell-inspect]]
-==== `/inspect`
-
-Opens the GUI object browser to inspect a variable or the result of the
-last evaluation.
 
 [[GroovyShell-load]]
 ==== `/load`
@@ -409,6 +393,22 @@ Edit the current buffer in an external editor.
 
 Currently only works on UNIX systems which have the `EDITOR` environment
 variable set, or have configured the `editor` preference.
+
+[[GroovyShell-prnt]]
+==== `/prnt`
+
+The `/prnt` command outputs its argument to the console. Both variable expansion
+and formatting are supported.
+
+image:assets/img/repl_prnt.png[usage of the /prnt command, width=60%]
+
+See also the `/echo` command, which is similar but takes multiple arguments.
+It also supports variable expansion but doesn't support formatting.
+
+[[GroovyShell-reset]]
+==== `/reset`
+
+Clears the current buffer and shared variables.
 
 [[GroovyShell-save]]
 ==== `/save`
