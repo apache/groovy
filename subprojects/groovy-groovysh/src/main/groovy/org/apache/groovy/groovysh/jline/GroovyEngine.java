@@ -644,12 +644,15 @@ public class GroovyEngine implements ScriptEngine {
             methodNames.remove(prefix);
         } else {
             methodNames.remove(name);
-            methods.keySet().forEach(k -> {
+            Iterator<String> it = methods.keySet().iterator();
+            while (it.hasNext()) {
+                String k = it.next();
                 if (k.equals(name) || k.startsWith(name + "(")) {
-                    Integer gone = methods.remove(k);
+                    Integer gone = methods.get(k);
                     if (gone != null) snippets.set(gone, null);
+                    it.remove();
                 }
-            });
+            }
         }
     }
 
