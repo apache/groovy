@@ -160,8 +160,8 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public GroovyEngine() {
-        this.sharedData = new Binding();
-        this.classLoader = new EngineClassLoader();
+        sharedData = new Binding();
+        classLoader = new EngineClassLoader();
         shell = new GroovyShell(classLoader, sharedData);
         for (String s : DEFAULT_IMPORTS) {
             addToNameClass(s, defaultNameClass);
