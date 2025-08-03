@@ -108,10 +108,10 @@ public class GroovyEngine implements ScriptEngine {
     private static final String VAR_GROOVY_OPTIONS = "GROOVY_OPTIONS";
     private static final String DEFAULT_NANORC_SYNTAX = "classpath:/nanorc/jnanorc";
     private static final String REGEX_SYSTEM_VAR = "[A-Z]+[A-Z_]*";
-    private static final String BASE_REGEX_VAR = "[\\p{L}_$][\\p{L}\\p{N}_$]+";
+    private static final String BASE_REGEX_VAR = "[\\p{L}_$][\\p{L}\\p{N}_$]*";
     private static final String REGEX_VAR = "(" + BASE_REGEX_VAR + ")";
     private static final String METHOD_REGEX_VAR = "(" + BASE_REGEX_VAR + "|\"(?:[^\"\\\\]|\\\\.)*\")";
-    private static final String ANNOTATIONS = "^\\s*(?:@(?!interface)(?:[\\p{L}_$][\\p{L}\\p{N}_$]*\\.)*[\\p{L}_$][\\p{L}\\p{N}_$]*(?:\\([^)]*\\))?\\s*)*";
+    private static final String ANNOTATIONS = "((?:@(?!interface)(?:[\\p{L}_$][\\p{L}\\p{N}_$]*\\.)*[\\p{L}_$][\\p{L}\\p{N}_$]*(?:\\([^)]*\\))?\\s*)*\\s+)?";
     private static final String MODIFIERS = "(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\\s+)*";
     private static final String BODY = "\\s*(.*?\\{.*?})(|;|\n)$";
     private static final String PARAMS = "\\(([\\p{L}\\p{N}_ ,]*)\\)";
