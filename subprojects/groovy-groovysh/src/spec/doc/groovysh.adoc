@@ -87,7 +87,7 @@ Hello
 ==== Evaluation Result
 
 When a complete expression is found, it is compiled and evaluated. The
-result of the evaluation is stored into the _ variable.
+result of the evaluation is stored into the `_` variable.
 
 [[GroovyShell-Multi-lineExpressions]]
 ==== Multi-line Expressions
@@ -179,19 +179,10 @@ The shell has a number of different commands, which provide rich access
 to the shell’s environment.
 
 Commands all have a _name_ and a _shortcut_ (which is something like
-`\h`). Commands may also have some predefined system _aliases_. Users
-may also create their own aliases.
-
-[[GroovyShell-RecognizedCommands]]
-==== Recognized Commands
-
-[[GroovyShell-help]]
-===== `/help`
-
-Display the list of commands (and aliases) or the help text for specific command.
-
-[[GroovyShell-TheCommandList]]
-The Command List
+`/h`). Commands may also have some predefined system _aliases_. Users
+may also create their own aliases. This section will list commands in
+alphabetical order, but you can also use the `/help` command to list
+the available commands:
 
 ----------------------------------------------------------------------------------
 groovy> /help
@@ -232,9 +223,6 @@ groovy> /help
     /slurp        slurp file or string variable context to object
 ----------------------------------------------------------------------------------
 
-[[GroovyShell-HelpforaCommand]]
-Help for a Command
-
 While in the interactive shell, you can ask for help for any command to
 get more details about its syntax or function. You can use `/help <command>`
 or `<command> --help`. Here is an example of
@@ -249,16 +237,33 @@ Usage: help [TOPIC...]
   -i --info                      List commands with a short command info
 ------------------------------------------------------------
 
-[[GroovyShell-exit]]
-===== `/exit`
+[[GroovyShell-alias]]
+==== `/alias`
 
-Exit the shell.
+Create an alias for a commandline fragment. The fragment could be Groovy code
+or a shell command. When evaluating a commandline, the alias will be replaced
+with the fragment:
 
-This is the *only* way to exit the shell. Well, you can still `CTRL-Z` on unix platforms,
-but things like `CTRL_C` are trapped. (See JLine3 documentation for more details.)
+image:assets/img/repl_alias.png[Usage of /alias, width=75%]
+
+The fragment is expected to be at the start of a line but other text may follow:
+
+image:assets/img/repl_alias2.png[More /alias examples, width=60%]
+
+Aliases are persisted in a `.groovysh/aliases.json` file in the user home directory.
+
+[[GroovyShell-clear]]
+===== `/clear`
+
+Clears the screen.
+
+[[GroovyShell-del]]
+===== `/del`
+
+Deletes objects from the shell.
 
 [[GroovyShell-echo]]
-===== `/echo`
+==== `/echo`
 
 The `/echo` command outputs its arguments to the console. Arguments are output verbatim,
 but variable expansion is also supported.
@@ -267,6 +272,14 @@ image:assets/img/repl_echo.png[Echo, width=60%]
 
 See also the `/prnt` command, which is similar but may perform additional formatting
 on the output(s).
+
+[[GroovyShell-exit]]
+==== `/exit`
+
+Exit the shell.
+
+This is the *only* way to exit the shell. Well, you can still `CTRL-Z` on unix platforms,
+but things like `CTRL_C` are trapped. (See JLine3 documentation for more details.)
 
 [[GroovyShell-import]]
 ===== `import`
@@ -350,11 +363,6 @@ Formatting of common file types is supported.
 
 image:assets/img/repl_less.png[Usage of the /less command, width=85%]
 
-[[GroovyShell-clear]]
-===== `/clear`
-
-Clears the screen.
-
 [[GroovyShell-reset]]
 ===== `/reset`
 
@@ -382,11 +390,6 @@ It also supports variable expansion but doesn't support formatting.
 Opens the GUI object browser to inspect a variable or the result of the
 last evaluation.
 
-[[GroovyShell-del]]
-===== `/del`
-
-Deletes objects from the shell.
-
 [[GroovyShell-nano]]
 ===== `/nano`
 
@@ -398,15 +401,21 @@ variable set, or have configured the `editor` preference.
 [[GroovyShell-load]]
 ===== `/load`
 
-Load one or more files (or urls) into the buffer.
+Load a file into the buffer.
+
+If no filename is given as an argument, the current shared variables are
+loaded from the `.groovy/groovysh.ser` file in the user home directory.
 
 [[GroovyShell-save]]
 ===== `/save`
 
 Saves the buffer’s contents to a file.
 
+If no filename is given as an argument, the current shared variables are
+saved into the `.groovy/groovysh.ser` file in the user home directory.
+
 [[GroovyShell-history]]
-===== `history`
+===== `/history`
 
 Display, manage and recall edit-line history.
 
@@ -422,13 +431,8 @@ Display, manage and recall edit-line history.
 [[GroovyShell-historyclear]]
 `history clear`
 
-[[GroovyShell-alias]]
-===== `alias`
-
-Create an alias.
-
 [[GroovyShell-doc]]
-===== `doc`
+===== `/doc`
 
 Opens a browser with documentation for the provided class.
 
@@ -497,9 +501,16 @@ NOTE: In contexts where opening a browser may not be desirable, e.g. on a CI ser
 this command can be disabled by setting the `groovysh.disableDocCommand` system property to `true`.
 
 [[GroovyShell-set]]
-===== `set`
+==== `set`
 
 Set or list preferences.
+
+[[GroovyShell-unalias]]
+==== `/unalias`
+
+image:assets/img/repl_unalias.png[Usage of the /unalias command, width=60%]
+
+Allows aliases to be removed. They will be removed from persistent storage.
 
 [[GroovyShell-Preferences]]
 === Preferences
