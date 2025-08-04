@@ -69,9 +69,11 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -136,15 +138,15 @@ public class GroovyEngine implements ScriptEngine {
             "groovy.util.*",
             "java.math.BigInteger",
             "java.math.BigDecimal");
-    private final Map<String, Class<?>> defaultNameClass = new HashMap<>();
+    private final Map<String, Class<?>> defaultNameClass = new TreeMap<>();
     private final GroovyShell shell;
     protected Binding sharedData;
     private final List<Snippet> snippets = new ArrayList<>();
-    private final Map<String, Integer> imports = new HashMap<>();
-    private final Map<String, Integer> methods = new HashMap<>();
-    private final Map<String, Integer> variables = new HashMap<>();
+    private final Map<String, Integer> imports = new LinkedHashMap<>();
+    private final Map<String, Integer> methods = new LinkedHashMap<>();
+    private final Map<String, Integer> variables = new LinkedHashMap<>();
     private final Set<String> methodNames = new HashSet<>();
-    private final Map<String, Integer> types = new HashMap<>();
+    private final Map<String, Integer> types = new LinkedHashMap<>();
     private final Map<String, Class<?>> nameClass;
     private Cloner objectCloner = new ObjectCloner();
     protected final EngineClassLoader classLoader;
@@ -170,7 +172,7 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public Map<String, String> getTypes() {
-        Map<String, String> out = new HashMap<>();
+        Map<String, String> out = new LinkedHashMap<>();
         types.forEach((String key, Integer index) -> {
             Snippet snippet = snippets.get(index);
             if (snippet.getType() == SnippetType.TYPE) {
@@ -181,7 +183,7 @@ public class GroovyEngine implements ScriptEngine {
     }
 
     public Map<String, String> getVariables() {
-        Map<String, String> out = new HashMap<>();
+        Map<String, String> out = new LinkedHashMap<>();
         variables.forEach((String key, Integer index) -> {
             Snippet snippet = snippets.get(index);
             if (snippet.getType() == SnippetType.VARIABLE) {
