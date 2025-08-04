@@ -612,6 +612,19 @@ as well as a few used for configuring various shell features.
 
 image:assets/img/repl_show.png[Usage of the /show command, width=60%]
 
+[[GroovyShell-slurp]]
+==== `/slurp`
+
+Slurp files to shared variables. Groovy has a bunch of slurpers for
+various formats like XML, JSON, YAML, etc. You can use those in your code
+if you like, but the `/slurp` command can be a convenience shortcut.
+It supports most of the common formats, including JSON, XML, YAML, CSV, TOML and property files.
+
+image:assets/img/repl_slurp.png[Usage of the /slurp command, width=75%]
+
+You can also provide an encoding. If you want more advanced control over the slurping,
+you can use Groovy's "Slurper" classes directly, e.g. `new XmlSlurper().parseText(...)`.
+
 [[GroovyShell-types]]
 ==== `/types`
 
