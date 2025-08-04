@@ -372,6 +372,13 @@ Displays the available colors.
 
 image:assets/img/repl_colors.png[Colors, width=80%]
 
+[[GroovyShell-console]]
+==== `/console`
+
+Displays the current buffer in the GroovyConsole.
+
+image:assets/img/repl_console.png[Console, width=80%]
+
 [[GroovyShell-del]]
 ==== `/del`
 
@@ -515,8 +522,13 @@ import java.util.concurrent.BlockingQueue
 [[GroovyShell-inspect]]
 ==== `/inspect`
 
-Opens the GUI object browser to inspect a variable or the result of the
-last evaluation.
+Display or browse object info on the terminal or object browser.
+
+image:assets/img/repl_inspect.png[Usage of the /inspect command, width=80%]
+
+Using the `--gui/-g` option displays the object in Groovy's object browser:
+
+image:assets/img/repl_inspect_gui.png[Usage of the /inspect command, width=80%]
 
 [[GroovyShell-less]]
 ==== `/less`
