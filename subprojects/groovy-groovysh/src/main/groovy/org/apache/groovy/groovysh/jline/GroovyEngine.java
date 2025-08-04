@@ -116,10 +116,10 @@ public class GroovyEngine implements ScriptEngine {
     private static final String BODY = "\\s*(.*?\\{.*?})(|;|\n)$";
     private static final String PARAMS = "\\(([\\p{L}\\p{N}_ ,]*)\\)";
     private static final Pattern PATTERN_METHOD_DEF = Pattern.compile(
-            "(?ms)" + ANNOTATIONS + MODIFIERS + "(?!record)" + REGEX_VAR + "\\s+(" + METHOD_REGEX_VAR + "\\s*" + PARAMS + ")" + BODY);
+            "(?ms)" + ANNOTATIONS + MODIFIERS + "(?!record\\s+)" + REGEX_VAR + "\\s+(" + METHOD_REGEX_VAR + "\\s*" + PARAMS + ")" + BODY);
     private static final Pattern PATTERN_VAR_DEF = Pattern.compile("^\\s*" + ANNOTATIONS + BASE_REGEX_VAR + "\\s+" + REGEX_VAR + "\\s*=[^=~].*");
     private static final Pattern PATTERN_TYPE_DEF =
-            Pattern.compile("(?ms)" + ANNOTATIONS + MODIFIERS + "((?:\\bclass|@?\\binterface|\\benum|\\btrait)\\s+" + REGEX_VAR + "|(?:\\brecord\\s+" + REGEX_VAR + "\\s*" + PARAMS + "))" + BODY);
+            Pattern.compile("(?ms)" + ANNOTATIONS + MODIFIERS + "((?:\\bclass|@?\\binterface|\\benum|\\btrait)(?:\\s+)" + REGEX_VAR + "|(?:\\brecord)(?:\\s+)" + REGEX_VAR + "\\s*" + PARAMS + ")" + BODY);
     private static final String REGEX_CLASS = "(.*?)\\.([A-Z_].*)";
     private static final Pattern PATTERN_CLASS = Pattern.compile(REGEX_CLASS);
     private static final String REGEX_PACKAGE = "([a-z][a-z_0-9]*\\.)*";
@@ -437,8 +437,9 @@ public class GroovyEngine implements ScriptEngine {
             classLoader.purgeClassCache();
             Matcher matcher = PATTERN_TYPE_DEF.matcher(statement);
             if (matcher.matches()) {
-                types.put(matcher.group(2), addSnippet(SnippetType.TYPE, removeTrailingSemi(matcher.group(0))));
-                addToNameClass(matcher.group(2));
+                String name = matcher.group(2) != null ? matcher.group(2) : matcher.group(3);
+                types.put(name, addSnippet(SnippetType.TYPE, removeTrailingSemi(matcher.group(0))));
+                addToNameClass(name);
             }
             matcher = PATTERN_VAR_DEF.matcher(statement);
             if (matcher.matches()) {
