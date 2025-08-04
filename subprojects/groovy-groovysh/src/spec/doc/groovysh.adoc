@@ -161,6 +161,13 @@ groovy> assert fruit == []
 The `def fruit = []` will be _remembered_ before executing each of the next three statements.
 --
 
+The shell also has the concept of the "current buffer". This is the collection of all type,
+method, imports, and variable definitions. The ordering of these snippets is retained,
+which is important for the shell, since it is only executing one snippet at a time,
+it typically requires everything needed for a snippet to be pre-defined.
+This is different to a compiler which might compile multiple source files at once,
+and resolve references between types as needed.
+
 [[GroovyShell-EvaluatingExpressions]]
 === Evaluating Expressions
 
@@ -519,6 +526,8 @@ Formatting of common file types is supported.
 
 image:assets/img/repl_less.png[Usage of the /less command, width=85%]
 
+If no filename is given, the contents of the current buffer are displayed.
+
 [[GroovyShell-load]]
 ==== `/load`
 
@@ -530,10 +539,18 @@ loaded from the `.groovy/groovysh.ser` file in the user home directory.
 [[GroovyShell-nano]]
 ==== `/nano`
 
-Edit the current buffer in an external editor.
+Edit files or the current buffer.
 
-Currently only works on UNIX systems which have the `EDITOR` environment
-variable set, or have configured the `editor` preference.
+The `/nano` command has numerous options:
+
+image:assets/img/repl_nano_help.png[Help for the /nano command, width=100%]
+
+You can use the `/nano` command to edit files or the current buffer:
+
+image:assets/img/repl_nano.png[Using the /nano command, width=80%]
+
+If editing the current buffer, when you exit and then save,
+the buffer will be reloaded with the edited contents.
 
 [[GroovyShell-prnt]]
 ==== `/prnt`
