@@ -268,6 +268,13 @@ image:assets/img/repl_classloader.png[Classloader, width=80%]
 
 Clears the screen.
 
+[[GroovyShell-colors]]
+==== `/colors`
+
+Displays the available colors.
+
+image:assets/img/repl_colors.png[Colors, width=80%]
+
 [[GroovyShell-del]]
 ==== `/del`
 
@@ -424,6 +431,13 @@ saved into the `.groovy/groovysh.ser` file in the user home directory.
 ==== `/show`
 
 Show the shared variables (the binding).
+
+[[GroovyShell-types]]
+==== `/types`
+
+Show the declared types (enums, interfaces, classes, traits, annotation definitions, and records).
+
+image:assets/img/repl_types.png[Usage of the /types command, width=80%]
 
 [[GroovyShell-history]]
 ==== `/history`
