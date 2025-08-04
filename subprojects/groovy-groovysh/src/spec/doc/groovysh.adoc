@@ -252,6 +252,8 @@ image:assets/img/repl_alias2.png[More /alias examples, width=60%]
 
 Aliases are persisted in a `.groovysh/aliases.json` file in the user home directory.
 
+See also the `/unalias` command, which allows aliases to be removed.
+
 [[GroovyShell-classloader]]
 ==== `/classloader`
 
