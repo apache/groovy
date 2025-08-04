@@ -437,7 +437,11 @@ Show the shared variables (the binding).
 
 Show the declared types (enums, interfaces, classes, traits, annotation definitions, and records).
 
-image:assets/img/repl_types.png[Usage of the /types command, width=80%]
+image:assets/img/repl_types.png[Usage of the /types command, width=75%]
+
+Types can be deleted using `/types -d` (completion is available) but see also the `/del` command:
+
+image:assets/img/repl_types2.png[Deleting types, width=80%]
 
 [[GroovyShell-history]]
 ==== `/history`
