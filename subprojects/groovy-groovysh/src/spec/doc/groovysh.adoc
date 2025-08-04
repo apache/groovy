@@ -576,6 +576,34 @@ Saves the buffer’s contents to a file.
 If no filename is given as an argument, the current shared variables are
 saved into the `.groovy/groovysh.ser` file in the user home directory.
 
+[[GroovyShell-setopt]]
+==== `/setopt`
+
+Set options.
+
+----
+groovy> /setopt
+disable-event-expansion
+use-forward-slash
+insert-bracket
+no-empty-word-options
+groovy>
+----
+
+[[GroovyShell-setvar]]
+==== `/setvar`
+
+Set linereader variable values.
+
+----
+groovy> /setvar
+history-file: /Users/paulk/.groovy/groovysh_history
+indentation: 2
+list-max: 100
+secondary-prompt-pattern: %M%P >
+groovy>
+----
+
 [[GroovyShell-show]]
 ==== `/show`
 
@@ -594,6 +622,27 @@ image:assets/img/repl_types.png[Usage of the /types command, width=75%]
 Types can be deleted using `/types -d` (completion is available) but see also the `/del` command:
 
 image:assets/img/repl_types2.png[Deleting types, width=85%]
+
+[[GroovyShell-ttop]]
+==== `/ttop`
+
+Display information about threads.
+
+image:assets/img/repl_ttop.png[Usage of the /ttop command, width=75%]
+
+Various options are available:
+
+----
+groovy> /ttop --help
+ttop -  display and update sorted information about threads
+Usage: ttop [OPTIONS]
+  -? --help                   Show help
+  -o --order=ORDER            Comma separated list of sorting keys
+  -t --stats=STATS            Comma separated list of stats to display
+  -s --seconds=SECONDS        Delay between updates in seconds
+  -m --millis=MILLIS          Delay between updates in milliseconds
+  -n --nthreads=NTHREADS      Only display up to NTHREADS threads
+----
 
 [[GroovyShell-doc]]
 ==== `/doc`
@@ -664,17 +713,14 @@ https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-an
 NOTE: In contexts where opening a browser may not be desirable, e.g. on a CI server,
 this command can be disabled by setting the `groovysh.disableDocCommand` system property to `true`.
 
-[[GroovyShell-set]]
-==== `set`
-
-Set or list preferences.
-
 [[GroovyShell-unalias]]
 ==== `/unalias`
 
+Allows aliases to be removed.
+
 image:assets/img/repl_unalias.png[Usage of the /unalias command, width=60%]
 
-Allows aliases to be removed. They will be removed from persistent storage.
+Removed aliases will also be removed from persistent storage.
 
 [[GroovyShell-Preferences]]
 === Preferences
