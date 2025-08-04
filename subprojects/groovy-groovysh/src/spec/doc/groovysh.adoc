@@ -594,6 +594,17 @@ saved into the `.groovy/groovysh.ser` file in the user home directory.
 Set options.
 
 ----
+groovy> /setopt -?
+setopt -  set options
+Usage: setopt [-m] option ...
+setopt
+-? --help                      Displays command help
+-m                             Use pattern matching
+----
+
+If no option is given, the current set options are displayed.
+
+----
 groovy> /setopt
 disable-event-expansion
 use-forward-slash
@@ -601,6 +612,8 @@ insert-bracket
 no-empty-word-options
 groovy>
 ----
+
+See also `/unsetopt` to unset options.
 
 [[GroovyShell-setvar]]
 ==== `/setvar`
@@ -668,6 +681,63 @@ Usage: ttop [OPTIONS]
   -m --millis=MILLIS          Delay between updates in milliseconds
   -n --nthreads=NTHREADS      Only display up to NTHREADS threads
 ----
+
+[[GroovyShell-unsetopt]]
+==== `/unsetopt`
+
+Unset options.
+
+----
+groovy> /unsetopt -?
+unsetopt -  unset options
+Usage: unsetopt [-m] option ...
+       unsetopt
+  -? --help                      Displays command help
+  -m                             Use pattern matching
+----
+
+If no option is given, the current unset options are displayed.
+
+----
+groovy> /unsetopt
+complete-in-word
+complete-matcher-camelcase
+no-complete-matcher-typo
+history-verify
+no-history-ignore-space
+no-history-ignore-dups
+no-history-reduce-blanks
+no-history-beep
+no-history-incremental
+no-history-timestamped
+no-auto-group
+no-auto-menu
+no-auto-list
+auto-menu-list
+recognize-exact
+no-group
+group-persist
+case-insensitive
+list-ambiguous
+list-packed
+list-rows-first
+glob-complete
+menu-complete
+auto-fresh-line
+delay-line-wrap
+no-auto-param-slash
+no-auto-remove-slash
+insert-tab
+mouse
+disable-highlighter
+no-bracketed-paste
+erase-line-on-finish
+case-insensitive-search
+disable-undo
+groovy>
+----
+
+See also `/setopt` to set options.
 
 [[GroovyShell-doc]]
 ==== `/doc`
