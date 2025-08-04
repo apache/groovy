@@ -71,6 +71,96 @@ experiments.
   -V, --version           Display the version
 -----------------------------------------------------------------
 
+[[GroovyShell-Model]]
+=== Repl model
+
+The Groovy Shell is a Read-Eval-Print Loop (REPL) which allows you to
+interactively evaluate Groovy expressions and statements,
+define classes and other types, invoke commands, and run simple experiments.
+
+When you input a line, the shell will try to determine if the input you
+have given is a complete valid expression, statement, or definition.
+If not complete, it will prompt you for more input.
+If it is complete, it will execute the input, and print the result,
+if any, to the console. Each input you enter is executed in isolation.
+
+There are some exceptions to this conceptual model. Any import statements
+entered will be remembered and used for all subsequent evaluations.
+Similarly, with some caveats we'll discuss next, any previously defined classes, methods, and potentially variables will be available.
+
+The shell has the concept of shared variables. Given that subsequent statements
+are run in isolation, you should store any results needed for later use in shared variables.
+
+Many Groovy tutorials and examples use the `def` keyword or a type to define variables.
+Script examples might distinguish between local variables with a type and script
+binding variables where no type, nor the `def` or `var` type placeholders,
+are given. The script binding is the exact equivalent to the shell's shared variables.
+
+Because such statements are so common, the shell has a special mode
+called _interpreter mode_ which allows you to use typed variables.
+The following table summarizes the differences between the two modes:
+
+[options="header"]
+|===
+| interpreterMode | off | on
+| imports 2+| remembered
+| types 2+| available
+| methods | converted to closure shared variables | remembered
+| shared variables 2+| available
+| local variables | forgotten | remembered
+|===
+
+Conceptually, for things that are _remembered_ in the above table,
+it is as if you included the related code at the start of each of your inputs.
+
+[NOTE]
+--
+You should treat local variables as if you were using immutable data structures.
+An input which mutates a local variable will likely be undone by subsequent statements.
+So, you should pick one of the first two styles below.
+
+In either mode you can use shared variables:
+[source,jshell]
+----
+groovy> fruit = []
+groovy> fruit << 'peach'
+[peach]
+groovy> fruit << 'pear'
+[peach, pear]
+groovy> assert fruit == ['peach', 'pear']
+----
+
+Use the `/show` command to see the shared variables.
+
+Only in interpreter mode:
+[source,jshell]
+----
+groovy> def noFruit = []
+[]
+groovy> def oneFruit = noFruit << 'peach'
+[peach]
+groovy> def twoFruit = oneFruit << 'pear'
+[peach, pear]
+groovy> assert twoFruit == ['peach', 'pear']
+----
+
+By the time you get to the last statement, the previous three local variable
+definitions are remembered, so the assertion will pass.
+
+Avoid this (relevant to interpreter mode):
+[source,jshell]
+----
+groovy> def fruit = []
+[]
+groovy> fruit << 'peach'
+[peach]
+groovy> fruit << 'pear'
+[pear]
+groovy> assert fruit == []
+----
+The `def fruit = []` will be _remembered_ before executing each of the next three statements.
+--
+
 [[GroovyShell-EvaluatingExpressions]]
 === Evaluating Expressions
 
@@ -178,9 +268,9 @@ the same namespace.
 The shell has a number of different commands, which provide rich access
 to the shell’s environment.
 
-Commands all have a _name_ and a _shortcut_ (which is something like
-`/h`). Commands may also have some predefined system _aliases_. Users
-may also create their own aliases. This section will list commands in
+Commands all have a _name_, e.g. `/help` and `/prnt`.
+Commands may also have some predefined system _aliases_, e.g. `/h`.
+Users may also create their own aliases. This section will list commands in
 alphabetical order, but you can also use the `/help` command to list
 the available commands:
 
