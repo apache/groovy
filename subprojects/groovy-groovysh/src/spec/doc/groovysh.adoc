@@ -579,7 +579,10 @@ saved into the `.groovy/groovysh.ser` file in the user home directory.
 [[GroovyShell-show]]
 ==== `/show`
 
-Show the shared variables (the binding).
+Show the shared variables (the binding). These include your shared variables
+as well as a few used for configuring various shell features.
+
+image:assets/img/repl_show.png[Usage of the /show command, width=60%]
 
 [[GroovyShell-types]]
 ==== `/types`
