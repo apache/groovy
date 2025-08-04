@@ -423,6 +423,48 @@ org.apache.commons:commons-email:
 
 This command can be given at any time to add new dependencies.
 
+[[GroovyShell-history]]
+==== `/history`
+
+Display, manage and recall edit-line history. The `/history` command has numerous options
+which let you list (with various options), save, read, and clear the edit-line history.
+
+----
+groovy> /history -?
+history -  list history of commands
+Usage: history [-dnrfEie] [-m match] [first] [last]
+       history -ARWI [filename]
+       history -s [old=new] [command]
+       history --clear
+       history --save
+  -? --help                      Displays command help
+     --clear                     Clear history
+     --save                      Save history
+  -m match                       If option -m is present the first argument is taken as a pattern
+                                 and only the history events matching the pattern will be shown
+  -d                             Print timestamps for each event
+  -f                             Print full time date stamps in the US format
+  -E                             Print full time date stamps in the European format
+  -i                             Print full time date stamps in ISO8601 format
+  -n                             Suppresses command numbers
+  -r                             Reverses the order of the commands
+  -A                             Appends the history out to the given file
+  -R                             Reads the history from the given file
+  -W                             Writes the history out to the given file
+  -I                             If added to -R, only the events that are not contained within the internal list are added
+                                 If added to -W or -A, only the events that are new since the last incremental operation
+                                 to the file are added
+  [first] [last]                 These optional arguments may be specified as a number or as a string. A negative number
+                                 is used as an offset to the current history event number. A string specifies the most
+                                 recent event beginning with the given string.
+  -e                             Uses the nano editor to edit the commands before executing
+  -s                             Re-executes the command without invoking an editor
+----
+
+Here is an example of using the `/history` command:
+
+image:assets/img/repl_history.png[Usage of the /history command, width=70%]
+
 [[GroovyShell-import]]
 ==== `import`
 
@@ -531,24 +573,7 @@ image:assets/img/repl_types.png[Usage of the /types command, width=75%]
 
 Types can be deleted using `/types -d` (completion is available) but see also the `/del` command:
 
-image:assets/img/repl_types2.png[Deleting types, width=80%]
-
-[[GroovyShell-history]]
-==== `/history`
-
-Display, manage and recall edit-line history.
-
-[[GroovyShell-historyshow]]
-`history show`
-
-[[GroovyShell-historyrecall]]
-`history recall`
-
-[[GroovyShell-historyflush]]
-`history flush`
-
-[[GroovyShell-historyclear]]
-`history clear`
+image:assets/img/repl_types2.png[Deleting types, width=85%]
 
 [[GroovyShell-doc]]
 ==== `/doc`
