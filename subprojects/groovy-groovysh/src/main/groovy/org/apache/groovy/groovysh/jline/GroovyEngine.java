@@ -437,9 +437,17 @@ public class GroovyEngine implements ScriptEngine {
             EnumSet<SnippetType> filter = iMode
                 ? EnumSet.of(SnippetType.IMPORT, SnippetType.VARIABLE, SnippetType.METHOD)
                 : EnumSet.of(SnippetType.IMPORT);
+            Matcher matcher = PATTERN_VAR_DEF.matcher(statement);
+            if (matcher.matches()) {
+                String name = matcher.group(1);
+                Integer existing = variables.get(name);
+                if (existing != null) {
+                    snippets.set(existing, null);
+                }
+            }
             out = executeStatement(shell, snippets, filter, statement);
             classLoader.purgeClassCache();
-            Matcher matcher = PATTERN_TYPE_DEF.matcher(statement);
+            matcher = PATTERN_TYPE_DEF.matcher(statement);
             if (matcher.matches()) {
                 String name = matcher.group(2) != null ? matcher.group(2) : matcher.group(3);
                 types.put(name, addSnippet(SnippetType.TYPE, removeTrailingSemi(matcher.group(0))));
@@ -447,7 +455,9 @@ public class GroovyEngine implements ScriptEngine {
             }
             matcher = PATTERN_VAR_DEF.matcher(statement);
             if (matcher.matches()) {
-                variables.put(matcher.group(1), addSnippet(SnippetType.VARIABLE, removeTrailingSemi(matcher.group(0))));
+                String name = matcher.group(1);
+                String code = removeTrailingSemi(matcher.group(0));
+                variables.put(name, addSnippet(SnippetType.VARIABLE, code));
             }
         }
         return out;

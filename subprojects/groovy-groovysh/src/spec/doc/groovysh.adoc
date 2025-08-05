@@ -243,6 +243,8 @@ def foo = "bar"
 
 This behavior can be changed by activating <<GroovyShell-InterpreterMode,interpreter mode>>.
 
+Variables definitions having the same name as existing definitions will replace the old definition with the new one.
+
 [[GroovyShell-Methods]]
 ==== Methods
 
