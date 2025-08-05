@@ -164,7 +164,7 @@ public class GroovyEngine implements ScriptEngine {
     public GroovyEngine() {
         sharedData = new Binding();
 // for debugging
-        sharedData.setVariable("engine", this);
+//        sharedData.setVariable("engine", this);
         classLoader = new EngineClassLoader();
         shell = new GroovyShell(classLoader, sharedData);
         for (String s : DEFAULT_IMPORTS) {
