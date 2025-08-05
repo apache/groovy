@@ -36,6 +36,7 @@ class GroovySystemRegistry extends SystemRegistryImpl {
     // workaround for: https://github.com/jline/jline3/issues/1361
     @Override
     Object execute(String line) throws Exception {
+        line = line.startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
         def m = line =~ /([a-zA-Z][a-zA-Z0-9_]*)(\s*)=(\s*)(\/?)(\S.*)/
         def target = null
         if (m.matches()) {
@@ -43,7 +44,6 @@ class GroovySystemRegistry extends SystemRegistryImpl {
             if (slash) {
                 target = variable
                 line = slash + rhs
-                line = line.startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
             } else {
                 space1 = space1.size() == 0 ? ' ' : space1
                 space2 = space2.size() == 0 ? ' ' : space2
