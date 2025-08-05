@@ -506,7 +506,7 @@ ArrayBlockingQueue            ConcurrentSkipListSet         ForkJoinTask
 
 Once an import statement has been executed, relevant classes will become available for completion:
 
-image:assets/img/repl_import.png[Import, width=80%]
+image:assets/img/repl_import.png[Import, width=90%]
 
 [[GroovyShell-imports]]
 ==== `/imports`
@@ -647,7 +647,32 @@ It supports most of the common formats, including JSON, XML, YAML, CSV, TOML and
 
 image:assets/img/repl_slurp.png[Usage of the /slurp command, width=75%]
 
-You can also provide an encoding. If you want more advanced control over the slurping,
+As you can see in the usage information at the end of the above image,
+you can also provide an encoding and a format. If no format is given,
+`UTF_8` is the default. If no format is given, the shell will try to
+determine the format from the extension of the file (if given).
+
+Although the details of the exact object returned are an implementation
+detail which may change in the future, the current behavior is as follows:
+
+[cols="1,5" options="header"]
+|===
+| Format | Notes
+| JSON | Uses JsonSlurper, returns a lazy Map.
+| TOML | Uses TomlSlurper, returns a lazy Map.
+| YAML | Uses YamlSlurper, returns a lazy Map.
+| XML | Uses XmlParser, returns a Node.
+| PROPERTIES | Returns a Properties file, which is a Map-like object.
+| CSV | Uses Apache Commons CSV if on the classpath. Assumes a header row which is used to
+create a list (the rows) of maps from column name to value.
+| TEXT | Reads the file as raw lines (or argument as a line).
+| NONE | If you want the raw text rather than parsed content.
+|===
+
+If these do change in the future, the replacement will be a compatible
+implementation, that follows the normal GPath conventions.
+
+If you want more advanced control over the slurping,
 you can use Groovy's "Slurper" classes directly, e.g. `new XmlSlurper().parseText(...)`.
 
 [[GroovyShell-types]]
