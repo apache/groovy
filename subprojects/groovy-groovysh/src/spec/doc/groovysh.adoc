@@ -269,6 +269,14 @@ Internally the shell creates a closure to encapsulate the function and
 then binds the closure to a variable. So variables and functions share
 the same namespace.
 
+[[GroovyShell-Exceptions]]
+==== Exceptions
+
+If an exception is thrown, the shell will print the exception message
+and set a special `exception` shared variable.
+
+image:assets/img/repl_exceptions.png[Exception, width=80%]
+
 [[GroovyShell-Commands]]
 === Commands
 
