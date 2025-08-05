@@ -248,7 +248,7 @@ This behavior can be changed by activating <<GroovyShell-InterpreterMode,interpr
 
 Methods can be defined in the shell, and will be saved for later use.
 
-Defining a function is easy:
+Defining a method is easy:
 
 [source,jshell]
 ----------------------------------
@@ -265,9 +265,15 @@ groovy> hello "Jason"
 Hello Jason
 --------------
 
-Internally the shell creates a closure to encapsulate the function and
-then binds the closure to a variable. So variables and functions share
-the same namespace.
+If a method definition has the same signature as an existing definition,
+the old definition will be replaced with the new one.
+
+When in _interpreterMode_, methods are remembered and given as extra statements
+when executing the next input.
+
+When not in _interpreterMode_, the shell internally creates a closure to encapsulate
+the method and stores it in the shared variables.
+In this case, variables and methods share the same namespace.
 
 [[GroovyShell-Exceptions]]
 ==== Exceptions

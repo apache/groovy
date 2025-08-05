@@ -164,7 +164,7 @@ public class GroovyEngine implements ScriptEngine {
     public GroovyEngine() {
         sharedData = new Binding();
 // for debugging
-//        sharedData.setVariable("engine", this);
+        sharedData.setVariable("engine", this);
         classLoader = new EngineClassLoader();
         shell = new GroovyShell(classLoader, sharedData);
         for (String s : DEFAULT_IMPORTS) {
@@ -577,7 +577,12 @@ public class GroovyEngine implements ScriptEngine {
             methodNames.add(m.group(3));
             if (isInterpreterMode()) {
                 String code = removeTrailingSemi(m.group(0));
-                methods.put(m.group(2), addSnippet(SnippetType.METHOD, code));
+                Integer existing = methods.get(m.group(2));
+                if (existing != null) {
+                    snippets.get(existing).setSnippet(code);
+                } else {
+                    methods.put(m.group(2), addSnippet(SnippetType.METHOD, code));
+                }
             } else {
                 String body = m.group(5).substring(1);
                 put(m.group(3), execute("{" + m.group(4) + "->" + body));
@@ -654,8 +659,10 @@ public class GroovyEngine implements ScriptEngine {
                 String k = it.next();
                 if (k.equals(name) || k.startsWith(name + "(")) {
                     Integer gone = methods.get(k);
-                    if (gone != null) snippets.set(gone, null);
-                    it.remove();
+                    if (gone != null) {
+                        snippets.set(gone, null);
+                        it.remove();
+                    }
                 }
             }
         }
