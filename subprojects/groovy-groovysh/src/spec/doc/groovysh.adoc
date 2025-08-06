@@ -37,7 +37,6 @@ to https://github.com/jline/jline3[JLine3].
 * ANSI colors (prompt, exception traces, etc).
 * Simple, yet robust, command system with online help, user alias
 support and more.
-* User profile support
 
 [[GroovyShell-Command-lineOptionsandArguments]]
 === Command-line Options and Arguments
@@ -193,8 +192,8 @@ Multi-line/complex expressions (like closure or class definitions) may
 be defined over several lines. When the shell detects that it has a
 complete expression it will compile and evaluate it.
 
-[[GroovyShell-DefineaClass]]
-===== Define a Class
+[[GroovyShell-DefineTypes]]
+==== Defining types
 
 You can define all the normal types, e.g. a class:
 
@@ -218,9 +217,7 @@ baz
 
 Defined classes are known to the shell and can be used in completion:
 
-image:assets/img/repl_typedef.png[Define Class, width=60%]
-
-[[GroovyShell-VariablesandMethods]]
+image:assets/img/repl_typedef.png[Define Class, width=50%]
 
 [[GroovyShell-Variables]]
 ==== Variables
@@ -387,6 +384,14 @@ Clears the screen.
 Displays the available colors.
 
 image:assets/img/repl_colors.png[Colors, width=80%]
+
+This can be useful when configuring the console options, for example the `PRNT_COLORS`:
+
+image:assets/img/repl_colors2.png[Colors, width=80%]
+
+As this example shows, you can mix color names, theme colors, and color numbers.
+See the https://github.com/jline/jline3/wiki/REPL-Console-Customization[REPL Console Customization]
+documentation for more details about such customization.
 
 [[GroovyShell-console]]
 ==== `/console`
