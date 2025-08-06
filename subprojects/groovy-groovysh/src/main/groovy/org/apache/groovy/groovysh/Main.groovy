@@ -18,6 +18,8 @@
  */
 package org.apache.groovy.groovysh
 
+import groovy.cli.internal.CliBuilderInternal
+import groovy.cli.internal.OptionAccessor
 import org.apache.groovy.groovysh.jline.GroovyBuiltins
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
@@ -180,6 +182,39 @@ class Main {
     }
 
     static void main(String[] args) {
+        def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
+            header: messages['cli.option.header'])
+        cli.with {
+            _(names: ['-cp', '-classpath', '--classpath'], messages['cli.option.classpath.description'])
+            h(longOpt: 'help', messages['cli.option.help.description'])
+            V(longOpt: 'version', messages['cli.option.version.description'])
+            v(longOpt: 'verbose', messages['cli.option.verbose.description'])
+            q(longOpt: 'quiet', messages['cli.option.quiet.description'])
+            d(longOpt: 'debug', messages['cli.option.debug.description'])
+            e(longOpt: 'evaluate', args: 1, argName: 'CODE', optionalArg: false, messages['cli.option.evaluate.description'])
+            C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
+            D(longOpt: 'define', type: Map, argName: 'name=value', messages['cli.option.define.description'])
+            T(longOpt: 'terminal', args: 1, argName: 'TYPE', messages['cli.option.terminal.description'])
+            pa(longOpt: 'parameters', messages['cli.option.parameters.description'])
+            pr(longOpt: 'enable-preview', messages['cli.option.enable.preview.description'])
+        }
+        OptionAccessor options = cli.parse(args)
+
+        if (options == null) {
+            // CliBuilder prints error, but does not exit
+            System.exit(22) // Invalid Args
+        }
+
+        if (options.h) {
+            cli.usage()
+            System.exit(0)
+        }
+
+        if (options.V) {
+            println render(messages.format('cli.info.version', GroovySystem.version))
+            System.exit(0)
+        }
+
         try {
             Supplier<Path> workDir = () -> Paths.get(System.getProperty('user.dir'))
             DefaultParser parser = new DefaultParser(
@@ -284,11 +319,16 @@ class Main {
             keyMap.bind(new Reference(Widgets.AUTOSUGGEST_TOGGLE), KeyMap.alt("v"))
             def init = configPath.getUserConfig('groovysh_init')
             if (init) {
-                systemRegistry.initialize(configPath.getUserConfig('groovysh_init').toFile())
+                systemRegistry.setConsoleOption() // initialize(configPath.getUserConfig('groovysh_init').toFile())
             }
 
-            println render(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version'], terminal.type))
-            println render(messages['startup_banner.1'])
+            if (options.q) {
+                println render(messages.format('cli.info.version', GroovySystem.version))
+            } else {
+                println render(messages.format('startup_banner.0', GroovySystem.version, System.properties['java.version'], terminal.type))
+                println render(messages['startup_banner.1'])
+                println render(messages['startup_banner.2'])
+            }
             println '-' * (terminal.width - 1)
 // for debugging
 //            def index = 0
