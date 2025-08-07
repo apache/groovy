@@ -264,19 +264,11 @@ class Main {
                 setCommandRegistries(extra, consoleEngine, builtins, groovy)
                 addCompleter(scriptEngine.scriptCompleter)
                 setScriptDescription(scriptEngine::scriptDescription)
-                // sys registry doesn't support rename/alias, so for now invoke as user alias
-/*
                 renameLocal 'exit', '/exit'
                 renameLocal 'help', '/help'
                 invoke '/alias', '/x', '/exit'
                 invoke '/alias', '/q', '/exit'
                 invoke '/alias', '/h', '/help'
-*/
-                invoke '/alias', '/exit', 'exit'
-                invoke '/alias', '/help', 'help'
-                invoke '/alias', '/x', 'exit'
-                invoke '/alias', '/q', 'exit'
-                invoke '/alias', '/h', 'help'
             }
 
             def highlighter = new SystemHighlighter(commandHighlighter, argsHighlighter, groovyHighlighter).tap {
