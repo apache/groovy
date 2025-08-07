@@ -29,7 +29,7 @@ if "%DIRNAME%" == "" set DIRNAME=.\
 
 set CLASSNAME=org.apache.groovy.groovysh.Main
 
-if "%JAVA_VERSION%" gtr "17.0" set JAVA_OPTS=%JAVA_OPTS% --enable-native-access=ALL-UNNAMED
+set NATIVE_FLAG=true
 
 "%DIRNAME%\startGroovy.bat" "%DIRNAME%" %CLASSNAME% %*
 
