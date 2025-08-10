@@ -57,14 +57,17 @@ class GroovyBuiltins extends Builtins {
     }
 
     private void less(CommandInput input) {
-        Options opt = Options.compile(Less.usage()).parse(input.args())
-        boolean usingBuffer = opt.args().size() == 0
-        if (usingBuffer) {
-            def temp = File.createTempFile('groovysh', '.groovy')
-            temp.text = engine.buffer
-            input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
-        }
+        Options opt = Options.compile(*Less.usage()*.replaceAll('less ', '/less ')).parse(input.args())
         try {
+            if (opt.isSet("help")) {
+                throw new Options.HelpException(opt.usage());
+            }
+            boolean usingBuffer = opt.args().size() == 0
+            if (usingBuffer) {
+                def temp = File.createTempFile('groovysh', '.groovy')
+                temp.text = engine.buffer
+                input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
+            }
             Commands.less(input.terminal(), input.in(), input.out(), input.err(), workDir.get(), input.xargs(), configPath)
         } catch (Exception e) {
             saveException(e)
@@ -72,15 +75,18 @@ class GroovyBuiltins extends Builtins {
     }
 
     private void nano(CommandInput input) {
-        Options opt = Options.compile(Nano.usage()).parse(input.args())
-        boolean usingBuffer = opt.args().size() == 0
-        def temp = null
-        if (usingBuffer) {
-            temp = File.createTempFile('groovysh', '.groovy')
-            temp.text = engine.buffer
-            input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
-        }
+        Options opt = Options.compile(*Nano.usage()*.replaceAll('nano ', '/nano ')).parse(input.args())
         try {
+            if (opt.isSet("help")) {
+                throw new Options.HelpException(opt.usage());
+            }
+            boolean usingBuffer = opt.args().size() == 0
+            def temp = null
+            if (usingBuffer) {
+                temp = File.createTempFile('groovysh', '.groovy')
+                temp.text = engine.buffer
+                input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
+            }
             Commands.nano(input.terminal(), input.out(), input.err(), workDir.get(), input.args(), configPath)
             if (temp) GroovyCommands.loadFile(engine, temp)
         } catch (Exception e) {
