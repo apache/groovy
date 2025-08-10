@@ -28,8 +28,11 @@ import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.apache.groovy.groovysh.util.DocFinder
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.jline.builtins.ClasspathResourceUtil
+import org.jline.builtins.Completers
 import org.jline.builtins.ConfigurationPath
 import org.jline.builtins.Options
+import org.jline.builtins.PosixCommands
+import org.jline.builtins.PosixCommandsRegistry
 import org.jline.builtins.SyntaxHighlighter
 import org.jline.console.CommandInput
 import org.jline.console.CommandMethods
@@ -41,6 +44,7 @@ import org.jline.console.impl.JlineCommandRegistry
 import org.jline.console.impl.SystemHighlighter
 import org.jline.keymap.KeyMap
 import org.jline.reader.Binding
+import org.jline.reader.Completer
 import org.jline.reader.EndOfFileException
 import org.jline.reader.LineReader
 import org.jline.reader.LineReader.Option
@@ -49,6 +53,8 @@ import org.jline.reader.Reference
 import org.jline.reader.UserInterruptException
 import org.jline.reader.impl.DefaultParser
 import org.jline.reader.impl.DefaultParser.Bracket
+import org.jline.reader.impl.completer.ArgumentCompleter
+import org.jline.reader.impl.completer.NullCompleter
 import org.jline.terminal.Size
 import org.jline.terminal.Terminal
 import org.jline.terminal.Terminal.Signal
@@ -79,15 +85,35 @@ class Main {
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
         private LineReader reader
         private final Supplier<Path> workDir
+        private final Map<String, Object> variables
+        private PosixCommandsRegistry posix
 
-        ExtraConsoleCommands(Supplier<Path> workDir) {
+        ExtraConsoleCommands(Supplier<Path> workDir, Map<String, Object> variables) {
             super()
             this.workDir = workDir
+            this.variables = variables
             registerCommands([
+                '/tail' : new CommandMethods((Function) this::tail, this::optFileCompleter),
+                '/head' : new CommandMethods((Function) this::head, this::optFileCompleter),
+                '/ls'   : new CommandMethods((Function) this::ls, this::optFileCompleter),
                 '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
                 '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
             ])
+        }
+
+        private void init() {
+            def terminal = reader.terminal
+            posix = new PosixCommandsRegistry(
+                terminal.input(),
+                new PrintStream(terminal.output()),
+                new PrintStream(terminal.output()),
+                workDir.get(),
+                terminal,
+                variables::get)
+            posix.register('/tail', PosixCommands::tail)
+            posix.register('/head', PosixCommands::head)
+            posix.register('/ls', PosixCommands::ls)
         }
 
         @Override
@@ -100,7 +126,73 @@ class Main {
         }
 
         private Terminal terminal() {
-            return reader.terminal
+            return reader?.terminal
+        }
+
+        private List<Completer> optFileCompleter(String command) {
+            [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.FilesCompleter(workDir), this::commandOptions, 1))]
+        }
+
+        private void tail(CommandInput input) {
+            def usage = new String[]{
+                "/tail - display last lines of files",
+                "Usage: /tail [-f] [-q] [-c # | -n #] [file ...]",
+                "  -? --help                    Show help",
+                "  -f --follow                  Do not stop at end of file",
+                "  -F --FOLLOW                  Follow and check for file renaming or rotation",
+                "  -n --lines=LINES             Number of lines to print",
+                "  -c --bytes=BYTES             Number of bytes to print",
+            }
+            try {
+                parseOptions(usage, input.args())
+                posix.execute('/tail', input.args())
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
+        private void head(CommandInput input) {
+            def usage = new String[]{
+                "/head - display first lines of files",
+                "Usage: /head [-n lines | -c bytes] [file ...]",
+                "  -? --help                    Show help",
+                "  -n --lines=LINES             Print line counts",
+                "  -c --bytes=BYTES             Print byte counts"
+            }
+            try {
+                parseOptions(usage, input.args())
+                posix.execute('/head', input.args())
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
+        private void ls(CommandInput input) {
+            def usage = new String[]{
+                "/ls - list files",
+                "Usage: /ls [OPTIONS] [PATTERNS...]",
+                "  -? --help                show help",
+                "  -1                       list one entry per line",
+                "  -C                       multi-column output",
+                "     --color=WHEN          colorize the output, may be `always', `never' or `auto'",
+                "  -a                       list entries starting with .",
+                "  -F                       append file type indicators",
+                "  -m                       comma separated",
+                "  -l                       long listing",
+                "  -S                       sort by size",
+                "  -f                       output is not sorted",
+                "  -r                       reverse sort order",
+                "  -t                       sort by modification time",
+                "  -x                       sort horizontally",
+                "  -L                       list referenced file for links",
+                "  -h                       print sizes in human readable form"
+            }
+            try {
+                parseOptions(usage, input.args())
+                posix.execute('/ls', input.args())
+            } catch (Exception e) {
+                saveException(e)
+            }
         }
 
         private void clear(CommandInput input) {
@@ -249,7 +341,7 @@ class Main {
             CommandRegistry builtins = new GroovyBuiltins(scriptEngine, workDir, configPath, (String fun) ->
                 new ConsoleEngine.WidgetCreator(consoleEngine, fun)
             )
-            def extra = new ExtraConsoleCommands(workDir)
+            def extra = new ExtraConsoleCommands(workDir, scriptEngine.variables)
 
             // Command line highlighter
             scriptEngine.put(GroovyEngine.NANORC_VALUE, rootURL.toString())
@@ -275,7 +367,7 @@ class Main {
                 if (!OSUtils.IS_WINDOWS) {
                     setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
                 }
-                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save')
+                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', '/head', '/tail', '/ls')
                 addFileHighlight('/classloader', null, ['-a', '--add'])
                 addExternalHighlighterRefresh(printer::refresh)
                 addExternalHighlighterRefresh(scriptEngine::refresh)
@@ -302,6 +394,7 @@ class Main {
             }
 
             [consoleEngine, builtins, extra]*.setLineReader(reader)
+            extra.init()
 
             // widgets and console initialization
             new TailTipWidgets(reader, systemRegistry::commandDescription, 5, TipType.COMPLETER)
