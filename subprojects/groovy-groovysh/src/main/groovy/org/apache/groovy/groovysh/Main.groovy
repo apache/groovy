@@ -24,6 +24,7 @@ import org.apache.groovy.groovysh.jline.GroovyBuiltins
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
+import org.apache.groovy.groovysh.jline.GroovyPosixContext
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.apache.groovy.groovysh.util.DocFinder
 import org.codehaus.groovy.tools.shell.util.MessageSource
@@ -85,27 +86,28 @@ class Main {
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
         private final LineReader reader
-        private final Supplier<Path> workDir
         private final Map<String, Object> variables
-        private final PosixCommandsRegistry posix
+        private PosixCommandsRegistry posix
         private final Map<String, String[]> usage = [:]
 
-        ExtraConsoleCommands(Supplier<Path> workDir, Map<String, Object> variables, LineReader reader) {
+        ExtraConsoleCommands(Path workDir, Map<String, Object> variables, LineReader reader) {
             super()
-            this.workDir = workDir
             this.variables = variables
             this.reader = reader
             def terminal = reader.terminal
-            posix = new PosixCommandsRegistry(
+            def context = new GroovyPosixContext(
                 terminal.input(),
                 new PrintStream(terminal.output()),
                 new PrintStream(terminal.output()),
-                workDir.get(),
+                workDir,
                 terminal,
-                variables::get)
+                variables::get
+            )
+            posix = new PosixCommandsRegistry(context)
             def cmds = [
                 '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
                 '/pwd'  : new CommandMethods((Function) this::pwd, this::defaultCompleter),
+                '/cd'   : new CommandMethods((Function) this::cd, this::defaultCompleter),
                 '/date' : new CommandMethods((Function) this::date, this::defaultCompleter),
                 '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
@@ -116,9 +118,15 @@ class Main {
                 posix.register(cmd, PosixCommands::"$orig")
                 cmds.put(cmd, new CommandMethods((Function) this::posix, this::optFileCompleter))
             }
+            posix.register('cd', PosixCommands::cd)
+            posix.register('/cd', PosixCommands::cd)
             posix.register('/pwd', PosixCommands::pwd)
             posix.register('/date', PosixCommands::date)
             registerCommands(cmds)
+        }
+
+        Path currentDir() {
+            posix.context.currentDir
         }
 
         private String[] adjustUsage(String from, String to) {
@@ -139,11 +147,20 @@ class Main {
         }
 
         private List<Completer> optFileCompleter(String command) {
-            [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.FilesCompleter(workDir), this::commandOptions, 1))]
+            [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.FilesCompleter(this::currentDir), this::commandOptions, 1))]
         }
 
         private void pwd(CommandInput input) {
             posix(adjustUsage('pwd', '/pwd'), input)
+        }
+
+        private void cd(CommandInput input) {
+            try {
+                parseOptions(adjustUsage('cd', '/cd'), input.args())
+                PosixCommands.cd(posix.context, ['/cd', *input.args()] as String[], { Path newPath -> posix.context.currentDir = newPath })
+            } catch (Exception e) {
+                saveException(e)
+            }
         }
 
         private void date(CommandInput input) {
@@ -276,7 +293,6 @@ class Main {
         }
 
         try {
-            Supplier<Path> workDir = () -> Paths.get(System.getProperty('user.dir'))
             DefaultParser parser = new DefaultParser(
                 regexCommand: /\/?[a-zA-Z!]\S*/,
                 eofOnUnclosedQuote: true,
@@ -310,8 +326,6 @@ class Main {
             def argsHighlighter = SyntaxHighlighter.build(jnanorc, "ARGS")
             def groovyHighlighter = SyntaxHighlighter.build(jnanorc, "Groovy")
 
-            CommandRegistry groovy = new GroovyCommands(scriptEngine, workDir, printer, groovyHighlighter)
-
             LineReader reader = LineReaderBuilder.builder()
                 .terminal(terminal)
                 .parser(parser)
@@ -329,7 +343,10 @@ class Main {
                     LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
             }
 
-            def extra = new ExtraConsoleCommands(workDir, scriptEngine.variables, reader)
+            def extra = new ExtraConsoleCommands(Paths.get(System.getProperty('user.dir')), scriptEngine.variables, reader)
+            Supplier<Path> workDir = extra::currentDir
+
+            CommandRegistry groovy = new GroovyCommands(scriptEngine, workDir, printer, groovyHighlighter)
 
             ConsoleEngine consoleEngine = new GroovyConsoleEngine(scriptEngine, printer, workDir, configPath, reader)
             consoleEngine.setConsoleOption('docs', new DocFinder())
