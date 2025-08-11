@@ -80,29 +80,21 @@ import static org.jline.jansi.AnsiRenderer.render
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
+    private static POSIX_FILE_CMDS = ['/tail', '/ls', '/head', '/grep', '/wc', '/sort', '/cat']
 
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
-        private LineReader reader
+        private final LineReader reader
         private final Supplier<Path> workDir
         private final Map<String, Object> variables
-        private PosixCommandsRegistry posix
+        private final PosixCommandsRegistry posix
+        private final Map<String, String[]> usage = [:]
 
-        ExtraConsoleCommands(Supplier<Path> workDir, Map<String, Object> variables) {
+        ExtraConsoleCommands(Supplier<Path> workDir, Map<String, Object> variables, LineReader reader) {
             super()
             this.workDir = workDir
             this.variables = variables
-            registerCommands([
-                '/tail' : new CommandMethods((Function) this::tail, this::optFileCompleter),
-                '/head' : new CommandMethods((Function) this::head, this::optFileCompleter),
-                '/ls'   : new CommandMethods((Function) this::ls, this::optFileCompleter),
-                '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
-                '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
-                "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
-            ])
-        }
-
-        private void init() {
+            this.reader = reader
             def terminal = reader.terminal
             posix = new PosixCommandsRegistry(
                 terminal.input(),
@@ -111,18 +103,31 @@ class Main {
                 workDir.get(),
                 terminal,
                 variables::get)
-            posix.register('/tail', PosixCommands::tail)
-            posix.register('/head', PosixCommands::head)
-            posix.register('/ls', PosixCommands::ls)
+            def cmds = [
+                '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
+                '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
+                "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
+            ]
+            POSIX_FILE_CMDS.each { String cmd ->
+                String orig = cmd[1..-1]
+                usage[cmd] = adjustUsage(orig, cmd)
+                posix.register(cmd, PosixCommands::"$orig")
+                cmds.put(cmd, new CommandMethods((Function) this::posix, this::optFileCompleter))
+            }
+            registerCommands(cmds)
+        }
+
+        private String[] adjustUsage(String from, String to) {
+            try {
+                posix.execute(from, [from, '--help'] as String[])
+            } catch (Options.HelpException e) {
+                e.message.readLines()*.replaceAll("$from ", "$to ") as String[]
+            }
         }
 
         @Override
         String name() {
             'Console Commands'
-        }
-
-        void setLineReader(LineReader reader) {
-            this.reader = reader
         }
 
         private Terminal terminal() {
@@ -133,63 +138,10 @@ class Main {
             [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.FilesCompleter(workDir), this::commandOptions, 1))]
         }
 
-        private void tail(CommandInput input) {
-            def usage = new String[]{
-                "/tail - display last lines of files",
-                "Usage: /tail [-f] [-q] [-c # | -n #] [file ...]",
-                "  -? --help                    Show help",
-                "  -f --follow                  Do not stop at end of file",
-                "  -F --FOLLOW                  Follow and check for file renaming or rotation",
-                "  -n --lines=LINES             Number of lines to print",
-                "  -c --bytes=BYTES             Number of bytes to print",
-            }
+        private void posix(CommandInput input) {
             try {
-                parseOptions(usage, input.args())
-                posix.execute('/tail', input.args())
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void head(CommandInput input) {
-            def usage = new String[]{
-                "/head - display first lines of files",
-                "Usage: /head [-n lines | -c bytes] [file ...]",
-                "  -? --help                    Show help",
-                "  -n --lines=LINES             Print line counts",
-                "  -c --bytes=BYTES             Print byte counts"
-            }
-            try {
-                parseOptions(usage, input.args())
-                posix.execute('/head', input.args())
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void ls(CommandInput input) {
-            def usage = new String[]{
-                "/ls - list files",
-                "Usage: /ls [OPTIONS] [PATTERNS...]",
-                "  -? --help                show help",
-                "  -1                       list one entry per line",
-                "  -C                       multi-column output",
-                "     --color=WHEN          colorize the output, may be `always', `never' or `auto'",
-                "  -a                       list entries starting with .",
-                "  -F                       append file type indicators",
-                "  -m                       comma separated",
-                "  -l                       long listing",
-                "  -S                       sort by size",
-                "  -f                       output is not sorted",
-                "  -r                       reverse sort order",
-                "  -t                       sort by modification time",
-                "  -x                       sort horizontally",
-                "  -L                       list referenced file for links",
-                "  -h                       print sizes in human readable form"
-            }
-            try {
-                parseOptions(usage, input.args())
-                posix.execute('/ls', input.args())
+                parseOptions(usage[input.command()], input.args())
+                posix.execute(input.command(), [input.command(), *input.args()] as String[])
             } catch (Exception e) {
                 saveException(e)
             }
@@ -335,15 +287,7 @@ class Main {
             def interpreterMode = Boolean.parseBoolean(System.getProperty("groovysh.interpreterMode", "true"))
             scriptEngine.put('GROOVYSH_OPTIONS', [interpreterMode: interpreterMode])
             Printer printer = new DefaultPrinter(scriptEngine, configPath)
-            ConsoleEngine consoleEngine = new GroovyConsoleEngine(scriptEngine, printer, workDir, configPath)
-            consoleEngine.setConsoleOption('docs', new DocFinder())
 
-            CommandRegistry builtins = new GroovyBuiltins(scriptEngine, workDir, configPath, (String fun) ->
-                new ConsoleEngine.WidgetCreator(consoleEngine, fun)
-            )
-            def extra = new ExtraConsoleCommands(workDir, scriptEngine.variables)
-
-            // Command line highlighter
             scriptEngine.put(GroovyEngine.NANORC_VALUE, rootURL.toString())
             Path jnanorc = root.resolve('jnanorc')
             def commandHighlighter = SyntaxHighlighter.build(jnanorc, "COMMAND")
@@ -351,6 +295,33 @@ class Main {
             def groovyHighlighter = SyntaxHighlighter.build(jnanorc, "Groovy")
 
             CommandRegistry groovy = new GroovyCommands(scriptEngine, workDir, printer, groovyHighlighter)
+
+            LineReader reader = LineReaderBuilder.builder()
+                .terminal(terminal)
+                .parser(parser)
+                .variable(LineReader.SECONDARY_PROMPT_PATTERN, "%M%P > ")
+                .variable(LineReader.INDENTATION, 2)
+                .variable(LineReader.LIST_MAX, 100)
+                .variable(LineReader.HISTORY_FILE, configPath.getUserConfig('groovysh_history', true))
+                .option(Option.INSERT_BRACKET, true)
+                .option(Option.EMPTY_WORD_OPTIONS, false)
+                .option(Option.USE_FORWARD_SLASH, true)
+                .option(Option.DISABLE_EVENT_EXPANSION, true)
+                .build()
+            if (OSUtils.IS_WINDOWS) {
+                reader.setVariable(
+                    LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
+            }
+
+            def extra = new ExtraConsoleCommands(workDir, scriptEngine.variables, reader)
+
+            ConsoleEngine consoleEngine = new GroovyConsoleEngine(scriptEngine, printer, workDir, configPath, reader)
+            consoleEngine.setConsoleOption('docs', new DocFinder())
+
+            CommandRegistry builtins = new GroovyBuiltins(scriptEngine, workDir, configPath, reader, (String fun) ->
+                new ConsoleEngine.WidgetCreator(consoleEngine, fun)
+            )
+
             GroovySystemRegistry systemRegistry = new GroovySystemRegistry(parser, terminal, workDir, configPath).tap {
                 groupCommandsInHelp(false)
                 setCommandRegistries(extra, consoleEngine, builtins, groovy)
@@ -367,34 +338,14 @@ class Main {
                 if (!OSUtils.IS_WINDOWS) {
                     setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
                 }
-                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', '/head', '/tail', '/ls')
+                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *POSIX_FILE_CMDS)
                 addFileHighlight('/classloader', null, ['-a', '--add'])
                 addExternalHighlighterRefresh(printer::refresh)
                 addExternalHighlighterRefresh(scriptEngine::refresh)
             }
 
-            // LineReader
-            LineReader reader = LineReaderBuilder.builder()
-                .terminal(terminal)
-                .completer(systemRegistry.completer())
-                .parser(parser)
-                .highlighter(highlighter)
-                .variable(LineReader.SECONDARY_PROMPT_PATTERN, "%M%P > ")
-                .variable(LineReader.INDENTATION, 2)
-                .variable(LineReader.LIST_MAX, 100)
-                .variable(LineReader.HISTORY_FILE, configPath.getUserConfig('groovysh_history', true))
-                .option(Option.INSERT_BRACKET, true)
-                .option(Option.EMPTY_WORD_OPTIONS, false)
-                .option(Option.USE_FORWARD_SLASH, true)
-                .option(Option.DISABLE_EVENT_EXPANSION, true)
-                .build()
-            if (OSUtils.IS_WINDOWS) {
-                reader.setVariable(
-                    LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
-            }
-
-            [consoleEngine, builtins, extra]*.setLineReader(reader)
-            extra.init()
+            reader.highlighter = highlighter
+            reader.completer = systemRegistry.completer()
 
             // widgets and console initialization
             new TailTipWidgets(reader, systemRegistry::commandDescription, 5, TipType.COMPLETER)

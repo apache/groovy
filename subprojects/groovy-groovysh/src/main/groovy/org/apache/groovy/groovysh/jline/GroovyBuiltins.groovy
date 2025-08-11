@@ -26,6 +26,7 @@ import org.jline.builtins.Options
 import org.jline.console.CommandInput
 import org.jline.console.CommandMethods
 import org.jline.console.impl.Builtins
+import org.jline.reader.LineReader
 import org.jline.reader.Widget
 
 import java.nio.file.Path
@@ -37,7 +38,7 @@ class GroovyBuiltins extends Builtins {
     private final Supplier<Path> workDir
     private final GroovyEngine engine
 
-    GroovyBuiltins(GroovyEngine engine, Supplier<Path> workDir, ConfigurationPath configPath, Function<String, Widget> widgetCreator) {
+    GroovyBuiltins(GroovyEngine engine, Supplier<Path> workDir, ConfigurationPath configPath, LineReader reader, Function<String, Widget> widgetCreator) {
         super(workDir, configPath, widgetCreator)
         this.workDir = workDir
         this.configPath = configPath
@@ -53,6 +54,7 @@ class GroovyBuiltins extends Builtins {
         def commandName = commandNames().collectEntries{ name ->
             [Command."${name.toUpperCase()}", '/' + name]
         }
+        setLineReader(reader)
         registerCommands(commandName, commandExecute)
     }
 

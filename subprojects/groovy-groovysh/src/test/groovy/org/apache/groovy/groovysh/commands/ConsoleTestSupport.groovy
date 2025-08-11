@@ -47,7 +47,7 @@ abstract class ConsoleTestSupport extends GroovyTestCase {
     protected DummyPrinter printer = new DummyPrinter(configPath)
     private highlighter = SyntaxHighlighter.build(root, "DUMMY")
     protected CommandRegistry groovy = new GroovyCommands(engine, null, printer, highlighter)
-    protected ConsoleEngine console = new GroovyConsoleEngine(engine, printer, null, configPath)
+    protected ConsoleEngine console
     protected CommandRegistry.CommandSession session = new CommandRegistry.CommandSession()
     protected LineReader reader
 
@@ -55,7 +55,7 @@ abstract class ConsoleTestSupport extends GroovyTestCase {
     void setUp() {
         super.setUp()
         reader = LineReaderBuilder.builder().parser(new DefaultParser(regexCommand: /\/?[a-zA-Z!]+\S*/)).build()
-        console.lineReader = reader
+        console = new GroovyConsoleEngine(engine, printer, null, configPath, reader)
     }
 
     static class DummyPrinter extends DefaultPrinter {

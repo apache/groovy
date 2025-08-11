@@ -22,6 +22,7 @@ import org.jline.builtins.ConfigurationPath
 import org.jline.console.Printer
 import org.jline.console.ScriptEngine
 import org.jline.console.impl.ConsoleEngineImpl
+import org.jline.reader.LineReader
 
 import java.nio.file.Path
 import java.util.function.Supplier
@@ -29,9 +30,10 @@ import java.util.function.Supplier
 class GroovyConsoleEngine extends ConsoleEngineImpl {
     private final Printer printer
 
-    GroovyConsoleEngine(ScriptEngine engine, Printer printer, Supplier<Path> workDir, ConfigurationPath configPath) {
+    GroovyConsoleEngine(ScriptEngine engine, Printer printer, Supplier<Path> workDir, ConfigurationPath configPath, LineReader reader) {
         super(Command.values().toSet() - Command.SLURP, engine, printer, workDir, configPath)
         this.printer = printer
+        setLineReader(reader)
         commandNames().each{ name -> rename(Command."${name.toUpperCase()}", "/$name") }
     }
 
