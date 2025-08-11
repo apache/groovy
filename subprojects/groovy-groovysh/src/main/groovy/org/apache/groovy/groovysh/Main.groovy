@@ -107,7 +107,7 @@ class Main {
             def cmds = [
                 '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
                 '/pwd'  : new CommandMethods((Function) this::pwd, this::defaultCompleter),
-                '/cd'   : new CommandMethods((Function) this::cd, this::defaultCompleter),
+                '/cd'   : new CommandMethods((Function) this::cd, this::optDirCompleter),
                 '/date' : new CommandMethods((Function) this::date, this::defaultCompleter),
                 '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
@@ -148,6 +148,10 @@ class Main {
 
         private List<Completer> optFileCompleter(String command) {
             [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.FilesCompleter(this::currentDir), this::commandOptions, 1))]
+        }
+
+        private List<Completer> optDirCompleter(String command) {
+            [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.DirectoriesCompleter(this::currentDir), this::commandOptions, 1))]
         }
 
         private void pwd(CommandInput input) {
@@ -371,7 +375,7 @@ class Main {
                 if (!OSUtils.IS_WINDOWS) {
                     setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
                 }
-                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *POSIX_FILE_CMDS)
+                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *POSIX_FILE_CMDS, '/cd')
                 addFileHighlight('/classloader', null, ['-a', '--add'])
                 addExternalHighlighterRefresh(printer::refresh)
                 addExternalHighlighterRefresh(scriptEngine::refresh)

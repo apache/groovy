@@ -198,7 +198,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             overwrite = true
             arg = input.args()[1]
         }
-        saveFile(engine, new File(arg), overwrite)
+        saveFile(engine, workDir.get().resolve(arg).toFile(), overwrite)
     }
 
     static void saveFile(GroovyEngine engine, File file, boolean overwrite = false) {
@@ -228,7 +228,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             merge = true
             arg = input.args()[1]
         }
-        loadFile(engine, new File(arg), merge)
+        loadFile(engine, workDir.get().resolve(arg).toFile(), merge)
     }
 
     void slurpcmd(CommandInput input) {
@@ -264,7 +264,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             throw new IllegalArgumentException("Invalid parameter type: " + arg.getClass().simpleName)
         }
         try {
-            Path path = Paths.get(arg)
+            Path path = workDir.get().resolve(arg)
             if (Files.exists(path)) {
                 if (!format) {
                     def ext = path.extension
