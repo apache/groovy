@@ -105,6 +105,8 @@ class Main {
                 variables::get)
             def cmds = [
                 '/clear': new CommandMethods((Function) this::clear, this::defaultCompleter),
+                '/pwd'  : new CommandMethods((Function) this::pwd, this::defaultCompleter),
+                '/date' : new CommandMethods((Function) this::date, this::defaultCompleter),
                 '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
             ]
@@ -114,6 +116,8 @@ class Main {
                 posix.register(cmd, PosixCommands::"$orig")
                 cmds.put(cmd, new CommandMethods((Function) this::posix, this::optFileCompleter))
             }
+            posix.register('/pwd', PosixCommands::pwd)
+            posix.register('/date', PosixCommands::date)
             registerCommands(cmds)
         }
 
@@ -138,9 +142,21 @@ class Main {
             [new ArgumentCompleter(NullCompleter.INSTANCE, new Completers.OptionCompleter(new Completers.FilesCompleter(workDir), this::commandOptions, 1))]
         }
 
+        private void pwd(CommandInput input) {
+            posix(adjustUsage('pwd', '/pwd'), input)
+        }
+
+        private void date(CommandInput input) {
+            posix(adjustUsage('date', '/date'), input)
+        }
+
         private void posix(CommandInput input) {
+            posix(usage[input.command()], input)
+        }
+
+        private void posix(String[] usage, CommandInput input) {
             try {
-                parseOptions(usage[input.command()], input.args())
+                parseOptions(usage, input.args())
                 posix.execute(input.command(), [input.command(), *input.args()] as String[])
             } catch (Exception e) {
                 saveException(e)
