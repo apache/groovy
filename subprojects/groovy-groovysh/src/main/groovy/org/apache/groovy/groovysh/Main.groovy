@@ -274,6 +274,7 @@ class Main {
             V(longOpt: 'version', messages['cli.option.version.description'])
             v(longOpt: 'verbose', messages['cli.option.verbose.description'])
             q(longOpt: 'quiet', messages['cli.option.quiet.description'])
+            c(longOpt: 'encoding', args: 1, argName: 'CHARSET', optionalArg: false, messages['cli.option.encoding.description'])
             d(longOpt: 'debug', messages['cli.option.debug.description'])
             e(longOpt: 'evaluate', args: 1, argName: 'CODE', optionalArg: false, messages['cli.option.evaluate.description'])
             C(longOpt: 'color', args: 1, argName: 'FLAG', optionalArg: true, messages['cli.option.color.description'])
@@ -298,6 +299,7 @@ class Main {
             println render(messages.format('cli.info.version', GroovySystem.version))
             System.exit(0)
         }
+        String evaluate = options.e ?: null
 
         try {
             DefaultParser parser = new DefaultParser(
@@ -308,7 +310,18 @@ class Main {
             parser.blockCommentDelims(new DefaultParser.BlockCommentDelims('/*', '*/'))
                 .lineCommentDelims(new String[]{'//'})
                 .setEofOnUnclosedBracket(Bracket.CURLY, Bracket.ROUND, Bracket.SQUARE)
-            Terminal terminal = TerminalBuilder.builder().build()
+            Terminal terminal = TerminalBuilder.builder().tap{
+                if (options.T) {
+                    type(options.T)
+                }
+                if (options.c) {
+                    encoding(options.c)
+                }
+                if (options.C) {
+                    color(options.C as boolean)
+                }
+                name('groovysh')
+            }.build()
             if (terminal.width == 0 || terminal.height == 0) {
                 terminal.size = new Size(120, 40) // hard-coded terminal size when redirecting
             }
@@ -418,9 +431,15 @@ class Main {
             while (true) {
                 try {
                     systemRegistry.cleanUp() // delete temporary variables and reset output streams
+                    String line
 // for debugging
-//                    String line = lines[index++]
-                    String line = reader.readLine("groovy> ")
+//                    line = lines[index++]
+                    if (evaluate) {
+                        line = evaluate
+                        evaluate = null
+                    } else {
+                        line = reader.readLine("groovy> ")
+                    }
                     line = line.readLines().collect{ s ->
                         // remove Groovy continuation character for repl not Groovy's sake
                         s.endsWith(' \\') ? s[0..-3] : s

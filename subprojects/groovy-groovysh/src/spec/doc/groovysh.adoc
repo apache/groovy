@@ -41,34 +41,38 @@ support and more.
 [[GroovyShell-Command-lineOptionsandArguments]]
 === Command-line Options and Arguments
 
-The shell supports several options to control verbosity, ANSI coloring
-and other features.
+The shell supports several options to control various features.
 
 [source,shell]
 -----------------------------------------------------------------
-./bin/groovysh --help
+> groovysh --help
 
 Usage: groovysh [options] [...]
 The Groovy Shell, aka groovysh, is a command-line application which allows easy
-access to evaluate Groovy expressions, define classes and run simple
-experiments.
-  -C, --color[=<FLAG>]    Enable or disable use of ANSI colors
+access to evaluate Groovy expressions, define classes and run simple experiments.
+  -c, --encoding=<CHARSET>   The encoding to use
+  -C, --color[=<FLAG>]       Enable or disable use of ANSI colors
       -cp, -classpath, --classpath
-                          Specify where to find the class files - must be first
-                            argument
-  -d, --debug             Enable debug output
-  -D, --define=<name=value>
-                          Define a system property
-  -e, --evaluate=<CODE>   Evaluate the code first when starting interactive session
-  -h, --help              Display this help message
-  -pa, --parameters       Generate metadata for reflection on method parameter names
-                            (jdk8+ only)
-  -pr, --enable-preview   Enable preview Java features (jdk12+ only)
-  -q, --quiet             Suppress superfluous output
-  -T, --terminal=<TYPE>   Specify the terminal TYPE to use
-  -v, --verbose           Enable verbose output
-  -V, --version           Display the version
+                             Specify where to find the class files - must be
+                               first argument
+  -d, --debug                Enable debug output
+  -D, --define=<name=value>  Define a system property
+  -e, --evaluate=<CODE>      Evaluate the code first when starting interactive
+                               session
+  -h, --help                 Display this help message
+      -pa, --parameters      Generate metadata for reflection on method
+                               parameter names
+      -pr, --enable-preview  Enable preview Java features (jdk12+ only) - must
+                               be after classpath but before other arguments
+  -q, --quiet                Suppress superfluous output
+  -T, --terminal=<TYPE>      Specify the terminal TYPE to use
+  -v, --verbose              Enable verbose output
+  -V, --version              Display the version
 -----------------------------------------------------------------
+
+Here is an example showing the `-q`|`--quiet` and `-e`|`--evaluate` options:
+
+image:assets/img/repl_evaluate.png[Exception, width=80%]
 
 [[GroovyShell-Model]]
 === Repl model
@@ -111,54 +115,6 @@ The following table summarizes the differences between the two modes:
 
 Conceptually, for things that are _remembered_ in the above table,
 it is as if you included the related code at the start of each of your inputs.
-
-[NOTE]
---
-You should treat local variables as if you were using immutable data structures.
-An input which mutates a local variable will likely be undone by subsequent statements.
-So, you should pick one of the first two styles below.
-
-In either mode you can use shared variables:
-[source,jshell]
-----
-groovy> fruit = []
-groovy> fruit << 'peach'
-[peach]
-groovy> fruit << 'pear'
-[peach, pear]
-groovy> assert fruit == ['peach', 'pear']
-----
-
-Use the `/show` command to see the shared variables.
-
-Only in interpreter mode:
-[source,jshell]
-----
-groovy> def noFruit = []
-[]
-groovy> def oneFruit = noFruit << 'peach'
-[peach]
-groovy> def twoFruit = oneFruit << 'pear'
-[peach, pear]
-groovy> assert twoFruit == ['peach', 'pear']
-----
-
-By the time you get to the last statement, the previous three local variable
-definitions are remembered, so the assertion will pass.
-
-Avoid this (relevant to interpreter mode):
-[source,jshell]
-----
-groovy> def fruit = []
-[]
-groovy> fruit << 'peach'
-[peach]
-groovy> fruit << 'pear'
-[pear]
-groovy> assert fruit == []
-----
-The `def fruit = []` will be _remembered_ before executing each of the next three statements.
---
 
 The shell also has the concept of the "current buffer". This is the collection of all type,
 method, imports, and variable definitions. The ordering of these snippets is retained,
@@ -1189,87 +1145,67 @@ image:assets/img/widget2.png[Tailtip,width=80%]
 
 You can accept the entire suggestion or a word at a time. Both widgets can be enabled.
 
-[[GroovyShell-register]]
-=== Custom commands
+[[GroovyShell-Advanced]]
+=== Advanced Topics
 
-The `register` command allows you to register custom commands in the shell. For example, writing the following
-will register the `Stats` command:
+[[GroovyShell-ReplModelDetails]]
+==== REPL Model Details
 
+The style of coding you use in a REPL is slightly different from
+what you might use in a script. The style you use may also depend on
+whether you are using the Groovy Shell in _interpreter mode_ or not.
+
+===== Using binding (shared) variables
+
+Regardless of interpreter mode you can use shared variables:
+[source,jshell]
 ----
-groovy:000> :register Stats
-----
-
-where the `Stats` class is a class extending the `org.apache.groovy.groovysh.CommandSupport` class. For example:
-
-[source,groovy]
-----
-
-class Stats extends CommandSupport {
-    protected Stats(final Groovysh shell) {
-        super(shell, 'stats', 'T')
-    }
-
-    public Object execute(List args) {
-        println "Free memory: ${Runtime.runtime.freeMemory()}"
-    }
-
-}
+groovy> fruit = []
+groovy> fruit << 'peach'
+[peach]
+groovy> fruit << 'pear'
+[peach, pear]
+groovy> assert fruit == ['peach', 'pear']
 ----
 
-Then the command can be called using:
+Use the `/show` command to see the shared variables.
 
+===== Using local variables
+
+You should treat local variables as if you were using immutable data structures.
+An input which mutates a local variable will likely be undone by subsequent statements.
+
+Only in interpreter mode:
+[source,jshell]
 ----
-groovy:000> :stats
-stats
-Free memory: 139474880
-groovy:000>
+groovy> def noFruit = []
+[]
+groovy> def oneFruit = noFruit << 'peach'
+[peach]
+groovy> def twoFruit = oneFruit << 'pear'
+[peach, pear]
+groovy> assert twoFruit == ['peach', 'pear']
 ----
 
-Note that the command class must be found on classpath: you cannot define a new command from within the shell.
+By the time you get to the last statement, the previous three local variable
+definitions are remembered, so the assertion will pass.
+
+Avoid this (relevant to interpreter mode):
+[source,jshell]
+----
+groovy> def fruit = []
+[]
+groovy> fruit << 'peach'
+[peach]
+groovy> fruit << 'pear'
+[pear]
+groovy> assert fruit == []
+----
+The `def fruit = []` will be _remembered_ before executing each of the next three statements.
 
 [[GroovyShell-PlatformProblems]]
-==== Platform Problems
+=== Platform Problems
 
-[[GroovyShell-ProblemsloadingtheJLineDLL]]
-===== Problems loading the JLine DLL
-
-On Windows, https://github.com/jline/jline2[JLine2] (which is used for the fancy
-shell input/history/completion fluff), uses a *tiny* DLL file to trick
-the *evil* Windows faux-shell (`CMD.EXE` or `COMMAND.COM`) into
-providing Java with unbuffered input. In some rare cases, this might
-fail to load or initialize.
-
-One solution is to disable the frills and use the unsupported terminal
-instance. You can do that on the command-line using the `--terminal`
-flag and set it to one of:
-
-* `none`
-* `false`
-* `off`
-* `jline.UnsupportedTerminal`
-
-------------------------
-groovysh --terminal=none
-------------------------
-
-[[GroovyShell-ProblemswithCygwinonWindows]]
-===== Problems with Cygwin on Windows
-
-Some people have issues when running groovysh with cygwin. If you have
-troubles, the following may help:
-
-------------------------
-stty -icanon min 1 -echo
-groovysh --terminal=unix
-stty icanon echo
-------------------------
-
-[[GroovyShell-GMavenPlus]]
-== GMavenPlus Maven Plugin
-https://github.com/groovy/GMavenPlus[GMavenPlus] is a Maven plugin with goals
-that support launching a Groovy Shell or Groovy Console bound to a Maven
-project.
-
-[[GroovyShell-GradleGroovyshPlugin]]
-== Gradle Groovysh Plugin
-https://github.com/tkruse/gradle-groovysh-plugin[Gradle Groovysh Plugin] is a Gradle plugin that provides gradle tasks to start a Groovy Shell bound to a Gradle project.
+The Groovy Shell relies heavily on the JLine3 library for its platform
+support. If you have specific platform problems, please refer to the
+JLine documentation.
