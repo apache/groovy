@@ -86,13 +86,13 @@ class Main {
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
         private final LineReader reader
-        private final Map<String, Object> variables
+        private final GroovyEngine scriptEngine
         private PosixCommandsRegistry posix
         private final Map<String, String[]> usage = [:]
 
-        ExtraConsoleCommands(Path workDir, Map<String, Object> variables, LineReader reader) {
+        ExtraConsoleCommands(Path workDir, GroovyEngine scriptEngine, LineReader reader) {
             super()
-            this.variables = variables
+            this.scriptEngine = scriptEngine
             this.reader = reader
             def terminal = reader.terminal
             def context = new GroovyPosixContext(
@@ -101,7 +101,7 @@ class Main {
                 new PrintStream(terminal.output()),
                 workDir,
                 terminal,
-                variables::get
+                scriptEngine::get
             )
             posix = new PosixCommandsRegistry(context)
             def cmds = [
@@ -161,7 +161,10 @@ class Main {
         private void cd(CommandInput input) {
             try {
                 parseOptions(adjustUsage('cd', '/cd'), input.args())
-                PosixCommands.cd(posix.context, ['/cd', *input.args()] as String[], { Path newPath -> posix.context.currentDir = newPath })
+                PosixCommands.cd(posix.context, ['/cd', *input.args()] as String[], { Path newPath ->
+                    posix.context.currentDir = newPath
+                    scriptEngine.put('PWD', newPath)
+                })
             } catch (Exception e) {
                 saveException(e)
             }
@@ -347,8 +350,9 @@ class Main {
                     LineReader.BLINK_MATCHING_PAREN, 0) // if enabled cursor remains in begin parenthesis (gitbash)
             }
 
-            def extra = new ExtraConsoleCommands(Paths.get(System.getProperty('user.dir')), scriptEngine.variables, reader)
+            def extra = new ExtraConsoleCommands(Paths.get(System.getProperty('user.dir')), scriptEngine, reader)
             Supplier<Path> workDir = extra::currentDir
+            scriptEngine.put('PWD', workDir.get())
 
             CommandRegistry groovy = new GroovyCommands(scriptEngine, workDir, printer, groovyHighlighter)
 
