@@ -298,39 +298,49 @@ the available commands:
 groovy> /help
     /!           execute shell command
     /alias       create command alias
+    /cat         concatenate and print FILES
+    /cd          change directory
     /classloader display/manage Groovy classLoader data
     /clear       clear terminal
     /colors      view 256-color table and ANSI-styles
     /console     launch Groovy console
+    /date        display date
     /del         delete console variables, methods, classes and imports
     /doc         open document on browser
     /echo        echos a value
+    /exit        exit from app/script
     /grab        add maven repository dependencies to classpath
+    /grep        search for PATTERN in each FILE or standard input.
+    /head        display first lines of files
+    /help        command help
     /highlighter manage nanorc theme system
     /history     list history of commands
     /imports     show/delete import statements
     /inspect     display/browse object info on terminal/object browser
     /keymap      manipulate keymaps
     /less        file pager
-    /load        load a file into the buffer
+    /load        load state/a file into the buffer
+    /ls          list files
     /methods     show/delete methods
     /nano        edit files
     /pipe        create/delete pipe operator
     /prnt        print object
+    /pwd         print working directory
     /reset       clear the buffer
-    /save        save the buffer to a file
+    /save        save state/the buffer to a file
     /setopt      set options
     /setvar      set lineReader variable value
     /show        list console variables
+    /slurp       slurp file or string variable context to object
+    /sort        writes sorted standard input to standard output.
+    /tail        display last lines of files
     /ttop        display and update sorted information about threads
     /types       show/delete types
     /unalias     remove command alias
     /unsetopt    unset options
     /vars        show/delete variable declarations
+    /wc          word, line, character, and byte count
     /widget      manipulate widgets
-    /exit         exit from app/script
-    /help         command help
-    /slurp        slurp file or string variable context to object
 ----------------------------------------------------------------------------------
 
 While in the interactive shell, you can ask for help for any command to
@@ -363,6 +373,43 @@ image:assets/img/repl_alias2.png[More /alias examples, width=60%]
 Aliases are persisted in a `.groovysh/aliases.json` file in the user home directory.
 
 See also the `/unalias` command, which allows aliases to be removed.
+
+[[GroovyShell-cat]]
+==== `/cat`
+
+Concatenate and print files:
+
+[source,jshell]
+----
+groovy> /cat answers.json answers.toml
+{
+    "answer": {
+        "universe":
+        42
+    }
+}
+[answer]
+universe = 42
+----
+
+See also the `/less` command, which can be used to display the contents of a file
+a page at a time with syntax highlighting.
+
+[[GroovyShell-cd]]
+==== `/cd`
+
+Change the current working directory. `groovysh` keeps track of a _current working directory_. You can view it with `/pwd` and change it with `/cd`.
+
+The `groovysh` file commands
+(`/cat`, `/less`, `/head`, `/slurp`, `/load`, `/ls`, etc.) will use the current working directory.
+
+NOTE: The JVM running `groovysh` also has its own concept of the current working directory, which is the directory in which `groovysh` was started, so `/!ls` and `/ls` may not show the same files. Using `/!cd` only changes the working directory within the context of that one shell command.
+
+There is a predefined shared variable `PWD` which can assist with invoking shell commands. So, on unix platforms, `/ls` will list the same files as `/!ls $PWD`.
+
+See also the `/pwd` command, which prints the current working directory.
+
+image:assets/img/repl_cd.png[Cd, width=80%]
 
 [[GroovyShell-classloader]]
 ==== `/classloader`
@@ -403,7 +450,21 @@ image:assets/img/repl_console.png[Console, width=80%]
 [[GroovyShell-del]]
 ==== `/del`
 
-Deletes objects from the shell.
+Deletes objects from the shell. The command looks for any
+variable, method, type, shared data, or import with the given name and deletes it.
+
+Here we create two variables, `x` and `y`, then delete the `x` variable:
+
+image:assets/img/repl_del.png[Console, width=40%]
+
+See also, the `/vars`, `/methods`, `/types`, and `/imports` commands.
+These offer a `-d`|`--delete` option to delete the respective objects
+with completion.
+
+[[GroovyShell-doc]]
+==== `/doc`
+
+Open documentation in a browser.
 
 [[GroovyShell-echo]]
 ==== `/echo`
@@ -457,6 +518,13 @@ org.apache.commons:commons-email:
 ----
 
 This command can be given at any time to add new dependencies.
+
+[[GroovyShell-grep]]
+==== `/grep`
+
+The `/grep` command searches for patterns in files or standard input.
+
+image:assets/img/repl_grep.png[Echo, width=60%]
 
 [[GroovyShell-history]]
 ==== `/history`
