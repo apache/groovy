@@ -526,6 +526,18 @@ The `/grep` command searches for patterns in files or standard input.
 
 image:assets/img/repl_grep.png[Echo, width=60%]
 
+[[GroovyShell-head]]
+==== `/head`
+
+The `/head` command displays the start of a file.
+
+[source,jshell]
+----
+groovy> /head -n2 fruit.txt
+apple
+banana
+----
+
 [[GroovyShell-history]]
 ==== `/history`
 
@@ -637,6 +649,30 @@ Load a file into the buffer.
 If no filename is given as an argument, the current shared variables are
 loaded from the `.groovy/groovysh.ser` file in the user home directory.
 
+[[GroovyShell-ls]]
+==== `/ls`
+
+The `/ls` command lists files.
+
+[source,jshell]
+----
+groovy> /ls subprojects
+                     groovy-dateutil      groovy-swing
+..                   groovy-docgenerator  groovy-templates
+binary-compatibility groovy-ginq          groovy-test
+groovy-all           groovy-groovydoc     groovy-test-junit5
+groovy-ant           groovy-groovysh      groovy-testng
+groovy-astbuilder    groovy-jmx           groovy-toml
+groovy-binary        groovy-json          groovy-typecheckers
+groovy-bom           groovy-jsr223        groovy-xml
+groovy-cli-commons   groovy-macro         groovy-yaml
+groovy-cli-picocli   groovy-macro-library performance
+groovy-console       groovy-nio           stress
+groovy-contracts     groovy-servlet       tests-preview
+groovy-datetime      groovy-sql
+groovy>
+----
+
 [[GroovyShell-nano]]
 ==== `/nano`
 
@@ -663,6 +699,17 @@ image:assets/img/repl_prnt.png[usage of the /prnt command, width=60%]
 
 See also the `/echo` command, which is similar but takes multiple arguments.
 It also supports variable expansion but doesn't support formatting.
+
+[[GroovyShell-pwd]]
+==== `/pwd`
+
+The `/pwd` command prints the current working directory.
+
+[source,jshell]
+----
+groovy> /pwd
+/Users/paulk/Projects/groovy
+----
 
 [[GroovyShell-reset]]
 ==== `/reset`
@@ -764,6 +811,25 @@ implementation, that follows the normal GPath conventions.
 If you want more advanced control over the slurping,
 you can use Groovy's "Slurper" classes directly, e.g. `new XmlSlurper().parseText(...)`.
 
+[[GroovyShell-sort]]
+==== `/sort`
+
+The `/sort` command sorts files or standard input.
+
+image:assets/img/repl_sort.png[Deleting types, width=85%]
+
+[[GroovyShell-tail]]
+==== `/tail`
+
+The `/tail` command displays the end of a file.
+
+[source,jshell]
+----
+groovy> /tail -n2 fruit.txt
+date
+elderberry
+----
+
 [[GroovyShell-types]]
 ==== `/types`
 
@@ -852,6 +918,17 @@ groovy>
 ----
 
 See also `/setopt` to set options.
+
+[[GroovyShell-wc]]
+==== `/wc`
+
+The `/wc` command displays word, line, character, and byte counts.
+
+[source,jshell]
+----
+groovy> /wc LICENSE
+     262    1754   13493 LICENSE
+----
 
 [[GroovyShell-doc]]
 ==== `/doc`
