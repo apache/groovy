@@ -669,6 +669,24 @@ as these examples show:
 
 image:assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
 
+There is another less commonly used builtin pipe operator, `|;`, which is used to flip arguments:
+
+[source,jshell]
+----
+groovy> 4 |; 8 -
+4
+groovy> 4 |; 8 *
+32
+groovy> 4 |; 8 /
+2
+groovy> 4 |; 8 +
+12
+groovy> 4 |; 8 %
+0
+groovy> 4 |; 8 **
+4096
+----
+
 [[GroovyShell-prnt]]
 ==== `/prnt`
 
