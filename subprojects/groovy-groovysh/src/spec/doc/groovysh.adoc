@@ -593,7 +593,7 @@ image:assets/img/repl_inspect_gui.png[Usage of the /inspect command, width=80%]
 Display the contents of a file (usually a page at a time).
 Formatting of common file types is supported.
 
-image:assets/img/repl_less.png[Usage of the /less command, width=85%]
+image:assets/img/repl_less.png[Usage of the /less command, width=90%]
 
 If no filename is given, the contents of the current buffer are displayed.
 
@@ -668,6 +668,30 @@ You can also define your own pipe operators, defined using `/pipe [OPERATOR] [PR
 as these examples show:
 
 image:assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
+
+JLine functionality includes support for named pipes and pipe aliases:
+
+[source,jshell]
+----
+groovy> /pipe smallFruit '.findAll{ it.size() <' '}'
+groovy> fruit | smallFruit 6
+[apple, date]
+groovy> /alias sizes '|. it.size()'
+groovy> fruit | sizes
+[5, 6, 6, 4, 10]
+----
+
+These should be regarded as incubating features, as we are still
+exploring the possibility of an alternative syntax to use for the Groovy Shell,
+since the pipe operator conflicts with the binary OR operator.
+In the meantime, bracketed expressions aren't searched for pipe operators,
+so that provides a workaround for the conflict:
+
+[source,jshell]
+----
+groovy> (4 | 8)
+12
+----
 
 There is another less commonly used builtin pipe operator, `|;`, which is used to flip arguments:
 
