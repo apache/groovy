@@ -664,7 +664,8 @@ image:assets/img/repl_pipe_builtin.png[usage of the builtin pipes, width=50%]
 Pipe operators are handled by the shell. The left and right hand sides
 will be either repl commands or code passed to the Groovy engine for execution.
 
-You can also define your own pipe operators as these examples show:
+You can also define your own pipe operators, defined using `/pipe [OPERATOR] [PREFIX] [POSTFIX]`,
+as these examples show:
 
 image:assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
 
