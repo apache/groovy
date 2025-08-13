@@ -711,6 +711,18 @@ groovy> 4 |; 8 **
 4096
 ----
 
+It is most commonly used with commands:
+
+[source,jshell]
+----
+groovy> /widget -l |; /prnt -s JSON
+[
+    "_autosuggest-end-of-line (_autosuggest-end-of-line)",
+    "_autosuggest-forward-char (_autosuggest-forward-char)",
+    ...
+]
+----
+
 [[GroovyShell-prnt]]
 ==== `/prnt`
 
