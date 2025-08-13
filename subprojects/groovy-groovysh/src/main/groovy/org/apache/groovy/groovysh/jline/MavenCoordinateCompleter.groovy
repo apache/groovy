@@ -94,7 +94,7 @@ class MavenCoordinateCompleter implements Completer {
             groupDir.eachDir { artifactDir ->
                 if (artifactDir.name.startsWith(artifactPrefix) && isVersionDirPresent(artifactDir)) {
                     def suggestion = "${groupId}:${artifactDir.name}:"
-                    candidates << new Candidate(suggestion, suggestion, null, null, '', null, false)
+                    candidates << new Candidate(suggestion, "${artifactDir.name}:", null, null, '', null, false)
                 }
             }
         }
@@ -104,7 +104,7 @@ class MavenCoordinateCompleter implements Completer {
         groupDir.eachDir { artifactDir ->
             if (artifactDir.name.startsWith(artifactPrefix) && isJarsDirPresent(artifactDir)) {
                 def suggestion = "${groupId}:${artifactDir.name}:"
-                candidates << new Candidate(suggestion, suggestion, null, null, '', null, false)
+                candidates << new Candidate(suggestion, "${artifactDir.name}:", null, null, '', null, false)
             }
         }
     }
@@ -115,7 +115,7 @@ class MavenCoordinateCompleter implements Completer {
             artifactDir.eachDir { versionDir ->
                 if (versionDir.name.startsWith(versionPrefix)) {
                     def suggestion = "${groupId}:${artifactId}:${versionDir.name}"
-                    candidates << new Candidate(suggestion, suggestion, null, null, ' ', null, true)
+                    candidates << new Candidate(suggestion, "${versionDir.name}", null, null, ' ', null, true)
                 }
             }
         }
@@ -124,8 +124,9 @@ class MavenCoordinateCompleter implements Completer {
         if (!artifactDir.exists()) return
         artifactDir.eachFile { candidate ->
             if (candidate.name.startsWith("$artifactId-$versionPrefix") && candidate.name.endsWith('.jar')) {
-                def suggestion = /$groupId:$artifactId:${(candidate.name - '.jar') - "$artifactId-"}/
-                candidates << new Candidate(suggestion, suggestion, null, null, ' ', null, true)
+                def version = candidate.name - "$artifactId-" - '.jar'
+                def suggestion = "$groupId:$artifactId:$version"
+                candidates << new Candidate(suggestion, version, null, null, ' ', null, true)
             }
         }
     }
