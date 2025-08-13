@@ -1263,7 +1263,7 @@ public class SecureASTCustomizer extends CompilationCustomizer {
         public void visitMethodCallExpression(final MethodCallExpression call) {
             assertExpressionAuthorized(call);
             Expression receiver = call.getObjectExpression();
-            final String typeName = receiver.getType().getName();
+            final String typeName = getType(receiver).getName();
             if (allowedReceivers != null && !allowedReceivers.contains(typeName)) {
                 throw new SecurityException("Method calls not allowed on [" + typeName + "]");
             } else if (disallowedReceivers != null && disallowedReceivers.contains(typeName)) {
