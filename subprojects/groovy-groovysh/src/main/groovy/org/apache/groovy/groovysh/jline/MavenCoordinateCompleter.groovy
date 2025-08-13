@@ -90,10 +90,19 @@ class MavenCoordinateCompleter implements Completer {
 
     private void suggestArtifactIds(String groupId, String artifactPrefix, List<Candidate> candidates) {
         def groupDir = new File(mavenRepo, groupId.replace('.', File.separator))
-        if (!groupDir.exists()) return
+        if (groupDir.exists()) {
+            groupDir.eachDir { artifactDir ->
+                if (artifactDir.name.startsWith(artifactPrefix) && isVersionDirPresent(artifactDir)) {
+                    def suggestion = "${groupId}:${artifactDir.name}:"
+                    candidates << new Candidate(suggestion, suggestion, null, null, '', null, false)
+                }
+            }
+        }
 
+        groupDir = new File(grapeRepo, groupId)
+        if (!groupDir.exists()) return
         groupDir.eachDir { artifactDir ->
-            if (artifactDir.name.startsWith(artifactPrefix) && isVersionDirPresent(artifactDir)) {
+            if (artifactDir.name.startsWith(artifactPrefix) && isJarsDirPresent(artifactDir)) {
                 def suggestion = "${groupId}:${artifactDir.name}:"
                 candidates << new Candidate(suggestion, suggestion, null, null, '', null, false)
             }
@@ -101,12 +110,21 @@ class MavenCoordinateCompleter implements Completer {
     }
 
     private void suggestVersions(String groupId, String artifactId, String versionPrefix, List<Candidate> candidates) {
-        def artifactDir = new File(mavenRepo, "${groupId.replace('.', File.separator)}/${artifactId}")
-        if (!artifactDir.exists()) return
+        def artifactDir = new File(mavenRepo, "${groupId.replace('.', File.separator)}${File.separator}${artifactId}")
+        if (artifactDir.exists()) {
+            artifactDir.eachDir { versionDir ->
+                if (versionDir.name.startsWith(versionPrefix)) {
+                    def suggestion = "${groupId}:${artifactId}:${versionDir.name}"
+                    candidates << new Candidate(suggestion, suggestion, null, null, ' ', null, true)
+                }
+            }
+        }
 
-        artifactDir.eachDir { versionDir ->
-            if (versionDir.name.startsWith(versionPrefix)) {
-                def suggestion = "${groupId}:${artifactId}:${versionDir.name}"
+        artifactDir = new File(grapeRepo, "${groupId}${File.separator}${artifactId}${File.separator}jars")
+        if (!artifactDir.exists()) return
+        artifactDir.eachFile { candidate ->
+            if (candidate.name.startsWith("$artifactId-$versionPrefix") && candidate.name.endsWith('.jar')) {
+                def suggestion = /$groupId:$artifactId:${(candidate.name - '.jar') - "$artifactId-"}/
                 candidates << new Candidate(suggestion, suggestion, null, null, ' ', null, true)
             }
         }
@@ -114,6 +132,10 @@ class MavenCoordinateCompleter implements Completer {
 
     private boolean isVersionDirPresent(File dir) {
         dir.isDirectory() && dir.listFiles()?.any { isVersionDir(it) }
+    }
+
+    private boolean isJarsDirPresent(File dir) {
+        dir.isDirectory() && dir.listFiles()?.any { it.name == 'jars' }
     }
 
     private boolean isVersionDir(File dir) {
