@@ -645,6 +645,29 @@ image:assets/img/repl_nano.png[Using the /nano command, width=80%]
 If editing the current buffer, when you exit and then save,
 the buffer will be reloaded with the edited contents.
 
+[[GroovyShell-pipe]]
+==== `/pipe`
+
+The `/pipe` command lets you create and delete pipe operators.
+There are two builtin pipe operators, `|||` and `|&&`:
+
+* The _and_ operator (|&&) executes the right hand side only if the execution of the left hand side succeeds.
+* The _or_ operator (|||) executes the right hand side only if the execution of the left hand side fails.
+
+Where _succeeds_ means executing without throwing an exception and returning
+a non-null, non-empty, non-zero result, i.e. `true` according to _Groovy truth_.
+
+Here are some examples:
+
+image:assets/img/repl_pipe_builtin.png[usage of the builtin pipes, width=50%]
+
+Pipe operators are handled by the shell. The left and right hand sides
+will be either repl commands or code passed to the Groovy engine for execution.
+
+You can also define your own pipe operators as these examples show:
+
+image:assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
+
 [[GroovyShell-prnt]]
 ==== `/prnt`
 
