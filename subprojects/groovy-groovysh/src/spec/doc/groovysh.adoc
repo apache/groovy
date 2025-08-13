@@ -322,6 +322,11 @@ with the fragment:
 
 image:assets/img/repl_alias.png[Usage of /alias, width=75%]
 
+The `/cat` command is already available. As can be seen here, aliases
+are replaced before command selection, so with the above alias in place,
+we actually invoke `/less -F` command, which has syntax highlighting,
+instead of the builtin `/cat` which doesn't.
+
 The fragment is expected to be at the start of a line but other text may follow:
 
 image:assets/img/repl_alias2.png[More /alias examples, width=60%]
