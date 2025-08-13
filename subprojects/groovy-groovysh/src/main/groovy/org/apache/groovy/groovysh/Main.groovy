@@ -432,12 +432,12 @@ class Main {
                 try {
                     systemRegistry.cleanUp() // delete temporary variables and reset output streams
                     String line
-// for debugging
-//                    line = lines[index++]
                     if (evaluate) {
                         line = evaluate
                         evaluate = null
                     } else {
+                        // for debugging
+//                        line = lines[index++]
                         line = reader.readLine("groovy> ")
                     }
                     line = line.readLines().collect{ s ->

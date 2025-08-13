@@ -231,7 +231,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         loadFile(engine, workDir.get().resolve(arg).toFile(), merge)
     }
 
-    void slurpcmd(CommandInput input) {
+    def slurpcmd(CommandInput input) {
         checkArgCount(input, [0, 1, 2, 3, 4])
         if (maybePrintHelp(input, '/slurp')) return
         Charset encoding = StandardCharsets.UTF_8
@@ -324,6 +324,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             throw ignore
         }
         engine.put("_", out)
+        out
     }
 
     Object getParser(String format, String parserName) {

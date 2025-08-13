@@ -33,32 +33,19 @@ class GroovySystemRegistry extends SystemRegistryImpl {
         rename(Pipe.OR, '|||')
     }
 
-    // workaround for: https://github.com/jline/jline3/issues/1361
     @Override
     Object execute(String line) throws Exception {
         line = line.startsWith("/!") ? line.replaceFirst("/!", "/! ") : line
-        def m = line =~ /([a-zA-Z][a-zA-Z0-9_]*)(\s*)=(\s*)(\/?)(\S.*)/
-        def target = null
+        // SystemRegistryImpl assumes we have no spaces around the '=' in variable assignments
+        // for commands, so we adjust here to support Groovy idiomatic syntax.
+        def m = line =~ /([a-zA-Z][a-zA-Z0-9_]*)\s*=\s*(\/?)(\S.*)/
         if (m.matches()) {
-            def (_, variable, space1, space2, slash, rhs) = m[0]
+            def (_, variable, slash, rhs) = m[0]
             if (slash) {
-                target = variable
-                line = slash + rhs
-            } else {
-                space1 = space1.size() == 0 ? ' ' : space1
-                space2 = space2.size() == 0 ? ' ' : space2
-                line = "$variable$space1=$space2$rhs"
+                line = variable + '=' + slash + rhs
             }
         }
-        def result = super.execute(line)
-        if (target) {
-            consoleEngine().with {
-                if (hasVariable('_')) {
-                    putVariable(target, getVariable('_'))
-                }
-            }
-        }
-        result
+        super.execute(line)
     }
 
     @Override
