@@ -35,6 +35,9 @@ endif::[]
 ifndef::reldir_jmx[]
 :reldir_jmx: ../../../../../subprojects/groovy-jmx/src/spec/doc
 endif::[]
+ifndef::reldir_groovysh[]
+:reldir_groovysh: ../../../../../subprojects/groovy-groovysh/src/spec/doc
+endif::[]
 
 include::../../../../../src/spec/doc/core-introduction.adoc[]
 

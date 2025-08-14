@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::reldir_groovysh[]
+:reldir_groovysh: .
+endif::[]
 
 = Groovysh, the Groovy shell
 
@@ -72,7 +75,7 @@ access to evaluate Groovy expressions, define classes and run simple experiments
 
 Here is an example showing the `-q`|`--quiet` and `-e`|`--evaluate` options:
 
-image:assets/img/repl_evaluate.png[Exception, width=80%]
+image:{reldir_groovysh}/assets/img/repl_evaluate.png[Exception, width=80%]
 
 [[GroovyShell-Model]]
 === Repl model
@@ -173,7 +176,7 @@ baz
 
 Defined classes are known to the shell and can be used in completion:
 
-image:assets/img/repl_typedef.png[Define Class, width=50%]
+image:{reldir_groovysh}/assets/img/repl_typedef.png[Define Class, width=50%]
 
 [[GroovyShell-Variables]]
 ==== Variables
@@ -236,7 +239,7 @@ In this case, variables and methods share the same namespace.
 If an exception is thrown, the shell will print the exception message
 and set a special `exception` shared variable.
 
-image:assets/img/repl_exceptions.png[Exception, width=80%]
+image:{reldir_groovysh}/assets/img/repl_exceptions.png[Exception, width=80%]
 
 [[GroovyShell-Commands]]
 === Commands
@@ -320,7 +323,7 @@ Create an alias for a commandline fragment. The fragment could be Groovy code
 or a shell command. When evaluating a commandline, the alias will be replaced
 with the fragment:
 
-image:assets/img/repl_alias.png[Usage of /alias, width=75%]
+image:{reldir_groovysh}/assets/img/repl_alias.png[Usage of /alias, width=75%]
 
 The `/cat` command is already available. As can be seen here, aliases
 are replaced before command selection, so with the above alias in place,
@@ -329,7 +332,7 @@ instead of the builtin `/cat` which doesn't.
 
 The fragment is expected to be at the start of a line but other text may follow:
 
-image:assets/img/repl_alias2.png[More /alias examples, width=60%]
+image:{reldir_groovysh}/assets/img/repl_alias2.png[More /alias examples, width=60%]
 
 Aliases are persisted in a `.groovysh/aliases.json` file in the user home directory.
 
@@ -370,7 +373,7 @@ There is a predefined shared variable `PWD` which can assist with invoking shell
 
 See also the `/pwd` command, which prints the current working directory.
 
-image:assets/img/repl_cd.png[Cd, width=80%]
+image:{reldir_groovysh}/assets/img/repl_cd.png[Cd, width=80%]
 
 [[GroovyShell-classloader]]
 ==== `/classloader`
@@ -379,7 +382,7 @@ Display and manage the Groovy classloader data.
 
 Let's `/grab` a dependency, define a class using it, and then use the `/classloader` command to see the classloader data:
 
-image:assets/img/repl_classloader.png[Classloader, width=80%]
+image:{reldir_groovysh}/assets/img/repl_classloader.png[Classloader, width=80%]
 
 [[GroovyShell-clear]]
 ==== `/clear`
@@ -391,11 +394,11 @@ Clears the screen.
 
 Displays the available colors.
 
-image:assets/img/repl_colors.png[Colors, width=80%]
+image:{reldir_groovysh}/assets/img/repl_colors.png[Colors, width=80%]
 
 This can be useful when configuring the console options, for example the `PRNT_COLORS`:
 
-image:assets/img/repl_colors2.png[Colors, width=80%]
+image:{reldir_groovysh}/assets/img/repl_colors2.png[Colors, width=80%]
 
 As this example shows, you can mix color names, theme colors, and color numbers.
 See the https://github.com/jline/jline3/wiki/REPL-Console-Customization[REPL Console Customization]
@@ -406,7 +409,7 @@ documentation for more details about such customization.
 
 Displays the current buffer in the GroovyConsole.
 
-image:assets/img/repl_console.png[Console, width=80%]
+image:{reldir_groovysh}/assets/img/repl_console.png[Console, width=80%]
 
 [[GroovyShell-del]]
 ==== `/del`
@@ -416,7 +419,7 @@ variable, method, type, shared data, or import with the given name and deletes i
 
 Here we create two variables, `x` and `y`, then delete the `x` variable:
 
-image:assets/img/repl_del.png[Console, width=40%]
+image:{reldir_groovysh}/assets/img/repl_del.png[Console, width=40%]
 
 See also, the `/vars`, `/methods`, `/types`, and `/imports` commands.
 These offer a `-d`|`--delete` option to delete the respective objects
@@ -427,13 +430,77 @@ with completion.
 
 Open documentation in a browser.
 
+For example, we can get both the Javadoc and GDK enhancements doc for `java.util.List` (shown running on JDK17):
+
+[subs=attributes]
+----
+groovy:000> :doc java.util.List
+https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/java/util/List.html
+----
+
+This will print the documentation URLs found and open two windows (or tabs, depending on your browser):
+
+* one for the JDK documentation
+* one for the GDK documentation
+
+By default, for Java classes, the `java.base` module is assumed. You can specify an optional module
+for other cases (shown running on JDK17):
+
+----
+groovy:000> :doc java.scripting javax.script.ScriptContext
+https://docs.oracle.com/en/java/javase/17/docs/api/java.scripting/javax/script/ScriptContext.html
+----
+
+For backwards compatibility, if no module is specified when searching for Java classes, and no class is found in the `java.base` module, an additional attempt is made to find documentation for the class in the JDK8 (pre-module) Javadoc:
+
+----
+groovy:000> :doc javax.script.ScriptContext
+https://docs.oracle.com/javase/8/docs/api/javax/script/ScriptContext.html
+----
+
+To get the Groovydoc for `groovy.ant.AntBuilder` and `groovy.xml.XmlSlurper`:
+
+[subs=attributes]
+----
+groovy:000> :doc groovy.ant.AntBuilder
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/ant/AntBuilder.html
+groovy:000> :doc groovy.xml.XmlSlurper
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/xml/XmlSlurper.html
+----
+
+To get both the Groovydoc and GDK enhancements doc for `groovy.lang.Closure` and `groovy.sql.GroovyResultSet`:
+
+[subs=attributes]
+----
+groovy:000> :doc groovy.lang.Closure
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/lang/Closure.html
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/lang/Closure.html
+groovy:000> :doc groovy.sql.GroovyResultSet
+https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/sql/GroovyResultSet.html
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/sql/GroovyResultSet.html
+----
+
+Documentation is also available for the GDK enhancements to primitive arrays and arrays of arrays:
+
+[subs=attributes]
+----
+groovy:000> :doc int[]
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/int%5B%5D.html
+groovy:000> :doc double[][]
+https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/double%5B%5D%5B%5D.html
+----
+
+NOTE: In contexts where opening a browser may not be desirable, e.g. on a CI server,
+this command can be disabled by setting the `groovysh.disableDocCommand` system property to `true`.
+
 [[GroovyShell-echo]]
 ==== `/echo`
 
 The `/echo` command outputs its arguments to the console. Arguments are output verbatim,
 but variable expansion is also supported.
 
-image:assets/img/repl_echo.png[Echo, width=60%]
+image:{reldir_groovysh}/assets/img/repl_echo.png[Echo, width=60%]
 
 See also the `/prnt` command, which is similar but may perform additional formatting
 on the output(s).
@@ -468,14 +535,11 @@ by known artifacts in the local Maven (~/.m2) and Grape (~/.groovy/grapes) repos
 [source,jshell]
 ----
 groovy> /grab org.apache.commons:commons-<TAB>
-org.apache.commons:commons-collections4:     org.apache.commons:commons-exec:
-org.apache.commons:commons-compress:         org.apache.commons:commons-imaging:
-org.apache.commons:commons-configuration2:   org.apache.commons:commons-lang3:
-org.apache.commons:commons-crypto:           org.apache.commons:commons-math3:
-org.apache.commons:commons-csv:              org.apache.commons:commons-parent:
-org.apache.commons:commons-dbcp2:            org.apache.commons:commons-pool2:
-org.apache.commons:commons-digester3:        org.apache.commons:commons-text:
-org.apache.commons:commons-email:
+commons-collections4:     commons-dbcp2:            commons-lang3:
+commons-compress:         commons-digester3:        commons-math3:
+commons-configuration2:   commons-email:            commons-parent:
+commons-crypto:           commons-exec:             commons-pool2:
+commons-csv:              commons-imaging:          commons-text:
 ----
 
 This command can be given at any time to add new dependencies.
@@ -485,7 +549,7 @@ This command can be given at any time to add new dependencies.
 
 The `/grep` command searches for patterns in files or standard input.
 
-image:assets/img/repl_grep.png[Echo, width=60%]
+image:{reldir_groovysh}/assets/img/repl_grep.png[Echo, width=60%]
 
 [[GroovyShell-head]]
 ==== `/head`
@@ -539,7 +603,7 @@ Usage: history [-dnrfEie] [-m match] [first] [last]
 
 Here is an example of using the `/history` command:
 
-image:assets/img/repl_history.png[Usage of the /history command, width=70%]
+image:{reldir_groovysh}/assets/img/repl_history.png[Usage of the /history command, width=70%]
 
 [[GroovyShell-import]]
 ==== `import`
@@ -568,7 +632,7 @@ ArrayBlockingQueue            ConcurrentSkipListSet         ForkJoinTask
 
 Once an import statement has been executed, relevant classes will become available for completion:
 
-image:assets/img/repl_import.png[Import, width=90%]
+image:{reldir_groovysh}/assets/img/repl_import.png[Import, width=90%]
 
 [[GroovyShell-imports]]
 ==== `/imports`
@@ -586,11 +650,11 @@ import java.util.concurrent.BlockingQueue
 
 Display or browse object info on the terminal or object browser.
 
-image:assets/img/repl_inspect.png[Usage of the /inspect command, width=80%]
+image:{reldir_groovysh}/assets/img/repl_inspect.png[Usage of the /inspect command, width=80%]
 
 Using the `--gui/-g` option displays the object in Groovy's object browser:
 
-image:assets/img/repl_inspect_gui.png[Usage of the /inspect command, width=80%]
+image:{reldir_groovysh}/assets/img/repl_inspect_gui.png[Usage of the /inspect command, width=80%]
 
 [[GroovyShell-less]]
 ==== `/less`
@@ -598,7 +662,7 @@ image:assets/img/repl_inspect_gui.png[Usage of the /inspect command, width=80%]
 Display the contents of a file (usually a page at a time).
 Formatting of common file types is supported.
 
-image:assets/img/repl_less.png[Usage of the /less command, width=90%]
+image:{reldir_groovysh}/assets/img/repl_less.png[Usage of the /less command, width=90%]
 
 If no filename is given, the contents of the current buffer are displayed.
 
@@ -641,11 +705,11 @@ Edit files or the current buffer.
 
 The `/nano` command has numerous options:
 
-image:assets/img/repl_nano_help.png[Help for the /nano command, width=100%]
+image:{reldir_groovysh}/assets/img/repl_nano_help.png[Help for the /nano command, width=100%]
 
 You can use the `/nano` command to edit files or the current buffer:
 
-image:assets/img/repl_nano.png[Using the /nano command, width=80%]
+image:{reldir_groovysh}/assets/img/repl_nano.png[Using the /nano command, width=80%]
 
 If editing the current buffer, when you exit and then save,
 the buffer will be reloaded with the edited contents.
@@ -669,7 +733,7 @@ i.e. `true` according to _Groovy truth_.
 
 Here are some examples for _and_ and _or_:
 
-image:assets/img/repl_pipe_builtin.png[usage of the builtin pipes, width=50%]
+image:{reldir_groovysh}/assets/img/repl_pipe_builtin.png[usage of the builtin pipes, width=50%]
 
 Pipe operators are handled by the shell. The left and right hand sides
 will be either repl commands or code passed to the Groovy engine for execution.
@@ -707,7 +771,7 @@ groovy> 4 |; 8 **
 You can also define your own custom pipe operators, defined using `/pipe [OPERATOR] [PREFIX] [POSTFIX]`,
 as these examples show:
 
-image:assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
+image:{reldir_groovysh}/assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
 
 JLine functionality includes support for _named pipes_ and _pipe aliases_.
 
@@ -782,7 +846,7 @@ using spaces when you want a binary OR.
 As a final example, let's use a custom pipe with the output redirection
 operators to find fruit with large names:
 
-image:assets/img/repl_pipe2.png[usage of the /pipe command, width=80%]
+image:{reldir_groovysh}/assets/img/repl_pipe2.png[usage of the /pipe command, width=80%]
 
 [[GroovyShell-prnt]]
 ==== `/prnt`
@@ -790,7 +854,7 @@ image:assets/img/repl_pipe2.png[usage of the /pipe command, width=80%]
 The `/prnt` command outputs its argument to the console. Both variable expansion
 and formatting are supported.
 
-image:assets/img/repl_prnt.png[usage of the /prnt command, width=60%]
+image:{reldir_groovysh}/assets/img/repl_prnt.png[usage of the /prnt command, width=60%]
 
 See also the `/echo` command, which is similar but takes multiple arguments.
 It also supports variable expansion but doesn't support formatting.
@@ -866,7 +930,7 @@ groovy>
 Show the shared variables (the binding). These include your shared variables
 as well as a few used for configuring various shell features.
 
-image:assets/img/repl_show.png[Usage of the /show command, width=60%]
+image:{reldir_groovysh}/assets/img/repl_show.png[Usage of the /show command, width=60%]
 
 [[GroovyShell-slurp]]
 ==== `/slurp`
@@ -876,7 +940,7 @@ various formats like XML, JSON, YAML, etc. You can use those in your code
 if you like, but the `/slurp` command can be a convenience shortcut.
 It supports most of the common formats, including JSON, XML, YAML, CSV, TOML and property files.
 
-image:assets/img/repl_slurp.png[Usage of the /slurp command, width=75%]
+image:{reldir_groovysh}/assets/img/repl_slurp.png[Usage of the /slurp command, width=75%]
 
 As you can see in the usage information at the end of the above image,
 you can also provide an encoding and a format. If no format is given,
@@ -911,7 +975,7 @@ you can use Groovy's "Slurper" classes directly, e.g. `new XmlSlurper().parseTex
 
 The `/sort` command sorts files or standard input.
 
-image:assets/img/repl_sort.png[Deleting types, width=85%]
+image:{reldir_groovysh}/assets/img/repl_sort.png[Deleting types, width=85%]
 
 [[GroovyShell-tail]]
 ==== `/tail`
@@ -930,18 +994,18 @@ elderberry
 
 Show the declared types (enums, interfaces, classes, traits, annotation definitions, and records).
 
-image:assets/img/repl_types.png[Usage of the /types command, width=75%]
+image:{reldir_groovysh}/assets/img/repl_types.png[Usage of the /types command, width=75%]
 
 Types can be deleted using `/types -d` (completion is available) but see also the `/del` command:
 
-image:assets/img/repl_types2.png[Deleting types, width=85%]
+image:{reldir_groovysh}/assets/img/repl_types2.png[Deleting types, width=85%]
 
 [[GroovyShell-ttop]]
 ==== `/ttop`
 
 Display information about threads.
 
-image:assets/img/repl_ttop.png[Usage of the /ttop command, width=75%]
+image:{reldir_groovysh}/assets/img/repl_ttop.png[Usage of the /ttop command, width=75%]
 
 Various options are available:
 
@@ -1025,81 +1089,12 @@ groovy> /wc LICENSE
      262    1754   13493 LICENSE
 ----
 
-[[GroovyShell-doc]]
-==== `/doc`
-
-Opens a browser with documentation for the provided class.
-
-For example, we can get both the Javadoc and GDK enhancements doc for `java.util.List` (shown running on JDK17):
-
-[subs=attributes]
-----
-groovy:000> :doc java.util.List
-https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/java/util/List.html
-----
-
-This will print the documentation URLs found and open two windows (or tabs, depending on your browser):
-
-* one for the JDK documentation
-* one for the GDK documentation
-
-By default, for Java classes, the `java.base` module is assumed. You can specify an optional module
-for other cases (shown running on JDK17):
-
-----
-groovy:000> :doc java.scripting javax.script.ScriptContext
-https://docs.oracle.com/en/java/javase/17/docs/api/java.scripting/javax/script/ScriptContext.html
-----
-
-For backwards compatibility, if no module is specified when searching for Java classes, and no class is found in the `java.base` module, an additional attempt is made to find documentation for the class in the JDK8 (pre-module) Javadoc:
-
-----
-groovy:000> :doc javax.script.ScriptContext
-https://docs.oracle.com/javase/8/docs/api/javax/script/ScriptContext.html
-----
-
-To get the Groovydoc for `groovy.ant.AntBuilder` and `groovy.xml.XmlSlurper`:
-
-[subs=attributes]
-----
-groovy:000> :doc groovy.ant.AntBuilder
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/ant/AntBuilder.html
-groovy:000> :doc groovy.xml.XmlSlurper
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/xml/XmlSlurper.html
-----
-
-To get both the Groovydoc and GDK enhancements doc for `groovy.lang.Closure` and `groovy.sql.GroovyResultSet`:
-
-[subs=attributes]
-----
-groovy:000> :doc groovy.lang.Closure
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/lang/Closure.html
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/lang/Closure.html
-groovy:000> :doc groovy.sql.GroovyResultSet
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/sql/GroovyResultSet.html
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/sql/GroovyResultSet.html
-----
-
-Documentation is also available for the GDK enhancements to primitive arrays and arrays of arrays:
-
-[subs=attributes]
-----
-groovy:000> :doc int[]
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/int%5B%5D.html
-groovy:000> :doc double[][]
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/double%5B%5D%5B%5D.html
-----
-
-NOTE: In contexts where opening a browser may not be desirable, e.g. on a CI server,
-this command can be disabled by setting the `groovysh.disableDocCommand` system property to `true`.
-
 [[GroovyShell-unalias]]
 ==== `/unalias`
 
 Allows aliases to be removed.
 
-image:assets/img/repl_unalias.png[Usage of the /unalias command, width=60%]
+image:{reldir_groovysh}/assets/img/repl_unalias.png[Usage of the /unalias command, width=60%]
 
 Removed aliases will also be removed from persistent storage.
 
@@ -1158,16 +1153,16 @@ Normally, completions are shown when you hit the 'TAB' key, but with the tailtip
 you can see completions as you type., as well as additional usage information given in the
 tailtip window as seen here for a command:
 
-image:assets/img/widget1.png[Tailtip, width=80%]
+image:{reldir_groovysh}/assets/img/widget1.png[Tailtip, width=80%]
 
 And here for some code:
 
-image:assets/img/widget3.png[Tailtip, width=60%]
+image:{reldir_groovysh}/assets/img/widget3.png[Tailtip, width=60%]
 
 With the autosuggest widget enabled, you can see suggestions for what to type next
 as you type, based on your history, as seen here:
 
-image:assets/img/widget2.png[Tailtip,width=80%]
+image:{reldir_groovysh}/assets/img/widget2.png[Tailtip,width=80%]
 
 You can accept the entire suggestion or a word at a time. Both widgets can be enabled.
 
