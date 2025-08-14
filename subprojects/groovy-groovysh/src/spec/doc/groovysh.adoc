@@ -653,52 +653,40 @@ the buffer will be reloaded with the edited contents.
 [[GroovyShell-pipe]]
 ==== `/pipe`
 
-The `/pipe` command lets you create and delete pipe operators.
-There are two builtin pipe operators, `|||` and `|&&`:
+The `/pipe` command lets you create and delete custom pipe operators.
 
-* The _and_ operator (|&&) executes the right hand side only if the execution of the left hand side succeeds.
-* The _or_ operator (|||) executes the right hand side only if the execution of the left hand side fails.
+There are several builtin pipe and pipe-like operators:
 
-Where _succeeds_ means executing without throwing an exception and returning
-a non-null, non-empty, non-zero result, i.e. `true` according to _Groovy truth_.
+* The _pipe and_ operator (|&&) executes the right hand side only if the execution of the left hand side succeeds
+* The _pipe or_ operator (|||) executes the right hand side only if the execution of the left hand side fails
+* The _pipe flip_ operator (|;) flips the left and right hand side expressions
+* The _output redirect_ operator (|>) redirects the output to a file
+* The _append output redirect_ operator (|>>) redirects the output by appending to a file
 
-Here are some examples:
+For the pipe _and_ and _or_ operators, _succeeds_ means executing without
+throwing an exception and returning a non-null, non-empty, non-zero result,
+i.e. `true` according to _Groovy truth_.
+
+Here are some examples for _and_ and _or_:
 
 image:assets/img/repl_pipe_builtin.png[usage of the builtin pipes, width=50%]
 
 Pipe operators are handled by the shell. The left and right hand sides
 will be either repl commands or code passed to the Groovy engine for execution.
 
-You can also define your own pipe operators, defined using `/pipe [OPERATOR] [PREFIX] [POSTFIX]`,
-as these examples show:
-
-image:assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
-
-JLine functionality includes support for named pipes and pipe aliases:
+The pipe _flip_ operator is most commonly used with commands:
 
 [source,jshell]
 ----
-groovy> /pipe smallFruit '.findAll{ it.size() <' '}'
-groovy> fruit | smallFruit 6
-[apple, date]
-groovy> /alias sizes '|. it.size()'
-groovy> fruit | sizes
-[5, 6, 6, 4, 10]
+groovy> /widget -l |; /prnt -s JSON
+[
+    "_autosuggest-end-of-line (_autosuggest-end-of-line)",
+    "_autosuggest-forward-char (_autosuggest-forward-char)",
+    ...
+]
 ----
 
-These should be regarded as incubating features, as we are still
-exploring the possibility of an alternative syntax to use for the Groovy Shell,
-since the pipe operator conflicts with the binary OR operator.
-In the meantime, bracketed expressions aren't searched for pipe operators,
-so that provides a workaround for the conflict:
-
-[source,jshell]
-----
-groovy> (4 | 8)
-12
-----
-
-There is another less commonly used builtin pipe operator, `|;`, which is used to flip arguments:
+It is less common, but it can also be used with code:
 
 [source,jshell]
 ----
@@ -716,17 +704,85 @@ groovy> 4 |; 8 **
 4096
 ----
 
-It is most commonly used with commands:
+You can also define your own custom pipe operators, defined using `/pipe [OPERATOR] [PREFIX] [POSTFIX]`,
+as these examples show:
+
+image:assets/img/repl_pipe.png[usage of the /pipe command, width=70%]
+
+JLine functionality includes support for _named pipes_ and _pipe aliases_.
+
+Here is a named pipe for finding fruit with small names:
 
 [source,jshell]
 ----
-groovy> /widget -l |; /prnt -s JSON
-[
-    "_autosuggest-end-of-line (_autosuggest-end-of-line)",
-    "_autosuggest-forward-char (_autosuggest-forward-char)",
-    ...
-]
+groovy> /pipe smallFruit '.findAll{ it.size() <' '}'
+groovy> fruit | smallFruit 6
+[apple, date]
 ----
+
+Here is a pipe alias:
+
+[source,jshell]
+----
+groovy> /alias sizes '|. it.size()'
+groovy> fruit | sizes
+[5, 6, 6, 4, 10]
+----
+
+The pipe alias always has the pipe it is aliasing at the start, `|.` in the above example.
+
+[NOTE]
+--
+Care should be taken when using named pipes along with Groovy code that uses Groovy's
+pipe operator (`|`), AKA binary OR operator, as this can lead to conflicts.
+
+Is the expression `x | y` the binary OR of two variables, or making use of a named pipe
+with name `y`?
+
+Spaces in Groovy are normally not significant, but the Groovy Shell
+is using JLine console functionality which requires spaces around the pipe operator
+before a named pipe and is bracket aware.
+So, `x| y`, `x |y`, `x|y`, and `(x | y)` will be passed to Groovy for execution.
+The Groovy Shell also passes `x | y` to Groovy if `y` is not a known named pipe.
+
+[source,jshell]
+----
+groovy> x = 4
+groovy> y = 8
+groovy> x | y
+12
+groovy> /pipe y '+1' ''
+groovy> x | y
+5
+----
+
+Getting back to how you can avoid conflicts,
+one convention you could use to avoid conflicts is to use brackets or avoid spaces
+when wanting the binary OR operator,
+and use spaces and no brackets when wanting to use a named pipe.
+
+Another alternative, is to define a custom pipe name instead of a named pipe:
+
+[source,jshell]
+----
+groovy> /pipe |smallFruit '.findAll{ it.size() <' '}'
+groovy> fruit |smallFruit 6
+[apple, date, fig, grape]
+groovy> /pipe
+smallFruit  [.findAll{ it.size() <, }]
+|smallFruit [.findAll{ it.size() <, }]
+----
+
+Here, the custom pipe named `|smallFruit`, is different to the named pipe `smallFruit`.
+The former mustn't have a space, the latter must have one.
+If you use only the first of these, you can have a convention of
+using spaces when you want a binary OR.
+--
+
+As a final example, let's use a custom pipe with the output redirection
+operators to find fruit with large names:
+
+image:assets/img/repl_pipe2.png[usage of the /pipe command, width=70%]
 
 [[GroovyShell-prnt]]
 ==== `/prnt`
