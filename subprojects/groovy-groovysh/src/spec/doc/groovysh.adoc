@@ -782,7 +782,7 @@ using spaces when you want a binary OR.
 As a final example, let's use a custom pipe with the output redirection
 operators to find fruit with large names:
 
-image:assets/img/repl_pipe2.png[usage of the /pipe command, width=70%]
+image:assets/img/repl_pipe2.png[usage of the /pipe command, width=80%]
 
 [[GroovyShell-prnt]]
 ==== `/prnt`
