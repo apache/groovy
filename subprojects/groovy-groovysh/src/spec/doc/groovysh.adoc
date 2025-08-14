@@ -1103,126 +1103,13 @@ image:assets/img/repl_unalias.png[Usage of the /unalias command, width=60%]
 
 Removed aliases will also be removed from persistent storage.
 
-[[GroovyShell-Preferences]]
-=== Preferences
-
-Some aspects of `groovysh` behaviors can be customized by setting
-preferences. Preferences are set using the `set` command or the `:=`
-shortcut.
-
-[[GroovyShell-RecognizedPreferences]]
-==== Recognized Preferences
-
-[[GroovyShell-InterpreterMode]]
-===== `interpreterMode`
-
-Allows the use of typed variables (i.e. `def` or other type information):
-
-----
-groovy:000> def x = 3
-===> 3
-groovy:000> x
-===> 3
-----
-
-It's especially useful for copy&pasting code from tutorials etc. into the running session.
-
-[[GroovyShell-verbosity]]
-===== `verbosity`
-
-Set the shell’s verbosity level. Expected to be one of:
-
-* `DEBUG`
-* `VERBOSE`
-* `INFO`
-* `QUIET`
-
-Default is `INFO`.
-
-If this preference is set to an invalid value, then the previous setting
-will be used, or if there is none, then the preference is removed and
-the default is used.
-
-===== `colors`
-
-Set the shell’s use of colors.
-
-Default is `true`.
-
-[[GroovyShell-show-last-result]]
-===== `show-last-result`
-
-Show the last result after an execution.
-
-Default is `true`.
-
-[[GroovyShell-sanitize-stack-trace]]
-===== `sanitize-stack-trace`
-
-Sanitize (trim-down/filter) stack traces.
-
-Default is `true`.
-
-[[GroovyShell-editor]]
-===== `editor`
-
-Configures the editor used by the `edit` command.
-
-Default is the value of the system environment variable `EDITOR`.
-
-To use TextEdit, the default text editor on macOS, configure:
-set editor /Applications/TextEdit.app/Contents/MacOS/TextEdit
-
-[[GroovyShell-SettingaPreference]]
-==== Setting a Preference
-
--------------------
-groovy:000> :set verbosity DEBUG
--------------------
-
-[[GroovyShell-ListingPreferences]]
-==== Listing Preferences
-
-To list the current _set_ preferences (and their values):
-
-----------------
-groovy:000> :show preferences
-----------------
-
-Limitation: At the moment, there is no way to list all the
-known/available preferences to be set.
-
-[[GroovyShell-ClearingPreferencesieResettingtoDefaults]]
-==== Clearing Preferences (i.e. Resetting to Defaults)
-
------------------
-groovy:000> :purge preferences
------------------
-
-[[GroovyShell-UserProfileScriptsandState]]
-=== User Profile Scripts and State
-
-[[GroovyShell-ProfileScripts]]
-==== Profile Scripts
-
-[[GroovyShell-HOMEgroovygroovyshprofile]]
-===== `$HOME/.groovy/groovysh.profile`
-
-This script, if it exists, is loaded when the shell starts up.
-
-[[GroovyShell-HOMEgroovygroovyshrc]]
-===== `$HOME/.groovy/groovysh.rc`
-
-This script, if it exists, is loaded when the shell enters interactive
-mode.
-
 [[GroovyShell-State]]
-==== State
+=== State
 
-[[GroovyShell-HOMEgroovygroovyshhistory]]
-===== `$HOME/.groovy/groovysh.history`
+[[GroovyShell-History]]
+==== History
 
-Edit-line history is stored in this file.
+History is stored in the file `$HOME/.groovy/groovysh_history`.
 
 [[GroovyShell-widgets]]
 === Widgets
