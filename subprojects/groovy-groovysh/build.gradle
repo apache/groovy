@@ -21,7 +21,8 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
+// For testing new JLine versions
+//    mavenLocal()
     mavenCentral()
 }
 
