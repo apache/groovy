@@ -386,6 +386,7 @@ class Main {
                 invoke '/alias', '/x', '/exit'
                 invoke '/alias', '/q', '/exit'
                 invoke '/alias', '/h', '/help'
+                setConsoleOption "ignoreUnknownPipes", true
             }
 
             def highlighter = new SystemHighlighter(commandHighlighter, argsHighlighter, groovyHighlighter).tap {

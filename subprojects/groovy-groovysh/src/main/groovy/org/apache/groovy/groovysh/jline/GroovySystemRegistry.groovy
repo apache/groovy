@@ -19,7 +19,6 @@
 package org.apache.groovy.groovysh.jline
 
 import org.jline.builtins.ConfigurationPath
-import org.jline.console.impl.SystemRegistryImpl
 import org.jline.reader.Parser
 import org.jline.terminal.Terminal
 
@@ -31,6 +30,8 @@ class GroovySystemRegistry extends SystemRegistryImpl {
         super(parser, terminal, workDir, configPath)
         rename(Pipe.AND, '|&&')
         rename(Pipe.OR, '|||')
+        rename(Pipe.REDIRECT, '|>')
+        rename(Pipe.APPEND, '|>>')
     }
 
     @Override
