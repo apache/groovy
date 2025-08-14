@@ -59,5 +59,6 @@ tasks.named('rat') {
     excludes << '**/jline/ObjectInspector.groovy' // BSD license as per NOTICE/LICENSE files
     excludes << '**/jline/Utils.groovy' // BSD license as per NOTICE/LICENSE files
     excludes << '**/jline/JrtJavaBasePackages.java' // BSD license as per NOTICE/LICENSE files
+    excludes << '**/jline/SystemRegistryImpl.java' // BSD license as per NOTICE/LICENSE files
     excludes << '**/jline/PackageHelper.java' // BSD license as per NOTICE/LICENSE files
 }
