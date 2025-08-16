@@ -37,7 +37,7 @@ import java.util.concurrent.locks.StampedLock;
  * @since 3.0.0
  */
 @ThreadSafe
-public class StampedCommonCache<K, V> implements FlexibleEvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
+public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<V, Object>, Serializable {
 
     private static final long serialVersionUID = 6760742552334555146L;
     private final StampedLock sl = new StampedLock();

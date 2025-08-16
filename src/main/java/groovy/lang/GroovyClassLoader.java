@@ -37,7 +37,7 @@ import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.memoize.ConcurrentCommonCache;
 import org.codehaus.groovy.runtime.memoize.EvictableCache;
-import org.codehaus.groovy.runtime.memoize.FlexibleEvictableCache;
+import org.codehaus.groovy.runtime.memoize.FlexibleCache;
 import org.codehaus.groovy.runtime.memoize.UnlimitedConcurrentCache;
 import org.codehaus.groovy.util.URLStreams;
 import org.objectweb.asm.ClassVisitor;
@@ -100,7 +100,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * This cache contains mappings of file name to class. It is used to bypass compilation.
      */
-    protected final FlexibleEvictableCache<String, Class> sourceCache;
+    protected final FlexibleCache<String, Class> sourceCache;
 
     private final CompilerConfiguration config;
     private final String sourceEncoding;
@@ -158,7 +158,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param useConfigurationClasspath determines if the configurations classpath should be added
      * @param sourceCache               the source cache to use
      */
-    public GroovyClassLoader(final ClassLoader parent, final CompilerConfiguration config, final boolean useConfigurationClasspath, FlexibleEvictableCache<String, Class> sourceCache) {
+    public GroovyClassLoader(final ClassLoader parent, final CompilerConfiguration config, final boolean useConfigurationClasspath, FlexibleCache<String, Class> sourceCache) {
         super(EMPTY_URL_ARRAY, parent);
         this.config = (config != null ? config : CompilerConfiguration.DEFAULT);
         this.sourceCache = sourceCache;
