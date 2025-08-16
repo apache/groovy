@@ -23,6 +23,6 @@ package org.codehaus.groovy.runtime.memoize;
  *
  * @since 5.0.0
  */
-public interface FlexibleEvictableCache<K, V> extends EvictableCache<K, V> {
+public interface FlexibleCache<K, V> extends EvictableCache<K, V> {
     V getAndPut(K key, ValueProvider<? super K, ? extends V> valueProvider, boolean shouldCache);
 }

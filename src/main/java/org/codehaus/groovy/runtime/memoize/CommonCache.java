@@ -38,7 +38,7 @@ import java.util.Set;
  * @param <V> type of the values
  * @since 2.5.0
  */
-public class CommonCache<K, V> implements FlexibleEvictableCache<K, V>, ValueConvertable<V, Object>, Serializable {
+public class CommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<V, Object>, Serializable {
     private static final long serialVersionUID = 934699400232698324L;
     /**
      * The default load factor
