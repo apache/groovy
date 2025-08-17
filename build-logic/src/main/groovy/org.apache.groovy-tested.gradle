@@ -70,11 +70,9 @@ tasks.withType(Test).configureEach {
         userHome: temporaryDir // make sure tests are isolated from real user home or tests using Grape may fail
     ))
 
-    if (rootProject.hasProperty('target.java.home')) {
-        String targetJavaHome = rootProject.property('target.java.home')?.trim()
-        if (targetJavaHome) {
-            executable = "${targetJavaHome}/bin/java"
-            println "Using ${executable} to run tests"
+    if (rootProject.hasProperty('test.java.ea')) {
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(25)
         }
     }
 
