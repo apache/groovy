@@ -30,7 +30,7 @@ jobs:
   build:
     strategy:
       fail-fast: true
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
     steps:
