@@ -158,7 +158,7 @@ tasks.withType(AbstractArchiveTask).configureEach {
 
 tasks.withType(Jar).configureEach { jar ->
     metaInf {
-        if (jar.name == 'sourcesJar') {
+        if (jar.name in ['jar', 'sourcesJar']) {
             if (file("${projectDir}/LICENSE").exists()) {
                 from "${projectDir}/LICENSE"
             } else {
