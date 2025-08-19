@@ -411,6 +411,51 @@ Displays the current buffer in the GroovyConsole.
 
 image:{reldir_groovysh}/assets/img/repl_console.png[Console, width=80%]
 
+[[GroovyShell-date]]
+==== `/date`
+
+Groovy has numerous classes for working with dates and time.
+
+Here are some examples using the legacy date/calendar classes:
+
+[source,jshell]
+----
+groovy> println new Date()
+Tue Aug 19 14:35:22 AEST 2025
+groovy> printf '%1ta %1$tb %1$td %1$tT %1$tZ %1$tY%n', new Date()
+Tue Aug 19 14:35:22 AEST 2025
+groovy> println Calendar.instance.time
+Tue Aug 19 14:35:22 AEST 2025
+groovy> println new Date().format('dd-MMM-yyyy HH:mm')
+19-Aug-2025 14:35
+----
+
+Here are some examples using the `java.time` classes:
+
+[source,jshell]
+----
+groovy> println LocalDateTime.now()
+2025-08-19T14:17:35.383665
+groovy> println Instant.now()
+2025-08-19T04:17:35.590829Z
+groovy> printf '%1ta %1$tb %1$td %1$tT %1$tY%n', LocalDateTime.now()
+Tue Aug 19 14:47:35 2025
+groovy> println LocalDateTime.now().format('dd-MMM-yyyy HH:mm')
+19-Aug-2025 14:47
+----
+
+The `/date` command is an alternative for those familiar with the unix `date` commandL:
+
+[source,jshell]
+----
+groovy> /date -R
+Tue, 19 Aug 2025 14:17:05 +10
+groovy> /date --rfc-3339=seconds
+2025-08-19 14:17:05+10
+groovy> /date --rfc-3339=time
+Aug Tue 19 14:17:05 2025
+----
+
 [[GroovyShell-del]]
 ==== `/del`
 
@@ -1224,8 +1269,14 @@ groovy> assert fruit == []
 ----
 The `def fruit = []` will be _remembered_ before executing each of the next three statements.
 
-[[GroovyShell-PlatformProblems]]
-=== Platform Problems
+==== Gotchas
+
+The Groovy Shell attempts to blend a Groovy programming environment with
+a shell-like scripting environment. Sometimes the two are at odds.
+As one example, don't try `/ls /tmp/*.txt`. The `/*` will be interpreted
+as the start of a comment. Instead, quote the argument like this `/ls '/tmp/*.txt'`.
+
+==== Platform Problems
 
 The Groovy Shell relies heavily on the JLine3 library for its platform
 support. If you have specific platform problems, please refer to the
