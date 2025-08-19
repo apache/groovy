@@ -278,10 +278,10 @@ public @interface TupleConstructor {
     /**
      * Used to set whether default value processing is enabled (the default) or disabled.
      * Ignored if an explicit value is given for {@code defaultsMode()}.
-     *
+     * <p>
      * By default, every constructor parameter is given a default value.
      * This is the equivalent of {@link DefaultsMode#ON}.
-     *
+     * <p>
      * When set to false, default values are not allowed for properties and fields.
      * This is the equivalent of {@link DefaultsMode#OFF}.
      *
@@ -291,7 +291,7 @@ public @interface TupleConstructor {
 
     /**
      * Used to set the mode for default value processing.
-     *
+     * <p>
      * When set to {@code ON} (the default value), every constructor parameter is given a default value.
      * This value will be Java's default for primitive types (zero or false) and null for Objects,
      * unless an initial value is given when declaring the property or field. A consequence of
@@ -300,14 +300,14 @@ public @interface TupleConstructor {
      * create additional constructors under the covers representing the constructors
      * with parameters left off, all the way from the constructor with all arguments
      * to the no-arg constructor.
-     *
+     * <p>
      * When set to {@code AUTO}, default values are catered for where explicit
      * default values are given for the respective property/field.
      * Additional positional constructors are generated as per Groovy's normal default value processing.
-     * Properties/fields with an explicit initial value are deemed {@em optional} and may be dropped.
-     * Properties/fields with no initial value are deemed {@em mandatory} and must be supplied as an argument to the respective constructor.
+     * Properties/fields with an explicit initial value are deemed <em>optional</em> and may be dropped.
+     * Properties/fields with no initial value are deemed <em>mandatory</em> and must be supplied as an argument to the respective constructor.
      * Optional arguments to a positional constructor are dropped from the right.
-     *
+     * <p>
      * When set to {@code OFF}, default values are not allowed for properties and fields.
      * Only the constructor containing all arguments will be provided.
      * In particular, a no-arg constructor won't be provided and since this is currently
