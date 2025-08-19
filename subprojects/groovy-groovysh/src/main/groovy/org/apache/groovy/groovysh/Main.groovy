@@ -24,6 +24,7 @@ import org.apache.groovy.groovysh.jline.GroovyBuiltins
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
 import org.apache.groovy.groovysh.jline.GroovyEngine
+import org.apache.groovy.groovysh.jline.GroovyPosixCommands
 import org.apache.groovy.groovysh.jline.GroovyPosixContext
 import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.apache.groovy.groovysh.util.DocFinder
@@ -81,7 +82,7 @@ import static org.jline.jansi.AnsiRenderer.render
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
-    private static POSIX_FILE_CMDS = ['/tail', '/ls', '/head', '/grep', '/wc', '/sort', '/cat']
+    private static POSIX_FILE_CMDS = ['/tail', '/head', '/wc', '/sort']
 
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
@@ -110,6 +111,9 @@ class Main {
                 '/cd'   : new CommandMethods((Function) this::cd, this::optDirCompleter),
                 '/date' : new CommandMethods((Function) this::date, this::defaultCompleter),
                 '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
+                '/ls'   : new CommandMethods((Function) this::ls, this::optFileCompleter),
+                '/grep' : new CommandMethods((Function) this::grepcmd, this::optFileCompleter),
+                '/cat'  : new CommandMethods((Function) this::cat, this::optFileCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
             ]
             POSIX_FILE_CMDS.each { String cmd ->
@@ -165,6 +169,30 @@ class Main {
                     posix.context.currentDir = newPath
                     scriptEngine.put('PWD', newPath)
                 })
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
+        private void ls(CommandInput input) {
+            try {
+                GroovyPosixCommands.ls(posix.context, ['/ls', *input.args()] as String[])
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
+        private void grepcmd(CommandInput input) {
+            try {
+                GroovyPosixCommands.grep(posix.context, ['/grep', *input.args()] as String[])
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
+        private void cat(CommandInput input) {
+            try {
+                GroovyPosixCommands.cat(posix.context, ['/cat', *input.args()] as String[])
             } catch (Exception e) {
                 saveException(e)
             }
@@ -393,7 +421,7 @@ class Main {
                 if (!OSUtils.IS_WINDOWS) {
                     setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
                 }
-                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *POSIX_FILE_CMDS, '/cd')
+                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *POSIX_FILE_CMDS, '/cd', '/ls', '/cat', '/grep')
                 addFileHighlight('/classloader', null, ['-a', '--add'])
                 addExternalHighlighterRefresh(printer::refresh)
                 addExternalHighlighterRefresh(scriptEngine::refresh)

@@ -58,7 +58,8 @@ public class SystemRegistryImpl implements SystemRegistry {
         AND,
         OR,
         REDIRECT,
-        APPEND
+        APPEND,
+        PIPE
     }
 
     private static final Class<?>[] BUILTIN_REGISTRIES = {Builtins.class, ConsoleEngineImpl.class};
@@ -90,6 +91,7 @@ public class SystemRegistryImpl implements SystemRegistry {
         pipeName.put(Pipe.NAMED, "|");
         pipeName.put(Pipe.AND, "&&");
         pipeName.put(Pipe.OR, "||");
+        pipeName.put(Pipe.PIPE, "|!");
         pipeName.put(Pipe.REDIRECT, ">");
         pipeName.put(Pipe.APPEND, ">>");
         commandExecute.put("exit", new CommandMethods(this::exit, this::exitCompleter));
@@ -722,8 +724,9 @@ public class SystemRegistryImpl implements SystemRegistry {
                             }
                             pipe = words.get(i + 1);
                             if (!pipe.matches("\\w+") || !customPipes.containsKey(pipe)) {
-                                if (consoleOption("ignoreUnknownPipes", false)) break;
-                                throw new IllegalArgumentException("Unknown or illegal pipe name: " + pipe);
+                                if (!consoleOption("ignoreUnknownPipes", false)) {
+                                    throw new IllegalArgumentException("Unknown or illegal pipe name: " + pipe);
+                                }
                             }
                         }
                         pipes.add(pipe);
@@ -736,7 +739,7 @@ public class SystemRegistryImpl implements SystemRegistry {
                         }
                         break;
                     } else if (words.get(i).equals(pipeName.get(Pipe.OR))
-                            || words.get(i).equals(pipeName.get(Pipe.AND))) {
+                            || words.get(i).equals(pipeName.get(Pipe.AND))|| words.get(i).equals(pipeName.get(Pipe.PIPE))) {
                         if (variable != null || pipeSource != null) {
                             pipes.add(words.get(i));
                         } else if (pipes.size() > 0
@@ -1291,7 +1294,10 @@ public class SystemRegistryImpl implements SystemRegistry {
                         }
                         out = consoleEngine.execute(cmd.command(), cmd.rawLine(), cmd.args());
                     }
-                    if (cmd.pipe().equals(pipeName.get(Pipe.OR)) || cmd.pipe().equals(pipeName.get(Pipe.AND))) {
+                    if (cmd.pipe().equals(pipeName.get(Pipe.OR)) || cmd.pipe().equals(pipeName.get(Pipe.AND)) || cmd.pipe().equals(pipeName.get(Pipe.PIPE))) {
+                        if (cmd.pipe().equals(pipeName.get(Pipe.PIPE)) && out == null) {
+                            out = outputStream.output;
+                        }
                         ExecutionResult er = postProcess(cmd, statement, consoleEngine, out);
                         postProcessed = true;
                         consoleEngine.println(er.result());

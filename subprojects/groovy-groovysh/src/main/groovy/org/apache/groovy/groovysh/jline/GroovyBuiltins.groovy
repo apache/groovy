@@ -62,7 +62,7 @@ class GroovyBuiltins extends Builtins {
         Options opt = Options.compile(*Less.usage()*.replaceAll('less ', '/less ')).parse(input.args())
         try {
             if (opt.isSet("help")) {
-                throw new Options.HelpException(opt.usage());
+                throw new Options.HelpException(opt.usage())
             }
             boolean usingBuffer = opt.args().size() == 0
             if (usingBuffer) {
@@ -70,7 +70,7 @@ class GroovyBuiltins extends Builtins {
                 temp.text = engine.buffer
                 input = new CommandInput(input.command(), [*input.args(), temp.absolutePath] as String[], input.terminal(), input.in(), input.out(), input.err())
             }
-            Commands.less(input.terminal(), input.in(), input.out(), input.err(), workDir.get(), input.xargs(), configPath)
+            GroovyPosixCommands.less(new GroovyPosixContext(input.in(), new PrintStream(input.out()), new PrintStream(input.err()), workDir.get(), input.terminal(), engine::get), ['/less', *input.args()] as String[])
         } catch (Exception e) {
             saveException(e)
         }
