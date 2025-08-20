@@ -749,7 +749,27 @@ groovy-cli-picocli   groovy-macro-library performance
 groovy-console       groovy-nio           stress
 groovy-contracts     groovy-servlet       tests-preview
 groovy-datetime      groovy-sql
-groovy>
+----
+
+Wildcard support is available, so you can use `/ls *.groovy` to list all Groovy files in the current directory. File patterns which involve asterisks as well as slashes can sometimes be confused with Groovy's comment syntax, so quote the pattern if in doubt:
+
+[source,jshell]
+----
+groovy> /ls '**/bu*.gradle'
+bootstrap/build.gradle                        subprojects/groovy-datetime/build.gradle      subprojects/groovy-swing/build.gradle
+build-logic/build.gradle                      subprojects/groovy-dateutil/build.gradle      subprojects/groovy-templates/build.gradle
+build.gradle                                  subprojects/groovy-docgenerator/build.gradle  subprojects/groovy-test-junit5/build.gradle
+gradle/build-scans.gradle                     subprojects/groovy-ginq/build.gradle          subprojects/groovy-test/build.gradle
+subprojects/binary-compatibility/build.gradle subprojects/groovy-groovydoc/build.gradle     subprojects/groovy-testng/build.gradle
+subprojects/groovy-all/build.gradle           subprojects/groovy-groovysh/build.gradle      subprojects/groovy-toml/build.gradle
+subprojects/groovy-ant/build.gradle           subprojects/groovy-jmx/build.gradle           subprojects/groovy-typecheckers/build.gradle
+subprojects/groovy-astbuilder/build.gradle    subprojects/groovy-json/build.gradle          subprojects/groovy-xml/build.gradle
+subprojects/groovy-binary/build.gradle        subprojects/groovy-jsr223/build.gradle        subprojects/groovy-yaml/build.gradle
+subprojects/groovy-bom/build.gradle           subprojects/groovy-macro-library/build.gradle subprojects/performance/build.gradle
+subprojects/groovy-cli-commons/build.gradle   subprojects/groovy-macro/build.gradle         subprojects/stress/build.gradle
+subprojects/groovy-cli-picocli/build.gradle   subprojects/groovy-nio/build.gradle           subprojects/tests-preview/build.gradle
+subprojects/groovy-console/build.gradle       subprojects/groovy-servlet/build.gradle
+subprojects/groovy-contracts/build.gradle     subprojects/groovy-sql/build.gradle
 ----
 
 [[GroovyShell-nano]]
