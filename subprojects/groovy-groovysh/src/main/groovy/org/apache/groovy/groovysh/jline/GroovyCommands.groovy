@@ -43,6 +43,7 @@ import org.jline.reader.impl.completer.NullCompleter
 import org.jline.reader.impl.completer.StringsCompleter
 import org.jline.utils.AttributedString
 
+import java.awt.Desktop
 import java.awt.event.ActionListener
 import java.lang.reflect.Method
 import java.nio.charset.Charset
@@ -64,6 +65,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     private final Map<String, Tuple4<Function, Function, Function, List<String>>> commands = [
         '/inspect'     : new Tuple4<>(this::inspect, this::inspectCompleter, this::inspectCmdDesc, ['display/browse object info on terminal/object browser']),
         '/console'     : new Tuple4<>(this::console, this::defCompleter, this::defCmdDesc, ['launch Groovy console']),
+        '/doc'         : new Tuple4<>(this::doc, this::defCompleter, this::defCmdDesc, ['display documentation']),
         '/grab'        : new Tuple4<>(this::grab, this::grabCompleter, this::grabCmdDesc, ['add maven repository dependencies to classpath']),
         '/classloader' : new Tuple4<>(this::classLoader, this::classloaderCompleter, this::classLoaderCmdDesc, ['display/manage Groovy classLoader data']),
         '/imports'     : new Tuple4<>(this::importsCommand, this::importsCompleter, this::nameDeleteCmdDesc, ['show/delete import statements']),
@@ -229,6 +231,111 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             arg = input.args()[1]
         }
         loadFile(engine, workDir.get().resolve(arg).toFile(), merge)
+    }
+
+    private static final String VAR_CONSOLE_OPTIONS = "CONSOLE_OPTIONS"
+
+    private Map<String, Object> consoleOption(String key) {
+        def opts = engine.hasVariable(VAR_CONSOLE_OPTIONS)
+            ? (Map<String, Object>) engine.get(VAR_CONSOLE_OPTIONS)
+            : new HashMap<>()
+        opts[key]
+    }
+
+    def doc(CommandInput input) {
+        def usage = new String[]{
+            "/doc -  open document on browser",
+            "Usage: /doc [OBJECT]",
+            "  -? --help                       Displays command help"
+        }
+        try {
+            parseOptions(usage, input.xargs());
+            if (input.xargs().length == 0) {
+                return null
+            }
+            if (!Desktop.isDesktopSupported()) {
+                throw new IllegalStateException("Desktop is not supported!")
+            }
+            Map<String, Object> docs
+            try {
+                docs = consoleOption("docs")
+            } catch (Exception e) {
+                Exception exception = new IllegalStateException("Bad documents configuration!")
+                exception.addSuppressed(e)
+                throw exception
+            }
+            if (docs == null) {
+                throw new IllegalStateException("No documents configuration!")
+            }
+            boolean done = false
+            Object arg = input.xargs()[0]
+            if (arg instanceof String) {
+                def addresses = []
+                addresses += docs.get(input.args()[0])
+                addresses.each { address ->
+                    if (address != null) {
+                        done = true
+                        if (urlExists(address)) {
+                            Desktop.getDesktop().browse(new URI(address))
+                        } else {
+                            throw new IllegalArgumentException("Document not found: " + address)
+                        }
+                    }
+                }
+            }
+            if (!done) {
+                String name
+                if (arg instanceof String && ((String) arg).matches("([a-z]+\\.)+[A-Z][a-zA-Z]+")) {
+                    name = (String) arg
+                } else {
+                    name = arg.getClass().getCanonicalName()
+                }
+                name = name.replaceAll("\\.", "/") + ".html"
+                Object doc = null
+                for (Map.Entry<String, Object> entry : docs.entrySet()) {
+                    if (name.matches(entry.getKey())) {
+                        doc = entry.getValue()
+                        break
+                    }
+                }
+                if (doc == null) {
+                    throw new IllegalArgumentException("No document configuration for " + name)
+                }
+                String url = name
+                if (doc instanceof Collection) {
+                    for (Object o : (Collection<?>) doc) {
+                        url = o + name
+                        if (urlExists(url)) {
+                            Desktop.getDesktop().browse(new URI(url))
+                            done = true
+                        }
+                    }
+                } else {
+                    url = doc + name
+                    if (urlExists(url)) {
+                        Desktop.getDesktop().browse(new URI(url))
+                        done = true
+                    }
+                }
+                if (!done) {
+                    throw new IllegalArgumentException("Document not found: " + url)
+                }
+            }
+        } catch (Exception e) {
+            saveException(e)
+        }
+        return null
+    }
+
+    private boolean urlExists(String weburl) {
+        try {
+            URL url = URI.create(weburl).toURL()
+            HttpURLConnection huc = (HttpURLConnection) url.openConnection()
+            huc.setRequestMethod("HEAD")
+            return huc.getResponseCode() == HttpURLConnection.HTTP_OK
+        } catch (Exception ignore) {
+            return false
+        }
     }
 
     def slurpcmd(CommandInput input) {

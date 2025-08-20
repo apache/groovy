@@ -18,11 +18,25 @@
  */
 package org.apache.groovy.groovysh.util
 
-// TODO previous version had browseWithAWT as potential fallback if no native browser found.
-// It also provided a list of URLs including GDK links. It would be nice to give those as options (or fire them all off).
 class DocFinder extends HashMap<String, Object> {
+    private static boolean exists(String url) {
+        try {
+            (url.toURL().openConnection() as HttpURLConnection).with {
+                requestMethod = 'HEAD'
+                connectTimeout = 5000
+                readTimeout = 5000
+                return responseCode in 200..399
+            }
+        } catch (Exception e) {
+            return false
+        }
+    }
+
     @Override
     Object get(Object key) {
+        if (containsKey(key)) {
+            return super.get(key)
+        }
         def groovyVersion = GroovySystem.getVersion()
         Class clazz = Eval.me("${key}")
         def name = clazz.name
@@ -32,6 +46,11 @@ class DocFinder extends HashMap<String, Object> {
         }
         def majorVersion = System.getProperty('java.version').tokenize('.')[0]
         def module = clazz.module?.name ?: 'java.base'
-        "https://docs.oracle.com/en/java/javase/${majorVersion}/docs/api/${module}/${path}".toString()
+        def result = ["https://docs.oracle.com/en/java/javase/${majorVersion}/docs/api/${module}/${path}".toString()]
+        def gdk = "https://docs.groovy-lang.org/latest/html/groovy-jdk/${path}"
+        if (exists(gdk)) {
+            result << gdk.toString()
+        }
+        result
     }
 }

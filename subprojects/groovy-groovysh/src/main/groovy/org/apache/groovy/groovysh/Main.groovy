@@ -363,7 +363,9 @@ class Main {
             // ScriptEngine and command registries
             GroovyEngine scriptEngine = new GroovyEngine()
             scriptEngine.put('ROOT', rootURL.toString())
-            scriptEngine.put('CONSOLE_OPTIONS', [:])
+            if (!scriptEngine.hasVariable('CONSOLE_OPTIONS')) {
+                scriptEngine.put('CONSOLE_OPTIONS', [:])
+            }
             def interpreterMode = Boolean.parseBoolean(System.getProperty("groovysh.interpreterMode", "true"))
             scriptEngine.put('GROOVYSH_OPTIONS', [interpreterMode: interpreterMode])
             Printer printer = new DefaultPrinter(scriptEngine, configPath)
@@ -436,9 +438,9 @@ class Main {
             KeyMap<Binding> keyMap = reader.keyMaps.get("main")
             keyMap.bind(new Reference(Widgets.TAILTIP_TOGGLE), KeyMap.alt("s"))
             keyMap.bind(new Reference(Widgets.AUTOSUGGEST_TOGGLE), KeyMap.alt("v"))
-            def init = configPath.getUserConfig('groovysh_init')
+            def init = configPath.getUserConfig('groovysh_init.groovy')
             if (init) {
-                systemRegistry.setConsoleOption() // initialize(configPath.getUserConfig('groovysh_init').toFile())
+                systemRegistry.initialize(init.toFile())
             }
 
             if (options.q) {
