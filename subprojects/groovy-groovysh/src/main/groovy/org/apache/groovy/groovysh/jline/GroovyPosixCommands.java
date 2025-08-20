@@ -178,14 +178,18 @@ public class GroovyPosixCommands extends PosixCommands {
 
             public PathEntry(Path abs, Path root) {
                 this.abs = abs;
+                this.path = getPath(abs, root);
+                this.attributes = readAttributes(abs);
+            }
+
+            private Path getPath(Path abs, Path root) {
                 try {
-                    this.path = Files.isSameFile(abs, root)
+                    return Files.isSameFile(abs, root)
                         ? Paths.get(".")
                         : abs.startsWith(root) ? root.relativize(abs) : abs;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                } catch (IOException ignore) {
+                    return abs;
                 }
-                this.attributes = readAttributes(abs);
             }
 
             @Override
@@ -375,11 +379,11 @@ public class GroovyPosixCommands extends PosixCommands {
             });
         }
         boolean listAll = opt.isSet("a");
-        Predicate<Path> filter = p -> p.getFileName() != null // .. on root
-            && (listAll
+        Predicate<Path> filter = p -> listAll
+            || p.getFileName() == null // root
             || p.getFileName().toString().equals(".")
             || p.getFileName().toString().equals("..")
-            || !p.getFileName().toString().startsWith("."));
+            || !p.getFileName().toString().startsWith(".");
         List<PathEntry> all = expanded.stream()
             .filter(filter)
             .map(p -> new PathEntry(p, currentDir))
