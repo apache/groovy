@@ -29,9 +29,12 @@ import org.jline.utils.InputStreamReader;
 import org.jline.utils.OSUtils;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -68,7 +71,6 @@ import java.util.stream.Stream;
 // https://github.com/jline/jline3/pull/1400
 // https://github.com/jline/jline3/pull/1398
 // https://github.com/jline/jline3/pull/1390
-@Deprecated
 public class GroovyPosixCommands extends PosixCommands {
 
     public static void cat(Context context, String[] argv) throws Exception {
@@ -373,10 +375,11 @@ public class GroovyPosixCommands extends PosixCommands {
             });
         }
         boolean listAll = opt.isSet("a");
-        Predicate<Path> filter = p -> listAll
+        Predicate<Path> filter = p -> p.getFileName() != null // .. on root
+            && (listAll
             || p.getFileName().toString().equals(".")
             || p.getFileName().toString().equals("..")
-            || !p.getFileName().toString().startsWith(".");
+            || !p.getFileName().toString().startsWith("."));
         List<PathEntry> all = expanded.stream()
             .filter(filter)
             .map(p -> new PathEntry(p, currentDir))
@@ -841,6 +844,40 @@ public class GroovyPosixCommands extends PosixCommands {
     }
 
     private static List<Path> expandGlob(Context context, String pattern) {
+        // try Ant for globbing if on classpath
+        try {
+            Class<?> directoryScannerClass = Class.forName("org.apache.tools.ant.DirectoryScanner");
+            Object scanner = directoryScannerClass.getDeclaredConstructor().newInstance();
+            List<Path> result = new ArrayList<>();
+
+            // Use reflection to invoke methods on the DirectoryScanner
+            Method setBasedirMethod = directoryScannerClass.getMethod("setBasedir", File.class);
+            setBasedirMethod.invoke(scanner, context.currentDir().toFile());
+
+            Method setIncludesMethod = directoryScannerClass.getMethod("setIncludes", String[].class);
+            setIncludesMethod.invoke(scanner, (Object) new String[]{pattern});
+
+            Method scanMethod = directoryScannerClass.getMethod("scan");
+            scanMethod.invoke(scanner);
+
+            Method getIncludedFilesMethod = directoryScannerClass.getMethod("getIncludedFiles");
+            String[] includedFiles = (String[]) getIncludedFilesMethod.invoke(scanner);
+
+            for (String file : includedFiles) {
+                result.add(Path.of(file));
+            }
+
+            Method getIncludedDirsMethod = directoryScannerClass.getMethod("getIncludedDirectories");
+            String[] includedDirs = (String[]) getIncludedDirsMethod.invoke(scanner);
+
+            for (String dir : includedDirs) {
+                result.add(Path.of(dir));
+            }
+            return result;
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException |
+                 InvocationTargetException ignore) {
+        }
+
         Path path = Path.of(pattern);
 
         Path base;
