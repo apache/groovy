@@ -473,7 +473,7 @@ variable, method, type, shared data, or import with the given name and deletes i
 
 Here we create two variables, `x` and `y`, then delete the `x` variable:
 
-image:{reldir_groovysh}/assets/img/repl_del.png[Console, width=40%]
+image:{reldir_groovysh}/assets/img/repl_del.png[Console, width=30%]
 
 See also, the `/vars`, `/methods`, `/types`, and `/imports` commands.
 These offer a `-d`|`--delete` option to delete the respective objects
@@ -484,69 +484,39 @@ with completion.
 
 Open documentation in a browser.
 
-For example, we can get both the Javadoc and GDK enhancements doc for `java.util.List` (shown running on JDK17):
+Documentation can be found for Groovy classes like this:
 
-[subs=attributes]
+[source,jshell]
 ----
-groovy:000> :doc java.util.List
-https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/List.html
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/java/util/List.html
+groovy> /doc groovy.lang.Tuple
 ----
 
-This will print the documentation URLs found and open two windows (or tabs, depending on your browser):
+For Java classes, the `/doc` command will look for the class in the JDK documentation
+as well as in the groovy-jdk if Groovy has any extensions for that class:
 
-* one for the JDK documentation
-* one for the GDK documentation
-
-By default, for Java classes, the `java.base` module is assumed. You can specify an optional module
-for other cases (shown running on JDK17):
-
+[source,jshell]
 ----
-groovy:000> :doc java.scripting javax.script.ScriptContext
-https://docs.oracle.com/en/java/javase/17/docs/api/java.scripting/javax/script/ScriptContext.html
+groovy> /doc java.util.List
 ----
 
-For backwards compatibility, if no module is specified when searching for Java classes, and no class is found in the `java.base` module, an additional attempt is made to find documentation for the class in the JDK8 (pre-module) Javadoc:
+Documentation is also extensible, so you can add your own documentation
+using regex patterns. For example, if you add the following line to your `~/.groovy/groovysh_init.groovy` file:
 
+[source,groovy]
 ----
-groovy:000> :doc javax.script.ScriptContext
-https://docs.oracle.com/javase/8/docs/api/javax/script/ScriptContext.html
-----
-
-To get the Groovydoc for `groovy.ant.AntBuilder` and `groovy.xml.XmlSlurper`:
-
-[subs=attributes]
-----
-groovy:000> :doc groovy.ant.AntBuilder
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/ant/AntBuilder.html
-groovy:000> :doc groovy.xml.XmlSlurper
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/xml/XmlSlurper.html
+CONSOLE_OPTIONS.docs.groovy='https://groovy-lang.org/documentation.html'
+CONSOLE_OPTIONS.docs.'org/jline/.*'='https://www.javadoc.io/doc/org.jline/jline/latest/'
 ----
 
-To get both the Groovydoc and GDK enhancements doc for `groovy.lang.Closure` and `groovy.sql.GroovyResultSet`:
+Then, the following commands will open the Groovy documentation page and the
+JLine documentation for `Terminal` respectively in your browser:
 
-[subs=attributes]
+[source,jshell]
 ----
-groovy:000> :doc groovy.lang.Closure
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/lang/Closure.html
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/lang/Closure.html
-groovy:000> :doc groovy.sql.GroovyResultSet
-https://docs.groovy-lang.org/{groovy-full-version}/html/gapi/groovy/sql/GroovyResultSet.html
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/groovy/sql/GroovyResultSet.html
+groovy> /doc groovy
+groovy> /doc org.jline.terminal.Terminal
 ----
 
-Documentation is also available for the GDK enhancements to primitive arrays and arrays of arrays:
-
-[subs=attributes]
-----
-groovy:000> :doc int[]
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/int%5B%5D.html
-groovy:000> :doc double[][]
-https://docs.groovy-lang.org/{groovy-full-version}/html/groovy-jdk/primitives-and-primitive-arrays/double%5B%5D%5B%5D.html
-----
-
-NOTE: In contexts where opening a browser may not be desirable, e.g. on a CI server,
-this command can be disabled by setting the `groovysh.disableDocCommand` system property to `true`.
 
 [[GroovyShell-echo]]
 ==== `/echo`

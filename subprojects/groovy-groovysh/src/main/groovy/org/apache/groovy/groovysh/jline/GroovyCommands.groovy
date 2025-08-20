@@ -65,7 +65,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
     private final Map<String, Tuple4<Function, Function, Function, List<String>>> commands = [
         '/inspect'     : new Tuple4<>(this::inspect, this::inspectCompleter, this::inspectCmdDesc, ['display/browse object info on terminal/object browser']),
         '/console'     : new Tuple4<>(this::console, this::defCompleter, this::defCmdDesc, ['launch Groovy console']),
-        '/doc'         : new Tuple4<>(this::doc, this::defCompleter, this::defCmdDesc, ['display documentation']),
+        '/doc'         : new Tuple4<>(this::doc, this::importsCompleter, this::defCmdDesc, ['display documentation']),
         '/grab'        : new Tuple4<>(this::grab, this::grabCompleter, this::grabCmdDesc, ['add maven repository dependencies to classpath']),
         '/classloader' : new Tuple4<>(this::classLoader, this::classloaderCompleter, this::classLoaderCmdDesc, ['display/manage Groovy classLoader data']),
         '/imports'     : new Tuple4<>(this::importsCommand, this::importsCompleter, this::nameDeleteCmdDesc, ['show/delete import statements']),

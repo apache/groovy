@@ -44,13 +44,16 @@ class DocFinder extends HashMap<String, Object> {
         if (name.matches(/^(?:org\.(?:apache|codehaus)\.)?groovy\..+/)) {
             return "https://docs.groovy-lang.org/$groovyVersion/html/gapi/$path".toString()
         }
-        def majorVersion = System.getProperty('java.version').tokenize('.')[0]
-        def module = clazz.module?.name ?: 'java.base'
-        def result = ["https://docs.oracle.com/en/java/javase/${majorVersion}/docs/api/${module}/${path}".toString()]
-        def gdk = "https://docs.groovy-lang.org/latest/html/groovy-jdk/${path}"
-        if (exists(gdk)) {
-            result << gdk.toString()
+        if (name.matches(/java.*/)) {
+            def majorVersion = System.getProperty('java.version').tokenize('.')[0]
+            def module = clazz.module?.name ?: 'java.base'
+            def result = ["https://docs.oracle.com/en/java/javase/${majorVersion}/docs/api/${module}/${path}".toString()]
+            def gdk = "https://docs.groovy-lang.org/latest/html/groovy-jdk/${path}"
+            if (exists(gdk)) {
+                result << gdk.toString()
+            }
+            return result
         }
-        result
+        return null
     }
 }
