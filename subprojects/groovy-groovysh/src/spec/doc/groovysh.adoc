@@ -603,7 +603,7 @@ This command can be given at any time to add new dependencies.
 
 The `/grep` command searches for patterns in files or standard input.
 
-image:{reldir_groovysh}/assets/img/repl_grep.png[Echo, width=60%]
+image:{reldir_groovysh}/assets/img/repl_grep.png[Grep usage, width=80%]
 
 [[GroovyShell-head]]
 ==== `/head`
