@@ -26,8 +26,6 @@ endif::[]
 
 == Groovy : Groovy Shell
 
-NOTE: The groovysh is undergoing a major re-vamp and some of this information may not yet have been updated to reflect the latest changes.
-
 The Groovy Shell, aka. `groovysh` is a command-line application which
 allows easy access to evaluate Groovy expressions, define classes and
 run simple experiments.
