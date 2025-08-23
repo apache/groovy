@@ -42,7 +42,8 @@ tasks.named('asciidoctor') {
     attributes reldir_root: '.',
             reldir_jmx: '.',
             reldir_swing: '.',
-            reldir_console: '.'
+            reldir_console: '.',
+            reldir_groovysh: '.'
 }
 
 distribution {
