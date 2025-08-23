@@ -47,8 +47,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static java.util.Arrays.copyOf;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
 import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
@@ -201,19 +201,20 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
 
             if (skipInterfaces) return;
 
-            Set<ClassNode> addedInterfaces = getInterfacesAndSuperInterfaces(delegate.type);
-            addedInterfaces.removeIf(i -> (i.getModifiers() & (ACC_PUBLIC | ACC_SYNTHETIC)) != ACC_PUBLIC || i.isSealed()); // GROOVY-7288 and JDK16+
-            if (!addedInterfaces.isEmpty()) {
-                Set<ClassNode> ownerInterfaces = getInterfacesAndSuperInterfaces(delegate.owner);
-                for (ClassNode i : addedInterfaces) {
-                    if (!ownerInterfaces.contains(i)) {
-                        ClassNode[] faces = delegate.owner.getInterfaces();
-                        faces = copyOf(faces, faces.length + 1);
-                        faces[faces.length - 1] = i;
+            Set<ClassNode> interfaces;
+            if (delegate.type.isInterface()) { // GROOVY-11736
+                interfaces = new HashSet<>(Set.of(delegate.type));
+            } else {
+                interfaces = getInterfacesAndSuperInterfaces(delegate.type);
+                // if interfaces contains Collection, remove redundant Iterable
+                interfaces.removeIf(i1 -> interfaces.stream().anyMatch(i2 -> i2 != i1 && i2.implementsInterface(i1)));
+            }
+            interfaces.removeIf(i -> (i.getModifiers() & (ACC_PUBLIC | ACC_SYNTHETIC)) != ACC_PUBLIC || i.isSealed()); // GROOVY-7288 and JDK16+
 
-                        delegate.owner.setInterfaces(faces);
-                    }
-                }
+            interfaces.removeAll(getInterfacesAndSuperInterfaces(delegate.owner));
+
+            if (!interfaces.isEmpty()) {
+                delegate.owner.setInterfaces(Stream.concat(Stream.of(delegate.owner.getInterfaces()), interfaces.stream()).toArray(ClassNode[]::new));
             }
         }
     }

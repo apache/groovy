@@ -86,6 +86,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 import static java.lang.reflect.Modifier.isFinal;
@@ -402,6 +403,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                                 if (t.equals(in)) {
                                     String one = in.toString(false), two = t.toString(false);
                                     if (!one.equals(two)) {
+                                        IntFunction<String> via = (n) -> {
+                                            ClassNode from;
+                                            if (n < nInterfaces) {
+                                                from = interfaces[n];
+                                                if (from.equals(in)) from = cn;
+                                            } else {
+                                                from = cn.getUnresolvedSuperClass();
+                                            }
+                                            return " (via " + from.getNameWithoutPackage() + ")";
+                                        };
+                                        one += via.apply(i);
+                                        two += via.apply(j);
                                         if (Traits.isTrait(in)) { // GROOVY-11508
                                             cn.getModule().getContext().addWarning("The trait " + in.getNameWithoutPackage() +
                                                 " is implemented more than once with different arguments: " + one + " and " + two, cn);
