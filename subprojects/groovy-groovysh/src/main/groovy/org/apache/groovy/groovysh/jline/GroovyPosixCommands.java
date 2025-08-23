@@ -581,8 +581,9 @@ public class GroovyPosixCommands extends PosixCommands {
             if ("-".equals(arg)) {
                 sources.add(new GrepSource(context.in(), "(standard input)"));
             } else {
-                Path path = context.currentDir().resolve(arg);
-                sources.add(new GrepSource(path, arg));
+                sources.addAll(maybeExpandGlob(context, arg).stream()
+                    .map(gp -> new GrepSource(gp, gp.toString()))
+                    .collect(Collectors.toList()));
             }
         }
         boolean match = false;
