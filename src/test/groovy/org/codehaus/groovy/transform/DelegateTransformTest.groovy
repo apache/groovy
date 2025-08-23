@@ -21,7 +21,7 @@ package org.codehaus.groovy.transform
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import java.util.concurrent.Callable
 import java.util.concurrent.locks.Lock
@@ -37,7 +37,8 @@ import static org.junit.Assert.assertTrue
  */
 final class DelegateTransformTest {
 
-    @Test // GROOVY-3380
+    // GROOVY-3380
+    @Test
     void testDelegateImplementingNonPublicInterface() {
         assertScript '''
             import org.codehaus.groovy.transform.ClassImplementingANonPublicInterface
@@ -51,7 +52,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-3380
+    // GROOVY-3380
+    @Test
     void testDelegateImplementingNonPublicInterfaceWithZipFileConcreteCase() {
         assertScript '''
             import java.util.zip.*
@@ -64,7 +66,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-10439
+    // GROOVY-10439
+    @Test
     void testDelegateImplementingInterfaceWithDifferentTypeArgumentThanOwner() {
         def err = shouldFail '''
             class C extends ArrayList<String> {
@@ -79,10 +82,11 @@ final class DelegateTransformTest {
                 @Delegate HashSet<Number> numbers // Set<Number> added; Verifier checks
             }
         '''
-        assert err =~ /The interface Collection cannot be implemented more than once with different arguments: java.util.Collection<java.lang.Number> and java.util.Collection<java.lang.String>/
+        assert err =~ /The interface Collection cannot be implemented more than once with different arguments: java.util.Collection<java.lang.Number> \(via Set\) and java.util.Collection<java.lang.String> \(via ArrayList\)/
     }
 
-    @Test // GROOVY-5974
+    // GROOVY-5974
+    @Test
     void testDelegateExcludes() {
         assertScript '''
             class MapSet {
@@ -198,7 +202,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-3471
+    // GROOVY-3471
+    @Test
     void testDelegateOnAMapTypeFieldWithInitializationUsingConstructorProperties() {
         assertScript '''
             class Test3471 { @Delegate Map mp }
@@ -207,13 +212,15 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-3323
+    // GROOVY-3323
+    @Test
     void testDelegateTransformCorrectlyDelegatesMethodsFromSuperInterfaces() {
         assert new DelegateBarImpl(new DelegateFooImpl()).bar() == 'bar impl'
         assert new DelegateBarImpl(new DelegateFooImpl()).foo() == 'foo impl'
     }
 
-    @Test // GROOVY-3555
+    // GROOVY-3555
+    @Test
     void testDelegateTransformIgnoresDeprecatedMethodsByDefault() {
         def b1 = new DelegateBarForcingDeprecated(baz: new BazWithDeprecatedFoo())
         def b2 = new DelegateBarWithoutDeprecated(baz: new BazWithDeprecatedFoo())
@@ -225,7 +232,8 @@ final class DelegateTransformTest {
         }
     }
 
-    @Test // GROOVY-4163
+    // GROOVY-4163
+    @Test
     void testDelegateTransformAllowsInterfacesAndDelegation() {
         assertScript '''
             class Temp implements Runnable {
@@ -258,7 +266,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-4265
+    // GROOVY-4265
+    @Test
     void testShouldPreferDelegatedOverStaticSuperMethod() {
         assertScript '''
             class A {
@@ -274,7 +283,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-4244
+    // GROOVY-4244
+    @Test
     void testSetPropertiesThroughDelegate() {
         def foo = new Foo4244()
 
@@ -288,12 +298,14 @@ final class DelegateTransformTest {
         }
     }
 
+    // GROOVY-4619
     @Test
-    void testDelegateSuperInterfaces_Groovy4619() {
+    void testDelegateSuperInterfaces() {
         assert 'doSomething' in SomeClass4619.class.methods*.name
     }
 
-    @Test // GROOVY-5112
+    // GROOVY-5112
+    @Test
     void testGenericsOnArray() {
         assertScript '''
             class ListWrapper {
@@ -307,7 +319,41 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-5732
+    // GROOVY-11736
+    @Test
+    void testRawTypeInterfaces() {
+        assertScript '''
+            class C implements Collection {
+                @Delegate Collection collection
+                C(Collection collection) {
+                    this.collection = collection
+                }
+            }
+
+            class D extends C implements Set {
+                @Delegate Set set
+                D(Set set) {
+                    super(set)
+                    this.set = set
+                }
+            }
+
+            def c = new C(new HashSet<>())
+            assert c instanceof Collection
+            assert c !instanceof Set
+            assert c.isEmpty()
+
+            def d = new D(new HashSet<>())
+            assert d instanceof Collection
+            assert d.collection.isEmpty()
+            assert d instanceof Set
+            assert d.set.isEmpty()
+            assert d.isEmpty()
+        '''
+    }
+
+    // GROOVY-5732
+    @Test
     void testInterfacesFromSuperClasses() {
         assertScript '''
             interface I5732 {
@@ -328,7 +374,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-5729
+    // GROOVY-5729
+    @Test
     void testDeprecationWithInterfaces() {
         assertScript '''
             interface I5729 {
@@ -356,7 +403,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-5446
+    // GROOVY-5446
+    @Test
     void testDelegateWithParameterAnnotations() {
         assertScript '''
             import java.lang.annotation.*
@@ -503,7 +551,8 @@ final class DelegateTransformTest {
         assert err.message.contains('@Delegate does not support keeping Closure annotation members.')
     }
 
-    @Test // GROOVY-5445
+    // GROOVY-5445
+    @Test
     void testDelegateToSuperProperties() {
         assertScript '''
             class Foo {
@@ -523,7 +572,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-7243
+    // GROOVY-7243
+    @Test
     void testInclude() {
         assertScript '''
             class Book {
@@ -568,7 +618,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-6329
+    // GROOVY-6329
+    @Test
     void testIncludeAndExcludeByType() {
         assertScript '''
             interface OddInclusionsTU<T, U> {
@@ -609,7 +660,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-5211
+    // GROOVY-5211
+    @Test
     void testAvoidFieldNameClashWithParameterName() {
         assertScript '''
             class A {
@@ -638,7 +690,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-6542
+    // GROOVY-6542
+    @Test
     void testLineNumberInStackTrace() {
         def err = shouldFail '''\
             @groovy.transform.ASTTest(phase=CANONICALIZATION, value={
@@ -692,7 +745,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-7118
+    // GROOVY-7118
+    @Test
     void testDelegateOfMethodHavingPlaceholder() {
         assertScript '''
             interface FooInt {
@@ -725,7 +779,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-7261
+    // GROOVY-7261
+    @Test
     void testShouldWorkWithLazyTransform() {
         assertScript '''
             class Foo {
@@ -741,7 +796,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-6454
+    // GROOVY-6454
+    @Test
     void testMethodsWithInternalNameShouldNotBeDelegatedTo() {
         assertScript '''
             class HasMethodWithInternalName {
@@ -758,7 +814,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-6454
+    // GROOVY-6454
+    @Test
     void testMethodsWithInternalNameShouldBeDelegatedToIfRequested() {
         assertScript '''
             interface HasMethodWithInternalName {
@@ -774,7 +831,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-6454
+    // GROOVY-6454
+    @Test
     void testProperitesWithInternalNameShouldBeDelegatedToIfRequested() {
         assertScript '''
             class HasPropertyWithInternalName {
@@ -794,15 +852,15 @@ final class DelegateTransformTest {
 
     @Test
     void testDelegateToGetterMethod() {
-        // given:
         def delegate = { new DelegateFooImpl() }
-        // when:
+
         def foo = new FooToMethod(delegate)
-        // then:
+
         assert foo.foo() == delegate().foo()
     }
 
-    @Test // GROOVY-5752
+    // GROOVY-5752
+    @Test
     void testDelegationShouldAccountForPrimitiveBooleanProperties() {
         assertScript '''
             class A {
@@ -831,7 +889,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test //GROOVY-8132
+    //GROOVY-8132
+    @Test
     void testOwnerPropertyPreferredToDelegateProperty() {
         assertScript '''
             class Foo {
@@ -863,7 +922,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-8204
+    // GROOVY-8204
+    @Test
     void testDelegateToArray() {
         assertScript '''
             class BugsMe {
@@ -877,7 +937,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-9289
+    // GROOVY-9289
+    @Test
     void testExcludesWithInvalidPropertyNameResultsInError() {
         def err = shouldFail '''
             class WMap {
@@ -897,7 +958,8 @@ final class DelegateTransformTest {
         assert err.message.contains("Error during @Delegate processing: 'excludes' property or method 'name' does not exist.")
     }
 
-    @Test // GROOVY-8825
+    // GROOVY-8825
+    @Test
     void testDelegateToPrecompiledGroovyGeneratedMethod() {
         assertScript '''
             import org.codehaus.groovy.transform.CompiledClass8825
@@ -909,7 +971,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-9414
+    // GROOVY-9414
+    @Test
     void testDelegateToPropertyViaGetter() {
         assertScript '''
             class Bar {
@@ -922,7 +985,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-4516
+    // GROOVY-4516
+    @Test
     void testParameterWithDefaultArgument1() {
         assertScript '''
             class C {
@@ -939,7 +1003,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-4516
+    // GROOVY-4516
+    @Test
     void testParameterWithDefaultArgument2() {
         assertScript '''
             class C {
@@ -978,7 +1043,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-4320
+    // GROOVY-4320
+    @Test
     void testParameterWithDefaultArgument4() {
         assertScript '''
             interface I {
@@ -999,7 +1065,8 @@ final class DelegateTransformTest {
         '''
     }
 
-    @Test // GROOVY-4320
+    // GROOVY-4320
+    @Test
     void testParameterWithDefaultArgument5() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
@@ -1055,7 +1122,8 @@ final class DelegateTransformTest {
         }
     }
 
-    @Test // GROOVY-5204
+    // GROOVY-5204
+    @Test
     void testParameterWithDefaultArgument6() {
         assertScript '''
             class C {
