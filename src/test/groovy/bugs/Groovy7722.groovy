@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -46,7 +46,8 @@ final class Groovy7722 {
         '''
     }
 
-    @Test // GROOVY-7864
+    // GROOVY-7864
+    @Test
     void testGenericsStackOverflow2() {
         assertScript '''
             // from RxJava 1.x
@@ -54,12 +55,12 @@ final class Groovy7722 {
                 interface OnSubscribe<T> extends Action1<Subscriber<? super T>> {
                 }
                 static <T> Observable<T> create(OnSubscribe<T> f) {
-                    return new Observable<T>(/*RxJavaHooks.onCreate(f)*/);
+                    new Observable<T>(/*RxJavaHooks.onCreate(f)*/)
                 }
             }
             abstract class Subscriber<T> implements Observer<T>, Subscription {
             }
-            interface Action1<T> /*extends Action*/ {
+            interface Action1<T> {
                 void call(T t)
             }
             interface Observer<T> {
@@ -67,7 +68,7 @@ final class Groovy7722 {
                 void onCompleted()
                 void onError(Throwable t)
             }
-            public interface Subscription {
+            interface Subscription {
                 void unsubscribe()
                 boolean isUnsubscribed()
             }

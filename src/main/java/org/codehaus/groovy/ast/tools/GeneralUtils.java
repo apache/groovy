@@ -87,6 +87,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import static org.codehaus.groovy.antlr.PrimitiveHelper.getDefaultValueForPrimitive;
 
@@ -488,17 +489,27 @@ public class GeneralUtils {
     }
 
     private static void addAllInterfaces(final Set<ClassNode> result, final ClassNode source) {
-        for (ClassNode in : source.getInterfaces()) {
-            if (in.getGenericsTypes() != null) { // GROOVY-11707
-                in = GenericsUtils.parameterizeType(source, in);
+        UnaryOperator<ClassNode> sourceTypeArgs = (ClassNode cn) -> {
+            if (source.isRedirectNode() && GenericsUtils.hasUnresolvedGenerics(cn)) { // GROOVY-11707
+                if (source.getGenericsTypes() == null && source.redirect().getGenericsTypes() != null) {
+                    cn = cn.getPlainNodeReference(); // GROOVY-11736
+                } else {
+                    cn = GenericsUtils.parameterizeType(source, cn);
+                }
             }
+            return cn;
+        };
+
+        for (ClassNode in : source.getInterfaces()) {
+            in = sourceTypeArgs.apply(in);
             if (result.add(in)) {
                 addAllInterfaces(result, in);
             }
         }
+
         ClassNode sc = source.redirect().getUnresolvedSuperClass(false);
         if (sc != null && !ClassHelper.isObjectType(sc)) {
-            addAllInterfaces(result, GenericsUtils.parameterizeType(source, sc));
+            addAllInterfaces(result, sourceTypeArgs.apply(sc));
         }
     }
 

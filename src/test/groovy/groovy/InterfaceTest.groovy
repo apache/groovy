@@ -44,7 +44,7 @@ final class InterfaceTest extends CompilableTestSupport {
             interface J<T> extends I<T> {}
             class X implements I<String>, J<Number> {}
         '''
-        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> and I<java.lang.Number>')
+        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> (via X) and I<java.lang.Number> (via J)')
     }
 
     // GROOVY-5106
@@ -54,7 +54,7 @@ final class InterfaceTest extends CompilableTestSupport {
             class X implements I<Number> {}
             class Y extends X implements I<String> {}
         '''
-        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> and I<java.lang.Number>')
+        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> (via Y) and I<java.lang.Number> (via X)')
     }
 
     // GROOVY-11707
@@ -65,6 +65,17 @@ final class InterfaceTest extends CompilableTestSupport {
             abstract class B extends A implements Comparable {
             }
         '''
+    }
+
+    // GROOVY-11736
+    void testReImplementsInterface4() {
+        def err = shouldFail '''
+            abstract class A implements Comparable<Object> {
+            }
+            abstract class B extends A implements Comparable {
+            }
+        '''
+        assert err.contains('The interface Comparable cannot be implemented more than once with different arguments: java.lang.Comparable (via B) and java.lang.Comparable<java.lang.Object> (via A)')
     }
 
     // GROOVY-10060

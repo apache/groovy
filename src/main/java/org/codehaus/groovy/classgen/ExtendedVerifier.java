@@ -46,8 +46,10 @@ import org.objectweb.asm.Opcodes;
 import java.lang.annotation.Retention;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -65,11 +67,10 @@ import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
 import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.makeCached;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
-import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
 import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 
@@ -423,10 +424,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         if (annotationType.isResolved() && "java.lang.Override".equals(annotationType.getName())) {
             if (node instanceof MethodNode && !Boolean.TRUE.equals(node.getNodeMetaData(Verifier.DEFAULT_PARAMETER_GENERATED))) {
                 boolean override = false;
-                MethodNode origMethod = (MethodNode) node;
-                ClassNode cNode = origMethod.getDeclaringClass();
-                if (origMethod.hasDefaultValue()) {
-                    List<MethodNode> variants = cNode.getDeclaredMethods(origMethod.getName());
+                MethodNode mNode = (MethodNode) node;
+                ClassNode  cNode = mNode.getDeclaringClass();
+                if (mNode.hasDefaultValue()) {
+                    List<MethodNode> variants = cNode.getDeclaredMethods(mNode.getName());
                     for (MethodNode m : variants) {
                         if (m.getAnnotations().contains(visited) && isOverrideMethod(m)) {
                             override = true;
@@ -434,11 +435,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                         }
                     }
                 } else {
-                    override = isOverrideMethod(origMethod);
+                    override = isOverrideMethod(mNode);
                 }
 
                 if (!override) {
-                    addError("Method '" + origMethod.getName() + "' from class '" + cNode.getName() + "' does not override " +
+                    addError("Method '" + mNode.getName() + "' from class '" + cNode.getName() + "' does not override " +
                             "method from its superclass or interfaces but is annotated with @Override.", visited);
                 }
             }
@@ -446,32 +447,29 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     }
 
     private static boolean isOverrideMethod(final MethodNode method) {
-        ClassNode declaringClass = method.getDeclaringClass();
-        ClassNode next = declaringClass;
-        outer:
-        while (next != null) {
-            Map<String, ClassNode> nextSpec = createGenericsSpec(next);
-            MethodNode mn = correctToGenericsSpec(nextSpec, method);
-            if (next != declaringClass) {
-                if (getDeclaredMethodCorrected(nextSpec, mn, next) != null) break;
+        final ClassNode declaringClass = method.getDeclaringClass();
+        var todo = new LinkedList<ClassNode>();
+        var done = new HashSet<ClassNode>();
+        var next = declaringClass;
+        do {
+            if (done.add(next)) {
+                if (next != declaringClass
+                        && getDeclaredMethodCorrected(method, next) != null) {
+                    return true;
+                }
+                ClassNode sc = next.redirect().getUnresolvedSuperClass(false);
+                if (sc != null) todo.addFirst(parameterizeType(next, sc));
+                for (ClassNode in : next.getInterfaces()) {
+                    todo.add(parameterizeType(next, in));
+                }
             }
+        } while ((next = todo.poll()) != null);
 
-            for (ClassNode face : getInterfacesAndSuperInterfaces(next)) {
-                Map<String, ClassNode> faceSpec = createGenericsSpec(face, nextSpec);
-                if (getDeclaredMethodCorrected(faceSpec, mn, face) != null) break outer;
-            }
-
-            ClassNode superClass = next.getUnresolvedSuperClass();
-            if (superClass != null) {
-                next = correctToGenericsSpecRecurse(nextSpec, superClass);
-            } else {
-                next = null;
-            }
-        }
-        return next != null;
+        return false;
     }
 
-    private static MethodNode getDeclaredMethodCorrected(final Map<String, ClassNode> genericsSpec, final MethodNode mn, final ClassNode cn) {
+    private static MethodNode getDeclaredMethodCorrected(final MethodNode mn, final ClassNode cn) {
+        Map<String, ClassNode> genericsSpec = createGenericsSpec(cn);
         for (MethodNode declared : cn.getDeclaredMethods(mn.getName())) {
             MethodNode corrected = correctToGenericsSpec(genericsSpec, declared);
             if (parametersEqual(corrected.getParameters(), mn.getParameters())) {
