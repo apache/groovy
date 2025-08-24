@@ -165,7 +165,7 @@ class Main {
         private void cd(CommandInput input) {
             try {
                 parseOptions(adjustUsage('cd', '/cd'), input.args())
-                PosixCommands.cd(posix.context, ['/cd', *input.args()] as String[], { Path newPath ->
+                PosixCommands.cd(context(input), ['/cd', *input.args()] as String[], { Path newPath ->
                     posix.context.currentDir = newPath
                     scriptEngine.put('PWD', newPath)
                 })
@@ -176,7 +176,7 @@ class Main {
 
         private void ls(CommandInput input) {
             try {
-                GroovyPosixCommands.ls(posix.context, ['/ls', *input.args()] as String[])
+                GroovyPosixCommands.ls(context(input), ['/ls', *input.args()] as String[])
             } catch (Exception e) {
                 saveException(e)
             }
@@ -184,15 +184,21 @@ class Main {
 
         private void grepcmd(CommandInput input) {
             try {
-                GroovyPosixCommands.grep(posix.context, ['/grep', *input.args()] as String[])
+                GroovyPosixCommands.grep(context(input), ['/grep', *input.args()] as String[])
             } catch (Exception e) {
                 saveException(e)
             }
         }
 
+        private GroovyPosixContext context(CommandInput input) {
+            GroovyPosixContext ctx = new GroovyPosixContext(input.in(), input.out(), input.err(),
+                posix.context.currentDir(), input.terminal(), scriptEngine::get)
+            ctx
+        }
+
         private void cat(CommandInput input) {
             try {
-                GroovyPosixCommands.cat(posix.context, ['/cat', *input.args()] as String[])
+                GroovyPosixCommands.cat(context(input), ['/cat', *input.args()] as String[])
             } catch (Exception e) {
                 saveException(e)
             }
@@ -209,7 +215,8 @@ class Main {
         private void posix(String[] usage, CommandInput input) {
             try {
                 parseOptions(usage, input.args())
-                posix.execute(input.command(), [input.command(), *input.args()] as String[])
+                PosixCommands."${input.command()[1..-1]}"(context(input), [input.command(), *input.args()] as String[])
+//                posix.execute(input.command(), [input.command(), *input.args()] as String[])
             } catch (Exception e) {
                 saveException(e)
             }

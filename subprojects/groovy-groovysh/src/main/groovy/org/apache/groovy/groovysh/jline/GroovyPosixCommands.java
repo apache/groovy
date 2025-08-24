@@ -753,6 +753,7 @@ public class GroovyPosixCommands extends PosixCommands {
                     }
                     match |= nb > 0;
                 }
+                context.out().flush();
             }
         }
     }
