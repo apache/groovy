@@ -269,12 +269,12 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitWhileLoop");
         writeStatementLabel(statement);
 
+        CompileStack compileStack = controller.getCompileStack();
+        compileStack.pushLoop(statement.getStatementLabels());
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+
         MethodVisitor mv = controller.getMethodVisitor();
-
-        controller.getCompileStack().pushLoop(statement.getStatementLabels());
-        Label continueLabel = controller.getCompileStack().getContinueLabel();
-        Label breakLabel = controller.getCompileStack().getBreakLabel();
-
         mv.visitLabel(continueLabel);
 
         visitConditionOfLoopingStatement(statement.getBooleanExpression(), breakLabel, mv);
@@ -283,26 +283,29 @@ public class StatementWriter {
         mv.visitJumpInsn(GOTO, continueLabel);
         mv.visitLabel(breakLabel);
 
-        controller.getCompileStack().pop();
+        compileStack.pop();
     }
 
     public void writeDoWhileLoop(final DoWhileStatement statement) {
         writeStatementLabel(statement);
 
-        controller.getCompileStack().pushLoop(statement.getStatementLabels());
-        Label continueLabel = controller.getCompileStack().getContinueLabel();
-        Label breakLabel = controller.getCompileStack().getBreakLabel();
+        CompileStack compileStack = controller.getCompileStack();
+        compileStack.pushLoop(statement.getStatementLabels());
+        Label continueLabel = compileStack.getContinueLabel();
+        Label breakLabel = compileStack.getBreakLabel();
+        Label blockLabel = new Label();
 
         MethodVisitor mv = controller.getMethodVisitor();
-        mv.visitLabel(continueLabel);
+        mv.visitLabel(blockLabel);
 
         statement.getLoopBlock().visit(controller.getAcg());
+        mv.visitLabel(continueLabel); // GROOVY-11739: continue jumps to condition
         visitConditionOfLoopingStatement(statement.getBooleanExpression(), breakLabel, mv);
 
-        mv.visitJumpInsn(GOTO, continueLabel);
+        mv.visitJumpInsn(GOTO, blockLabel);
         mv.visitLabel(breakLabel);
 
-        controller.getCompileStack().pop();
+        compileStack.pop();
     }
 
     public void writeIfElse(final IfStatement statement) {
