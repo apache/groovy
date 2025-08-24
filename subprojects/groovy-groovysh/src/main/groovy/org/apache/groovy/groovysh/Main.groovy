@@ -184,7 +184,7 @@ class Main {
 
         private void grepcmd(CommandInput input) {
             try {
-                GroovyPosixCommands.grep(context(input), ['/grep', *input.args()] as String[])
+                GroovyPosixCommands.grep(context(input), ['/grep', *input.xargs()] as Object[])
             } catch (Exception e) {
                 saveException(e)
             }

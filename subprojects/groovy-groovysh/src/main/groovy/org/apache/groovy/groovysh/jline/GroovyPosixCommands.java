@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.groovysh.jline;
 
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.jline.builtins.Less;
 import org.jline.builtins.Options;
 import org.jline.builtins.PosixCommands;
@@ -29,6 +30,7 @@ import org.jline.utils.InputStreamReader;
 import org.jline.utils.OSUtils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +38,7 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -489,10 +492,10 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
-    public static void grep(Context context, String[] argv) throws Exception {
+    public static void grep(Context context, Object[] argv) throws Exception {
         final String[] usage = {
-            "grep -  search for PATTERN in each FILE or standard input.",
-            "Usage: grep [OPTIONS] PATTERN [FILES]",
+            "grep -  search for PATTERN in each FILE or VARIABLE or standard input.",
+            "Usage: grep [OPTIONS] PATTERN [FILES] [VARIABLES]",
             "  -? --help                Show help",
             "  -i --ignore-case         Ignore case distinctions",
             "  -n --line-number         Prefix each line with line number within its input file",
@@ -584,6 +587,8 @@ public class GroovyPosixCommands extends PosixCommands {
         for (String arg : args) {
             if ("-".equals(arg)) {
                 sources.add(new GrepSource(context.in(), "(standard input)"));
+            } else if (arg.startsWith("[Ljava.lang.String;@")) {
+                sources.add(new GrepSource(variableInputStream(argv, arg), arg));
             } else {
                 sources.addAll(maybeExpandGlob(context, arg).stream()
                     .map(gp -> new GrepSource(gp, gp.toString()))
@@ -756,6 +761,12 @@ public class GroovyPosixCommands extends PosixCommands {
                 context.out().flush();
             }
         }
+    }
+
+    private static ByteArrayInputStream variableInputStream(Object[] argv, String arg) {
+        String[] found = (String[]) Arrays.stream(argv).filter(v -> v.toString().equals(arg)).findFirst().get();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(ArrayGroovyMethods.join(found, "\n").getBytes(StandardCharsets.UTF_8));
+        return inputStream;
     }
 
     public static void less(Context context, String[] argv) throws Exception {
