@@ -633,8 +633,8 @@ public class GroovyPosixCommands extends PosixCommands {
 
     public static void grep(Context context, Object[] argv) throws Exception {
         final String[] usage = {
-            "grep -  search for PATTERN in each FILE or VARIABLE or standard input.",
-            "Usage: grep [OPTIONS] PATTERN [FILES] [VARIABLES]",
+            "/grep -  search for PATTERN in each FILE or VARIABLE or standard input.",
+            "Usage: /grep [OPTIONS] PATTERN [FILE|VARIABLE ...]",
             "  -? --help                Show help",
             "  -i --ignore-case         Ignore case distinctions",
             "  -n --line-number         Prefix each line with line number within its input file",
