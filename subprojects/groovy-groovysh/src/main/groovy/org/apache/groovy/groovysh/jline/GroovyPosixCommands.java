@@ -518,9 +518,7 @@ public class GroovyPosixCommands extends PosixCommands {
         if (opt.args().isEmpty()) {
             expanded.add(currentDir);
         } else {
-            opt.args().forEach(s -> {
-                expanded.addAll(maybeExpandGlob(context, s));
-            });
+            opt.args().stream().flatMap(s -> maybeExpandGlob(context, s)).forEach(expanded::add);
         }
         boolean listAll = opt.isSet("a");
         Predicate<Path> filter = p -> listAll
@@ -901,7 +899,7 @@ public class GroovyPosixCommands extends PosixCommands {
             } else if (arg.startsWith("[Ljava.lang.String;@")) {
                 sources.add(new NamedInputStream(variableInputStream(argv, arg), arg));
             } else {
-                sources.addAll(maybeExpandGlob(context, arg).stream()
+                sources.addAll(maybeExpandGlob(context, arg)
                     .map(gp -> new NamedInputStream(newInputStream(gp), gp.toString()))
                     .collect(Collectors.toList()));
             }
@@ -926,7 +924,7 @@ public class GroovyPosixCommands extends PosixCommands {
             if ("-".equals(arg)) {
                 sources.add(new Source.StdInSource(context.in()));
             } else {
-                sources.addAll(maybeExpandGlob(context, arg).stream()
+                sources.addAll(maybeExpandGlob(context, arg)
                     .map(p -> {
                         try {
                             return new Source.URLSource(p.toUri().toURL(), p.toString());
@@ -1024,11 +1022,11 @@ public class GroovyPosixCommands extends PosixCommands {
         return perms;
     }
 
-    private static List<Path> maybeExpandGlob(Context context, String s) {
+    private static Stream<Path> maybeExpandGlob(Context context, String s) {
         if (s.contains("*") || s.contains("?")) {
-            return expandGlob(context, s);
+            return expandGlob(context, s).stream();
         }
-        return Collections.singletonList(context.currentDir().resolve(s));
+        return Stream.of(context.currentDir().resolve(s));
     }
 
     private static List<Path> expandGlob(Context context, String pattern) {
