@@ -924,7 +924,7 @@ public class GroovyPosixCommands extends PosixCommands {
             if ("-".equals(arg)) {
                 sources.add(new Source.StdInSource(context.in()));
             } else {
-                sources.addAll(maybeExpandGlob(context, arg)
+                maybeExpandGlob(context, arg)
                     .map(p -> {
                         try {
                             return new Source.URLSource(p.toUri().toURL(), p.toString());
@@ -932,7 +932,7 @@ public class GroovyPosixCommands extends PosixCommands {
                             throw new RuntimeException(e);
                         }
                     })
-                    .collect(Collectors.toList()));
+                    .forEach(sources::add);
             }
         }
 
