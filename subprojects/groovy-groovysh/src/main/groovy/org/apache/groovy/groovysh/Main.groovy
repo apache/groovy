@@ -82,7 +82,7 @@ import static org.jline.jansi.AnsiRenderer.render
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
-    private static POSIX_FILE_CMDS = ['/tail', '/head', '/wc', '/sort']
+    private static POSIX_FILE_CMDS = ['/tail', '/wc', '/sort']
 
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
@@ -113,6 +113,7 @@ class Main {
                 '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
                 '/ls'   : new CommandMethods((Function) this::ls, this::optFileCompleter),
                 '/grep' : new CommandMethods((Function) this::grepcmd, this::optFileCompleter),
+                '/head' : new CommandMethods((Function) this::headcmd, this::optFileCompleter),
                 '/cat'  : new CommandMethods((Function) this::cat, this::optFileCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
             ]
@@ -190,6 +191,14 @@ class Main {
             }
         }
 
+        private void headcmd(CommandInput input) {
+            try {
+                GroovyPosixCommands.head(context(input), ['/head', *input.xargs()] as Object[])
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
         private GroovyPosixContext context(CommandInput input) {
             GroovyPosixContext ctx = new GroovyPosixContext(input.in(), input.out(), input.err(),
                 posix.context.currentDir(), input.terminal(), scriptEngine::get)
@@ -198,7 +207,7 @@ class Main {
 
         private void cat(CommandInput input) {
             try {
-                GroovyPosixCommands.cat(context(input), ['/cat', *input.args()] as String[])
+                GroovyPosixCommands.cat(context(input), ['/cat', *input.xargs()] as Object[])
             } catch (Exception e) {
                 saveException(e)
             }

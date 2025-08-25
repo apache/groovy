@@ -76,10 +76,10 @@ import java.util.stream.Stream;
 // https://github.com/jline/jline3/pull/1390
 public class GroovyPosixCommands extends PosixCommands {
 
-    public static void cat(Context context, String[] argv) throws Exception {
+    public static void cat(Context context, Object[] argv) throws Exception {
         final String[] usage = {
-            "/cat - concatenate and print FILES",
-            "Usage: /cat [OPTIONS] [FILES]",
+            "/cat - concatenate and print FILES or VARIABLES",
+            "Usage: /cat [OPTIONS] [FILES] [VARIABLES]",
             "  -? --help                show help",
             "  -n                       number the output lines, starting at 1"
         };
@@ -89,28 +89,14 @@ public class GroovyPosixCommands extends PosixCommands {
         if (args.isEmpty()) {
             args = Collections.singletonList("-");
         }
-        List<InputStream> expanded = new ArrayList<>();
-        for (String arg : args) {
-            if ("-".equals(arg)) {
-                expanded.add(context.in());
-            } else {
-                expanded.addAll(maybeExpandGlob(context, arg).stream()
-                    .map(p -> {
-                        try {
-                            return p.toUri().toURL().openStream();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .collect(Collectors.toList()));
-            }
-        }
-        for (InputStream is : expanded) {
-            cat(context, new BufferedReader(new InputStreamReader(is)), opt.isSet("n"));
+        List<NamedInputStream> sources = getSources(context, argv, args);
+        for (NamedInputStream nis : sources) {
+            InputStream is = nis.getInputStream();
+            doCat(context, new BufferedReader(new InputStreamReader(is)), opt.isSet("n"));
         }
     }
 
-    private static void cat(Context context, BufferedReader reader, boolean numbered) throws IOException {
+    private static void doCat(Context context, BufferedReader reader, boolean numbered) throws IOException {
         String line;
         int lineno = 1;
         try {
@@ -123,6 +109,75 @@ public class GroovyPosixCommands extends PosixCommands {
             }
         } finally {
             reader.close();
+        }
+    }
+
+    public static void head(Context context, Object[] argv) throws Exception {
+        final String[] usage = {
+            "/head - display first lines of files or variables",
+            "Usage: /head [-n lines | -c bytes] [file|variable ...]",
+            "  -? --help                    Show help",
+            "  -n --lines=LINES             Print line counts",
+            "  -c --bytes=BYTES             Print byte counts",
+        };
+        Options opt = parseOptions(context, usage, argv);
+
+        if (opt.isSet("lines") && opt.isSet("bytes")) {
+            throw new IllegalArgumentException("usage: head [-n # | -c #] [file ...]");
+        }
+
+        int nbLines = Integer.MAX_VALUE;
+        int nbBytes = Integer.MAX_VALUE;
+        if (opt.isSet("lines")) {
+            nbLines = opt.getNumber("lines");
+        } else if (opt.isSet("bytes")) {
+            nbBytes = opt.getNumber("bytes");
+        } else {
+            nbLines = 10; // default
+        }
+
+        List<String> args = opt.args();
+        if (args.isEmpty()) {
+            args = Collections.singletonList("-");
+        }
+
+        boolean first = true;
+        List<NamedInputStream> sources = getSources(context, argv, args);
+        for (NamedInputStream nis : sources) {
+            if (!first && args.size() > 1) {
+                context.out().println();
+            }
+            if (args.size() > 1) {
+                context.out().println("==> " + nis.getName() + " <==");
+            }
+
+            InputStream is = nis.getInputStream();
+            if (nbLines != Integer.MAX_VALUE) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+                    String line;
+                    int count = 0;
+                    while ((line = reader.readLine()) != null && count < nbLines) {
+                        context.out().println(line);
+                        count++;
+                    }
+                }
+            } else {
+                byte[] buffer = new byte[nbBytes];
+                int bytesRead = is.read(buffer);
+                if (bytesRead > 0) {
+                    context.out().write(buffer, 0, bytesRead);
+                }
+                is.close();
+            }
+            first = false;
+        }
+    }
+
+    private static InputStream newInputStream(Path p) {
+        try {
+            return Files.newInputStream(p);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -583,18 +638,7 @@ public class GroovyPosixCommands extends PosixCommands {
         if (args.isEmpty()) {
             args.add("-");
         }
-        List<GrepSource> sources = new ArrayList<>();
-        for (String arg : args) {
-            if ("-".equals(arg)) {
-                sources.add(new GrepSource(context.in(), "(standard input)"));
-            } else if (arg.startsWith("[Ljava.lang.String;@")) {
-                sources.add(new GrepSource(variableInputStream(argv, arg), arg));
-            } else {
-                sources.addAll(maybeExpandGlob(context, arg).stream()
-                    .map(gp -> new GrepSource(gp, gp.toString()))
-                    .collect(Collectors.toList()));
-            }
-        }
+        List<NamedInputStream> sources = getSources(context, argv, args);
         boolean filenameHeader = sources.size() > 1;
         if (opt.isSet("header")) {
             filenameHeader = true;
@@ -602,7 +646,7 @@ public class GroovyPosixCommands extends PosixCommands {
             filenameHeader = false;
         }
         boolean match = false;
-        for (GrepSource src : sources) {
+        for (NamedInputStream src : sources) {
             List<String> lines = new ArrayList<>();
             boolean firstPrint = true;
             int nb = 0;
@@ -763,6 +807,22 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    private static List<NamedInputStream> getSources(Context context, Object[] argv, List<String> args) {
+        List<NamedInputStream> sources = new ArrayList<>();
+        for (String arg : args) {
+            if ("-".equals(arg)) {
+                sources.add(new NamedInputStream(context.in(), "(standard input)"));
+            } else if (arg.startsWith("[Ljava.lang.String;@")) {
+                sources.add(new NamedInputStream(variableInputStream(argv, arg), arg));
+            } else {
+                sources.addAll(maybeExpandGlob(context, arg).stream()
+                    .map(gp -> new NamedInputStream(newInputStream(gp), gp.toString()))
+                    .collect(Collectors.toList()));
+            }
+        }
+        return sources;
+    }
+
     private static ByteArrayInputStream variableInputStream(Object[] argv, String arg) {
         String[] found = (String[]) Arrays.stream(argv).filter(v -> v.toString().equals(arg)).findFirst().get();
         ByteArrayInputStream inputStream = new ByteArrayInputStream(ArrayGroovyMethods.join(found, "\n").getBytes(StandardCharsets.UTF_8));
@@ -808,18 +868,19 @@ public class GroovyPosixCommands extends PosixCommands {
         Less less = new Less(context.terminal(), context.currentDir(), opt);
         less.run(sources);
     }
-    private static class GrepSource {
+
+    private static class NamedInputStream {
         private final InputStream inputStream;
         private final Path path;
         private final String name;
 
-        public GrepSource(InputStream inputStream, String name) {
+        public NamedInputStream(InputStream inputStream, String name) {
             this.inputStream = inputStream;
             this.path = null;
             this.name = name;
         }
 
-        public GrepSource(Path path, String name) {
+        public NamedInputStream(Path path, String name) {
             this.inputStream = null;
             this.path = path;
             this.name = name;
