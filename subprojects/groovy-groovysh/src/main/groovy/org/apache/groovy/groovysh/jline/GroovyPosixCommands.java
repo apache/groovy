@@ -15,6 +15,14 @@
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
  *  under the License.
+ *
+ * This file has some code copied from its parent's class: PosixCommands from JLine3.
+ * This is in some cases due to bug fixes not yet merged or released in JLine3,
+ * and in other cases where existing extensibility points were insufficient.
+ * Additional PRs related to extensibility might still be needed.
+ * The intent would be to delete all copied code (and maybe most of this file)
+ * if/when the relevant PRs have been merged into JLine3.
+ * The copied code is available under the BSD License.
  */
 package org.apache.groovy.groovysh.jline;
 
