@@ -82,7 +82,7 @@ import static org.jline.jansi.AnsiRenderer.render
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
-    private static POSIX_FILE_CMDS = ['/tail', '/wc', '/sort']
+    private static POSIX_FILE_CMDS = ['/wc', '/sort']
 
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
@@ -114,6 +114,7 @@ class Main {
                 '/ls'   : new CommandMethods((Function) this::ls, this::optFileCompleter),
                 '/grep' : new CommandMethods((Function) this::grepcmd, this::optFileCompleter),
                 '/head' : new CommandMethods((Function) this::headcmd, this::optFileCompleter),
+                '/tail' : new CommandMethods((Function) this::tailcmd, this::optFileCompleter),
                 '/cat'  : new CommandMethods((Function) this::cat, this::optFileCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
             ]
@@ -194,6 +195,14 @@ class Main {
         private void headcmd(CommandInput input) {
             try {
                 GroovyPosixCommands.head(context(input), ['/head', *input.xargs()] as Object[])
+            } catch (Exception e) {
+                saveException(e)
+            }
+        }
+
+        private void tailcmd(CommandInput input) {
+            try {
+                GroovyPosixCommands.tail(context(input), ['/tail', *input.xargs()] as Object[])
             } catch (Exception e) {
                 saveException(e)
             }

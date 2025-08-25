@@ -31,6 +31,7 @@ import org.jline.utils.OSUtils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,15 +116,17 @@ public class GroovyPosixCommands extends PosixCommands {
     public static void head(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/head - display first lines of files or variables",
-            "Usage: /head [-n lines | -c bytes] [file|variable ...]",
+            "Usage: /head [-n lines | -c bytes | -q | -v] [file|variable ...]",
             "  -? --help                    Show help",
             "  -n --lines=LINES             Print line counts",
             "  -c --bytes=BYTES             Print byte counts",
+            "  -q --quiet                   Never output filename headers",
+            "  -v --verbose                 Always output filename headers",
         };
         Options opt = parseOptions(context, usage, argv);
 
         if (opt.isSet("lines") && opt.isSet("bytes")) {
-            throw new IllegalArgumentException("usage: head [-n # | -c #] [file ...]");
+            throw new IllegalArgumentException("usage: /head [-n # | -c # | -q | -v] [file|variable ...]");
         }
 
         int nbLines = Integer.MAX_VALUE;
@@ -144,32 +147,107 @@ public class GroovyPosixCommands extends PosixCommands {
         boolean first = true;
         List<NamedInputStream> sources = getSources(context, argv, args);
         for (NamedInputStream nis : sources) {
-            if (!first && args.size() > 1) {
-                context.out().println();
+            boolean filenameHeader = sources.size() > 1;
+            if (opt.isSet("verbose")) {
+                filenameHeader = true;
+            } else if (opt.isSet("quiet")) {
+                filenameHeader = false;
             }
-            if (args.size() > 1) {
+            if (filenameHeader) {
+                if (!first) {
+                    context.out().println();
+                }
                 context.out().println("==> " + nis.getName() + " <==");
             }
-
-            InputStream is = nis.getInputStream();
-            if (nbLines != Integer.MAX_VALUE) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
-                    String line;
-                    int count = 0;
-                    while ((line = reader.readLine()) != null && count < nbLines) {
-                        context.out().println(line);
-                        count++;
-                    }
-                }
-            } else {
-                byte[] buffer = new byte[nbBytes];
-                int bytesRead = is.read(buffer);
-                if (bytesRead > 0) {
-                    context.out().write(buffer, 0, bytesRead);
-                }
-                is.close();
-            }
+            doHead(context, nis.getInputStream(), nbLines, nbBytes);
             first = false;
+        }
+    }
+
+    private static void doHead(Context context, InputStream is, final int nbLines, final int nbBytes) throws IOException {
+        if (nbLines != Integer.MAX_VALUE) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+                String line;
+                int count = 0;
+                while ((line = reader.readLine()) != null && count < nbLines) {
+                    context.out().println(line);
+                    count++;
+                }
+            }
+        } else {
+            byte[] buffer = new byte[nbBytes];
+            int bytesRead = is.read(buffer);
+            if (bytesRead > 0) {
+                context.out().write(buffer, 0, bytesRead);
+            }
+            is.close();
+        }
+    }
+
+    public static void tail(Context context, Object[] argv) throws Exception {
+        final String[] usage = {
+            "/tail - display last lines of files or variables",
+            "Usage: /tail [-n lines | -c bytes | -q | -v] [file|variable ...]",
+            "  -? --help                    Show help",
+            "  -n --lines=LINES             Number of lines to print",
+            "  -c --bytes=BYTES             Number of bytes to print",
+            "  -q --quiet                   Never output filename headers",
+            "  -v --verbose                 Always output filename headers",
+        };
+        Options opt = parseOptions(context, usage, argv);
+
+        if (opt.isSet("lines") && opt.isSet("bytes")) {
+            throw new IllegalArgumentException("usage: /tail [-c # | -n # | -q | -v] [file|variable ...]");
+        }
+
+        int lines = opt.isSet("lines") ? opt.getNumber("lines") : 10;
+        int bytes = opt.isSet("bytes") ? opt.getNumber("bytes") : -1;
+
+        List<String> args = opt.args();
+        if (args.isEmpty()) {
+            args = Collections.singletonList("-");
+        }
+
+        List<NamedInputStream> sources = getSources(context, argv, args);
+        boolean filenameHeader = sources.size() > 1;
+        if (opt.isSet("verbose")) {
+            filenameHeader = true;
+        } else if (opt.isSet("quiet")) {
+            filenameHeader = false;
+        }
+        for (NamedInputStream nis : sources) {
+            if (filenameHeader) {
+                context.out().println("==> " + nis.getName() + " <==");
+            }
+            tailInputStream(context, nis.getInputStream(), lines, bytes);
+        }
+    }
+
+    private static void tailInputStream(Context context, InputStream is, int lines, int bytes) throws IOException {
+        if (bytes > 0) {
+            // Read all and keep last bytes
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int n;
+            while ((n = is.read(buffer)) != -1) {
+                baos.write(buffer, 0, n);
+            }
+            byte[] data = baos.toByteArray();
+            int start = Math.max(0, data.length - bytes);
+            context.out().write(data, start, data.length - start);
+        } else {
+            // Read all and keep last lines
+            List<String> allLines = new ArrayList<>();
+            try (BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(is))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    allLines.add(line);
+                }
+            }
+            int start = Math.max(0, allLines.size() - lines);
+            for (int i = start; i < allLines.size(); i++) {
+                context.out().println(allLines.get(i));
+            }
         }
     }
 
