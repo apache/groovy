@@ -143,15 +143,15 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
             // second pass, call visit on all the collected nodes
             List<Tuple2<ASTTransformation, ASTNode[]>> tuples = new ArrayList<>();
-            for (ASTNode[] node : targetNodes) {
-                for (ASTTransformation snt : transforms.get(node[0])) {
-                    tuples.add(new Tuple2<>(snt, node));
+            for (ASTNode[] nodes : targetNodes) {
+                for (ASTTransformation xform : transforms.get(nodes[0])) {
+                    tuples.add(new Tuple2<>(xform, nodes));
                 }
             }
-            tuples.sort(priorityComparator);
+            if (tuples.size() > 1) tuples.sort(priorityComparator);
             for (Tuple2<ASTTransformation, ASTNode[]> tuple : tuples) {
-                if (tuple.getV1() instanceof CompilationUnitAware) {
-                    ((CompilationUnitAware)tuple.getV1()).setCompilationUnit(context.getCompilationUnit());
+                if (tuple.getV1() instanceof CompilationUnitAware unitAware) {
+                    unitAware.setCompilationUnit(context.getCompilationUnit());
                 }
                 tuple.getV1().visit(tuple.getV2(), source);
             }
@@ -237,8 +237,6 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                         visitor.source = source;
                         visitor.visitClass(classNode);
                     }, phase.getPhaseNumber());
-                    break;
-
             }
         }
     }
