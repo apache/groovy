@@ -568,7 +568,7 @@ final class TraitASTTransformationTest {
         assertScript shell, """
             $mode
             trait Impl<T> implements Api<T> {
-                @Override T fun() { null }
+                @Override T fun() { print("") }
             }
             $mode
             trait Api<RT> {
