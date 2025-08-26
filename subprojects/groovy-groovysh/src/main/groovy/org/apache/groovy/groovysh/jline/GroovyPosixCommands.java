@@ -752,8 +752,8 @@ public class GroovyPosixCommands extends PosixCommands {
             "  -x --line-regexp         Select only whole lines",
             "  -c --count               Only print a count of matching lines per file",
             "  -z --zero                When used with -c, don't print a count of zero",
-            "  -h --header              Display filename header for each file (defaults to true if multiple files are given)",
-            "  -H --no-filename         Do not display filename header",
+            "  -H --with-filename       Display filename header for each file (defaults to true if multiple files are given)",
+            "  -h --no-filename         Do not display filename header",
             "     --color=WHEN          Use markers to distinguish the matching string, may be `always', `never' or `auto'",
             "  -B --before-context=NUM  Print NUM lines of leading context before matching lines",
             "  -A --after-context=NUM   Print NUM lines of trailing context after matching lines",
@@ -832,7 +832,7 @@ public class GroovyPosixCommands extends PosixCommands {
         }
         List<NamedInputStream> sources = getSources(context, argv, args);
         boolean filenameHeader = sources.size() > 1;
-        if (opt.isSet("header")) {
+        if (opt.isSet("with-filename")) {
             filenameHeader = true;
         } else if (opt.isSet("no-filename")) {
             filenameHeader = false;
