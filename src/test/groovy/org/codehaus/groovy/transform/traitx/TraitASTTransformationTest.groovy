@@ -562,6 +562,27 @@ final class TraitASTTransformationTest {
         """
     }
 
+    // GROOVY-11743
+    @CompileModesTest
+    void testTraitWithGenerics5(String mode) {
+        assertScript shell, """
+            $mode
+            trait Impl<T> implements Api<T> {
+                @Override T fun() { null }
+            }
+            $mode
+            trait Api<RT> {
+                abstract RT fun()
+            }
+            $mode
+            void test() {
+                def obj = new Impl<String>() {}
+                assert obj.fun() == null
+            }
+            test()
+        """
+    }
+
     @CompileModesTest
     void testTraitWithGenericProperty1(String mode) {
         assertScript shell, """
