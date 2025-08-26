@@ -165,7 +165,6 @@ public class GroovyPosixCommands extends PosixCommands {
             case "auto":
             case "tty":
             case "if-tty":
-                total = context.isTty();
                 break;
             default:
                 throw new IllegalArgumentException("invalid argument '" + totalOpt + "' for '--total'");
