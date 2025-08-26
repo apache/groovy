@@ -82,7 +82,8 @@ import static org.jline.jansi.AnsiRenderer.render
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'
-    private static POSIX_FILE_CMDS = ['/wc', '/sort']
+//    private static POSIX_CMDS = []
+    private static GROOVY_POSIX_CMDS = ['/ls', '/wc', '/sort', '/head', '/tail', '/cat', '/grep']
 
     @SuppressWarnings("resource")
     protected static class ExtraConsoleCommands extends JlineCommandRegistry implements CommandRegistry {
@@ -111,19 +112,20 @@ class Main {
                 '/cd'   : new CommandMethods((Function) this::cd, this::optDirCompleter),
                 '/date' : new CommandMethods((Function) this::date, this::defaultCompleter),
                 '/echo' : new CommandMethods((Function) this::echo, this::defaultCompleter),
-                '/ls'   : new CommandMethods((Function) this::ls, this::optFileCompleter),
-                '/grep' : new CommandMethods((Function) this::grepcmd, this::optFileCompleter),
-                '/head' : new CommandMethods((Function) this::headcmd, this::optFileCompleter),
-                '/tail' : new CommandMethods((Function) this::tailcmd, this::optFileCompleter),
-                '/cat'  : new CommandMethods((Function) this::cat, this::optFileCompleter),
                 "/!"    : new CommandMethods((Function) this::shell, this::defaultCompleter)
             ]
-            POSIX_FILE_CMDS.each { String cmd ->
-                String orig = cmd[1..-1]
-                usage[cmd] = adjustUsage(orig, cmd)
-                posix.register(cmd, PosixCommands::"$orig")
-                cmds.put(cmd, new CommandMethods((Function) this::posix, this::optFileCompleter))
+            GROOVY_POSIX_CMDS.each { String cmd ->
+                String base = cmd[1..-1]
+                usage[cmd] = adjustUsage(base, cmd)
+                posix.register(cmd, PosixCommands::"$base")
+                cmds.put(cmd, new CommandMethods((Function) this::posixCommand, this::optFileCompleter))
             }
+//            POSIX_CMDS.each { String cmd ->
+//                String orig = cmd[1..-1]
+//                usage[cmd] = adjustUsage(orig, cmd)
+//                posix.register(cmd, PosixCommands::"$orig")
+//                cmds.put(cmd, new CommandMethods((Function) this::posix, this::optFileCompleter))
+//            }
             posix.register('cd', PosixCommands::cd)
             posix.register('/cd', PosixCommands::cd)
             posix.register('/pwd', PosixCommands::pwd)
@@ -176,33 +178,11 @@ class Main {
             }
         }
 
-        private void ls(CommandInput input) {
+        private void posixCommand(CommandInput input) {
             try {
-                GroovyPosixCommands.ls(context(input), ['/ls', *input.args()] as String[])
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void grepcmd(CommandInput input) {
-            try {
-                GroovyPosixCommands.grep(context(input), ['/grep', *input.xargs()] as Object[])
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void headcmd(CommandInput input) {
-            try {
-                GroovyPosixCommands.head(context(input), ['/head', *input.xargs()] as Object[])
-            } catch (Exception e) {
-                saveException(e)
-            }
-        }
-
-        private void tailcmd(CommandInput input) {
-            try {
-                GroovyPosixCommands.tail(context(input), ['/tail', *input.xargs()] as Object[])
+                String cmd = input.command()
+                String name = cmd[1..-1]
+                GroovyPosixCommands."$name"(context(input), [cmd, *input.xargs()] as Object[])
             } catch (Exception e) {
                 saveException(e)
             }
@@ -212,14 +192,6 @@ class Main {
             GroovyPosixContext ctx = new GroovyPosixContext(input.in(), input.out(), input.err(),
                 posix.context.currentDir(), input.terminal(), scriptEngine::get)
             ctx
-        }
-
-        private void cat(CommandInput input) {
-            try {
-                GroovyPosixCommands.cat(context(input), ['/cat', *input.xargs()] as Object[])
-            } catch (Exception e) {
-                saveException(e)
-            }
         }
 
         private void date(CommandInput input) {
@@ -448,7 +420,7 @@ class Main {
                 if (!OSUtils.IS_WINDOWS) {
                     setSpecificHighlighter("/!", SyntaxHighlighter.build(jnanorc, "SH-REPL"))
                 }
-                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *POSIX_FILE_CMDS, '/cd', '/ls', '/cat', '/grep')
+                addFileHighlight('/nano', '/less', '/slurp', '/load', '/save', *GROOVY_POSIX_CMDS, '/cd')
                 addFileHighlight('/classloader', null, ['-a', '--add'])
                 addExternalHighlighterRefresh(printer::refresh)
                 addExternalHighlighterRefresh(scriptEngine::refresh)

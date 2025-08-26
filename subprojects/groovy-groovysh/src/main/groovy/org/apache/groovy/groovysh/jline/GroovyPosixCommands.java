@@ -40,6 +40,7 @@ import org.jline.utils.OSUtils;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -121,10 +122,117 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    public static void wc(Context context, Object[] argv) throws Exception {
+        final String[] usage = {
+            "/wc - word, line, character, and byte count",
+            "Usage: /wc [OPTIONS] [FILES]",
+            "  -? --help                    Show help",
+            "  -l --lines                   Print line counts",
+            "  -c --bytes                   Print byte counts",
+            "  -m --chars                   Print character counts",
+            "  -w --words                   Print word counts",
+            "     --total=WHEN              Print total counts, WHEN=auto|always|never|only",
+        };
+        Options opt = parseOptions(context, usage, argv);
+
+        List<String> args = opt.args();
+        if (args.isEmpty()) {
+            args = Collections.singletonList("-");
+        }
+        List<NamedInputStream> sources = getSources(context, argv, args);
+
+        boolean showLines = opt.isSet("lines");
+        boolean showWords = opt.isSet("words");
+        boolean showChars = opt.isSet("chars");
+        boolean showBytes = opt.isSet("bytes");
+        boolean only = false;
+        boolean total = sources.size() > 1;
+        String totalOpt = opt.isSet("total") ? opt.get("total") : "auto";
+        switch (totalOpt) {
+            case "always":
+            case "yes":
+            case "force":
+                total = true;
+                break;
+            case "never":
+            case "no":
+            case "none":
+                total = false;
+                break;
+            case "only":
+                only = true;
+                break;
+            case "auto":
+            case "tty":
+            case "if-tty":
+                total = context.isTty();
+                break;
+            default:
+                throw new IllegalArgumentException("invalid argument '" + totalOpt + "' for '--total'");
+        }
+
+        // If no options specified, show all
+        if (!showLines && !showWords && !showChars && !showBytes) {
+            showLines = showWords = showBytes = true;
+        }
+
+        long totalLines = 0, totalWords = 0, totalChars = 0, totalBytes = 0;
+
+        for (NamedInputStream source : sources) {
+            long lines = 0, words = 0, chars = 0, bytes = 0;
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(source.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    lines++;
+                    chars += line.length() + 1; // +1 for newline
+                    bytes += line.getBytes().length + 1; // +1 for newline
+
+                    // Count words
+                    String[] wordArray = line.trim().split("\\s+");
+                    if (wordArray.length == 1 && wordArray[0].isEmpty()) {
+                        // Empty line
+                    } else {
+                        words += wordArray.length;
+                    }
+                }
+            }
+
+            totalLines += lines;
+            totalWords += words;
+            totalChars += chars;
+            totalBytes += bytes;
+
+            if (only) continue;
+            // Print results for this file
+            StringBuilder result = new StringBuilder();
+            if (showLines) result.append(String.format("%8d", lines));
+            if (showWords) result.append(String.format("%8d", words));
+            if (showChars) result.append(String.format("%8d", chars));
+            if (showBytes) result.append(String.format("%8d", bytes));
+            result.append(" ").append(source.getName());
+
+            context.out().println(result);
+            context.out().flush();
+        }
+
+        // Print totals if multiple files
+        if (total) {
+            StringBuilder result = new StringBuilder();
+            if (showLines) result.append(String.format("%8d", totalLines));
+            if (showWords) result.append(String.format("%8d", totalWords));
+            if (showChars) result.append(String.format("%8d", totalChars));
+            if (showBytes) result.append(String.format("%8d", totalBytes));
+            result.append(" total");
+
+            context.out().println(result);
+        }
+    }
+
     public static void head(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/head - display first lines of files or variables",
-            "Usage: /head [-n lines | -c bytes | -q | -v] [file|variable ...]",
+            "Usage: /head [-n lines | -c bytes] [-q | -v] [file|variable ...]",
             "  -? --help                    Show help",
             "  -n --lines=LINES             Print line counts",
             "  -c --bytes=BYTES             Print byte counts",
@@ -134,7 +242,11 @@ public class GroovyPosixCommands extends PosixCommands {
         Options opt = parseOptions(context, usage, argv);
 
         if (opt.isSet("lines") && opt.isSet("bytes")) {
-            throw new IllegalArgumentException("usage: /head [-n # | -c # | -q | -v] [file|variable ...]");
+            throw new IllegalArgumentException("usage: /head [-n # | -c #] [-q | -v] [file|variable ...]");
+        }
+
+        if (opt.isSet("quiet") && opt.isSet("verbose")) {
+            throw new IllegalArgumentException("usage: /head [-n # | -c #] [-q | -v] [file|variable ...]");
         }
 
         int nbLines = Integer.MAX_VALUE;
@@ -195,7 +307,7 @@ public class GroovyPosixCommands extends PosixCommands {
     public static void tail(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/tail - display last lines of files or variables",
-            "Usage: /tail [-n lines | -c bytes | -q | -v] [file|variable ...]",
+            "Usage: /tail [-n lines | -c bytes] [-q | -v] [file|variable ...]",
             "  -? --help                    Show help",
             "  -n --lines=LINES             Number of lines to print",
             "  -c --bytes=BYTES             Number of bytes to print",
@@ -205,7 +317,11 @@ public class GroovyPosixCommands extends PosixCommands {
         Options opt = parseOptions(context, usage, argv);
 
         if (opt.isSet("lines") && opt.isSet("bytes")) {
-            throw new IllegalArgumentException("usage: /tail [-c # | -n # | -q | -v] [file|variable ...]");
+            throw new IllegalArgumentException("usage: /tail [-c # | -n #] [-q | -v] [file|variable ...]");
+        }
+
+        if (opt.isSet("quiet") && opt.isSet("verbose")) {
+            throw new IllegalArgumentException("usage: /tail [-c # | -n #] [-q | -v] [file|variable ...]");
         }
 
         int lines = opt.isSet("lines") ? opt.getNumber("lines") : 10;
@@ -259,15 +375,7 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
-    private static InputStream newInputStream(Path p) {
-        try {
-            return Files.newInputStream(p);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void ls(Context context, String[] argv) throws Exception {
+    public static void ls(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/ls - list files",
             "Usage: /ls [OPTIONS] [PATTERNS...]",
@@ -891,26 +999,51 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
-    private static List<NamedInputStream> getSources(Context context, Object[] argv, List<String> args) {
-        List<NamedInputStream> sources = new ArrayList<>();
-        for (String arg : args) {
-            if ("-".equals(arg)) {
-                sources.add(new NamedInputStream(context.in(), "(standard input)"));
-            } else if (arg.startsWith("[Ljava.lang.String;@")) {
-                sources.add(new NamedInputStream(variableInputStream(argv, arg), arg));
-            } else {
-                sources.addAll(maybeExpandGlob(context, arg)
-                    .map(gp -> new NamedInputStream(newInputStream(gp), gp.toString()))
-                    .collect(Collectors.toList()));
+    public static void sort(Context context, Object[] argv) throws Exception {
+        final String[] usage = {
+            "/sort -  writes sorted standard input to standard output.",
+            "Usage: /sort [OPTIONS] [FILES]",
+            "  -? --help                    show help",
+            "  -f --ignore-case             fold lower case to upper case characters",
+            "  -r --reverse                 reverse the result of comparisons",
+            "  -u --unique                  output only the first of an equal run",
+            "  -t --field-separator=SEP     use SEP instead of non-blank to blank transition",
+            "  -b --ignore-leading-blanks   ignore leading blancks",
+            "     --numeric-sort            compare according to string numerical value",
+            "  -k --key=KEY                 fields to use for sorting separated by whitespaces"
+        };
+
+        Options opt = parseOptions(context, usage, argv);
+
+        List<String> args = opt.args();
+        if (args.isEmpty()) {
+            args = Collections.singletonList("-");
+        }
+        List<NamedInputStream> sources = getSources(context, argv, args);
+        List<String> lines = new ArrayList<>();
+        for (NamedInputStream s : sources) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(s.getInputStream()))) {
+                readLines(reader, lines);
             }
         }
-        return sources;
-    }
 
-    private static ByteArrayInputStream variableInputStream(Object[] argv, String arg) {
-        String[] found = (String[]) Arrays.stream(argv).filter(v -> v.toString().equals(arg)).findFirst().get();
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(ArrayGroovyMethods.join(found, "\n").getBytes(StandardCharsets.UTF_8));
-        return inputStream;
+        String separator = opt.get("field-separator");
+        boolean caseInsensitive = opt.isSet("ignore-case");
+        boolean reverse = opt.isSet("reverse");
+        boolean ignoreBlanks = opt.isSet("ignore-leading-blanks");
+        boolean numeric = opt.isSet("numeric-sort");
+        boolean unique = opt.isSet("unique");
+        List<String> sortFields = opt.getList("key");
+
+        char sep = (separator == null || separator.length() == 0) ? '\0' : separator.charAt(0);
+        lines.sort(new SortComparator(caseInsensitive, reverse, ignoreBlanks, numeric, sep, sortFields));
+        String last = null;
+        for (String s : lines) {
+            if (!unique || last == null || !s.equals(last)) {
+                context.out().println(s);
+            }
+            last = s;
+        }
     }
 
     public static void less(Context context, String[] argv) throws Exception {
@@ -953,34 +1086,68 @@ public class GroovyPosixCommands extends PosixCommands {
         less.run(sources);
     }
 
-    private static class NamedInputStream {
-        private final InputStream inputStream;
+    private static class NamedInputStream implements Closeable {
+        private InputStream inputStream;
         private final Path path;
         private final String name;
+        private final boolean close;
 
-        public NamedInputStream(InputStream inputStream, String name) {
+        public NamedInputStream(InputStream inputStream, String name, boolean close) {
             this.inputStream = inputStream;
             this.path = null;
             this.name = name;
+            this.close = close;
         }
 
+        public NamedInputStream(InputStream inputStream, String name) {
+            this(inputStream, name, true);
+        }
         public NamedInputStream(Path path, String name) {
             this.inputStream = null;
             this.path = path;
             this.name = name;
+            this.close = false;
         }
 
         public InputStream getInputStream() throws IOException {
-            if (inputStream != null) {
-                return inputStream;
-            } else {
-                return path.toUri().toURL().openStream();
+            if (inputStream == null) {
+                inputStream = path.toUri().toURL().openStream();
             }
+            return inputStream;
         }
 
         public String getName() {
             return name;
         }
+
+        @Override
+        public void close() throws IOException {
+            if (inputStream != null && close) {
+                inputStream.close();
+            }
+        }
+    }
+
+    private static List<NamedInputStream> getSources(Context context, Object[] argv, List<String> args) {
+        List<NamedInputStream> sources = new ArrayList<>();
+        for (String arg : args) {
+            if ("-".equals(arg)) {
+                sources.add(new NamedInputStream(context.in(), "(standard input)", false));
+            } else if (arg.startsWith("[Ljava.lang.String;@")) {
+                sources.add(new NamedInputStream(variableInputStream(argv, arg), arg));
+            } else {
+                sources.addAll(maybeExpandGlob(context, arg)
+                    .map(p -> new NamedInputStream(p, p.toString()))
+                    .collect(Collectors.toList()));
+            }
+        }
+        return sources;
+    }
+
+    private static ByteArrayInputStream variableInputStream(Object[] argv, String arg) {
+        String[] found = (String[]) Arrays.stream(argv).filter(v -> v.toString().equals(arg)).findFirst().get();
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(ArrayGroovyMethods.join(found, "\n").getBytes(StandardCharsets.UTF_8));
+        return inputStream;
     }
 
     private static LinkOption[] getLinkOptions(boolean followLinks) {
@@ -1020,6 +1187,13 @@ public class GroovyPosixCommands extends PosixCommands {
             perms.add(PosixFilePermission.OTHERS_EXECUTE);
         }
         return perms;
+    }
+
+    private static void readLines(BufferedReader reader, List<String> lines) throws IOException {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            lines.add(line);
+        }
     }
 
     private static Stream<Path> maybeExpandGlob(Context context, String s) {
