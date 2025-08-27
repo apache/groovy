@@ -792,6 +792,16 @@ groovy> /widget -l |; /prnt -s JSON
 ]
 ----
 
+[source,jshell]
+----
+groovy> /ls --1 subprojects |; /head -n12 |; /tail -n5
+groovy-bom
+groovy-cli-commons
+groovy-cli-picocli
+groovy-console
+groovy-contracts
+----
+
 It is less common, but it can also be used with code:
 
 [source,jshell]
