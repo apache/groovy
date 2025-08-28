@@ -2688,7 +2688,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         boolean isStatic = (theClass != Class.class && object instanceof Class);
         if (isStatic && object != theClass) {
             MetaClass mc = registry.getMetaClass((Class<?>) object);
-            mc.getProperty(sender, object, name, useSuper, fromInsideClass);
+            mc.setProperty(sender, object, name, newValue, useSuper, fromInsideClass);
             return;
         }
 
