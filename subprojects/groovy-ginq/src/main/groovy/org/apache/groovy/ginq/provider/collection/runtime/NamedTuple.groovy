@@ -18,20 +18,26 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
 import groovy.transform.stc.POJO
+
+import static groovy.transform.PackageScopeTarget.*
 
 /**
  * Immutable named list to represent list result of GINQ
  *
  * @since 4.0.0
  */
+@PackageScope([CLASS, CONSTRUCTORS, METHODS])
 @CompileStatic
-@PackageScope
+@AutoFinal
 @POJO
 class NamedTuple<E> extends Tuple<E> {
+
     private static final long serialVersionUID = -5067092453136522209L
+
     private final Map<String, E> data
 
     NamedTuple(List<E> elementList, List<String> nameList) {
@@ -54,11 +60,11 @@ class NamedTuple<E> extends Tuple<E> {
         }
     }
 
-    def get(String name) {
-        return getAt(name)
+    public get(String name) {
+        return data.get(name)
     }
 
-    def getAt(String name) {
+    public getAt(String name) {
         return data.get(name)
     }
 
@@ -67,15 +73,15 @@ class NamedTuple<E> extends Tuple<E> {
     }
 
     List<String> getNameList() {
-        return Collections.unmodifiableList(data.keySet().toList())
+        return new ArrayList<>(data.keySet())
     }
 
     @Override
-    String toString() {
+    public String toString() {
         StringJoiner sj = new StringJoiner(', ', '(', ')')
         for (String name : getNameList()) {
             sj.add(name + ':' + this[name])
         }
-        sj.toString()
+        return sj.toString()
     }
 }
