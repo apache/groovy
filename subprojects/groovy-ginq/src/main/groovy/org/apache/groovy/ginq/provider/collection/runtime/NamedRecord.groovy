@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import groovy.transform.stc.POJO
 
@@ -26,12 +27,15 @@ import groovy.transform.stc.POJO
  *
  * @since 4.0.0
  */
-@POJO
 @CompileStatic
+@AutoFinal
+@POJO
 class NamedRecord<E, T> extends NamedTuple<E> {
+
     private static final long serialVersionUID = -2554041223576761912L
-    private SourceRecord<T> sourceRecord
+
     private final List<String> aliasList
+    private SourceRecord<T> sourceRecord
 
     NamedRecord(List<E> elementList, List<String> nameList, List<String> aliasList = Collections.emptyList()) {
         super(elementList, nameList)
@@ -39,13 +43,21 @@ class NamedRecord<E, T> extends NamedTuple<E> {
     }
 
     @Override
+    String toString() {
+        return super.toString()
+    }
+
+    @Override
+    def get(String name) {
+        return getAt(name)
+    }
+
+    @Override
     def getAt(String name) {
         if (exists(name)) {
-            def value = super.getAt(name)
-            return value
+            return super.get(name)
         }
-
-        return sourceRecord.get(name)
+        return sourceRecord?.get(name)
     }
 
     List<String> getAliasList() {
@@ -53,7 +65,7 @@ class NamedRecord<E, T> extends NamedTuple<E> {
     }
 
     NamedRecord<E, T> sourceRecord(T sr) {
-        this.sourceRecord = new SourceRecord<>(sr, aliasList)
+        sourceRecord = new SourceRecord<>(sr, getAliasList())
         return this
     }
 }
