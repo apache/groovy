@@ -1039,7 +1039,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         'Abstract method m() cannot be called directly'
     }
 
-    // GROOVY-8339, GROOVY-10109, GROOVY-10594
+    // GROOVY-8339, GROOVY-10109, GROOVY-10594, GROOVY-11746
     void testInvokePublicMethodFromInaccessibleBase() {
         assertScript '''
             new StringBuilder().setLength(0)
@@ -1054,6 +1054,16 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             String sub = new StringBuilder("Hello World").substring(0,5)
             assert sub == 'Hello'
+        '''
+
+        assertScript '''
+            @Grab('org.apache.pdfbox:pdfbox:3.0.5')
+            import org.apache.pdfbox.pdmodel.PDPageContentStream
+            import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
+            void test(PDPageContentStream stream, PDImageXObject image, float x, float y, float width, float height) {
+                stream.drawImage(image, x, y, width, height) // drawImage: synthetic in PDPageContentStream for access
+            }
+            assert true
         '''
     }
 
