@@ -78,7 +78,7 @@ class DocGDK extends DefaultTask {
                      '-link',
                      'groovy,org.codehaus.groovy,org.apache.groovy=https://docs.groovy-lang.org/latest/html/gapi/',
                      '-link',
-                     'java,org.xml,javax,org.w3c=https://docs.oracle.com/en/java/javase/11/docs/api/java.base/'] + classes.get()
+                     'java,org.xml,javax,org.w3c=https://docs.oracle.com/en/java/javase/17/docs/api/java.base/'] + classes.get()
             )
         }
         fs.copy {

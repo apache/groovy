@@ -320,7 +320,9 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         var traits = Traits.findTraits(traitClass); traits.remove(traitClass);
 
         for (ClassNode superTrait : traits) {
-            for (MethodNode methodNode : Traits.findHelper(superTrait).getDeclaredMethods(methodName)) {
+            ClassNode traitHelper = Traits.findHelper(superTrait);
+            if (traitHelper == null) continue; // GROOVY-11743: order issue
+            for (MethodNode methodNode : traitHelper.getDeclaredMethods(methodName)) {
                 if (methodNode.isPublic() && methodNode.isStatic()
                         // exclude public method with body as it's included in trait interface
                         && ClassHelper.isClassType(methodNode.getParameters()[0].getType())) {
