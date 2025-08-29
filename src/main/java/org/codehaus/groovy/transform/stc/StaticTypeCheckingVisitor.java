@@ -5060,10 +5060,11 @@ trying: for (ClassNode[] signature : signatures) {
             methods = findMethodsWithGenerated(receiver, name);
             if ("call".equals(name) && receiver.isInterface()) {
                 MethodNode sam = findSAM(receiver);
-                if (sam != null) {
+                if (sam != null && !"call".equals(sam.getName())) {
                     MethodNode callMethod = new MethodNode("call", sam.getModifiers(), sam.getReturnType(), sam.getParameters(), sam.getExceptions(), sam.getCode());
                     callMethod.setDeclaringClass(sam.getDeclaringClass());
                     callMethod.setSourcePosition(sam);
+                    callMethod.setSynthetic(true);
                     methods.add(callMethod);
                 }
             }

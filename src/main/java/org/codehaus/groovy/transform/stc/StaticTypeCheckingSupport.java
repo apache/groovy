@@ -1192,7 +1192,7 @@ public abstract class StaticTypeCheckingSupport {
                 if (toBeRemoved.contains(two)) continue;
                 if (one.getParameters().length == two.getParameters().length) {
                     ClassNode oneDC = one.getDeclaringClass(), twoDC = two.getDeclaringClass();
-                    if (oneDC == twoDC || isSynthetic(one,two)||isSynthetic(two,one)) { // GROOVY-11341
+                    if (oneDC == twoDC) {
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
                             ClassNode oneRT = one.getReturnType(), twoRT = two.getReturnType();
                             if (isCovariant(oneRT, twoRT)) {
@@ -1201,8 +1201,8 @@ public abstract class StaticTypeCheckingSupport {
                                 toBeRemoved.add(one);
                             }
                         } else {
-                            // imperfect solution to determining if two methods are
-                            // equivalent, for example String#compareTo(Object) and
+                            // imperfect solution of determining if two methods are
+                            // equivalent; for example String#compareTo(Object) and
                             // String#compareTo(String) -- in that case, the Object
                             // version is marked as synthetic
                             if (isSynthetic(one, two)) {
@@ -1213,6 +1213,10 @@ public abstract class StaticTypeCheckingSupport {
                         }
                     } else if (!oneDC.equals(twoDC)) {
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
+                            // GROOVY-11341, GROOVY-11746: multi-level covariant and synthetic override
+                            if (!one.getReturnType().equals(two.getReturnType())) {
+                                toBeRemoved.add(isCovariant(two.getReturnType(), one.getReturnType()) ? one : two);
+                            } else
                             // GROOVY-6882, GROOVY-6970: drop overridden or interface equivalent method
                             if (!twoDC.isInterface() ? oneDC.isDerivedFrom(twoDC) : oneDC.implementsInterface(twoDC) || // GROOVY-10897: concrete vs. abstract
                                                                                     (!disjoint && !one.isAbstract() && !(two instanceof ExtensionMethodNode))) {
