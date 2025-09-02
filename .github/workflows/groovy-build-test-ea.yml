@@ -26,10 +26,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        java: [17]
         # The jdk links of "install-jdk.sh" are sometimes outdated, so we have to download openjdk releases from https://jdk.java.net/ by ourselves.
-        jdk: ["https://download.java.net/java/GA/jdk20/bdc68b4b9cbc4ebcb30745c85038d91d/36/GPL/openjdk-20_linux-x64_bin.tar.gz",
-              "https://download.java.net/java/GA/jdk21/fd2272bbf8e04c3dbaee13770090416c/35/GPL/openjdk-21_linux-x64_bin.tar.gz"]
+        jdk: ['https://download.java.net/java/early_access/jdk25/15/GPL/openjdk-25-ea+15_linux-x64_bin.tar.gz']
     runs-on: ${{ matrix.os }}
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
@@ -43,8 +41,8 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: ${{ matrix.java }}
           check-latest: true
+          java-version: 17
       - uses: gradle/gradle-build-action@v2
       - name: Test with Gradle
         run: ./gradlew test -Ptarget.java.home=/home/runner/openjdk

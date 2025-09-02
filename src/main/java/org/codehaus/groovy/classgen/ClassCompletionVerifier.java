@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.transform.NonSealed;
-import groovy.transform.Sealed;
 import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
@@ -317,7 +315,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkClassForExtendingFinalOrSealed(final ClassNode cn) {
-        boolean sealed = Boolean.TRUE.equals(cn.getNodeMetaData(Sealed.class));
+        boolean sealed = Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.Sealed.class));
         if (sealed && cn.getPermittedSubclasses().isEmpty()) {
             addError("Sealed " + getDescription(cn) + " has no explicit or implicit permitted subclasses.", cn);
             return;
@@ -362,8 +360,12 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         addError("You are not allowed to extend the final " + getDescription(superCN) + ".", cn);
     }
 
-    private boolean nonSealed(final ClassNode node) {
-        return Boolean.TRUE.equals(node.getNodeMetaData(NonSealed.class));
+    private boolean nonSealed(final ClassNode cn) {
+        if (Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.NonSealed.class))) {
+            return true;
+        }
+        ClassNode sc = cn.getSuperClass(); // GROOVY-11292, GROOVY-11750: check super class
+        return (sc != null && sc.isSealed() && !(cn.isSealed() || isFinal(cn.getModifiers())));
     }
 
     private void checkSealedParent(final ClassNode cn, final ClassNode parent) {
