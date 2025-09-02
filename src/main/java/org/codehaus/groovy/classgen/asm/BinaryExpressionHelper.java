@@ -984,6 +984,7 @@ public class BinaryExpressionHelper {
         // load x, dup it and cast to boolean
         truePart.visit(controller.getAcg());
         int top = operandStack.getStackLength();
+        var type = operandStack.getTopOperand();
         operandStack.dup();
         operandStack.castToBool(top, true);
         Label l0 = operandStack.jump(IFEQ);
@@ -995,6 +996,7 @@ public class BinaryExpressionHelper {
 
         // false path: drop x, load y and cast to T
         mv.visitLabel(l0);
+        operandStack.replace(type); // GROOVY-11747
         operandStack.pop();
         falsePart.visit(controller.getAcg());
         operandStack.doGroovyCast(commonType);
