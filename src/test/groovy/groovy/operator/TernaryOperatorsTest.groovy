@@ -18,7 +18,7 @@
  */
 package groovy.operator
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import java.util.regex.Pattern
 
@@ -42,9 +42,8 @@ final class TernaryOperatorsTest {
         assertCalledWithFoo(z < 100 ? "bar" : "foo")
     }
 
-    void assertCalledWithFoo(param) {
-        println "called with param ${param}"
-        assert param == "foo"
+    void assertCalledWithFoo(object) {
+        assert object == "foo" : "called with: ${object}"
     }
 
     @Test
@@ -57,7 +56,7 @@ final class TernaryOperatorsTest {
     }
 
     @Test
-    void testElvisOperator() {
+    void testElvisOperator1() {
         def a = 1
         def x = a?:2
         assert x==a
@@ -68,7 +67,10 @@ final class TernaryOperatorsTest {
         a = null
         x = a?:2
         assert x==2
+    }
 
+    @Test
+    void testElvisOperator2() {
         def list = ['a','b','c']
         def index = 0
         def ret = list[index++]?:"something else"
@@ -77,6 +79,15 @@ final class TernaryOperatorsTest {
         def ret2 = list[index]
           ?: "something else entirely"
         assert ret2 == 'b'
+    }
+
+    // GROOVY-11747
+    @Test
+    void testElvisOperator3() {
+        long one = 1
+        Long two = 2
+        def wrap = one ?: two
+        assert wrap == 1L
     }
 
     @Test
