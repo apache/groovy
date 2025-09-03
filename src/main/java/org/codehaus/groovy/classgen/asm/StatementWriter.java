@@ -150,7 +150,18 @@ public class StatementWriter {
         operandStack.push(ClassHelper.OBJECT_TYPE);
         operandStack.storeVar(valueVariable);
         if (indexVariable != null) {
-            mv.visitIincInsn(indexVariable.getIndex(), 1);
+            if (!indexVariable.isHolder()) {
+                mv.visitIincInsn(indexVariable.getIndex(), 1);
+            } else { // GROOVY-11751: shared variable reference
+                mv.visitVarInsn(ALOAD, indexVariable.getIndex());
+                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;", false);
+                mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false);
+                mv.visitInsn(ICONST_1);
+                mv.visitInsn(IADD);
+                operandStack.push(ClassHelper.int_TYPE);
+                operandStack.storeVar(indexVariable);
+            }
         }
 
         // generate the loop body

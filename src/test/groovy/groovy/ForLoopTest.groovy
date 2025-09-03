@@ -144,6 +144,17 @@ final class ForLoopTest {
         }
     }
 
+    // GROOVY-11751
+    @Test
+    void testForEachWithIndex2() {
+        int x = 0
+        for (i, v in ['a','b','c']) {
+          def c = { -> x += i }
+          c()
+        }
+        assert x == (0 + 1 + 2)
+    }
+
     @Test
     void testClassicFor() {
         for (int i = 0; i < 10; i++) {
