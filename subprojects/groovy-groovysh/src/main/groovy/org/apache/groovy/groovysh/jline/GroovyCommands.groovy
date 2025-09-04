@@ -371,8 +371,12 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             throw new IllegalArgumentException("Invalid parameter type: " + arg.getClass().simpleName)
         }
         try {
-            Path path = workDir.get().resolve(arg)
-            if (Files.exists(path)) {
+//            NamedInputStream nis = getSource(arg, input.xargs(), input.args().toList())
+            Path path = null
+            try {
+                path = workDir.get().resolve(arg)
+            } catch(Exception ignore) { }
+            if (path && Files.exists(path)) {
                 if (!format) {
                     def ext = path.extension
                     if (ext.equalsIgnoreCase('json')) {
@@ -402,11 +406,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     def parser = getParser(format, slurpers[format])
                     out = parser.parse(path)
                 } else if (format == 'CSV') {
-                    def parserName = 'org.apache.commons.csv.CSVFormat'
-                    if (!ClassUtils.lookFor(engine, parserName)) {
-                        throw new IllegalArgumentException("$format format requires $parserName to be available")
-                    }
-                    def parser = engine.execute("${parserName}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
+                    def parser = getCsvParser(format)
                     out = parser.parse(path.newReader(encoding.displayName())).toList()*.toMap()
                 } else if (format == 'PROPERTIES') {
                     out = path.withInputStream{ is ->
@@ -423,6 +423,9 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                 } else if (format in slurpers.keySet()) {
                     def parser = getParser(format, slurpers[format])
                     out = parser.parseText(arg)
+                } else if (format == 'CSV') {
+                    def parser = getCsvParser(format)
+                    out = parser.parse(new StringReader(arg)).toList()*.toMap()
                 } else {
                     out = engine.deserialize(arg, 'NONE')
                 }
@@ -432,6 +435,14 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         }
         engine.put("_", out)
         out
+    }
+
+    private getCsvParser(String format) {
+        def parserName = 'org.apache.commons.csv.CSVFormat'
+        if (!ClassUtils.lookFor(engine, parserName)) {
+            throw new IllegalArgumentException("$format format requires $parserName to be available")
+        }
+        engine.execute("${parserName}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
     }
 
     Object getParser(String format, String parserName) {
