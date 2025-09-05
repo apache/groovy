@@ -2095,11 +2095,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private boolean isVisibleProperty(final MetaProperty field, final MetaMethod method, final Class<?> sender) {
-        if (!(field instanceof CachedField)) return false;
+        if (field == null
+            || sender == null // GROOVY-11745
+            || field.isPrivate()
+            || !(field instanceof CachedField cachedField)) return false;
 
-        if (field.isPrivate()) return false;
-
-        Class<?> owner = ((CachedField) field).getDeclaringClass();
+        Class<?> owner = cachedField.getDeclaringClass();
         // ensure access originates within the type hierarchy of the field owner
         if (owner.equals(sender) || !owner.isAssignableFrom(sender)) return false;
 
