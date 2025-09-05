@@ -157,14 +157,19 @@ final class ForLoopTest {
 
     @Test
     void testClassicFor() {
-        for (int i = 0; i < 10; i++) {
-            x++
+        for (x = 0; x < 10; x += 2) {
         }
         assert x == 10
 
-        def list = [1, 2]
         x = 0
-        for (Iterator i = list.iterator(); i.hasNext();) {
+        for (int i = 0; i < 10; i++) {
+            x += 1
+        }
+        assert x == 10
+
+        x = 0
+        def list = [1, 2]
+        for (Iterator i = list.iterator(); i.hasNext(); ) {
             x += i.next()
         }
         assert x == 3
@@ -212,6 +217,15 @@ final class ForLoopTest {
             result += i + j
         }
         assert result == 7 // 1 + 2 + 4
+    }
+
+    // GROOVY-11601
+    void testClassicForWithMultiAssignment2() {
+        int foo, bar, baz = 0
+        for (foo = 1, bar = 2; foo < 10; foo += 1, bar += 2) {
+            baz += bar
+        }
+        assert baz == (2 + 4 + 6 + 8 + 10 + 12 + 14 + 16 + 18)
     }
 
     @Test
