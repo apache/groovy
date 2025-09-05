@@ -1992,6 +1992,29 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    // GROOVY-11341, GROOVY-11746
+    void testInterfaceExtensionMethodIsCovariant() {
+        assertScript '''
+            class Thing extends Tuple {
+                Thing() {
+                    super(new Object[0])
+                }
+                def getAt(String name) {
+                    name
+                }
+                void test() {
+                    @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                        def md = node.rightExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET)
+                        assert md.declaringClass.nameWithoutPackage == 'Thing' // not Collection
+                    })
+                    def foo = getAt('foo')
+                }
+            }
+            def thing = new Thing()
+            thing[''] == ''
+        '''
+    }
+
     // GROOVY-7987
     void testNonStaticMethodViaStaticReceiver() {
         shouldFailWithMessages '''

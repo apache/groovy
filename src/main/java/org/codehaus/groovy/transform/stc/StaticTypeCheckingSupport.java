@@ -1213,13 +1213,17 @@ public abstract class StaticTypeCheckingSupport {
                         }
                     } else if (!oneDC.equals(twoDC)) {
                         if (ParameterUtils.parametersEqual(one.getParameters(), two.getParameters())) {
-                            // GROOVY-11341, GROOVY-11746: multi-level covariant and synthetic override
-                            if (!one.getReturnType().equals(two.getReturnType())) {
-                                toBeRemoved.add(isCovariant(two.getReturnType(), one.getReturnType()) ? one : two);
-                            } else
                             // GROOVY-6882, GROOVY-6970: drop overridden or interface equivalent method
                             if (!twoDC.isInterface() ? oneDC.isDerivedFrom(twoDC) : oneDC.implementsInterface(twoDC) || // GROOVY-10897: concrete vs. abstract
                                                                                     (!disjoint && !one.isAbstract() && !(two instanceof ExtensionMethodNode))) {
+                                // GROOVY-10109, GROOVY-11341, GROOVY-11746: multi-level covariant and synthetic overrides
+                                if (isSynthetic(one, two) && !two.isAbstract() && !(two instanceof ExtensionMethodNode)) {
+                                    ClassNode oneRT = one.getReturnType(), twoRT = two.getReturnType();
+                                    if (!oneRT.equals(twoRT) && isCovariant(twoRT, oneRT)) {
+                                        toBeRemoved.add(one); // edge case: two is covariant
+                                        continue;
+                                    }
+                                }
                                 toBeRemoved.add(two);
                             } else if (oneDC.isInterface() ? (disjoint ? twoDC.implementsInterface(oneDC) : twoDC.isInterface()) : twoDC.isDerivedFrom(oneDC)) {
                                 toBeRemoved.add(one);
