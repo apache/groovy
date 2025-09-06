@@ -514,30 +514,30 @@ public class GroovyPosixCommands extends PosixCommands {
             }
 
             String longDisplay() {
-                String username;
+                StringBuilder username;
                 if (attributes.containsKey("owner")) {
-                    username = Objects.toString(attributes.get("owner"), null);
+                    username = new StringBuilder(Objects.toString(attributes.get("owner"), null));
                 } else {
-                    username = "owner";
+                    username = new StringBuilder("owner");
                 }
                 if (username.length() > 8) {
-                    username = username.substring(0, 8);
+                    username = new StringBuilder(username.substring(0, 8));
                 } else {
                     for (int i = username.length(); i < 8; i++) {
-                        username = username + " ";
+                        username.append(" ");
                     }
                 }
-                String group;
+                StringBuilder group;
                 if (attributes.containsKey("group")) {
-                    group = Objects.toString(attributes.get("group"), null);
+                    group = new StringBuilder(Objects.toString(attributes.get("group"), null));
                 } else {
-                    group = "group";
+                    group = new StringBuilder("group");
                 }
                 if (group.length() > 8) {
-                    group = group.substring(0, 8);
+                    group = new StringBuilder(group.substring(0, 8));
                 } else {
                     for (int i = group.length(); i < 8; i++) {
-                        group = group + " ";
+                        group.append(" ");
                     }
                 }
                 Number length = (Number) attributes.get("size");
