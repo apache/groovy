@@ -2098,8 +2098,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (field == null
             || sender == null // GROOVY-11745
             || field.isPrivate()
-            || !(field instanceof CachedField cachedField)) return false;
+            || !(field instanceof CachedField)) return false;
 
+        CachedField cachedField = (CachedField) field;
         Class<?> owner = cachedField.getDeclaringClass();
         // ensure access originates within the type hierarchy of the field owner
         if (owner.equals(sender) || !owner.isAssignableFrom(sender)) return false;
