@@ -656,7 +656,7 @@ public class SystemRegistryImpl implements SystemRegistry {
         int last;
         List<String> pipes = new ArrayList<>();
         String pipeSource = null;
-        String rawLine = null;
+        StringBuilder rawLine = null;
         String pipeResult = null;
         if (isCommandAlias(ap.command())) {
             ap.parse(replaceCommandAlias(ap.variable(), ap.command(), nextRawLine));
@@ -783,7 +783,7 @@ public class SystemRegistryImpl implements SystemRegistry {
                 if (rawLine != null || (pipes.size() > 1 && customPipes.containsKey(pipes.get(pipes.size() - 2)))) {
                     done = false;
                     if (rawLine == null) {
-                        rawLine = pipeSource;
+                        rawLine = new StringBuilder(pipeSource);
                     }
                     if (customPipes.containsKey(pipes.get(pipes.size() - 2))) {
                         List<String> fixes = customPipes.get(pipes.get(pipes.size() - 2));
@@ -791,9 +791,7 @@ public class SystemRegistryImpl implements SystemRegistry {
                             int idx = subLine.indexOf(" ");
                             subLine = idx > 0 ? subLine.substring(idx + 1) : "";
                         }
-                        rawLine += fixes.get(0)
-                                + (consoleId != null ? consoleEngine().expandCommandLine(subLine) : subLine)
-                                + fixes.get(1);
+                        rawLine.append(fixes.get(0)).append(consoleId != null ? consoleEngine().expandCommandLine(subLine) : subLine).append(fixes.get(1));
                         statement = true;
                     }
                     if (pipes.get(pipes.size() - 1).equals(pipeName.get(Pipe.FLIP))
@@ -802,31 +800,31 @@ public class SystemRegistryImpl implements SystemRegistry {
                         done = true;
                         pipeSource = null;
                         if (variable != null) {
-                            rawLine = variable + " = " + rawLine;
+                            rawLine.insert(0, variable + " = ");
                         }
                     }
                     if (last + 1 >= words.size() || file != null) {
                         done = true;
                         pipeSource = null;
                         if (pipeResult != null) {
-                            rawLine = pipeResult + " = " + rawLine;
+                            rawLine.insert(0, pipeResult + " = ");
                         }
                     }
                 } else if (pipes.get(pipes.size() - 1).equals(pipeName.get(Pipe.FLIP)) || pipeStart) {
                     if (pipeStart && pipeResult != null) {
                         subLine = subLine.substring(subLine.indexOf("=") + 1);
                     }
-                    rawLine = flipArgument(command, subLine, pipes, arglist);
-                    rawLine = variable + "=" + rawLine;
+                    rawLine = new StringBuilder(flipArgument(command, subLine, pipes, arglist));
+                    rawLine.insert(0, variable + "=");
                 } else {
-                    rawLine = flipArgument(command, subLine, pipes, arglist);
+                    rawLine = new StringBuilder(flipArgument(command, subLine, pipes, arglist));
                 }
                 if (done) {
                     //
                     // add composed command to return list
                     //
                     out.add(new CommandData(
-                            ap, statement, rawLine, variable, file, append, pipes.get(pipes.size() - 1)));
+                            ap, statement, rawLine.toString(), variable, file, append, pipes.get(pipes.size() - 1)));
                     if (pipes.get(pipes.size() - 1).equals(pipeName.get(Pipe.AND))
                             || pipes.get(pipes.size() - 1).equals(pipeName.get(Pipe.OR))) {
                         pipeSource = null;
