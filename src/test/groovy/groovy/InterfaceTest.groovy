@@ -134,4 +134,25 @@ final class InterfaceTest extends CompilableTestSupport {
             }
         '''
     }
+
+    // GROOVY-11753
+    void testSuperClassCovariantOfParameterizedInterface() {
+        assertScript '''
+            class A extends B {
+            }
+            class B implements C<String> {
+                static class NestMate {
+                }
+                @Override
+                void p(String s) {
+                    print(s)
+                }
+            }
+            interface C<T> {
+                void p(T t)
+            }
+
+            new A().p("")
+        '''
+    }
 }

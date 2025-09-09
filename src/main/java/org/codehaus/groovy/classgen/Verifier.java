@@ -122,6 +122,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
+import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
 
 /**
@@ -1495,9 +1496,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, scMethods);
             // add bridge methods in original class for any interface methods overridden by super
             if (!interfaceMethods.isEmpty()) {
-                for (MethodNode method : scMethods) {
-                    if (!method.isStatic())
-                        storeMissingCovariantMethods(interfaceMethods.values(), method, methodsToAdd, Collections.emptyMap(), true);
+                for (MethodNode scMethod : scMethods) {
+                    if (isPossibleOverride(scMethod)) {
+                        for (MethodNode ifMethod : interfaceMethods.values()) {
+                            if (!ifMethod.getName().equals(scMethod.getName())) continue;
+                            // GROOVY-11753: create generics specification from classNode
+                            ClassNode face = parameterizeType(classNode, ifMethod.getDeclaringClass());
+                            Map<String, ClassNode> interfaceGenericsSpec = createGenericsSpec(face, oldGenericsSpec);
+                            storeMissingCovariantMethods(Collections.singletonList(ifMethod), scMethod, methodsToAdd, interfaceGenericsSpec, true);
+                        }
+                    }
                 }
             }
 
@@ -1510,6 +1518,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             storeMissingCovariantMethods(declaredMethods, methodsToAdd, genericsSpec, ifaceMethods);
             addCovariantMethods(anInterface, declaredMethods, interfaceMethods, methodsToAdd, genericsSpec);
         }
+    }
+
+    private static boolean isPossibleOverride(final MethodNode methodNode) {
+        return (methodNode.getModifiers() & (ACC_BRIDGE | ACC_PRIVATE | ACC_STATIC)) == 0;
     }
 
     private void storeMissingCovariantMethods(final List<MethodNode> declaredMethods, final Map<String, MethodNode> methodsToAdd, final Map<String, ClassNode> genericsSpec, final List<MethodNode> superClassMethods) {
