@@ -96,4 +96,17 @@
             <link packages="org.codehaus.gmaven." href="http://groovy.github.io/gmaven/apidocs/"/>
         </groovydoc>
     </target>
+
+    <target name="testJavadocForRecords">
+        <groovydoc destdir="${tmpdir}" sourcepath="${test}"
+                   packagenames="org/codehaus/groovy/tools/groovydoc/testfiles/**.*"
+                   use="true" windowtitle="GroovyDoc" private="false" javaVersion="JAVA_21">
+            <link packages="java.,org.groovy.xml.,javax.,org.groovy.w3c." href="http://docs.oracle.com/javase/7/docs/api/"/>
+            <link packages="org.apache.tools.ant." href="http://docs.groovy-lang.org/docs/ant/api/"/>
+            <link packages="org.junit.,junit.framework." href="http://junit.org/junit4/javadoc/latest/"/>
+            <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
+            <link packages="org.codehaus.gmaven." href="http://groovy.github.io/gmaven/apidocs/"/>
+        </groovydoc>
+    </target>
+
 </project>
