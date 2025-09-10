@@ -35,7 +35,7 @@ import static groovy.test.GroovyAssert.isAtLeastJdk;
 
 public class SecurityTest extends GroovyTestCase {
 
-    private final boolean skip = Runtime.version().feature() >= 24;
+    private final boolean skip = isAtLeastJdk("24");
 
     @SuppressWarnings("unused")
     public class TestClass{
