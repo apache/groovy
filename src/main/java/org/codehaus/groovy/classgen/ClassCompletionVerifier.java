@@ -217,12 +217,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (node.isAbstract()) return;
         for (MethodNode method : node.getAbstractMethods()) {
             MethodNode sameArgsMethod = node.getMethod(method.getName(), method.getParameters());
-            if (sameArgsMethod == null) {
-                sameArgsMethod = ClassHelper.GROOVY_OBJECT_TYPE.getMethod(method.getName(), method.getParameters());
-                if (sameArgsMethod != null && !sameArgsMethod.isAbstract() && sameArgsMethod.getReturnType().equals(method.getReturnType())) {
-                    continue;
-                }
-            }
 
             String what; ASTNode where = node;
             if (sameArgsMethod == null || sameArgsMethod.getReturnType().equals(method.getReturnType())) {

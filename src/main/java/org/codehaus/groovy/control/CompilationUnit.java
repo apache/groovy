@@ -23,12 +23,14 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.transform.CompilationUnitAware;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.ClassCompletionVerifier;
 import org.codehaus.groovy.classgen.EnumCompletionVisitor;
@@ -1023,7 +1025,7 @@ public class CompilationUnit extends ProcessingUnit {
                 } else {
                     count = getSuperClassCount(cn) + 1000;
                 }
-                if (cn.getOuterClass() == null && cn.getInnerClasses().hasNext()) {
+                if (cn.getOuterClass() == null && hasInnerClassWithClosure(cn)) {
                     count += 2000; // GROOVY-10687: nest host must follow members (with closures)
                 }
                 return count;
@@ -1031,6 +1033,39 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
         return classes;
+    }
+
+    private static boolean hasInnerClassWithClosure(final ClassNode cn) {
+        for (var it = cn.getInnerClasses(); it.hasNext(); ) {
+            class ClosureFound extends RuntimeException {
+                private static final long serialVersionUID = 1;
+                @Override public Throwable fillInStackTrace() {
+                    return this;
+                }
+            }
+
+            var visitor = new ClassCodeVisitorSupport() {
+                @Override
+                public SourceUnit getSourceUnit() {
+                    return cn.getModule().getContext();
+                }
+                @Override
+                public void visitClosureExpression(final ClosureExpression ce) {
+                    throw new ClosureFound();
+                }
+            };
+
+            ClassNode innerClass = it.next();
+            try {
+                visitor.visitClass(innerClass);
+            } catch (ClosureFound done) {
+                return true;
+            }
+            if (hasInnerClassWithClosure(innerClass)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void changeBugText(final GroovyBugError e, final SourceUnit context) {
