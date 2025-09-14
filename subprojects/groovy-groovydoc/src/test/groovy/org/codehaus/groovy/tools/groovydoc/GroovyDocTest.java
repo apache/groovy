@@ -102,7 +102,7 @@ public class GroovyDocTest {
     }
 
     @Test
-    public void testUnsupportedJavadocVersion() throws Exception {
+    public void testUnsupportedJavadocVersion() {
         rule.executeTarget("unsupportedGroovyDocJava");
 
         final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
@@ -113,7 +113,7 @@ public class GroovyDocTest {
     }
 
     @Test
-    public void testInvalidJavaVersion() throws Exception {
+    public void testInvalidJavaVersion() {
         try {
             rule.executeTarget("invalidJavaVersion");
         }
@@ -133,5 +133,20 @@ public class GroovyDocTest {
         CharsetToolkit charsetToolkit = new CharsetToolkit(documentedClassHtmlDoc);
 
         assertEquals("The generated groovydoc must be in 'UTF-16LE' file encoding.'", StandardCharsets.UTF_16LE, charsetToolkit.getCharset());
+    }
+
+    @Test
+    public void testJavadocForRecords() throws Exception {
+        rule.executeTarget("testJavadocForRecords");
+
+        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/records");
+        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("Record.html"));
+
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
+        assertEquals(1, list.length);
+        File documentedClassHtmlDoc = new File(testfilesPackageDir, list[0]);
+
+        List<String> lines = ResourceGroovyMethods.readLines(documentedClassHtmlDoc);
+        assertTrue("\"<title>Record</title>\" not in: " + lines, lines.contains("<title>Record</title>"));
     }
 }
