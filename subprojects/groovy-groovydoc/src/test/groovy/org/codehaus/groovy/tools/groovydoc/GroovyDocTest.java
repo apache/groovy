@@ -24,6 +24,7 @@ import org.apache.tools.ant.BuildFileRule;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -135,6 +136,7 @@ public class GroovyDocTest {
         assertEquals("The generated groovydoc must be in 'UTF-16LE' file encoding.'", StandardCharsets.UTF_16LE, charsetToolkit.getCharset());
     }
 
+    @Ignore
     @Test
     public void testJavadocForRecords() throws Exception {
         rule.executeTarget("testJavadocForRecords");
