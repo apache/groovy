@@ -25,12 +25,14 @@ import com.github.javaparser.ast.body.AnnotationDeclaration;
 import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
 import com.github.javaparser.ast.body.CallableDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.CompactConstructorDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
 import com.github.javaparser.ast.body.EnumConstantDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Name;
@@ -62,13 +64,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
+public class GroovydocJavaVisitor
+    extends VoidVisitorAdapter<Object> {
     private final List<LinkArgument> links;
     private SimpleGroovyClassDoc currentClassDoc = null;
-    private Map<String, GroovyClassDoc> classDocs = new LinkedHashMap<>();
-    private String packagePath;
+    private final Map<String, GroovyClassDoc> classDocs = new LinkedHashMap<>();
+    private final String packagePath;
     private final Map<String, String> aliases = new LinkedHashMap<>();
-    private List<String> imports = new ArrayList<>();
+    private final List<String> imports = new ArrayList<>();
     private static final String FS = "/";
 
     public GroovydocJavaVisitor(String packagePath, List<LinkArgument> links) {
@@ -148,7 +151,7 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
         n.getJavadocComment().ifPresent(javadocComment ->
                 fieldDoc.setRawCommentText(javadocComment.getContent()));
         n.getDefaultValue().ifPresent(defValue -> {
-            fieldDoc.setRawCommentText(fieldDoc.getRawCommentText() + "\n* @default " + defValue.toString());
+            fieldDoc.setRawCommentText(fieldDoc.getRawCommentText() + "\n* @default " + defValue);
             fieldDoc.setConstantValueExpression(defValue.toString());
         });
         super.visit(n, arg);
@@ -179,6 +182,26 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
         if (parent != null) {
             currentClassDoc = parent;
         }
+    }
+
+    @Override
+    public void visit(final RecordDeclaration n, final Object arg) {
+        SimpleGroovyClassDoc parent = visit(n);
+        if (n.isRecordDeclaration()) {
+            currentClassDoc.setTokenType(SimpleGroovyDoc.RECORD_DEF);
+        }
+        super.visit(n,arg);
+        if (parent != null) {
+            currentClassDoc = parent;
+        }
+    }
+
+    @Override
+    public void visit(final CompactConstructorDeclaration c, Object arg) {
+        SimpleGroovyConstructorDoc meth = new SimpleGroovyConstructorDoc(c.getNameAsString(), currentClassDoc);
+        setCompactConstructor(c, meth);
+        currentClassDoc.add(meth);
+        super.visit(c, arg);
     }
 
     private String fullName(ClassOrInterfaceType et) {
@@ -299,6 +322,23 @@ public class GroovydocJavaVisitor extends VoidVisitorAdapter<Object> {
             SimpleGroovyParameter p = new SimpleGroovyParameter(param.getNameAsString());
             processAnnotations(p, param);
             p.setType(makeType(param.getType()));
+            methOrCons.add(p);
+        }
+    }
+
+    private void setCompactConstructor(CompactConstructorDeclaration n, SimpleGroovyExecutableMemberDoc methOrCons) {
+        n.getComment().ifPresent(javadocComment ->
+                                            methOrCons.setRawCommentText(javadocComment.getContent()));
+        NodeList<Modifier> mods = n.getModifiers();
+        if (currentClassDoc.isInterface()) {
+            mods.add(Modifier.publicModifier());
+        }
+        setModifiers(mods, methOrCons);
+        processAnnotations(methOrCons, n);
+        for (TypeParameter param : n.getTypeParameters()) {
+            SimpleGroovyParameter p = new SimpleGroovyParameter(param.getNameAsString());
+            processAnnotations(p, param);
+            p.setType(makeType(param));
             methOrCons.add(p);
         }
     }
