@@ -18,6 +18,9 @@
  */
 package groovy
 
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.messages.WarningMessage
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -350,6 +353,93 @@ final class PropertyTest {
             assert new C(foo: 'C').getFoo() == 'C'
             assert C.getMethod('setFoo', String).declaringClass.name == 'C'
         '''
+    }
+
+    // GROOVY-8659
+    @Test
+    void testPropertyCannotOverrideFinalGetter() {
+        File parentDir = File.createTempDir()
+        def config = new CompilerConfiguration()
+        config.targetDirectory = File.createTempDir()
+        config.warningLevel = WarningMessage.POSSIBLE_ERRORS
+        try {
+            def a = new File(parentDir, 'A.groovy')
+            a.write '''
+                abstract class A {
+                    final String getFoo() { 'A' }
+                }
+            '''
+            def c = new File(parentDir, 'C.groovy')
+            c.write '''
+                class C extends A {
+                    final String foo = 'C'
+                }
+            '''
+            def m = new File(parentDir, 'Main.groovy')
+            m.write '''
+                def pogo = new C()
+                assert pogo.foo == 'A'
+                assert pogo.getFoo() == 'A'
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new CompilationUnit(config, null, loader)
+            cu.addSources(a, c, m)
+            cu.compile()
+
+            assert cu.errorCollector.warnings*.message == [
+                'Property foo cannot override final method getFoo() of class A'
+            ]
+
+            loader.addClasspath(config.targetDirectory.absolutePath)
+            loader.loadClass('Main').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
+    }
+
+    // GROOVY-8659
+    @Test
+    void testPropertyCannotOverrideFinalSetter() {
+        File parentDir = File.createTempDir()
+        def config = new CompilerConfiguration()
+        config.targetDirectory = File.createTempDir()
+        config.warningLevel = WarningMessage.POSSIBLE_ERRORS
+        try {
+            def a = new File(parentDir, 'A.groovy')
+            a.write '''
+                abstract class A {
+                    final void setFoo(String foo) { }
+                }
+            '''
+            def c = new File(parentDir, 'C.groovy')
+            c.write '''
+                class C extends A {
+                    String foo
+                }
+            '''
+            def m = new File(parentDir, 'Main.groovy')
+            m.write '''
+                def pogo = new C(foo: 'C')
+                assert pogo.foo == null
+            '''
+
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new CompilationUnit(config, null, loader)
+            cu.addSources(a, c, m)
+            cu.compile()
+
+            assert cu.errorCollector.warnings*.message == [
+                'Property foo cannot override final method setFoo(java.lang.String) of class A'
+            ]
+
+            loader.addClasspath(config.targetDirectory.absolutePath)
+            loader.loadClass('Main').main()
+        } finally {
+            parentDir.deleteDir()
+            config.targetDirectory.deleteDir()
+        }
     }
 
     @Test
