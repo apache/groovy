@@ -114,6 +114,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getInterfacesAndSuperInterfaces;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
@@ -809,16 +810,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     public void visitField(final FieldNode node) {
     }
 
-    private boolean methodNeedsReplacement(final MethodNode m) {
-        // no method found, we need to replace
-        if (m == null) return true;
-        // method is in current class, nothing to be done
-        if (m.getDeclaringClass() == getClassNode()) return false;
-        // do not overwrite final
-        if (isFinal(m.getModifiers())) return false;
-        return true;
-    }
-
     @Override
     public void visitProperty(final PropertyNode node) {
         String name = node.getName();
@@ -866,6 +857,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
             visitMethod(setter);
         }
+    }
+
+    private boolean methodNeedsReplacement(final MethodNode mn) {
+        if (mn != null) {
+            ClassNode declaringClass = mn.getDeclaringClass();
+            // nothing to be done for method of current class
+            if (declaringClass == classNode) return false;
+            // cannot overwrite a non-private final method
+            if (mn.isFinal() && !mn.isPrivate() && (!mn.isPackageScope() || inSamePackage(declaringClass, classNode))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void visitGetter(final PropertyNode node, final FieldNode field, final Statement getterBlock, final int getterModifiers, final String getterName) {

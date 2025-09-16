@@ -326,14 +326,41 @@ final class PropertyTest {
     }
 
     @Test
+    void testPropertyOverridesGetterAndSetter2() {
+        assertScript '''
+            abstract class A {
+                private final String getFoo() { 'A' }
+            }
+            class C extends A {
+                final String foo = 'C'
+            }
+
+            assert new C().getFoo() == 'C'
+            assert C.getMethod('getFoo').declaringClass.name == 'C'
+        '''
+
+        assertScript '''
+            abstract class A {
+                private final void setFoo(String foo) { }
+            }
+            class C extends A {
+                String foo
+            }
+
+            assert new C(foo: 'C').getFoo() == 'C'
+            assert C.getMethod('setFoo', String).declaringClass.name == 'C'
+        '''
+    }
+
+    @Test
     void testPropertyWithOverrideGetterAndSetter() {
         assertScript '''
-            abstract class Base {
+            abstract class A {
                 abstract String getName()
                 abstract void setName(String name)
             }
-            class A extends Base {
-                private String name = 'AA'
+            class C extends A {
+                private String name = 'C'
 
                 @Override
                 String getName() {
@@ -344,10 +371,11 @@ final class PropertyTest {
                     this.name = name
                 }
             }
-            Base a = new A()
-            assert 'AA' == a.name
-            a.name = 'BB'
-            assert 'BB' == a.name
+
+            A a = new C()
+            assert a.name == 'C'
+            a.name = 'X'
+            assert a.name == 'X'
         '''
     }
 
