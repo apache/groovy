@@ -117,38 +117,85 @@ class PropertyTest extends GroovyTestCase {
         assert foo.body == "James"
     }
 
-    void testFinalProperty() {
-        def shell = new GroovyShell();
-        assertScript """
-        class A {
-           final foo = 1
-        }
-        A.class.declaredMethods.each {
-          assert it.name!="setFoo"
+    // GROOVY-11675
+    void testSplitProperty() {
+        assertScript '''import java.lang.reflect.*
+            class C {
+                @Deprecated private final Integer one
+                final Integer one
 
-        }
-        assert new A().foo==1
-      """
-        shouldFail {
-            shell.execute """
-          class A {
-            final foo = 1
-          }
-          new A().foo = 2
-        """
-        }
+                protected synchronized Integer two
+                synchronized Integer two
+
+                public Integer three
+                @Deprecated Integer three
+            }
+
+            Member m = C.getDeclaredField('one')
+            assert m.isAnnotationPresent(Deprecated)
+            assert m.modifiers == Modifier.PRIVATE + Modifier.FINAL
+
+            m = C.getDeclaredMethod('getOne')
+            assert !m.isAnnotationPresent(Deprecated)
+            assert m.modifiers == Modifier.PUBLIC + Modifier.FINAL
+
+            groovy.test.GroovyAssert.shouldFail(NoSuchMethodException) {
+                m = C.getDeclaredMethod('setOne', Integer)
+            }
+
+            m = C.getDeclaredField('two')
+            assert m.modifiers == Modifier.PROTECTED
+            // field cannot carry modifier SYNCHRONIZED
+
+            m = C.getDeclaredMethod('getTwo')
+            assert m.modifiers == Modifier.PUBLIC + Modifier.SYNCHRONIZED
+
+            m = C.getDeclaredMethod('setTwo', Integer)
+            assert m.modifiers == Modifier.PUBLIC + Modifier.SYNCHRONIZED
+
+            m = C.getDeclaredField('three')
+            assert m.modifiers == Modifier.PUBLIC
+            assert !m.isAnnotationPresent(Deprecated)
+
+            m = C.getDeclaredMethod('getThree')
+            assert m.modifiers == Modifier.PUBLIC
+            assert m.isAnnotationPresent(Deprecated)
+
+            m = C.getDeclaredMethod('setThree', Integer)
+            assert m.modifiers == Modifier.PUBLIC
+            assert m.isAnnotationPresent(Deprecated)
+        '''
+    }
+
+    void testFinalProperty() {
+        assertScript '''
+            class C {
+               final foo = 1
+            }
+            C.declaredMethods.each {
+                assert it.name != "setFoo"
+            }
+
+            assert new C().foo == 1
+        '''
+
+        shouldFail '''
+            class C {
+                final foo = 1
+            }
+
+            new C().foo = 2
+        '''
     }
 
     void testFinalField() {
-        def shell = new GroovyShell();
-        shouldFail {
-            shell.execute """
-          class A {
-            public final foo = 1
-          }
-          new A().foo = 2
-        """
-        }
+        shouldFail '''
+            class C {
+                public final foo = 1
+            }
+
+            new C().foo = 2
+        '''
     }
 
     void testFinalPropertyWithInheritance() {
