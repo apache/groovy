@@ -30,24 +30,25 @@ import java.util.Properties;
  * factory is instantiated and used instead of this factory.
  */
 public class StandardPropertiesModuleFactory extends PropertiesModuleFactory {
+
     public static final String MODULE_FACTORY_KEY = "moduleFactory";
 
     @Override
     @SuppressWarnings("unchecked")
     public ExtensionModule newModule(final Properties properties, final ClassLoader classLoader) {
         String factoryName = properties.getProperty(MODULE_FACTORY_KEY);
-        if (factoryName!=null) {
+        if (factoryName != null) {
             try {
-                Class<? extends PropertiesModuleFactory> factoryClass = (Class<? extends PropertiesModuleFactory>) classLoader.loadClass(factoryName);
+                var factoryClass = (Class<? extends PropertiesModuleFactory>) classLoader.loadClass(factoryName);
                 PropertiesModuleFactory delegate = factoryClass.getDeclaredConstructor().newInstance();
                 return delegate.newModule(properties, classLoader);
-            } catch (ClassNotFoundException | NoSuchMethodException e) {
-                throw new GroovyRuntimeException("Unable to load module factory ["+factoryName+"]",e);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                throw new GroovyRuntimeException("Unable to instantiate module factory ["+factoryName+"]",e);
+            } catch (final ClassNotFoundException | NoSuchMethodException e) {
+                throw new GroovyRuntimeException("Unable to load module factory [" + factoryName + "]", e);
+            } catch (final InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                throw new GroovyRuntimeException("Unable to instantiate module factory [" + factoryName + "]", e);
             }
         }
+
         return MetaInfExtensionModule.newModule(properties, classLoader);
     }
-
 }
