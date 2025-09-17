@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import java.lang.reflect.Modifier;
 
 public class PropertyNodeUtils {
+
     /**
      * Fields within the AST that have no explicit visibility are deemed to be properties
      * and represented by a PropertyNode. The Groovy compiler creates accessor methods and
@@ -33,11 +34,17 @@ public class PropertyNodeUtils {
      * methods (such as {@code volatile} and {@code transient}) but other modifiers are carried over,
      * for example {@code static}.
      *
-     * @param propNode the original property node
+     * @since 2.4.8
+     * @param node the original property node
      * @return the modifiers which make sense for an accessor method
      */
-    public static int adjustPropertyModifiersForMethod(PropertyNode propNode) {
-        // GROOVY-3726: clear some modifiers so that they do not get applied to methods
-        return propNode.getModifiers() & ~(Modifier.FINAL | Modifier.TRANSIENT | Modifier.VOLATILE);
+    public static int adjustPropertyModifiersForMethod(final PropertyNode node) {
+        // GROOVY-3726, GROOVY-7969: clear modifiers that do not apply to methods
+        int mods = node.getModifiers() & ~(Modifier.TRANSIENT|Modifier.VOLATILE);
+        // GROOVY-11675: split property case may declare final modifier
+        if (node.getField() == null || node.getField().isSynthetic()) {
+            mods &= ~Modifier.FINAL;
+        }
+        return mods;
     }
 }
