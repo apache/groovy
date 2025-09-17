@@ -129,6 +129,57 @@ final class PropertyTest {
         assert foo.body == "James"
     }
 
+    // GROOVY-11675
+    @Test
+    void testSplitProperty() {
+        assertScript '''import java.lang.reflect.*
+            class C {
+                @Deprecated private final Integer one
+                final Integer one
+
+                protected synchronized Integer two
+                synchronized Integer two
+
+                public Integer three
+                @Deprecated Integer three
+            }
+
+            Member m = C.getDeclaredField('one')
+            assert m.isAnnotationPresent(Deprecated)
+            assert m.modifiers == Modifier.PRIVATE + Modifier.FINAL
+
+            m = C.getDeclaredMethod('getOne')
+            assert !m.isAnnotationPresent(Deprecated)
+            assert m.modifiers == Modifier.PUBLIC + Modifier.FINAL
+
+            groovy.test.GroovyAssert.shouldFail(NoSuchMethodException) {
+                m = C.getDeclaredMethod('setOne', Integer)
+            }
+
+            m = C.getDeclaredField('two')
+            assert m.modifiers == Modifier.PROTECTED
+            // field cannot carry modifier SYNCHRONIZED
+
+            m = C.getDeclaredMethod('getTwo')
+            assert m.modifiers == Modifier.PUBLIC + Modifier.SYNCHRONIZED
+
+            m = C.getDeclaredMethod('setTwo', Integer)
+            assert m.modifiers == Modifier.PUBLIC + Modifier.SYNCHRONIZED
+
+            m = C.getDeclaredField('three')
+            assert m.modifiers == Modifier.PUBLIC
+            assert !m.isAnnotationPresent(Deprecated)
+
+            m = C.getDeclaredMethod('getThree')
+            assert m.modifiers == Modifier.PUBLIC
+            assert m.isAnnotationPresent(Deprecated)
+
+            m = C.getDeclaredMethod('setThree', Integer)
+            assert m.modifiers == Modifier.PUBLIC
+            assert m.isAnnotationPresent(Deprecated)
+        '''
+    }
+
     @Test
     void testFinalProperty() {
         assertScript '''
@@ -703,7 +754,7 @@ final class PropertyTest {
     static class Child extends Base {
         protected String field = 'foo' + super.field
 
-            def getField() { field }
+        def getField() { field }
 
         void setSuperField(value) { super.field = value }
 
@@ -711,7 +762,7 @@ final class PropertyTest {
 
         def thing = 'bar thing'
 
-            def superthing() {
+        def superthing() {
             'bar1' + super.thing
         }
 
