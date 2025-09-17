@@ -117,38 +117,92 @@ class PropertyTest extends GroovyTestCase {
         assert foo.body == "James"
     }
 
+    void testSplitProperty() {
+        assertScript '''
+            import java.lang.reflect.*
+            import groovy.transform.Generated
+
+            class C {
+                @Deprecated private final Integer one
+                final Integer one
+
+                protected synchronized Integer two
+                synchronized Integer two
+
+                public Integer three
+                @Deprecated Integer three
+            }
+
+            Member m = C.getDeclaredField('one')
+            assert m.isAnnotationPresent(Deprecated)
+            assert m.modifiers == Modifier.PRIVATE + Modifier.FINAL
+
+            m = C.getDeclaredMethod('getOne')
+            assert m.isAnnotationPresent(Generated)
+            assert !m.isAnnotationPresent(Deprecated)
+            assert m.modifiers == Modifier.PUBLIC + Modifier.FINAL
+
+            groovy.test.GroovyAssert.shouldFail(NoSuchMethodException) {
+                m = C.getDeclaredMethod('setOne', Integer)
+            }
+
+            m = C.getDeclaredField('two')
+            assert m.modifiers == Modifier.PRIVATE
+            // field cannot carry modifier SYNCHRONIZED
+
+            m = C.getDeclaredMethod('getTwo')
+            assert m.modifiers == Modifier.PUBLIC + Modifier.SYNCHRONIZED
+            assert m.isAnnotationPresent(Generated)
+
+            m = C.getDeclaredMethod('setTwo', Integer)
+            assert m.modifiers == Modifier.PUBLIC + Modifier.SYNCHRONIZED
+            assert m.isAnnotationPresent(Generated)
+
+            m = C.getDeclaredField('three')
+            assert m.modifiers == Modifier.PRIVATE
+            assert m.isAnnotationPresent(Deprecated)
+
+            m = C.getDeclaredMethod('getThree')
+            assert m.modifiers == Modifier.PUBLIC
+            assert m.isAnnotationPresent(Generated)
+            assert !m.isAnnotationPresent(Deprecated)
+
+            m = C.getDeclaredMethod('setThree', Integer)
+            assert m.modifiers == Modifier.PUBLIC
+            assert m.isAnnotationPresent(Generated)
+            assert !m.isAnnotationPresent(Deprecated)
+        '''
+    }
+
     void testFinalProperty() {
-        def shell = new GroovyShell();
-        assertScript """
-        class A {
-           final foo = 1
-        }
-        A.class.declaredMethods.each {
-          assert it.name!="setFoo"
-          
-        }
-        assert new A().foo==1
-      """
-        shouldFail {
-            shell.execute """
-          class A {
-            final foo = 1
-          }
-          new A().foo = 2
-        """
-        }
+        assertScript '''
+            class C {
+               final foo = 1
+            }
+            C.declaredMethods.each {
+                assert it.name != "setFoo"
+            }
+
+            assert new C().foo == 1
+        '''
+
+        shouldFail '''
+            class C {
+                final foo = 1
+            }
+
+            new C().foo = 2
+        '''
     }
 
     void testFinalField() {
-        def shell = new GroovyShell();
-        shouldFail {
-            shell.execute """
-          class A {
-            public final foo = 1
-          }
-          new A().foo = 2
-        """
-        }
+        shouldFail '''
+            class C {
+                public final foo = 1
+            }
+
+            new C().foo = 2
+        '''
     }
 
     void testFinalPropertyWithInheritance() {
@@ -255,7 +309,7 @@ class PropertyTest extends GroovyTestCase {
             }
             class A extends Base {
                 private String name = 'AA'
-            
+
                 @Override
                 String getName() {
                     this.name
@@ -437,7 +491,7 @@ class PropertyTest extends GroovyTestCase {
             static String getAProp() { 'AProp' }
             static String getpNAME() { 'pNAME' }
         }
-        
+
         import static A.*
 
         assert prop == 'Prop'
@@ -467,7 +521,7 @@ class PropertyTest extends GroovyTestCase {
             static String getAProp() { 'AProp' }
             static String getpNAME() { 'pNAME' }
         }
-        
+
         import static A.*
 
         class B {
