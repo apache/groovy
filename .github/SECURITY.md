@@ -34,7 +34,8 @@ The latest released version in the Groovy 2.5.x stream is recommended where JDK7
 | 2.5.x    | :white_check_mark: | Reduced releases on this branch (\*) |
 | 3.0.x    | :white_check_mark: |                                      |
 | 4.0.x    | :white_check_mark: |                                      |
-| 5.x      | :grey_question:    | Pre-release status (**)              |
+| 5.0.x    | :white_check_mark: |                                      |
+| 6.x      | :grey_question:    | Pre-release status (**)              |
 
 (\*) The 2.5.x stream is no longer the focus of the core team,
 but we are currently still doing critical security fixes if needed.
