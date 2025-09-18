@@ -73,8 +73,8 @@ public class GroovyDocTest {
     public void testCustomClassTemplate() throws Exception {
         rule.executeTarget("testCustomClassTemplate");
 
-        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles");
-        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("DocumentedClass.html"));
+        File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles");
+        String[] list = testfilesPackageDir.list((file, name) -> name.equals("DocumentedClass.html"));
 
         assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals(1, list.length);
@@ -89,8 +89,8 @@ public class GroovyDocTest {
     public void testSupportedJavadocVersion() throws Exception {
         rule.executeTarget("supportedGroovyDocJava");
 
-        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
-        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
+        File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
+        String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
 
         assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals(1, list.length);
@@ -105,8 +105,8 @@ public class GroovyDocTest {
     public void testUnsupportedJavadocVersion() {
         rule.executeTarget("unsupportedGroovyDocJava");
 
-        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
-        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
+        File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
+        String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
 
         assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals("Files unexpectedly found when not expecting to parse",0, list.length);
@@ -126,8 +126,8 @@ public class GroovyDocTest {
     public void testFileEncoding() throws Exception {
         rule.executeTarget("testFileEncoding");
 
-        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles");
-        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("DocumentedClass.html"));
+        File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles");
+        String[] list = testfilesPackageDir.list((file, name) -> name.equals("DocumentedClass.html"));
 
         File documentedClassHtmlDoc = new File(testfilesPackageDir, list[0]);
         CharsetToolkit charsetToolkit = new CharsetToolkit(documentedClassHtmlDoc);
@@ -139,8 +139,8 @@ public class GroovyDocTest {
     public void testJavadocForRecords() throws Exception {
         rule.executeTarget("testJavadocForRecords");
 
-        final File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/records");
-        final String[] list = testfilesPackageDir.list((file, name) -> name.equals("Record.html"));
+        File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/records");
+        String[] list = testfilesPackageDir.list((file, name) -> name.equals("Record.html"));
 
         assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals(1, list.length);
