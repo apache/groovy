@@ -156,7 +156,7 @@ public class NullObject extends GroovyObjectSupport {
     }
 
     /**
-     * Fallback for {@code null+null}. The {@link plus(String)} variant catches
+     * Fallback for {@code null+null}. The {@link #plus(String)} variant catches
      * the case of adding a non-null String to null.
      *
      * @return never
