@@ -17,10 +17,10 @@ if (pluginManager.hasPlugin('java-platform')) {
 
 afterEvaluate {
     def bomTask = tasks.cyclonedxBom
-    def bomFile = new File(bomTask.outputs.files.singleFile, "${bomTask.outputName.get()}.${bomTask.outputFormat.get()}")
+    def bomFile = file(bomTask.jsonOutput.get())
     def mavenPublish = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
     mavenPublish?.publications.each {
-        it.artifact(bomFile) { classifier = "cyclonedx" }
+        it.artifact(bomFile) { classifier = 'cyclonedx' }
     }
     tasks.matching { it.group == PublishingExtension.NAME }.configureEach { dependsOn(bomTask) }
 }
@@ -28,11 +28,11 @@ afterEvaluate {
 publishing {
     repositories {
         maven {
-            name = "LocalFile"
-            url = rootProject.layout.buildDirectory.dir("repo").get().asFile.absolutePath
+            name = 'LocalFile'
+            url = rootProject.layout.buildDirectory.dir('repo').get().asFile.absolutePath
         }
         maven {
-            name = "Apache"
+            name = 'Apache'
             url = findProperty('groovyVersion').contains('SNAPSHOT')
                     ? 'https://repository.apache.org/content/repositories/snapshots'
                     : 'https://repository.apache.org/service/local/staging/deploy/maven2'
@@ -808,8 +808,8 @@ gradle.taskGraph.whenReady { taskGraph ->
     if (sharedConfiguration.signing.shouldSign(gradle.taskGraph)) {
         // Use Java 6's console or Swing to read input (not suitable for CI)
         if (!sharedConfiguration.signing.hasAllKeyDetails()) {
-            printf "\n\nWe have to sign some things in this build." +
-                    "\n\nPlease enter your signing details.\n\n"
+            printf '\n\nWe have to sign some things in this build.' +
+                    '\n\nPlease enter your signing details.\n\n'
             System.out.flush()
 
             if (!sharedConfiguration.signing.keyId.present) {
@@ -823,23 +823,22 @@ gradle.taskGraph.whenReady { taskGraph ->
             }
 
             allprojects {
-                project.properties.put("signing.keyId", sharedConfiguration.signing.keyId.get())
-                project.properties.put("signing.secretKeyRingFile", sharedConfiguration.signing.secretKeyRingFile.get())
-                project.properties.put("signing.password", sharedConfiguration.signing.password.get())
+                project.properties.put('signing.keyId', sharedConfiguration.signing.keyId.get())
+                project.properties.put('signing.secretKeyRingFile', sharedConfiguration.signing.secretKeyRingFile.get())
+                project.properties.put('signing.password', sharedConfiguration.signing.password.get())
             }
 
-            printf "\nThanks.\n\n"
+            printf '\nThanks.\n\n'
             System.out.flush()
         }
     }
 }
 
-def promptUser(String prompt) {
+String promptUser(String prompt) {
     def response = ''
     if (System.console() != null) {
-        response = new String(System.console().readPassword("\n$prompt: "))
+        response = String.valueOf(System.console().readPassword("\n$prompt: "))
     }
-
     if (!response) {
         throw new InvalidUserDataException("Null response detected!")
     }
@@ -848,9 +847,11 @@ def promptUser(String prompt) {
 
 cyclonedxBom {
     includeConfigs = ['runtimeClasspath']
-    skipConfigs = ['compileClasspath', 'testCompileClasspath', 'detached.*']
-    outputName = "cyclonedx"
-    outputFormat = 'json'
+       skipConfigs = ['compileClasspath', 'detached.*', 'test.*']
+
     includeLicenseText = false
     includeMetadataResolution = false
+
+    xmlOutput.unsetConvention()
+    jsonOutput.set(file("build/reports/cyclonedx/${project.name}.json"))
 }
