@@ -393,31 +393,89 @@ final class TraitASTTransformationTest {
     @Test
     void testOverridePropertyDefinedInTrait() {
         assertScript shell, '''
-            trait Id {
-                Long id = 123L
+            trait Foo {
+                long id = 123L
+            }
+            class Bar implements Foo {
+                long id = 456L
             }
 
-            class Foo implements Id {
-                Long id = 456L
-            }
-            def f = new Foo()
-            assert f.id == 456L
+            def pogo = new Bar()
+            assert pogo.id == 456L
+            assert pogo.getId() == 456L
         '''
     }
 
     @Test
     void testOverridePropertyGetterDefinedInTrait() {
         assertScript shell, '''
-            trait Id {
-                Long id = 123L
+            trait Foo {
+                long id = 123L
+            }
+            class Bar implements Foo {
+                long getId() { 456L }
             }
 
-            class Foo implements Id {
-                Long getId() { 456L }
-            }
-            def f = new Foo()
-            assert f.id == 456L
+            def pogo = new Bar()
+            assert pogo.id == 456L
+            assert pogo.getId() == 456L
         '''
+    }
+
+    @Test
+    void testShadowingPropertyGetterDefinedInTrait() {
+        assertScript shell, '''
+            trait Foo {
+                private long getId() { 123L }
+            }
+            trait Bar extends Foo {
+                long id = 456L
+            }
+            class Baz implements Bar {
+            }
+
+            def pogo = new Baz()
+            assert pogo.id == 456L
+            assert pogo.getId() == 456L
+        '''
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings=['public',/*TODO:'protected',*/'private'])
+    void testFinalPropertyGetterDefinedInSuperClass(String modifier) {
+        assertScript shell, """
+            trait Foo {
+                final long id = 123L
+            }
+            class Bar {
+                $modifier final long getId() { 456L }
+            }
+            class Baz extends Bar implements Foo {
+            }
+
+            def pogo = new Baz()
+            assert pogo.id == ${modifier == 'private' ? '123L' : '456L'}
+            assert pogo.getId() == ${modifier == 'private' ? '123L' : '456L'}
+        """
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings=['private','@PackageScope','protected','public','static'])
+    void testNonFinalPropertyGetterDefinedInSuperClass(String modifier) {
+        assertScript shell, """
+            trait Foo {
+                long id = 123L
+            }
+            class Bar {
+                $modifier long getId() { 456L }
+            }
+            class Baz extends Bar implements Foo {
+            }
+
+            def pogo = new Baz()
+            assert pogo.id == 123L
+            assert pogo.getId() == 123L
+        """
     }
 
     @Test
