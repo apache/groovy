@@ -523,9 +523,7 @@ public class GroovyPosixCommands extends PosixCommands {
                 if (username.length() > 8) {
                     username = new StringBuilder(username.substring(0, 8));
                 } else {
-                    for (int i = username.length(); i < 8; i++) {
-                        username.append(" ");
-                    }
+                    username.append(" ".repeat(Math.max(0, 8 - username.length())));
                 }
                 StringBuilder group;
                 if (attributes.containsKey("group")) {
@@ -536,9 +534,7 @@ public class GroovyPosixCommands extends PosixCommands {
                 if (group.length() > 8) {
                     group = new StringBuilder(group.substring(0, 8));
                 } else {
-                    for (int i = group.length(); i < 8; i++) {
-                        group.append(" ");
-                    }
+                    group.append(" ".repeat(Math.max(0, 8 - group.length())));
                 }
                 Number length = (Number) attributes.get("size");
                 if (length == null) {
