@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Generate SNAPSHOT
+name: Generate SNAPSHOT distributions
 
 on: [push, pull_request]
 
@@ -23,18 +23,18 @@ jobs:
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Install graphviz
+        run: sudo apt-get install -y graphviz
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: 17
           check-latest: true
+      - uses: actions/checkout@v3
       - uses: gradle/gradle-build-action@v2
-      - name: Install graphviz
-        run: sudo apt-get install -y graphviz
       - name: Build and package
-        run: ./gradlew clean dist --no-build-cache --no-scan --refresh-dependencies
+        run: ./gradlew clean dist --no-build-cache --no-daemon --no-scan --refresh-dependencies
         timeout-minutes: 60
       - name: Move binary distribution
         run:  mkdir -p build/distributions/binary/ && mv subprojects/groovy-binary/build/distributions/apache-groovy-binary-*.zip build/distributions/binary/
