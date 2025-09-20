@@ -507,13 +507,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private static boolean methodNeedsReplacement(final ClassNode cNode, final MethodNode mNode) {
-        // no method found, we need to replace
-        if (mNode == null) return true;
-        // method is in current class, nothing to be done
-        if (mNode.getDeclaringClass() == cNode) return false;
-        // do not overwrite final
-        if ((mNode.getModifiers() & ACC_FINAL) != 0) return false;
-        return true;
+        return mNode == null || mNode.getDeclaringClass() != cNode; // do not replace trait method
     }
 
     private void processField(final FieldNode field, final MethodNode initializer, final MethodNode staticInitializer,

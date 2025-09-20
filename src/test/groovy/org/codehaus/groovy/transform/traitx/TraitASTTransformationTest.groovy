@@ -441,7 +441,7 @@ final class TraitASTTransformationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings=['public',/*TODO:'protected',*/'private'])
+    @ValueSource(strings=['public','private'])
     void testFinalPropertyGetterDefinedInSuperClass(String modifier) {
         assertScript shell, """
             trait Foo {

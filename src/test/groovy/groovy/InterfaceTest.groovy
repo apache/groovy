@@ -135,6 +135,22 @@ final class InterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-11758
+    void testSuperClassFinalMethodAndInterfaceMethod() {
+        def err = shouldNotCompile '''
+            interface A {
+                def m()
+            }
+            class B {
+                protected final m() {
+                }
+            }
+            class C extends B implements A {
+            }
+        '''
+        assert err =~ /inherited final method m\(\) from B cannot shadow the public method in A/
+    }
+
     // GROOVY-11753
     void testSuperClassCovariantOfParameterizedInterface() {
         assertScript '''

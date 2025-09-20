@@ -93,12 +93,14 @@ public abstract class TraitComposer {
      * to call this method on a class node which does not implement a trait.
      */
     public static void doExtendTraits(final ClassNode cn, final SourceUnit su, final CompilationUnit cu) {
-        if (cn.isInterface()) return;
+        if (cn.isInterface()) {
+            return;
+        }
         if (Traits.isTrait(cn)) {
             checkTraitAllowed(cn, su);
             return;
         }
-        if (!cn.getNameWithoutPackage().endsWith(Traits.TRAIT_HELPER)) {
+        if (!cn.getName().endsWith(Traits.TRAIT_HELPER)) {
             GroovyClassVisitor visitor = new SuperCallTraitTransformer(su);
             for (ClassNode trait : Traits.findTraits(cn)) {
                 applyTrait(trait, cn, Traits.findHelpers(trait), su);
@@ -119,13 +121,13 @@ public abstract class TraitComposer {
         }
     }
 
-    private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers, SourceUnit unit) {
+    private static void applyTrait(final ClassNode trait, final ClassNode cNode, final TraitHelpersTuple helpers, final SourceUnit unit) {
         ClassNode helperClassNode = helpers.getHelper();
         ClassNode fieldHelperClassNode = helpers.getFieldHelper();
         ClassNode staticFieldHelperClassNode = helpers.getStaticFieldHelper();
         Map<String, ClassNode> genericsSpec = GenericsUtils.createGenericsSpec(trait, GenericsUtils.createGenericsSpec(cNode));
 
-        List<MethodNode> hMethods = new ArrayList<>(helperClassNode.getMethods());
+        var hMethods = new ArrayList<MethodNode>(helperClassNode.getMethods());
         if (hMethods.size() > 1) {
             hMethods.sort(Comparator.comparing(MethodNodeUtils::methodDescriptorWithoutReturnType));
         }
@@ -371,19 +373,15 @@ public abstract class TraitComposer {
         forwarder.addAnnotation(bridgeAnnotation);
 
         MethodNode existingMethod = findExistingMethod(targetNode, forwarder);
-        if (existingMethod != null) {
-            if (!forwarder.isStatic() && existingMethod.isStatic()) {
-                // found an existing static method that is going to conflict with interface
-                unit.addError(createException(trait, targetNode, forwarder, existingMethod));
-                return;
+        if (existingMethod != null && existingMethod.isStatic() && !forwarder.isStatic()) {
+            // found an existing static method that is going to conflict with interface
+            unit.addError(createException(trait, targetNode, forwarder, existingMethod));
+        } else {
+            if (!shouldSkipMethod(targetNode, forwarder.getName(), forwarderParams)) {
+                targetNode.addMethod(forwarder);
             }
+            createSuperForwarder(targetNode, forwarder, genericsSpec);
         }
-
-        if (!shouldSkipMethod(targetNode, forwarder.getName(), forwarderParams)) {
-            targetNode.addMethod(forwarder);
-        }
-
-        createSuperForwarder(targetNode, forwarder, genericsSpec);
     }
 
     private static SyntaxException createException(ClassNode trait, ClassNode targetNode, MethodNode forwarder, MethodNode existingMethod) {
@@ -414,10 +412,10 @@ public abstract class TraitComposer {
         return new SyntaxException(message, errorTarget);
     }
 
-    private static GenericsType[] removeNonPlaceHolders(GenericsType[] oldTypes) {
-        if (oldTypes==null || oldTypes.length==0) return oldTypes;
-        ArrayList<GenericsType> l = new ArrayList<>(Arrays.asList(oldTypes));
-        Iterator<GenericsType> it = l.iterator();
+    private static GenericsType[] removeNonPlaceHolders(final GenericsType[] oldTypes) {
+        if (oldTypes == null || oldTypes.length == 0) return oldTypes;
+        var list = new ArrayList<GenericsType>(Arrays.asList(oldTypes));
+        Iterator<GenericsType> it = list.iterator();
         boolean modified = false;
         while (it.hasNext()) {
             GenericsType gt = it.next();
@@ -427,8 +425,8 @@ public abstract class TraitComposer {
             }
         }
         if (!modified) return oldTypes;
-        if (l.isEmpty()) return null;
-        return l.toArray(GenericsType.EMPTY_ARRAY);
+        if (list.isEmpty()) return null;
+        return list.toArray(GenericsType[]::new);
     }
 
     /**
@@ -436,7 +434,7 @@ public abstract class TraitComposer {
      * @param forwarder a forwarder method
      * @param genericsSpec
      */
-    private static void createSuperForwarder(ClassNode targetNode, MethodNode forwarder, final Map<String,ClassNode> genericsSpec) {
+    private static void createSuperForwarder(final ClassNode targetNode, final MethodNode forwarder, final Map<String,ClassNode> genericsSpec) {
         List<ClassNode> interfaces = new ArrayList<>(Traits.collectAllInterfacesReverseOrder(targetNode, new LinkedHashSet<>()));
         String name = forwarder.getName();
         Parameter[] forwarderParameters = forwarder.getParameters();
