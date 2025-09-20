@@ -23,11 +23,9 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.util.URLStreams;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
+import java.util.Objects;
 import java.util.Properties;
-
-import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 
 /**
  * A module extension scanner is responsible for searching classpath modules,
@@ -39,6 +37,7 @@ import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuiet
  * @since 2.1.2
  */
 public class ExtensionModuleScanner {
+
     public static final String LEGACY_MODULE_META_INF_FILE = "META-INF/services/org.codehaus.groovy.runtime.ExtensionModule";
     public static final String MODULE_META_INF_FILE = "META-INF/groovy/org.codehaus.groovy.runtime.ExtensionModule";
 
@@ -46,8 +45,8 @@ public class ExtensionModuleScanner {
     private final ClassLoader classLoader;
 
     public ExtensionModuleScanner(final ExtensionModuleListener listener, final ClassLoader loader) {
-        this.listener = listener;
-        this.classLoader = loader;
+        this.listener = Objects.requireNonNull(listener);
+        this.classLoader = Objects.requireNonNull(loader);
     }
 
     public void scanClasspathModules() {
@@ -55,36 +54,38 @@ public class ExtensionModuleScanner {
         scanClasspathModulesFrom(LEGACY_MODULE_META_INF_FILE);
     }
 
-    private void scanClasspathModulesFrom(String moduleMetaInfFile) {
+    private void scanClasspathModulesFrom(final String moduleMetaInfFile) {
         try {
             for (URL url : DefaultGroovyMethods.toSet(classLoader.getResources(moduleMetaInfFile))) {
                 scanExtensionModuleFromMetaInf(url);
             }
-        } catch (IOException e) {
+        } catch (final IOException e) {
             // DO NOTHING
         }
     }
 
     private void scanExtensionModuleFromMetaInf(final URL metadata) {
         Properties properties = new Properties();
-        InputStream inStream = null;
-        try {
-            inStream = URLStreams.openUncachedStream(metadata);
-            properties.load(inStream);
-        } catch (IOException e) {
+
+        try (var stream = URLStreams.openUncachedStream(metadata)) {
+            properties.load(stream);
+        } catch (final IOException e) {
             throw new GroovyRuntimeException("Unable to load module META-INF descriptor", e);
-        } finally {
-            closeQuietly(inStream);
         }
+
         scanExtensionModuleFromProperties(properties);
     }
 
     public void scanExtensionModuleFromProperties(final Properties properties) {
-        StandardPropertiesModuleFactory factory = new StandardPropertiesModuleFactory();
-        ExtensionModule module = factory.newModule(properties, classLoader);
-        listener.onModule(module);
+        var factory = new StandardPropertiesModuleFactory();
+        var module = factory.newModule(properties, classLoader);
+        if (module instanceof SimpleExtensionModule simpleModule
+                && simpleModule.getStaticMethodsExtensionClasses().isEmpty()
+                && simpleModule.getInstanceMethodsExtensionClasses().isEmpty()) {
+            module = null; // GROOVY-6491: empty module implies restriction (like OSGi)
+        }
+        if (module != null) listener.onModule(module);
     }
-
 
     public interface ExtensionModuleListener {
         void onModule(ExtensionModule module);
