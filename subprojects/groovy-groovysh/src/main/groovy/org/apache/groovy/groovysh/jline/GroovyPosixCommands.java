@@ -81,9 +81,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 // The following file is expected to be deleted if/when the following issues have been merged in JLine3:
-// https://github.com/jline/jline3/pull/1400
-// https://github.com/jline/jline3/pull/1398
-// https://github.com/jline/jline3/pull/1390
+// https://github.com/jline/jline3/pull/1436
+// also some desired fixes have been merged only on master (v4) which is not yet released
 public class GroovyPosixCommands extends PosixCommands {
 
     public static void cat(Context context, Object[] argv) throws Exception {
@@ -374,6 +373,7 @@ public class GroovyPosixCommands extends PosixCommands {
         }
     }
 
+    // from jline master (v4), remove once it is released, and we move to that version, and jline PR#1436 is merged
     public static void ls(Context context, Object[] argv) throws Exception {
         final String[] usage = {
             "/ls - list files",
@@ -429,18 +429,14 @@ public class GroovyPosixCommands extends PosixCommands {
 
             public PathEntry(Path abs, Path root) {
                 this.abs = abs;
-                this.path = getPath(abs, root);
-                this.attributes = readAttributes(abs);
-            }
-
-            private Path getPath(Path abs, Path root) {
                 try {
-                    return Files.isSameFile(abs, root)
+                    this.path = Files.isSameFile(abs, root)
                         ? Paths.get(".")
                         : abs.startsWith(root) ? root.relativize(abs) : abs;
-                } catch (IOException ignore) {
-                    return abs;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
+                this.attributes = readAttributes(abs);
             }
 
             @Override
@@ -514,72 +510,46 @@ public class GroovyPosixCommands extends PosixCommands {
             }
 
             String longDisplay() {
-                StringBuilder username;
-                if (attributes.containsKey("owner")) {
-                    username = new StringBuilder(Objects.toString(attributes.get("owner"), null));
-                } else {
-                    username = new StringBuilder("owner");
-                }
-                if (username.length() > 8) {
-                    username = new StringBuilder(username.substring(0, 8));
-                } else {
-                    username.append(" ".repeat(Math.max(0, 8 - username.length())));
-                }
-                StringBuilder group;
-                if (attributes.containsKey("group")) {
-                    group = new StringBuilder(Objects.toString(attributes.get("group"), null));
-                } else {
-                    group = new StringBuilder("group");
-                }
-                if (group.length() > 8) {
-                    group = new StringBuilder(group.substring(0, 8));
-                } else {
-                    group.append(" ".repeat(Math.max(0, 8 - group.length())));
-                }
+                String username = Objects.toString(attributes.get("owner"), "owner");
+                String group = Objects.toString(attributes.get("group"), "group");
+                String size = formatSize();
+
+                @SuppressWarnings("unchecked")
+                Set<PosixFilePermission> perms = (Set<PosixFilePermission>) attributes.get("permissions");
+                String permissions = PosixFilePermissions.toString(
+                    perms != null ? perms : EnumSet.noneOf(PosixFilePermission.class));
+
+                String fileType = is("isDirectory") ? "d" : (is("isSymbolicLink") ? "l" : (is("isOther") ? "o" : "-"));
+                String linkCount = Objects.toString(attributes.get("nlink"), "1");
+                String modTime = toString((FileTime) attributes.get("lastModifiedTime"));
+                String fileName = display();
+
+                return String.format(
+                    "%s%s %3s %-8.8s %-8.8s %8s %s %s",
+                    fileType, permissions, linkCount, username, group, size, modTime, fileName);
+            }
+
+            private String formatSize() {
                 Number length = (Number) attributes.get("size");
                 if (length == null) {
                     length = 0L;
                 }
-                String lengthString;
                 if (opt.isSet("h")) {
-                    double l = length.longValue();
-                    String unit = "B";
-                    if (l >= 1000) {
-                        l /= 1024;
-                        unit = "K";
-                        if (l >= 1000) {
-                            l /= 1024;
-                            unit = "M";
-                            if (l >= 1000) {
-                                l /= 1024;
-                                unit = "T";
-                            }
-                        }
+                    long bytes = length.longValue();
+                    if (bytes < SIZE_THRESHOLD) {
+                        return bytes + "B";
                     }
-                    if (l < 10 && length.longValue() > 1000) {
-                        lengthString = String.format("%.1f", l) + unit;
-                    } else {
-                        lengthString = String.format("%3.0f", l) + unit;
+                    double size = bytes;
+                    int unitIndex = 0;
+                    while (size >= SIZE_THRESHOLD && unitIndex < SIZE_UNITS.length - 1) {
+                        size /= 1024;
+                        unitIndex++;
                     }
+                    String format = (size < 10 && bytes > SIZE_THRESHOLD) ? "%.1f" : "%.0f";
+                    return String.format(format, size) + SIZE_UNITS[unitIndex];
                 } else {
-                    lengthString = String.format("%1$8s", length);
+                    return length.toString();
                 }
-                @SuppressWarnings("unchecked")
-                Set<PosixFilePermission> perms = (Set<PosixFilePermission>) attributes.get("permissions");
-                if (perms == null) {
-                    perms = EnumSet.noneOf(PosixFilePermission.class);
-                }
-                // TODO: all fields should be padded to align
-                return (is("isDirectory") ? "d" : (is("isSymbolicLink") ? "l" : (is("isOther") ? "o" : "-")))
-                    + PosixFilePermissions.toString(perms) + " "
-                    + String.format(
-                    "%3s",
-                    (attributes.containsKey("nlink")
-                        ? attributes.get("nlink").toString()
-                        : "1"))
-                    + " " + username + " " + group + " " + lengthString + " "
-                    + toString((FileTime) attributes.get("lastModifiedTime"))
-                    + " " + display();
             }
 
             protected String toString(FileTime time) {
@@ -662,7 +632,7 @@ public class GroovyPosixCommands extends PosixCommands {
                 s.map(PathEntry::longDisplay).forEach(out::println);
             }
             // Column listing
-            else if (optCol) {
+            else {
                 toColumn(context, out, s.map(PathEntry::display), opt.isSet("x"));
             }
         };
@@ -733,6 +703,9 @@ public class GroovyPosixCommands extends PosixCommands {
             out.print(sb.toAnsi(terminal));
         }
     }
+
+    private static final String[] SIZE_UNITS = {"B", "K", "M", "G", "T", "P"};
+    private static final long SIZE_THRESHOLD = 1000L;
 
     public static void grep(Context context, Object[] argv) throws Exception {
         final String[] usage = {
