@@ -26,7 +26,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     implementation projects.groovyJson
     testImplementation projects.groovyTest
-    testRuntimeOnly "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
+    testRuntimeOnly "com.fasterxml.jackson.core:jackson-annotations:${versions.jacksonAnnotations}"
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
 }
 
