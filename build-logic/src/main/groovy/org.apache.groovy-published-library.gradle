@@ -3,7 +3,6 @@ plugins {
     id 'signing'
     id 'org.apache.groovy-publish-validation'
     id 'org.apache.groovy-artifactory'
-    id 'org.cyclonedx.bom'
 }
 
 def componentName
@@ -16,7 +15,7 @@ if (pluginManager.hasPlugin('java-platform')) {
 }
 
 afterEvaluate {
-    def bomTask = tasks.cyclonedxBom
+    def bomTask = tasks.cyclonedxDirectBom
     def bomFile = file(bomTask.jsonOutput.get())
     def mavenPublish = extensions.findByName(PublishingExtension.NAME) as PublishingExtension
     mavenPublish?.publications.each {
@@ -845,7 +844,8 @@ String promptUser(String prompt) {
     response
 }
 
-cyclonedxBom {
+/*
+cyclonedxDirectBom {
     includeConfigs = ['runtimeClasspath']
        skipConfigs = ['compileClasspath', 'detached.*', 'test.*']
 
@@ -855,3 +855,4 @@ cyclonedxBom {
     xmlOutput.unsetConvention()
     jsonOutput.set(file("build/reports/cyclonedx/${project.name}.json"))
 }
+*/
