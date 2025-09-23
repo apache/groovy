@@ -25,6 +25,7 @@ plugins {
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
     id 'org.apache.groovy-jacoco-aggregation'
+    id 'org.cyclonedx.bom' version '3.0.0-alpha-1'
 }
 
 base {
@@ -276,4 +277,18 @@ artifacts {
     xstreamAstRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
     gparsRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
     loggingRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
+}
+
+// this really belongs in org.apache.groovy-published-library.gradle but currently gives errors
+allprojects { p ->
+    tasks.cyclonedxDirectBom {
+        includeConfigs = ['runtimeClasspath']
+        skipConfigs = ['compileClasspath', 'detached.*', 'test.*']
+
+        includeLicenseText = false
+        includeMetadataResolution = false
+
+        xmlOutput.unsetConvention()
+        jsonOutput.set(file("build/reports/cyclonedx/${p.name}.json"))
+    }
 }

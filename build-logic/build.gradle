@@ -33,9 +33,10 @@ dependencies {
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.1'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:6.2.4'
     implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.2'
-    implementation 'org.cyclonedx:cyclonedx-gradle-plugin:2.4.0'
+    implementation 'org.cyclonedx:cyclonedx-gradle-plugin:3.0.0-alpha-1'
     implementation "com.fasterxml.jackson:jackson-bom:2.20.0" // later version for cyclonedx
     implementation "org.slf4j:slf4j-api:2.0.17" // later version for cyclonedx
+    implementation "org.apache.commons:commons-lang3:3.18.0" // later version for cyclonedx
     implementation 'org.apache.maven:maven-core:3.9.11'
 }
 
