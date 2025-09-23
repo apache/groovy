@@ -148,7 +148,7 @@ public class Groovydoc extends Task {
     /**
      * Defaults to a popular Java version defined by the JavaParser library. Otherwise, override here for a specific expected source file version.
      *
-     * @param javaVersion the expected source level of any Java files that may be parsed; i.e. JAVA_11
+     * @param javaVersion the expected source level of any Java files that may be parsed; e.g. JAVA_11
      */
     public void setJavaVersion(String javaVersion) {
         this.javaVersion = javaVersion;
