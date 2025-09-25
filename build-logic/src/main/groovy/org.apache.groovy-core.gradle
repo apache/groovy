@@ -197,7 +197,8 @@ def generateGrammarSourceTask = tasks.named("generateGrammarSource") {
     outputDirectory = layout.buildDirectory.dir("generated/sources/antlr4").get().asFile
 
     final PARSER_PACKAGE_NAME = 'org.apache.groovy.parser.antlr4'
-    arguments += ["-visitor", "-no-listener", "-package", PARSER_PACKAGE_NAME]
+    packageName = PARSER_PACKAGE_NAME
+    arguments += ["-visitor", "-no-listener"]
 
     doLast {
         def parserFilePattern = 'Groovy*'
