@@ -21,7 +21,7 @@ import org.asciidoctor.gradle.jvm.AbstractAsciidoctorTask
 import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
 
 plugins {
-    id 'org.asciidoctor.jvm.convert'
+    id 'org.asciidoctor.jvm.convert.classic'
 }
 
 configurations {
