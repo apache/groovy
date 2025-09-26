@@ -131,6 +131,7 @@ dependencies {
     codenarc project(':groovy-templates')
 
     checkstyle "com.puppycrawl.tools:checkstyle:${versions.checkstyle}"
+    checkstyle "commons-codec:commons-codec:1.19.0"
     spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
     spotbugs "org.apache.logging.log4j:log4j-api:${versions.log4j2}"
     spotbugs "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
@@ -239,7 +240,7 @@ tasks.withType(SpotBugsTask).configureEach {
     excludeFilter = rootProject.file('config/spotbugs/exclude.xml')
     ignoreFailures = true
     effort = Effort.valueOf('MAX')
-    maxHeapSize = '2g'
+    maxHeapSize = '4g'
     reports {
         xml {
             required = false
