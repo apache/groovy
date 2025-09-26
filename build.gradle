@@ -23,7 +23,7 @@ import org.cyclonedx.model.OrganizationalContact
 import org.cyclonedx.model.OrganizationalEntity
 
 plugins {
-    id 'com.github.ben-manes.versions' version '0.52.0'
+    id 'com.github.ben-manes.versions' version '0.53.0'
     id 'io.github.goooler.osgi' version '0.8.6'
     id 'com.github.jk1.dependency-license-report' version '2.9'
     id 'org.sonarqube' version '6.2.0.5505'
