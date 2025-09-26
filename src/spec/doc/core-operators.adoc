@@ -887,7 +887,7 @@ The table below lists all groovy operators in order of precedence.
 |   | `~` {nbsp} `!` {nbsp} `(type)` | bitwise negate/pattern, not, typecast
 |   | `[]` {nbsp} `?[]` {nbsp} `++` {nbsp} `--` | list/map/array (safe) index, post inc/decrement
 | 2 | `**` | power
-| 3 | `++` {nbsp} `--` {nbsp} `+` {nbsp} `-` | pre inc/decrement, unary plus, unary minus
+| 3 | `\++` {nbsp} `--` {nbsp} `+` {nbsp} `-` | pre inc/decrement, unary plus, unary minus
 | 4 | `*` {nbsp} `/` {nbsp} `%` | multiply, div, remainder
 | 5 | `+` {nbsp} `-` | addition, subtraction
 | 6 | `<<` {nbsp} `>>` {nbsp} `>>>` {nbsp} `..` {nbsp} `..<` {nbsp} `<..<` {nbsp} `<..` | left/right (unsigned) shift, inclusive/exclusive ranges
