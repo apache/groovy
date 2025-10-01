@@ -30,7 +30,7 @@ plugins {
     id 'org.apache.groovy-core'
     id 'java-test-fixtures'
     id 'org.apache.groovy-jacoco-aggregation'
-    id 'org.cyclonedx.bom' version '3.0.0-alpha-1'
+    id 'org.cyclonedx.bom' version '3.0.0-alpha-2'
 }
 
 base {
