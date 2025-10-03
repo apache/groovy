@@ -24,8 +24,6 @@ import groovy.lang.MetaClass;
 import groovy.transform.CompileStatic;
 import groovy.transform.Generated;
 import groovy.transform.Internal;
-import groovy.transform.NonSealed;
-import groovy.transform.Sealed;
 import groovy.transform.stc.POJO;
 import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
@@ -166,8 +164,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     public static final String __TIMESTAMP = "__timeStamp";
     public static final String __TIMESTAMP__ = "__timeStamp__239_neverHappen";
 
-    private static final Class<Sealed> SEALED_TYPE = Sealed.class;
-    private static final Class<NonSealed> NON_SEALED_TYPE = NonSealed.class;
     private static final Parameter[] SET_METACLASS_PARAMS = {new Parameter(ClassHelper.METACLASS_TYPE, "mc")};
 
     private ClassNode classNode;
@@ -276,7 +272,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         checkForDuplicateMethods(node);
         checkForDuplicateConstructors(node);
         addCovariantMethods(node);
-        detectNonSealedClasses(node);
+        detectNonSealedType(node);
         checkFinalVariables(node);
     }
 
@@ -326,21 +322,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    private static void detectNonSealedClasses(final ClassNode node) {
+    private static void detectNonSealedType(final ClassNode node) {
         if (isFinal(node.getModifiers())) return;
-        if (Boolean.TRUE.equals(node.getNodeMetaData(SEALED_TYPE))) return;
-        if (Boolean.TRUE.equals(node.getNodeMetaData(NON_SEALED_TYPE))) return;
-        ClassNode sn = node.getSuperClass();
-        boolean found = false;
-        while (sn != null && !sn.equals(ClassHelper.OBJECT_TYPE)) {
-            if (sn.isSealed()) {
-                found = true;
-                break;
+        if (Boolean.TRUE.equals(node.getNodeMetaData(groovy.transform.Sealed.class))) return;
+        if (Boolean.TRUE.equals(node.getNodeMetaData(groovy.transform.NonSealed.class))) return;
+        for (ClassNode sc = node.getSuperClass(); sc != null && !isObjectType(sc); sc = sc.getSuperClass()) {
+            if (sc.isSealed()) {
+                node.putNodeMetaData(groovy.transform.NonSealed.class, Boolean.TRUE);
+                return;
             }
-            sn = sn.getSuperClass();
-        }
-        if (found) {
-            node.putNodeMetaData(NON_SEALED_TYPE, Boolean.TRUE);
         }
     }
 

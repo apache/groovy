@@ -104,7 +104,7 @@ public class DecompiledClassNode extends ClassNode {
         // check Java "sealed"
         try {
             return ReflectionUtils.isSealed(getTypeClass());
-        } catch (NoClassDefFoundError ignored) {
+        } catch (AssertionError | LinkageError ignore) {
         }
         return false;
     }
