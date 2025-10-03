@@ -211,6 +211,21 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    void testCastObjectToInterface() {
+        assertScript '''
+            List<Object> m(object) {
+                if (object == null) return new ArrayList<>()
+                if (object instanceof Collection) return new ArrayList<Object>((Collection) object)
+                return [object]
+            }
+            def item = 0
+            def list = [1,2]
+            assert m(null).size() == 0
+            assert m(item).size() == 1
+            assert m(list).size() == 2
+        '''
+    }
+
     void testCastInterfaceToSubclass() {
         assertScript '''
             interface A {

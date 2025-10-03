@@ -24,4 +24,12 @@ import groovy.transform.stc.CoercionSTCTest
  * Unit tests for static compilation : coercions.
  */
 final class CoercionStaticCompileTests extends CoercionSTCTest implements StaticCompilationTestSupport {
+
+    @Override // GROOVY-11769
+    void testCastObjectToInterface() {
+        super.testCastObjectToInterface()
+        String bytecode = astTrees.values()[0][1]
+        bytecode = bytecode.substring(bytecode.indexOf('m(Ljava/lang/Object;)'))
+        assert bytecode.count('CHECKCAST') == 1 // guarded typecast isn't groovy
+    }
 }
