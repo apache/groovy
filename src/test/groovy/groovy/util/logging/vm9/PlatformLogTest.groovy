@@ -18,161 +18,173 @@
  */
 package groovy.util.logging.vm9
 
-import groovy.test.GroovyTestCase
-import groovy.util.logging.PlatformLog
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.Before
+import org.junit.Test
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.Assume.assumeTrue
+
 /**
  * Test to make sure the @Log annotation is working correctly.
  */
-class PlatformLogTest extends GroovyTestCase {
+final class PlatformLogTest {
+
+    @Before
+    void setUp() {
+        assumeTrue(isAtLeastJdk('9'))
+    }
+
+    @Test
     void testPrivateFinalStaticLogFieldAppears() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             @groovy.util.logging.PlatformLog
             class MyClassPrivateFinalStaticLogFieldAppears { }
-        ''')
-
+        '''
         assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    Modifier.isPrivate(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
+            field.name == 'log'
+                && Modifier.isFinal(field.getModifiers())
+                && Modifier.isStatic(field.getModifiers())
+                && Modifier.isPrivate(field.getModifiers())
+                && Modifier.isTransient(field.getModifiers())
         }
     }
 
+    @Test
     void testPrivateFinalStaticNamedLogFieldAppears() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             @groovy.util.logging.PlatformLog('logger')
             class MyClassPrivateFinalStaticNamedLogFieldAppears { }
-        ''')
-
+        '''
         assert clazz.declaredFields.find { Field field ->
-            field.name == 'logger' &&
-                    Modifier.isPrivate(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
+            field.name == 'logger'
+                && Modifier.isFinal(field.getModifiers())
+                && Modifier.isStatic(field.getModifiers())
+                && Modifier.isPrivate(field.getModifiers())
+                && Modifier.isTransient(field.getModifiers())
         }
     }
 
+    @Test
     void testExplicitPrivateFinalStaticLogFieldAppears() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PRIVATE)
             @groovy.util.logging.PlatformLog
             class MyClassExplicitPrivateFinalStaticLogFieldAppears { }
-        ''')
-
+        '''
         assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    Modifier.isPrivate(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
+            field.name == 'log'
+                && Modifier.isFinal(field.getModifiers())
+                && Modifier.isStatic(field.getModifiers())
+                && Modifier.isPrivate(field.getModifiers())
+                && Modifier.isTransient(field.getModifiers())
         }
     }
 
+    @Test
     void testPackagePrivateFinalStaticLogFieldAppears() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PACKAGE_PRIVATE)
             @groovy.util.logging.PlatformLog
             class MyClassPackagePrivateFinalStaticLogFieldAppears { }
-        ''')
-
+        '''
         assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    !Modifier.isPrivate(field.getModifiers()) &&
-                    !Modifier.isProtected(field.getModifiers()) &&
-                    !Modifier.isPublic(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
+            field.name == 'log'
+                &&  Modifier.isFinal(field.getModifiers())
+                &&  Modifier.isStatic(field.getModifiers())
+                && !Modifier.isPublic(field.getModifiers())
+                && !Modifier.isPrivate(field.getModifiers())
+                && !Modifier.isProtected(field.getModifiers())
+                &&  Modifier.isTransient(field.getModifiers())
         }
     }
 
+    @Test
     void testProtectedFinalStaticLogFieldAppears() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PROTECTED)
             @groovy.util.logging.PlatformLog
             class MyClassProtectedFinalStaticLogFieldAppears { }
-        ''')
-
+        '''
         assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    Modifier.isProtected(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
+            field.name == 'log'
+                && Modifier.isFinal(field.getModifiers())
+                && Modifier.isStatic(field.getModifiers())
+                && Modifier.isProtected(field.getModifiers())
+                && Modifier.isTransient(field.getModifiers())
         }
     }
 
+    @Test
     void testPublicFinalStaticLogFieldAppears() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PUBLIC)
             @groovy.util.logging.PlatformLog
             class MyClassPublicFinalStaticLogFieldAppears { }
-        ''')
-
+        '''
         assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    Modifier.isPublic(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
+            field.name == 'log'
+                && Modifier.isFinal(field.getModifiers())
+                && Modifier.isStatic(field.getModifiers())
+                && Modifier.isPublic(field.getModifiers())
+                && Modifier.isTransient(field.getModifiers())
         }
     }
 
+    @Test
     void testClassAlreadyHasLogField() {
-        def msg = shouldFail {
-            Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.PlatformLog
-                class MyClassAlreadyHasLogField {
-                    String log
-                }
-            ''')
-
-            assert clazz.getConstructor().newInstance()
-        }
-        assert msg.contains('cannot have log field declared')
+        def err = shouldFail '''
+            @groovy.util.logging.PlatformLog
+            class MyClassAlreadyHasLogField {
+                String log
+            }
+        '''
+        assert err.message.contains('cannot have log field declared')
     }
 
+    @Test
     void testClassAlreadyHasNamedLogField() {
-        def msg = shouldFail {
-            Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.PlatformLog('logger')
-                class MyClassAlreadyHasNamedLogField {
-                    String logger
-                }
-            ''')
-            assert clazz.getConstructor().newInstance()
-        }
-        assert msg.contains('cannot have log field declared')
+        def err = shouldFail '''
+            @groovy.util.logging.PlatformLog('logger')
+            class MyClassAlreadyHasNamedLogField {
+                String logger
+            }
+        '''
+        assert err.message.contains('cannot have log field declared')
     }
 
-    @PlatformLog
-    static class MyClassLogFromStaticMethods {
-        static loggingMethod() {
-            log.info ('info    called')
-        }
-    }
-
+    @Test
     void testLogFromStaticMethods() {
-        MyClassLogFromStaticMethods.loggingMethod()
+        Class clazz = new GroovyClassLoader().parseClass '''
+            @groovy.util.logging.PlatformLog
+            class MyClassLogFromStaticMethods {
+                static loggingMethod() {
+                    log.info('info called')
+                }
+            }
+        '''
+        clazz.loggingMethod()
         def finder = System.LoggerFinder.getLoggerFinder()
         assert finder instanceof LoggerSpyFinder
         def logSpy = finder.spy
-        assert logSpy.infoParameter    == 'info    called'
+        try {
+            assert logSpy.infoParameter == 'info called'
+        } finally {
+            logSpy.reset()
+        }
     }
 
+    @Test
     void testLogInfo() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+        Class clazz = new GroovyClassLoader().parseClass '''
             @groovy.util.logging.PlatformLog
             class MyClassLogInfo {
                 def loggingMethod() {
@@ -183,45 +195,54 @@ class PlatformLogTest extends GroovyTestCase {
                     log.trace('trace   called')
                 }
             }
-        ''')
-        def s = clazz.getConstructor().newInstance()
-        s.loggingMethod()
+        '''
+        clazz.getConstructor().newInstance().loggingMethod()
         def finder = System.LoggerFinder.getLoggerFinder()
         assert finder instanceof LoggerSpyFinder
         def logSpy = finder.spy
-        assert logSpy.warningParameter == 'warning called'
-        assert logSpy.infoParameter    == 'info    called'
-        assert logSpy.debugParameter   == 'debug   called'
-        assert logSpy.traceParameter   == 'trace   called'
-        assert logSpy.errorParameter   == 'error   called'
-        logSpy.reset()
-    }
-
-    @PlatformLog('logger')
-    static class MyClassLogInfoWithName {
-        def loggingMethod() {
-            logger.error('error   called')
-            logger.warn ('warning called')
-            logger.info ('info    called')
-            logger.debug('debug   called')
-            logger.trace('trace   called')
+        try {
+            assert logSpy.warningParameter == 'warning called'
+            assert logSpy.infoParameter    == 'info    called'
+            assert logSpy.debugParameter   == 'debug   called'
+            assert logSpy.traceParameter   == 'trace   called'
+            assert logSpy.errorParameter   == 'error   called'
+        } finally {
+            logSpy.reset()
         }
     }
 
+    @Test
     void testLogInfoWithName() {
-        new MyClassLogInfoWithName().loggingMethod()
+        Class clazz = new GroovyClassLoader().parseClass '''
+            @groovy.util.logging.PlatformLog('logger')
+            class MyClassLogInfoWithName {
+                def loggingMethod() {
+                    logger.error('error   called')
+                    logger.warn ('warning called')
+                    logger.info ('info    called')
+                    logger.debug('debug   called')
+                    logger.trace('trace   called')
+                }
+            }
+        '''
+        clazz.getConstructor().newInstance().loggingMethod()
         def finder = System.LoggerFinder.getLoggerFinder()
         assert finder instanceof LoggerSpyFinder
         def logSpy = finder.spy
-        assert logSpy.warningParameter == 'warning called'
-        assert logSpy.infoParameter    == 'info    called'
-        assert logSpy.debugParameter   == 'debug   called'
-        assert logSpy.traceParameter   == 'trace   called'
-        assert logSpy.errorParameter   == 'error   called'
+        try {
+            assert logSpy.warningParameter == 'warning called'
+            assert logSpy.infoParameter    == 'info    called'
+            assert logSpy.debugParameter   == 'debug   called'
+            assert logSpy.traceParameter   == 'trace   called'
+            assert logSpy.errorParameter   == 'error   called'
+        } finally {
+            logSpy.reset()
+        }
     }
 
+    @Test
     void testInheritancePrivateNoShadowingIssue() {
-        def clazz = new GroovyShell().evaluate('''
+        Class clazz = new GroovyShell().evaluate '''
             class MyParentTestInheritance {
                 private log
             }
@@ -229,7 +250,7 @@ class PlatformLogTest extends GroovyTestCase {
             @groovy.util.logging.PlatformLog
             class MyClassTestInheritance extends MyParentTestInheritance {
                 def loggingMethod() {
-                    log.info   (prepareLogMessage())
+                    log.info(prepareLogMessage())
                 }
                 def prepareLogMessage() {
                     'formatted log message'
@@ -237,44 +258,40 @@ class PlatformLogTest extends GroovyTestCase {
             }
 
             return MyClassTestInheritance
-        ''')
-
+        '''
         assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    Modifier.isPrivate(field.getModifiers()) &&
-                    Modifier.isStatic(field.getModifiers()) &&
-                    Modifier.isTransient(field.getModifiers()) &&
-                    Modifier.isFinal(field.getModifiers())
+            field.name == 'log'
+                && Modifier.isFinal(field.getModifiers())
+                && Modifier.isStatic(field.getModifiers())
+                && Modifier.isPrivate(field.getModifiers())
+                && Modifier.isTransient(field.getModifiers())
         }
     }
 
+    @Test
     void testInheritanceProtectedShadowing() {
-        def msg = shouldFail(MultipleCompilationErrorsException) {
-            new GroovyClassLoader().parseClass('''
-                class MyParentProtectedShadowing {
-                    protected log
-                }
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            class MyParentProtectedShadowing {
+                protected log
+            }
 
-                @groovy.util.logging.PlatformLog
-                class MyClassProtectedShadowing extends MyParentProtectedShadowing { }
-            ''')
-        }
-        assert msg.contains('cannot have log field declared because the field exists in the parent class')
+            @groovy.util.logging.PlatformLog
+            class MyClassProtectedShadowing extends MyParentProtectedShadowing { }
+        '''
+        assert err.message.contains('cannot have log field declared because the field exists in the parent class')
     }
 
+    @Test
     void testInheritancePublicShadowing() {
-        def msg = shouldFail(MultipleCompilationErrorsException) {
-            new GroovyClassLoader().parseClass('''
-                class MyParentPublicShadowing {
-                    public log
-                }
+        def err = shouldFail MultipleCompilationErrorsException, '''
+            class MyParentPublicShadowing {
+                public log
+            }
 
-                @groovy.util.logging.PlatformLog
-                class MyClassPublicShadowing extends MyParentPublicShadowing {
-                }
-            ''')
-        }
-        assert msg.contains('cannot have log field declared because the field exists in the parent class')
+            @groovy.util.logging.PlatformLog
+            class MyClassPublicShadowing extends MyParentPublicShadowing {
+            }
+        '''
+        assert err.message.contains('cannot have log field declared because the field exists in the parent class')
     }
 }
-

@@ -20,11 +20,21 @@ package org.codehaus.groovy.vmplugin.v9
 
 import org.codehaus.groovy.control.ResolveVisitor
 import org.codehaus.groovy.vmplugin.VMPluginFactory
+import org.junit.Before
 import org.junit.Test
 
 import java.util.stream.Collectors
 
-class ClassFinderTest {
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeTrue
+
+final class ClassFinderTest {
+
+    @Before
+    void setUp() {
+        assumeTrue(isAtLeastJdk('9'))
+    }
+
     @Test
     void findGroovyClass() {
         Map<String, Set<String>> result = ClassFinder.find(GroovySystem.location.toURI(), "groovy/lang")

@@ -25,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 import static groovy.test.GroovyAssert.assertScript
 
-class StreamingTemplateEngineTest {
+final class StreamingTemplateEngineTest {
+
   TemplateEngine engine
   Map binding
   private static final String SIXTY_FOUR_K_OF_A
@@ -510,22 +511,21 @@ class StreamingTemplateEngineTest {
     '''
   }
 
+  @groovy.transform.CompileStatic
   static Class reloadClass(String className) {
-    def clazz =
-            new GroovyClassLoader() {
-              private final Map<String, Class> loadedClasses = new ConcurrentHashMap<String, Class>()
+    def loader = new GroovyClassLoader() {
+      private final Map<String, Class> loadedClasses = new ConcurrentHashMap<>()
 
-              @Override
-              Class loadClass(String name) {
-                if (name ==~ ('^' + className + '([$].+)?$')) {
-                  return loadedClasses.computeIfAbsent(name, n -> {
-                    def clazz = defineClass(n, GroovyClassLoader.class.getResourceAsStream('/' + n.replace('.', '/') + '.class').bytes)
-                    return clazz
-                  })
-                }
-                return super.loadClass(name)
-              }
-            }.loadClass(className)
-    return clazz
+      @Override
+      Class<?> loadClass(String name) {
+        if (name ==~ ('^' + className + '([$].+)?$')) {
+          return loadedClasses.computeIfAbsent(name, n -> {
+            defineClass(n, GroovyClassLoader.class.getResourceAsStream('/' + n.replace('.', '/') + '.class').getBytes())
+          })
+        }
+        return super.loadClass(name)
+      }
+    }
+    return loader.loadClass(className)
   }
 }
