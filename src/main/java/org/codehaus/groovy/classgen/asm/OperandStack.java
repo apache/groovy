@@ -375,7 +375,7 @@ public class OperandStack {
         } else {
             top = stack.get(size - 1);
             if (!WideningCategories.implementsInterfaceOrSubclassOf(top, targetType)) {
-                BytecodeHelper.doCast(mv,targetType);
+                BytecodeHelper.doCast(mv, targetType);
             }
         }
         replace(targetType);

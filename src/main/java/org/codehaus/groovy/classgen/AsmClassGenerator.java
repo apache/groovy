@@ -94,7 +94,6 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-import org.codehaus.groovy.ast.tools.WideningCategories;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
 import org.codehaus.groovy.classgen.asm.CompileStack;
@@ -132,7 +131,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.getField;
@@ -158,6 +156,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.thisPropX;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.isVargs;
+import static org.codehaus.groovy.ast.tools.WideningCategories.implementsInterfaceOrSubclassOf;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedNative;
 import static org.codehaus.groovy.transform.SealedASTTransformation.sealedSkipAnnotation;
 import static org.objectweb.asm.Opcodes.AALOAD;
@@ -994,8 +993,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     @Override
     public void visitCastExpression(final CastExpression castExpression) {
-        Expression subExpression = castExpression.getExpression();
-        subExpression.visit(this);
+        Expression expression = castExpression.getExpression();
+        expression.visit(this);
 
         ClassNode type = castExpression.getType();
         if (isObjectType(type)) return;
@@ -1004,19 +1003,13 @@ public class AsmClassGenerator extends ClassGenerator {
         OperandStack operandStack = controller.getOperandStack();
         if (castExpression.isCoerce()) {
             operandStack.doAsType(type);
+        } else if (isNullConstant(expression) && !isPrimitiveType(type)) {
+            operandStack.replace(type);
+        } else if (castExpression.isStrict() || (!isPrimitiveType(type) && implementsInterfaceOrSubclassOf(typeOf(expression), type))) {
+            BytecodeHelper.doCast(controller.getMethodVisitor(), type); // checkcast or unbox
+            operandStack.replace(type);
         } else {
-            if (isNullConstant(subExpression) && !isPrimitiveType(type)) {
-                operandStack.replace(type);
-            } else {
-                ClassNode subExprType = controller.getTypeChooser().resolveType(subExpression, controller.getClassNode());
-                if (castExpression.isStrict() ||
-                        (!isPrimitiveType(type) && WideningCategories.implementsInterfaceOrSubclassOf(subExprType, type))) {
-                    BytecodeHelper.doCast(controller.getMethodVisitor(), type);
-                    operandStack.replace(type);
-                } else {
-                    operandStack.doGroovyCast(type);
-                }
-            }
+            operandStack.doGroovyCast(type);
         }
     }
 
@@ -1192,7 +1185,7 @@ public class AsmClassGenerator extends ClassGenerator {
             return !controller.isStaticContext(); // TODO: not @POJO
         }
 
-        ClassNode objectExpressionType = controller.getTypeChooser().resolveType(objectExpression, controller.getClassNode());
+        ClassNode objectExpressionType = typeOf(objectExpression);
         if (isObjectType(objectExpressionType)) objectExpressionType = objectExpression.getType();
         return objectExpressionType.isDerivedFromGroovyObject();
     }
@@ -1456,9 +1449,7 @@ public class AsmClassGenerator extends ClassGenerator {
             pexp.visit(this);
 
             if (!compileStack.isLHS() && !expression.isDynamicTyped()) {
-                ClassNode variableType = controller.getTypeChooser()
-                    .resolveType(expression, controller.getClassNode());
-                controller.getOperandStack().doGroovyCast(variableType);
+                controller.getOperandStack().doGroovyCast(typeOf(expression));
             }
         }
 
@@ -2440,5 +2431,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void throwException(final String message) {
         throw new RuntimeParserException(message, currentASTNode);
+    }
+
+    private ClassNode typeOf(final Expression expr) {
+        return controller.getTypeChooser().resolveType(expr, controller.getClassNode());
     }
 }
