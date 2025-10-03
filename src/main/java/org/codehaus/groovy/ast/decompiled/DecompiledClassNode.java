@@ -96,7 +96,7 @@ public class DecompiledClassNode extends ClassNode {
         List<AnnotationStub> annotations = classData.annotations;
         if (annotations != null) {
             for (AnnotationStub stub : annotations) {
-                if (stub.className.equals("groovy.transform.Sealed")) {
+                if ("groovy.transform.Sealed".equals(stub.className)) {
                     return true;
                 }
             }
@@ -104,7 +104,7 @@ public class DecompiledClassNode extends ClassNode {
         // check Java "sealed"
         try {
             return ReflectionUtils.isSealed(getTypeClass());
-        } catch (NoClassDefFoundError ignored) {
+        } catch (AssertionError | LinkageError ignore) {
         }
         return false;
     }

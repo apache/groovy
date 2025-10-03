@@ -315,53 +315,53 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkClassForExtendingFinalOrSealed(final ClassNode cn) {
-        boolean sealed = Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.Sealed.class));
-        if (sealed && cn.getPermittedSubclasses().isEmpty()) {
-            addError("Sealed " + getDescription(cn) + " has no explicit or implicit permitted subclasses.", cn);
-            return;
-        }
         boolean isFinal = isFinal(cn.getModifiers());
-        if (sealed && isFinal) {
-            addError("The " + getDescription(cn) + " cannot be both final and sealed.", cn);
-            return;
-        }
-        boolean explicitNonSealed = nonSealed(cn);
-        ClassNode superCN = cn.getSuperClass();
-        boolean sealedSuper = superCN != null && superCN.isSealed();
-        boolean sealedInterface = Arrays.stream(cn.getInterfaces()).anyMatch(ClassNode::isSealed);
-        boolean nonSealedSuper = superCN != null && nonSealed(superCN);
-        boolean nonSealedInterface = Arrays.stream(cn.getInterfaces()).anyMatch(this::nonSealed);
+        boolean isSealed = Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.Sealed.class));
+        boolean isNonSealed = cn.getAnnotations().stream().anyMatch(an -> an.getClassNode().getName().equals("groovy.transform.NonSealed")); // GROOVY-11768
 
-        if (explicitNonSealed && !(sealedSuper || sealedInterface || nonSealedSuper || nonSealedInterface)) {
-            addError("The " + getDescription(cn) + " cannot be non-sealed as it has no sealed parent.", cn);
-            return;
+        ClassNode sc = cn.getSuperClass();
+        if (sc != null && isFinal(sc.getModifiers())) {
+            addError("You are not allowed to extend the final " + getDescription(sc) + ".", cn);
         }
-        if (sealedSuper || sealedInterface) {
-            if (sealed && explicitNonSealed) {
+
+        if (isFinal && isNonSealed) {
+            addError("The " + getDescription(cn) + " cannot be both final and non-sealed.", cn);
+        }
+        if (isSealed) {
+            if (isFinal) {
+                addError("The " + getDescription(cn) + " cannot be both final and sealed.", cn);
+            }
+            if (isNonSealed) {
                 addError("The " + getDescription(cn) + " cannot be both sealed and non-sealed.", cn);
-                return;
             }
-            if (isFinal && explicitNonSealed) {
-                addError("The " + getDescription(cn) + " cannot be both final and non-sealed.", cn);
-                return;
+            if (cn.getPermittedSubclasses().isEmpty()) {
+                addError("Sealed " + getDescription(cn) + " has no explicit or implicit permitted subclasses.", cn);
             }
-            if (sealedSuper) {
-                checkSealedParent(cn, superCN);
-            }
-            if (sealedInterface) {
-                for (ClassNode candidate : cn.getInterfaces()) {
-                    if (candidate.isSealed()) {
-                        checkSealedParent(cn, candidate);
-                    }
+        }
+
+        boolean sealedSuper = sc != null && sc.isSealed();
+        boolean nonSealedSuper = sc != null && isNonSealed(sc);
+        boolean sealedInterface = Arrays.stream(cn.getInterfaces()).anyMatch(ClassNode::isSealed);
+        boolean nonSealedInterface = Arrays.stream(cn.getInterfaces()).anyMatch(this::isNonSealed);
+
+        if (isNonSealed && !(sealedSuper || sealedInterface || nonSealedSuper || nonSealedInterface)) {
+            addError("The " + getDescription(cn) + " cannot be non-sealed as it has no sealed parent.", cn);
+        }
+        if (sealedSuper) {
+            checkSealedParent(cn, sc);
+        }
+        if (sealedInterface) {
+            for (ClassNode si : cn.getInterfaces()) {
+                if (si.isSealed()) {
+                    checkSealedParent(cn, si);
                 }
             }
         }
-        if (superCN == null || !isFinal(superCN.getModifiers())) return;
-        addError("You are not allowed to extend the final " + getDescription(superCN) + ".", cn);
     }
 
-    private boolean nonSealed(final ClassNode cn) {
-        if (Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.NonSealed.class))) {
+    private boolean isNonSealed(final ClassNode cn) {
+        if (cn.isPrimaryClassNode()
+                && Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.NonSealed.class))) {
             return true;
         }
         ClassNode sc = cn.getSuperClass(); // GROOVY-11292, GROOVY-11750: check super class
