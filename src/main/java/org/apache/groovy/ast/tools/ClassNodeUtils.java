@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.ast.tools;
 
-import groovy.transform.NonSealed;
 import org.apache.groovy.util.BeanUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassNode;
@@ -27,13 +26,11 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.transform.AbstractASTTransformation;
 
 import java.lang.reflect.Modifier;
@@ -50,7 +47,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static java.lang.reflect.Modifier.isFinal;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveType;
@@ -367,23 +363,22 @@ public class ClassNodeUtils {
      * @since 5.0.0
      */
     public static boolean isNonSealed(final ClassNode cn) {
-        if (cn instanceof DecompiledClassNode) {
-            Class<?> typeClass;
-            try {
-                typeClass = cn.getTypeClass();
-            } catch (NoClassDefFoundError e) {
-                return false;
-            }
-
-            final Class<?> superclass = typeClass.getSuperclass();
-            if (null == superclass) return false;
-            return ReflectionUtils.isSealed(superclass) && !(Modifier.isFinal(typeClass.getModifiers()) || ReflectionUtils.isSealed(typeClass));
+        if (cn.isArray() || isPrimitiveType(cn)) {
+            return false;
         }
-
-        if (Boolean.TRUE.equals(cn.getNodeMetaData(NonSealed.class))) return true;
-        final ClassNode superClass = cn.getSuperClass();
-        if (null == superClass) return false;
-        return superClass.isSealed() && !(isFinal(cn.getModifiers()) || cn.isSealed());
+        if (cn.isPrimaryClassNode()) {
+            if (Boolean.TRUE.equals(cn.getNodeMetaData(groovy.transform.NonSealed.class))) return true;
+        } else {
+            // GROOVY-11292, GROOVY-11750: check super class
+            try {
+                Class<?> tc = cn.getTypeClass();
+                Class<?> sc = tc.getSuperclass();
+                return sc != null && sc.isSealed() && !(Modifier.isFinal(tc.getModifiers()) || tc.isSealed());
+            } catch (AssertionError | LinkageError ignore) {
+            }
+        }
+        ClassNode sc = cn.getSuperClass();
+        return sc != null && sc.isSealed() && !(Modifier.isFinal(cn.getModifiers()) || cn.isSealed());
     }
 
     /**

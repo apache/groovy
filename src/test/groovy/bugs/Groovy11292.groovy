@@ -23,14 +23,25 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.isAtLeastJdk
-import static org.junit.Assume.assumeTrue
 
 final class Groovy11292 {
-    @Test
-    void testClassWithNonSealedParent_1() {
-        assumeTrue(isAtLeastJdk('17.0'))
 
+    @Test
+    void testClassWithNonSealedParent1() {
+        assertScript '''import java.lang.ref.SoftReference // non-sealed type
+
+            class TestReference<T> extends SoftReference<T> {
+                TestReference(T referent) {
+                    super(referent)
+                }
+            }
+
+            assert new TestReference(null)
+        '''
+    }
+
+    @Test
+    void testClassWithNonSealedParent2() {
         def config = new CompilerConfiguration(
             targetDirectory: File.createTempDir(),
             jointCompilationOptions: [memStub: true]
@@ -56,12 +67,10 @@ final class Groovy11292 {
             '''
             def e = new File(parentDir, 'E.groovy')
             e.write '''
-                @groovy.transform.CompileStatic
                 class E extends B {}
             '''
             def f = new File(parentDir, 'F.groovy')
             f.write '''
-                @groovy.transform.CompileStatic
                 class F extends E {}
             '''
 
@@ -75,26 +84,40 @@ final class Groovy11292 {
         }
     }
 
+    // GROOVY-11768
     @Test
-    void testClassWithNonSealedParent_2() {
-        assertScript '''
-            import org.codehaus.groovy.util.Finalizable
-            class TestReference<T>
-                extends java.lang.ref.SoftReference<T>
-                implements org.codehaus.groovy.util.Reference<T, Finalizable> {
+    void testClassWithNonSealedParent3() {
+        def config = new CompilerConfiguration(
+            targetDirectory: File.createTempDir(),
+            jointCompilationOptions: [memStub: true]
+        )
 
-                final Finalizable handler
+        def parentDir = File.createTempDir()
+        try {
+            def a = new File(parentDir, 'A.java')
+            a.write '''
+                public abstract sealed class A permits B {}
+            '''
+            def b = new File(parentDir, 'B.java')
+            b.write '''
+                public abstract non-sealed class B extends A {}
+            '''
+            def c = new File(parentDir, 'C.java')
+            c.write '''
+                public class C extends B {}
+            '''
+            def d = new File(parentDir, 'D.groovy')
+            d.write '''
+                class D extends C {}
+            '''
 
-                TestReference(T referent) {
-                    super(referent)
-                }
-
-                @Override
-                Finalizable getHandler() {
-                    return handler
-                }
-            }
-            assert new TestReference(null)
-        '''
+            def loader = new GroovyClassLoader(this.class.classLoader)
+            def cu = new JavaAwareCompilationUnit(config, loader)
+            cu.addSources(a, b, c, d)
+            cu.compile()
+        } finally {
+            config.targetDirectory.deleteDir()
+            parentDir.deleteDir()
+        }
     }
 }

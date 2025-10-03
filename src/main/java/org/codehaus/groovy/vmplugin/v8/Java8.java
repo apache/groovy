@@ -73,7 +73,6 @@ import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Java 8 based functions.
@@ -507,10 +506,11 @@ public class Java8 implements VMPlugin {
     }
 
     private void makePermittedSubclasses(final CompileUnit cu, final ClassNode classNode, final Class<?> clazz) {
-        if (!ReflectionUtils.isSealed(clazz)) return;
-        List<ClassNode> permittedSubclasses = Arrays.stream(ReflectionUtils.getPermittedSubclasses(clazz))
+        if (!clazz.isSealed()) return;
+        List<ClassNode> permittedSubclasses =
+            Arrays.stream(clazz.getPermittedSubclasses())
                 .map(c -> makeClassNode(cu, c, c))
-                .collect(Collectors.toList());
+                .toList();
         classNode.setPermittedSubclasses(permittedSubclasses);
     }
 

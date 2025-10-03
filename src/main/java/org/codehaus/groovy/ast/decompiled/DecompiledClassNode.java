@@ -27,7 +27,6 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Modifier;
@@ -103,8 +102,8 @@ public class DecompiledClassNode extends ClassNode {
         }
         // check Java "sealed"
         try {
-            return ReflectionUtils.isSealed(getTypeClass());
-        } catch (NoClassDefFoundError ignored) {
+            return getTypeClass().isSealed();
+        } catch (AssertionError | LinkageError ignored) {
         }
         return false;
     }

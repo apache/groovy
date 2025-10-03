@@ -57,7 +57,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.codehaus.groovy.control.CompilerConfiguration.ASM_API_VERSION;
-import static org.codehaus.groovy.reflection.ReflectionUtils.isSealed;
 import static org.objectweb.asm.Opcodes.AASTORE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -203,7 +202,7 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         this.implClasses.add(superClass);
         if (generateDelegateField) {
             implClasses.add(delegateClass);
-            Collections.addAll(this.implClasses, Arrays.stream(delegateClass.getInterfaces()).filter(c -> !isSealed(c)).toArray(Class[]::new));
+            Collections.addAll(this.implClasses, Arrays.stream(delegateClass.getInterfaces()).filter(c -> !c.isSealed()).toArray(Class[]::new));
         }
         if (interfaces != null) {
             Collections.addAll(this.implClasses, interfaces);
