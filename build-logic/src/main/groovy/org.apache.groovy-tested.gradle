@@ -17,7 +17,7 @@
  *  under the License.
  */
 import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
-import javax.inject.Inject
+import org.apache.tools.ant.taskdefs.condition.Os
 
 // Instead of adding to the test sources, this should
 // be a separate source set so that we can run spec tests in isolation
@@ -34,14 +34,13 @@ sourceSets {
 
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
-    def grapeDirectory = new File(temporaryDir, "grape")
+    def grapeDirectory = new File(temporaryDir, 'grape')
     def jdk8 = ['-XX:+UseConcMarkSweepGC']
-    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
-//        def jdk9 = ['-Djava.locale.providers=COMPAT,SPI', '--illegal-access=debug']
-    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-Duser.language=en"]
+    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI'/*, '--illegal-access=debug*/]
+    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en']
     if (JavaVersion.current().isJava9Compatible()) {
         jvmArgs(*common, *jdk9)
-        systemProperty "groovy.force.illegal.access", findProperty("groovy.force.illegal.access")
+        systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
     } else {
         jvmArgs(*common, *jdk8)
     }
@@ -58,7 +57,8 @@ tasks.withType(Test).configureEach {
     if (rootProject.hasProperty('target.java.home')) {
         String targetJavaHome = rootProject.property('target.java.home')?.trim()
         if (targetJavaHome) {
-            executable = "${targetJavaHome}/bin/java"
+            executable = [targetJavaHome,'bin','java'].join(File.separator)
+            if (Os.isFamily(Os.FAMILY_WINDOWS)) executable += '.exe'
             println "Using ${executable} to run tests"
         }
     }
@@ -89,7 +89,7 @@ tasks.withType(Test).configureEach {
     }
     doLast {
         fs.delete {
-            delete(files(".").filter { it.name.endsWith '.class' })
+            delete(files('.').filter { it.name.endsWith '.class' })
         }
     }
 }
@@ -116,6 +116,6 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
 }
 
 interface TestServices {
-    @Inject
+    @javax.inject.Inject
     FileSystemOperations getFileSystemOperations()
 }
