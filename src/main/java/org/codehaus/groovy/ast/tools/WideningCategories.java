@@ -269,11 +269,16 @@ public class WideningCategories {
             ClassNode t1 = upperBound(agt[i]);
             ClassNode t2 = upperBound(bgt[i]);
             ClassNode basicType;
+            // TODO GROOVY-11770: we should add more cases where we can determine the correct LUB
             if (areEqualWithGenerics(t1, isPrimitiveType(a)?getWrapper(a):a) && areEqualWithGenerics(t2, isPrimitiveType(b)?getWrapper(b):b)) {
                 // "String implements Comparable<String>" and "StringBuffer implements Comparable<StringBuffer>"
                 basicType = fallback; // do not loop
             } else {
-                basicType = lowestUpperBound(t1, t2);
+                try {
+                    basicType = lowestUpperBound(t1, t2);
+                } catch (StackOverflowError ignore) {
+                    basicType = fallback; // best we can do for now
+                }
             }
             if (agt[i].isWildcard() || bgt[i].isWildcard() || !t1.equals(t2)) {
                 lubGTs[i] = GenericsUtils.buildWildcardType(basicType);
