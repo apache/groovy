@@ -39,7 +39,7 @@ jobs:
             ${{ matrix.java }}
             21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - name: Test with Gradle
         run: ./gradlew test -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
         timeout-minutes: 60
@@ -65,7 +65,7 @@ jobs:
             ${{ matrix.java }}
             21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
       - name: Test with Gradle
         run: ./gradlew test -Ptarget.java.home="$JAVA_HOME_${{ matrix.java }}_X64"
         timeout-minutes: 60
