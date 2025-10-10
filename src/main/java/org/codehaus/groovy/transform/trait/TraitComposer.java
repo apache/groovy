@@ -333,7 +333,10 @@ public abstract class TraitComposer {
         ClassNode returnType = GenericsUtils.correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
         boolean castRequired = !genericsSpec.isEmpty() && !helperMethod.isVoidMethod();
 
-        int modifiers = helperMethod.getModifiers();
+        int modifiers = helperMethod.getModifiers() & ~Opcodes.ACC_PROTECTED;
+        if (!helperMethod.isPublic()) {
+            modifiers |= Opcodes.ACC_PRIVATE;
+        }
         if (!ClassHelper.isClassType(helperMethodParams[0].getOriginType())) {
             modifiers &= ~Opcodes.ACC_STATIC;
         }
