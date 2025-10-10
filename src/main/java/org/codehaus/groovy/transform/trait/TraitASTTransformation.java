@@ -87,6 +87,7 @@ import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -569,43 +570,55 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private MethodNode processMethod(final ClassNode traitClass, final ClassNode traitHelperClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
-        Parameter[] initialParams = methodNode.getParameters();
-        Parameter[] newParams = new Parameter[initialParams.length + 1];
-        newParams[0] = createSelfParameter(traitClass, methodNode.isStatic());
-        System.arraycopy(initialParams, 0, newParams, 1, initialParams.length);
-        final int mod = methodNode.isPrivate() ? ACC_PRIVATE : ACC_PUBLIC | (methodNode.isFinal() ? ACC_FINAL : 0);
+        boolean isAbstractMethod = methodNode.isAbstract();
+        boolean isPrivateMethod = methodNode.isPrivate();
+        boolean isStaticMethod = methodNode.isStatic();
+
+        int modifiers = ACC_PUBLIC;
+        if (isAbstractMethod) {
+            modifiers |= ACC_ABSTRACT;
+        } else {
+            // public or private
+            if (isPrivateMethod) {
+                modifiers ^= ACC_PUBLIC | (!isStaticMethod ? ACC_PRIVATE : ACC_PROTECTED); // GROOVY-11776
+            }
+            // static or final (maybe)
+            if (!isStaticMethod && methodNode.isFinal()) {
+                modifiers |= ACC_FINAL;
+            }
+            modifiers |= ACC_STATIC;
+        }
+
+        Parameter[] methodParams = methodNode.getParameters();
+        Parameter[] helperParams = new Parameter[methodParams.length + 1];
+        helperParams[0] = createSelfParameter(traitClass, isStaticMethod);
+        System.arraycopy(methodParams, 0, helperParams, 1, methodParams.length);
+
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
-                mod | ACC_STATIC,
+                modifiers,
                 methodNode.getReturnType(),
-                newParams,
+                helperParams,
                 methodNode.getExceptions(),
-                processBody(varX(newParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
+                processBody(varX(helperParams[0]), methodNode.getCode(), traitClass, traitHelperClass, fieldHelper, knownFields)
         );
-        mNode.setSourcePosition(methodNode);
-        mNode.addAnnotations(filterAnnotations(methodNode.getAnnotations()));
+        for (AnnotationNode annotation : methodNode.getAnnotations()) {
+            if (!annotation.getClassNode().equals(OVERRIDE_TYPE)) {
+                mNode.addAnnotation(annotation);
+            }
+        }
         mNode.setGenericsTypes(methodNode.getGenericsTypes());
-        if (methodNode.isAbstract()) {
-            mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
-        } else {
-            methodNode.addAnnotation(new AnnotationNode(Traits.IMPLEMENTED_CLASSNODE));
+        mNode.setSourcePosition(methodNode);
+
+        if (!isAbstractMethod) {
+            methodNode.addAnnotation(Traits.IMPLEMENTED_CLASSNODE);
+        }
+        if (!isPrivateMethod && !isStaticMethod) {
+            methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         }
         methodNode.setCode(null);
 
-        if (!methodNode.isPrivate() && !methodNode.isStatic()) {
-            methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
-        }
         return mNode;
-    }
-
-    private static List<AnnotationNode> filterAnnotations(final List<AnnotationNode> annotations) {
-        List<AnnotationNode> result = new ArrayList<>(annotations.size());
-        for (AnnotationNode annotation : annotations) {
-            if (!annotation.getClassNode().equals(OVERRIDE_TYPE)) {
-                result.add(annotation);
-            }
-        }
-        return result;
     }
 
     private static Parameter createSelfParameter(final ClassNode traitClass, boolean isStatic) {
