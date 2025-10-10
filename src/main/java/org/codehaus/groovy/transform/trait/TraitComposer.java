@@ -335,28 +335,32 @@ public abstract class TraitComposer {
                 helperMethodArgList
         );
         mce.setImplicitThis(false);
+        if (!helperMethod.isPrivate()) mce.setMethodTarget(helperMethod); // GROOVY-11776
 
-        ClassNode[] exceptionNodes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
-        ClassNode fixedReturnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
-        boolean noCastRequired = genericsSpec.isEmpty() || fixedReturnType.getName().equals(ClassHelper.VOID_TYPE.getName());
-        Expression forwardExpression = noCastRequired ? mce : new CastExpression(fixedReturnType,mce);
-        // we could rely on the first parameter name ($static$self) but that information is not
-        // guaranteed to be always present
-        boolean isHelperForStaticMethod = helperMethodParams[0].getOriginType().equals(ClassHelper.CLASS_Type);
+        ClassNode[] exceptionTypes = correctToGenericsSpecRecurse(genericsSpec, copyExceptions(helperMethod.getExceptions()));
+        ClassNode returnType = correctToGenericsSpecRecurse(genericsSpec, helperMethod.getReturnType());
+        // we could rely on the first parameter name ($static$self) but that information is not guaranteed to be always present
+        boolean noCastRequired = genericsSpec.isEmpty() || ClassHelper.VOID_TYPE.equals(returnType);
+        Expression forwardExpression = noCastRequired ? mce : new CastExpression(returnType, mce);
+
+        boolean isHelperForStaticMethod = ClassHelper.CLASS_Type.equals(helperMethodParams[0].getOriginType());
         if (helperMethod.isPrivate() && !isHelperForStaticMethod) {
-            // GROOVY-7213: do not create forwarder for private methods
-            return;
+            return; // GROOVY-7213: don't create forwarder for private method
         }
-        int modifiers = helperMethod.getModifiers();
+        int modifiers = helperMethod.getModifiers() & ~Opcodes.ACC_PROTECTED;
+        if (!helperMethod.isPublic()) {
+            modifiers |= Opcodes.ACC_PRIVATE;
+        }
         if (!isHelperForStaticMethod) {
-            modifiers ^= Opcodes.ACC_STATIC;
+            modifiers &= ~Opcodes.ACC_STATIC;
         }
+
         MethodNode forwarder = new MethodNode(
                 helperMethod.getName(),
                 modifiers,
-                fixedReturnType,
+                returnType,
                 forwarderParams,
-                exceptionNodes,
+                exceptionTypes,
                 new ExpressionStatement(forwardExpression)
         );
         List<AnnotationNode> copied = new LinkedList<>();
