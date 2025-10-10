@@ -619,14 +619,33 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
     }
 
     private MethodNode processMethod(final ClassNode traitClass, final ClassNode traitHelperClass, final MethodNode methodNode, final ClassNode fieldHelper, final Collection<String> knownFields) {
+        boolean isAbstractMethod = methodNode.isAbstract();
+        boolean isPrivateMethod = methodNode.isPrivate();
+        boolean isStaticMethod = methodNode.isStatic();
+
+        int modifiers = ACC_PUBLIC;
+        if (isAbstractMethod) {
+            modifiers |= ACC_ABSTRACT;
+        } else {
+            // public or private
+            if (isPrivateMethod) {
+                modifiers ^= ACC_PUBLIC | ACC_PRIVATE;
+            }
+            // static or final (maybe)
+            if (!isStaticMethod && methodNode.isFinal()) {
+                modifiers |= ACC_FINAL;
+            }
+            modifiers |= ACC_STATIC;
+        }
+
         Parameter[] methodParams = methodNode.getParameters();
         Parameter[] helperParams = new Parameter[methodParams.length + 1];
-        helperParams[0] = createSelfParameter(traitClass,methodNode.isStatic());
+        helperParams[0] = createSelfParameter(traitClass, isStaticMethod);
         System.arraycopy(methodParams, 0, helperParams, 1, methodParams.length);
 
         MethodNode mNode = new MethodNode(
                 methodNode.getName(),
-                (methodNode.isPrivate() ? ACC_PRIVATE : ACC_PUBLIC) | (methodNode.isFinal() ? ACC_FINAL : 0) | ACC_STATIC,
+                modifiers,
                 methodNode.getReturnType(),
                 helperParams,
                 methodNode.getExceptions(),
@@ -639,12 +658,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }
         mNode.setGenericsTypes(methodNode.getGenericsTypes());
         mNode.setSourcePosition(methodNode);
-        if (methodNode.isAbstract()) {
-            mNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
-        } else {
-            methodNode.addAnnotation(new AnnotationNode(Traits.IMPLEMENTED_CLASSNODE));
+
+        if (!isAbstractMethod) {
+            methodNode.addAnnotation(Traits.IMPLEMENTED_CLASSNODE);
         }
-        if (!methodNode.isPrivate() && !methodNode.isStatic()) {
+        if (!isPrivateMethod && !isStaticMethod) {
             methodNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT);
         }
         methodNode.setCode(null);
