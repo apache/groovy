@@ -473,15 +473,13 @@ public class AsmClassGenerator extends ClassGenerator {
         int[] n = {this.context.getClosureClassIndex()};
         for (ClassNode innerClass : getInnerClasses()) {
             if (innerClass instanceof InterfaceHelperClassNode) continue;
-            var doCall = innerClass.getMethods().get(0);
-            doCall.getCode().visit(new CodeVisitorSupport() {
+            var toVisit = new TreeMap<String, ClosureExpression>(); // GROOVY-11780
+            var visitor = new CodeVisitorSupport() {
                 private String name = BytecodeHelper.getClassInternalName(innerClass);
                 private void visitNested(final String kind, final ClosureExpression expr) {
-                    String save = name;
-                    name += "$_" + kind + n[0]++;
-                    classVisitor.visitNestMember(name);
-                    super.visitClosureExpression(expr);
-                    name = save;
+                    String nest = name + "$_" + kind + n[0]++;
+                    classVisitor.visitNestMember(nest);
+                    toVisit.put(nest, expr);
                 }
                 @Override
                 public  void visitClosureExpression(final ClosureExpression expression) {
@@ -496,7 +494,19 @@ public class AsmClassGenerator extends ClassGenerator {
                         super.visitLambdaExpression(expression);
                     }
                 }
-            });
+            };
+
+            MethodNode doCall = innerClass.getMethods().get(0);
+            doCall.getCode().visit(visitor);
+
+            while (!toVisit.isEmpty()) {
+                var iter = toVisit.entrySet().iterator(); // take first entry
+                var next = iter.next();
+                iter.remove();
+
+                visitor.name = next.getKey(); // traverse
+                next.getValue().getCode().visit(visitor);
+            }
         }
     }
 

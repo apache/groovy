@@ -134,4 +134,47 @@ final class NestHostTests {
             assert type.nestMembers*.name.sort() == ['C', 'C$_closure1', 'C$_closure1$_closure2', 'C$_closure1$_closure2$_lambda3']
         }
     }
+
+    // GROOVY-11780
+    @Test
+    void testNestHost7() {
+        def types = compileScript '''
+            class C {
+                def aaa() {
+                    { ->
+                        { ->
+                            { ->
+                                { ->
+                                }
+                            }
+                        }
+                        { ->
+                            { ->
+                            }
+                        }
+                    }
+                    { ->
+                        { ->
+                        }
+                    }
+                }
+                def bbb() {
+                    { ->
+                        { ->
+                        }
+                    }
+                }
+            }
+        '''
+
+        types.each { type ->
+            assert type.nestHost.name == 'C'
+            assert type.nestMembers*.name.sort() == ['C',
+                'C$_aaa_closure1', 'C$_aaa_closure1$_closure4', 'C$_aaa_closure1$_closure4$_closure6', 'C$_aaa_closure1$_closure4$_closure6$_closure7',
+                                   'C$_aaa_closure1$_closure5', 'C$_aaa_closure1$_closure5$_closure8',
+                'C$_aaa_closure2', 'C$_aaa_closure2$_closure9',
+                'C$_bbb_closure3', 'C$_bbb_closure3$_closure10'
+            ]
+        }
+    }
 }
