@@ -889,9 +889,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         Class<?> instanceKlazz = instance.getClass();
-        if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
+        if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz)) {
             instanceKlazz = theClass;
-
+        }
         Class<?>[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
         MetaMethod method = findMixinMethod(methodName, argClasses);
@@ -914,7 +914,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return method.invoke(instance, invokeMethodArgs);
         }
 
-        // last resort look in the category
+        // last resort: look in the category
         if (method == null && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodMissing(instanceKlazz);
             if (method != null) {
@@ -922,29 +922,27 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
+        if (theClass != Class.class && instance instanceof Class) { // GROOVY-11781
+            return invokeStaticMissingMethod((Class<?>) instance, methodName, arguments);
+        }
         if (methodMissing != null) {
             try {
                 return methodMissing.invoke(instance, new Object[]{methodName, arguments});
             } catch (InvokerInvocationException iie) {
                 if (methodMissing instanceof ClosureMetaMethod && iie.getCause() instanceof MissingMethodException) {
                     MissingMethodException mme = (MissingMethodException) iie.getCause();
-                    throw new MissingMethodExecutionFailed(mme.getMethod(), mme.getClass(),
-                            mme.getArguments(), mme.isStatic(), mme);
+                    throw new MissingMethodExecutionFailed(mme.getMethod(), mme.getClass(), mme.getArguments(), mme.isStatic(), mme);
                 }
                 throw iie;
             } catch (MissingMethodException mme) {
                 if (methodMissing instanceof ClosureMetaMethod) {
-                    throw new MissingMethodExecutionFailed(mme.getMethod(), mme.getClass(),
-                            mme.getArguments(), mme.isStatic(), mme);
-                } else {
-                    throw mme;
+                    throw new MissingMethodExecutionFailed(mme.getMethod(), mme.getClass(), mme.getArguments(), mme.isStatic(), mme);
                 }
+                throw mme;
             }
-        } else if (original != null) {
-            throw original;
-        } else {
-            throw new MissingMethodExceptionNoStack(methodName, theClass, arguments, false);
         }
+
+        throw original != null ? original : new MissingMethodExceptionNoStack(methodName, theClass, arguments, false);
     }
 
     protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
@@ -1018,9 +1016,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         var ownerMetaClass = registry.getMetaClass(ownerClass);
         try {
             return ownerMetaClass.invokeMethod(ownerClass, owner, method, arguments, false, false);
-        } catch (GroovyRuntimeException e) { // GroovyRuntimeException(cause:IllegalArgumentException) thrown for final fields
-                                             // InvokerInvocationException(cause:IllegalArgumentException) thrown for not this
-            if (!ownerIsClass || !(e instanceof MissingMethodException || e.getCause() instanceof IllegalArgumentException)) {
+        } catch (GroovyRuntimeException e) { // GroovyRuntimeException(cause:IllegalArgumentException) thrown for final field
+                                             // InvokerInvocationException(cause:MissingMethodException) thrown for not found
+            if (!ownerIsClass || !(e instanceof MissingMethodException || e.getCause() instanceof MissingMethodException || e.getCause() instanceof IllegalArgumentException)) {
                 throw e;
             }
             if (MethodClosure.NEW.equals(method)) {

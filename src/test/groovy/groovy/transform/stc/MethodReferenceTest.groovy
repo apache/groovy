@@ -19,6 +19,8 @@
 package groovy.transform.stc
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -1517,41 +1519,39 @@ final class MethodReferenceTest {
     }
 
     // GROOVY-10859
-    @Test
-    void testDynamicMethodSelection() {
-        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
-            assertScript shell, """
-                $tag
-                void test() {
-                    def result = [[]].stream().flatMap(List::stream).toList()
-                    assert result.isEmpty()
-                }
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testDynamicMethodSelection(String tag) {
+        assertScript shell, """
+            $tag
+            void test() {
+                def result = [[]].stream().flatMap(List::stream).toList()
+                assert result.isEmpty()
+            }
 
-                test()
-            """
-        }
+            test()
+        """
     }
 
     // GROOVY-10904
-    @Test
-    void testPropertyMethodLocation() {
-        for (tag in ['@TypeChecked', '@CompileStatic', '@CompileDynamic']) {
-            assertScript shell, """
-                $tag
-                class Test {
-                    static class Profile {
-                        String foo, bar
-                    }
-
-                    Map<String, Profile> profiles = [new Profile()].stream()
-                        .collect(Collectors.toMap(Profile::getFoo, Function.identity()))
-
-                    static main(args) {
-                        assert this.newInstance().getProfiles().size() == 1
-                    }
+    @ParameterizedTest
+    @ValueSource(strings=['@CompileDynamic','@TypeChecked','@CompileStatic'])
+    void testPropertyMethodLocation(String tag) {
+        assertScript shell, """
+            $tag
+            class Test {
+                static class Profile {
+                    String foo, bar
                 }
-            """
-        }
+
+                Map<String, Profile> profiles = [new Profile()].stream()
+                    .collect(Collectors.toMap(Profile::getFoo, Function.identity()))
+
+                static main(args) {
+                    assert this.newInstance().getProfiles().size() == 1
+                }
+            }
+        """
     }
 
     // GROOVY-10742, GROOVY-10858

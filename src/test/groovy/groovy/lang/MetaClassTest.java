@@ -18,59 +18,68 @@
  */
 package groovy.lang;
 
-import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MetaClassTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-    public void testMetaClass() {
-        Class foo = String[].class;
+final class MetaClassTest {
+
+    @Test
+    void testMetaClass() {
+        Class<?> foo = String[].class;
         System.out.println(foo + " name: " + foo.getName());
 
         MetaClass metaClass = InvokerHelper.getMetaClass(this);
 
-        assertTrue("got metaclass", metaClass != null);
+        assertNotNull(metaClass, "got metaclass");
 
         metaClass.invokeMethod(this, "doSomething", new Object[0]);
     }
 
-    public void testArray() {
+    @Test
+    void testArray() {
         String[] value = new String[]{"hello"};
 
         MetaClass metaClass = InvokerHelper.getMetaClass(value);
 
-        assertTrue("got metaclass", metaClass != null);
+        assertNotNull(metaClass, "got metaclass");
 
         metaClass.invokeMethod(value, "toString", new Object[0]);
     }
 
-    public void testString() {
+    @Test
+    void testString() {
         String value = "hello";
 
         MetaClass metaClass = InvokerHelper.getMetaClass(value);
 
-        assertTrue("got metaclass", metaClass != null);
+        assertNotNull(metaClass, "got metaclass");
 
         Object answer = metaClass.invokeMethod(value, "toString", new Object[0]);
 
         assertEquals("hello", answer);
     }
 
-    public void testObject() {
+    @Test
+    void testObject() {
         Object value = new Object();
 
         MetaClass metaClass = InvokerHelper.getMetaClass(value);
 
-        assertTrue("got metaclass", metaClass != null);
+        assertNotNull(metaClass, "got metaclass");
 
         metaClass.invokeMethod(value, "toString", new Object[0]);
     }
 
-    public void testPublicField() {
+    @Test
+    void testPublicField() {
         DymmyClass dymmyClass = new DymmyClass();
 
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
@@ -85,13 +94,39 @@ public class MetaClassTest extends GroovyTestCase {
         assertEquals(dymmyClass.y, "newvalue");
     }
 
-    public void testSetPropertyWithInt() {
+    // GROOVY-11781
+    @Test
+    void testMethodMissing() {
+        MetaClass metaClass = InvokerHelper.getMetaClass(DymmyClass.class);
+
+        assertThrows(MissingMethodException.class, () -> {
+            metaClass.invokeMissingMethod(DymmyClass.class, "xxx", new Object[0]);
+        });
+    }
+
+    @Test
+    void testGetPropertyMissing() {
+        class Pojo {
+            @SuppressWarnings("unused")
+            public static Object $static_propertyMissing(String name) {
+                if (name.equals("fizz")) return "buzz";
+                throw new MissingPropertyException(name, Pojo.class);
+            }
+        }
+
+        MetaClass metaClass = InvokerHelper.getMetaClass(Pojo.class);
+        assertEquals("buzz", metaClass.getProperty(null, Pojo.class, "fizz", false, false));
+    }
+
+    @Test
+    void testSetPropertyWithInt() {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
         metaClass.setProperty(dymmyClass, "anInt", Integer.valueOf(10));
     }
 
-    public void testSetPropertyWithDoubleArray() {
+    @Test
+    void testSetPropertyWithDoubleArray() {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
         Double[][] matrix2 =
@@ -107,7 +142,8 @@ public class MetaClassTest extends GroovyTestCase {
         metaClass.setProperty(dymmyClass, "matrix2", matrix2);
     }
 
-    public void testSetPropertyWithArray() {
+    @Test
+    void testSetPropertyWithArray() {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
 
@@ -126,12 +162,13 @@ public class MetaClassTest extends GroovyTestCase {
         assertEquals(integers, metaClass.getProperty(dymmyClass, "integers"));
     }
 
-    public void testSetPropertyWithList() {
+    @Test
+    void testSetPropertyWithList() {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
 
         // test list
-        ArrayList list = new ArrayList();
+        var list = new ArrayList<Integer>();
         list.add(Integer.valueOf(120));
         list.add(Integer.valueOf(150));
 
@@ -142,74 +179,75 @@ public class MetaClassTest extends GroovyTestCase {
         metaClass.setProperty(dymmyClass, "integers", list);
     }
 
-    public void testMetaMethodsOnlyAddedOnce() {
+    @Test
+    void testMetaMethodsOnlyAddedOnce() {
         MetaClass metaClass = InvokerHelper.getMetaClass("some String");
 
-        List methods = metaClass.getMetaMethods();
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            MetaMethod method = (MetaMethod) iter.next();
+        List<MetaMethod> methods = metaClass.getMetaMethods();
+        for (Iterator<MetaMethod> iter = methods.iterator(); iter.hasNext(); ) {
+            MetaMethod method = iter.next();
             int count = 0;
-            for (Iterator inner = methods.iterator(); inner.hasNext();) {
-                MetaMethod runner = (MetaMethod) inner.next();
+            for (Iterator<MetaMethod> inner = methods.iterator(); inner.hasNext(); ) {
+                MetaMethod runner = inner.next();
                 if (method.equals(runner)) {
                     System.out.println("runner = " + runner);
                     System.out.println("method = " + method);
                     count++;
                 }
             }
-            assertEquals("count of Method " + method.getName(), 1, count);
+            assertEquals(1, count, "count of Method " + method.getName());
         }
-
     }
 
+    //--------------------------------------------------------------------------
 
     public void doSomething() {
         System.out.println("Called doSomething()");
     }
+
+    static class DymmyClass {
+        public int x = 0;
+        public String y = "none";
+        private int anInt;
+        private int[] ints;
+        private Integer[] integers;
+        double[][] matrix2;
+        Double[][] matrix;
+
+        public Integer[] getIntegers() {
+            return integers;
+        }
+
+        public void setIntegers(Integer[] integers) {
+            this.integers = integers;
+        }
+
+        public int[] getInts() {
+            return ints;
+        }
+
+        public void setInts(int[] ints) {
+            this.ints = ints;
+        }
+
+        public int getAnInt() {
+            return anInt;
+        }
+
+        public void setAnInt(int anInt) {
+            this.anInt = anInt;
+        }
+
+        public void setMatrix(Double[][] matrix) {
+            this.matrix = matrix;
+        }
+
+        public void setMatrix2(double[][] matrixReloaded) {
+            this.matrix2 = matrixReloaded;
+        }
+
+        public Object methodMissing(String name, Object args) {
+            throw new MissingMethodException(name, getClass(), InvokerHelper.asArray(args));
+        }
+    }
 }
-
-
-class DymmyClass {
-    public int x = 0;
-    public String y = "none";
-
-    private int anInt;
-    private int[] ints;
-    private Integer[] integers;
-    double[][] matrix2;
-    Double[][] matrix;
-
-    public Integer[] getIntegers() {
-        return integers;
-    }
-
-    public void setIntegers(Integer[] integers) {
-        this.integers = integers;
-    }
-
-    public int[] getInts() {
-        return ints;
-    }
-
-    public void setInts(int[] ints) {
-        this.ints = ints;
-    }
-
-    public int getAnInt() {
-        return anInt;
-    }
-
-    public void setAnInt(int anInt) {
-        this.anInt = anInt;
-    }
-
-    public void setMatrix(Double[][] matrix) {
-        this.matrix = matrix;
-    }
-
-    public void setMatrix2(double[][] matrixReloaded) {
-        this.matrix2 = matrixReloaded;
-    }
-
-}
-
