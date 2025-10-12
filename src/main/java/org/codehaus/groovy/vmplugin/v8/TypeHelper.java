@@ -25,34 +25,41 @@ import java.math.BigInteger;
 
 /**
  * This class contains helper methods for converting and comparing types.
- * WARNING: This class is for internal use only. do not use it outside of its
- * package and not outside groovy-core.
+ * WARNING: This class is for internal use only. Do not use it outside of its
+ * package and not outside of groovy-core.
  */
 public class TypeHelper {
+
+    protected static Class<?> getUnboxedType(Class<?> c) {
+        if (c == null || c.isPrimitive())                ;
+        else if (c ==   Boolean.class) c =   Boolean.TYPE;
+        else if (c ==      Byte.class) c =      Byte.TYPE;
+        else if (c == Character.class) c = Character.TYPE;
+        else if (c ==     Float.class) c =     Float.TYPE;
+        else if (c ==    Double.class) c =    Double.TYPE;
+        else if (c ==   Integer.class) c =   Integer.TYPE;
+        else if (c ==      Long.class) c =      Long.TYPE;
+        else if (c ==     Short.class) c =     Short.TYPE;
+      //else if (c ==      Void.class) c =      Void.TYPE;
+        return c;
+    }
+
     /**
-     * Get wrapper class for a given class.
-     * If the class is for a primitive number type, then the wrapper class
-     * will be returned. If it is no primitive number type, we return the
-     * class itself.
+     * Gets wrapper class for a given class. If the class is for a primitive
+     * number type, then the wrapper class will be returned. If it is not a
+     * primitive number type, we return the class itself.
      */
     protected static Class<?> getWrapperClass(Class<?> c) {
-        if (c == Integer.TYPE) {
-            c = Integer.class;
-        } else if (c == Byte.TYPE) {
-            c = Byte.class;
-        } else if (c == Long.TYPE) {
-            c = Long.class;
-        } else if (c == Double.TYPE) {
-            c = Double.class;
-        } else if (c == Float.TYPE) {
-            c = Float.class;
-        } else if (c == Boolean.TYPE) {
-            c = Boolean.class;
-        } else if (c == Character.TYPE) {
-            c = Character.class;
-        } else if (c == Short.TYPE) {
-            c = Short.class;
-        }
+        if (c == null || !c.isPrimitive())               ;
+        else if (c ==   Integer.TYPE) c =   Integer.class;
+        else if (c ==      Byte.TYPE) c =      Byte.class;
+        else if (c ==      Long.TYPE) c =      Long.class;
+        else if (c ==    Double.TYPE) c =    Double.class;
+        else if (c ==     Float.TYPE) c =     Float.class;
+        else if (c ==   Boolean.TYPE) c =   Boolean.class;
+        else if (c == Character.TYPE) c = Character.class;
+        else if (c ==     Short.TYPE) c =     Short.class;
+      //else if (c ==      Void.TYPE) c =      Void.class;
         return c;
     }
 
