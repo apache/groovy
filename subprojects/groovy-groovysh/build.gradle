@@ -34,7 +34,7 @@ dependencies {
     implementation projects.groovyJson
     implementation projects.groovyNio
     testImplementation projects.groovyTest
-    implementation 'net.java.dev.jna:jna:5.18.0'
+    implementation "net.java.dev.jna:jna:${versions.jna}"
     implementation "org.jline:jansi:${versions.jline}"
     implementation "org.jline:jline-reader:${versions.jline}"
     implementation "org.jline:jline-console:${versions.jline}"
