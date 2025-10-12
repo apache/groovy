@@ -86,6 +86,7 @@ import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MET
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_GET;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_CONSTRUCTOR;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.MOP_INVOKE_METHOD;
+import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NON_NULL;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.NULL_REF;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_CLASS;
 import static org.codehaus.groovy.vmplugin.v8.IndyGuardsFiltersAndSignatures.SAME_MC;
@@ -899,8 +900,7 @@ public abstract class Selector {
          * Sets all argument and receiver guards.
          */
         public void setGuards(Object receiver) {
-            if (handle == null) return;
-            if (!cache) return;
+            if (!cache || handle == null) return;
 
             MethodHandle fallback;
             if (callSite instanceof CacheableCallSite) {
@@ -925,7 +925,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("added class equality check");
             }
 
-            if (!useMetaClass && isCategoryMethod) {
+            if (isCategoryMethod && !useMetaClass) {
                 // category method needs Thread check
                 // cases:
                 // (1) method is a category method
@@ -950,20 +950,16 @@ public abstract class Selector {
             Class<?>[] pt = handle.type().parameterArray();
             for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
-                Class<?> paramType = pt[i];
                 MethodHandle test;
-
                 if (arg == null) {
-                    test = IS_NULL.asType(MethodType.methodType(boolean.class, paramType));
+                    test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                     if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
+                } else if (pt[i].isPrimitive()) { // GROOVY-11782: if null then uncache
+                    test = NON_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
+                    if (LOG_ENABLED) LOG.info("added non-null argument check at pos " + i);
                 } else {
-                    Class<?> argClass = arg.getClass();
-                    if (paramType.isPrimitive()) continue;
-                    //if (Modifier.isFinal(argClass.getModifiers()) && TypeHelper.argumentClassIsParameterClass(argClass,pt[i])) continue;
-                    test = SAME_CLASS.
-                            bindTo(argClass).
-                            asType(MethodType.methodType(boolean.class, paramType));
-                    if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
+                    test = SAME_CLASS.bindTo(arg.getClass()).asType(MethodType.methodType(boolean.class, pt[i]));
+                    if (LOG_ENABLED) LOG.info("added same-class argument check at pos " + i);
                 }
                 Class<?>[] drops = new Class[i];
                 System.arraycopy(pt, 0, drops, 0, drops.length);

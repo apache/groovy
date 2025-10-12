@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.codehaus.groovy.vmplugin.v7.IndyInterface.LOOKUP;
 
@@ -71,7 +72,7 @@ public class IndyGuardsFiltersAndSignatures {
 
     protected static final MethodHandle
             SAME_CLASS, UNWRAP_METHOD,
-            SAME_MC, IS_NULL,
+            SAME_MC, IS_NULL, NON_NULL,
             UNWRAP_EXCEPTION, META_METHOD_INVOKER,
             GROOVY_OBJECT_INVOKER, GROOVY_OBJECT_GET_PROPERTY,
             HAS_CATEGORY_IN_CURRENT_THREAD_GUARD,
@@ -91,6 +92,7 @@ public class IndyGuardsFiltersAndSignatures {
             UNWRAP_METHOD = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", OBJECT_FILTER);
             SAME_MC = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isSameMetaClass", METACLASS1_GUARD);
             IS_NULL = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "isNull", OBJECT_GUARD);
+            NON_NULL = LOOKUP.findStatic(Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class));
             UNWRAP_EXCEPTION = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "unwrap", GRE_GUARD);
             GROOVY_OBJECT_INVOKER = LOOKUP.findStatic(IndyGuardsFiltersAndSignatures.class, "invokeGroovyObjectInvoker", INVOKER.insertParameterTypes(0, MissingMethodException.class));
 
