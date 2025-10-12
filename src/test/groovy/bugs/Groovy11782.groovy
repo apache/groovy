@@ -20,35 +20,27 @@ package bugs
 
 import org.junit.Test
 
-final class Groovy11126 {
+import static groovy.test.GroovyAssert.shouldFail
 
-    private safeCall(String string) {
-        string?.size()
+final class Groovy11782 {
+
+    private static int inc(int i) {
+        ++i
     }
 
-    private safeName(String string) {
-        string?.chars
-    }
-
-    @Test
-    void testSafeCall() {
-        10000.times {
-            safeCall('1')
-            safeCall('')
-        }
-        safeCall(null)
-        safeCall('22')
-        safeCall(null)
+    final Closure functor = { Integer i ->
+        Groovy11782.inc(i)
     }
 
     @Test
-    void testSafeName() {
-        10000.times {
-            safeName('1')
-            safeName('')
+    void testNullForPrimitiveParameter() {
+        assert functor(0) == 1
+        shouldFail(MissingMethodException) {
+            functor(null)
         }
-        safeName(null)
-        safeName('22')
-        safeName(null)
+        assert functor(1) == 2
+        shouldFail(MissingMethodException) {
+            functor(null)
+        }
     }
 }

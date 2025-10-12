@@ -898,8 +898,7 @@ public abstract class Selector {
          * Sets all argument and receiver guards.
          */
         public void setGuards(Object receiver) {
-            if (handle == null) return;
-            if (!cache) return;
+            if (!cache || handle == null) return;
 
             MethodHandle fallback;
             if (callSite instanceof CacheableCallSite) {
@@ -924,7 +923,7 @@ public abstract class Selector {
                 if (LOG_ENABLED) LOG.info("added class equality check");
             }
 
-            if (!useMetaClass && isCategoryMethod) {
+            if (isCategoryMethod && !useMetaClass) {
                 // category method needs Thread check
                 // cases:
                 // (1) method is a category method
@@ -945,35 +944,37 @@ public abstract class Selector {
             handle = switchPoint.guardWithTest(handle, fallback);
             if (LOG_ENABLED) LOG.info("added switch point guard");
 
+            java.util.function.Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
+                return !Modifier.isFinal(t.getModifiers())
+                    || TypeHelper.getUnboxedType(t).isPrimitive(); // GROOVY-11782
+            };
+
             // guards for receiver and parameter
             Class<?>[] pt = handle.type().parameterArray();
             if (Arrays.stream(args).anyMatch(Objects::isNull)) {
                 for (int i = 0; i < args.length; i++) {
                     Object arg = args[i];
-                    Class<?> paramType = pt[i];
                     MethodHandle test;
                     if (arg == null) {
-                        test = IS_NULL.asType(MethodType.methodType(boolean.class, paramType));
+                        test = IS_NULL.asType(MethodType.methodType(boolean.class, pt[i]));
                         if (LOG_ENABLED) LOG.info("added null argument check at pos " + i);
                     } else {
-                        if (Modifier.isFinal(paramType.getModifiers())) {
-                            // primitive types are also `final`
-                            continue;
-                        }
-                        test = SAME_CLASS.bindTo(arg.getClass()).asType(MethodType.methodType(boolean.class, paramType));
-                        if (LOG_ENABLED) LOG.info("added same class check at pos " + i);
+                        if (nonFinalOrNullUnsafe.negate().test(pt[i])) continue; // null-safe type that cannot change
+                        test = SAME_CLASS.bindTo(arg.getClass()).asType(MethodType.methodType(boolean.class, pt[i]));
+                        if (LOG_ENABLED) LOG.info("added same-class argument check at pos " + i);
                     }
                     Class<?>[] drops = new Class[i];
                     System.arraycopy(pt, 0, drops, 0, drops.length);
                     test = MethodHandles.dropArguments(test, 0, drops);
                     handle = MethodHandles.guardWithTest(test, handle, fallback);
                 }
-            } else if (Arrays.stream(pt).anyMatch(paramType -> !Modifier.isFinal(paramType.getModifiers()))) {
+            } else if (Arrays.stream(pt).anyMatch(nonFinalOrNullUnsafe)) {
                 MethodHandle test = SAME_CLASSES
                         .bindTo(Arrays.stream(args).map(Object::getClass).toArray(Class[]::new))
                         .asCollector(Object[].class, pt.length)
                         .asType(MethodType.methodType(boolean.class, pt));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
+                if (LOG_ENABLED) LOG.info("added same-class argument check");
             } else if (safeNavigationOrig) { // GROOVY-11126
                 MethodHandle test = NON_NULL.asType(MethodType.methodType(boolean.class, pt[0]));
                 handle = MethodHandles.guardWithTest(test, handle, fallback);
