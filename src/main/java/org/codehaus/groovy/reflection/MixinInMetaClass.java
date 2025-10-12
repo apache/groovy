@@ -36,51 +36,48 @@ import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class MixinInMetaClass {
-    final ExpandoMetaClass emc;
-    final CachedClass mixinClass;
-    final CachedConstructor constructor;
-    private final ManagedIdentityConcurrentMap managedIdentityConcurrentMap =
-            new ManagedIdentityConcurrentMap(ManagedIdentityConcurrentMap.ReferenceType.SOFT);
 
-    public MixinInMetaClass(ExpandoMetaClass emc, CachedClass mixinClass) {
+    private final ExpandoMetaClass emc;
+    private final CachedClass mixinClass;
+    private final CachedConstructor mixinConstructor;
+    private final Map<Object, Object> mixinAssociations =
+        new ManagedIdentityConcurrentMap<>(ManagedIdentityConcurrentMap.ReferenceType.SOFT);
+
+    public MixinInMetaClass(final ExpandoMetaClass emc, final CachedClass mixinClass) {
         this.emc = emc;
         this.mixinClass = mixinClass;
+        this.mixinConstructor = findDefaultConstructor(mixinClass);
 
-        this.constructor = findDefaultConstructor(mixinClass);
         emc.addMixinClass(this);
     }
 
-    private static CachedConstructor findDefaultConstructor(CachedClass mixinClass) {
-        for (CachedConstructor constr : mixinClass.getConstructors()) {
-            if (!constr.isPublic())
-                continue;
-
-            CachedClass[] classes = constr.getParameterTypes();
-            if (classes.length == 0)
-                return constr;
+    private static CachedConstructor findDefaultConstructor(final CachedClass mixinClass) {
+        for (CachedConstructor ctor : mixinClass.getConstructors()) {
+            if (ctor.isPublic() && ctor.getParameterTypes().length == 0) {
+                return ctor;
+            }
         }
 
         throw new GroovyRuntimeException("No default constructor for class " + mixinClass.getName() + "! Can't be mixed in.");
     }
 
-    public synchronized Object getMixinInstance(Object object) {
-        Object mixinInstance = managedIdentityConcurrentMap.get(object);
-        if (mixinInstance == null) {
-            mixinInstance = constructor.invoke(MetaClassHelper.EMPTY_ARRAY);
-            new MixedInMetaClass(mixinInstance, object);
-            managedIdentityConcurrentMap.put(object, mixinInstance);
-        }
-        return mixinInstance;
+    public synchronized Object getMixinInstance(final Object object) {
+        return mixinAssociations.computeIfAbsent(object, (final Object owner) -> {
+            var mixinInstance = mixinConstructor.invoke(MetaClassHelper.EMPTY_ARRAY);
+            new MixedInMetaClass(mixinInstance, owner);
+            return mixinInstance;
+        });
     }
 
-    public synchronized void setMixinInstance(Object object, Object mixinInstance) {
-        if (mixinInstance == null) {
-            managedIdentityConcurrentMap.remove(object);
+    public synchronized void setMixinInstance(final Object object, final Object mixinInstance) {
+        if (mixinInstance != null) {
+            mixinAssociations.put(object, mixinInstance);
         } else {
-            managedIdentityConcurrentMap.put(object, mixinInstance);
+            mixinAssociations.remove(object);
         }
     }
 
@@ -92,41 +89,38 @@ public class MixinInMetaClass {
         return mixinClass;
     }
 
-    public static void mixinClassesToMetaClass(MetaClass self, List<Class> categoryClasses) {
-        final Class selfClass = self.getTheClass();
+    public static void mixinClassesToMetaClass(MetaClass self, final List<Class> categoryClasses) {
+        final Class<?> selfClass = self.getTheClass();
 
-        if (self instanceof HandleMetaClass) {
-            self = (MetaClass) ((HandleMetaClass) self).replaceDelegate();
+        if (self instanceof HandleMetaClass hmc) {
+            self = (MetaClass) hmc.replaceDelegate();
         }
 
         if (!(self instanceof ExpandoMetaClass)) {
-            if (self instanceof DelegatingMetaClass && ((DelegatingMetaClass) self).getAdaptee() instanceof ExpandoMetaClass) {
-                self = ((DelegatingMetaClass) self).getAdaptee();
+            if (self instanceof DelegatingMetaClass dmc && dmc.getAdaptee() instanceof ExpandoMetaClass) {
+                self = dmc.getAdaptee();
             } else {
                 throw new GroovyRuntimeException("Can't mixin methods to meta class: " + self);
             }
         }
 
         ExpandoMetaClass mc = (ExpandoMetaClass) self;
-
-        List<MetaMethod> arr = new ArrayList<>();
-        for (Class categoryClass : categoryClasses) {
-
+        List<MetaMethod> toRegister = new ArrayList<>();
+        for (Class<?> categoryClass : categoryClasses) {
             final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);
             final MixinInMetaClass mixin = new MixinInMetaClass(mc, cachedCategoryClass);
 
             final MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(categoryClass);
-            final List<MetaProperty> propList = metaClass.getProperties();
-            for (MetaProperty prop : propList)
-                if (self.getMetaProperty(prop.getName()) == null) {
-                    mc.registerBeanProperty(prop.getName(), new MixinInstanceMetaProperty(prop, mixin));
+            for (MetaProperty mp : metaClass.getProperties()) {
+                if (self.getMetaProperty(mp.getName()) == null) {
+                    mc.registerBeanProperty(mp.getName(), new MixinInstanceMetaProperty(mp, mixin));
                 }
-
-            for (MetaProperty prop : cachedCategoryClass.getFields())
-                if (self.getMetaProperty(prop.getName()) == null) {
-                    mc.registerBeanProperty(prop.getName(), new MixinInstanceMetaProperty(prop, mixin));
+            }
+            for (MetaProperty mp : cachedCategoryClass.getFields()) {
+                if (self.getMetaProperty(mp.getName()) == null) {
+                    mc.registerBeanProperty(mp.getName(), new MixinInstanceMetaProperty(mp, mixin));
                 }
-
+            }
             for (MetaMethod method : metaClass.getMethods()) {
                 if (!method.isPublic())
                     continue;
@@ -134,71 +128,59 @@ public class MixinInMetaClass {
                 if (method instanceof CachedMethod && method.isSynthetic())
                     continue;
 
-                if (method instanceof CachedMethod && hasAnnotation((CachedMethod) method, Internal.class))
+                if (method instanceof CachedMethod cachedMethod && hasAnnotation(cachedMethod, Internal.class))
                     continue;
 
                 if (method.isStatic()) {
-                    if (method instanceof CachedMethod)
-                        staticMethod(self, arr, (CachedMethod) method);
+                    if (method instanceof CachedMethod cachedMethod)
+                        staticMethod(self, toRegister, cachedMethod);
                 } else if (method.getDeclaringClass().getTheClass() != Object.class || "toString".equals(method.getName())) {
                   //if (self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
-                        arr.add(new MixinInstanceMetaMethod(method, mixin));
+                        toRegister.add(new MixinInstanceMetaMethod(method, mixin));
                   //}
                 }
             }
         }
 
-        for (MetaMethod res : arr) {
-            final MetaMethod metaMethod = res;
-            if (metaMethod.getDeclaringClass().isAssignableFrom(selfClass))
-                mc.registerInstanceMethod(metaMethod);
-            else {
-                mc.registerSubclassInstanceMethod(metaMethod);
+        for (MetaMethod mm : toRegister) {
+            if (mm.getDeclaringClass().isAssignableFrom(selfClass)) {
+                mc.registerInstanceMethod(mm);
+            } else {
+                mc.registerSubclassInstanceMethod(mm);
             }
         }
     }
 
-    private static boolean hasAnnotation(CachedMethod method, Class<Internal> annotationClass) {
+    private static boolean hasAnnotation(final CachedMethod method, final Class<Internal> annotationClass) {
         return method.getAnnotation(annotationClass) != null;
     }
 
-    private static void staticMethod(final MetaClass self, List<MetaMethod> arr, final CachedMethod method) {
+    private static void staticMethod(final MetaClass self, List<MetaMethod> mm, final CachedMethod method) {
         CachedClass[] paramTypes = method.getParameterTypes();
-
-        if (paramTypes.length == 0)
-            return;
-
-        NewInstanceMetaMethod metaMethod;
-        if (paramTypes[0].isAssignableFrom(self.getTheClass())) {
-            if (paramTypes[0].getTheClass() == self.getTheClass())
-                metaMethod = new NewInstanceMetaMethod(method);
-            else
-                metaMethod = new NewInstanceMetaMethod(method) {
-                    @Override
-                    public CachedClass getDeclaringClass() {
-                        return ReflectionCache.getCachedClass(self.getTheClass());
-                    }
-                };
-            arr.add(metaMethod);
-        } else {
-            if (self.getTheClass().isAssignableFrom(paramTypes[0].getTheClass())) {
-                metaMethod = new NewInstanceMetaMethod(method);
-                arr.add(metaMethod);
+        if (paramTypes.length > 0) {
+            Class<?> selfClass = self.getTheClass();
+            if (paramTypes[0].isAssignableFrom(selfClass)) {
+                if (paramTypes[0].getTheClass() == selfClass) {
+                    mm.add(new NewInstanceMetaMethod(method));
+                } else {
+                    mm.add(new NewInstanceMetaMethod(method) {
+                        @Override
+                        public CachedClass getDeclaringClass() {
+                            return ReflectionCache.getCachedClass(selfClass);
+                        }
+                    });
+                }
+            } else if (selfClass.isAssignableFrom(paramTypes[0].getTheClass())) {
+                mm.add(new NewInstanceMetaMethod(method));
             }
         }
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof MixinInMetaClass)) return false;
-        if (!super.equals(o)) return false;
-
-        MixinInMetaClass that = (MixinInMetaClass) o;
-
-        if (!Objects.equals(mixinClass, that.mixinClass)) return false;
-
-        return true;
+    public boolean equals(final Object that) {
+        return that == this
+            || (that instanceof MixinInMetaClass mc
+                && Objects.equals(mixinClass, mc.mixinClass));
     }
 
     @Override
@@ -206,7 +188,7 @@ public class MixinInMetaClass {
         int result = super.hashCode();
         result = 31 * result + (emc != null ? emc.hashCode() : 0);
         result = 31 * result + (mixinClass != null ? mixinClass.hashCode() : 0);
-        result = 31 * result + (constructor != null ? constructor.hashCode() : 0);
+        result = 31 * result + (mixinConstructor != null ? mixinConstructor.hashCode() : 0);
         return result;
     }
 }
