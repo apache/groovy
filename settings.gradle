@@ -29,8 +29,8 @@ pluginManagement {
 // check https://gradle.com/enterprise/releases with new versions. GE plugin version should not lag behind Gradle version
 plugins {
     // Before updating this, please check the compatibility from https://docs.gradle.com/enterprise/compatibility/#develocity_compatibility and https://develocity.apache.org/scans.
-    id "com.gradle.develocity" version "4.1.1"
-    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.3'
+    id "com.gradle.develocity" version "4.2.2"
+    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.4.0'
 }
 
 apply from: 'gradle/build-scans.gradle'
