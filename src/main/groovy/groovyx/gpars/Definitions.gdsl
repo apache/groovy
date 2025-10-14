@@ -1,0 +1,133 @@
+// GPars - Groovy Parallel Systems
+//
+// Copyright © 2008-2012  The original author or authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package groovyx.gpars
+
+/**
+ * Enhance collections with parallel methods
+ *
+ * @author Vaclav Pech
+ */
+def parallelCollection = context(ctype: "java.lang.Object")
+
+contributor(parallelCollection) {
+    property name: 'parallel', type: 'groovyx.gpars.PAWrapper'
+    property name: 'parallelArray', type: 'extra166y.ParallelArray'
+
+    method name: "eachParallel", type: "void", params: [closure: 'groovy.lang.Closure']
+    method name: "eachWithIndexParallel", type: "void", params: [closure: 'groovy.lang.Closure']
+    method name: "collectParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "collectManyParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "findParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "findAnyParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "findAllParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "grepParallel", type: "Object", params: [object: 'java.lang.Object']
+    method name: "splitParallel", type: "Object", params: [object: 'groovy.lang.Closure']
+    method name: "countParallel", type: "int", params: [object: 'java.lang.Object']
+    method name: "anyParallel", type: "boolean", params: [closure: 'groovy.lang.Closure']
+    method name: "everyParallel", type: "boolean", params: [closure: 'groovy.lang.Closure']
+    method name: "groupByParallel", type: "boolean", params: [closure: 'groovy.lang.Closure']
+    method name: "minParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "minParallel", type: "Object"
+    method name: "maxParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "maxParallel", type: "Object"
+    method name: "sumParallel", type: "Object"
+    method name: "injectParallel", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "injectParallel", type: "Object", params: [seed: 'Object', closure: 'groovy.lang.Closure']
+    method name: "inject", type: "Object", params: [closure: 'groovy.lang.Closure']
+    method name: "inject", type: "Object", params: [seed: 'Object', closure: 'groovy.lang.Closure']
+    method name: "makeConcurrent", type: "groovyx.gpars.TransparentParallel"
+    method name: "asConcurrent", type: "void", params: [code: 'groovy.lang.Closure']
+    method name: "makeSequential", type: "java.lang.Object"
+}
+
+/**
+ * Enhances actors' body with actor's react, loop and receive methods
+ */
+def actorBody = context(scope: closureScope())
+
+contributor(actorBody) {
+    def call = enclosingCall("actor")
+    if (call) {
+        def currentMethod = call.bind()
+        def clazz = currentMethod?.containingClass
+        final def clazzName = clazz?.qualName?.toUpperCase()
+        if ((clazzName?.contains("PGROUP")) || (clazzName?.contains("ACTORS"))) {
+            method name: "react", type: "void", params: [closure: 'groovy.lang.Closure']
+            method name: "react", type: "void", params: [timeout: 'long', unit: 'java.util.concurrent.TimeUnit', closure: 'groovy.lang.Closure']
+            method name: "react", type: "void", params: [timeout: 'long', closure: 'groovy.lang.Closure']
+            method name: "react", type: "void", params: [timeout: 'groovy.time.Duration', closure: 'groovy.lang.Closure']
+            method name: "receive", type: "void", params: [closure: 'groovy.lang.Closure']
+            method name: "receive", type: "void", params: [timeout: 'long', unit: 'java.util.concurrent.TimeUnit', closure: 'groovy.lang.Closure']
+            method name: "receive", type: "void", params: [timeout: 'groovy.time.Duration', closure: 'groovy.lang.Closure']
+            method name: "receive", type: "Object"
+            method name: "receive", type: "Object", params: [timeout: 'long', unit: 'java.util.concurrent.TimeUnit']
+            method name: "receive", type: "Object", params: [timeout: 'groovy.time.Duration']
+            method name: "loop", type: "void", params: [closure: 'groovy.lang.Closure']
+            method name: "loop", type: "void", params: [numberOfLoops: 'Integer', closure: 'groovy.lang.Closure']
+            method name: "loop", type: "void", params: [condition: 'groovy.lang.Closure', closure: 'groovy.lang.Closure']
+        }
+    }
+}
+
+/**
+ * Enhances closures within the GParsExecutorsPool blocks with async() and callAsync() methods
+ */
+
+def ThreadPoolBody = context(ctype: "groovy.lang.Closure", scope: closureScope())
+
+contributor(ThreadPoolBody) {
+    def call = enclosingCall("withPool")
+    if (call) {
+        def currentMethod = call.bind()
+        def clazz = currentMethod?.containingClass
+        final def clazzName = clazz?.qualName?.toUpperCase()
+        if (clazzName?.contains("GPARSPOOL") || clazzName?.contains("GPARSEXECUTORSPOOL")) {
+            method name: "async", type: "groovy.lang.Closure"
+            method name: "asyncFun", type: "groovy.lang.Closure"
+            method name: "asyncFun", type: "groovy.lang.Closure", params: [blocking: 'boolean']
+            method name: "callAsync", type: "java.util.concurrent.Future"
+            method name: "callAsync", type: "java.util.concurrent.Future", params: [args: 'Object[]']
+            method name: "callTimeoutAsync", type: "java.util.concurrent.Future", params: [timeout: 'Long']
+            method name: "callTimeoutAsync", type: "java.util.concurrent.Future", params: [timeout: 'groovy.time.Duration']
+            method name: "callTimeoutAsync", type: "java.util.concurrent.Future", params: [timeout: 'Long', args: 'Object[]']
+            method name: "callTimeoutAsync", type: "java.util.concurrent.Future", params: [timeout: 'groovy.time.Duration', args: 'Object[]']
+        }
+    }
+}
+
+/**
+ * Enhances closures within the Dataflow.operator blocks
+ */
+
+def operatorBody = context(scope: closureScope())
+
+contributor(operatorBody) {
+    ["operator", "selector", "splitter"].each { processorType ->
+        def call = enclosingCall(processorType)
+        if (call) {
+            def currentMethod = call.bind()
+            def clazz = currentMethod?.containingClass
+            final def clazzName = clazz?.qualName?.toUpperCase()
+            if (clazzName?.contains("DATAFLOW")) {
+                method name: "bindOutput", type: "void", params: [idx: 'Integer', value: 'Object']
+                method name: "bindOutput", type: "void", params: [value: 'Object']
+                property name: 'guards', type: 'java.util.List'
+            }
+        }
+    }
+}
+

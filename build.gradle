@@ -90,9 +90,12 @@ dependencies {
 
     antlr "me.sunlan:antlr4:${versions.antlr4}"
 
-    gparsImplementation "org.codehaus.gpars:gpars:${versions.gpars}", {
-        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
-    }
+    implementation "io.netty:netty-all:4.1.25.Final" // for gpars, moved to subprojects at last
+    implementation "org.multiverse:multiverse-core:0.7.0", { transitive = false } // for gpars
+    implementation files('lib/jcsp-1.2.0.jar')//"cspforjava:jcsp:1.2.0" // for gpars, should be replaced by maven artifact
+//    gparsImplementation "org.codehaus.gpars:gpars:${versions.gpars}", {
+//        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
+//    }
 
     grapesImplementation "org.apache.ivy:ivy:${versions.ivy}", {
         transitive = false
@@ -160,11 +163,11 @@ configurations {
     javadocClasspath.extendsFrom(
             loggingImplementation,
             xstreamAstImplementation,
-            gparsImplementation,
+//            gparsImplementation,
             grapesImplementation
     )
     groovyCompilerClasspath {
-        extendsFrom(implementation, compileOnly, gparsImplementation, grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
+        extendsFrom(implementation, compileOnly, /*gparsImplementation,*/ grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
     }
 }
 
