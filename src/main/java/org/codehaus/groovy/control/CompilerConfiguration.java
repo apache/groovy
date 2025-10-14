@@ -51,7 +51,7 @@ import static org.codehaus.groovy.runtime.StringGroovyMethods.isAtLeast;
  */
 public class CompilerConfiguration {
 
-    /** Optimization Option for enabling <code>invokedynamic</code> compilation. */
+    /** Optimization Option for enabling <code>invokedynamic</code> compilation. Since 4.0 always enabled. */
     public static final String INVOKEDYNAMIC = "indy";
 
     /** Optimization Option for enabling attaching groovydoc as AST node metadata. */
@@ -1282,8 +1282,9 @@ public class CompilerConfiguration {
     }
 
     /**
-     * Checks if invoke dynamic is enabled.
+     * Checks if invoke dynamic is enabled.  Since 4.0 this is always true.
      */
+    @Deprecated
     public boolean isIndyEnabled() {
         return !Boolean.FALSE.equals(getOptimizationOptions().get(INVOKEDYNAMIC));
     }

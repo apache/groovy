@@ -103,8 +103,7 @@ listed; defaults to no. |No
 |stacktrace |if true each compile error message will contain a
 stacktrace |No
 
-|indy |Enable compilation with the ``invoke dynamic'' support when using
-Groovy 2.0 and beyond and running on JDK 7 |No
+|indy |Not used since Groovy 4.0 |No
 
 |scriptBaseClass |Sets the base class for Groovy scripts |No
 
