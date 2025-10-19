@@ -21,7 +21,7 @@ plugins {
 }
 
 performanceTests {
-    versions 'current', '3.0.25', '4.0.27'
+    versions 'current', '3.0.25', '4.0.29'
 
     testFiles project.files("src/files") +
             project.files('src/jmh/groovy/org/apache/groovy/bench/Ackermann.groovy') +
