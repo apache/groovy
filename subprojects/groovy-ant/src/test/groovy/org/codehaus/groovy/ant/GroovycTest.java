@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -357,5 +358,12 @@ final class GroovycTest {
         ensureNotPresent("GroovycTest3Peer");
         project.executeTarget("incrementalCompilation");
         ensureResultOK("GroovycTest3");
+    }
+
+    // GROOVY-11789
+    @Test
+    void testBadJavacArgument() {
+        var e = assertThrows(BuildException.class, () -> project.executeTarget("badJavacArgument"));
+        assertTrue(e.getCause().getMessage().contains("invalid flag: -Xlint:xxx"));
     }
 }
