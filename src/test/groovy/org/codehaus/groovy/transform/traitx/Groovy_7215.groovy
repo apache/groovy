@@ -26,20 +26,16 @@ final class Groovy_7215 {
 
     @Test
     void testTraitAndClassUnderJointCompilation() {
-        def config = new CompilerConfiguration().tap {
-            jointCompilationOptions = [flags: new String[]{'release=11'}, memStub: true]
-            targetDirectory = File.createTempDir()
-            targetBytecode = '11'
-        }
-        File parentDir = File.createTempDir()
+        File sourceDir = File.createTempDir()
+        File targetDir = File.createTempDir()
         try {
-            def a = new File(parentDir, 'A.java')
+            def a = new File(sourceDir, 'A.java')
             a.write '''
                 public class A {
                     public static final String TEXT = "";
                 }
             '''
-            def b = new File(parentDir, 'B.groovy')
+            def b = new File(sourceDir, 'B.groovy')
             b.write '''
                 @groovy.transform.CompileStatic
                 class B implements org.codehaus.groovy.transform.traitx.Groovy7215SupportTrait {
@@ -47,13 +43,18 @@ final class Groovy_7215 {
                 }
             '''
 
+            def config = new CompilerConfiguration(
+                classpath: new File(this.class.location.toURI()).path,
+                jointCompilationOptions: [memStub: true],
+                targetDirectory: targetDir
+            )
             def loader = new GroovyClassLoader(this.class.classLoader)
             def unit = new JavaAwareCompilationUnit(config, loader)
             unit.addSources(a, b)
             unit.compile()
         } finally {
-            parentDir.deleteDir()
-            config.targetDirectory.deleteDir()
+            sourceDir.deleteDir()
+            targetDir.deleteDir()
         }
     }
 }
