@@ -319,4 +319,14 @@ public class GroovycTest extends GroovyTestCase {
         ensureExecutes("plainForkedCompilation_NestingSrcElementCheck");
         ensureNotPresent("GroovycTest2"); // excluded from src > fileset
     }
+
+    // GROOVY-11789
+    public void testBadJavacArgument() {
+        try {
+            project.executeTarget("badJavacArgument");
+            fail("BuildException expected");
+        } catch (BuildException e) {
+            assertTrue(e.getCause().getMessage().contains("invalid flag: -Xlint:xxx"));
+        }
+    }
 }

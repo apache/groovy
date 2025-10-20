@@ -62,18 +62,16 @@ public class JavacJavaCompiler implements JavaCompiler {
         StringBuilderWriter javacOutput = new StringBuilderWriter();
         int javacReturnValue = 0;
         try {
-            try {
-                boolean successful = doCompileWithSystemJavaCompiler(cu, files, javacParameters, javacOutput);
-                if (!successful) {
-                    javacReturnValue = 1;
-                }
-            } catch (IllegalArgumentException e) {
-                javacReturnValue = 2; // any of the options are invalid
-                cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
-            } catch (IOException e) {
+            boolean successful = doCompileWithSystemJavaCompiler(cu, files, javacParameters, javacOutput);
+            if (!successful) {
                 javacReturnValue = 1;
-                cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
             }
+        } catch (IllegalArgumentException e) {
+            javacReturnValue = 2; // any of the options are invalid
+            cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
+        } catch (IOException e) {
+            javacReturnValue = 1;
+            cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }

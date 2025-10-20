@@ -200,6 +200,15 @@
         <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
     </target>
 
+    <!-- GROOVY-11789 -->
+    <target name="badJavacArgument">
+        <compile-joint includes="**/GroovycTest2.java">
+            <javac>
+                <compilerarg value="-Xlint:xxx"/>
+            </javac>
+        </compile-joint>
+    </target>
+
     <target name="clean">
         <delete quiet="true">
             <fileset dir="${destPath}/org/codehaus/groovy/ant">
