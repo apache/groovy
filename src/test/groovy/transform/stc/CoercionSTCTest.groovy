@@ -483,7 +483,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             import static org.awaitility.Awaitility.await
 
             List<String> strings = ['x']
-            await().until { -> strings }
+            await().until { -> strings.asBoolean() }
         '''
     }
 
