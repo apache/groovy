@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 
 import static groovy.test.GroovyAssert.isAtLeastJdk;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
@@ -367,5 +368,12 @@ public final class GroovycTest {
         ensureNotPresent("GroovycTest3");
         project.executeTarget("incrementalCompilation");
         ensureResultOK("GroovycTest3");
+    }
+
+    // GROOVY-11789
+    @Test
+    public void testBadJavacArgument() {
+        Exception e = assertThrows(BuildException.class, () -> project.executeTarget("badJavacArgument"));
+        assertTrue(e.getCause().getMessage().contains("invalid flag: -Xlint:xxx"));
     }
 }
