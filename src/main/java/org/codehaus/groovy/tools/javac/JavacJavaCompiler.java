@@ -144,10 +144,12 @@ public class JavacJavaCompiler implements JavaCompiler {
 
         Map<String, Object> options = config.getJointCompilationOptions();
         boolean classpath = false;
+        boolean release = false;
 
         if (options.get("flags") instanceof String[] flags) {
             for (String flag : flags) {
                 if (flag == null) continue;
+                if (!release) release = isReleaseParameter(flag.split("=")[0]);
 
                 params.add("-" + flag);
             }
@@ -157,11 +159,18 @@ public class JavacJavaCompiler implements JavaCompiler {
             for (int i = 0, n = namedValues.length; i < n; i += 2) {
                 var name = namedValues[i];
                 if (name == null) continue;
-                if (!classpath) classpath = isClasspathParameter(name);
+                if (!release && isReleaseParameter(name)) release = true;
+                else if (!classpath) classpath = isClasspathParameter(name);
 
                 params.add("-" + name);
                 params.add(namedValues[i + 1]);
             }
+        }
+
+        // GROOVY-11790
+        if (!release) {
+            params.add("--release");
+            params.add(config.getTargetBytecode());
         }
 
         // append classpath if not already defined
@@ -196,6 +205,12 @@ public class JavacJavaCompiler implements JavaCompiler {
 
     private static boolean isClasspathParameter(final String param) {
         return param.equals("cp") || param.equals("classpath") || param.equals("-class-path");
+    }
+
+    private static boolean isReleaseParameter(final String param) {
+        return param.equals("source")  || param.equals("-source")
+            || param.equals("target")  || param.equals("-target")
+            || param.equals("release") || param.equals("-release");
     }
 
     @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
