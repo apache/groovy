@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.tools.javac;
 
-import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
@@ -26,42 +25,34 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.SimpleMessage;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
-import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.codehaus.groovy.control.CompilerConfiguration.MEM_STUB;
 
 public class JavacJavaCompiler implements JavaCompiler {
 
-    private static final Locale DEFAULT_LOCALE = Locale.ENGLISH;
     private final CompilerConfiguration config;
-    private final Charset charset;
 
-    public JavacJavaCompiler(CompilerConfiguration config) {
-        this.config = config;
-        this.charset = Charset.forName(config.getSourceEncoding());
+    public JavacJavaCompiler(final CompilerConfiguration config) {
+        this.config = Objects.requireNonNull(config);
     }
 
     @Override
-    public void compile(List<String> files, CompilationUnit cu) {
+    public void compile(final List<String> files, final CompilationUnit cu) {
         List<String> javacParameters = makeParameters(cu.getClassLoader());
-        StringBuilderWriter javacOutput = new StringBuilderWriter();
+        var javacOutput = new StringBuilderWriter();
         int javacReturnValue = 0;
         try {
             boolean successful = doCompileWithSystemJavaCompiler(cu, files, javacParameters, javacOutput);
@@ -69,7 +60,7 @@ public class JavacJavaCompiler implements JavaCompiler {
                 javacReturnValue = 1;
             }
         } catch (IllegalArgumentException e) {
-            javacReturnValue = 2; // any of the options are invalid
+            javacReturnValue = 2; // invalid options
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         } catch (IOException e) {
             javacReturnValue = 1;
@@ -79,39 +70,40 @@ public class JavacJavaCompiler implements JavaCompiler {
         }
 
         if (javacReturnValue != 0) {
-            switch (javacReturnValue) {
-                case 1: addJavacError("Compile error during compilation with javac.", cu, javacOutput); break;
-                case 2: addJavacError("Invalid commandline usage for javac.", cu, javacOutput); break;
-                default: addJavacError("unexpected return value by javac.", cu, javacOutput); break;
-            }
+            addJavacError(switch (javacReturnValue) {
+                case  1 -> "Compile error during compilation with javac.";
+                case  2 -> "Invalid commandline usage for javac.";
+                default -> "unexpected return value by javac.";
+            }, javacOutput.toString(), cu);
         } else {
-            // print warnings if any
-            System.out.print(javacOutput);
+            System.out.print(javacOutput); // print errors/warnings
         }
     }
 
-    private boolean doCompileWithSystemJavaCompiler(CompilationUnit cu, List<String> files, List<String> javacParameters, StringBuilderWriter javacOutput) throws IOException {
+    private boolean doCompileWithSystemJavaCompiler(final CompilationUnit cu, final List<String> files, final List<String> javacParameters, final Writer javacOutput) throws IOException {
+        Locale locale = Locale.ENGLISH;
+        Charset charset = Charset.forName(config.getSourceEncoding());
         javax.tools.JavaCompiler compiler = javax.tools.ToolProvider.getSystemJavaCompiler();
-        try (javax.tools.StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, DEFAULT_LOCALE, charset)) {
+        try (javax.tools.StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, locale, charset)) {
             Set<javax.tools.JavaFileObject> compilationUnitSet = cu.getJavaCompilationUnitSet(); // java stubs already added
 
-            Map<String, Object> options = this.config.getJointCompilationOptions();
-            if (!Boolean.TRUE.equals(options.get(MEM_STUB))) {
+            Map<String, Object> options = config.getJointCompilationOptions();
+            if (!Boolean.TRUE.equals(options.get(CompilerConfiguration.MEM_STUB))) {
                 // clear the java stubs in the source set of Java compilation
                 compilationUnitSet = new HashSet<>();
 
                 // use sourcepath to specify the root directory of java stubs
-                javacParameters.add("-sourcepath");
-                final File stubDir = (File) options.get("stubDir");
-                if (null == stubDir) {
-                    throw new GroovyBugError("stubDir is not specified");
+                if (options.get("stubDir") instanceof File stubDir) {
+                    javacParameters.add("-sourcepath");
+                    javacParameters.add(stubDir.getAbsolutePath());
+                } else {
+                    throw new GroovyBugError("stubDir not specified");
                 }
-                javacParameters.add(stubDir.getAbsolutePath());
             }
 
             // add java source files to compile
             fileManager.getJavaFileObjectsFromFiles(
-                    files.stream().map(File::new).collect(Collectors.toList())
+                    files.stream().map(File::new).toList()
             ).forEach(compilationUnitSet::add);
 
             javax.tools.JavaCompiler.CompilationTask compilationTask = compiler.getTask(
@@ -119,90 +111,97 @@ public class JavacJavaCompiler implements JavaCompiler {
                     fileManager,
                     null,
                     javacParameters,
-                    Collections.emptyList(),
+                    null,
                     compilationUnitSet
             );
-            compilationTask.setLocale(DEFAULT_LOCALE);
+            compilationTask.setLocale(locale);
 
             return compilationTask.call();
         }
     }
 
-    private static void addJavacError(String header, CompilationUnit cu, StringBuilderWriter msg) {
-        if (msg != null) {
-            header = header + "\n" + msg.getBuilder().toString();
+    private static void addJavacError(final String head, final String text, final CompilationUnit unit) {
+        String message;
+        if (text != null && !text.trim().isEmpty()) {
+            message = head + "\n" + text;
         } else {
-            header = header +
+            message = head +
                     "\nThis javac version does not support compile(String[],PrintWriter), " +
                     "so no further details of the error are available. The message error text " +
                     "should be found on System.err.\n";
         }
-        cu.getErrorCollector().addFatalError(new SimpleMessage(header, cu));
+        unit.getErrorCollector().addFatalError(new SimpleMessage(message, unit));
     }
 
-    private List<String> makeParameters(GroovyClassLoader parentClassLoader) {
-        Map<String, Object> options = config.getJointCompilationOptions();
+    private List<String> makeParameters(final ClassLoader classLoader) {
         List<String> params = new ArrayList<>();
 
-        File target = config.getTargetDirectory();
-        if (target == null) target = new File(".");
+        File targetDir = config.getTargetDirectory();
+        if (targetDir == null) targetDir = new File(".");
 
         params.add("-d");
-        params.add(target.getAbsolutePath());
+        params.add(targetDir.getAbsolutePath());
 
-        String[] flags = (String[]) options.get("flags");
-        if (flags != null) {
+        Map<String, Object> options = config.getJointCompilationOptions();
+        boolean classpath = false;
+
+        if (options.get("flags") instanceof String[] flags) {
             for (String flag : flags) {
+                if (flag == null) continue;
+
                 params.add("-" + flag);
             }
         }
 
-        boolean hadClasspath = false;
-        String[] namedValues = (String[]) options.get("namedValues");
-        if (namedValues != null) {
+        if (options.get("namedValues") instanceof String[] namedValues) {
             for (int i = 0, n = namedValues.length; i < n; i += 2) {
-                String name = namedValues[i];
-                if ("classpath".equals(name)) hadClasspath = true;
+                var name = namedValues[i];
+                if (name == null) continue;
+                if (!classpath) classpath = isClasspathParameter(name);
+
                 params.add("-" + name);
                 params.add(namedValues[i + 1]);
             }
         }
 
         // append classpath if not already defined
-        if (!hadClasspath) {
-            // add all classpaths that compilation unit sees
+        if (!classpath) {
+            // add class paths of compilation unit
             List<String> paths = new ArrayList<>(config.getClasspath());
-            ClassLoader loader = parentClassLoader;
-            while (loader != null) {
-                if (loader instanceof URLClassLoader) {
-                    for (URL u : ((URLClassLoader) loader).getURLs()) {
+            for (ClassLoader loader = classLoader; loader != null; loader = loader.getParent()) {
+                if (loader instanceof URLClassLoader ucl) {
+                    for (URL u : ucl.getURLs()) {
                         try {
                             paths.add(new File(u.toURI()).getPath());
                         } catch (URISyntaxException ignore) {
                         }
                     }
                 }
-                loader = loader.getParent();
             }
 
             try {
-                CodeSource codeSource = getCodeSource();
-                if (codeSource != null) {
+                var codeSource = getCodeSource();
+                if (codeSource != null) { // add class path of groovy runtime
                     paths.add(new File(codeSource.getLocation().toURI()).getPath());
                 }
             } catch (URISyntaxException ignore) {
             }
 
             params.add("-classpath");
-            params.add(DefaultGroovyMethods.join((Iterable<String>) paths, File.pathSeparator));
+            params.add(String.join(File.pathSeparator, paths));
         }
 
         return params;
     }
 
+    private static boolean isClasspathParameter(final String param) {
+        return param.equals("cp") || param.equals("classpath") || param.equals("-class-path");
+    }
+
     @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private CodeSource getCodeSource() {
-        return java.security.AccessController.doPrivileged(
-                (PrivilegedAction<CodeSource>) () -> GroovyObject.class.getProtectionDomain().getCodeSource());
+    private static java.security.CodeSource getCodeSource() {
+        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<java.security.CodeSource>) () ->
+            GroovyObject.class.getProtectionDomain().getCodeSource()
+        );
     }
 }
