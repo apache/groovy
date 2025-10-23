@@ -471,8 +471,9 @@ class Main {
                     line = line.readLines().collect{ s ->
                         // remove Groovy continuation character for repl not Groovy's sake
                         s.endsWith(' \\') ? s[0..-3] : s
-                    }.join('\n')
+                    }.join('\n').replaceAll($/(/[a-z]+\s+)(https?://\S+)/$, '$1"$2"') // quote URLs after commands
                     if (line.startsWith(':')) {
+                        // some simple legacy support for ':' commands
                         def maybeCmd = line.split()[0].replaceFirst(':', '/')
                         if (systemRegistry.hasCommand(maybeCmd) || systemRegistry.isCommandAlias(maybeCmd)) {
                             line = line.replaceFirst(':', '/')
