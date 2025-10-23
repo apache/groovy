@@ -376,7 +376,9 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
             try {
                 path = workDir.get().resolve(arg)
             } catch(Exception ignore) { }
+            Reader source = null
             if (path && Files.exists(path)) {
+                source = Files.newBufferedReader(path, encoding)
                 if (!format) {
                     def ext = path.extension
                     if (ext.equalsIgnoreCase('json')) {
@@ -397,23 +399,26 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                         format = 'TEXT'
                     }
                 }
+            }
+            if (!source && (arg.startsWith('http://') || arg.startsWith('https://'))) {
+                URL url = new URL(arg)
+                source = new InputStreamReader(url.openStream(), encoding)
+            }
+            if (source) {
                 if (format == 'TEXT') {
-                    out = Files.readAllLines(path, encoding)
+                    out = source.readLines()
                 } else if (format in engine.deserializationFormats) {
-                    byte[] encoded = Files.readAllBytes(path)
-                    out = engine.deserialize(new String(encoded, encoding), format)
+                    out = engine.deserialize(source.text, format)
                 } else if (format in slurpers.keySet()) {
                     def parser = getParser(format, slurpers[format])
-                    out = parser.parse(path)
+                    out = parser.parse(source)
                 } else if (format == 'CSV') {
                     def parser = getCsvParser(format)
-                    out = parser.parse(path.newReader(encoding.displayName())).toList()*.toMap()
+                    out = parser.parse(source).toList()*.toMap()
                 } else if (format == 'PROPERTIES') {
-                    out = path.withInputStream{ is ->
-                        new Properties().tap {load(is) }
-                    }
+                    out = new Properties().tap {load(source) }
                 } else {
-                    out = engine.deserialize(Files.readString(path, encoding), 'NONE')
+                    out = engine.deserialize(source.text, 'AUTO')
                 }
             } else {
                 if (format == 'TEXT') {
@@ -427,7 +432,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     def parser = getCsvParser(format)
                     out = parser.parse(new StringReader(arg)).toList()*.toMap()
                 } else {
-                    out = engine.deserialize(arg, 'NONE')
+                    out = engine.deserialize(arg, 'AUTO')
                 }
             }
         } catch (Exception ignore) {

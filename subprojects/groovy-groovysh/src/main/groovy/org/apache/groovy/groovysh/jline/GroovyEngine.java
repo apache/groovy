@@ -90,7 +90,8 @@ public class GroovyEngine implements ScriptEngine {
     public enum Format {
         JSON,
         GROOVY,
-        NONE
+        NONE,
+        AUTO
     }
 
     public static final String CANONICAL_NAMES = "canonicalNames";
