@@ -982,12 +982,17 @@ various formats like XML, JSON, YAML, etc. You can use those in your code
 if you like, but the `/slurp` command can be a convenience shortcut.
 It supports most of the common formats, including JSON, XML, YAML, CSV, TOML and property files.
 
-image:{reldir_groovysh}/assets/img/repl_slurp.png[Usage of the /slurp command, width=75%]
+image:{reldir_groovysh}/assets/img/repl_slurp.png[Usage of the /slurp command, width=80%]
 
 As you can see in the usage information at the end of the above image,
 you can also provide an encoding and a format. If no format is given,
 `UTF_8` is the default. If no format is given, the shell will try to
 determine the format from the extension of the file (if given).
+If no format or file extension is given, the `/slurp` command makes
+a rudimentary attempt to determine the format by looking at the content,
+e.g. the json format is determined in the following example:
+
+image:{reldir_groovysh}/assets/img/repl_slurp_url.png[Usage of the /slurp command with a URL, width=75%]
 
 Although the details of the exact object returned are an implementation
 detail which may change in the future, the current behavior is as follows:
