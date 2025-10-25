@@ -127,8 +127,8 @@ public class ClassFinder {
         boolean wfs = "file".equals(uri.getScheme());
         if (wfs) prefix = prefix.replace("/", File.separator);
 
-        final String sepPattern = Pattern.quote(wfs ? File.separator : "/");
-        final int prefixElemCnt = prefix.trim().isEmpty() ? 0 : prefix.split(sepPattern).length;
+        final Pattern sepPattern = Pattern.compile(Pattern.quote(wfs ? File.separator : "/"));
+        final int prefixElemCnt = prefix.trim().isEmpty() ? 0 : sepPattern.split(prefix).length;
 
         Map<String, Set<String>> result = new LinkedHashMap<>();
         Tuple2<FileSystem, Boolean> fsMaybeNew = null;
@@ -142,7 +142,7 @@ public class ClassFinder {
 
                 @Override
                 public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
-                    String[] pathElems = path.toString().split(sepPattern);
+                    String[] pathElems = sepPattern.split(path.toString());
                     int nameCount = pathElems.length;
                     if (nameCount <= prefixElemCnt) {
                         return FileVisitResult.CONTINUE;
