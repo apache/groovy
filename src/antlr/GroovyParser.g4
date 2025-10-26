@@ -130,6 +130,7 @@ modifier
     :   classOrInterfaceModifier
     |   m=(   NATIVE
           |   SYNCHRONIZED
+          |   ASYNC
           |   TRANSIENT
           |   VOLATILE
           |   DEF
@@ -776,6 +777,12 @@ expression
     // must come before postfixExpression to resolve the ambiguities between casting and call on parentheses expression, e.g. (int)(1 / 2)
     :   castParExpression castOperandExpression                                             #castExprAlt
 
+    // async expression
+    |   ASYNC nls closureOrLambdaExpression                                                 #asyncExprAlt
+
+    // await expression
+    |   AWAIT nls expression                                                                #awaitExprAlt
+
     // qualified names, array expressions, method invocation, post inc/dec
     |   postfixExpression                                                                   #postfixExprAlt
 
@@ -1226,6 +1233,8 @@ identifier
     :   Identifier
     |   CapitalizedIdentifier
     |   AS
+    |   ASYNC
+    |   AWAIT
     |   IN
     |   PERMITS
     |   RECORD
@@ -1243,7 +1252,9 @@ builtInType
 keywords
     :   ABSTRACT
     |   AS
+    |   ASYNC
     |   ASSERT
+    |   AWAIT
     |   BREAK
     |   CASE
     |   CATCH

@@ -346,6 +346,13 @@ final class GroovyParserTest {
     }
 
     @Test
+    void 'groovy core - async-await'() {
+        doRunAndTestAntlr4('core/AsyncAwait_01x.groovy')
+        doRunAndTestAntlr4('core/AsyncAwait_02x.groovy')
+        doRunAndTestAntlr4('core/AsyncAwait_03x.groovy')
+    }
+
+    @Test
     void 'groovy core - LocalVariableDeclaration'() {
         doTest('core/LocalVariableDeclaration_01.groovy', [Token]) // [class org.codehaus.groovy.syntax.Token][startLine]:: 9 != 8
         doRunAndTestAntlr4('core/LocalVariableDeclaration_02x.groovy')
