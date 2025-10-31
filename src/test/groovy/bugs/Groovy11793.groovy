@@ -21,11 +21,15 @@ package bugs
 import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.Assume.assumeTrue
 
 final class Groovy11793 {
 
     @Test
     void testConstantInlining() {
+        assumeTrue(isAtLeastJdk('9')) // for StringUTF16
+
         assertScript '''
             @interface A {
                 int value()
