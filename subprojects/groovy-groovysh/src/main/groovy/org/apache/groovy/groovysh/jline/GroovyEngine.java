@@ -1029,38 +1029,40 @@ public class GroovyEngine implements ScriptEngine {
         }
 
         private static Set<String> sourcesForPackage(String domain) {
-            String separator = FileSystems.getDefault().getSeparator();
-            if (separator.equals("\\")) {
-                separator += separator;
-            }
-            boolean onlyPackage = domain != null && domain.endsWith("*");
-            if (onlyPackage) {
-                domain = domain.substring(0, domain.lastIndexOf("."));
-            }
-            String pkg = domain;
-            String dom;
-            if (domain == null) {
-                dom = separator + "(|.*)";
-            } else if (domain.isEmpty()) {
-                dom = ".*" + separator;
-            } else {
-                dom = separator + domain.replace(".", separator) + "(|.*)";
-            }
-            dom = "regex:\\." + dom + "[A-Z]+[a-zA-Z]*\\.groovy";
-            PathMatcher matcher = FileSystems.getDefault().getPathMatcher(dom);
             Set<String> out = new HashSet<>();
-            try (Stream<Path> pathStream = Files.walk(Paths.get("."))) {
-                Stream<String> classes = pathStream
+            if (!domain.startsWith("java.") && !domain.startsWith("groovy.")) {
+                String separator = FileSystems.getDefault().getSeparator();
+                if (separator.equals("\\")) {
+                    separator += separator;
+                }
+                boolean onlyPackage = domain != null && domain.endsWith("*");
+                if (onlyPackage) {
+                    domain = domain.substring(0, domain.lastIndexOf("."));
+                }
+                String pkg = domain;
+                String dom;
+                if (domain == null) {
+                    dom = separator + "(|.*)";
+                } else if (domain.isEmpty()) {
+                    dom = ".*" + separator;
+                } else {
+                    dom = separator + domain.replace(".", separator) + "(|.*)";
+                }
+                dom = "regex:\\." + dom + "[A-Z]+[a-zA-Z]*\\.groovy";
+                PathMatcher matcher = FileSystems.getDefault().getPathMatcher(dom);
+                try (Stream<Path> pathStream = Files.walk(Paths.get("."))) {
+                    Stream<String> classes = pathStream
                         .filter(matcher::matches)
                         .filter(p -> p.getFileName().toString().matches("[A-Z]+[a-zA-Z]*\\.groovy"))
                         .map(Path::toString)
                         .map(source -> source.substring(2, source.lastIndexOf("."))
-                                .replace(FileSystems.getDefault().getSeparator(), "."));
-                if (onlyPackage) {
-                    classes = classes.filter(cl -> Character.isUpperCase(cl.charAt(pkg.length() + 1)));
+                            .replace(FileSystems.getDefault().getSeparator(), "."));
+                    if (onlyPackage) {
+                        classes = classes.filter(cl -> Character.isUpperCase(cl.charAt(pkg.length() + 1)));
+                    }
+                    classes.forEach(out::add);
+                } catch (Exception ignore) {
                 }
-                classes.forEach(out::add);
-            } catch (Exception ignore) {
             }
             return out;
         }
