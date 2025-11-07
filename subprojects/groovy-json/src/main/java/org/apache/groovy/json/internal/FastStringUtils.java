@@ -37,7 +37,7 @@ public class FastStringUtils {
 // that means you might need @GrabConfig(systemClassLoader=true) if getting json via grab
 //            ClassLoader rootLoader = DefaultGroovyMethods.getRootLoader(loader);
             ServiceLoader<FastStringServiceFactory> serviceLoader = ServiceLoader.load(FastStringServiceFactory.class);
-            FastStringService found = null;
+            FastStringService found = new DefaultFastStringService();
             for (FastStringServiceFactory factory : serviceLoader) {
                 FastStringService service = factory.getService();
                 if (service != null) {
