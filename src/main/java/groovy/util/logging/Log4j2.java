@@ -23,8 +23,6 @@ import groovy.transform.Undefined;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
@@ -37,6 +35,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Locale;
 
+import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ternaryX;
 
@@ -76,32 +76,34 @@ public @interface Log4j2 {
 
     Class<? extends LogASTTransformation.LoggingStrategy> loggingStrategy() default Log4j2LoggingStrategy.class;
 
+    //
+
     class Log4j2LoggingStrategy extends LogASTTransformation.AbstractLoggingStrategyV2 {
-        private static final String LOGGER_NAME = "org.apache.logging.log4j.core.Logger";
-        private static final String LOG_MANAGER_NAME = "org.apache.logging.log4j.LogManager";
 
         protected Log4j2LoggingStrategy(final GroovyClassLoader loader) {
             super(loader);
         }
 
         @Override
-        public FieldNode addLoggerFieldToClass(ClassNode classNode, String logFieldName, String categoryName, int fieldModifiers) {
-            return classNode.addField(logFieldName,
-                    fieldModifiers,
-                    classNode(LOGGER_NAME),
-                    new MethodCallExpression(
-                            new ClassExpression(classNode(LOG_MANAGER_NAME)),
-                            "getLogger",
-                            new ConstantExpression(getCategoryName(classNode, categoryName))));
+        public FieldNode addLoggerFieldToClass(final ClassNode classNode, final String logFieldName, final String categoryName, final int fieldModifiers) {
+            ClassNode fieldType = classNode("org.apache.logging.log4j.Logger"); // GROOVY-11798
+
+            MethodCallExpression fieldValue = new MethodCallExpression(
+                    classX(classNode("org.apache.logging.log4j.LogManager")),
+                    "getLogger",
+                    constX(getCategoryName(classNode, categoryName)));
+            fieldValue.setImplicitThis(false);
+
+            return classNode.addField(logFieldName, fieldModifiers, fieldType, fieldValue);
         }
 
         @Override
-        public boolean isLoggingMethod(String methodName) {
+        public boolean isLoggingMethod(final String methodName) {
             return methodName.matches("fatal|error|warn|info|debug|trace");
         }
 
         @Override
-        public Expression wrapLoggingMethodCall(Expression logVariable, String methodName, Expression originalExpression) {
+        public Expression wrapLoggingMethodCall(final Expression logVariable, final String methodName, final Expression originalExpression) {
             MethodCallExpression condition = new MethodCallExpression(
                     logVariable,
                     "is" + methodName.substring(0, 1).toUpperCase(Locale.ENGLISH) + methodName.substring(1) + "Enabled",
