@@ -394,6 +394,24 @@ final class Slf4jTest {
         """
     }
 
+    // GROOVY-11800
+    @Test
+    void testLogOwner() {
+        Class clazz = new GroovyClassLoader().parseClass('''
+            @groovy.util.logging.Slf4j
+            class MyClass {
+                def loggingMethod() {
+                    [].with {
+                        log.info('info')
+                    }
+                }
+            }
+        ''')
+        clazz.newInstance().loggingMethod()
+
+        assert appender.events.size() == 1
+    }
+
     @Test
     void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
@@ -402,15 +420,14 @@ final class Slf4jTest {
                 def loggingMethod() {
                     def isSet = false
                     log.setLevel(ch.qos.logback.classic.Level.ERROR)
-                    log.trace (isSet = true)
+                    log.trace(isSet = true)
                     return isSet
                 }
             }
-            new MyClass().loggingMethod()
         ''')
+        boolean result = clazz.newInstance().loggingMethod()
 
-        Script s = (Script) clazz.newInstance()
-        assert s.run() == false
+        assert result == false
     }
 
     @Test
@@ -423,9 +440,7 @@ final class Slf4jTest {
                 }
             }
         ''')
-
-        def s = clazz.newInstance()
-        s.loggingMethod()
+        clazz.newInstance().loggingMethod()
 
         assert appender.events.size() == 1
     }
@@ -448,8 +463,7 @@ final class Slf4jTest {
                 }
             }
         ''')
-        def s = clazz.newInstance()
-        s.loggingMethod()
+        clazz.newInstance().loggingMethod()
 
         assert appenderForCustomCategory.events.size() == 1
         assert appender.events.isEmpty()
