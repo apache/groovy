@@ -18,7 +18,6 @@
  */
 package groovy.util.logging
 
-import groovy.test.GroovyTestCase
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.Filter
@@ -26,13 +25,16 @@ import org.apache.logging.log4j.core.Layout
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.appender.AbstractAppender
 import org.apache.logging.log4j.core.layout.PatternLayout
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Field
 import java.nio.charset.Charset
 
+import static groovy.test.GroovyAssert.shouldFail
 import static java.lang.reflect.Modifier.*
 
-class Log4j2Test extends GroovyTestCase {
+final class Log4j2Test {
 
     static class Log4j2InterceptingAppender extends AbstractAppender {
         List<Map> events
@@ -50,7 +52,7 @@ class Log4j2Test extends GroovyTestCase {
         }
     }
 
-    Log4j2InterceptingAppender appender = new Log4j2InterceptingAppender('MyAppender', null, createLayout())
+    private Log4j2InterceptingAppender appender = new Log4j2InterceptingAppender('MyAppender', null, createLayout())
 
     private static PatternLayout createLayout() {
         return PatternLayout.newBuilder()
@@ -63,142 +65,127 @@ class Log4j2Test extends GroovyTestCase {
                 .build()
     }
 
-    void testPrivateFinalStaticLogFieldAppears() {
+    //--------------------------------------------------------------------------
+
+    @Test
+    void testPrivateStaticFinalLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j2
             class MyClass { }
         ''')
+        Field field = clazz.declaredFields.find { it.name == 'log' }
 
-        assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    isPrivate(field.getModifiers()) &&
-                    isStatic(field.getModifiers()) &&
-                    isTransient(field.getModifiers()) &&
-                    isFinal(field.getModifiers())
-        }
+        assert field != null
+        assert isFinal(field.getModifiers())
+        assert isStatic(field.getModifiers())
+        assert isPrivate(field.getModifiers())
+        assert isTransient(field.getModifiers())
+        assert field.type.name == 'org.apache.logging.log4j.Logger' // GROOVY-11798
     }
 
-    void testExplicitPrivateFinalStaticLogFieldAppears() {
+    @Test
+    void testExplicitPrivateStaticFinalLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PRIVATE)
             @groovy.util.logging.Log4j2
             class MyClass { }
         ''')
+        Field field = clazz.declaredFields.find { it.name == 'log' }
 
-        assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    isPrivate(field.getModifiers()) &&
-                    isStatic(field.getModifiers()) &&
-                    isTransient(field.getModifiers()) &&
-                    isFinal(field.getModifiers())
-        }
+        assert field != null
+        assert isFinal(field.getModifiers())
+        assert isStatic(field.getModifiers())
+        assert isPrivate(field.getModifiers())
+        assert isTransient(field.getModifiers())
     }
 
-    void testPackagePrivateFinalStaticLogFieldAppears() {
+    @Test
+    void testPackagePrivateStaticFinalLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PACKAGE_PRIVATE)
             @groovy.util.logging.Log4j2
             class MyClass { }
         ''')
+        Field field = clazz.declaredFields.find { it.name == 'log' }
 
-        assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    !isPrivate(field.getModifiers()) &&
-                    !isProtected(field.getModifiers()) &&
-                    !isPublic(field.getModifiers()) &&
-                    isStatic(field.getModifiers()) &&
-                    isTransient(field.getModifiers()) &&
-                    isFinal(field.getModifiers())
-        }
+        assert field != null
+        assert  isFinal(field.getModifiers())
+        assert  isStatic(field.getModifiers())
+        assert !isPublic(field.getModifiers())
+        assert !isPrivate(field.getModifiers())
+        assert !isProtected(field.getModifiers())
+        assert  isTransient(field.getModifiers())
     }
 
-    void testProtectedFinalStaticLogFieldAppears() {
+    @Test
+    void testProtectedStaticFinalLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PROTECTED)
             @groovy.util.logging.Log4j2
             class MyClass { }
         ''')
+        Field field = clazz.declaredFields.find { it.name == 'log' }
 
-        assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    isProtected(field.getModifiers()) &&
-                    isStatic(field.getModifiers()) &&
-                    isTransient(field.getModifiers()) &&
-                    isFinal(field.getModifiers())
-        }
+        assert field != null
+        assert isFinal(field.getModifiers())
+        assert isStatic(field.getModifiers())
+        assert isProtected(field.getModifiers())
+        assert isTransient(field.getModifiers())
     }
 
-    void testPublicFinalStaticLogFieldAppears() {
+    @Test
+    void testPublicStaticFinalLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
             @groovy.transform.VisibilityOptions(value = PUBLIC)
             @groovy.util.logging.Log4j2
             class MyClass { }
         ''')
+        Field field = clazz.declaredFields.find { it.name == 'log' }
 
-        assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    isPublic(field.getModifiers()) &&
-                    isStatic(field.getModifiers()) &&
-                    isTransient(field.getModifiers()) &&
-                    isFinal(field.getModifiers())
-        }
+        assert field != null
+        assert isFinal(field.getModifiers())
+        assert isStatic(field.getModifiers())
+        assert isPublic(field.getModifiers())
+        assert isTransient(field.getModifiers())
     }
 
-    void testUnknownAccessPrivateFinalStaticLogFieldAppears() {
-        Class clazz = new GroovyClassLoader().parseClass('''
+    @Test
+    void testClassAlreadyHasLogField1() {
+        shouldFail '''
             @groovy.util.logging.Log4j2
-            class MyClass { }
-        ''')
-
-        assert clazz.declaredFields.find { Field field ->
-            field.name == 'log' &&
-                    isPrivate(field.getModifiers()) &&
-                    isStatic(field.getModifiers()) &&
-                    isTransient(field.getModifiers()) &&
-                    isFinal(field.getModifiers())
-        }
+            class MyClass {
+                String log
+            }
+        '''
     }
 
-    void testClassAlreadyHasLogField() {
-        shouldFail(RuntimeException) {
-            Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.Log4j2()
-                class MyClass {
-                    String log
-                }
-            ''')
-            assert clazz.getConstructor().newInstance()
-        }
-    }
-
-    void testClassAlreadyHasNamedLogField() {
-        shouldFail(RuntimeException) {
-            Class clazz = new GroovyClassLoader().parseClass('''
-                @groovy.util.logging.Log4j2('logger')
-                class MyClass {
-                    String logger
-                }
-            ''')
-            assert clazz.getConstructor().newInstance()
-        }
+    @Test
+    void testClassAlreadyHasLogField2() {
+        shouldFail '''
+            @groovy.util.logging.Log4j2('logger')
+            class MyClass {
+                String logger
+            }
+        '''
     }
 
     @Log4j2
     static class MyClassLogInfo {
         def loggingMethod() {
-            log.fatal ('fatal called')
-            log.error ('error called')
-            log.warn  ('warn called')
-            log.info  ('info called')
-            log.debug ('debug called')
-            log.trace ('trace called')
+            log.fatal('fatal called')
+            log.error('error called')
+            log.warn ('warn called')
+            log.info ('info called')
+            log.debug('debug called')
+            log.trace('trace called')
         }
     }
 
+    @Test
     void testLogInfo() {
         MyClassLogInfo.log.addAppender(appender)
         MyClassLogInfo.log.setLevel(Level.ALL)
@@ -224,10 +211,11 @@ class Log4j2Test extends GroovyTestCase {
     @Log4j2
     static class MyClassLogFromStaticMethods {
         static loggingMethod() {
-            log.info   ('(static) info called')
+            log.info('(static) info called')
         }
     }
 
+    @Test
     void testLogFromStaticMethods() {
         MyClassLogFromStaticMethods.log.addAppender(appender)
         MyClassLogFromStaticMethods.log.setLevel(Level.ALL)
@@ -242,15 +230,16 @@ class Log4j2Test extends GroovyTestCase {
     @Log4j2('logger')
     static class MyClassLogInfoForNamedLogger {
         def loggingMethod() {
-            logger.fatal ('fatal called')
-            logger.error ('error called')
-            logger.warn  ('warn called')
-            logger.info  ('info called')
-            logger.debug ('debug called')
-            logger.trace ('trace called')
+            logger.fatal('fatal called')
+            logger.error('error called')
+            logger.warn ('warn called')
+            logger.info ('info called')
+            logger.debug('debug called')
+            logger.trace('trace called')
         }
     }
 
+    @Test
     void testLogInfoForNamedLogger() {
         MyClassLogInfoForNamedLogger.logger.addAppender(appender)
         MyClassLogInfoForNamedLogger.logger.setLevel(Level.ALL)
@@ -273,19 +262,19 @@ class Log4j2Test extends GroovyTestCase {
         assert events[ind].message == 'trace called'
     }
 
-    // TODO check this is actually working, my suspicion is we have two contexts here
+    @Test // TODO check this is actually working, my suspicion is we have two contexts here
     void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j2
             class MyClassLogGuard {
                 def loggingMethod() {
                     log.setLevel(org.apache.logging.log4j.Level.OFF)
-                    log.fatal (prepareLogMessage())
-                    log.error (prepareLogMessage())
-                    log.warn  (prepareLogMessage())
-                    log.info  (prepareLogMessage())
-                    log.debug (prepareLogMessage())
-                    log.trace (prepareLogMessage())
+                    log.fatal(prepareLogMessage())
+                    log.error(prepareLogMessage())
+                    log.warn (prepareLogMessage())
+                    log.info (prepareLogMessage())
+                    log.debug(prepareLogMessage())
+                    log.trace(prepareLogMessage())
                 }
 
                 def prepareLogMessage() {
@@ -293,7 +282,7 @@ class Log4j2Test extends GroovyTestCase {
                     return 'formatted log message'
                 }
             }
-            ''')
+        ''')
 
         clazz.log.addAppender(appender)
         clazz.log.setLevel(Level.ALL)
@@ -301,16 +290,15 @@ class Log4j2Test extends GroovyTestCase {
         assert appender.isLogGuarded
     }
 
-    /*
     @Log4j2
     static class MyClassLogGuard {
         def loggingMethod() {
-            log.fatal (prepareLogMessage())
-            log.error (prepareLogMessage())
-            log.warn  (prepareLogMessage())
-            log.info  (prepareLogMessage())
-            log.debug (prepareLogMessage())
-            log.trace (prepareLogMessage())
+            log.fatal(prepareLogMessage())
+            log.error(prepareLogMessage())
+            log.warn (prepareLogMessage())
+            log.info (prepareLogMessage())
+            log.debug(prepareLogMessage())
+            log.trace(prepareLogMessage())
         }
 
         def prepareLogMessage() {
@@ -322,7 +310,8 @@ class Log4j2Test extends GroovyTestCase {
         }
     }
 
-    void testLogGuard() {
+    @Disabled @Test
+    void testLogGuard2() {
         MyClassLogGuard.log.addAppender(appender)
         MyClassLogGuard.log.setLevel(Level.OFF)
         new MyClassLogGuard().loggingMethod()
@@ -334,8 +323,6 @@ class Log4j2Test extends GroovyTestCase {
         new MyClassLogGuard().loggingMethod()
         println !appender.isLogGuarded
     }
-    */
-
 
     @Log4j2
     static class MyClassDefaultCategory {
@@ -344,6 +331,7 @@ class Log4j2Test extends GroovyTestCase {
         }
     }
 
+    @Test
     void testDefaultCategory() {
         MyClassDefaultCategory.log.addAppender(appender)
         MyClassDefaultCategory.log.setLevel(Level.ALL)
@@ -359,6 +347,7 @@ class Log4j2Test extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCustomCategory() {
         def appenderForCustomCategory = new Log4j2InterceptingAppender('Appender4CustomCategory', null, createLayout())
         def loggerForCustomCategory = LogManager.getLogger('customCategory')
