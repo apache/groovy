@@ -35,7 +35,6 @@ tasks.named('jarjar') { JarJarTask jjt ->
     jjt.withManifest {
         instruction '-nouses', 'true'
         instruction 'Export-Package', "*;version=${groovyBundleVersion}"
-        instruction 'Fragment-Host', 'groovy' // GROOVY-9402, GROOVY-11570
         def folder = file("${projectDir}/src/main/resources/META-INF/services")
         if (folder.exists() && folder.listFiles().count { it.name ==~ /^(?!(org.codehaus.groovy.transform.ASTTransformation)$).*$/ } > 0) {
             instruction 'Require-Capability', 'osgi.extender;filter:="(osgi.extender=osgi.serviceloader.processor)"'
