@@ -18,24 +18,33 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import groovy.transform.CompileStatic
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import java.util.concurrent.locks.ReentrantLock
-import org.codehaus.groovy.reflection.ClassInfo
 
-class MixinTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
-    @groovy.transform.CompileStatic
-    protected void setUp() {
-        ClassInfo.clearModifiedExpandos()
+final class MixinTest {
+
+    @BeforeEach
+    @CompileStatic
+    void setUp() {
+        org.codehaus.groovy.reflection.ClassInfo.clearModifiedExpandos()
     }
 
-    protected void tearDown() {
+    @AfterEach
+    void tearDown() {
         ArrayList.metaClass = null
-        List.metaClass = null
+             List.metaClass = null
         ObjToTest.metaClass = null
     }
 
+    @Test
     void testOneClass() {
         List.mixin ListExt
         ArrayList.mixin ArrayListExt
@@ -45,6 +54,7 @@ class MixinTest extends GroovyTestCase {
         assertEquals 1, [0, 1].swap().unswap()[1]
     }
 
+    @Test
     void testWithList() {
         ArrayList.mixin ArrayListExt, ListExt
         assertEquals 1, [0, 1].swap()[0]
@@ -53,6 +63,7 @@ class MixinTest extends GroovyTestCase {
         assertEquals 1, [0, 1].swap().unswap()[1]
     }
 
+    @Test
     void testCombined() {
         ArrayList.mixin Combined
         assertEquals 1, [0, 1].swap()[0]
@@ -61,6 +72,7 @@ class MixinTest extends GroovyTestCase {
         assertEquals 1, [0, 1].swap().unswap()[1]
     }
 
+    @Test
     void testWithEmc() {
         ArrayList.metaClass.unswap = {
             [delegate[1], delegate[0]]
@@ -72,25 +84,28 @@ class MixinTest extends GroovyTestCase {
         assertEquals 1, [0, 1].swap().unswap()[1]
     }
 
+    @Test
     void testGroovyObject() {
         def obj = new ObjToTest()
-        assertEquals "original", obj.value
+        assertEquals 'original', obj.value
         obj.metaClass.mixin ObjToTestCategory
-        assertEquals "changed by category", obj.value
-        assertEquals "original", new ObjToTest().value
+        assertEquals 'changed by category', obj.value
+        assertEquals 'original', new ObjToTest().value
     }
 
+    @Test
     void testGroovyObjectWithEmc() {
         ObjToTest.metaClass.getValue = {->
-            "emc changed"
+            'emc changed'
         }
         ObjToTest obj = new ObjToTest()
-        assertEquals "emc changed", obj.getValue()
+        assertEquals 'emc changed', obj.getValue()
         obj.metaClass.mixin ObjToTestCategory
-        assertEquals "changed by category", obj.value
-        assertEquals "emc changed", new ObjToTest().value
+        assertEquals 'changed by category', obj.value
+        assertEquals 'emc changed', new ObjToTest().value
     }
 
+    @Test
     void testFlatten() {
         Object.metaClass.mixin DeepFlattenToCategory
         assertEquals([8, 9, 3, 2, 1, 4], [[8, 9] as Object[], [3, 2, [2: 1, 3: 4]], [2, 3]].flattenTo() as List)
@@ -110,11 +125,11 @@ class MixinTest extends GroovyTestCase {
             return set
         }
         Object.metaClass.flattenTo(ArrayList) {Set set ->
-            set << "oops"
-            return Collection.metaClass.invokeMethod(delegate, "flattenTo", set)
+            set << 'oops'
+            return Collection.metaClass.invokeMethod(delegate, 'flattenTo', set)
         }
         ArrayList.metaClass = null
-        assertEquals(["oops", -2, -3, 8, 9, 3, 2, 1, 4], [x, [8, 9] as Object[], [3, 2, [2: 1, 3: 4]], [2, 3]].flattenTo() as List)
+        assertEquals(['oops', -2, -3, 8, 9, 3, 2, 1, 4], [x, [8, 9] as Object[], [3, 2, [2: 1, 3: 4]], [2, 3]].flattenTo() as List)
 
         ArrayList.metaClass = null
         Object.metaClass {
@@ -125,15 +140,15 @@ class MixinTest extends GroovyTestCase {
             }
 
             flattenTo(ArrayList) {Set set ->
-                set << "oopsssss"
-                return Collection.metaClass.invokeMethod(delegate, "flattenTo", set)
+                set << 'oopsssss'
+                return Collection.metaClass.invokeMethod(delegate, 'flattenTo', set)
             }
 
             asList {->
                 delegate as List
             }
         }
-        assertEquals(["oopsssss", -2, -3, 8, 9, 3, 2, 1, 4], [x, [8, 9] as Object[], [3, 2, [2: 1, 3: 4]], [2, 3]].flattenTo().asList())
+        assertEquals(['oopsssss', -2, -3, 8, 9, 3, 2, 1, 4], [x, [8, 9] as Object[], [3, 2, [2: 1, 3: 4]], [2, 3]].flattenTo().asList())
 
         ArrayList.metaClass = null
         Object.metaClass {
@@ -145,8 +160,8 @@ class MixinTest extends GroovyTestCase {
                 }
 
                 flattenTo {Set set ->
-                    set << "ssoops"
-                    return Collection.metaClass.invokeMethod(delegate, "flattenTo", set)
+                    set << 'ssoops'
+                    return Collection.metaClass.invokeMethod(delegate, 'flattenTo', set)
                 }
             }
 
@@ -154,14 +169,15 @@ class MixinTest extends GroovyTestCase {
                 delegate as List
             }
         }
-        assertEquals(["ssoops", -2, -3, 8, 9, 3, 2, 1, 4], [x, [8, 9] as Object[], [3, 2, [2: 1, 3: 4]], [2, 3]].flattenTo().asList())
+        assertEquals(['ssoops', -2, -3, 8, 9, 3, 2, 1, 4], [x, [8, 9] as Object[], [3, 2, [2: 1, 3: 4]], [2, 3]].flattenTo().asList())
 
         Object.metaClass = null
     }
 
+    @Test
     void testMixingLockable() {
         Object.metaClass.mixin ReentrantLock
-        def name = "abcdef"
+        def name = 'abcdef'
         name.lock()
         try {
             assertTrue name.isLocked()
@@ -172,6 +188,7 @@ class MixinTest extends GroovyTestCase {
         Object.metaClass = null
     }
 
+    @Test
     void testConcurrentQueue() {
         ReentrantLock.metaClass {
             withLock {Closure operation ->
@@ -196,6 +213,7 @@ class MixinTest extends GroovyTestCase {
         ReentrantLock.metaClass = null
     }
 
+    @Test
     void testDynamicConcurrentQueue() {
         ReentrantLock.metaClass {
             withLock {Closure operation ->
@@ -264,6 +282,7 @@ class MixinTest extends GroovyTestCase {
         ReentrantLock.metaClass = null
     }
 
+    @Test
     void testNoDupCollection() {
         def list = new Object()
         list.metaClass {
@@ -287,6 +306,7 @@ class MixinTest extends GroovyTestCase {
         assertEquals 3, list[2]
     }
 
+    @Test
     void testList() {
         def u = []
         u.metaClass {
@@ -311,8 +331,8 @@ class MixinTest extends GroovyTestCase {
         assertEquals 2, ((Set) u).size()
     }
 
+    @Test
     void testWPM() {
-
         new WPM_B().foo()
 
         WPM_C.metaClass { mixin WPM_B }
@@ -322,6 +342,7 @@ class MixinTest extends GroovyTestCase {
         c.foobar()
     }
 
+    @Test
     void testStackOverflow() {
         Overflow_B.metaClass {
             mixin Overflow_A
@@ -338,15 +359,17 @@ class MixinTest extends GroovyTestCase {
         b.foo()
     }
 
+    // GROOVY-3474
+    @Test
     void testStackOverflowErrorWithMixinsAndClosure() {
-        assertScript """
+        assertScript '''
             class Groovy3474A {
                 int counter = 1
                 protected final foo() {
                     bar { counter }
                 }
-                private final String bar(Closure code) { 
-                    return "Bar " + code() 
+                private final String bar(Closure code) {
+                    return "Bar " + code()
                 }
             }
 
@@ -357,11 +380,11 @@ class MixinTest extends GroovyTestCase {
             def c = new Groovy3474C()
             assert c.foo() == 'Bar 1'
             println "testStackOverflowErrorWithMixinsAndClosure() Done"
-        """
+        '''
     }
 
     void testMixinWithVarargs() {
-        assertScript """
+        assertScript '''
             class Dsl {
                 static novarargs(java.util.List s) { "novarargs" + s.size() }
                 static plainVarargs(Object... s) { "plainVarargs" + s.size() }
@@ -371,143 +394,147 @@ class MixinTest extends GroovyTestCase {
             assert novarargs(["a", "b"]) == "novarargs2"
             assert plainVarargs("a", "b", 35) == "plainVarargs3"
             assert mixedVarargs(3, "a", "b", "c", "d") == "mixedVarargs4"
-        """
-    }
-}
-
-class ArrayListExt {
-    static def swap(ArrayList self) {
-        [self[1], self[0]]
-    }
-}
-
-class ListExt {
-    static def unswap(List self) {
-        [self[1], self[0]]
-    }
-}
-
-class Combined {
-    static def swap(ArrayList self) {
-        [self[1], self[0]]
+        '''
     }
 
-    static def unswap(List self) {
-        [self[1], self[0]]
-    }
-}
+    //--------------------------------------------------------------------------
 
-class ObjToTest {
-    def getValue() {
-        "original"
-    }
-}
-
-class ObjToTestCategory {
-    static getValue(ObjToTest self) {
-        "changed by category"
-    }
-}
-
-class DeepFlattenToCategory {
-    static Set flattenTo(element) {
-        LinkedHashSet set = new LinkedHashSet()
-        element.flattenTo(set)
-        return set
-    }
-
-    // Object - put to result set
-    static void flattenTo(element, Set addTo) {
-        addTo << element
-    }
-
-    // Collection - flatten each element
-    static void flattenTo(Collection elements, Set addTo) {
-        elements.each {element ->
-            element.flattenTo(addTo)
+    static class ArrayListExt {
+        static def swap(ArrayList self) {
+            [self[1], self[0]]
         }
     }
 
-    // Map - flatten each value
-    static void flattenTo(Map elements, Set addTo) {
-        elements.values().flattenTo(addTo)
-    }
-
-    // Array - flatten each element
-    static void flattenTo(Object[] elements, Set addTo) {
-        elements.each {element ->
-            element.flattenTo(addTo)
-        }
-    }
-}
-
-class NoFlattenArrayListCategory {
-    // Object - put to result set
-
-    static void flattenTo(ArrayList element, Set addTo) {
-        addTo << element
-    }
-}
-
-class ConcurrentQueue {
-    static {
-        ConcurrentQueue.metaClass.mixin LinkedList, ReentrantLock
-    }
-
-    def get() {
-        withLock {
-            removeFirst()
+    static class ListExt {
+        static def unswap(List self) {
+            [self[1], self[0]]
         }
     }
 
-    void put(def obj) {
-        withLock {
-            addLast(obj)
-        }
-    }
-}
-
-class NoDuplicateCollection {
-    void put(def obj) {
-        def clone = find {
-            it == obj
+    static class Combined {
+        static def swap(ArrayList self) {
+            [self[1], self[0]]
         }
 
-        if (!clone)
-            add obj
+        static def unswap(List self) {
+            [self[1], self[0]]
+        }
+    }
+
+    static class ObjToTest {
+        def getValue() {
+            'original'
+        }
+    }
+
+    static class ObjToTestCategory {
+        static getValue(ObjToTest self) {
+            'changed by category'
+        }
+    }
+
+    static class DeepFlattenToCategory {
+        static Set flattenTo(element) {
+            LinkedHashSet set = new LinkedHashSet()
+            element.flattenTo(set)
+            return set
+        }
+
+        // Object - put to result set
+        static void flattenTo(element, Set addTo) {
+            addTo << element
+        }
+
+        // Collection - flatten each element
+        static void flattenTo(Collection elements, Set addTo) {
+            elements.each {element ->
+                element.flattenTo(addTo)
+            }
+        }
+
+        // Map - flatten each value
+        static void flattenTo(Map elements, Set addTo) {
+            elements.values().flattenTo(addTo)
+        }
+
+        // Array - flatten each element
+        static void flattenTo(Object[] elements, Set addTo) {
+            elements.each {element ->
+                element.flattenTo(addTo)
+            }
+        }
+    }
+
+    static class NoFlattenArrayListCategory {
+        // Object - put to result set
+
+        static void flattenTo(ArrayList element, Set addTo) {
+            addTo << element
+        }
+    }
+
+    static class ConcurrentQueue {
+        static {
+            ConcurrentQueue.metaClass.mixin LinkedList, ReentrantLock
+        }
+
+        def get() {
+            withLock {
+                removeFirst()
+            }
+        }
+
+        void put(def obj) {
+            withLock {
+                addLast(obj)
+            }
+        }
+    }
+
+    static class NoDuplicateCollection {
+        void put(def obj) {
+            def clone = find {
+                it == obj
+            }
+
+            if (!clone)
+                add obj
+        }
+    }
+
+    static class WPM_A {
+        final foo() {
+            bar()
+        }
+
+        private final String bar() {
+            return 'Bar'
+        }
+    }
+
+    static class WPM_B extends WPM_A {
+        def foobar() {
+            super.foo()
+        }
+    }
+
+    static class WPM_C {
+    }
+
+    static class Overflow_A {
+        public void foo() {
+            println 'Original foo ' + receive('')
+        }
+
+        protected Object receive() {
+            return 'Message'
+        }
+
+        protected Object receive(param) {
+            receive() + param
+        }
+    }
+
+    static class Overflow_B {
     }
 }
-
-class WPM_A {
-
-    final foo() {
-        bar()
-    }
-
-    private final String bar() { return "Bar" }
-}
-
-class WPM_B extends WPM_A {
-    def foobar() {
-        super.foo()
-    }
-}
-
-class WPM_C {}
-
-class Overflow_A {
-    public void foo() {
-        println 'Original foo ' + receive('')
-    }
-
-    protected Object receive() {
-        return "Message"
-    }
-
-    protected Object receive(Object param) {
-        receive() + param
-    }
-}
-
-class Overflow_B {}
-
