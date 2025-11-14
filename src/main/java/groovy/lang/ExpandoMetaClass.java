@@ -448,8 +448,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-    public void addMixinClass(MixinInMetaClass mixin) {
-        mixinClasses.add(mixin);
+    @Deprecated
+    public void addMixinClass$$bridge(MixinInMetaClass mixin) {
+        addMixinClass(mixin);
+    }
+
+    public boolean addMixinClass(MixinInMetaClass mixin) {
+        return mixinClasses.add(mixin);
     }
 
     public Object castToMixedType(Object obj, Class type) {

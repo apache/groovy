@@ -38,9 +38,9 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static java.util.Arrays.stream;
+import static java.util.Objects.requireNonNull;
 
 public class MixinInMetaClass {
 
@@ -50,13 +50,11 @@ public class MixinInMetaClass {
     private final Map<Object, Object> mixinAssociations =
         new ManagedIdentityConcurrentMap<>(ManagedIdentityConcurrentMap.ReferenceType.SOFT);
 
-    public MixinInMetaClass(final ExpandoMetaClass emc, final CachedClass mixinClass) {
-        this.emc = emc;
-        this.mixinClass = mixinClass;
+    private MixinInMetaClass(final ExpandoMetaClass emc, final CachedClass mixinClass) {
+        this.emc = requireNonNull(emc);
+        this.mixinClass = requireNonNull(mixinClass);
         this.mixinConstructor = stream(mixinClass.getConstructors()).filter(it -> it.isPublic() && it.getParameterTypes().length == 0).findFirst()
                 .orElseThrow(() -> new GroovyRuntimeException("No default constructor for class " + mixinClass.getName() + "! Can't be mixed in."));
-
-        emc.addMixinClass(this);
     }
 
     public synchronized Object getMixinInstance(final Object object) {
@@ -103,6 +101,9 @@ public class MixinInMetaClass {
         for (Class<?> categoryClass : categoryClasses) {
             final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);
             final MixinInMetaClass mixin = new MixinInMetaClass(emc, cachedCategoryClass);
+            if (!emc.addMixinClass(mixin)) {
+                continue; // GROOVY-11775
+            }
 
             final MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(categoryClass);
             for (MetaProperty mp : metaClass.getProperties()) {
@@ -172,17 +173,13 @@ public class MixinInMetaClass {
 
     @Override
     public boolean equals(final Object that) {
-        return that == this
-            || (that instanceof MixinInMetaClass mc
-                && Objects.equals(mixinClass, mc.mixinClass));
+        return (that == this)
+            || (that instanceof MixinInMetaClass mmc
+                && emc.equals(mmc.emc) && mixinClass.equals(mmc.mixinClass));
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (emc != null ? emc.hashCode() : 0);
-        result = 31 * result + (mixinClass != null ? mixinClass.hashCode() : 0);
-        result = 31 * result + (mixinConstructor != null ? mixinConstructor.hashCode() : 0);
-        return result;
+        return mixinClass.hashCode(); // GROOVY-11775
     }
 }
