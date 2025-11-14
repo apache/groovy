@@ -448,8 +448,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-    public void addMixinClass(MixinInMetaClass mixin) {
-        mixinClasses.add(mixin);
+    @Deprecated
+    public void addMixinClass$$bridge(MixinInMetaClass mixin) {
+        addMixinClass(mixin);
+    }
+
+    public boolean addMixinClass(MixinInMetaClass mixin) {
+        return mixinClasses.add(mixin);
     }
 
     public Object castToMixedType(Object obj, Class type) {
@@ -1242,7 +1247,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
      * Either the first or second letter must be upperCase for that to be true.
      */
     private static boolean isPropertyName(String name) {
-        return ((!name.isEmpty()) && Character.isUpperCase(name.charAt(0))) || ((name.length() > 1) && Character.isUpperCase(name.charAt(1)));
+        return (!name.isEmpty() && Character.isUpperCase(name.charAt(0))) || (name.length() > 1 && Character.isUpperCase(name.charAt(1)));
     }
 
     /**
@@ -1479,9 +1484,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     private static class MixedInAccessor {
         private final Object object;
-        private final Set<MixinInMetaClass> mixinClasses;
+        private final Iterable<MixinInMetaClass> mixinClasses;
 
-        private MixedInAccessor(Object object, Set<MixinInMetaClass> mixinClasses) {
+        private MixedInAccessor(Object object, Iterable<MixinInMetaClass> mixinClasses) {
             this.object = object;
             this.mixinClasses = mixinClasses;
         }

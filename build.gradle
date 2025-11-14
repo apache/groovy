@@ -65,6 +65,7 @@ groovyCore {
     }
 
     bridgedClasses *supportClasses,
+            'groovy.lang.ExpandoMetaClass',
             'org.codehaus.groovy.classgen.Verifier',
             'org.codehaus.groovy.ast.tools.GeneralUtils',
             'org.codehaus.groovy.ast.stmt.TryCatchStatement',
