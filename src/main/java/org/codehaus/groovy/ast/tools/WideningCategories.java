@@ -259,7 +259,11 @@ public class WideningCategories {
                 // "String implements Comparable<String>" and "StringBuffer implements Comparable<StringBuffer>"
                 basicType = fallback; // do not loop
             } else {
-                basicType = lowestUpperBound(t1, t2);
+                try {
+                    basicType = lowestUpperBound(t1, t2);
+                } catch (StackOverflowError ignore) {
+                    basicType = fallback; // best we can do for now
+                }
             }
             if (agt[i].isWildcard() || bgt[i].isWildcard() || !t1.equals(t2)) {
                 lubGTs[i] = GenericsUtils.buildWildcardType(basicType);
