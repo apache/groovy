@@ -131,7 +131,7 @@ dependencies {
     tools "org.jboss.bridger:bridger:${versions.bridger}"
     // updated bridger dependencies to remove vulnerabilities:
     tools "com.jcraft:jsch:0.1.55"
-    tools "commons-io:commons-io:2.20.0"
+    tools "commons-io:commons-io:2.21.0"
     tools "org.apache.maven:maven-core:3.9.11"
     tools "org.apache.maven.shared:maven-shared-utils:3.4.2"
     tools "org.codehaus.plexus:plexus-utils:4.0.2"
