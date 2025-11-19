@@ -97,6 +97,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -113,6 +114,7 @@ import java.util.function.BiConsumer;
 
 import static groovy.lang.Tuple.tuple;
 import static java.lang.Character.isUpperCase;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.reflection.ReflectionUtils.checkAccessible;
@@ -359,6 +361,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             for (CachedMethod m : c.getMethods()) {
                 if (c == theCachedClass || (m.isPublic() && !m.isStatic())) { // GROOVY-8164
                     addMetaMethodToIndex(m, mainClassMethodHeader);
+                }
+                if (c != theCachedClass && isValidAccessorName(m.getName())) { // GROOVY-11803
+                    metaMethodIndex.addMetaMethod(m, metaMethodIndex.indexMap.computeIfAbsent(c.getTheClass(), k -> new HashMap<>()));
                 }
             }
         }
@@ -2354,6 +2359,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             applyPropertyDescriptors(propertyDescriptors);
 
             applyStrayPropertyMethods(superClasses, classPropertyIndex, true);
+            applyStrayPropertyMethods(superInterfaces, classPropertyIndex, true);
             applyStrayPropertyMethods(superClasses, classPropertyIndexForSuper, false);
         }
         fillStaticPropertyIndex();
@@ -2504,6 +2510,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private void applyStrayPropertyMethods(CachedClass source, Map<String, MetaProperty> target, boolean isThis) {
         var header = metaMethodIndex.getHeader(source.getTheClass());
+        if (header == null) return;
         for (MetaMethodIndex.Cache e : header.values()) {
             String methodName = e.name;
             int methodNameLength = methodName.length();

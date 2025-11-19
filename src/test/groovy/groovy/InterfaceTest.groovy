@@ -78,6 +78,39 @@ final class InterfaceTest extends CompilableTestSupport {
         assert err.contains('The interface Comparable cannot be implemented more than once with different arguments: java.lang.Comparable (via B) and java.lang.Comparable<java.lang.Object> (via A)')
     }
 
+    // GROOVY-11803
+    void testDefaultInterfaceMethod() {
+        assertScript '''
+            interface Foo {
+                default int barSize() {
+                    return bar.size()
+                }
+                String getBar()
+            }
+            class Baz implements Foo {
+                final String bar = 'BAR'
+            }
+
+            assert new Baz().barSize() == 3
+        '''
+        for (kind in ['default','private','static']) {
+            assertScript """
+                interface Foo {
+                    default int barSize() {
+                        return bar.size()
+                    }
+                    $kind String getBar() {
+                        return 'fizzbuzz'
+                    }
+                }
+                class Baz implements Foo {
+                }
+
+                assert new Baz().barSize() == 8
+            """
+        }
+    }
+
     // GROOVY-10060
     void testPrivateInterfaceMethod() {
         assertScript '''
