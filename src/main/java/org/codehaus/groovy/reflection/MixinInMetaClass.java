@@ -34,10 +34,13 @@ import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaProperty;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
+import static java.util.Arrays.stream;
+import static java.util.Objects.requireNonNull;
 
 public class MixinInMetaClass {
 
@@ -47,22 +50,11 @@ public class MixinInMetaClass {
     private final Map<Object, Object> mixinAssociations =
         new ManagedIdentityConcurrentMap<>(ManagedIdentityConcurrentMap.ReferenceType.SOFT);
 
-    public MixinInMetaClass(final ExpandoMetaClass emc, final CachedClass mixinClass) {
-        this.emc = emc;
-        this.mixinClass = mixinClass;
-        this.mixinConstructor = findDefaultConstructor(mixinClass);
-
-        emc.addMixinClass(this);
-    }
-
-    private static CachedConstructor findDefaultConstructor(final CachedClass mixinClass) {
-        for (CachedConstructor ctor : mixinClass.getConstructors()) {
-            if (ctor.isPublic() && ctor.getParameterTypes().length == 0) {
-                return ctor;
-            }
-        }
-
-        throw new GroovyRuntimeException("No default constructor for class " + mixinClass.getName() + "! Can't be mixed in.");
+    private MixinInMetaClass(final ExpandoMetaClass emc, final CachedClass mixinClass) {
+        this.emc = requireNonNull(emc);
+        this.mixinClass = requireNonNull(mixinClass);
+        this.mixinConstructor = stream(mixinClass.getConstructors()).filter(it -> it.isPublic() && it.getParameterTypes().length == 0).findFirst()
+                .orElseThrow(() -> new GroovyRuntimeException("No default constructor for class " + mixinClass.getName() + "! Can't be mixed in."));
     }
 
     public synchronized Object getMixinInstance(final Object object) {
@@ -104,21 +96,24 @@ public class MixinInMetaClass {
             }
         }
 
-        ExpandoMetaClass mc = (ExpandoMetaClass) self;
+        ExpandoMetaClass emc = (ExpandoMetaClass) self;
         List<MetaMethod> toRegister = new ArrayList<>();
         for (Class<?> categoryClass : categoryClasses) {
             final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);
-            final MixinInMetaClass mixin = new MixinInMetaClass(mc, cachedCategoryClass);
+            final MixinInMetaClass mixin = new MixinInMetaClass(emc, cachedCategoryClass);
+            if (!emc.addMixinClass(mixin)) {
+                continue; // GROOVY-11775
+            }
 
             final MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(categoryClass);
             for (MetaProperty mp : metaClass.getProperties()) {
-                if (self.getMetaProperty(mp.getName()) == null) {
-                    mc.registerBeanProperty(mp.getName(), new MixinInstanceMetaProperty(mp, mixin));
+                if (emc.getMetaProperty(mp.getName()) == null) {
+                    emc.registerBeanProperty(mp.getName(), new MixinInstanceMetaProperty(mp, mixin));
                 }
             }
             for (MetaProperty mp : cachedCategoryClass.getFields()) {
-                if (self.getMetaProperty(mp.getName()) == null) {
-                    mc.registerBeanProperty(mp.getName(), new MixinInstanceMetaProperty(mp, mixin));
+                if (emc.getMetaProperty(mp.getName()) == null) {
+                    emc.registerBeanProperty(mp.getName(), new MixinInstanceMetaProperty(mp, mixin));
                 }
             }
             for (MetaMethod method : metaClass.getMethods()) {
@@ -135,7 +130,7 @@ public class MixinInMetaClass {
                     if (method instanceof CachedMethod cachedMethod)
                         staticMethod(self, toRegister, cachedMethod);
                 } else if (method.getDeclaringClass().getTheClass() != Object.class || "toString".equals(method.getName())) {
-                  //if (self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
+                  //if (emc.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
                         toRegister.add(new MixinInstanceMetaMethod(method, mixin));
                   //}
                 }
@@ -144,14 +139,14 @@ public class MixinInMetaClass {
 
         for (MetaMethod mm : toRegister) {
             if (mm.getDeclaringClass().isAssignableFrom(selfClass)) {
-                mc.registerInstanceMethod(mm);
+                emc.registerInstanceMethod(mm);
             } else {
-                mc.registerSubclassInstanceMethod(mm);
+                emc.registerSubclassInstanceMethod(mm);
             }
         }
     }
 
-    private static boolean hasAnnotation(final CachedMethod method, final Class<Internal> annotationClass) {
+    private static boolean hasAnnotation(final CachedMethod method, final Class<? extends Annotation> annotationClass) {
         return method.getAnnotation(annotationClass) != null;
     }
 
@@ -178,17 +173,13 @@ public class MixinInMetaClass {
 
     @Override
     public boolean equals(final Object that) {
-        return that == this
-            || (that instanceof MixinInMetaClass mc
-                && Objects.equals(mixinClass, mc.mixinClass));
+        return (that == this)
+            || (that instanceof MixinInMetaClass mmc
+                && emc.equals(mmc.emc) && mixinClass.equals(mmc.mixinClass));
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (emc != null ? emc.hashCode() : 0);
-        result = 31 * result + (mixinClass != null ? mixinClass.hashCode() : 0);
-        result = 31 * result + (mixinConstructor != null ? mixinConstructor.hashCode() : 0);
-        return result;
+        return mixinClass.hashCode(); // GROOVY-11775
     }
 }
