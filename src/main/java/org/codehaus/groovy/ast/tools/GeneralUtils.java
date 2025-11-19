@@ -19,6 +19,7 @@
 package org.codehaus.groovy.ast.tools;
 
 import groovy.lang.MetaProperty;
+import groovy.util.concurrent.async.AsyncHelper;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -110,6 +111,7 @@ public class GeneralUtils {
     public  static final Token INSTANCEOF    = Token.newSymbol(Types.KEYWORD_INSTANCEOF        , -1, -1);
     public  static final Token MINUS         = Token.newSymbol(Types.MINUS                     , -1, -1);
     public  static final Token PLUS          = Token.newSymbol(Types.PLUS                      , -1, -1);
+
 
     public static BinaryExpression andX(final Expression lhv, final Expression rhv) {
         return binX(lhv, AND, rhv);
@@ -309,6 +311,21 @@ public class GeneralUtils {
      */
     public static LambdaExpression lambdaX(final Statement code) {
         return lambdaX(Parameter.EMPTY_ARRAY, code);
+    }
+
+    /**
+     * Wraps the original code inside an asynchronous execution using {@link AsyncHelper#async(java.util.function.Supplier)}
+     *
+     * @param origCode the original code
+     * @return the new block statement with asynchronous execution
+     * @since 6.0.0
+     */
+    public static BlockStatement asyncS(final Statement origCode) {
+        LambdaExpression supplierLambdaExpression = lambdaX(origCode);
+        Expression resultExpression = callX(ASYNC_HELPER_TYPE, "async", supplierLambdaExpression);
+        BlockStatement newCode = block(stmt(resultExpression));
+        newCode.setSourcePosition(origCode);
+        return newCode;
     }
 
     /**
@@ -1208,4 +1225,6 @@ public class GeneralUtils {
 
         return true;
     }
+
+    private static final ClassNode ASYNC_HELPER_TYPE = ClassHelper.make(AsyncHelper.class);
 }
