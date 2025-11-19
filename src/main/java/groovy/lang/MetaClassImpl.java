@@ -152,13 +152,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected final boolean isMap;
     protected final MetaMethodIndex metaMethodIndex;
 
+    private static Map<String, MetaProperty> subMap(Map<CachedClass, LinkedHashMap<String, MetaProperty>> map, CachedClass key) {
+        return map.computeIfAbsent(key, k -> new LinkedHashMap<>());
+    }
+    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndexForSuper = new LinkedHashMap<>();
     private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndex = new LinkedHashMap<>();
     private final Map<String, MetaProperty> staticPropertyIndex = new LinkedHashMap<>();
     private final Map<String, MetaMethod> listeners = new LinkedHashMap<>();
     private final List<MetaMethod> allMethods = new ArrayList<>();
-    // we only need one of these that can be reused over and over.
-    private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndexForSuper = new LinkedHashMap<>();
     private final Set<MetaMethod> newGroovyMethodsSet = new LinkedHashSet<>();
     private final MetaMethod[] myNewMetaMethods;
     private final MetaMethod[] additionalMetaMethods;
@@ -289,12 +290,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public MetaProperty getMetaProperty(final String name) {
         MetaProperty metaProperty = null;
 
-        LinkedHashMap<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
+        Map<String, MetaProperty> propertyMap = subMap(classPropertyIndex, theCachedClass);
         metaProperty = propertyMap.get(name);
         if (metaProperty == null) {
             metaProperty = staticPropertyIndex.get(name);
             if (metaProperty == null) {
-                propertyMap = classPropertyIndexForSuper.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
+                propertyMap = subMap(classPropertyIndexForSuper, theCachedClass);
                 metaProperty = propertyMap.get(name);
                 if (metaProperty == null) {
                     MetaBeanProperty property = findPropertyInClassHierarchy(name, theCachedClass);
@@ -2323,23 +2324,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * This will build up the property map (Map of MetaProperty objects, keyed on
-     * property name).
+     * Populates the map of MetaProperty objects, keyed by class and property name.
      *
      * @param propertyDescriptors the property descriptors
      */
     private void setUpProperties(final PropertyDescriptor[] propertyDescriptors) {
         if (theCachedClass.isInterface) {
-            for (CachedClass iface : theCachedClass.getInterfaces()) { // includes theCachedClass
-                classPropertyIndex.computeIfAbsent(iface, x -> {
-                    var index = new LinkedHashMap<String, MetaProperty>();
-                    addConsts(iface, index);
-                    return index;
-                });
-            }
+            addConsts(theCachedClass, subMap(classPropertyIndex, theCachedClass));
+
             applyPropertyDescriptors(propertyDescriptors);
             CachedClass superClass = ReflectionCache.OBJECT_CLASS;
-            applyStrayPropertyMethods(superClass, classPropertyIndex.computeIfAbsent(superClass, x -> new LinkedHashMap<>()), true);
+            applyStrayPropertyMethods(superClass, subMap(classPropertyIndex, superClass), true);
         } else {
             List<CachedClass> superClasses = getSuperClasses();
             List<CachedClass> superInterfaces = new ArrayList<>(theCachedClass.getInterfaces());
@@ -2350,9 +2345,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             if (theCachedClass.isArray) { // add the special read-only "length" property
-                var map = new LinkedHashMap<String, MetaProperty>();
-                map.put("length", arrayLengthProperty);
-                classPropertyIndex.put(theCachedClass, map);
+                subMap(classPropertyIndex, theCachedClass).put("length", new MetaArrayLengthProperty());
             }
 
             inheritStaticInterfaceFields(superClasses, superInterfaces);
@@ -2383,7 +2376,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         };
 
-        classPropertyIndex.computeIfAbsent(theCachedClass, x -> new LinkedHashMap<>()).forEach(indexStaticProperty);
+        subMap(classPropertyIndex, theCachedClass).forEach(indexStaticProperty);
 
         if (theCachedClass.isInterface) { // GROOVY-10592: static interface accessors
             Map<String, MetaProperty> strayProperties = new LinkedHashMap<>();
@@ -2450,14 +2443,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void inheritStaticInterfaceFields(List<CachedClass> superClasses, Iterable<CachedClass> interfaces) {
         for (CachedClass iface : interfaces) {
-            LinkedHashMap<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(iface, x -> {
+            Map<String, MetaProperty> iPropertyIndex = classPropertyIndex.computeIfAbsent(iface, x -> {
                 var index = new LinkedHashMap<String, MetaProperty>();
                 addConsts(iface, index);
                 return index;
             });
             for (CachedClass superClass : superClasses) {
                 if (!iface.getTheClass().isAssignableFrom(superClass.getTheClass())) continue;
-                LinkedHashMap<String, MetaProperty> sPropertyIndex = classPropertyIndex.computeIfAbsent(superClass, x -> new LinkedHashMap<>());
+                Map<String, MetaProperty> sPropertyIndex = subMap(classPropertyIndex, superClass);
                 copyNonPrivateFields(iPropertyIndex, sPropertyIndex, null);
             }
         }
@@ -2466,11 +2459,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private void inheritFields(final Iterable<CachedClass> superClasses) {
         Map<String, MetaProperty> sci = null;
         for (CachedClass cc : superClasses) {
-            Map<String, MetaProperty> cci = classPropertyIndex.computeIfAbsent(cc, x -> new LinkedHashMap<>());
+            Map<String, MetaProperty> cci = subMap(classPropertyIndex, cc);
             if (sci != null && !sci.isEmpty()) {
                 copyNonPrivateFields(sci, cci, cc);
                 // GROOVY-9608, GROOVY-9609: add public, protected, and package-private fields to index for super
-                copyNonPrivateFields(sci, classPropertyIndexForSuper.computeIfAbsent(cc, x -> new LinkedHashMap<>()), cc);
+                copyNonPrivateFields(sci, subMap(classPropertyIndexForSuper, cc), cc);
             }
             sci = cci;
             addFields(cc, cci);
@@ -2502,7 +2495,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void applyStrayPropertyMethods(Iterable<CachedClass> classes, Map<CachedClass, LinkedHashMap<String, MetaProperty>> propertyIndex, boolean isThis) {
         for (CachedClass cc : classes) {
-            applyStrayPropertyMethods(cc, propertyIndex.computeIfAbsent(cc, x -> new LinkedHashMap<>()), isThis);
+            applyStrayPropertyMethods(cc, subMap(propertyIndex, cc), isThis);
         }
     }
 
@@ -2641,7 +2634,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (staticProperty != null) {
             staticPropertyIndex.put(mp.getName(), mp);
         } else {
-            Map<String, MetaProperty> propertyMap = classPropertyIndex.computeIfAbsent(theCachedClass, k -> new LinkedHashMap<>());
+            Map<String, MetaProperty> propertyMap = subMap(classPropertyIndex, theCachedClass);
             // remember field
             CachedField field;
             MetaProperty old = propertyMap.get(mp.getName());
@@ -3361,12 +3354,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void addProperties() {
         BeanInfo info;
-        //     introspect
         try {
             if (isBeanDerivative(theClass)) {
-                info = (BeanInfo) doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO));
+                info = doPrivileged(() -> Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO));
             } else {
-                info = (BeanInfo) doPrivileged((PrivilegedExceptionAction) () -> Introspector.getBeanInfo(theClass));
+                info = doPrivileged(() -> Introspector.getBeanInfo(theClass));
             }
         } catch (PrivilegedActionException pae) {
             throw new GroovyRuntimeException("exception during bean introspection", pae.getException());
@@ -3402,7 +3394,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Set<String> componentNames = new HashSet<>(plugin.getRecordComponentNames(theClass));
         if (!componentNames.isEmpty()) {
             MethodDescriptor[] methodDescriptors = info.getMethodDescriptors();
-            Map<String, MetaProperty> propIndex = classPropertyIndex.computeIfAbsent(theCachedClass, x -> new LinkedHashMap<>());
+            Map<String, MetaProperty> propIndex = subMap(classPropertyIndex, theCachedClass);
             for (MethodDescriptor md : methodDescriptors) {
                 if (md.getMethod().getParameterCount() != 0) continue;
                 String name = md.getName();
@@ -3416,8 +3408,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private Object doPrivileged(PrivilegedExceptionAction action) throws PrivilegedActionException {
+    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(final PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
         return java.security.AccessController.doPrivileged(action);
     }
 
@@ -3622,7 +3614,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 property = searchInterfacesForMetaProperty(propertyName, superInterfaces);
                 if (property != null) break;
             }
-
         }
         return property;
     }
