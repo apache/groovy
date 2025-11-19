@@ -383,6 +383,7 @@ final class MixinTest {
         '''
     }
 
+    @Test
     void testMixinWithVarargs() {
         assertScript '''
             class Dsl {
@@ -394,6 +395,25 @@ final class MixinTest {
             assert novarargs(["a", "b"]) == "novarargs2"
             assert plainVarargs("a", "b", 35) == "plainVarargs3"
             assert mixedVarargs(3, "a", "b", "c", "d") == "mixedVarargs4"
+        '''
+    }
+
+    // GROOVY-11775
+    @Test
+    void testRepeatMixing() {
+        assertScript '''
+            class Foo {
+                int value = new Random().nextInt()
+            }
+            class Bar {
+            }
+            Bar.mixin(Foo)
+            def bar = new Bar()
+            int val = bar.value
+            assert bar.value == val
+            Bar.mixin(Foo)
+            assert bar.value == val
+            assert bar.value == val
         '''
     }
 
