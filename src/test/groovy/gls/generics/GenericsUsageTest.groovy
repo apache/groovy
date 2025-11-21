@@ -18,29 +18,35 @@
  */
 package gls.generics
 
-import gls.CompilableTestSupport
+import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.jupiter.api.Test
 
-final class GenericsUsageTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class GenericsUsageTest {
+
+    @Test
     void testInvalidParameterUsage() {
-        shouldNotCompile """
+        shouldFail CompilationFailedException, '''
             abstract class B<T> implements Map<T>{}
-        """
-        shouldNotCompile """
+        '''
+        shouldFail CompilationFailedException, '''
             class A<T,V> extends ArrayList<T,V>{}
-        """
-        shouldNotCompile """
+        '''
+        shouldFail CompilationFailedException, '''
             class A<T extends Number> {}
             class B<T> extends A<T>{}
-        """
-        shouldNotCompile """
+        '''
+        shouldFail CompilationFailedException, '''
             class B<T> extends ArrayList<?>{}
-        """
+        '''
     }
 
+    @Test
     void testCovariantReturn() {
-        shouldNotCompile '''
+        shouldFail CompilationFailedException, '''
             class A<T> {
                 T foo(T t) { 1 }
             }
@@ -49,24 +55,30 @@ final class GenericsUsageTest extends CompilableTestSupport {
                 String foo(Long l) { '2' }
             }
         '''
+    }
 
-        // GROOVY-6977
+    // GROOVY-6977
+    @Test
+    void testCovariantReturn2() {
         assertScript '''
             class A {
-              public <R> List<R> foo() {
-                List<R> list = new ArrayList<R>() {
+                public <R> List<R> foo() {
+                    List<R> list = new ArrayList<R>() {
+                        // ...
+                    }
                     // ...
+                    list
                 }
-                // ...
-                list
-              }
             }
 
             def longList = new A().<Long>foo()
             assert longList != null
             assert longList.empty
         '''
+    }
 
+    @Test
+    void testCovariantReturn3() {
         assertScript '''
             class A<T> {
                 T foo(T t) {1}
@@ -87,8 +99,9 @@ final class GenericsUsageTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testCovariantReturnWithInterface() {
-        assertScript """
+        assertScript '''
             import java.util.concurrent.*
 
             class CallableTask implements Callable<String> {
@@ -97,57 +110,63 @@ final class GenericsUsageTest extends CompilableTestSupport {
 
             def task = new CallableTask()
             assert task.call() == "x"
-        """
+        '''
     }
 
+    @Test
     void testCovariantReturnWithEmptyAbstractClassesInBetween() {
-        assertScript """
-        import java.util.concurrent.*;
+        assertScript '''
+            import java.util.concurrent.*
 
-        abstract class AbstractCallableTask<T> implements Callable<T> { }
-        abstract class SubclassCallableTask<T> extends AbstractCallableTask<T> { }
-        class CallableTask extends SubclassCallableTask<String> {
-            String call() { return "x"; }
-        }
-        assert "x" == new CallableTask().call();
-      """
+            abstract class AbstractCallableTask<T> implements Callable<T> { }
+            abstract class SubclassCallableTask<T> extends AbstractCallableTask<T> { }
+            class CallableTask extends SubclassCallableTask<String> {
+                String call() { return "x" }
+            }
+
+            assert "x" == new CallableTask().call()
+        '''
     }
 
+    @Test
     void testGenericsDiamondShortcutSimple() {
-        assertScript """
-            List<List<String>> list1 = new ArrayList<>()
-            assert list1.size() == 0
-        """
+        assertScript '''
+            List<List<String>> list = new ArrayList<>()
+            assert list.size() == 0
+        '''
     }
 
+    @Test
     void testGenericsDiamondShortcutComplex() {
-        assertScript """
-            List<List<List<List<List<String>>>>> list2 = new ArrayList<>()
-            assert list2.size() == 0
-        """
+        assertScript '''
+            List<List<List<List<List<String>>>>> list = new ArrayList<>()
+            assert list.size() == 0
+        '''
     }
 
+    @Test
     void testGenericsDiamondShortcutMethodCall() {
-        assertScript """
-            def method(List<List<String>> list3) {
-              list3.size()
+        assertScript '''
+            def method(List<List<String>> list) {
+                list.size()
             }
 
             assert method(new ArrayList<>()) == 0
-        """
+        '''
     }
 
+    @Test
     void testGenericsDiamondShortcutIllegalPosition() {
-        shouldFailCompilationWithAnyMessage '''
-            List<> list4 = []
-        ''', ['unexpected token: <', 'Unexpected input: \'List<>\'']
+        shouldFailCompilationWithMessage 'List<> list;', 'Unexpected input: \'List<>\''
     }
 
+    // GROOVY-2725
+    @Test
     void testGenericsInAsType() {
         // this is to ensure no regression to GROOVY-2725 will happen
         // "as ThreadLocal<Integer>\n" did not compile because the nls
         // was swallowed and could not be used to end the expression
-        assertScript """
+        assertScript '''
             import java.util.concurrent.atomic.AtomicInteger
 
             class ThreadId {
@@ -165,49 +184,51 @@ final class GenericsUsageTest extends CompilableTestSupport {
             // we do not actually want to execute something, just
             // ensure this compiles, so we do a dummy command here
             assert ThreadId != null
-        """
+        '''
     }
 
+    @Test
     void testCompilationWithMissingClosingBracketsInGenerics() {
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             def list1 = new ArrayList<Integer()
-        """, "Unexpected input: '('"
+        ''', "Unexpected input: '('"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             List<Integer list2 = new ArrayList<Integer>()
-        """, "Unexpected input: 'List<Integer'"
+        ''', "Unexpected input: 'List<Integer'"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             def c = []
             for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
-        """, "Unexpected input: 'Iterator<String i'"
+        ''', "Unexpected input: 'Iterator<String i'"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             def m(Class<Integer someParam) {}
-        """, "Unexpected input: 'Class<Integer someParam'"
+        ''', "Unexpected input: 'Class<Integer someParam'"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
-        """, "Unexpected input: 'implements'"
+        ''', "Unexpected input: 'implements'"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
-        """, "Unexpected input: '<'"
+        ''', "Unexpected input: '<'"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
-        """, "Unexpected input: '<'"
+        ''', "Unexpected input: '<'"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             def List<List<Integer> history = new ArrayList<List<Integer>>()
-        """, "Unexpected input: 'def List<List<Integer> history'"
+        ''', "Unexpected input: 'def List<List<Integer> history'"
 
-        shouldFailCompilationWithMessage """
+        shouldFailCompilationWithMessage '''
             def List<List<Integer>> history = new ArrayList<List<Integer>()
-        """, "Unexpected input: '('"
+        ''', "Unexpected input: '('"
     }
 
     // GROOVY-3975
+    @Test
     void testGenericsForClosureParameters() {
         def cl = { List<String> s -> }
 
@@ -219,6 +240,7 @@ final class GenericsUsageTest extends CompilableTestSupport {
     }
 
     // GROOVY-4974
+    @Test
     void testBoundedGenericsWithInheritance() {
         assertScript '''
             class TestGenerics {
@@ -242,30 +264,57 @@ final class GenericsUsageTest extends CompilableTestSupport {
         '''
     }
 
+    // GROOVY-11805
+    @Test
+    void testSelfReferentialTypeVariableWildcard() {
+        assertScript '''
+            interface I<T extends I<?>> {
+                void proc()
+            }
+            class C implements I<C> {
+                @Override
+                void proc() {
+                }
+            }
+            I<?> func(Closure cl) {
+                (new C()).tap(cl)
+            }
+
+            func {
+                proc()
+            }
+
+            def classLoader = new GroovyClassLoader(this.class.classLoader)
+            def shell = new GroovyShell(classLoader)
+            shell.parse("import I; new C()").run()
+        '''
+    }
+
     // GROOVY-3731, GROOVY-7865, GROOVY-10033
+    @Test
     void testFriendlyErrorMessageForGenericsErrors() {
         // superclass and interfaces
-        shouldFailCompilationWithMessages '''
+        shouldFailCompilationWithMessage '''
             class C extends ArrayList<> { }
-        ''', ["Unexpected input: '<'"]
-        shouldFailCompilationWithMessages '''
+        ''', "Unexpected input: '<'"
+        shouldFailCompilationWithMessage '''
             class C extends ArrayList<? extends Number> { }
-        ''', ['A supertype may not specify a wildcard type']
+        ''', 'A supertype may not specify a wildcard type'
         shouldFailCompilationWithMessages '''
             class C extends ArrayList<String, String> { }
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'
         shouldFailCompilationWithMessages '''
             class C extends HashMap<String> { }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
-        shouldFailCompilationWithMessages '''
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
+        shouldFailCompilationWithMessage '''
             class C implements Map<> { }
-        ''', ["Unexpected input: '<'"]
+        ''', "Unexpected input: '<'"
         shouldFailCompilationWithMessages '''
             class MyMap implements Map<String> { }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             class C implements List<String, String> { }
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'
 
         // constructor call
         assertScript '''
@@ -276,103 +325,104 @@ final class GenericsUsageTest extends CompilableTestSupport {
         ''', 'Cannot use diamond <> with anonymous inner classes'
         shouldFailCompilationWithMessages '''
             new LinkedList<Integer, String>()
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'
         shouldFailCompilationWithMessages '''
             new LinkedList<String, String>()
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'
         shouldFailCompilationWithMessages '''
             new LinkedList<String, String>() { }
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'
         shouldFailCompilationWithMessages '''
             new Date<Calendar>()
-        ''', ['(supplied with 1 type parameter)', 'which takes no parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes no parameters'
 
         // constructor declaration
         shouldFailCompilationWithMessages '''
             class C { C(Map<String> m) { } }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             class C { C(Closure<String,Number> c) { } }
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'
 
         // method declaration
         shouldFailCompilationWithMessages '''
             def method(Map<String> map) { }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             Map<String> method() { }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             def method(Map<String, Map<String>> map) { }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             def method(Map<String, Map<String>> map) { }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
 
         // field declaration
         shouldFailCompilationWithMessages '''
             class C { Map<String> map }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             class C { Map<String, Map<String>> map }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
 
         // variable declaration
         shouldFailCompilationWithMessages '''
             def method() { Map<String> map }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             def method() { Map<String, Map<String>> map }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             def (Map<String,String> one, Map<String> two) = [ [:], [:] ]
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             Map<String>[][] array = new Map[0][0]
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             Map<String,String>[][] array = new Map<String>[0][]
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             class C { { Map<String> m = null } }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             class C { static { Map<String> m = null } }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             @groovy.transform.ASTTest(value={
                 Map<String> m = null
             })
             class C { }
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
 
         // casting and coercion
         shouldFailCompilationWithMessages '''
             def map = (Map<String>) null
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             def map = null as Map<String>
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
     }
 
     // GROOVY-5441
+    @Test
     void testCompilationErrorForMismatchedGenericsWithQualifiedTypes() {
         shouldFailCompilationWithMessages '''
             groovy.lang.Tuple2<Object> tuple
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             java.util.List<Object,Object> list
-        ''', ['(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 2 type parameters)', 'which takes 1 parameter'
         shouldFailCompilationWithMessages '''
             java.util.Map<Object,Object,Object> map
-        ''', ['(supplied with 3 type parameters)', 'which takes 2 parameters']
+        ''', '(supplied with 3 type parameters)', 'which takes 2 parameters'
         shouldFailCompilationWithMessages '''
             def (java.util.Map<Object> x, java.util.List<Object,Object> y) = [null,null]
-        ''', ['(supplied with 1 type parameter)', 'which takes 2 parameters',
-              '(supplied with 2 type parameters)', 'which takes 1 parameter']
+        ''', '(supplied with 1 type parameter)', 'which takes 2 parameters', '(supplied with 2 type parameters)', 'which takes 1 parameter'
     }
 
     // GROOVY-8990
+    @Test
     void testCompilationErrorForMismatchedGenericsWithMultipleBounds() {
         shouldFailCompilationWithMessages '''
             class C1<T> {}
@@ -399,50 +449,37 @@ final class GenericsUsageTest extends CompilableTestSupport {
             interface I2<T extends Number> {}
             class C12 implements I2<String> {} // String not a Number
             class C13 implements I2<C10> {} // C10 is a Number
-        ''', [
-                'The type String is not a valid substitute for the bounded parameter <T extends I1>',
-                'The type C2 is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
-                'The type Integer is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
-                'The type String is not a valid substitute for the bounded parameter <T extends java.lang.Number>'
-        ]
+        ''',
+        'The type String is not a valid substitute for the bounded parameter <T extends I1>',
+        'The type C2 is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
+        'The type Integer is not a valid substitute for the bounded parameter <T extends java.lang.Number & I1>',
+        'The type String is not a valid substitute for the bounded parameter <T extends java.lang.Number>'
     }
 
     //--------------------------------------------------------------------------
 
-    private void shouldFailCompilationWithDefaultMessage(scriptText) {
-        shouldFailCompilationWithMessage scriptText, "Missing closing bracket '>' for generics types"
-    }
-
     private void shouldFailCompilationWithMessage(scriptText, String errorMessage) {
-        shouldFailCompilationWithMessages(scriptText, [errorMessage])
+        def mcee = shouldFail(MultipleCompilationErrorsException, scriptText)
+        def text = mcee.toString()
+        assert text.contains(errorMessage)
     }
 
-    private void shouldFailCompilationWithMessages(scriptText, List<String> errorMessages) {
-        try {
-            assertScript scriptText
-            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
-        } catch (MultipleCompilationErrorsException mcee) {
-            def text = mcee.toString()
-            errorMessages.each {
-                assert text.contains(it)
-            }
+    private void shouldFailCompilationWithMessages(scriptText, String... errorMessages) {
+        def mcee = shouldFail(MultipleCompilationErrorsException, scriptText)
+        def text = mcee.toString()
+        for (errorMessage in errorMessages) {
+            assert text.contains(errorMessage)
         }
     }
 
     private void shouldFailCompilationWithAnyMessage(scriptText, List<String> errorMessages) {
-        try {
-            assertScript scriptText
-            fail("The script compilation should have failed as it contains generics errors, e.g. mis-matching generic brackets")
-        } catch (MultipleCompilationErrorsException mcee) {
-            def text = mcee.toString()
-
-            for (errorMessage in errorMessages) {
-                if (text.contains(errorMessage)) {
-                    return
-                }
+        def mcee = shouldFail(MultipleCompilationErrorsException, scriptText)
+        def text = mcee.toString()
+        for (errorMessage in errorMessages) {
+            if (text.contains(errorMessage)) {
+                return
             }
-
-            assert false, text + " can not match any expected error message: " + errorMessages
         }
+        assert false, "$text can not match any expected error message: $errorMessages"
     }
 }
