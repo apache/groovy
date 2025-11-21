@@ -252,18 +252,19 @@ public class Java8 implements VMPlugin {
     }
 
     private ClassNode configureParameterizedType(final ParameterizedType parameterizedType) {
-        ClassNode base = configureType(parameterizedType.getRawType());
-        GenericsType[] gts = configureTypeArguments(parameterizedType.getActualTypeArguments());
+        ClassNode type = configureType(parameterizedType.getRawType());
+        GenericsType[] tas = configureTypeArguments(parameterizedType.getActualTypeArguments());
         // fix erasure : ResolveVisitor#resolveWildcardBounding
-        final int n; if (gts != null && (n = gts.length) > 0) {
-            for (int i = 0; i < n; i += 1) { GenericsType gt = gts[i];
-                if (!gt.isWildcard() || gt.getUpperBounds() != null) continue;
-                ClassNode[] ubs = base.redirect().getGenericsTypes()[i].getUpperBounds();
-                if (ubs != null && !ClassHelper.OBJECT_TYPE.equals(ubs[0])) gt.getType().setRedirect(ubs[0]);
+        final int n; if (tas != null && (n = tas.length) > 0) {
+            GenericsType[] tps = type.redirect().getGenericsTypes();
+            for (int i = 0; i < n; i += 1) { GenericsType ta = tas[i];
+                if (!ta.isWildcard() || ta.getUpperBounds() != null) continue;
+                ClassNode[] ubs = (tps != null && tps.length > i ? tps[i].getUpperBounds() : null);
+                if (ubs != null && !ClassHelper.isObjectType(ubs[0])) ta.getType().setRedirect(ubs[0]);
             }
         }
-        base.setGenericsTypes(gts);
-        return base;
+        type.setGenericsTypes(tas);
+        return type;
     }
 
     private GenericsType[] configureTypeArguments(final Type[] ta) {
