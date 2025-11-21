@@ -63,7 +63,7 @@ abstract class StubTestCase extends GroovyTestCase {
     protected JavaProjectBuilder qdox = new JavaProjectBuilder()
 
     protected GroovyClassLoader loader
-    protected CompilerConfiguration config = new CompilerConfiguration()
+    protected CompilerConfiguration config
 
     protected boolean debug = false;
     protected boolean delete = true;

@@ -49,6 +49,7 @@ public class JavaAwareResolveVisitor extends ResolveVisitor {
 
     @Override
     public void addError(final String error, final ASTNode node) {
-        // do nothing here; leave it to the normal resolving
+        if (error.startsWith("unable to resolve")) // GROOVY-11806
+            getSourceUnit().getAST().putNodeMetaData("require.imports", Boolean.TRUE);
     }
 }
