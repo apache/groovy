@@ -1062,6 +1062,13 @@ public class JavaStubGenerator {
             out.println("import static " + ssi.getType().getName().replace('$', '.') + ".*;");
         }
 
+        // GROOVY-11806: non-static star imports are required if any unresolved type
+        if (Boolean.TRUE.equals(currentModule.getNodeMetaData("require.imports"))) {
+            for (ImportNode si : currentModule.getStarImports()) {
+                out.println("import " + si.getPackageName() + "*;");
+            }
+        }
+
         out.println();
     }
 
