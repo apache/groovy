@@ -1244,7 +1244,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
     }
 
-    private MetaMethod getMetaMethod(Class sender, Object object, String methodName, boolean isCallToSuper, Object... arguments) {
+    private MetaMethod getMetaMethod(final Class<?> sender, final Object object, final String methodName, final boolean isCallToSuper, final Object[] arguments) {
         MetaMethod method = null;
         if (CALL_METHOD.equals(methodName) && object instanceof GeneratedClosure) {
             method = getMethodWithCaching(sender, DO_CALL_METHOD, arguments, isCallToSuper);
@@ -1259,7 +1259,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
-    private MetaMethod tryListParamMetaMethod(Class sender, String methodName, boolean isCallToSuper, Object[] arguments) {
+    private MetaMethod tryListParamMetaMethod(final Class<?> sender, final String methodName, final boolean isCallToSuper, final Object[] arguments) {
         MetaMethod method = null;
         if (arguments.length == 1 && arguments[0] instanceof List) {
             Object[] newArguments = ((List) arguments[0]).toArray();
@@ -1268,7 +1268,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
-    protected MetaMethod createTransformMetaMethod(MetaMethod method) {
+    protected MetaMethod createTransformMetaMethod(final MetaMethod method) {
         if (method == null) {
             return null;
         }
@@ -1293,14 +1293,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object value = null;
         if (metaProperty != null) {
             value = metaProperty.getProperty(object);
-        } else if (object instanceof Map) {
-            value = ((Map<?, ?>) object).get(methodName);
-        } else if (object instanceof Script) {
-            value = ((Script) object).getBinding().getVariables().get(methodName);
+        } else if (object instanceof Map<?, ?> map) {
+            value = map.get(methodName);
+        } else if (object instanceof Script script) {
+            value = script.getBinding().getVariables().get(methodName);
         }
 
-        if (value instanceof Closure) {
-            Closure<?> closure = (Closure<?>) value;
+        if (value instanceof Closure closure) {
             MetaClass metaClass = closure.getMetaClass();
             try {
                 return metaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, fromInsideClass);
@@ -2826,44 +2825,25 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private MetaProperty getMetaProperty(final Class clazz, final String name, final boolean useSuper, final boolean useStatic) {
-        if (clazz == theClass && !useSuper)
-            return getMetaProperty(name, useStatic);
+    private MetaProperty getMetaProperty(final Class<?> clazz, final String name, final boolean useSuper, final boolean useStatic) {
+        CachedClass cachedClass = (clazz == theClass ? theCachedClass : ReflectionCache.getCachedClass(clazz));
 
-        CachedClass cachedClass = ReflectionCache.getCachedClass(clazz);
-        while (true) {
-            Map<String, MetaProperty> propertyMap;
-            if (useStatic) {
-                propertyMap = staticPropertyIndex;
-            } else if (useSuper) {
-                propertyMap = classPropertyIndexForSuper.get(cachedClass);
-            } else {
-                propertyMap = classPropertyIndex.get(cachedClass);
-            }
-            if (propertyMap == null) {
-                if (cachedClass != theCachedClass) {
-                    cachedClass = theCachedClass;
-                    continue;
-                } else {
-                    return null;
-                }
-            }
-            return propertyMap.get(name);
-        }
-    }
-
-    private MetaProperty getMetaProperty(final String name, final boolean useStatic) {
-        CachedClass clazz = theCachedClass;
         Map<String, MetaProperty> propertyMap;
         if (useStatic) {
             propertyMap = staticPropertyIndex;
+        } else if (!useSuper) {
+            propertyMap = classPropertyIndex.get(cachedClass);
         } else {
-            propertyMap = classPropertyIndex.get(clazz);
+            propertyMap = classPropertyIndexForSuper.get(cachedClass);
         }
-        if (propertyMap == null) {
+
+        if (propertyMap != null) {
+            return propertyMap.get(name);
+        } else if (cachedClass != theCachedClass) {
+            return getMetaProperty(theClass, name, useSuper, useStatic);
+        } else {
             return null;
         }
-        return propertyMap.get(name);
     }
 
     /**
