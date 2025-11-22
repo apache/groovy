@@ -1241,7 +1241,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
-        return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
+        return invokePropertyOrMissing(sender, object, methodName, originalArguments, fromInsideClass, isCallToSuper);
     }
 
     private MetaMethod getMetaMethod(final Class<?> sender, final Object object, final String methodName, final boolean isCallToSuper, final Object[] arguments) {
@@ -1287,11 +1287,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     /**
      * Tries to find a callable property and make the call.
      */
-    private Object invokePropertyOrMissing(final Object object, final String methodName, final Object[] originalArguments, final boolean fromInsideClass, final boolean isCallToSuper) {
-        MetaProperty metaProperty = this.getMetaProperty(methodName, false);
+    private Object invokePropertyOrMissing(final Class<?> sender, final Object object, final String methodName, final Object[] originalArguments, final boolean fromInsideClass, final boolean isCallToSuper) {
+        MetaProperty metaProperty = getEffectiveGetMetaProperty(sender, object, methodName, isCallToSuper); // GROOVY-11762
 
         Object value = null;
-        if (metaProperty != null) {
+        if (!(metaProperty instanceof ReadOnlyMetaProperty)) {
             value = metaProperty.getProperty(object);
         } else if (object instanceof Map<?, ?> map) {
             value = map.get(methodName);
