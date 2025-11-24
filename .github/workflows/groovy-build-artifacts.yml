@@ -34,7 +34,7 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Publish to Local Repository
         run: ./gradlew clean publishMavenPublicationToLocalFileRepository --no-build-cache --no-scan --refresh-dependencies
         timeout-minutes: 90
