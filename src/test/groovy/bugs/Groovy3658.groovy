@@ -18,22 +18,24 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3658Bug extends GroovyTestCase {
+final class Groovy3658 {
+
+    @Test
     void testConstructorWithParameterWithInitialValueAsStaticMethodCallResult() {
-        Groovy3658BugHelper bug2 = new Groovy3658BugHelper('person', 'tag')
-        assert bug2.dump() != null
+        Pogo pogo = new Pogo('person')
+        assert pogo.dump() != null
+        pogo = new Pogo('person', 'x')
+        assert pogo.dump() != null
     }
-}
 
-class Groovy3658BugHelper {
-    Groovy3658BugHelper(final String name1, final String name2 = f(name1)) {
-        this.name1 = name1
-        this.name2 = name2
+    static class Pogo {
+        Pogo(String name1, String name2 = f(name1)) {
+            this.name1 = name1
+            this.name2 = name2
+        }
+        static String f(String s) { s }
+        final String name1, name2
     }
-    static String f(String s) {
-        s
-    }
-    final String name1, name2
 }

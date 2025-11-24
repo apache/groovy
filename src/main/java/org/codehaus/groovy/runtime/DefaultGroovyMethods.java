@@ -4603,28 +4603,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Generates a detailed dump string of an object showing its class,
      * hashCode and all accessible fields.
      *
+     * <pre class="groovyTestCase">
+     * assert null.dump() == 'null'
+     * </pre>
+     *
      * @param self an object
      * @return the dump representation
      * @since 1.0
      */
     public static String dump(Object self) {
-        if (self == null) {
+        if (self == null || self instanceof NullObject) {
             return "null";
         }
-        StringBuilder buffer = new StringBuilder("<");
+        StringBuilder buffer = new StringBuilder(64);
+        buffer.append('<');
         Class<?> klass = self.getClass();
         buffer.append(klass.getName());
-        buffer.append("@");
+        buffer.append('@');
         buffer.append(Integer.toHexString(self.hashCode()));
         boolean groovyObject = self instanceof GroovyObject;
         while (klass != null) {
             for (Field field : klass.getDeclaredFields()) {
-                if (Modifier.isStatic(field.getModifiers()) || (groovyObject && "metaClass".equals(field.getName()))) {
+                String fieldName = field.getName();
+                if (Modifier.isStatic(field.getModifiers())
+                        || (groovyObject && "metaClass".equals(fieldName))) {
                     continue;
                 }
-                buffer.append(" ");
-                buffer.append(field.getName());
-                buffer.append("=");
+                buffer.append(' ');
+                buffer.append(fieldName);
+                buffer.append('=');
                 if (!field.canAccess(self)) { // GROOVY-9144
                     if (!SystemUtil.getBooleanSafe("groovy.force.illegal.access")
                             || ReflectionUtils.makeAccessibleInPrivilegedAction(field).isEmpty()) {
@@ -4640,7 +4647,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             klass = klass.getSuperclass();
         }
-        buffer.append(">");
+        buffer.append('>');
         return buffer.toString();
     }
 
