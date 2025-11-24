@@ -31,6 +31,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.IntRange;
 import groovy.lang.ListWithDefault;
 import groovy.lang.MapWithDefault;
+import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassRegistry;
@@ -4605,6 +4606,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * <pre class="groovyTestCase">
      * assert null.dump() == 'null'
+     * class Base {
+     *   static String zero = ' '
+     *   final String three = 'z'
+     * }
+     * class Pogo extends Base {
+     *   public one = 'x'
+     *   String two = 'y'
+     * }
+     * def text = new Pogo().dump()
+     * assert text ==~ /<Pogo@[0-9a-f]{1,8} one=x two=y three=z>/
      * </pre>
      *
      * @param self an object
@@ -4635,7 +4646,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (!field.canAccess(self)) { // GROOVY-9144
                     if (!SystemUtil.getBooleanSafe("groovy.force.illegal.access")
                             || ReflectionUtils.makeAccessibleInPrivilegedAction(field).isEmpty()) {
-                        buffer.append("inaccessible");
+                        MetaProperty metaProperty = hasProperty(self, fieldName); // GROOVY-11779
+                        if (metaProperty instanceof MetaBeanProperty mbp
+                                && Modifier.isPublic(mbp.getModifiers())
+                                && mbp.getGetter() != null) {
+                            buffer.append(FormatHelper.toString(metaProperty.getProperty(self)));
+                        } else {
+                            buffer.append("inaccessible");
+                        }
                         continue;
                     }
                 }
