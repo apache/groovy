@@ -151,6 +151,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.fieldX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.maybeFallsThrough;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
@@ -1219,8 +1220,10 @@ public class AsmClassGenerator extends ClassGenerator {
                     }
                 } else {
                     fieldNode = classNode.getSuperClass().getDeclaredField(name);
-                    // GROOVY-4497: do not visit super class field if it is private
-                    if (fieldNode != null && fieldNode.isPrivate()) fieldNode = null;
+                    // GROOVY-4497, GROOVY-11764: do not visit super class field if it is private or package-private
+                    if (fieldNode != null && (fieldNode.isPrivate() || !(fieldNode.isPublic() || fieldNode.isProtected() || inSamePackage(classNode, classNode.getSuperClass())))) {
+                        fieldNode = null;
+                    }
                 }
 
                 if (fieldNode != null) {
