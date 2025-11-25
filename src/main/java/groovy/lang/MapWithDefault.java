@@ -18,13 +18,19 @@
  */
 package groovy.lang;
 
+import groovy.transform.stc.ClosureParams;
+import groovy.transform.stc.FirstParam;
+
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
- * A wrapper for Map which allows a default value to be specified using a closure.
- * Normally not instantiated directly but used via the DGM <code>withDefault</code> method.
+ * A wrapper for Map which allows a default value to be supplied by a Closure.
+ *
+ * @see org.codehaus.groovy.runtime.DefaultGroovyMethods#withDefault(Map,Closure)
+ * @see org.codehaus.groovy.runtime.DefaultGroovyMethods#withDefault(Map,boolean,boolean,Closure)
  *
  * @since 1.7.1
  */
@@ -32,25 +38,24 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
 
     private final Map<K, V> delegate;
     private final Closure<V> initClosure;
-    private final boolean autoGrow;
-    private final boolean autoShrink;
+    private final boolean autoGrow, autoShrink;
 
-    private MapWithDefault(Map<K, V> m, Closure<V> initClosure, boolean autoGrow, boolean autoShrink) {
-        delegate = m;
+    private MapWithDefault(final Map<K, V> map, final Closure<V> initClosure, final boolean autoGrow, final boolean autoShrink) {
+        this.delegate    = Objects.requireNonNull(map);
         this.initClosure = initClosure;
-        this.autoGrow = autoGrow;
-        this.autoShrink = autoShrink;
+        this.autoGrow    = autoGrow;
+        this.autoShrink  = autoShrink;
     }
 
     /**
      * Decorates the given Map allowing a default value to be specified.
      *
-     * @param m           a Map to wrap
-     * @param initClosure the closure which when passed the <code>key</code> returns the default value
+     * @param map         a Map to wrap
+     * @param initClosure a Closure which when passed a <code>key</code> returns the default value
      * @return the wrapped Map
      */
-    public static <K, V> Map<K, V> newInstance(Map<K, V> m, Closure<V> initClosure) {
-        return new MapWithDefault<>(m, initClosure, true, false);
+    public static <K, V> Map<K, V> newInstance(final Map<K, V> map, @ClosureParams(FirstParam.FirstGenericType.class) final Closure<V> initClosure) {
+        return new MapWithDefault<>(map, initClosure, true, false);
     }
 
     /**
@@ -59,15 +64,16 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
      * The value of {@code autoShrink} doesn't alter any values in the initial wrapped map, but you
      * can start with an empty map and use {@code putAll} if you really need the minimal backing map value.
      *
-     * @param m           a Map to wrap
+     * @param map         a Map to wrap
      * @param autoGrow    when true, also mutate the map adding in this value; otherwise, don't mutate the map, just return to calculated value
      * @param autoShrink  when true, ensure the key will be removed if attempting to store the default value using put or putAll
-     * @param initClosure the closure which when passed the <code>key</code> returns the default value
+     * @param initClosure a Closure which when passed a <code>key</code> returns the default value
      * @return the wrapped Map
+     *
      * @since 4.0.1
      */
-    public static <K, V> Map<K, V> newInstance(Map<K, V> m, boolean autoGrow, boolean autoShrink, Closure<V> initClosure) {
-        return new MapWithDefault<>(m, initClosure, autoGrow, autoShrink);
+    public static <K, V> Map<K, V> newInstance(final Map<K, V> map, final boolean autoGrow, final boolean autoShrink, @ClosureParams(FirstParam.FirstGenericType.class) final Closure<V> initClosure) {
+        return new MapWithDefault<>(map, initClosure, autoGrow, autoShrink);
     }
 
     @Override
@@ -81,12 +87,12 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
     }
 
     @Override
-    public boolean containsKey(Object key) {
+    public boolean containsKey(final Object key) {
         return delegate.containsKey(key);
     }
 
     @Override
-    public boolean containsValue(Object value) {
+    public boolean containsValue(final Object value) {
         return delegate.containsValue(value);
     }
 
@@ -94,31 +100,31 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
      * Returns the value to which the specified key is mapped,
      * or the default value as specified by the initializing closure
      * if this map contains no mapping for the key.
-     *
+     * <p>
      * If <code>autoGrow</code> is true and the initializing closure is called,
      * the map is modified to contain the new key and value so that the calculated
      * value is effectively cached if needed again.
      * Otherwise, the map will be unchanged.
      */
     @Override
-    public V get(Object key) {
-        if (delegate.containsKey(key)) {
-            return delegate.get(key);
-        }
-        V value = getDefaultValue(key);
-        if (autoGrow) {
-            delegate.put((K)key, value);
+    public V get(final Object key) {
+        V value = delegate.get(key);
+        if (value == null && !delegate.containsKey(key)) {
+            value = getDefaultValue((K) key);
+            if (autoGrow) {
+                delegate.put((K) key, value);
+            }
         }
         return value;
     }
 
-    private V getDefaultValue(Object key) {
+    private V getDefaultValue(final K key) {
         return initClosure.call(new Object[]{key});
     }
 
     /**
      * Associates the specified value with the specified key in this map.
-     *
+     * <p>
      * If <code>autoShrink</code> is true, the initializing closure is called
      * and if it evaluates to the value being stored, the value will not be stored
      * and indeed any existing value will be removed. This can be useful when trying
@@ -128,21 +134,22 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
      * @return the previous value associated with {@code key} if any, otherwise {@code null}.
      */
     @Override
-    public V put(K key, V value) {
-        if (autoShrink && value.equals(getDefaultValue(key))) {
-            return remove(key);
+    public V put(final K key, final V value) {
+        if (autoShrink && Objects.equals(value, getDefaultValue(key))) {
+            return delegate.remove(key);
         }
         return delegate.put(key, value);
     }
 
     @Override
-    public V remove(Object key) {
+    public V remove(final Object key) {
         return delegate.remove(key);
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> m) {
-        m.forEach(this::put);
+    public void putAll(final Map<? extends K, ? extends V> map) {
+        if (autoShrink) map.forEach(this::put);
+        else delegate.putAll(map);
     }
 
     @Override
@@ -166,8 +173,8 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return delegate.equals(obj);
+    public boolean equals(final Object object) {
+        return delegate.equals(object);
     }
 
     @Override
