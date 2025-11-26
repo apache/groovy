@@ -18,17 +18,15 @@
  */
 package org.apache.groovy.contracts.spock
 
-import spock.lang.Specification
 import groovy.contracts.Requires
 import org.apache.groovy.contracts.PreconditionViolation
 
-final class ContractsSpec extends Specification {
+final class ContractsSpec extends spock.lang.Specification {
 
     @Requires({ dir && file && path })
     private contractedMethod(String dir, String file, String path) {
     }
 
-    @spock.lang.Ignore // until Spock fixes thrown
     def "contracted method with precondition violation"(String dir, String file, String path) {
       when:
         contractedMethod(dir, file, path)
