@@ -126,6 +126,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -7837,6 +7838,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map groupBy(Iterable self, List<Closure> closures) {
         return groupBy(self, closures.toArray());
+    }
+
+    /**
+     * Sorts all Iterable members into (sub)groups determined by the supplied
+     * mapping closure. Each closure should return the key that this item
+     * should be grouped by. The returned LinkedHashMap will have an entry for each
+     * distinct 'key path' returned from the closures, with each value being a list
+     * of items for that 'group path'.
+     *
+     * Example usage:
+     * <pre>
+     * def people = [
+     *     [name: 'Alice', cities: ['NY', 'LA']],
+     *     [name: 'Bob',   cities: ['NY']],
+     *     [name: 'Cara',  cities: ['LA', 'CHI']]
+     * ]
+     *
+     * def grouped = people*.name.groupByMany { people.find{ p -> it == p.name }.cities }
+     *
+     * assert grouped == [
+     *     NY  : ['Alice', 'Bob'],
+     *     LA  : ['Alice', 'Cara'],
+     *     CHI : ['Cara']
+     * ]
+     * </pre>
+     *
+     * @param self  an iterable to group
+     * @param keyFn a closure returning an Iterable of keys for each element
+     * @return a new Map from keys to lists of elements
+     * @since 6.0.0
+     */
+    public static <T, K> Map<K, List<T>> groupByMany(Iterable<T> self, Closure<? extends Iterable<? extends K>> keyFn) {
+        Map<K, List<T>> result = new HashMap<>();
+
+        for (T item : self) {
+            Iterable<? extends K> keys = keyFn.call(item);
+            if (keys == null) continue;
+
+            for (K key : keys) {
+                result.computeIfAbsent(key, k -> new ArrayList<>())
+                    .add(item);
+            }
+        }
+
+        return result;
     }
 
     /**
