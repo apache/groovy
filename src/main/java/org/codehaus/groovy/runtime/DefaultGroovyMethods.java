@@ -126,6 +126,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -7955,6 +7956,146 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List<T> groupedElements = answer.computeIfAbsent(value, k -> new ArrayList<>());
 
         groupedElements.add(element);
+    }
+
+    //--------------------------------------------------------------------------
+    // groupByMany
+
+    /**
+     * Sorts all Iterable members into (sub)groups determined by the supplied
+     * mapping closure. Each closure should return a list of keys. The item
+     * should be grouped by each of these keys. The returned LinkedHashMap will have
+     * an entry for each distinct 'key path' returned from the closures, with each value
+     * being a list of items for that 'group path'.
+     *
+     * Example usage:
+     * <pre>
+     * def people = [
+     *     [name: 'Alice', cities: ['NY', 'LA']],
+     *     [name: 'Bob',   cities: ['NY']],
+     *     [name: 'Cara',  cities: ['LA', 'CHI']]
+     * ]
+     *
+     * def grouped = people*.name.groupByMany { people.find{ p -> it == p.name }.cities }
+     *
+     * assert grouped == [
+     *     NY  : ['Alice', 'Bob'],
+     *     LA  : ['Alice', 'Cara'],
+     *     CHI : ['Cara']
+     * ]
+     * </pre>
+     *
+     * @param self  an iterable to group
+     * @param keyFn a closure returning an Iterable of keys for each element
+     * @return a new Map from keys to lists of elements
+     * @since 6.0.0
+     */
+    public static <T, K> Map<K, List<T>> groupByMany(Iterable<T> self, Closure<? extends Iterable<? extends K>> keyFn) {
+        Map<K, List<T>> result = new HashMap<>();
+
+        for (T item : self) {
+            Iterable<? extends K> keys = keyFn.call(item);
+            if (keys == null) continue;
+
+            for (K key : keys) {
+                result.computeIfAbsent(key, k -> new ArrayList<>())
+                    .add(item);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Sorts all Iterable members into (sub)groups determined by the supplied
+     * mapping closure. Each closure should return a list of keys. The item
+     * should be grouped by each of these keys. The returned LinkedHashMap will have
+     * an entry for each distinct 'key path' returned from the closures, with each value
+     * being a list of items for that 'group path'.
+     *
+     * Example usage:
+     * <pre>
+     * record Person(String name, List&lt;String> cities) { }
+     *
+     * def people = [
+     *     new Person('Alice', ['NY', 'LA']),
+     *     new Person('Bob', ['NY']),
+     *     new Person('Cara', ['LA', 'CHI'])
+     * ]
+     *
+     * def grouped = people.groupByMany(Person::name, Person::cities)
+     *
+     * assert grouped == [
+     *     NY  : ['Alice', 'Bob'],
+     *     LA  : ['Alice', 'Cara'],
+     *     CHI : ['Cara']
+     * ]
+     * </pre>
+     *
+     * @param self  an iterable to group
+     * @param valueFn a closure which can transform each element before collecting
+     * @param keyFn a closure returning an Iterable of keys for each element
+     * @return a new Map from keys to lists of elements
+     * @since 6.0.0
+     */
+    public static <T, K> Map<K, List<T>> groupByMany(Iterable<T> self, Closure<? extends T> valueFn, Closure<? extends Iterable<? extends K>> keyFn) {
+        Map<K, List<T>> result = new HashMap<>();
+
+        for (T item : self) {
+            Iterable<? extends K> keys = keyFn.call(item);
+            if (keys == null) continue;
+
+            for (K key : keys) {
+                result.computeIfAbsent(key, k -> new ArrayList<>())
+                    .add(valueFn.call(item));
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Sorts all Iterable members into (sub)groups determined by the supplied
+     * mapping closure. Each closure should return a list of keys. The item
+     * should be grouped by each of these keys. The returned LinkedHashMap will have
+     * an entry for each distinct 'key path' returned from the closures, with each value
+     * being a list of items for that 'group path'.
+     *
+     * Example usage:
+     * <pre>
+     * def citiesLived = [
+     *     Alice: ['NY', 'LA'],
+     *     Bob: ['NY'],
+     *     Cara: ['LA', 'CHI']
+     * ]
+     *
+     * def grouped = citiesLived.groupByMany()
+     *
+     * assert grouped == [
+     *     NY  : ['Alice', 'Bob'],
+     *     LA  : ['Alice', 'Cara'],
+     *     CHI : ['Cara']
+     * ]
+     * </pre>
+     *
+     * @param self  a Map to group
+     * @return a new Map from keys to lists of elements
+     * @since 6.0.0
+     */
+    public static <T, K> Map<K, List<T>> groupByMany(Map<T, List<K>> self) {
+        Map<K, List<T>> result = new HashMap<>();
+
+        for (Map.Entry<T, List<K>> e : self.entrySet()) {
+            Iterable<? extends K> keys = e.getValue();
+            if (keys == null) continue;
+
+            for (K key : keys) {
+                result.computeIfAbsent(key, k -> new ArrayList<>())
+                    .add(e.getKey());
+            }
+        }
+
+        return result;
     }
 
     //--------------------------------------------------------------------------
