@@ -3708,11 +3708,15 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
     protected static MetaMethod findOwnMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass, MetaMethod method) {
         if (instanceKlazz != metaClass.getTheClass()) {
             MetaMethod ownMethod = metaClass.pickMethod(methodName, arguments);
-            if (ownMethod != null) {
+            if (ownMethod != null && !isPrivate(ownMethod, instanceKlazz)) { // GROOVY-10198
                 method = (method == null ? ownMethod : mostSpecific(method, ownMethod, instanceKlazz));
             }
         }
         return method;
+    }
+
+    private static boolean isPrivate(MetaMethod method, Class instanceKlazz) {
+        return method.isPrivate() || (method.isPackagePrivate() && !inSamePackage(method.getDeclaringClass().getTheClass(), instanceKlazz));
     }
 
     protected Object getSubclassMetaMethods(String methodName) {
