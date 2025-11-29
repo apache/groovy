@@ -18,10 +18,13 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ExpandoPropertyTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+final class ExpandoPropertyTest {
+
+    @Test
     void testExpandoProperty() {
         def foo = new Expando()
 
@@ -34,6 +37,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
         assert foo.properties.size() == 2
     }
 
+    @Test
     void testExpandoMethods() {
         def foo = new Expando()
 
@@ -52,6 +56,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
         shouldFail { foo.nameLength(1, 2) }
     }
 
+    @Test
     void testExpandoMethodCloning() {
         def foo = new Expando()
         def c = {
@@ -64,12 +69,14 @@ class ExpandoPropertyTest extends GroovyTestCase {
         assert !(c.delegate instanceof Expando)
     }
 
+    @Test
     void testExpandoConstructorAndToString() {
         def foo = new Expando(type: "sometype", value: 42)
         assert foo.toString() == "{type=sometype, value=42}"
         assert "${foo}" == "{type=sometype, value=42}"
     }
 
+    @Test
     void testExpandoMethodOverrides() {
         def equals = { Object obj -> return obj.value == value }
         def foo = new Expando(type: "myfoo", value: 42, equals: equals)
@@ -96,6 +103,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
         assert foo.toString() == "Type: myfoo, Value: 42"
     }
 
+    @Test
     void testArrayAccessOnThis() {
         def a = new FancyExpando([a: 1, b: 2])
         a.update([b: 5, a: 2])
@@ -104,20 +112,21 @@ class ExpandoPropertyTest extends GroovyTestCase {
         assert a.b == 5
     }
 
+    @Test
     void testExpandoClassProperty() {
         def e = new Expando()
         e.class = "hello world"
 
         assert e.class == "hello world"
     }
-}
 
-class FancyExpando extends Expando {
-    FancyExpando(args) { super(args) }
+    static class FancyExpando extends Expando {
+        FancyExpando(args) { super(args) }
 
-    def update(args) {
-        for (e in args) this[e.key] = e.value // using 'this'
+        def update(args) {
+            for (e in args) this[e.key] = e.value // using 'this'
+        }
+
+        String toString() { dump() }
     }
-
-    String toString() { dump() }
 }
