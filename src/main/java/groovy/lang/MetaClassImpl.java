@@ -3620,23 +3620,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected static MetaMethod findMethodInClassHierarchy(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
-        if (metaClass instanceof MetaClassImpl) {
-            boolean check = false;
-            for (ClassInfo ci : ((MetaClassImpl) metaClass).theCachedClass.getHierarchy()) {
-                final MetaClass aClass = ci.getStrongMetaClass();
-                if (aClass instanceof MutableMetaClass && ((MutableMetaClass) aClass).isModified()) {
-                    check = true;
-                    break;
+out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
+            for (ClassInfo ci : metaClassImpl.theCachedClass.getHierarchy()) {
+                if (ci.getStrongMetaClass() instanceof MutableMetaClass mmc && mmc.isModified()) {
+                    break out;
                 }
             }
-
-            if (!check) return null;
+            return null;
         }
 
-        final Class<?> superClass;
-        final Class<?> theClass = metaClass.getTheClass();
+        final Class<?> superClass, theClass = metaClass.getTheClass();
         if (theClass.isArray() && !theClass.getComponentType().isPrimitive() && theClass.getComponentType() != Object.class) {
             superClass = Object[].class;
+        } else if (theClass.isInterface()) {
+            superClass = Object.class;
         } else {
             superClass = theClass.getSuperclass();
         }
@@ -3645,43 +3642,38 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (superClass != null) {
             MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(superClass);
             method = findMethodInClassHierarchy(instanceKlazz, methodName, arguments, superMetaClass);
-        } else {
-            if (theClass.isInterface()) {
-                MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(Object.class);
-                method = findMethodInClassHierarchy(instanceKlazz, methodName, arguments, superMetaClass);
-            }
+        }
+
+        method = getMetaMethod(instanceKlazz, methodName, arguments, metaClass, method);
+
+        return method;
+    }
+
+    private static MetaMethod getMetaMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass, MetaMethod method) {
+        MetaMethod infMethod = null;
+        for (Class face : metaClass.getTheClass().getInterfaces()) {
+            MetaClass faceMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(face);
+            infMethod = getMetaMethod(instanceKlazz, methodName, arguments, faceMetaClass, infMethod);
+        }
+        if (infMethod != null) {
+            method = (method == null ? infMethod : mostSpecific(method, infMethod, instanceKlazz));
         }
 
         method = findSubClassMethod(instanceKlazz, methodName, arguments, metaClass, method);
-
-        method = getMetaMethod(instanceKlazz, methodName, arguments, metaClass, method);
 
         method = findOwnMethod(instanceKlazz, methodName, arguments, metaClass, method);
 
         return method;
     }
 
-    private static MetaMethod getMetaMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass, MetaMethod method) {
-        MetaMethod infMethod = searchInterfacesForMetaMethod(instanceKlazz, methodName, arguments, metaClass);
-        if (infMethod != null) {
-            method = (method == null ? infMethod : mostSpecific(method, infMethod, instanceKlazz));
-        }
-        return method;
-    }
-
     private static MetaMethod findSubClassMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass, MetaMethod method) {
-        if (metaClass instanceof MetaClassImpl) {
-            Object list = ((MetaClassImpl) metaClass).getSubclassMetaMethods(methodName);
-            if (list != null) {
-                if (list instanceof MetaMethod) {
-                    MetaMethod m = (MetaMethod) list;
-                    method = findSubClassMethod(instanceKlazz, arguments, method, m);
-                } else {
-                    FastArray arr = (FastArray) list;
-                    for (int i = 0; i != arr.size(); ++i) {
-                        MetaMethod m = (MetaMethod) arr.get(i);
-                        method = findSubClassMethod(instanceKlazz, arguments, method, m);
-                    }
+        if (metaClass instanceof MetaClassImpl metaClassImpl) {
+            var result = metaClassImpl.getSubclassMetaMethods(methodName);
+            if (result instanceof MetaMethod mm) {
+                method = findSubClassMethod(instanceKlazz, arguments, method, mm);
+            } else if (result instanceof FastArray arr) {
+                for (int i = 0; i < arr.size(); i += 1) {
+                    method = findSubClassMethod(instanceKlazz, arguments, method, (MetaMethod) arr.get(i));
                 }
             }
         }
@@ -3696,44 +3688,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private static MetaMethod mostSpecific(MetaMethod method, MetaMethod newMethod, Class instanceKlazz) {
-        Class newMethodC = newMethod.getDeclaringClass().getTheClass();
-        Class methodC = method.getDeclaringClass().getTheClass();
-
-        if (!newMethodC.isAssignableFrom(instanceKlazz))
+        Class<?> newMethodC = newMethod.getDeclaringClass().getTheClass();
+        if (!newMethodC.isAssignableFrom(instanceKlazz)) {
             return method;
-
-        if (newMethodC == methodC)
+        }
+        Class<?> methodC = method.getDeclaringClass().getTheClass();
+        if (newMethodC == methodC) {
             return newMethod;
-
+        }
         if (newMethodC.isAssignableFrom(methodC)) {
             return method;
         }
-
         if (methodC.isAssignableFrom(newMethodC)) {
             return newMethod;
         }
-
         return newMethod;
     }
 
-    private static MetaMethod searchInterfacesForMetaMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
-        Class[] interfaces = metaClass.getTheClass().getInterfaces();
-
-        MetaMethod method = null;
-        for (Class anInterface : interfaces) {
-            MetaClass infMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(anInterface);
-            method = getMetaMethod(instanceKlazz, methodName, arguments, infMetaClass, method);
-        }
-
-        method = findSubClassMethod(instanceKlazz, methodName, arguments, metaClass, method);
-
-        method = findOwnMethod(instanceKlazz, methodName, arguments, metaClass, method);
-
-        return method;
-    }
-
     protected static MetaMethod findOwnMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass, MetaMethod method) {
-        // we trick ourselves here
         if (instanceKlazz != metaClass.getTheClass()) {
             MetaMethod ownMethod = metaClass.pickMethod(methodName, arguments);
             if (ownMethod != null) {
