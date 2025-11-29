@@ -61,6 +61,9 @@ import java.util.regex.Pattern;
  * @since 3.0.2
  */
 public class ClassFinder {
+    private static final Pattern FILE_SEP_PATTERN = Pattern.compile(Pattern.quote(File.separator));
+    private static final Pattern SLASH_PATTERN = Pattern.compile("/");
+
     /**
      * Returns the found classes
      *
@@ -125,9 +128,10 @@ public class ClassFinder {
 
     static Map<String, Set<String>> find(URI uri, String prefix, String packageName, boolean recursive, final boolean innerClasses) {
         boolean wfs = "file".equals(uri.getScheme());
+        final Pattern sepPattern = wfs ? FILE_SEP_PATTERN : SLASH_PATTERN;
+
         if (wfs) prefix = prefix.replace("/", File.separator);
 
-        final Pattern sepPattern = Pattern.compile(Pattern.quote(wfs ? File.separator : "/"));
         final int prefixElemCnt = prefix.trim().isEmpty() ? 0 : sepPattern.split(prefix).length;
 
         Map<String, Set<String>> result = new LinkedHashMap<>();
