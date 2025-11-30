@@ -23,6 +23,8 @@ dependencies {
         exclude group: 'org.codehaus.groovy'
     }
     testImplementation ("org.spockframework:spock-junit4:$spockVersion")
+    // Gradle 9.x requires junit-platform-launcher explicitly for useJUnitPlatform()
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junit5PlatformVersion"
 }
 
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

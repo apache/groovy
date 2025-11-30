@@ -18,7 +18,8 @@
  */
 dependencies {
     api rootProject  // MarkupBuilder extends BuilderSupport...
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
+    // Use test output instead of full runtimeClasspath to avoid cross-project resolution issues in Gradle 9.x
+    testImplementation project(':').sourceSets.test.output
     testImplementation "xmlunit:xmlunit:$xmlunitVersion"
     testImplementation project(':groovy-test')
     testImplementation ("org.spockframework:spock-core:$spockVersion") {
@@ -27,6 +28,8 @@ dependencies {
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${junit5Version}") {
         because 'for JUnit 3/4 tests as well as JUnit 5'
     }
+    // Gradle 9.x requires junit-platform-launcher explicitly for useJUnitPlatform()
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junit5PlatformVersion"
 }
 
 test {

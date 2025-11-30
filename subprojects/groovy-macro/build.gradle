@@ -18,7 +18,8 @@
  */
 dependencies {
     api rootProject // ASTMatcher use ASTNode...
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
+    // Use test output instead of full runtimeClasspath to avoid cross-project resolution issues in Gradle 9.x
+    testImplementation project(':').sourceSets.test.output
     testImplementation project(':groovy-test')
 }
 

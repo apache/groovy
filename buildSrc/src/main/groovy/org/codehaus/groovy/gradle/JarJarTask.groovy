@@ -24,6 +24,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.java.archives.Manifest
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -41,15 +42,18 @@ class JarJarTask extends DefaultTask {
     private List<Action<? super Manifest>> manifestTweaks = []
 
     @InputFile
+    @Classpath
     File from
 
     @InputFiles
+    @Classpath
     FileCollection repackagedLibraries
 
     @InputFiles
+    @Classpath
     FileCollection jarjarToolClasspath
 
-    @InputFiles
+    @Input
     @org.gradle.api.tasks.Optional
     List<String> untouchedFiles = []
 
@@ -94,12 +98,15 @@ class JarJarTask extends DefaultTask {
         def tmpJar = new File(temporaryDir, "${outputFile.name}.${Integer.toHexString(UUID.randomUUID().hashCode())}.tmp")
         def manifestFile = new File(temporaryDir, 'MANIFEST.MF')
 
+        // Use fixed date/timestamp for reproducible builds (backported from GROOVY_4_0_X)
+        String tstamp = Date.parse('yyyy-MM-dd HH:mm', '1980-02-01 00:00').getTime().toString()
+
         // First step is to create a repackaged jar
         outputFile.parentFile.mkdirs()
         try {
             project.ant {
                 taskdef name: 'jarjar', classname: JARJAR_CLASS_NAME, classpath: jarjarToolClasspath.asPath
-                jarjar(jarfile: tmpJar, filesonly: true) {
+                jarjar(jarfile: tmpJar, filesonly: true, modificationtime: tstamp) {
                     zipfileset(
                             src: originalJar,
                             excludes: (untouchedFiles + excludes).join(','))
@@ -128,7 +135,7 @@ class JarJarTask extends DefaultTask {
 
             if (createManifest) {
                 // next step is to generate an OSGI manifest using the newly repackaged classes
-                def mf = project.rootProject.convention.plugins.osgi.osgiManifest {
+                def mf = project.rootProject.extensions.osgi.osgiManifest {
                     symbolicName = project.name
                     instruction 'Import-Package', '*;resolution:=optional'
                     classesDir = tmpJar
@@ -147,7 +154,7 @@ class JarJarTask extends DefaultTask {
 
             // so that we can put it into the final jar
             project.ant.copy(file: tmpJar, tofile: outputFile)
-            project.ant.jar(destfile: outputFile, update: true, index: true, manifest: manifestFile) {
+            project.ant.jar(destfile: outputFile, update: true, index: true, modificationtime: tstamp, manifest: manifestFile) {
                 manifest {
                     // because we don't want to use JDK 1.8.0_91, we don't care and it will
                     // introduce cache misses

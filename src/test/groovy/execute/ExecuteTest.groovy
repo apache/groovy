@@ -171,7 +171,8 @@ final class ExecuteTest extends GroovyTestCase {
         def err = new StringBuffer()
         process.waitForProcessOutput(out, err)
 
-        assert out.toString().startsWith('hello')
+        // Java 25+ may emit CDS warnings before the output when using custom system class loader
+        assert out.toString().contains('hello')
         assert process.exitValue() == 0
     }
 }

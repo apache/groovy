@@ -1,0 +1,166 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+// POM configuration for maven-publish plugin (Gradle 9.x compatible)
+// This replaces the legacy pomconfigurer.gradle that used the deprecated maven plugin
+
+group = 'org.codehaus.groovy'
+
+project.ext.optionalDeps = []
+project.ext.providedDeps = []
+
+project.ext.optional = { project.ext.optionalDeps << it }
+project.ext.provided = { project.ext.providedDeps << it }
+
+// Shared POM configuration closure for MavenPublication
+project.ext.configurePom = { pom ->
+    pom.name = 'Apache Groovy'
+    pom.description = 'Groovy: A powerful, dynamic language for the JVM'
+    pom.url = 'https://groovy-lang.org'
+    pom.inceptionYear = '2003'
+    pom.packaging = 'jar'
+
+    pom.organization {
+        name = 'Apache Software Foundation'
+        url = 'https://apache.org'
+    }
+
+    pom.licenses {
+        license {
+            name = 'The Apache Software License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            distribution = 'repo'
+        }
+    }
+
+    pom.scm {
+        connection = 'scm:git:https://github.com/apache/groovy.git'
+        developerConnection = 'scm:git:https://github.com/apache/groovy.git'
+        url = 'https://github.com/apache/groovy.git'
+    }
+
+    pom.issueManagement {
+        system = 'jira'
+        url = 'https://issues.apache.org/jira/browse/GROOVY'
+    }
+
+    pom.developers {
+        developer {
+            id = 'glaforge'
+            name = 'Guillaume Laforge'
+            organization = 'Google'
+        }
+        developer {
+            id = 'bob'
+            name = 'bob mcwhirter'
+            email = 'bob@werken.com'
+            organization = 'The Werken Company'
+        }
+        developer {
+            id = 'jstrachan'
+            name = 'James Strachan'
+            email = 'james@coredevelopers.com'
+            organization = 'Core Developers Network'
+        }
+        developer {
+            id = 'blackdrag'
+            name = 'Jochen Theodorou'
+            email = 'blackdrag@gmx.org'
+        }
+        developer {
+            id = 'mittie'
+            name = 'Dierk Koenig'
+            organization = 'Karakun AG'
+        }
+        developer {
+            id = 'paulk'
+            name = 'Paul King'
+            email = 'paulk@asert.com.au'
+            organization = 'OCI, Australia'
+        }
+        developer {
+            id = 'timyates'
+            name = 'Tim Yates'
+        }
+        developer {
+            id = 'aalmiray'
+            name = 'Andres Almiray'
+            email = 'aalmiray@users.sourceforge.net'
+        }
+        developer {
+            id = 'melix'
+            name = 'Cedric Champeau'
+            email = 'cedric.champeau@gmail.com'
+        }
+        developer {
+            id = 'sunlan'
+            name = 'Daniel Sun'
+        }
+        developer {
+            id = 'rpopma'
+            name = 'Remko Popma'
+        }
+        developer {
+            id = 'emilles'
+            name = 'Eric Milles'
+            organization = 'Thomson Reuters'
+        }
+    }
+}
+
+// Apply optional/provided dependency modifications to POM
+// This function receives an XmlProvider (already inside withXml context)
+project.ext.tweakPomDependencies = { xmlProvider, proj ->
+    def dependenciesNode = xmlProvider.asNode().dependencies
+    if (dependenciesNode) {
+        dependenciesNode.first()?.dependency?.each { dep ->
+            def artifactId = dep.artifactId?.text()
+
+            // Mark optional dependencies
+            if (proj.ext.optionalDeps.any { it.name == artifactId }) {
+                def optionalNode = dep.appendNode('optional')
+                optionalNode.setValue('true')
+            }
+
+            // Mark provided dependencies
+            if (proj.ext.providedDeps.any { it.name == artifactId }) {
+                dep.scope[0].setValue('provided')
+            }
+        }
+
+        // Remove test-scoped dependencies
+        def toRemove = []
+        dependenciesNode.first()?.dependency?.each { dep ->
+            if (dep.scope?.text() == 'test') {
+                toRemove << dep
+            }
+        }
+        toRemove.each { dependenciesNode.first().remove(it) }
+
+        // Make all dependencies optional for root project
+        if (proj == rootProject) {
+            dependenciesNode.first()?.dependency?.each { dep ->
+                if (!dep.optional) {
+                    def optionalNode = dep.appendNode('optional')
+                    optionalNode.setValue('true')
+                }
+            }
+        }
+    }
+}
