@@ -228,6 +228,17 @@ tasks.named('test') {
     dependsOn testExtensionModuleJar
 }
 
+// Disable groovydoc for root project - duplicate source issue with Gradle 9.x
+// The antlr4 generated sources and main sources have duplicate files
+tasks.named('groovydoc', Groovydoc) {
+    enabled = false
+}
+
+// Create empty groovydocJar since publication expects it
+tasks.named('groovydocJar', Jar) {
+    enabled = false
+}
+
 clean.doFirst {
     delete "${rootDir}/buildSrc"
 }

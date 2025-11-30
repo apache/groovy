@@ -71,6 +71,9 @@ tasks.withType(Groovydoc).configureEach {
         source = sourceSets.main.allSource
     }
     groovyClasspath = configurations.groovydocClasspath
+    // Exclude duplicate .interp and .tokens files from antlr4 grammar generation
+    exclude '**/*.interp'
+    exclude '**/*.tokens'
     use = true
     windowTitle = "Groovy ${versions.groovy}"
     docTitle = "Groovy ${versions.groovy}"
