@@ -20,8 +20,22 @@ allprojects {
     tasks.withType(Test) {
         def jdk8 = ['-XX:+UseConcMarkSweepGC']
         def jdk9 = ['-Djava.locale.providers=COMPAT,SPI'/*, '--illegal-access=debug'*/]
+        // Add --add-opens for Java 17+ module system (required for reflection access in tests)
+        def jdk17 = [
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.invoke=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.lang.reflect=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.io=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.util.regex=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.net=ALL-UNNAMED',
+            '--add-opens', 'java.base/java.math=ALL-UNNAMED'
+        ]
         def common = ['-ea', '-Duser.language=en', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}"]
-        if (JavaVersion.current().isJava9Compatible()) {
+        if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+            jvmArgs (*common, *jdk9, *jdk17)
+            systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
+        } else if (JavaVersion.current().isJava9Compatible()) {
             jvmArgs (*common, *jdk9)
             systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
         } else {
@@ -59,8 +73,8 @@ allprojects {
             systemProperties 'groovy.target.indy': true
             dependsOn 'jarWithIndy'
             dependencies.each { dependsOn "${it}:jarWithIndy" }
-            classpath = classpath - files(jar.archivePath, *dependencies.collect { project(it).jar }) +
-                    files({ [jarWithIndy.archivePath, *dependencies.collect { project(it).jarWithIndy }] })
+            classpath = classpath - files(jar.archiveFile.get().asFile, *dependencies.collect { project(it).jar }) +
+                    files({ [jarWithIndy.archiveFile.get().asFile, *dependencies.collect { project(it).jarWithIndy }] })
         }
         task testAll {
             description = "Runs both the normal and indy test suites"
@@ -145,20 +159,20 @@ ext.extModuleRepoDir = file("$extModuleOutputDir/repo")
 task compileTestExtensionModule(type: JavaCompile) {
     classpath = files(jar)
     source fileTree("$extModuleFixtureDir/src/main/java")
-    destinationDir = file("$extModuleOutputDir/classes")
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
+    destinationDirectory = file("$extModuleOutputDir/classes")
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 task testExtensionModuleJar(type: Jar) {
     description = 'Builds a sample extension module used in tests'
     dependsOn compileTestExtensionModule
-    baseName = 'module-test'
-    version = '1.4'
-    from { compileTestExtensionModule.destinationDir }
+    archiveBaseName = 'module-test'
+    archiveVersion = '1.4'
+    from { compileTestExtensionModule.destinationDirectory }
     from files("$extModuleFixtureDir/src/main/resources")
     // emulate Maven repo format for output
-    destinationDir = file("$extModuleRepoDir/jars/module-test/module-test/${version}")
+    destinationDirectory = file("$extModuleRepoDir/jars/module-test/module-test/${archiveVersion.get()}")
 }
 
 tasks.withType(Test) {

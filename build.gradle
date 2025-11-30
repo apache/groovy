@@ -34,27 +34,30 @@ buildscript {
 
     dependencies {
         // using the old "classpath" style of plugins because the new one doesn't play well with multi-modules
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.8'
-        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:3.0.3'
+        // Updated asciidoctor plugin for Gradle 9.x compatibility (backported from GROOVY_4_0_X)
+        classpath 'org.asciidoctor:asciidoctor-gradle-jvm:4.0.2'
+        // classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:6.0.4'
         //classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
         classpath 'org.nosphere.apache:creadur-rat-gradle:0.8.1'
-        classpath 'gradle.plugin.com.github.jk1:gradle-license-report:1.3'
+        // classpath 'gradle.plugin.com.github.jk1:gradle-license-report:1.3'
     }
 }
 
 plugins {
-    id 'me.champeau.buildscan-recipes' version '0.2.3'
-    id 'com.github.spotbugs' version '4.6.0'
-    id 'com.github.ben-manes.versions' version '0.42.0' // 0.43 requires gradle 7+
-    id 'com.github.blindpirate.osgi' version '0.0.6'
-    id 'org.sonarqube' version '3.0'
+    // Disabled for Gradle 9.x compatibility - buildscan-recipes uses deprecated APIs
+    // id 'me.champeau.buildscan-recipes' version '0.2.3'
+    id 'com.github.spotbugs' version '6.4.2'
+    id 'com.github.ben-manes.versions' version '0.51.0'
+    id 'io.github.goooler.osgi' version '0.8.6'
+    id 'org.sonarqube' version '6.0.1.5171'
 }
 
-buildScanRecipes {
-    recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
-    recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
-    recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
-}
+// Disabled for Gradle 9.x compatibility
+// buildScanRecipes {
+//     recipe 'git-commit', baseUrl: 'https://github.com/apache/groovy/tree'
+//     recipe 'teamcity', baseUrl: 'https://ci.groovy-lang.org', guest: 'true'
+//     recipes 'git-status', 'gc-stats', 'teamcity', 'travis-ci'
+// }
 
 ext.modules = {
     subprojects.findAll{ !['performance', 'binary-compatibility'].contains(it.name) }
@@ -62,8 +65,10 @@ ext.modules = {
 ext.isReleaseVersion = !groovyVersion.toLowerCase().endsWith('snapshot')
 
 apply from: 'gradle/bad-practices.gradle'
-apply from: 'gradle/publish.gradle'
-apply plugin: 'com.github.jk1.dependency-license-report'
+// TODO: Fix publish.gradle for Gradle 9.x compatibility - artifactory plugin API changed
+// apply from: 'gradle/publish.gradle'
+// Disabled for Gradle 9.x - jk1 plugin uses deprecated APIs
+// apply plugin: 'com.github.jk1.dependency-license-report'
 
 File javaHome = new File(System.getProperty('java.home'))
 logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.version')})"
@@ -71,9 +76,15 @@ logger.lifecycle "Using Java from $javaHome (version ${System.getProperty('java.
 allprojects {
     apply plugin: 'java-library'
 
-    buildDir = 'target'
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    layout.buildDirectory = file('target')
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    // Stub for provided() method (normally from pomconfigurer.gradle via upload.gradle)
+    ext.providedDeps = []
+    ext.provided = { ext.providedDeps << it }
 
     group = 'org.codehaus.groovy'
     version = groovyVersion
@@ -98,9 +109,9 @@ allprojects {
 
     apply plugin: 'groovy'
     apply from: "${rootProject.projectDir}/gradle/indy.gradle"
+    // Updated for asciidoctor-gradle-jvm 4.x (backported from GROOVY_4_0_X)
     apply from: "${rootProject.projectDir}/gradle/asciidoctor.gradle"
-
-    tasks.withType(org.asciidoctor.gradle.AsciidoctorTask) {
+    tasks.withType(org.asciidoctor.gradle.jvm.AsciidoctorTask) {
         outputs.cacheIf { true }
     }
 }
@@ -129,7 +140,7 @@ configurations {
 
 ext {
     antVersion = '1.10.15'
-    asmVersion = '9.8'
+    asmVersion = '9.9'
     antlrVersion = '2.7.7'
     antlr4Version = '4.9.0'
     bridgerVersion = '1.6.Final'
@@ -267,7 +278,8 @@ sourceSets {
 }
 
 task sourceJar(type: Jar) {
-    classifier = 'sources'
+    dependsOn 'ensureGrammars', 'generateGrammarSource'
+    archiveClassifier = 'sources'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from sourceSets.main.allSource
     from sourceSets.antlr2.allSource
@@ -275,7 +287,7 @@ task sourceJar(type: Jar) {
 
 subprojects {
     task sourceJar(type: Jar) {
-        classifier = 'sources'
+        archiveClassifier = 'sources'
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from sourceSets.main.allSource
     }
@@ -314,14 +326,16 @@ task ensureGrammars {
 
 compileJava {
     dependsOn ensureGrammars, generateGrammarSource
-    options.fork(memoryMaximumSize: javacMain_mx)
+    options.fork = true
+    options.forkOptions.memoryMaximumSize = javacMain_mx
 
     doLast {
+        def javaOutputDir = compileJava.destinationDirectory.get().asFile.canonicalPath
         ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/classgen/Verifier.class")
-            arg(value: "${sourceSets.main.java.outputDir.canonicalPath}/org/codehaus/groovy/ast/tools/GeneralUtils.class")
+            arg(value: "${javaOutputDir}/org/codehaus/groovy/runtime/DefaultGroovyMethods.class")
+            arg(value: "${javaOutputDir}/org/codehaus/groovy/runtime/StringGroovyMethods.class")
+            arg(value: "${javaOutputDir}/org/codehaus/groovy/classgen/Verifier.class")
+            arg(value: "${javaOutputDir}/org/codehaus/groovy/ast/tools/GeneralUtils.class")
         }
         ant.echo('Bridger (groovy): ' + ant.properties.stdout)
     }
@@ -356,12 +370,12 @@ task dgmConverter(dependsOn:compileJava) {
 task bootstrapJar(type: Jar) {
     dependsOn compileJava, dgmConverter
 
-    from compileJava.destinationDir
+    from compileJava.destinationDirectory
     from dgmConverter.outputDir
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    destinationDir = file("$buildDir/bootstrap")
-    classifier = 'bootstrap'
+    destinationDirectory = file("$buildDir/bootstrap")
+    archiveClassifier = 'bootstrap'
 }
 
 allprojects {
@@ -387,16 +401,17 @@ allprojects {
         task compileGroovyWithIndy(type: GroovyCompile) {
             source = sourceSets.main.groovy
             classpath = compileGroovy.classpath
-            sourceCompatibility = 1.8
-            targetCompatibility = 1.8
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
             groovyOptions.optimizationOptions['indy'] = true
-            destinationDir = file("$buildDir/classes/indy")
+            destinationDirectory = file("$buildDir/classes/indy")
         }
     }
 
     tasks.withType(GroovyCompile) {
         groovyOptions.forkOptions.jvmArgs += ['-Dgroovy.antlr4.cache.threshold=100']
-        groovyOptions.fork(memoryMaximumSize: groovycMain_mx)
+        groovyOptions.fork = true
+        groovyOptions.forkOptions.memoryMaximumSize = groovycMain_mx
         groovyOptions.encoding = 'UTF-8'
         //options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
         groovyClasspath = files(
@@ -412,7 +427,8 @@ allprojects {
 }
 
 compileTestGroovy {
-    groovyOptions.fork(memoryMaximumSize: groovycTest_mx)
+    groovyOptions.fork = true
+    groovyOptions.forkOptions.memoryMaximumSize = groovycTest_mx
 }
 
 task checkCompatibility {
@@ -438,7 +454,9 @@ apply from: 'gradle/test.gradle'
 apply from: 'gradle/groovydoc.gradle'
 apply from: 'gradle/docs.gradle'
 apply from: 'gradle/assemble.gradle'
-apply from: 'gradle/upload.gradle'
+// Legacy upload.gradle (uses deprecated maven plugin) - replaced by upload-publish.gradle
+// apply from: 'gradle/upload.gradle'
+apply from: 'gradle/upload-publish.gradle'
 apply from: 'gradle/idea.gradle'
 apply from: 'gradle/eclipse.gradle'
 apply from: 'gradle/quality.gradle'
@@ -451,12 +469,13 @@ if (file('user.gradle').exists()) {
 
 apply from: 'gradle/signing.gradle'
 
-licenseReport {
-    excludeGroups = [
-            'com.googlecode', // openbeans has no pom but is ASLv2
-            'org.multiverse'  // we never include this optional dependency of an optional dependency
-    ]
-}
+// Disabled - plugin not loaded
+// licenseReport {
+//     excludeGroups = [
+//             'com.googlecode', // openbeans has no pom but is ASLv2
+//             'org.multiverse'  // we never include this optional dependency of an optional dependency
+//     ]
+// }
 
 // UNCOMMENT THE FOLLOWING TASKS IF YOU WANT TO RUN LICENSE CHECKING
 //task licenseFormatCustom(type:nl.javadude.gradle.plugins.license.License) {

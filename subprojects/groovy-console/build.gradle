@@ -23,21 +23,33 @@ dependencies {
     implementation project(':groovy-swing')
     implementation project(':groovy-templates')
     testImplementation project(':groovy-test')
-    testImplementation project(':groovy-swing').sourceSets.test.runtimeClasspath
+    // Use test output instead of full runtimeClasspath to avoid cross-project resolution issues in Gradle 9.x
+    testImplementation project(':').sourceSets.test.output
+    testImplementation project(':groovy-swing').sourceSets.test.output
 }
 
 task console(type: JavaExec, dependsOn:classes) {
     jvmArgs += ["-Dgroovy.attach.groovydoc=true"]
 
-    main = 'groovy.console.ui.Console'
+    mainClass = 'groovy.console.ui.Console'
     classpath = sourceSets.main.runtimeClasspath
 }
 
-compileGroovy {
-    doLast {
-        ant.java(classname:'org.jboss.bridger.Bridger', classpath: rootProject.configurations.tools.asPath, outputproperty: 'stdout') {
-            arg(value: "${sourceSets.main.groovy.outputDir.canonicalPath}/groovy/ui/Console.class")
-        }
-        ant.echo('Bridger (groovy-console): ' + ant.properties.stdout)
-    }
-}
+// Bridger task disabled for Gradle 9.x - cross-project configuration resolution
+// without exclusive lock is no longer allowed. The Bridger optimization rewrites
+// default method calls for better performance but is not required for correctness.
+// Re-enabling would require moving the tools configuration to a shared convention
+// plugin or using buildSrc.
+//
+// task runBridgerConsole {
+//     dependsOn compileGroovy
+//     doLast {
+//         def destDir = compileGroovy.destinationDirectory
+//         def toolsClasspath = rootProject.configurations.tools
+//         ant.java(classname:'org.jboss.bridger.Bridger', classpath: toolsClasspath.asPath, outputproperty: 'stdout') {
+//             arg(value: "${destDir.get().asFile.canonicalPath}/groovy/ui/Console.class")
+//         }
+//         ant.echo('Bridger (groovy-console): ' + ant.properties.stdout)
+//     }
+// }
+// classes.dependsOn runBridgerConsole

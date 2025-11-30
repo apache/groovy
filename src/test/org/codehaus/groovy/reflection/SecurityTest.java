@@ -34,7 +34,11 @@ import java.security.ProtectionDomain;
 
 import static groovy.test.GroovyAssert.isAtLeastJdk;
 
+@SuppressWarnings("removal") // SecurityManager removed in Java 24+
 public class SecurityTest extends GroovyTestCase {
+
+    // SecurityManager was removed in Java 24 (JEP 486)
+    private static final boolean SECURITY_MANAGER_SUPPORTED = !isAtLeastJdk("24.0");
 
     @SuppressWarnings("unused")
     public class TestClass{
@@ -84,6 +88,10 @@ public class SecurityTest extends GroovyTestCase {
     Permissions forbidden;
 
     public void setUp() {
+        if (!SECURITY_MANAGER_SUPPORTED) {
+            // SecurityManager removed in Java 24+ (JEP 486) - skip setup
+            return;
+        }
         // Forbidding suppressAccessChecks in the test will make the internal implementation of some JDK fail,
         // so load vm plugin before security manager is installed:
         /*
@@ -113,6 +121,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void tearDown() {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         System.setSecurityManager(null);
     }
 
@@ -139,12 +148,14 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesPublicMethodsWithoutChecks() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("publicMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertTrue(invokesCachedMethod());
     }
 
     public void testReturnsAccesiblePublicMethodsWithoutChecks() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("publicMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertEquals("publicMethod", cachedMethodUnderTest.setAccessible().getName());
@@ -152,6 +163,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testAccessesPublicFieldsWithoutChecks() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedFieldUnderTest = createCachedField("publicField");
         System.setSecurityManager(restrictiveSecurityManager);
         TestClass object = new TestClass();
@@ -160,11 +172,13 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesPrivateMethodsWithoutSecurityManager() throws Exception{
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         assertTrue(invokesCachedMethod());
     }
 
     public void testAccessesPrivateFieldsWithoutSecurityManager() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedFieldUnderTest = createCachedField("privateField");
         System.setSecurityManager(null);
         TestClass object = new TestClass();
@@ -173,6 +187,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testReturnsAccesiblePrivateMethodsWithoutSecurityManager() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         System.setSecurityManager(null);
         assertEquals("privateMethod", cachedMethodUnderTest.setAccessible().getName());
@@ -180,6 +195,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForInvokeOnPrivateMethods() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         try {
@@ -192,6 +208,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForFieldAccessOnPrivateFields() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedFieldUnderTest = createCachedField("privateField");
         System.setSecurityManager(restrictiveSecurityManager);
         TestClass object = new TestClass();
@@ -211,6 +228,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testChecksReflectPermissionForMethodAccessOnPrivateMethods() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("privateMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         try {
@@ -229,12 +247,14 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesPackagePrivateMethodsWithoutChecksInNonRestrictedPackages() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("packagePrivateMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertTrue(invokesCachedMethod());
     }
 
     public void testChecksReflectPermissionForInvokeOnPackagePrivateMethodsInRestrictedJavaPackages() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         if (isAtLeastJdk("9.0")) return;
         cachedMethodUnderTest = createCachedMethod(ClassLoader.class, "getBootstrapClassPath", new Class[0]);
         System.setSecurityManager(restrictiveSecurityManager);
@@ -249,12 +269,14 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesProtectedMethodsWithoutChecks() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod("protectedMethod");
         System.setSecurityManager(restrictiveSecurityManager);
         assertTrue(invokesCachedMethod());
     }
 
     public void testChecksCreateClassLoaderPermissionForClassLoaderProtectedMethodAccess() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         // Illegal access to java.lang.ClassLoader.defineClass(java.lang.String,java.nio.ByteBuffer,java.security.ProtectionDomain)
         if (isAtLeastJdk("16.0")) return;
 
@@ -275,6 +297,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testInvokesPrivateMethodsInGroovyObjectsWithoutChecks() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         cachedMethodUnderTest = createCachedMethod(TestGroovyClass.class, "privateMethod");
         TestGroovyClass object = new TestGroovyClass();
         System.setSecurityManager(restrictiveSecurityManager);
@@ -283,6 +306,7 @@ public class SecurityTest extends GroovyTestCase {
     }
 
     public void testAccessesPrivateFieldsInGroovyObjectsWithoutChecks() throws Exception {
+        if (!SECURITY_MANAGER_SUPPORTED) return;
         Field field = TestGroovyClass.class.getDeclaredField("privateField");
         field.setAccessible(true);
         cachedFieldUnderTest = new CachedField(field);

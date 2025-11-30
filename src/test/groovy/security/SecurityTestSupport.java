@@ -40,15 +40,21 @@ import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
 
+@SuppressWarnings("removal") // SecurityManager removed in Java 24+
 public abstract class SecurityTestSupport extends GroovyTestCase {
     private static final String POLICY_FILE = "security/groovy.policy";
     private static int counter = 0;
     private static boolean securityDisabled;
     private static boolean securityAvailable;
     private static boolean securityChecked = false;
+    private static final boolean SECURITY_MANAGER_SUPPORTED;
 
     static {
-        if (System.getProperty("groovy.security.disabled") != null) {
+        // SecurityManager was removed in Java 24 (JEP 486)
+        int javaVersion = getMajorJavaVersion();
+        SECURITY_MANAGER_SUPPORTED = javaVersion < 24;
+
+        if (!SECURITY_MANAGER_SUPPORTED || System.getProperty("groovy.security.disabled") != null) {
             securityAvailable = false;
             securityDisabled = true;
         } else {
@@ -60,6 +66,23 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
                 securityAvailable = false;
             }
         }
+    }
+
+    private static int getMajorJavaVersion() {
+        String version = System.getProperty("java.version");
+        if (version.startsWith("1.")) {
+            return Integer.parseInt(version.substring(2, 3));
+        }
+        int dotIndex = version.indexOf(".");
+        if (dotIndex > 0) {
+            return Integer.parseInt(version.substring(0, dotIndex));
+        }
+        // Handle versions like "24-ea"
+        int dashIndex = version.indexOf("-");
+        if (dashIndex > 0) {
+            return Integer.parseInt(version.substring(0, dashIndex));
+        }
+        return Integer.parseInt(version);
     }
 
     public static boolean isSecurityAvailable() {
@@ -101,13 +124,16 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
     }
 
     /*
-      * Check SecuritySupport to see if security is properly configured.  If not, fail the first
-      * test that runs.  All remaining tests will run, but not do any security checking.
+      * Check SecuritySupport to see if security is properly configured.  If not, skip the test.
+      * On Java 24+ SecurityManager is not available, so tests are silently skipped.
       */
     private boolean checkSecurity() {
         if (!securityChecked) {
             securityChecked = true;
-            if (!isSecurityAvailable()) {
+            if (!SECURITY_MANAGER_SUPPORTED) {
+                // SecurityManager removed in Java 24+ (JEP 486) - skip silently
+                System.out.println("SecurityManager not supported on Java 24+ - skipping security tests");
+            } else if (!isSecurityAvailable()) {
                 fail("Security is not available - skipping security tests.  Ensure that "
                         + POLICY_FILE + " is available from the current execution directory.");
             }
@@ -137,6 +163,13 @@ public abstract class SecurityTestSupport extends GroovyTestCase {
     }
 
     protected void tearDown() {
+        if (!SECURITY_MANAGER_SUPPORTED) {
+            // Just restore the class loader on Java 24+
+            if (currentClassLoader != null) {
+                Thread.currentThread().setContextClassLoader(currentClassLoader);
+            }
+            return;
+        }
         AccessController.doPrivileged((PrivilegedAction) () -> {
             System.setSecurityManager(securityManager);
             Thread.currentThread().setContextClassLoader(currentClassLoader);
