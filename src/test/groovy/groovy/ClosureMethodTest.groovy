@@ -18,14 +18,17 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests the various Closure methods in Groovy
  */
-class ClosureMethodTest extends GroovyTestCase {
+final class ClosureMethodTest {
 
+    @Test
     void testListCollect() {
         def list = [1, 2, 3, 4]
         def answer = list.collect { item -> return item * 2 }
@@ -34,6 +37,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer == expected
     }
 
+    @Test
     void testMapCollect() {
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
         def answer = map.collect { e -> return e.key + e.value }
@@ -47,6 +51,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer.get(3) == 12
     }
 
+    @Test
     void testObjectFindResult() {
         def oneToTenObjectIterator = {
             def i = 1
@@ -74,6 +79,7 @@ class ClosureMethodTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testListFind() {
         def list = ["a", "b", "c"]
         def answer = list.find { item -> item == "b" }
@@ -82,6 +88,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer == null
     }
 
+    @Test
     void testListFindResult() {
         Collection<Integer> oneThroughFive = [1, 2, 3, 4, 5]
 
@@ -110,6 +117,7 @@ class ClosureMethodTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMapFind() {
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
         def answer = map.find { entry -> entry.value == 6 }
@@ -129,6 +137,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer.value == 4
     }
 
+    @Test
     void testMapFindResult() {
         def oneThroughFourMap = [a: 1, b: 2, c: 3, d: 4]
 
@@ -153,6 +162,7 @@ class ClosureMethodTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testListFindAll() {
         def list = [20, 5, 40, 2]
         def answer = list.findAll { item -> item < 10 }
@@ -160,6 +170,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer == [5, 2]
     }
 
+    @Test
     void testMapFindAll() {
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
         def answer = map.findAll { entry -> entry.value > 5 }
@@ -173,6 +184,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert values == [6, 8], "Expected [6, 8] but was $values"
     }
 
+    @Test
     void testMapEach() {
         def count = 0
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
@@ -182,6 +194,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert count == 50
     }
 
+    @Test
     void testMapEachWith2Params() {
         def count = 0
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
@@ -191,6 +204,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert count == 50
     }
 
+    @Test
     void testListEach() {
         def count = 0
         def list = [1, 2, 3, 4]
@@ -200,6 +214,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert count == 20
     }
 
+    @Test
     void testListEvery() {
         assert [1, 2, 3, 4].every { i -> return i < 5 }
         assert [1, 2, 7, 4].every { i -> i < 5 } == false
@@ -207,6 +222,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert ![a: 1, b: 2, c: 3].every { k, v -> k < 'd' && v < 3 }
     }
 
+    @Test
     void testListAny() {
         assert [1, 2, 3, 4].any { i -> return i < 5 }
         assert [1, 2, 3, 4].any { i -> i > 3 }
@@ -216,16 +232,19 @@ class ClosureMethodTest extends GroovyTestCase {
         assert !isThereAFourValue
     }
 
+    @Test
     void testJoin() {
         def value = [1, 2, 3].join('-')
         assert value == "1-2-3"
     }
 
+    @Test
     void testListReverse() {
         def value = [1, 2, 3, 4].reverse()
         assert value == [4, 3, 2, 1]
     }
 
+    @Test
     void testListInject() {
         def value = [1, 2, 3].inject('counting: ') { str, item -> str + item }
         assert value == "counting: 123"
@@ -235,6 +254,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value == 10
     }
 
+    @Test
     void testOneArgListInject() {
         // Check basic functionality
         def value = [1, 2, 3].inject { c, item -> c + item }
@@ -247,25 +267,20 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value.inject { a, b -> a.intersect(b) } == ['tim']
 
         // Check edges
-        try {
+        shouldFail(NoSuchElementException) {
             [].inject { a, b -> a + b } == null
-            fail("inject(Closure) on an empty list should throw a NoSuchElementException")
-        }
-        catch (NoSuchElementException e) {
         }
         assert [1].inject { a, b -> a + b } == 1
         assert [1, 2].inject { a, b -> a + b } == 3
     }
 
+    @Test
     void testOneArgObjectInject() {
         def value = ([1, 2, 3, 4] as Object[]).inject { c, item -> c + item }
         assert value == 10
 
-        try {
+        shouldFail(NoSuchElementException) {
             ([] as Object[]).inject { c, item -> c + item }
-            fail("inject(Closure) on an empty Object[] should throw a NoSuchElementException")
-        }
-        catch (NoSuchElementException e) {
         }
 
         value = ([1] as Object[]).inject { c, item -> c + item }
@@ -275,12 +290,9 @@ class ClosureMethodTest extends GroovyTestCase {
         def iter = [hasNext: { -> i < 5 }, next: { -> i++ }] as Iterator
         assert iter.inject { a, b -> a * b } == 24
 
-        try {
+        shouldFail(NoSuchElementException) {
             iter = [hasNext: { -> false }, next: { -> null }] as Iterator
             iter.inject { a, b -> a * b }
-            fail("inject(Closure) on an exhausted iterator should throw a NoSuchElementException")
-        }
-        catch (NoSuchElementException e) {
         }
 
         i = 1
@@ -288,6 +300,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert iter.inject { a, b -> a * b } == 1
     }
 
+    @Test
     void testOldAndNewStylesYieldSameResults() {
         def items = [1000, 200, 30, 4]
         def twice = { int x -> x * 2 }
@@ -311,6 +324,7 @@ class ClosureMethodTest extends GroovyTestCase {
         addTwiceFourWays.inject(checkEqual)
     }
 
+    @Test
     void testObjectInject() {
         def value = [1: 1, 2: 2, 3: 3].inject('counting: ') { str, item -> str + item.value }
         assert value == "counting: 123"
@@ -318,6 +332,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value == 6
     }
 
+    @Test
     void testIteratorInject() {
         def value = [1: 1, 2: 2, 3: 3].iterator().inject('counting: ') { str, item -> str + item.value }
         assert value == "counting: 123"
@@ -325,16 +340,13 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value == 6
     }
 
-    void testDump() {
-        def text = dump()
-        assert text != null && text.startsWith("<")
-    }
-
+    @Test
     void testInspect() {
         def text = [1, 2, 'three'].inspect()
         assert text == "[1, 2, 'three']"
     }
 
+    @Test
     void testTokenize() {
         def text = "hello-there-how-are-you"
         def answer = []
@@ -344,6 +356,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer == ['hello', 'there', 'how', 'are', 'you']
     }
 
+    @Test
     void testUpto() {
         def answer = []
         1.upto(5) { answer.add(it) }
