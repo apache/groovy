@@ -46,11 +46,20 @@ allprojects {
             systemProperties 'java.awt.headless': 'true'
         }
         systemProperties 'apple.awt.UIElement': 'true', 'javadocAssertion.src.dir': './src/main'
+        // Support both legacy target.java.home and new toolchain-based approach
         if (rootProject.hasProperty('target.java.home')) {
-            String targetJavaHome = rootProject.property('target.java.home')
-            if (targetJavaHome?.trim()) {
+            String targetJavaHome = rootProject.property('target.java.home')?.trim()
+            if (targetJavaHome) {
                 executable = "${targetJavaHome}/bin/java"
+                println "Using ${executable} to run tests"
             }
+        } else if (rootProject.hasProperty('testJavaVersion')) {
+            // Use Gradle toolchain for test execution
+            def testVersion = rootProject.property('testJavaVersion') as int
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(testVersion)
+            }
+            println "Using Java toolchain version ${testVersion} to run tests"
         }
 
         forkEvery = 50
