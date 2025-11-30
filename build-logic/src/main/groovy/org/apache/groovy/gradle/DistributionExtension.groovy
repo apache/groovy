@@ -43,7 +43,7 @@ class DistributionExtension {
     }
 
     DistributionExtension docs(String p, String... classNames) {
-        project.tasks.named('docGDK').configure { docgen ->
+        project.tasks.named('docGDK', DocGDK).configure { docgen ->
             docgeneratorClasses.set(docgeneratorClasses.get() +
                     classNames.collect { className ->
                         def src = project.project(p).layout.projectDirectory.file(
