@@ -160,7 +160,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
                } catch (Throwable e) {
                    //DO NOTHING
                }
-
             }
         });
    }
@@ -290,7 +289,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
         } finally {
             info.unlock();
         }
-        if ((oldMC == null && mc != newMC) || (oldMC != null && mc != newMC && mc != oldMC)) {
+        if ((oldMC == null || oldMC != mc) && (newMC != mc)) {
             fireConstantMetaClassUpdate(null, theClass, mc, newMC);
         }
     }

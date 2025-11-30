@@ -155,7 +155,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         }
     }
 
-    static class AnonymousMetaMethod extends MetaMethod {
+    static class AnonymousMetaMethod extends MetaMethod implements ClosureInvokingMethod {
         private final Closure closure;
         private final String name;
         private final Class declaringClass;
@@ -165,6 +165,11 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
             this.closure = closure;
             this.name = name;
             this.declaringClass = declaringClass;
+        }
+
+        @Override
+        public Closure getClosure() {
+            return closure;
         }
 
         @Override

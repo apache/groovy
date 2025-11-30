@@ -18,82 +18,126 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase;
+import org.codehaus.groovy.reflection.ClassInfo
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
 
-class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
-    def registry = GroovySystem.metaClassRegistry
-    MetaClass savedStringMeta
-    MetaClass savedObjectMeta
+final class ExpandoMetaClassCreationHandleTest {
 
-    void setUp() {
-        savedStringMeta = registry.getMetaClass(String)
-        savedObjectMeta = registry.getMetaClass(Object)
+    @BeforeAll
+    static void setUp() {
         ExpandoMetaClass.enableGlobally()
     }
 
-    void tearDown() {
+    @AfterAll
+    static void tearDown() {
         ExpandoMetaClass.disableGlobally()
-        registry.setMetaClass(String, savedStringMeta)
-        registry.setMetaClass(Object, savedObjectMeta)
+
+        ClassInfo.onAllClassInfo { info ->
+            if (info.getMetaClassForClass()) {
+                info.lock()
+                try {
+                    info.setStrongMetaClass(null)
+                } finally {
+                    info.unlock()
+                }
+            }
+        }
     }
 
-    void testInheritWithExistingMetaClass() {
-        registry.removeMetaClass(String)
-        registry.removeMetaClass(Object)
-
-        String foo = "hello"
-        assertEquals "HELLO", foo.toUpperCase()
-
-        Object.metaClass.doStuff = { -> delegate.toString().toUpperCase() }
-
-        assertEquals "HELLO", foo.doStuff()
+    private MetaClass expand(Class type) {
+        MetaClassRegistry registry = GroovySystem.getMetaClassRegistry()
+        MetaClass metaClass = registry.getMetaClass(type)
+        assert metaClass instanceof ExpandoMetaClass
+        return metaClass
     }
 
-    void testInheritFromInterfaceHierarchy() {
-        registry.removeMetaClass(IBar)
-        registry.removeMetaClass(Foo)
-        registry.removeMetaClass(Test1)
-
-        def metaClass = registry.getMetaClass(IBar)
-        assertTrue(metaClass instanceof ExpandoMetaClass)
-
-        metaClass.helloWorld = { -> "goodbye!" }
-
-        def t = new Test1()
-        assertEquals "goodbye!", t.helloWorld()
+    private void reset(Class<?>... types) {
+        types.each(GroovySystem.getMetaClassRegistry().&removeMetaClass)
     }
 
-    void testExpandoInterfaceInheritanceWithOverrideDGM() {
-        registry.removeMetaClass(Foo)
-        registry.removeMetaClass(Test1)
+    //--------------------------------------------------------------------------
 
-        def metaClass = registry.getMetaClass(Foo)
-        assertTrue(metaClass instanceof ExpandoMetaClass)
+    @Test
+    void testExpandoCreationHandle() {
+        reset(URL)
+
+        expand(URL).toStringUC = { -> delegate.toString().toUpperCase() }
+
+        def url = new URL('http://grails.org')
+        assert url.toString() == 'http://grails.org'
+        assert url.toStringUC() == 'HTTP://GRAILS.ORG'
+    }
+
+    @Test
+    void testInheritFromSuperClass() {
+        reset(Object, String)
+
+        String string = 'hello'
+        assert string.toUpperCase() == 'HELLO'
+
+        expand(Object).doStuff = { -> delegate.toString().toUpperCase() }
+
+        assert string.doStuff() == 'HELLO'
+    }
+
+    @Test
+    void testInheritFromSuperClass2() {
+        reset(Object, String, URI)
+
+        expand(Object).toFoo = { -> 'foo' }
+
+        def uri = new URI('http://bar.com')
+        def s = 'bar'
+
+        assert uri.toFoo() == 'foo'
+        assert s.toFoo() == 'foo'
+
+        expand(Object).toBar = { -> 'bar' }
+
+        assert uri.toBar() == 'bar'
+        assert s.toBar() == 'bar'
+    }
+
+    @Test
+    void testInheritFromSuperInterface() {
+        reset(Bar, Foo, Tester)
+
+        expand(Bar).helloWorld = { -> 'goodbye!' }
+
+        assert new Tester().helloWorld() == 'goodbye!'
+    }
+
+    @Test
+    void testOverrideGetAndPutAtViaInterface() {
+        reset(Bar, Foo, Tester)
+
+        assert metaClass instanceof ExpandoMetaClass
 
         def map = [:]
-        metaClass.getAt = { Integer i -> map[i] }
-        metaClass.putAt = { Integer i, val -> map[i] = val }
+        MetaClass metaClass = expand(Foo)
+        metaClass.getAt = { Integer idx -> map[idx] }
+        metaClass.putAt = { Integer idx, val -> map[idx] = val }
 
-        def t = new Test1()
-        //assertEquals 2, t.metaClass.getExpandoMethods().size()
-        //assert t.metaClass.getExpandoMethods().find { it.name == 'putAt' }
+        def t = new Tester()
+        //assert t.getMetaClass().getExpandoMethods().size() == 2
+        //assert t.getMetaClass().getExpandoMethods().find { it.name == 'putAt' }
 
-        t[0] = "foo"
+        t[0] = 'foo'
 
         assert map.size() == 1
 
-        assertEquals "foo", t[0]
+        assert t[0] == 'foo'
     }
 
+    @Test
     void testOverrideSetPropertyViaInterface() {
-        registry.removeMetaClass(Foo)
-        registry.removeMetaClass(Test1)
-
-        def metaClass = registry.getMetaClass(Foo)
+        reset(Bar, Foo, Tester)
 
         def testValue = null
-        metaClass.setProperty = { String name, value ->
-            def mp = delegate.metaClass.getMetaProperty(name)
+        expand(Foo).setProperty = { String name, value ->
+            def mp = delegate.getMetaClass().getMetaProperty(name)
             if (mp) {
                 mp.setProperty(delegate, value)
             } else {
@@ -101,165 +145,126 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
             }
         }
 
-        def t = new Test1()
+        def t = new Tester()
 
-        t.name = "Bob"
-        assertEquals "Bob", t.name
+        t.name = 'Bob'
+        assert t.name == 'Bob'
 
-        t.foo = "bar"
-        assertEquals "bar", testValue
+        t.xxxx = 'foo bar'
+        assert testValue == 'foo bar'
     }
 
+    @Test
     void testOverrideGetPropertyViaInterface() {
-        registry.removeMetaClass(Foo)
-        registry.removeMetaClass(Test1)
+        reset(Bar, Foo, Tester)
 
-        def metaClass = registry.getMetaClass(Foo)
-
-        metaClass.getProperty = { String name ->
-            def mp = delegate.metaClass.getMetaProperty(name)
-            mp ? mp.getProperty(delegate) : "foo $name"
+        expand(Foo).getProperty = { String name ->
+            def mp = delegate.getMetaClass().getMetaProperty(name)
+            mp ? mp.getProperty(delegate) : "fizz $name"
         }
 
-        def t = new Test1()
+        def t = new Tester()
 
-        assertEquals "Fred", t.getProperty("name")
-        assertEquals "Fred", t.name
-        assertEquals "foo bar", t.getProperty("bar")
-        assertEquals "foo bar", t.bar
+        assert t.getProperty('name') == 'Fred'
+        assert t.name == 'Fred'
+        assert t.getProperty('buzz') == 'fizz buzz'
+        assert t.buzz == 'fizz buzz'
     }
 
+    @Test
     void testOverrideInvokeMethodViaInterface() {
-        registry.removeMetaClass(Foo)
-        registry.removeMetaClass(Object)
-        registry.removeMetaClass(IBar)
-        registry.removeMetaClass(Test1)
+        reset(Bar, Foo, Tester)
 
-        def metaClass = registry.getMetaClass(Foo)
-
-        metaClass.invokeMethod = { String name, args ->
+        expand(Foo).invokeMethod = { String name, args ->
             def mm = delegate.metaClass.getMetaMethod(name, args)
-            mm ? mm.invoke(delegate, args) : "bar!!"
+            mm ? mm.invoke(delegate, args) : 'bar!'
         }
 
-        def t = new Test1()
+        def t = new Tester()
 
-        assertEquals "bar!!", t.doStuff()
-        assertEquals "foo", t.invokeMe()
+        assert t.invokeMe() == 'foo'
+        assert t.whatever() == 'bar!'
     }
 
-    void testInterfaceMethodInheritance() {
-        registry.removeMetaClass(List)
-        registry.removeMetaClass(ArrayList)
+    // GROOVY-3873
+    @Test
+    void testOverrideMethodMissingViaInterface() {
+        reset(List, ArrayList)
 
-        def metaClass = registry.getMetaClass(List)
-        assertTrue(metaClass instanceof ExpandoMetaClass)
-
-        metaClass.sizeDoubled = { -> delegate.size() * 2 }
-        metaClass.isFull = { -> false }
+        expand(List).methodMissing = { String name, args ->
+            true
+        }
 
         def list = new ArrayList()
 
+        assert list.noSuchMethod()
+    }
+
+    @Test
+    void testInterfaceMethodInheritance() {
+        reset(List, ArrayList)
+
+        expand(List).with {
+            sizeDoubled = { -> delegate.size() * 2 }
+            isFull = { -> false }
+        }
+
+        def list = new ArrayList()
         list << 1
         list << 2
 
-        assertEquals 4, list.sizeDoubled()
-
-        list = new ArrayList()
-
+        assert list.sizeDoubled() == 4
         assert !list.isFull()
-        assert !list.full
+      //assert !list.full -- tries [1.full,2.full]
     }
 
-    void testExpandoCreationHandle() {
-        def metaClass = registry.getMetaClass(URL)
-        if (!(metaClass instanceof ExpandoMetaClass)) {
-            registry.removeMetaClass(URL)
-        }
-
-        def url = new URL("http://grails.org")
-        metaClass = registry.getMetaClass(url.getClass())
-        assertTrue(metaClass instanceof ExpandoMetaClass)
-
-        metaClass.toUpperString = { ->
-            delegate.toString().toUpperCase()
-        }
-
-        assertEquals "http://grails.org", url.toString()
-        assertEquals "HTTP://GRAILS.ORG", url.toUpperString()
-    }
-
-    void testExpandoInheritance() {
-        registry.removeMetaClass(String)
-
-        def metaClass = registry.getMetaClass(Object)
-        if (!(metaClass instanceof ExpandoMetaClass)) {
-            registry.removeMetaClass(Object)
-            metaClass = registry.getMetaClass(Object)
-        }
-
-        metaClass.toFoo = { -> "foo" }
-
-        def uri = new URI("http://bar.com")
-        def s = "bar"
-
-        assertEquals "foo", uri.toFoo()
-        assertEquals "foo", s.toFoo()
-
-        metaClass.toBar = { -> "bar" }
-
-        assertEquals "bar", uri.toBar()
-        assertEquals "bar", s.toBar()
-    }
-
+    @Test
     void testAddMethodToChildThenParent() {
-        registry.removeMetaClass(Test1)
-        registry.removeMetaClass(EMCInheritTest)
+        reset(Bar, Foo, Tester, EMCInheritTest)
 
-        EMCInheritTest.metaClass.foo = { -> "hello!" }
+        expand(EMCInheritTest).foo = { -> 'hello!' }
 
         def emc = new EMCInheritTest()
 
-        assertEquals "hello!", emc.foo()
+        assert emc.foo() == 'hello!'
 
-        Test1.metaClass.foo = { -> "uck" }
+        expand(Tester).foo = { -> 'goodbye!' }
+
         emc = new EMCInheritTest()
-        // make sure original foo wasn't overridden
-        assertEquals "hello!", emc.foo()
+
+        assert emc.foo() == 'hello!' : 'original foo was replaced'
     }
 
+    @Test
     void testAddMethodMissingToChildThenParent() {
-        registry.removeMetaClass(Test1)
-        registry.removeMetaClass(EMCInheritTest)
-        registry.removeMetaClass(Foo)
-        registry.removeMetaClass(IBar)
-        registry.removeMetaClass(Object)
+        reset(Bar, Foo, Tester, EMCInheritTest)
 
-        EMCInheritTest.metaClass.methodMissing = { String name, args -> "hello!" }
+        expand(EMCInheritTest).methodMissing = { String name, args -> 'hello!' }
 
         def emc = new EMCInheritTest()
 
-        assertEquals "hello!", emc.foo()
+        assert emc.foo() == 'hello!'
 
-        Test1.metaClass.methodMissing = { String name, args -> "uck" }
+        expand(Tester).methodMissing = { String name, args -> 'goodbye!' }
+
         emc = new EMCInheritTest()
-        // make sure original foo wasn't overridden
-        assertEquals "hello!", emc.bar()
+
+        assert emc.bar() == 'hello!' : 'original methodMissing was replaced'
     }
-}
 
-interface IBar {}
+    //--------------------------------------------------------------------------
 
-interface Foo extends IBar {
+    interface Bar {
+    }
 
-}
+    interface Foo extends Bar {
+    }
 
-class Test1 implements Foo {
-    String name = "Fred"
+    static class Tester implements Foo {
+        String name = 'Fred'
+        def invokeMe() { 'foo' }
+    }
 
-    def invokeMe() { "foo" }
-}
-
-class EMCInheritTest extends Test1 {
-
+    static class EMCInheritTest extends Tester {
+    }
 }

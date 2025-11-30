@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
+import groovy.lang.ClosureInvokingMethod;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.tools.GeneralUtils;
 import org.codehaus.groovy.reflection.CachedClass;
@@ -233,11 +234,9 @@ public class MetaMethodIndex {
 
     private static boolean isNonRealMethod(final MetaMethod method) {
         return method instanceof NewMetaMethod
-            || method instanceof ClosureMetaMethod
             || method instanceof GeneratedMetaMethod
-            || method instanceof ClosureStaticMetaMethod
-            || method instanceof MixinInstanceMetaMethod
-            || method instanceof ClosureMetaMethod.AnonymousMetaMethod;
+            || method instanceof ClosureInvokingMethod
+            || method instanceof MixinInstanceMetaMethod;
     }
 
     private static boolean isMatchingMethod(final MetaMethod method1, final MetaMethod method2) {

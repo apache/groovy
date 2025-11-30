@@ -360,30 +360,31 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        List<MetaMethod> arr = new ArrayList<>(Arrays.asList(classInfo.newMetaMethods));
+        List<MetaMethod> metaMethods = new ArrayList<>();
 
-        final MetaClass metaClass = classInfo.getStrongMetaClass();
-        if (metaClass instanceof ExpandoMetaClass) {
-            arr.addAll(((ExpandoMetaClass)metaClass).getExpandoMethods());
+        Collections.addAll(metaMethods, classInfo.newMetaMethods);
+
+        if (classInfo.getStrongMetaClass() instanceof ExpandoMetaClass emc) {
+            List<MetaMethod> expandoMethods = emc.getExpandoMethods();
+            metaMethods.addAll(expandoMethods);
         }
 
         if (isInterface) {
             MetaClass mc = ReflectionCache.OBJECT_CLASS.classInfo.getStrongMetaClass();
-            addSubclassExpandos(arr, mc);
-        }
-        else {
-            for (CachedClass cls = this; cls != null; cls = cls.getCachedSuperClass()) {
-                MetaClass mc = cls.classInfo.getStrongMetaClass();
-                addSubclassExpandos(arr, mc);
+            addSubclassExpandos(metaMethods, mc);
+        } else {
+            for (CachedClass cc = this; cc != null; cc = cc.getCachedSuperClass()) {
+                MetaClass mc = cc.classInfo.getStrongMetaClass();
+                addSubclassExpandos(metaMethods, mc);
             }
         }
 
-        for (CachedClass inf : getInterfaces()) {
-            MetaClass mc = inf.classInfo.getStrongMetaClass();
-            addSubclassExpandos(arr, mc);
+        for (CachedClass cc : getInterfaces()) { // includes this if interface
+            MetaClass mc = cc.classInfo.getStrongMetaClass();
+            addSubclassExpandos(metaMethods, mc);
         }
 
-        return arr.toArray(MetaMethod.EMPTY_ARRAY);
+        return metaMethods.toArray(MetaMethod[]::new);
     }
 
     private void addSubclassExpandos(List<MetaMethod> arr, MetaClass mc) {

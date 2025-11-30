@@ -431,9 +431,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaMethod[] getNewMetaMethods(final CachedClass c) {
-        if (theCachedClass != c)
+        if (c != theCachedClass) {
             return c.getNewMetaMethods();
-
+        }
         return myNewMetaMethods;
     }
 
@@ -597,28 +597,27 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void inheritInterfaceNewMetaMethods(final Set<CachedClass> interfaces) {
         Method[] theClassMethods = null;
-        // add methods declared by DGM for interfaces
+        // add methods declared by extension for interfaces
         for (CachedClass face : interfaces) {
-            for (MetaMethod method : getNewMetaMethods(face)) {
-                boolean skip = false;
-                // skip DGM methods on an interface if the class already has the method
-                // but don't skip for GroovyObject-related methods as it breaks things :-(
-                if (method instanceof GeneratedMetaMethod && !GroovyObject.class.isAssignableFrom(method.getDeclaringClass().getTheClass())) {
-                    final String generatedMethodName = method.getName();
-                    final CachedClass[] generatedMethodParameterTypes = method.getParameterTypes();
-                    for (Method m : (null == theClassMethods ? theClassMethods = theClass.getMethods() : theClassMethods)) {
-                        if (generatedMethodName.equals(m.getName())
-                                // below not true for DGM#push and also co-variant return scenarios
-                                //&& method.getReturnType().equals(m.getReturnType())
-                                && MetaMethod.equal(generatedMethodParameterTypes, m.getParameterTypes())) {
-                            skip = true;
-                            break;
+        mm: for (MetaMethod mm : getNewMetaMethods(face)) {
+                if (mm instanceof GeneratedMetaMethod) {
+                    // skip DGM methods on an interface if the class already has the method
+                    // but do not skip GroovyObject-related methods as it breaks things :-(
+                    if (!GroovyObject.class.isAssignableFrom(mm.getDeclaringClass().getTheClass())) {
+                        String generatedMethodName = mm.getName();
+                        CachedClass[] generatedMethodParameterTypes = mm.getParameterTypes();
+                        for (Method m : (theClassMethods == null ? theClassMethods = theClass.getMethods() : theClassMethods)) {
+                            if (generatedMethodName.equals(m.getName())
+                                    // below not true for DGM#push and also co-variant return scenarios
+                                    //&& method.getReturnType().equals(m.getReturnType())
+                                    && MetaMethod.equal(generatedMethodParameterTypes, m.getParameterTypes())) {
+                                continue mm;
+                            }
                         }
                     }
                 }
-                if (!skip) {
-                    newGroovyMethodsSet.add(method);
-                    addMetaMethodToIndex(method, mainClassMethodHeader);
+                if (newGroovyMethodsSet.add(mm)) {
+                    addMetaMethodToIndex(mm, mainClassMethodHeader);
                 }
             }
         }
