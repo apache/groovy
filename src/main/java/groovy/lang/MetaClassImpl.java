@@ -2489,9 +2489,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private static void copyNonPrivateFields(Map<String, MetaProperty> from, Map<String, MetaProperty> to, @javax.annotation.Nullable CachedClass klass) {
         for (Map.Entry<String, MetaProperty> entry : from.entrySet()) {
-            CachedField field = (CachedField) entry.getValue();
-            if (field.isPublic() || field.isProtected() || (!field.isPrivate()
-                    && klass != null && inSamePackage(field.getDeclaringClass(), klass.getTheClass()))) {
+            if (entry.getValue() instanceof CachedField field && (field.isPublic() || field.isProtected()
+                    || (!field.isPrivate() && klass != null && inSamePackage(field.getDeclaringClass(), klass.getTheClass())))) {
                 to.put(entry.getKey(), field);
             }
         }
