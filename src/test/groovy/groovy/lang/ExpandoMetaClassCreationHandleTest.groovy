@@ -109,6 +109,22 @@ final class ExpandoMetaClassCreationHandleTest {
         assert new Tester().helloWorld() == 'goodbye!'
     }
 
+    // GROOVY-3299
+    @Test
+    void testInheritFromSuperInterface2() {
+        reset(CharSequence, String)
+
+        expand(CharSequence).dummy = { -> 'cat' }
+
+        assert 'testOne'.dummy() == 'cat'
+
+        reset(String) // TODO: don't require this
+
+        expand(CharSequence).dummy = { -> 'dog' }
+
+        assert 'testTwo'.dummy() == 'dog'
+    }
+
     @Test
     void testOverrideGetAndPutAtViaInterface() {
         reset(Bar, Foo, Tester)
