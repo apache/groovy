@@ -33,10 +33,6 @@ dependencies {
     implementation 'org.nosphere.apache:creadur-rat-gradle:0.8.1'
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:6.0.5'
     implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.2'
-    // Required for CheckstyleHtmlReport.groovy - GPathResult
-    implementation 'org.apache.groovy:groovy-xml:4.0.28'
-    // Required for org.apache.groovy-published-library.gradle - SwingBuilder
-    implementation 'org.apache.groovy:groovy-swing:4.0.28'
 }
 
 tasks.withType(Jar).configureEach {

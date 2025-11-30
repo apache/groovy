@@ -1,5 +1,3 @@
-import groovy.swing.SwingBuilder
-
 plugins {
     id 'maven-publish'
     id 'signing'
@@ -826,31 +824,10 @@ gradle.taskGraph.whenReady { taskGraph ->
 }
 
 def promptUser(String prompt) {
-    def response = ''
     if (System.console() == null) {
-        new SwingBuilder().edt {
-            dialog(modal: true, // pause build
-                    title: 'Response required', // dialog title
-                    alwaysOnTop: true,
-                    resizable: false,
-                    locationRelativeTo: null, // centered on screen
-                    pack: true,
-                    show: true
-            ) {
-                vbox {
-                    label(text: "$prompt:")
-                    input = passwordField()
-                    button(defaultButton: true, text: 'OK', actionPerformed: {
-                        response = new String(input.password)
-                        dispose()
-                    })
-                }
-            }
-        }
-    } else {
-        response = new String(System.console().readPassword("\n$prompt: "))
+        throw new InvalidUserDataException("No console available. Please provide signing credentials via gradle.properties or environment variables.")
     }
-
+    def response = new String(System.console().readPassword("\n$prompt: "))
     if (!response) {
         throw new InvalidUserDataException("Null response detected!")
     }
