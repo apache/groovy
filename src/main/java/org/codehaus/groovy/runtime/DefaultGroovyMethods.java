@@ -4616,7 +4616,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *   String two = 'y'
      * }
      * def text = new Pogo().dump()
-     * assert text ==~ /<Pogo@[0-9a-f]{1,8} one=x two=y three=z>/
+     * assert text ==~ /&lt;Pogo@[0-9a-f]{1,8} one=x two=y three=z>/
      * </pre>
      *
      * @param self an object
