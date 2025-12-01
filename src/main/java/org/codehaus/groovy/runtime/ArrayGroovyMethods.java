@@ -4379,6 +4379,39 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // groupByMany
+
+    /**
+     * Groups all array members into (sub)groups determined by the supplied key mapping closure.
+     * The closure should return a list of keys applicable to a member.
+     * The member will be grouped under each key from the list.
+     *
+     * Example usage finding the words with capital letters:
+     * <pre class="groovyTestCase">
+     * String[] words = ['TO', 'be', 'Or', 'nOT', 'To', 'be']
+     * assert words.groupByMany(w -&gt; w.toSet().grep(~'[A-Z]')) == [T:['TO', 'nOT', 'To'], O:['TO', 'Or', 'nOT']]
+     * </pre>
+     *
+     * If the lists of generated keys are all of size 1, the result will be the same as
+     * {@code groupBy} with a closure returning the value in the key list:
+     * <pre class="groovyTestCase">
+     * String[] animals = ['cat', 'dog', 'bird', 'pony']
+     * assert animals.groupByMany(a -&gt; [a.size()]) == animals.groupBy(String::size)
+     * </pre>
+     *
+     * @param self  an array to group
+     * @param keyFn a closure returning an Iterable of keys for each element
+     * @return a new Map from keys to lists of elements
+     * @since 6.0.0
+     */
+    public static <T, K> Map<K, List<T>> groupByMany(
+        T[] self,
+        @ClosureParams(FirstParam.Component.class) Closure<? extends Iterable<? extends K>> keyFn
+    ) {
+        return DefaultGroovyMethods.groupByMany(Arrays.asList(self), keyFn);
+    }
+
+    //--------------------------------------------------------------------------
     // head
 
     /**

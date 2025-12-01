@@ -7987,14 +7987,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // groupByMany
 
     /**
-     * Sorts all Iterable members into (sub)groups determined by the supplied
-     * mapping closure. Each closure should return a list of keys. The item
-     * should be grouped by each of these keys. The returned LinkedHashMap will have
-     * an entry for each distinct 'key path' returned from the closures, with each value
-     * being a list of items for that 'group path'.
+     * Groups all items from the iterable into (sub)groups determined by the supplied key mapping closure.
+     * The closure should return a list of keys applicable to an item.
+     * The item will be grouped under each key from the list.
      *
      * Example usage:
-     * <pre>
+     * <pre class="groovyTestCase">
      * def people = [
      *     [name: 'Alice', cities: ['NY', 'LA']],
      *     [name: 'Bob',   cities: ['NY']],
@@ -8015,7 +8013,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map from keys to lists of elements
      * @since 6.0.0
      */
-    public static <T, K> Map<K, List<T>> groupByMany(Iterable<T> self, Closure<? extends Iterable<? extends K>> keyFn) {
+    public static <T, K> Map<K, List<T>> groupByMany(
+        Iterable<T> self,
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Iterable<? extends K>> keyFn
+    ) {
         Map<K, List<T>> result = new HashMap<>();
 
         for (T item : self) {
@@ -8032,14 +8033,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts all Iterable members into (sub)groups determined by the supplied
-     * mapping closure. Each closure should return a list of keys. The item
-     * should be grouped by each of these keys. The returned LinkedHashMap will have
-     * an entry for each distinct 'key path' returned from the closures, with each value
-     * being a list of items for that 'group path'.
+     * Groups all elements from the iterable into (sub)groups determined by the supplied key mapping closure.
+     * The key mapping closure should return a list of keys applicable to an element.
+     * The value returned by mapping the element with the value mapping closure will be grouped under each key from the list.
      *
      * Example usage:
-     * <pre>
+     * <pre class="groovyTestCase">
      * record Person(String name, List&lt;String> cities) { }
      *
      * def people = [
@@ -8063,8 +8062,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map from keys to lists of elements
      * @since 6.0.0
      */
-    public static <T, K> Map<K, List<T>> groupByMany(Iterable<T> self, Closure<? extends T> valueFn, Closure<? extends Iterable<? extends K>> keyFn) {
-        Map<K, List<T>> result = new HashMap<>();
+    public static <T, U, K> Map<K, List<U>> groupByMany(
+        Iterable<T> self,
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends U> valueFn,
+        @ClosureParams(FirstParam.FirstGenericType.class) Closure<? extends Iterable<? extends K>> keyFn
+    ) {
+        Map<K, List<U>> result = new HashMap<>();
 
         for (T item : self) {
             Iterable<? extends K> keys = keyFn.call(item);
@@ -8080,14 +8083,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts all Iterable members into (sub)groups determined by the supplied
-     * mapping closure. Each closure should return a list of keys. The item
-     * should be grouped by each of these keys. The returned LinkedHashMap will have
-     * an entry for each distinct 'key path' returned from the closures, with each value
-     * being a list of items for that 'group path'.
+     * Groups all keys from the map into (sub)groups determined by the values.
+     * Each key will be grouped under each item in the value list.
      *
      * Example usage:
-     * <pre>
+     * <pre class="groovyTestCase">
      * def citiesLived = [
      *     Alice: ['NY', 'LA'],
      *     Bob: ['NY'],
@@ -8103,8 +8103,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * ]
      * </pre>
      *
-     * @param self  a Map to group
-     * @return a new Map from keys to lists of elements
+     * @param self  a Map to group from original keys to lists of original elements
+     * @return a new Map with keys being the original elements and values being lists of the original keys
      * @since 6.0.0
      */
     public static <T, K> Map<K, List<T>> groupByMany(Map<T, List<K>> self) {
