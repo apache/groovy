@@ -1814,9 +1814,12 @@ span.icon > [class^="icon-"], span.icon > [class*=" icon-"] {
     cursor: default;
 }
 
-.admonitionblock td.icon [class^="icon-"]:before {
+.admonitionblock td.icon [class^="icon-"]:before,
+.admonitionblock td.icon [class*=" icon-"]:before {
+    font-family: FontAwesome, serif;
+    font-style: normal;
     font-size: 2.5em;
-    /* text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);*/
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
     cursor: default;
 }
 
