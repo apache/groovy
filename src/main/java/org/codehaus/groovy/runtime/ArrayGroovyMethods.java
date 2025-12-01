@@ -68,6 +68,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -4389,14 +4390,14 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Example usage finding the words with capital letters:
      * <pre class="groovyTestCase">
      * String[] words = ['TO', 'be', 'Or', 'nOT', 'To', 'be']
-     * assert words.groupByMany(w -&gt; w.toSet().grep(~'[A-Z]')) == [T:['TO', 'nOT', 'To'], O:['TO', 'Or', 'nOT']]
+     * assert words.groupByMany(w -> w.toSet().grep(~'[A-Z]')) == [T:['TO', 'nOT', 'To'], O:['TO', 'Or', 'nOT']]
      * </pre>
      *
      * If the lists of generated keys are all of size 1, the result will be the same as
      * {@code groupBy} with a closure returning the value in the key list:
      * <pre class="groovyTestCase">
      * String[] animals = ['cat', 'dog', 'bird', 'pony']
-     * assert animals.groupByMany(a -&gt; [a.size()]) == animals.groupBy(String::size)
+     * assert animals.groupByMany(a -> [a.size()]) == animals.groupBy(String::size)
      * </pre>
      *
      * @param self  an array to group
@@ -4409,6 +4410,25 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
         @ClosureParams(FirstParam.Component.class) Closure<? extends Iterable<? extends K>> keyFn
     ) {
         return DefaultGroovyMethods.groupByMany(Arrays.asList(self), keyFn);
+    }
+
+    /**
+     * Groups all members from the array into (sub)groups determined by the supplied key mapping closure.
+     * The key mapping closure should return a list of keys applicable to a member.
+     * The value returned by mapping the member with the value mapping closure will be grouped under each key from the list.
+     *
+     * @param self  an array to group
+     * @param valueFn a closure which can transform each member before collecting
+     * @param keyFn a closure returning an Iterable of keys for each member
+     * @return a new Map from keys to lists of elements
+     * @since 6.0.0
+     */
+    public static <T, U, K> Map<K, List<U>> groupByMany(
+        T[] self,
+        @ClosureParams(FirstParam.Component.class) Closure<? extends U> valueFn,
+        @ClosureParams(FirstParam.Component.class) Closure<? extends Iterable<? extends K>> keyFn
+    ) {
+        return DefaultGroovyMethods.groupByMany(Arrays.asList(self), valueFn, keyFn);
     }
 
     //--------------------------------------------------------------------------
