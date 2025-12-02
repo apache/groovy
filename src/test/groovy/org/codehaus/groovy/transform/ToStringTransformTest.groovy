@@ -543,4 +543,20 @@ class ToStringTransformTest extends GroovyShellTestCase {
         '''
     }
 
+    // GROOVY-11814
+    void testToStringOnEnum() {
+        assertScript '''
+            import groovy.transform.*
+
+            @ToString(includeNames=true)
+            enum Foo {
+                Bar(prop: 'val1'), Baz(prop: 'val2')
+                final String prop
+            }
+
+            assert Foo.Bar.toString() == 'Bar(prop:val1)'
+            assert Foo.Baz.toString() == 'Baz(prop:val2)'
+        '''
+    }
+
 }
