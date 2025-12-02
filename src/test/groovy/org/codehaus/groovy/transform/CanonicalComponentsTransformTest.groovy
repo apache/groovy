@@ -564,7 +564,7 @@ class CanonicalComponentsTransformTest extends GroovyShellTestCase {
 
     // GROOVY-4570
     void testToStringForEnums() {
-        assert Color.PURPLE.toString() == 'org.codehaus.groovy.transform.Color(r:255, g:0, b:255)'
+        assert Color.PURPLE.toString() == 'PURPLE(r:255, g:0, b:255)'
     }
 
     void testCustomCopyConstructor_GROOVY7016() {
