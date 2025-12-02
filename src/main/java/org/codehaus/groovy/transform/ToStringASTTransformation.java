@@ -54,6 +54,7 @@ import static org.apache.groovy.ast.tools.MethodCallUtils.toStringX;
 import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -225,9 +226,15 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         final VariableExpression first = localVarX("$toStringFirst");
         body.addStatement(declS(first, constX(Boolean.TRUE)));
 
-        // <class_name>(
-        String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
-        body.addStatement(appendS(result, constX(className + delims[0])));
+        if (cNode.isEnum()) {
+            // <enum_name>(
+            body.addStatement(appendS(result, callThisX("name")));
+            body.addStatement(appendS(result, constX(delims[0])));
+        } else {
+            // <class_name>(
+            String className = (includePackage) ? cNode.getName() : cNode.getNameWithoutPackage();
+            body.addStatement(appendS(result, constX(className + delims[0])));
+        }
 
         Set<String> names = new HashSet<>();
         boolean includeProperties = true, includePseudoGetters = allProperties, includePseudoSetters = false, skipReadOnly = false, includeStatic = false;
