@@ -6215,7 +6215,7 @@ out:    for (ClassNode type : todo) {
                 ClassNode   superclass;
                 ClassNode[] interfaces;
                 if (expressionType instanceof WideningCategories.LowestUpperBoundClassNode) {
-                    superclass = expressionType.getSuperClass();
+                    superclass = expressionType.getUnresolvedSuperClass(); // GROOVY-11815
                     interfaces = expressionType.getInterfaces();
                 } else if (expressionType != null && expressionType.isInterface()) {
                     superclass = OBJECT_TYPE;

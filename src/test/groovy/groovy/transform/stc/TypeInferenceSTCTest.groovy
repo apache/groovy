@@ -127,7 +127,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         shouldFailWithMessages '''
             Object o
             if (o instanceof String) {
-               o.toUpperCase()
+                o.toUpperCase()
             } else {
                 o.toUpperCase() // ensure that type information is reset
             }
@@ -295,6 +295,25 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             String result = test(['foo', 'bar'])
             assert result == 'foobar'
         '''
+    }
+
+    // GROOVY-11815
+    void testInstanceOf13() {
+        assertScript '''
+            def c = true ? new ArrayDeque() : new Stack()
+            if (c instanceof Deque) {
+                c.addFirst(1)
+            //  ^ (AbstractCollection<Object> & Serializable & ... & Deque)
+            }
+        '''
+        shouldFailWithMessages '''
+            def c = true ? new ArrayDeque<String>() : new Stack<String>()
+            if (c instanceof Serializable) {
+                c.add(1)
+            //  ^ (AbstractCollection<String> & Serializable & ... & Deque)
+            }
+        ''',
+        'Cannot call <UnionType:java.util.AbstractCollection','#add(java.lang.String) with arguments [int]'
     }
 
     // GROOVY-5226
