@@ -266,6 +266,7 @@ import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
@@ -848,10 +849,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return;
             }
 
+            // GROOVY-7971, GROOVY-8965, GROOVY-10096, GROOVY-10702, et al.
+            if (op == LOGICAL_OR) typeCheckingContext.pushTemporaryTypeInfo();
+
             leftExpression.visit(this);
             ClassNode lType = getType(leftExpression);
             var setterInfo  = removeSetterInfo(leftExpression);
-            if (setterInfo != null) {
+            if (setterInfo != null) { assert op != LOGICAL_OR ;
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
@@ -860,7 +864,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     lType = getOriginalDeclarationType(leftExpression);
                     applyTargetType(lType, rightExpression);
                 }
-                rightExpression.visit(this);
+                if (op != LOGICAL_OR) {
+                    rightExpression.visit(this);
+                } else {
+                    var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+                    typeCheckingContext.pushTemporaryTypeInfo();
+                    rightExpression.visit(this);
+
+                    var rhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+                    propagateTemporaryTypeInfo(lhs, rhs); // `instanceof` on either side?
+                }
             }
 
             ClassNode rType = isNullConstant(rightExpression)
@@ -973,7 +986,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (op == KEYWORD_INSTANCEOF) {
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
             } else if (op == COMPARE_NOT_INSTANCEOF) { // GROOVY-6429, GROOVY-8321, GROOVY-8412, GROOVY-8523, GROOVY-9931
-                putNotInstanceOfTypeInfo(extractTemporaryTypeInfoKey(leftExpression), Collections.singleton(rightExpression.getType()));
+                putNotInstanceOfTypeInfo(extractTemporaryTypeInfoKey(leftExpression), Set.of(rightExpression.getType()));
             }
             if (!isEmptyDeclaration) {
                 storeType(expression, resultType);
@@ -987,6 +1000,55 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
         }
+    }
+
+    private void propagateTemporaryTypeInfo(final Map<Object, List<ClassNode>> lhs,
+                                            final Map<Object, List<ClassNode>> rhs) {
+        // TODO: deal with (x !instanceof T)
+        lhs.keySet().removeIf(k -> k instanceof Object[]);
+        rhs.keySet().removeIf(k -> k instanceof Object[]);
+
+        for (var entry : lhs.entrySet()) {
+            if (rhs.containsKey(entry.getKey())) {
+                // main case: (x instanceof A || x instanceof B) produces A|B type
+                ClassNode t = unionize(entry.getValue(), rhs.get(entry.getKey()));
+                typeCheckingContext.peekTemporaryTypeInfo(entry.getKey()).add(t);
+            } else if (entry.getKey() instanceof Variable v) {
+                // edge case: (x instanceof A || ...) produces A|typeof(x) type
+                ClassNode t = unionize(entry.getValue(), List.of(v instanceof ASTNode n ? getType(n) : v.getType()));
+                typeCheckingContext.peekTemporaryTypeInfo(v).add(t);
+            }
+        }
+
+        rhs.keySet().removeAll(lhs.keySet());
+
+        for (var entry : rhs.entrySet()) {
+            if (entry.getKey() instanceof Variable v) {
+                // edge case: (... || x instanceof B) produces typeof(x)|B type
+                ClassNode t = unionize(List.of(v instanceof ASTNode n ? getType(n) : v.getType()), entry.getValue());
+                typeCheckingContext.peekTemporaryTypeInfo(v).add(t);
+            }
+        }
+    }
+
+    private static ClassNode unionize(final List<ClassNode> a, final List<ClassNode> b) {
+        var types = new LinkedHashSet<ClassNode>();
+        for (ClassNode t : a) {
+            if (t instanceof UnionTypeClassNode u) {
+                Collections.addAll(types, u.getDelegates());
+            } else {
+                types.add(t);
+            }
+        }
+        for (ClassNode t : b) {
+            if (t instanceof UnionTypeClassNode u) {
+                Collections.addAll(types, u.getDelegates());
+            } else {
+                types.add(t);
+            }
+        }
+        assert types.size() > 1;
+        return new UnionTypeClassNode(types.toArray(ClassNode[]::new));
     }
 
     private void validateResourceInARM(final BinaryExpression expression, final ClassNode lType) {
@@ -1170,8 +1232,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 addStaticTypeError(message, leftExpression);
             } else {
-                ClassNode[] tergetTypes = visibleSetters.stream().map(setterType).toArray(ClassNode[]::new);
-                addAssignmentError(tergetTypes.length == 1 ? tergetTypes[0] : new UnionTypeClassNode(tergetTypes), getType(valueExpression), expression);
+                ClassNode[] targetTypes = visibleSetters.stream().map(setterType).toArray(ClassNode[]::new);
+                addAssignmentError(targetTypes.length == 1 ? targetTypes[0] : new UnionTypeClassNode(targetTypes), getType(valueExpression), expression);
             }
             return true;
         }
@@ -1492,7 +1554,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     ClassNode valueType = getType(valueExpression);
                     BinaryExpression kv = typeCheckingContext.popEnclosingBinaryExpression();
                     if (propertyTypes.stream().noneMatch(targetType -> checkCompatibleAssignmentTypes(targetType, getResultType(targetType, ASSIGN, valueType, kv), valueExpression))) {
-                        ClassNode targetType = propertyTypes.size() == 1 ? propertyTypes.iterator().next() : new UnionTypeClassNode(propertyTypes.toArray(ClassNode.EMPTY_ARRAY));
+                        ClassNode targetType = propertyTypes.size() == 1 ? propertyTypes.iterator().next() : new UnionTypeClassNode(propertyTypes.toArray(ClassNode[]::new));
                         if (!extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
                             addAssignmentError(targetType, valueType, entryExpression);
                         }
@@ -2381,10 +2443,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
         super.visitExpressionStatement(statement);
         Map<?,List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
         if (!tti.isEmpty() && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
-            tti.forEach((k, tempTypes) -> {
+            tti.forEach((key, tempTypes) -> {
                 if (tempTypes.contains(VOID_TYPE))
-                    typeCheckingContext.temporaryIfBranchTypeInformation.peek()
-                        .computeIfAbsent(k, x -> new LinkedList<>()).add(VOID_TYPE);
+                    typeCheckingContext.peekTemporaryTypeInfo(key).add(VOID_TYPE);
             });
         }
     }
@@ -4005,18 +4066,16 @@ out:                if (mn.size() != 1) {
         ClassNode receiver = getType(objectExpression);
         List<Receiver<String>> owners = new ArrayList<>();
         if (typeCheckingContext.delegationMetadata != null
-                && objectExpression instanceof VariableExpression
-                && "owner".equals(((Variable) objectExpression).getName())
-                && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null) {
+                && /*isNested:*/typeCheckingContext.delegationMetadata.getParent() != null
+                && objectExpression instanceof VariableExpression v && v.getName().equals("owner")) {
             owners.add(new Receiver<>(receiver, "owner")); // if nested, Closure is the first owner
             List<Receiver<String>> thisType = new ArrayList<>(2); // and the enclosing class is the
             addDelegateReceiver(thisType, makeThis(), null);      // end of the closure owner chain
             addReceivers(owners, thisType, typeCheckingContext.delegationMetadata.getParent(), "owner.");
         } else {
-            List<ClassNode> temporaryTypes = getTemporaryTypesForExpression(objectExpression);
-            int temporaryTypesCount = (temporaryTypes != null ? temporaryTypes.size() : 0);
-            if (temporaryTypesCount > 0) { // GROOVY-8965, GROOVY-10180, GROOVY-10668
-                owners.add(Receiver.make(lowestUpperBound(temporaryTypes)));
+            // GROOVY-8965, GROOVY-10180, GROOVY-10668: `instanceof` type before declared
+            for (ClassNode tempType : getTemporaryTypesForExpression(objectExpression)) {
+                if (tempType != receiver) owners.add(Receiver.make(tempType));
             }
             if (isClassClassNodeWrappingConcreteType(receiver)) {
                 ClassNode staticType = receiver.getGenericsTypes()[0].getType();
@@ -4032,9 +4091,6 @@ out:                if (mn.size() != 1) {
                         if (!receiver.implementsInterface(in)) owners.add(Receiver.make(in));
                     }
                 }
-            }
-            if (temporaryTypesCount > 1 && !(objectExpression instanceof VariableExpression)) {
-                owners.add(Receiver.make(new UnionTypeClassNode(temporaryTypes.toArray(ClassNode.EMPTY_ARRAY))));
             }
         }
         return owners;
@@ -4248,9 +4304,11 @@ trying: for (ClassNode[] signature : signatures) {
 
     @Override
     protected void afterSwitchCaseStatementsVisited(final SwitchStatement statement) {
-        // GROOVY-8411: if any "case Type:" then "default:" contributes condition type
-        if (!statement.getDefaultStatement().isEmpty() && !typeCheckingContext.temporaryIfBranchTypeInformation.peek().isEmpty())
-            pushInstanceOfTypeInfo(statement.getExpression(), new ClassExpression(statement.getExpression().getNodeMetaData(TYPE)));
+        // GROOVY-8411: if any "case Type:" then "default:" contributes alternate type
+        if (!statement.getDefaultStatement().isEmpty()) {
+            Expression selectable = statement.getExpression();
+            optInstanceOfTypeInfo(selectable, selectable.getNodeMetaData(TYPE));
+        }
     }
 
     @Override
@@ -4258,7 +4316,9 @@ trying: for (ClassNode[] signature : signatures) {
         Expression selectable = typeCheckingContext.getEnclosingSwitchStatement().getExpression();
         Expression expression = statement.getExpression();
         if (expression instanceof ClassExpression) { // GROOVY-8411: refine the switch type
-            pushInstanceOfTypeInfo(selectable, expression);
+            if (!optInstanceOfTypeInfo(selectable, expression.getType())) {
+                pushInstanceOfTypeInfo(selectable, expression);
+            }
         } else if (expression instanceof ClosureExpression) { // GROOVY-9854: propagate the switch type
             ClassNode inf = selectable.getNodeMetaData(TYPE);
             expression.putNodeMetaData(CLOSURE_ARGUMENTS, new ClassNode[]{inf});
@@ -4423,7 +4483,7 @@ trying: for (ClassNode[] signature : signatures) {
         } else {
             typeOfFalse = checkForTargetType(falseExpression, typeOfFalse);
             typeOfTrue = checkForTargetType(trueExpression, typeOfTrue);
-            resultType = lowestUpperBound(typeOfTrue, typeOfFalse);
+            resultType = lowestUpperBound(typeOfTrue, typeOfFalse); // TODO: union instead of intersect
         }
         storeType(expression, resultType);
         popAssignmentTracking(oldTracker);
@@ -4643,7 +4703,7 @@ trying: for (ClassNode[] signature : signatures) {
             }
             if (!var.isThisExpression() && !var.isSuperExpression() && !typeCheckingContext.temporaryIfBranchTypeInformation.isEmpty()) {
                 // GROOVY-5226, GROOVY-11290: assignment voids instanceof
-                pushInstanceOfTypeInfo(var, classX(VOID_TYPE));
+                pushInstanceOfTypeInfo(var, VOID_TYPE);
             }
         }
     }
@@ -5341,7 +5401,7 @@ trying: for (ClassNode[] signature : signatures) {
         if (!selfTypes.isEmpty()) { // TODO: reduce to the most-specific type(s)
             ClassNode superclass = selfTypes.stream().filter(t -> !t.isInterface()).findFirst().orElse(OBJECT_TYPE);
             selfTypes.remove(superclass); selfTypes.add(trait);
-            return new WideningCategories.LowestUpperBoundClassNode("TypesOf$" + trait.getNameWithoutPackage(), superclass, selfTypes.toArray(ClassNode.EMPTY_ARRAY));
+            return new WideningCategories.LowestUpperBoundClassNode("TypesOf$" + trait.getNameWithoutPackage(), superclass, selfTypes.toArray(ClassNode[]::new));
         }
         return trait;
     }
@@ -6158,19 +6218,33 @@ out:    for (ClassNode type : todo) {
     // temporaryIfBranchTypeInformation support; migrate to TypeCheckingContext?
 
     /**
-     * Stores information about types when [objectOfInstanceof instanceof typeExpression] is visited.
+     * Stores information about types when <i>[sourceExpression instanceof typeExpression]</i> is visited.
      *
-     * @param objectOfInstanceOf the expression to be checked against instanceof
-     * @param typeExpression     the expression which represents the target type
+     * @param sourceExpression the expression to be checked against instanceof
+     * @param typeExpression   the expression which represents the target type
      */
-    protected void pushInstanceOfTypeInfo(final Expression objectOfInstanceOf, final Expression typeExpression) {
-        Object ttiKey = extractTemporaryTypeInfoKey(objectOfInstanceOf); ClassNode type = typeExpression.getType();
-        typeCheckingContext.temporaryIfBranchTypeInformation.peek().computeIfAbsent(ttiKey, x -> new LinkedList<>()).add(type);
+    protected void pushInstanceOfTypeInfo(final Expression sourceExpression, final Expression typeExpression) {
+        pushInstanceOfTypeInfo(sourceExpression, typeExpression.getType());
+    }
+
+    private void pushInstanceOfTypeInfo(final Expression sourceExpression, final ClassNode type) {
+        typeCheckingContext.peekTemporaryTypeInfo(extractTemporaryTypeInfoKey(sourceExpression)).add(type);
     }
 
     private void putNotInstanceOfTypeInfo(final Object key, final Collection<ClassNode> types) {
         Object notKey = key instanceof Object[] ? ((Object[]) key)[1] : new Object[]{"!instanceof", key}; // stash negative type(s)
-        typeCheckingContext.temporaryIfBranchTypeInformation.peek().computeIfAbsent(notKey, x -> new LinkedList<>()).addAll(types);
+        typeCheckingContext.peekTemporaryTypeInfo(notKey).addAll(types);
+    }
+
+    private boolean optInstanceOfTypeInfo(final Expression expression, final ClassNode type) {
+        List<ClassNode> types = typeCheckingContext.temporaryIfBranchTypeInformation.peek().get(extractTemporaryTypeInfoKey(expression));
+        if (types != null) { assert !types.isEmpty();
+            ClassNode t = unionize(types, List.of(type));
+            types.clear();
+            types.add(t);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -6209,7 +6283,7 @@ out:    for (ClassNode type : todo) {
     }
 
     private ClassNode getInferredTypeFromTempInfo(final Expression expression, final ClassNode expressionType) {
-        if (expression instanceof VariableExpression) {
+        if (expression instanceof VariableExpression && !isPrimitiveType(expressionType)) {
             List<ClassNode> tempTypes = getTemporaryTypesForExpression(expression);
             if (!tempTypes.isEmpty()) {
                 ClassNode   superclass;
@@ -6249,10 +6323,15 @@ out:    for (ClassNode type : todo) {
                 }
 
                 int typesCount = types.size();
-                if (typesCount == 1) {
+                if (typesCount == 1 || (typesCount != 0 && types.stream().filter(ClassNode::isInterface).count() == 0)) {
                     return types.get(0);
                 } else if (typesCount > 1) {
-                    return new UnionTypeClassNode(types.toArray(ClassNode.EMPTY_ARRAY));
+                    String names = types.stream().map(StaticTypeCheckingSupport::prettyPrintType).collect(Collectors.joining(" & ", "(", ")"));
+                    Map<Boolean, List<ClassNode>> ifacesAndClasses = types.stream().collect(Collectors.partitioningBy(ClassNode::isInterface));
+                    ClassNode   sc = !ifacesAndClasses.get(Boolean.FALSE).isEmpty() ? ifacesAndClasses.get(Boolean.FALSE).get(0) : OBJECT_TYPE;
+                    ClassNode[] is = ifacesAndClasses.get(Boolean.TRUE).toArray(ClassNode[]::new);
+assert !isObjectType(sc) || (is.length > 1) : "expecting specific super class or multiple interfaces";
+                    return new ClassNode(names, Opcodes.ACC_ABSTRACT, sc, is, null);
                 }
             }
         }

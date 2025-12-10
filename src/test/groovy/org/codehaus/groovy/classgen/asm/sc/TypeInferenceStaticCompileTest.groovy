@@ -18,17 +18,10 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.TypeInferenceSTCTest
 
 /**
  * Unit tests for static compilation : type inference.
  */
-class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements StaticCompilationTestSupport {
-
-    @Override
-    @NotYetImplemented
-    void testInstanceOf9() {
-        super.testInstanceOf9() // GROOVY-7971
-    }
+final class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements StaticCompilationTestSupport {
 }

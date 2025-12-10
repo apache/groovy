@@ -51,14 +51,15 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundC
 /**
  * This class node type is very special and should only be used by the static type checker
  * to represent types which are the union of other types. This is useful when, for example,
- * we enter a section like :
+ * we enter a section like:
  * <pre>if (x instanceof A || x instanceof B)</pre>
  * where the type of <i>x</i> can be represented as one of <i>A</i> or <i>B</i>.
- *
+ * <p>
  * This class node type should never leak outside of the type checker. More precisely, it should
  * only be used to check method call arguments, and nothing more.
  */
 class UnionTypeClassNode extends ClassNode {
+
     private final ClassNode[] delegates;
 
     UnionTypeClassNode(final ClassNode... classNodes) {
@@ -68,7 +69,7 @@ class UnionTypeClassNode extends ClassNode {
     }
 
     private static String makeName(final ClassNode[] nodes) {
-        StringJoiner sj = new StringJoiner("+", "<UnionType:", ">");
+        var sj = new StringJoiner("+", "<UnionType:", ">");
         for (ClassNode node : nodes) {
             sj.add(node.getText());
         }
@@ -78,7 +79,7 @@ class UnionTypeClassNode extends ClassNode {
     private static ClassNode makeSuper(final ClassNode[] nodes) {
         ClassNode upper = lowestUpperBound(Arrays.asList(nodes));
         if (upper instanceof LowestUpperBoundClassNode) {
-            upper = upper.getUnresolvedSuperClass();
+            upper = upper.getUnresolvedSuperClass(false);
         } else if (upper.isInterface()) {
             upper = OBJECT_TYPE;
         }
@@ -87,7 +88,7 @@ class UnionTypeClassNode extends ClassNode {
 
     //--------------------------------------------------------------------------
 
-    public ClassNode[] getDelegates() {
+    ClassNode[] getDelegates() {
         return delegates;
     }
 
@@ -384,10 +385,7 @@ class UnionTypeClassNode extends ClassNode {
 
     @Override
     public boolean isDerivedFrom(final ClassNode type) {
-        for (ClassNode delegate : delegates) {
-            if (delegate.isDerivedFrom(type)) return true;
-        }
-        return false;
+        return getUnresolvedSuperClass(false).isDerivedFrom(type);
     }
 
     @Override

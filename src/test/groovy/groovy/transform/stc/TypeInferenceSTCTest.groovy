@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
@@ -145,8 +144,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 void bar() {
                 }
             }
-
-            void test(o) {
+            void test(Object o) {
                 if (o instanceof A) {
                     o.bar()
                 }
@@ -164,10 +162,10 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             class A {
             }
-            A test(Object x) {
-                if (x instanceof A) {
-                    def y = x
-                    return y
+            A test(Object o) {
+                if (o instanceof A) {
+                    def v = o
+                    return v
                 } else {
                     new A()
                 }
@@ -176,8 +174,26 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-9454
+    // GROOVY-8828
     void testInstanceOf7() {
+        assertScript '''
+            interface Foo {
+            }
+            interface Bar {
+                String name()
+            }
+            Map<String, Foo> map = [:]
+            map.values().each { foo ->
+                if (foo instanceof Bar) {
+                    String name = foo.name() // method available through Bar
+                    map.put(name, foo)       // second parameter expects Foo
+                }
+            }
+        '''
+    }
+
+    // GROOVY-9454
+    void testInstanceOf8() {
         assertScript '''
             interface Face {
             }
@@ -186,7 +202,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             class Task<R extends Face> implements java.util.concurrent.Callable<String> {
                 R request
-
                 @Override
                 String call() {
                     if (request instanceof Impl) {
@@ -204,29 +219,27 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10667
-    void testInstanceOf8() {
+    void testInstanceOf9() {
         assertScript '''
             trait Tagged {
                 String tag
             }
             class TaggedException extends Exception implements Tagged {
             }
-
             static void doSomething1(Exception e) {
                 if (e instanceof Tagged) {
-                    //println e.tag
+                    assert e.tag == 'Test'
                     doSomething2(e) // Cannot find matching method #doSomething2(Tagged)
                 }
             }
             static void doSomething2(Exception e) {
             }
-
             doSomething1(new TaggedException(tag:'Test'))
         '''
     }
 
     // GROOVY-7971
-    void testInstanceOf9() {
+    void testInstanceOf10() {
         assertScript '''
             import groovy.json.JsonOutput
             def test(value) {
@@ -242,9 +255,33 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-8337
+    void testInstanceOf11() {
+        assertScript '''
+            class C {
+                private Number n
+                BigDecimal m() {
+                    (n == null || n instanceof BigDecimal)
+                        ? n : new BigDecimal(n.toString())
+                }
+            }
+            assert new C().m() == null
+        '''
+
+        assertScript '''
+            class C {
+                private Number n = new BigDecimal('1.23')
+                BigDecimal m() {
+                    (n == null || n instanceof BigDecimal)
+                        ? n : new BigDecimal(n.toString())
+                }
+            }
+            assert new C().m() == 1.23G
+        '''
+    }
+
     // GROOVY-10096
-    @NotYetImplemented
-    void testInstanceOf10() {
+    void testInstanceOf12() {
         shouldFailWithMessages '''
             class Foo {
                 void foo() {
@@ -262,14 +299,13 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11007
-    void testInstanceOf11() {
+    void testInstanceOf13() {
         assertScript '''
             interface I {
                 CharSequence getCharSequence()
             }
-
-            void accept(CharSequence cs) {   }
-
+            void accept(CharSequence cs) {
+            }
             void test(I i) {
                 i.with {
                     if (charSequence instanceof String) {
@@ -278,27 +314,25 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                     }
                 }
             }
-
             test({ -> 'works' } as I)
         '''
     }
 
     // GROOVY-11290
-    void testInstanceOf12() {
+    void testInstanceOf14() {
         assertScript '''
             def test(List<String> list) {
                 if (list instanceof List) {
                     (list*.toLowerCase()).join()
                 }
             }
-
             String result = test(['foo', 'bar'])
             assert result == 'foobar'
         '''
     }
 
     // GROOVY-11815
-    void testInstanceOf13() {
+    void testInstanceOf15() {
         assertScript '''
             def c = true ? new ArrayDeque() : new Stack()
             if (c instanceof Deque) {
@@ -313,7 +347,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             //  ^ (AbstractCollection<String> & Serializable & ... & Deque)
             }
         ''',
-        'Cannot call <UnionType:java.util.AbstractCollection','#add(java.lang.String) with arguments [int]'
+        'Cannot call (java.util.AbstractCollection','#add(java.lang.String) with arguments [int]'
     }
 
     // GROOVY-5226
@@ -497,22 +531,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
-    // GROOVY-8828
-    void testMultipleInstanceOf8() {
-        assertScript '''
-            interface Foo { }
-            interface Bar { String name() }
-
-            Map<String, Foo> map = [:]
-            map.values().each { foo ->
-                if (foo instanceof Bar) {
-                    String name = foo.name() // method available through Bar
-                    map.put(name, foo)       // second parameter expects Foo
-                }
-            }
-        '''
-    }
-
     // GROOVY-6429
     void testNotInstanceof1() {
         String types = '''
@@ -679,11 +697,11 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testInstanceOfInferenceWithImplicitIt() {
         assertScript '''
-        ['a', 'b', 'c'].each {
-            if (it instanceof String) {
-                println it.toUpperCase()
+            ['a', 'b', 'c'].each {
+                if (it instanceof String) {
+                    println it.toUpperCase()
+                }
             }
-        }
         '''
     }
 
@@ -1249,7 +1267,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                   case File:
                     something.toString()
                   default:
-                    something.getCanonicalName()
+                    something.canonicalName // TODO: GROOVY-10702
                 }
             }
         ''',

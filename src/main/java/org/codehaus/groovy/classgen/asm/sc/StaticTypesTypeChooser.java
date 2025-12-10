@@ -43,7 +43,9 @@ public class StaticTypesTypeChooser extends StatementMetaTypeChooser {
             var ast = getTarget(exp); // GROOVY-9344, GROOVY-9607, GROOVY-11375
             inferredType = ast.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE);
         }
-        if (inferredType != null && !isPrimitiveVoid(inferredType)) {
+        if (inferredType != null && !isPrimitiveVoid(inferredType)
+                // prevent union and intersection types from escaping into classgen
+                && !inferredType.getName().startsWith("(") && !inferredType.getName().startsWith("<")) {
             return inferredType;
         }
 

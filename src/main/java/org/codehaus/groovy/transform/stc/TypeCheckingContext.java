@@ -116,6 +116,10 @@ public class TypeCheckingContext {
      */
     protected Stack<Map<Object, List<ClassNode>>> temporaryIfBranchTypeInformation = new Stack<>();
 
+    List<ClassNode> peekTemporaryTypeInfo(final Object o) {
+        return temporaryIfBranchTypeInformation.peek().computeIfAbsent(o, x -> new LinkedList<>());
+    }
+
     public void pushTemporaryTypeInfo() {
         temporaryIfBranchTypeInformation.push(new HashMap<>());
     }
