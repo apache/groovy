@@ -1500,17 +1500,21 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
         return new Writable() {
             @Override
             public Writer writeTo(Writer out) throws IOException {
-                BufferedWriter bw = new BufferedWriter(out);
-                String line;
-                BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
-                while ((line = br.readLine()) != null) {
-                    if (bcw.call(line)) {
-                        bw.write(line);
-                        bw.newLine();
+                try {
+                    BufferedWriter bw = new BufferedWriter(out);
+                    String line;
+                    BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+                    while ((line = br.readLine()) != null) {
+                        if (bcw.call(line)) {
+                            bw.write(line);
+                            bw.newLine();
+                        }
                     }
+                    bw.flush();
+                    return out;
+                } finally {
+                    closeWithWarning(br);
                 }
-                bw.flush();
-                return out;
             }
 
             @Override
