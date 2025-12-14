@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.decompiled.DecompiledClassNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -520,6 +521,11 @@ public class StaticInvocationWriter extends InvocationWriter {
             ClassNode elementType = StaticTypeCheckingVisitor.inferLoopElementType(controller.getTypeChooser().resolveType(receiver, controller.getClassNode()));
             Parameter element = new Parameter(elementType, "for$it$" + labelCounter.incrementAndGet());
 
+            VariableScope varScope = new VariableScope(controller.getCompileStack().getScope());
+            varScope.setInStaticContext(varScope.getParent().isInStaticContext());
+            element .setInStaticContext(varScope.getParent().isInStaticContext());
+            varScope.putDeclaredVariable(element);
+
             Expression nextValue;
             if (origin instanceof MethodCallExpression) {
                 MethodCallExpression oldMCE = (MethodCallExpression) origin;
@@ -550,13 +556,10 @@ public class StaticInvocationWriter extends InvocationWriter {
             addNextValue.setImplicitThis(false);
             addNextValue.setMethodTarget(StaticCompilationVisitor.ARRAYLIST_ADD_METHOD);
 
-            // for (element in receiver) result.add(element?.method(arguments));
-            var stmt = new ForStatement(
-                    element,
-                    tmpReceiver,
-                    stmt(produceResultList ? addNextValue : nextValue)
-            );
-            stmt.visit(controller.getAcg());
+            // for (element in receiver) result.add(element?.method(arguments))
+            var loop = new ForStatement(element, tmpReceiver, stmt(produceResultList ? addNextValue : nextValue));
+            loop.setVariableScope(varScope); // GROOVY-11816
+            loop.visit(controller.getAcg());
             if (produceResultList) {
                 result.remove(controller);
             }
