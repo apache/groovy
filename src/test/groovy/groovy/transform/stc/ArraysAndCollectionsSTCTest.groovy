@@ -339,6 +339,17 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
             def listClass = list.class
             assert listClass == ArrayList
         '''
+
+        // GROOVY-11816
+        assertScript '''
+            class C {
+                List<Class> classes
+                void test() {
+                    def names = classes*.simpleName
+                }
+            }
+            new C().test()
+        '''
     }
 
     void testListStarMethod() {

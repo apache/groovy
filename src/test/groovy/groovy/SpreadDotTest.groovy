@@ -18,68 +18,75 @@
  */
 package groovy
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assert.assertEquals
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
- * Tests for the spread dot operator "*.".
- *
- * For an example,
- *          list*.property
- * means
- *          list.collect { it?.property }
+ * Tests for the spread dot operator. For example, {@code list*.name} works
+ * like: <pre>
+ * list.collect { it?.name }
+ * </pre>
  */
 final class SpreadDotTest {
 
     @Test
-    void testSpreadDot() {
-        def m1 = ["a": 1, "b": 2]
-        def m2 = ["a": 11, "b": 22]
-        def m3 = ["a": 111, "b": 222]
-        def x = [m1, m2, m3]
-        assert x*.a == [1, 11, 111]
-        assert x*."a" == [1, 11, 111]
-        assert x == [m1, m2, m3]
+    void testSpreadDot1() {
+        def map = [A: 'one', B: 'two', C: 'three']
 
-        def m4 = null
-        x << m4
-        assert x*.a == [1, 11, 111, null]
-        assert x*."a" == [1, 11, 111, null]
-        assert x == [m1, m2, m3, null]
-
-        Date checkDate = new Date()
-        def d = new SpreadDotDemo()
-        x << d
-        assert x*."a"[4] >= checkDate
-        assert x == [m1, m2, m3, null, d]
-
-        def y = new SpreadDotDemo2()
-        assert y."a" == 'Attribute Get a'
-        assert y.a == 'Attribute Get a'
-
-        x << y
-        assert x*."a"[5] == 'Attribute Get a'
-        assert x == [m1, m2, m3, null, d, y]
+        assert map*.key == ['A', 'B', 'C']
+        assert map*.value*.size() == [3, 3, 5]
+        assert map.collect { entry -> entry.value.size() } == [3, 3, 5]
     }
 
     @Test
     void testSpreadDot2() {
+        def m1 = [a:   1, b:   2]
+        def m2 = [a:  11, b:  22]
+        def m3 = [a: 111, b: 222]
+
+        def x = [m1, m2, m3]
+        assert x == [m1, m2, m3]
+        assert x*.a == [1, 11, 111]
+        assert x*.'a' == [1, 11, 111]
+
+        x << null
+        assert x == [m1, m2, m3, null]
+        assert x*.a == [1, 11, 111, null]
+        assert x*.'a' == [1, 11, 111, null]
+
+        Date checkDate = new Date()
+        def d = new SpreadDotDemo()
+        x << d
+        assert x*.'a'[4] >= checkDate
+        assert x == [m1, m2, m3, null, d]
+
+        def y = new SpreadDotDemo2()
+        assert y.a == 'Attribute Get a'
+        assert y.'a' == 'Attribute Get a'
+
+        x << y
+        assert x == [m1, m2, m3, null, d, y]
+        assert x*.'a'[5] == 'Attribute Get a'
+    }
+
+    @Test
+    void testSpreadDot3() {
         def a = new SpreadDotDemo()
         def b = new SpreadDotDemo2()
         def x = [a, b]
 
-        assert x*.fnB("1") == [a.fnB("1"), b.fnB("1")]
+        assert x*.fnB('1') == [a.fnB('1'), b.fnB('1')]
         assert [a, b]*.fnB() == [a.fnB(), b.fnB()]
     }
 
     @Test
-    void testSpreadDotArrays() {
+    void testSpreadDotArrays1() {
         def a = new SpreadDotDemo()
         def b = new SpreadDotDemo2()
         Object[] x = [a, b]
 
-        assert x*.fnB("1") == [a.fnB("1"), b.fnB("1")]
+        assert x*.fnB('1') == [a.fnB('1'), b.fnB('1')]
         assert [a, b]*.fnB() == [a.fnB(), b.fnB()]
 
         int[] nums = [3, 4, 5]
@@ -98,9 +105,9 @@ final class SpreadDotTest {
 
         books*.metaClass*.foo = { "Hello, ${delegate.class.simpleName}".toString() }
 
-        assertEquals("Hello, Book1", new Book1().foo())
-        assertEquals("Hello, Book2", new Book2().foo())
-        assertEquals("Hello, Book3", new Book3().foo())
+        assertEquals('Hello, Book1', new Book1().foo())
+        assertEquals('Hello, Book2', new Book2().foo())
+        assertEquals('Hello, Book3', new Book3().foo())
     }
 
     @Test
@@ -114,14 +121,6 @@ final class SpreadDotTest {
         assertEquals([Object], new Object()*.getClass())
         assertEquals('Large', new Shirt().size())
         assertEquals(['Large'], new Shirt()*.size())
-    }
-
-    @Test
-    void testSpreadDotMap() {
-        def map = [A: "one", B: "two", C: "three"]
-        assert map.collect { child -> child.value.size() } == [3, 3, 5]
-        assert map*.value*.size() == [3, 3, 5]
-        assert map*.getKey() == ['A', 'B', 'C']
     }
 
     @Test
@@ -160,7 +159,7 @@ final class SpreadDotTest {
         }
 
         String fnB() {
-            return "bb"
+            return 'bb'
         }
 
         String fnB(String m) {
@@ -178,7 +177,7 @@ final class SpreadDotTest {
         }
 
         String fnB() {
-            return "cc"
+            return 'cc'
         }
 
         String fnB(String m) {
@@ -186,11 +185,14 @@ final class SpreadDotTest {
         }
     }
 
-    static class Book1 {}
+    static class Book1 {
+    }
 
-    static class Book2 {}
+    static class Book2 {
+    }
 
-    static class Book3 {}
+    static class Book3 {
+    }
 
     static class Shirt {
         def size() { 'Large' }
