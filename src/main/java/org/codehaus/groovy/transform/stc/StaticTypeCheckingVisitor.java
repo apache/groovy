@@ -739,7 +739,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
         PropertyExpression pexp = thisPropX(true, dynName);
         if (existsProperty(pexp, !typeCheckingContext.isTargetOfEnclosingAssignment(vexp))) {
             vexp.copyNodeMetaData(pexp.getObjectExpression());
-            for (Object key : new Object[]{IMPLICIT_RECEIVER, READONLY_PROPERTY, PV_FIELDS_ACCESS, PV_FIELDS_MUTATION, DIRECT_METHOD_CALL_TARGET}) {
+            for (Object key : new Object[]{DIRECT_METHOD_CALL_TARGET, DYNAMIC_RESOLUTION, IMPLICIT_RECEIVER, PV_FIELDS_ACCESS, PV_FIELDS_MUTATION, READONLY_PROPERTY}) {
                 vexp.putNodeMetaData(key, pexp.getNodeMetaData(key));
             }
             ClassNode type = pexp.getNodeMetaData(INFERRED_TYPE);
@@ -748,7 +748,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
             if (type == null) type = OBJECT_TYPE;
             vexp.putNodeMetaData(INFERRED_TYPE, type); // GROOVY-11007
-            String receiver = vexp.getNodeMetaData(IMPLICIT_RECEIVER);
+            String receiver = pexp.getNodeMetaData(IMPLICIT_RECEIVER);
             Boolean dynamic = pexp.getNodeMetaData(DYNAMIC_RESOLUTION);
             // GROOVY-7701, GROOVY-7996: correct false assumption made by VariableScopeVisitor
             if (((receiver != null && !receiver.endsWith("owner")) || Boolean.TRUE.equals(dynamic))

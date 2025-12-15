@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.InterfaceHelperClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.indy.IndyBinHelper;
@@ -207,6 +208,10 @@ public class WriterController {
     }
 
     public CallSiteWriter getCallSiteWriter() {
+        return callSiteWriter;
+    }
+
+    public CallSiteWriter getCallSiteWriterFor(final Expression expression) {
         return callSiteWriter;
     }
 

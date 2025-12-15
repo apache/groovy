@@ -96,6 +96,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.BytecodeVariable;
+import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCaller;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
@@ -1179,12 +1180,14 @@ public class AsmClassGenerator extends ClassGenerator {
             return;
         }
 
-        if (adapter == getGroovyObjectProperty && propertyName != null && !pexp.isSpreadSafe()) { // TODO: spread safe should be handled by each
-            controller.getCallSiteWriter().makeGroovyObjectGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
+        CallSiteWriter callSiteWriter = controller.getCallSiteWriterFor(pexp); // GROOVY-11817
+
+        if (adapter == getGroovyObjectProperty && propertyName != null && !pexp.isSpreadSafe()) { // TODO: propagate spread safe
+            callSiteWriter.makeGroovyObjectGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
         } else if (adapter == getProperty && propertyName != null && !pexp.isSpreadSafe()) {
-            controller.getCallSiteWriter().makeGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
+            callSiteWriter.makeGetPropertySite(objectExpression, propertyName, pexp.isSafe(), pexp.isImplicitThis());
         } else {
-            controller.getCallSiteWriter().fallbackAttributeOrPropertySite(pexp, objectExpression, propertyName, adapter);
+            callSiteWriter.fallbackAttributeOrPropertySite(pexp, objectExpression, propertyName, adapter);
         }
     }
 
