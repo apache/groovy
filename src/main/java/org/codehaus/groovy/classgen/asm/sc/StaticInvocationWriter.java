@@ -469,11 +469,8 @@ public class StaticInvocationWriter extends InvocationWriter {
     @Override
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
         if (origin.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
-            StaticTypesWriterController staticController = (StaticTypesWriterController) controller;
-            if (origin instanceof MethodCallExpression) {
-                ((MethodCallExpression) origin).setMethodTarget(null);
-            }
-            InvocationWriter dynamicInvocationWriter = staticController.getRegularInvocationWriter();
+            if (origin instanceof MethodCallExpression) ((MethodCallExpression) origin).setMethodTarget(null); // ensure dynamic resolve
+            InvocationWriter dynamicInvocationWriter = ((StaticTypesWriterController) controller).getRegularInvocationWriter();
             dynamicInvocationWriter.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
             return;
         }

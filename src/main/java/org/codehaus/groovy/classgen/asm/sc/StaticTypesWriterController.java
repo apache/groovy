@@ -21,6 +21,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.BinaryExpressionHelper;
@@ -37,10 +38,10 @@ import org.codehaus.groovy.classgen.asm.UnaryExpressionHelper;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.classgen.asm.indy.sc.IndyStaticTypesMultiTypeDispatcher;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.ClassVisitor;
 
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 
 /**
  * An alternative {@link org.codehaus.groovy.classgen.asm.WriterController} which handles static types and method
@@ -103,12 +104,18 @@ public class StaticTypesWriterController extends DelegatingController {
 
     @Override
     public CallSiteWriter getCallSiteWriter() {
-        MethodNode methodNode = getMethodNode();
-        if (isInStaticallyCheckedMethod && (methodNode == null
-                || !Boolean.TRUE.equals(methodNode.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION)))) {
+        if (isInStaticallyCheckedMethod) {
             return callSiteWriter;
         }
         return super.getCallSiteWriter();
+    }
+
+    @Override
+    public CallSiteWriter getCallSiteWriterFor(final Expression expression) {
+        if (expression.getNodeMetaData(DYNAMIC_RESOLUTION) != null) {
+            return getRegularCallSiteWriter(); // GROOVY-6263
+        }
+        return getCallSiteWriter();
     }
 
     public CallSiteWriter getRegularCallSiteWriter() {
