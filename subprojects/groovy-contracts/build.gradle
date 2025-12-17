@@ -27,7 +27,7 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation projects.groovyTemplates
     testImplementation "org.spockframework:spock-junit4:${versions.spock}", {
-        exclude group: 'org.codehaus.groovy'
+        exclude group: 'org.apache.groovy'
     }
 }
 
