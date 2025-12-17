@@ -26,7 +26,7 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation "xmlunit:xmlunit:${versions.xmlunit}"
     testImplementation("org.spockframework:spock-core:${versions.spock}") {
-        exclude group: 'org.codehaus.groovy'
+        exclude group: 'org.apache.groovy'
     }
 
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
@@ -46,7 +46,6 @@ plugins.withId('eclipse') {
 
 tasks.named('test') {
     useJUnitPlatform()
-    systemProperty 'spock.iKnowWhatImDoing.disableGroovyVersionCheck', 'true'
 }
 
 groovyLibrary {
