@@ -32,7 +32,6 @@ import org.codehaus.groovy.classgen.asm.ClosureWriter;
 import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
-import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Collections;
@@ -58,19 +57,15 @@ public class StaticTypesClosureWriter extends ClosureWriter {
     protected ClassNode createClosureClass(final ClosureExpression expression, final int mods) {
         ClassNode closureClass = super.createClosureClass(expression, mods);
         List<MethodNode> methods = closureClass.getDeclaredMethods("call");
-        List<MethodNode> doCall = closureClass.getMethods("doCall");
-        if (doCall.size() != 1) {
-            throw new GroovyBugError("Expected to find one (1) doCall method on generated closure, but found " + doCall.size());
+        List<MethodNode> doCalls = closureClass.getMethods("doCall");
+        if (doCalls.size() != 1) {
+            throw new GroovyBugError("Expected to find one (1) doCall method on generated closure, but found " + doCalls.size());
         }
-        MethodNode doCallMethod = doCall.get(0);
+        MethodNode doCallMethod = doCalls.get(0);
         if (methods.isEmpty() && doCallMethod.getParameters().length == 1) {
             createDirectCallMethod(closureClass, doCallMethod);
         }
         MethodTargetCompletionVisitor visitor = new MethodTargetCompletionVisitor(doCallMethod);
-        Object dynamic = expression.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION);
-        if (dynamic != null) {
-            doCallMethod.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, dynamic);
-        }
         for (MethodNode method : methods) {
             visitor.visitMethod(method);
         }

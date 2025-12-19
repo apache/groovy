@@ -274,14 +274,7 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
      * @return a virtual method node with the same name as the expected call
      */
     public MethodNode makeDynamic(MethodCall call, ClassNode returnType) {
-        TypeCheckingContext.EnclosingClosure enclosingClosure = context.getEnclosingClosure();
-        MethodNode enclosingMethod = context.getEnclosingMethod();
-        ((ASTNode)call).putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
-        if (enclosingClosure!=null) {
-            enclosingClosure.getClosureExpression().putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
-        } else {
-            enclosingMethod.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
-        }
+        ((ASTNode) call).putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
         setHandled(true);
         if (debug) {
             log("Turning " + call.getText() + " into a dynamic method call returning " + StaticTypeCheckingSupport.prettyPrintType(returnType));
@@ -305,7 +298,6 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
      * @param returnType the type of the property
      */
     public void makeDynamic(PropertyExpression pexp, ClassNode returnType) {
-        context.getEnclosingMethod().putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
         pexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
         storeType(pexp, returnType);
         setHandled(true);
@@ -330,7 +322,6 @@ public class AbstractTypeCheckingExtension extends TypeCheckingExtension {
      * @param vexp the dynamic variable
      */
     public void makeDynamic(VariableExpression vexp, ClassNode returnType) {
-        context.getEnclosingMethod().putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, Boolean.TRUE);
         vexp.putNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION, returnType);
         storeType(vexp, returnType);
         setHandled(true);

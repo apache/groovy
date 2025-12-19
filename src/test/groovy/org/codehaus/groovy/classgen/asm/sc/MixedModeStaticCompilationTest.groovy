@@ -186,7 +186,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
-    void testAllowMetaClass() {
+    void testMetaClassUsage() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
             void test() {
@@ -204,23 +204,49 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
-    void testRecognizeStaticMethodCall() {
+    void testDynamicClassMethod1() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
             Map<String, Integer> foo() {
                 String.map()
             }
+            try {
+                String.metaClass.static.map = { -> [a:1,b:2] }
+                assert foo().values().sort() == [1,2]
+            } finally {
+                GroovySystem.getMetaClassRegistry().removeMetaClass(String)
+            }
+        '''
+    }
+
+    void testDynamicClassMethod2() {
+        assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
-            List<Integer> bar() {
+            List<Integer> foo() {
                 Date.list()
             }
             try {
-                String.metaClass.static.map = { [a: 1, b:2 ]}
-                Date.metaClass.static.list = { [1,2] }
-                assert foo().values().sort() == bar()
+                Date.metaClass.static.list = { -> [1,2] }
+                assert foo() == [1,2]
             } finally {
                 GroovySystem.getMetaClassRegistry().removeMetaClass(Date)
-                GroovySystem.getMetaClassRegistry().removeMetaClass(String)
+            }
+        '''
+    }
+
+    // GROOVY-11817
+    void testDynamicClassMethod3() {
+        assertScript '''
+            @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
+            def foo() {
+                def list_of_integer = Date.list()
+                def integer = list_of_integer[0]
+            }
+            try {
+                Date.metaClass.static.list = { -> [1,2] }
+                assert foo() == 1
+            } finally {
+                GroovySystem.getMetaClassRegistry().removeMetaClass(Date)
             }
         '''
     }
