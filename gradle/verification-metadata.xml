@@ -45,6 +45,7 @@
          <trust file=".+-(sources|javadoc).jar" regex="true"/>
       </trusted-artifacts>
       <ignored-keys>
+         <ignored-key id="B5AD94BDD6BDB924" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0181B45EA58677BC" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="020BDA623C651E0E" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="164779204E106A76" reason="Key couldn't be downloaded from any key server"/>
@@ -686,6 +687,7 @@
       <component group="me.champeau.openbeans" name="openbeans" version="1.0.2">
          <artifact name="openbeans-1.0.2.jar">
             <pgp value="0191E61ACBBE76323AC15C83B5AD94BDD6BDB924"/>
+            <sha512 value="0341d2242dccabe13466fd86d94f75c67be41e078717bd1066d70d4ed6d658b21eb7654e72a502f35c8dbee1c4fc13d146b404ba49bcc8860bbab7cdad703185"/>
          </artifact>
       </component>
       <component group="me.sunlan" name="antlr4" version="4.13.2.6">
@@ -1059,7 +1061,7 @@
       </component>
       <component group="org.codehaus.plexus" name="plexus-component-annotations" version="2.1.1">
          <artifact name="plexus-component-annotations-2.1.1.jar">
-            <pgp value="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA"/>
+            <sha512 value="7cb690f7d8e07da36f019b9853cc924c513c254037abdb11b2b77d26df886b94468332f59008de6cafbc18bae102617df7877a68159717fbcdb1fae932b67f5b"/>
          </artifact>
       </component>
       <component group="org.codehaus.plexus" name="plexus-container-default" version="1.0-alpha-9-stable-1">
