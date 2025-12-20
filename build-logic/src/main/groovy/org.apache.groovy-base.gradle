@@ -133,6 +133,7 @@ dependencies {
     spotbugs "com.github.spotbugs:spotbugs:${versions.spotbugs}"
     spotbugs "org.apache.logging.log4j:log4j-api:${versions.log4j2}"
     spotbugs "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
+    spotbugs "org.slf4j:slf4j-api:${versions.slf4j}"
     spotbugsSlf4j "org.slf4j:slf4j-simple:${versions.slf4j}"
 }
 
