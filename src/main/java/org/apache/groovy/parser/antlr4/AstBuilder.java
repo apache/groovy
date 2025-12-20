@@ -927,6 +927,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     ctx.switchBlockStatementExpressionGroup().stream().map(this::visitSwitchBlockStatementExpressionGroup).toList();
             if (statementsAndArrowAndYieldOrThrow.isEmpty()) {
                 throw createParsingFailedException("`case` or `default` branches are expected", ctx.LBRACE());
+            } else {
+                var tuple = last(statementsAndArrowAndYieldOrThrow);
+                if (!tuple.getV2() && !tuple.getV3()) { // if no arrow, yield or throw is required
+                    throw createParsingFailedException("`yield` or `throw` is expected", tuple.getV1().get(0));
+                }
             }
 
             List<CaseStatement> caseStatements = new ArrayList<>();
@@ -945,9 +950,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         }
                         defaultStatement = s;
                     }
-                }
-                if (!tuple.getV2() && !tuple.getV3()) { // if no arrow, yield or throw is required
-                    throw createParsingFailedException("`yield` or `throw` is expected", tuple.getV1().get(0));
                 }
             }
 
