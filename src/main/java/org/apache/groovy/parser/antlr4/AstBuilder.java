@@ -900,99 +900,73 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     /**
      * <pre>
-     * switch(a) {
-     *     case 0, 1  ->   'a';
-     *     case 2     ->   'b';
-     *     default    ->   'z';
+     * switch(x) {
+     *   case 0, 1 -> 'a'
+     *   case 2    -> 'b'
+     *   default   -> 'z'
      * }
      * </pre>
-     * the above code will be transformed to:
+     * will be transformed to:
      * <pre>
-     * {->
-     *     switch(a) {
-     *         case 0:
-     *         case 1:  return 'a';
-     *         case 2:  return 'b';
-     *         default: return 'z';
+     * { ->
+     *     switch(x) {
+     *       case 0:
+     *       case 1:  return 'a'
+     *       case 2:  return 'b'
+     *       default: return 'z'
      *     }
-     * }()
+     * }.call()
      * </pre>
-     *
-     * @param ctx the parse tree
-     * @return {@link MethodCallExpression} instance
      */
     @Override
     public MethodCallExpression visitSwitchExpression(final SwitchExpressionContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
         try {
             validateSwitchExpressionLabels(ctx);
-            List<Tuple3<List<Statement>, Boolean, Boolean>> statementInfoList =
-                    ctx.switchBlockStatementExpressionGroup().stream()
-                            .map(e -> this.visitSwitchBlockStatementExpressionGroup(e))
-                            .collect(Collectors.toList());
-
-            if (statementInfoList.isEmpty()) {
+            List<Tuple3<List<Statement>, Boolean, Boolean>> statementsAndArrowAndYieldOrThrow =
+                    ctx.switchBlockStatementExpressionGroup().stream().map(this::visitSwitchBlockStatementExpressionGroup).toList();
+            if (statementsAndArrowAndYieldOrThrow.isEmpty()) {
                 throw createParsingFailedException("`case` or `default` branches are expected", ctx.LBRACE());
             }
 
-            Boolean isArrow = statementInfoList.get(0).getV2();
-            if (!isArrow && statementInfoList.stream().noneMatch(e -> {
-                Boolean hasYieldOrThrowStatement = e.getV3();
-                return hasYieldOrThrowStatement;
-            })) {
-                throw createParsingFailedException("`yield` or `throw` is expected", ctx);
-            }
+            List<CaseStatement> caseStatements = new ArrayList<>();
+            Statement defaultStatement = null;
 
-            List<Statement> statementList =
-                    statementInfoList.stream().map(e -> e.getV1())
-                            .reduce(new LinkedList<>(), (r, e) -> {
-                                r.addAll(e);
-                                return r;
-                            });
-
-            List<CaseStatement> caseStatementList = new LinkedList<>();
-            List<Statement> defaultStatementList = new LinkedList<>();
-
-            statementList.forEach(e -> {
-                if (e instanceof CaseStatement) {
-                    caseStatementList.add((CaseStatement) e);
-                } else if (isTrue(e, IS_SWITCH_DEFAULT)) {
-                    defaultStatementList.add(e);
+            for (var tuple : statementsAndArrowAndYieldOrThrow) {
+                for (Statement s : tuple.getV1()) {
+                    if (s instanceof CaseStatement c) {
+                        if (defaultStatement != null) {
+                            throw createParsingFailedException("default case should appear last", defaultStatement);
+                        }
+                        caseStatements.add(c);
+                    } else if (isTrue(s, IS_SWITCH_DEFAULT)) {
+                        if (defaultStatement != null) {
+                            throw createParsingFailedException("switch expression should have only one default case", s);
+                        }
+                        defaultStatement = s;
+                    }
                 }
-            });
-
-            int defaultStatementListSize = defaultStatementList.size();
-            if (defaultStatementListSize > 1) {
-                throw createParsingFailedException("switch expression should have only one default case, which should appear at last", defaultStatementList.get(0));
+                if (!tuple.getV2() && !tuple.getV3()) { // if no arrow, yield or throw is required
+                    throw createParsingFailedException("`yield` or `throw` is expected", tuple.getV1().get(0));
+                }
             }
 
-            if (defaultStatementListSize > 0 && last(statementList) instanceof CaseStatement) {
-                throw createParsingFailedException("default case should appear at last", defaultStatementList.get(0));
-            }
-
-            String variableName = "__$$sev" + switchExpressionVariableSeq++;
-            Statement declarationStatement = declS(localVarX(variableName), this.visitExpressionInPar(ctx.expressionInPar()));
-            SwitchStatement switchStatement = configureAST(
+            Statement statement = configureAST(
                     new SwitchStatement(
-                            varX(variableName),
-                            caseStatementList,
-                            defaultStatementListSize == 0 ? EmptyStatement.INSTANCE : defaultStatementList.get(0)
+                            this.visitExpressionInPar(ctx.expressionInPar()),
+                            caseStatements,
+                            defaultStatement != null ? defaultStatement : EmptyStatement.INSTANCE
                     ),
                     ctx);
+            statement = createBlockStatement(List.of(statement));
 
-            MethodCallExpression callClosure = callX(
-                    configureAST(
-                            closureX(null, createBlockStatement(declarationStatement, switchStatement)),
-                            ctx
-                    ), CALL_STR);
-            callClosure.setImplicitThis(false);
-
-            return configureAST(callClosure, ctx);
+            MethodCallExpression immediateExecution = callX(closureX(null, statement), CALL_STR);
+            immediateExecution.setImplicitThis(false);
+            return immediateExecution;
         } finally {
             switchExpressionRuleContextStack.pop();
         }
     }
-    private int switchExpressionVariableSeq;
 
     @Override
     public Tuple3<List<Statement>, Boolean, Boolean> visitSwitchBlockStatementExpressionGroup(SwitchBlockStatementExpressionGroupContext ctx) {
