@@ -54,6 +54,7 @@ tasks.withType(Test).configureEach {
             'gradle.home': gradle.gradleHomeDir, // this is needed by the security.policy
             'user.home': temporaryDir.absolutePath // make sure tests are isolated from real user home or tests using Grape may fail
 
+    // Support both legacy target.java.home and new toolchain-based approach
     if (rootProject.hasProperty('target.java.home')) {
         String targetJavaHome = rootProject.property('target.java.home')?.trim()
         if (targetJavaHome) {
@@ -61,6 +62,13 @@ tasks.withType(Test).configureEach {
             if (Os.isFamily(Os.FAMILY_WINDOWS)) executable += '.exe'
             println "Using ${executable} to run tests"
         }
+    } else if (rootProject.hasProperty('testJavaVersion')) {
+        // Use Gradle toolchain for test execution
+        def testVersion = rootProject.property('testJavaVersion') as int
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(testVersion)
+        }
+        println "Using Java toolchain version ${testVersion} to run tests"
     }
 
     forkEvery = 50
