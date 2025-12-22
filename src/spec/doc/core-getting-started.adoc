@@ -42,8 +42,6 @@ Basic <<SDKMAN,instructions>> can be found below.
 
 You can learn more about this version in the https://groovy-lang.org/releasenotes/groovy-{groovy-short-version}.html[release notes] or in the https://groovy-lang.org/changelogs/changelog-{groovy-full-version}.html[changelog].
 
-If you plan on using invokedynamic support, link:invokedynamic-support.html[read those notes].
-
 === Snapshots
 
 For those who want to test the very latest versions of Groovy and live on the bleeding edge, you can use our https://repository.apache.org/content/groups/snapshots/org/apache/groovy[snapshot builds].

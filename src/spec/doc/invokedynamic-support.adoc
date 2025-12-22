@@ -31,6 +31,8 @@ This means that unlike APIs, AST transformations or syntactic sugar, this featur
 - it is possible to mix classes compiled with and without invokedynamic in the same project, as long as you run JDK 1.7+
 - depending on the JVM (even different minor versions of the JVM), you can target close to Java performance for dynamic Groovy with invokedynamic support activated
 
+https://groovy-lang.org/releasenotes/groovy-4.0.html#Groovy4.0-indy-only[Since Groovy 4.0] Invoke Dynamic is always enabled, indy jars are not distributed, and the Groovy runtime still contains any necessary support for classes compiled using older versions of Groovy.
+
 == The distributions
 
 === Two jars
