@@ -883,12 +883,12 @@ public abstract class StaticTypeCheckingSupport {
             return true;
         }
         if (superOrInterface instanceof WideningCategories.LowestUpperBoundClassNode) {
-            if (implementsInterfaceOrIsSubclassOf(type, superOrInterface.getSuperClass())
+            if (implementsInterfaceOrIsSubclassOf(type, superOrInterface.getUnresolvedSuperClass())
                     && Arrays.stream(superOrInterface.getInterfaces()).allMatch(type::implementsInterface)) {
                 return true;
             }
-        } else if (superOrInterface instanceof UnionTypeClassNode) {
-            for (ClassNode delegate : ((UnionTypeClassNode) superOrInterface).getDelegates()) {
+        } else if (superOrInterface instanceof UnionTypeClassNode union) {
+            for (ClassNode delegate : union.getDelegates()) {
                 if (implementsInterfaceOrIsSubclassOf(type, delegate)) {
                     return true;
                 }

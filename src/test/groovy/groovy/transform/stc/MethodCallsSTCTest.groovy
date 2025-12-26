@@ -608,9 +608,10 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-5226
     void testMethodCallArgumentUsingInstanceOf() {
         assertScript '''
-            void foo(String str) { 'String' }
+            void foo(String str) { }
             def o
             if (o instanceof String) {
                 foo(o)
@@ -643,7 +644,8 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method'
     }
 
-    void testShouldNotFailThanksToInstanceOfChecks() {
+    // GROOVY-5226
+    void testShouldNotFailWithExplicitCasts() {
         assertScript '''
             static String foo(String s) {
                 'String'
@@ -656,17 +658,18 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             }
             ['foo',123,true].each {
                 if (it instanceof String) {
-                    foo((String)it)
-                } else if (it instanceof Boolean) {
-                    foo((Boolean)it)
+                    foo((String) it)
                 } else if (it instanceof Integer) {
-                    foo((Integer)it)
+                    foo((Integer) it)
+                } else if (it instanceof Boolean) {
+                    foo((Boolean) it)
                 }
             }
         '''
     }
 
-    void testShouldNotFailThanksToInstanceOfChecksAndWithoutExplicitCasts() {
+    // GROOVY-5226
+    void testShouldNotFailWithInstanceOfChecks() {
         assertScript '''
             static String foo(String s) {
                 'String'
@@ -680,16 +683,17 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             ['foo',123,true].each {
                 if (it instanceof String) {
                     foo(it)
-                } else if (it instanceof Boolean) {
-                    foo(it)
                 } else if (it instanceof Integer) {
+                    foo(it)
+                } else if (it instanceof Boolean) {
                     foo(it)
                 }
             }
         '''
     }
 
-    void testShouldNotFailThanksToInstanceOfChecksAndWithoutExplicitCasts2() {
+    // GROOVY-5226
+    void testShouldNotFailWithInstanceOfChecks2() {
         assertScript '''
             static String foo(String s) {
                 'String'
@@ -703,15 +707,16 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             ['foo',123,true].each { argument ->
                 if (argument instanceof String) {
                     foo(argument)
-                } else if (argument instanceof Boolean) {
-                    foo(argument)
                 } else if (argument instanceof Integer) {
+                    foo(argument)
+                } else if (argument instanceof Boolean) {
                     foo(argument)
                 }
             }
         '''
     }
 
+    // GROOVY-5226
     void testShouldFailWithMultiplePossibleMethods() {
         shouldFailWithMessages '''
             static String foo(String s) {
@@ -724,14 +729,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 'Boolean'
             }
             ['foo',123,true].each {
-                if (it instanceof String || it instanceof Boolean || it instanceof Integer) {
+                if (it instanceof String || it instanceof Integer || it instanceof Boolean) {
                     foo(it)
                 }
             }
         ''',
-        'Reference to method is ambiguous'
+        'foo'
     }
 
+    // GROOVY-5226
     void testShouldFailWithMultiplePossibleMethods2() {
         shouldFailWithMessages '''
             static String foo(String s) {
@@ -744,12 +750,12 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 'Boolean'
             }
             ['foo',123,true].each { argument ->
-                if (argument instanceof String || argument instanceof Boolean || argument instanceof Integer) {
+                if (argument instanceof String || argument instanceof Integer || argument instanceof Boolean) {
                     foo(argument)
                 }
             }
         ''',
-        'Reference to method is ambiguous'
+        'foo'
     }
 
     // GROOVY-5703
@@ -875,6 +881,17 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method','#foo(java.util.Date)',
         'Cannot find matching method','#bar(java.util.Date)'
+
+        shouldFailWithMessages foo + '''
+            def it = ~/regexp/
+            if (it !instanceof String) {
+                it = 123
+                Integer.toHextString(it)
+            } else { // cannot be String
+                foo(it)
+            }
+        ''',
+        'Cannot find matching method','#foo(java.util.regex.Pattern)'
     }
 
     // GROOVY-5226, GROOVY-11290
@@ -901,16 +918,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 } else {
                     bar(it)
                 }
-            }
-        '''
-
-        assertScript foobar + '''
-            def it = ~/regexp/
-            if (it !instanceof String) {
-                it = 123
-                foo(it)
-            } else {
-                bar(it)
             }
         '''
     }
