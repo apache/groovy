@@ -542,23 +542,46 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-10668
     void testMultipleInstanceOf8() {
-        for (string in ['(value as String)', 'value.toString()', 'value']) {
+        for (string in ['(value as String)', 'value.toString()']) {
             assertScript """
                 def toArray(Object value) {
                     def array
-                    if (value instanceof List)
+                    if (value instanceof List) {
                         array = value.toArray()
-                    else if (value instanceof String || value instanceof GString)
+                    } else if (value instanceof String || value instanceof GString) {
                         array = ${string}.split(',')
-                    else
+                    } else {
                         throw new Exception('not supported')
-
+                    }
                     return array
                 }
-                toArray([1,2,3])
-                toArray('1,2,3')
+                assert toArray([1,2,3]) == new Object[]{1,2,3}
+                assert toArray('1,2,3') == new String[]{'1','2','3'}
+                assert toArray("\${1}") == new String[]{'1'}
             """
         }
+    }
+
+    // GROOVY-10702
+    void testMultipleInstanceOf9() {
+        shouldFailWithMessages '''
+            def toArray(value) {
+                def array
+                if (value instanceof String || value instanceof GString) {
+                    array = value.split(',') // split(String) not declared for GString/CharSequence
+                }
+                array
+            }
+        ''',
+        'Cannot find matching method (java.lang.String | groovy.lang.GString)#split(java.lang.String)'
+
+        shouldFailWithMessages '''
+            def test(o) {
+                (o instanceof List || o instanceof Map) ? o.entrySet() : null
+            }
+            test([])
+        ''',
+        'Cannot find matching method (java.util.List | java.util.Map)#entrySet()'
     }
 
     // GROOVY-6429
@@ -1603,46 +1626,46 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-
+    // GROOVY-6207
     void testGetAnnotationFails() {
         assertScript '''
             import groovy.transform.*
             import java.lang.annotation.*
 
             @Retention(RetentionPolicy.RUNTIME)
-            @Target([ElementType.FIELD])
-            @interface Ann1 {}
+            @Target(ElementType.FIELD)
+            @interface Tag1 {}
 
             @Retention(RetentionPolicy.RUNTIME)
-            @Target([ElementType.FIELD])
-            @interface Ann2 {}
+            @Target(ElementType.FIELD)
+            @interface Tag2 {}
 
             class A {
-                @Ann2
+                @Tag2
                 String field
             }
 
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
                 lookup('second').each {
-                    assert it.expression.getNodeMetaData(INFERRED_TYPE).name == 'Ann2'
+                    assert it.expression.getNodeMetaData(INFERRED_TYPE).name == 'Tag2'
                 }
             })
             def doit(obj, String propName) {
                 def field = obj.getClass().getDeclaredField(propName)
                 if (field) {
                     @ASTTest(phase=INSTRUCTION_SELECTION, value={
-                        assert node.getNodeMetaData(INFERRED_TYPE).name == 'Ann1'
+                        assert node.getNodeMetaData(INFERRED_TYPE).name == 'Tag1'
                     })
-                    def annotation = field.getAnnotation Ann1
+                    def annotation = field.getAnnotation Tag1
                     if(true) {
-                        second: annotation = field.getAnnotation Ann2
+                        second: annotation = field.getAnnotation Tag2
                     }
                     return annotation
                 }
                 return null
             }
 
-            assert Ann2.isAssignableFrom(doit(new A(), "field").class)
+            assert Tag2.isAssignableFrom(doit(new A(), 'field').class)
         '''
     }
 

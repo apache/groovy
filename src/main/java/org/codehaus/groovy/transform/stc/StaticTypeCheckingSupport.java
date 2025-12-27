@@ -129,6 +129,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.isLongCategory;
 import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asList;
+import static org.codehaus.groovy.runtime.DefaultGroovyMethods.first;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.closeQuietly;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND;
 import static org.codehaus.groovy.syntax.Types.BITWISE_AND_EQUAL;
@@ -870,6 +871,13 @@ public abstract class StaticTypeCheckingSupport {
         if (type.isArray()) {
             return prettyPrintTypeName(type.getComponentType()) + "[]";
         }
+        if (type instanceof UnionTypeClassNode union) {
+            var sj = new StringJoiner(" | ", "(", ")");
+            for (ClassNode cn : union.getDelegates()) {
+                sj.add(prettyPrintTypeName(cn));
+            }
+            return sj.toString();
+        }
         return type.isGenericsPlaceHolder() ? type.getUnresolvedName() : type.getText();
     }
 
@@ -1036,16 +1044,24 @@ public abstract class StaticTypeCheckingSupport {
 
         // GROOVY-8965: type disjunction
         boolean duckType = receiver instanceof UnionTypeClassNode;
-        if (methods.size() > 1 && !methods.iterator().next().isConstructor())
+        if (methods.size() > 1 && !first(methods).isConstructor())
             methods = removeCovariantsAndInterfaceEquivalents(methods, duckType);
 
-        if (argumentTypes == null) {
+        if (!duckType && argumentTypes == null) {
             return asList(methods); // GROOVY-11683: no covariants or equivalents
         }
 
         Set<MethodNode> bestMethods = new HashSet<>(); // choose best method(s) for each possible receiver
         for (ClassNode rcvr : duckType ? ((UnionTypeClassNode) receiver).getDelegates() : new ClassNode[]{receiver}) {
-            bestMethods.addAll(chooseBestMethods(rcvr, methods, argumentTypes));
+            var view = methods;
+            if (duckType) {
+                view = methods.stream().filter(m -> implementsInterfaceOrSubclassOf(rcvr, m.getDeclaringClass())).toList();
+            }
+            view = chooseBestMethods(rcvr, view, argumentTypes);
+            if (view.isEmpty()) {
+                return Collections.emptyList(); // GROOVY-10702
+            }
+            bestMethods.addAll(view);
         }
         return new LinkedList<>(bestMethods); // assumes caller wants remove to be inexpensive
     }
