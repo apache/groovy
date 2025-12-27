@@ -403,17 +403,17 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                int foo() { 1 }
             }
             class B {
-               int foo2() { 2 }
+               int bar() { 2 }
             }
 
             def o = new A()
-            int result = o instanceof A ? o.foo() : (o instanceof B ? o.foo2() : 3)
+            int result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
             assert result == 1
             o = new B()
-            result = o instanceof A ? o.foo() : (o instanceof B ? o.foo2() : 3)
+            result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
             assert result == 2
             o = new Object()
-            result = o instanceof A ? o.foo() : (o instanceof B ? o.foo2() : 3)
+            result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
             assert result == 3
         '''
     }
@@ -421,21 +421,42 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testMultipleInstanceOf1() {
         assertScript '''
             class A {
-                void bar() {
+                void m() {
                 }
             }
             class B {
-                void bar() {
+                void m() {
                 }
             }
 
             void test(o) {
                 if (o instanceof A || o instanceof B) {
-                    o.bar()
+                    o.m()
                 }
             }
             test(new A())
             test(new B())
+        '''
+
+        assertScript '''
+            class A {
+                float getP() {
+                    return 1.0
+                }
+            }
+            class B {
+                short getP() {
+                    return 2
+                }
+            }
+
+            def foo(o) {
+                if (o instanceof A || o instanceof B) {
+                    return o.p
+                }
+            }
+            assert foo(new A()) == 1
+            assert foo(new B()) == 2
         '''
     }
 
@@ -465,19 +486,17 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-8965
     void testMultipleInstanceOf4() {
-        for (o in ['o', '((Number) o)']) {
-            assertScript """
-                def foo(o) {
-                    if (o instanceof Integer || o instanceof Double) {
-                        ${o}.floatValue() // ClassCastException
-                    }
+        assertScript '''
+            def foo(o) {
+                if (o instanceof Integer || o instanceof Double) {
+                    o.floatValue() // ClassCastException
                 }
-                def bar = foo(1.1d)
-                assert bar == 1.1f
-                def baz = foo(1)
-                assert baz == 1
-            """
-        }
+            }
+            def bar = foo(1.1d)
+            assert bar == 1.1f
+            def baz = foo(1)
+            assert baz == 1
+        '''
     }
 
     // GROOVY-11559
@@ -1312,7 +1331,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'No such property: canonicalName for class: java.lang.Object'
-/*
+
         shouldFailWithMessages '''
             void test(something) {
                 switch (something) {
@@ -1320,12 +1339,12 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                   case File:
                     something.toString()
                   default:
-                    something.canonicalName // TODO: GROOVY-10702
+                    something.canonicalName // GROOVY-10702
                 }
             }
         ''',
-        'No such property: canonicalName for class: java.lang.Object'
-*/
+        'No such property: canonicalName for class: (java.lang.Class | java.io.File | java.lang.Object)'
+
         shouldFailWithMessages '''
             void test(something) {
                 switch (something) {
