@@ -421,42 +421,36 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     void testMultipleInstanceOf1() {
         assertScript '''
             class A {
-                void m() {
-                }
+                Float m() { 1 }
             }
             class B {
-                void m() {
-                }
+                Short m() { 3 }
             }
 
-            void test(o) {
+            int foo(o) {
                 if (o instanceof A || o instanceof B) {
-                    o.m()
+                    return o.m().compareTo(2)
                 }
             }
-            test(new A())
-            test(new B())
+            assert foo(new A()) < 0
+            assert foo(new B()) > 0
         '''
 
         assertScript '''
             class A {
-                float getP() {
-                    return 1.0
-                }
+                float getP() { 1 }
             }
             class B {
-                short getP() {
-                    return 2
-                }
+                short getP() { 3 }
             }
 
-            def foo(o) {
+            int foo(o) {
                 if (o instanceof A || o instanceof B) {
-                    return o.p
+                    return o.p.compareTo(2)
                 }
             }
-            assert foo(new A()) == 1
-            assert foo(new B()) == 2
+            assert foo(new A()) < 0
+            assert foo(new B()) > 0
         '''
     }
 

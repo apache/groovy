@@ -1656,12 +1656,15 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
     on: for (Receiver<String> receiver : receivers) {
             ClassNode receiverType = receiver.getType();
             if (receiverType instanceof UnionTypeClassNode ut) {
+                List<ClassNode> propertyTypes = new ArrayList<>();
+                Consumer<ClassNode> add = t->propertyTypes.add(wrapTypeIfNecessary(t));
                 for (ClassNode type : ut.getDelegates()) { // GROOVY-8965, GROOVY-10702
                     var copy = (PropertyExpression) pexp.transformExpression(ex -> ex);
                     copy.setObjectExpression(varX("_", type));
-                    if (!existsProperty(copy, readMode, null))
+                    if (!existsProperty(copy, readMode, new PropertyLookup(type, add)))
                         continue on;
                 }
+                pexp.putNodeMetaData(INFERRED_TYPE, lowestUpperBound(propertyTypes));
                 pexp.putNodeMetaData(DYNAMIC_RESOLUTION, Boolean.TRUE);
                 return true;
             }
