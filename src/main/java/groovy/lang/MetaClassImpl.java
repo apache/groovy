@@ -2113,10 +2113,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private Tuple2<MetaMethod, MetaProperty> createMetaMethodAndMetaProperty(final Class<?> sender, final String name, final boolean useSuper, final boolean isStatic) {
-        MetaMethod method = null;
+        MetaMethod   mm = null;
         MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
+
         if ((mp == null || mp instanceof CachedField) && !name.isEmpty() && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name) && !"MetaClass".equals(name)) {
-            // GROOVY-9618 adjust because capitalised properties aren't stored as meta bean props
+            // GROOVY-9618: adjust because capitalised properties aren't stored as meta bean props
             MetaProperty saved = mp;
             mp = getMetaProperty(sender, BeanUtils.decapitalize(name), useSuper, isStatic);
             if (mp == null || (saved != null && mp instanceof CachedField)) {
@@ -2125,23 +2126,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        if (mp instanceof MetaBeanProperty) {
-            MetaBeanProperty mbp = (MetaBeanProperty) mp;
-            method = mbp.getGetter();
+        if (mp instanceof MetaBeanProperty mbp) {
+            mm = mbp.getGetter();
             mp = mbp.getField();
         }
 
         // check for a category method named like a getter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            String getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
+            var getterName = GroovyCategorySupport.getPropertyCategoryGetterName(name);
             if (getterName != null) {
                 MetaMethod categoryMethod = getCategoryMethodGetter(theClass, getterName, false);
-                if (categoryMethod != null)
-                    method = categoryMethod;
+                if (categoryMethod != null && (mm == null || Boolean.TRUE.equals(getMatchKindForCategory(mm, categoryMethod)))) { // GROOVY-11820
+                    mm = categoryMethod;
+                }
             }
         }
 
-        return tuple(method, mp);
+        return tuple(mm, mp);
     }
 
     private static CategoryMethod getCategoryMethodMissing(final Class<?> sender) {
@@ -2704,8 +2705,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
         MetaProperty field = null;
         if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+            if (mp instanceof MetaBeanProperty mbp) {
                 method = mbp.getSetter();
                 MetaProperty f = mbp.getField();
                 if (method != null || (f != null && !f.isFinal())) {
@@ -2722,7 +2722,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             var setterName = GroovyCategorySupport.getPropertyCategorySetterName(name);
             if (setterName != null) {
                 MetaMethod categoryMethod = getCategoryMethodSetter(theClass, setterName, false);
-                if (categoryMethod != null) {
+                if (categoryMethod != null && (method == null || Boolean.TRUE.equals(getMatchKindForCategory(method, categoryMethod)))) { // GROOVY-11820
                     method = categoryMethod;
                     arguments = new Object[]{newValue};
                 }
