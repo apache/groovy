@@ -23,6 +23,8 @@ import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -2217,6 +2219,24 @@ final class InnerClassTest {
             }
             assert new Outer(new Outer.Inner()).description == 'test'
         '''
+    }
+
+    // GROOVY-11822
+    @ParameterizedTest
+    @ValueSource(strings=['void','Void','def','Object'])
+    void testNestedPropertyHandling4(String returnType) {
+        def err = shouldFail """
+            class Upper {
+                $returnType propertyMissing(String name, Object value) {
+                }
+            }
+            class Outer {
+                static class Inner extends Upper {
+                }
+            }
+            new Outer.Inner().missing = 42
+        """
+        assert err =~ /No such property: missing for class: Outer.Inner/
     }
 
     // GROOVY-7312
