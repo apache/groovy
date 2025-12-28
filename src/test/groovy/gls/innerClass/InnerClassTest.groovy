@@ -2078,6 +2078,22 @@ final class InnerClassTest {
         '''
     }
 
+    @Test // GROOVY-11822
+    void testNestedPropertyHandling4() {
+        def err = shouldFail '''
+            class Upper {
+                def propertyMissing(String name, Object value) {
+                }
+            }
+            class Outer {
+                static class Inner extends Upper {
+                }
+            }
+            new Outer.Inner().missing = 42
+        '''
+        assert err =~ /No such property: missing for class: Outer.Inner/
+    }
+
     @Test // GROOVY-7312
     void testInnerClassOfInterfaceIsStatic() {
         assertScript '''

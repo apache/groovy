@@ -40,6 +40,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -71,12 +72,12 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.RETURN;
 
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
@@ -257,10 +258,15 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
+        ClassNode[] nameValueTypes = {STRING_TYPE, OBJECT_TYPE}; // GROOVY-11822: "def propertyMissing(String,Object)"
+        ClassNode returnType = node.getMethods("propertyMissing").stream().filter(m -> !m.isStatic() && !m.isPrivate()
+                 && Arrays.equals(Arrays.stream(m.getParameters()).map(Parameter::getType).toArray(), nameValueTypes))
+                .findFirst().map(MethodNode::getReturnType).orElse(VOID_TYPE);
+
         addMissingHandler(node,
                 "propertyMissing",
                 ACC_PUBLIC,
-                VOID_TYPE,
+                returnType,
                 params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
                 (methodBody, parameters) -> {
                     if (isStatic) {
@@ -274,7 +280,8 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                                         mv.visitVarInsn(ALOAD, 1);
                                         mv.visitVarInsn(ALOAD, 2);
                                         mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$set$" + outerClassDistance, "(Ljava/lang/String;Ljava/lang/Object;)V", false);
-                                        mv.visitInsn(RETURN);
+                                        if (!ClassHelper.isPrimitiveVoid(returnType)) mv.visitInsn(ACONST_NULL);
+                                        BytecodeHelper.doReturn(mv, returnType);
                                     }
                                 })
                         );
