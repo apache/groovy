@@ -40,12 +40,14 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.MethodVisitor;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
+import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
 import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
@@ -75,12 +77,12 @@ import static org.objectweb.asm.Opcodes.ACC_MANDATED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.RETURN;
 
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
@@ -266,10 +268,15 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
+        ClassNode[] nameValueTypes = {STRING_TYPE, OBJECT_TYPE};
+        MethodNode propertyMissing = getMethod(node, "propertyMissing", (m) -> !m.isStatic() && !m.isPrivate()
+                && Arrays.equals(Arrays.stream(m.getParameters()).map(Parameter::getType).toArray(),nameValueTypes));
+        ClassNode returnType = propertyMissing != null ? propertyMissing.getReturnType() : VOID_TYPE; // GROOVY-11822
+
         addMissingHandler(node,
                 "propertyMissing",
                 ACC_PUBLIC,
-                VOID_TYPE,
+                returnType,
                 params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
                 (methodBody, parameters) -> {
                     if (isStatic) {
@@ -283,7 +290,8 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                                         mv.visitVarInsn(ALOAD, 1);
                                         mv.visitVarInsn(ALOAD, 2);
                                         mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$set$" + outerClassDistance, "(Ljava/lang/String;Ljava/lang/Object;)V", false);
-                                        mv.visitInsn(RETURN);
+                                        if (!ClassHelper.isPrimitiveVoid(returnType)) mv.visitInsn(ACONST_NULL);
+                                        BytecodeHelper.doReturn(mv, returnType);
                                     }
                                 })
                         );
@@ -336,7 +344,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         );
     }
 
-            void addMissingHandler(final InnerClassNode innerClass, final String methodName, final int modifiers,
+    /*   */ void addMissingHandler(final InnerClassNode innerClass, final String methodName, final int modifiers,
             final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
         MethodNode method = innerClass.getDeclaredMethod(methodName, parameters);
         if (method == null) {
