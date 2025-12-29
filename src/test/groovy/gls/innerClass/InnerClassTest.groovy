@@ -141,6 +141,35 @@ final class InnerClassTest {
         '''
     }
 
+    @Test
+    void testAccessLocalVariableInAIC() {
+        assertScript '''
+            final String objName = 'My name is Guillaume'
+
+            assert new Object() {
+                String toString() { objName }
+            }.toString() == objName
+        '''
+    }
+
+    // GROOVY-5041
+    @Test
+    void testAccessLocalVariableInAIC2() {
+        assertScript '''
+            abstract class A {
+                abstract call()
+            }
+
+            def x = 1
+            def a = new A() {
+                def call() { x }
+            }
+            assert a.call() == 1
+            x = 2
+            assert a.call() == 2
+        '''
+    }
+
     // GROOVY-8448
     @Test
     void testAccessLocalVariableVsGetterInAIC() {
@@ -183,17 +212,6 @@ final class InnerClassTest {
                 }
             }
             o.m()
-        '''
-    }
-
-    @Test
-    void testAccessFinalLocalVariableFromMethodInAIC() {
-        assertScript '''
-            final String objName = "My name is Guillaume"
-
-            assert new Object() {
-                String toString() { objName }
-            }.toString() == objName
         '''
     }
 
@@ -1558,17 +1576,13 @@ final class InnerClassTest {
     void testReferencedVariableInAIC3() {
         assertScript '''
             abstract class A {
-                A() {
-                    m()
-                }
-                abstract void m();
+                abstract void m()
             }
             void test() {
                 def v = false
                 def a = new A() {
-                    // run by super ctor
                     @Override void m() {
-                        assert v != null
+                        assert v == true
                     }
                 }
                 v = true

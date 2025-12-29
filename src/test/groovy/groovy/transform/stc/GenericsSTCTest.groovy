@@ -5016,14 +5016,14 @@ class GenericsSTCTest extends StaticTypeCheckingTestCase {
                 function.apply('')
             }
 
-            String result = null
+            def result = new String[1]
             transform(new Function<String, String>() {
                 String apply(String input) {
-                    result = "ok"
+                    result[0] = 'ok'
                 }
             })
 
-            assert result == 'ok'
+            assert result[0] == 'ok'
         '''
     }
 

@@ -1027,16 +1027,15 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
         ''',
         'Cannot find matching method java.lang.Integer#toUpperCase()'
-   }
+    }
 
     void testDeclarationTypeInference() {
-        MethodNode method
+        Reference<MethodNode> method = []
         config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CLASS_GENERATION) {
             @Override
             void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-                method = classNode.methods.find { it.name == 'method' }
+                method.set(classNode.methods.find { it.name == 'method' })
             }
-
         })
         assertScript '''
             void method() {
@@ -1045,6 +1044,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 'String'
             }
         '''
+
         def inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
         assert inft instanceof WideningCategories.LowestUpperBoundClassNode
         [Comparable, Serializable].each {

@@ -18,48 +18,51 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.MethodCallExpression
+import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
-import org.codehaus.groovy.classgen.GeneratorContext
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.control.CompilePhase.CANONICALIZATION
 import static org.codehaus.groovy.control.CompilePhase.INSTRUCTION_SELECTION
 
-class Groovy7951Bug extends GroovyTestCase {
+final class Groovy7951Bug {
 
+    @Test
     void testTransformMethodCallExpressionPassesGenericTypes() {
-
         def config = new CompilerConfiguration()
 
         // Just visiting the transform method on each expression is enough to verify
         // that the checker is able to see the generic types in the later phase.
         def transformer = new CompilationCustomizer(CANONICALIZATION) {
-            @Override void call(SourceUnit src, GeneratorContext ctxt, ClassNode cn) {
+            @Override
+            void call(SourceUnit su, GeneratorContext gc, ClassNode cn) {
                 new ClassCodeExpressionTransformer() {
-                    @Override SourceUnit getSourceUnit() { src }
+                    @Override SourceUnit getSourceUnit() { su }
                 }.visitClass(cn)
             }
         }
 
-        boolean assertWasChecked
         def checker = new CompilationCustomizer(INSTRUCTION_SELECTION) {
-            void call(SourceUnit src, GeneratorContext ctxt, ClassNode cn) {
+            boolean assertWasChecked
+            @Override
+            void call(SourceUnit su, GeneratorContext gc, ClassNode cn) {
                 new ClassCodeVisitorSupport() {
-                    @Override void visitMethodCallExpression(MethodCallExpression mce) {
-                        if (mce.objectExpression.text == 'java.util.Collections' &&
-                                mce.method.text == 'emptyList') {
+                    @Override
+                    SourceUnit getSourceUnit() { su }
+                    @Override
+                    void visitMethodCallExpression(MethodCallExpression mce) {
+                        if (mce.objectExpression.text == 'java.util.Collections' && mce.method.text == 'emptyList') {
                             assert mce.genericsTypes != null && mce.genericsTypes*.name == ['Date']
                             assertWasChecked = true
                         }
                         super.visitMethodCallExpression(mce)
                     }
-                    @Override SourceUnit getSourceUnit() { src }
                 }.visitClass(cn)
             }
         }
@@ -70,7 +73,6 @@ class Groovy7951Bug extends GroovyTestCase {
             Collections.<Date>emptyList()
         '''
 
-        assert assertWasChecked
+        assert checker.assertWasChecked
     }
-
 }

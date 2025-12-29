@@ -19,19 +19,20 @@
 package org.codehaus.groovy.ast
 
 import groovy.test.GroovyTestCase
-import org.codehaus.groovy.classgen.GeneratorContext
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.customizers.CompilationCustomizer
-import org.codehaus.groovy.control.CompilerConfiguration
+import groovy.transform.TupleConstructor
 import org.codehaus.groovy.ast.expr.VariableExpression
+import org.codehaus.groovy.classgen.GeneratorContext
+import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.SourceUnit
+import org.codehaus.groovy.control.customizers.CompilationCustomizer
 
 /**
  * Adds several utility methods which are used in tests on generics.
  */
 abstract class GenericsTestCase extends GroovyTestCase {
 
-    def extractTypesFromCode(String string) {
+    protected Map<String, Object> extractTypesFromCode(String string) {
         def result = [generics:[], type:null]
         CompilerConfiguration config = new CompilerConfiguration()
         config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CANONICALIZATION) {
@@ -39,9 +40,9 @@ abstract class GenericsTestCase extends GroovyTestCase {
             void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
                 def visitor = new GenericsVisitorSupport(source)
                 visitor.visitClass(classNode)
-                result = visitor.result
+                result.clear()
+                result.putAll(visitor.result)
             }
-
         })
 
         new GroovyShell(config).evaluate(string)
@@ -49,37 +50,28 @@ abstract class GenericsTestCase extends GroovyTestCase {
         result
     }
 
+    @TupleConstructor(defaults=false)
     private static class GenericsVisitorSupport extends ClassCodeVisitorSupport {
 
-        private final SourceUnit sourceUnit
-        private final Map result = [:]
-
-        private GenericsVisitorSupport(SourceUnit unit) {
-            sourceUnit = unit
-        }
-
-        @Override
-        protected SourceUnit getSourceUnit() {
-            return sourceUnit
-        }
+        final SourceUnit sourceUnit
+        private final Map<String, Object> result = [:]
 
         @Override
         void visitVariableExpression(VariableExpression expression) {
             super.visitVariableExpression(expression)
-            if (expression.name=='type') {
-                result.generics = expression.type.genericsTypes
+            if (expression.name == 'type') {
                 result.type = expression.type
+                result.generics = expression.type.genericsTypes
             }
         }
 
         @Override
         void visitMethod(MethodNode node) {
             super.visitMethod(node)
-            if (node.name=='type') {
-                result.generics = node.genericsTypes
+            if (node.name == 'type') {
                 result.type = node.returnType
+                result.generics = node.genericsTypes
             }
         }
-
     }
 }

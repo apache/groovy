@@ -335,13 +335,13 @@ final class Slf4jTest {
                 static myMethod() {
                     String message = 'hello'
                     String audience = 'world'
-                    String result
+                    def value = new String[1]
                     new Runnable() {
                         void run() {
-                            result = "$message $audience"
+                            value[0] = "$message $audience"
                         }
                     }.run()
-                    result
+                    value[0]
                 }
             }
             assert MyClass.myMethod() == 'hello world'
