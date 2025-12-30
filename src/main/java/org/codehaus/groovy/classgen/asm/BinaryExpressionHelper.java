@@ -120,7 +120,9 @@ import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.IFNE;
 import static org.objectweb.asm.Opcodes.IF_ACMPEQ;
 import static org.objectweb.asm.Opcodes.INSTANCEOF;
+import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.POP;
+import static org.objectweb.asm.Opcodes.SWAP;
 
 public class BinaryExpressionHelper {
     // compare
@@ -783,7 +785,14 @@ public class BinaryExpressionHelper {
             Label l0 = operandStack.jump(IFEQ); // skip store if not instanceof
 
             mv.visitTypeInsn(CHECKCAST, typeName);
-            mv.visitVarInsn(ASTORE, v.getIndex());
+            if (!v.isHolder()) {
+                mv.visitVarInsn(ASTORE, v.getIndex());
+            } else { // GROOVY-11828: shared variable
+                mv.visitVarInsn(ALOAD, v.getIndex());
+                mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
+                mv.visitInsn(SWAP);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
+            }
             Label l1 = operandStack.jump(GOTO);
 
             mv.visitLabel(l0); // stack: ..., check, value

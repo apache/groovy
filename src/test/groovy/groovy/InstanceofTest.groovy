@@ -213,4 +213,14 @@ final class InstanceofTest {
         '''
         assert err =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
     }
+
+    // GROOVY-11828
+    @Test
+    void testVariableShare() {
+        def x = 'foo', y
+        if (x instanceof String s) {
+            y = { -> s + 'bar' }()
+        }
+        assert y == 'foobar'
+    }
 }
