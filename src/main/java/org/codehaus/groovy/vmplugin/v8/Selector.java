@@ -29,6 +29,7 @@ import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaClassImpl.MetaConstructor;
 import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
+import groovy.lang.ProxyMetaClass;
 import groovy.transform.Internal;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
@@ -1077,17 +1078,14 @@ public abstract class Selector {
     //--------------------------------------------------------------------------
 
     /**
-     * Returns the MetaClassImpl if the given MetaClass is one of
-     * MetaClassImpl, AdaptingMetaClass or ClosureMetaClass. If
-     * none of these cases matches, this method returns null.
+     * @return {@code mc} if {@code ClosureMetaClass}, {@code ExpandoMetaClass} or not {@code ProxyMetaClass}; otherwise null
      */
     private static MetaClassImpl getMetaClassImpl(final MetaClass mc, final boolean includeEMC) {
-        Class<?> mcc = mc.getClass();
-        boolean valid = mcc == MetaClassImpl.class
-                || mcc == ClosureMetaClass.class
-                || (includeEMC && mcc == ExpandoMetaClass.class);
+        boolean valid = (mc.getClass() == ClosureMetaClass.class)
+                || (includeEMC && mc instanceof ExpandoMetaClass)
+                || (mc instanceof MetaClassImpl && !(mc instanceof ExpandoMetaClass || mc instanceof ProxyMetaClass)); // GROOVY-11813
         if (!valid) {
-            if (LOG_ENABLED) LOG.info("meta class is neither MetaClassImpl, nor ClosureMetaClass, normal method selection path disabled.");
+            if (LOG_ENABLED) LOG.info("meta class isn't a ClosureMetaClass, ExpandoMetaClass, or non-proxy MetaClassImpl; normal method selection path disabled.");
             return null;
         }
         if (LOG_ENABLED) LOG.info("meta class is a recognized MetaClassImpl");
