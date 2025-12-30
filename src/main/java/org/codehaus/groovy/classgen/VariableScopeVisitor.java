@@ -73,6 +73,7 @@ import java.util.function.Supplier;
 import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
+import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
 
 /**
@@ -203,7 +204,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 if (name.equals(pn.getName())) return pn;
             }
 
-            for (MethodNode mn : cn.getMethods()) {
+            for (MethodNode mn : withDefaultArgumentMethods(cn.getMethods())) { // GROOVY-11827
                 if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
                     // check for super property before returning a pseudo-property
                     for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {

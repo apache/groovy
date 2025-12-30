@@ -88,8 +88,24 @@ final class Groovy5364 {
         '''
     }
 
+    // GROOVY-11827
     @Test
     void testStaticScriptMethodAsProperty6() {
+        assertScript '''
+            static getStaticProperty(o=null) {
+                'x'
+            }
+
+            static void test() {
+                assert 'x' == getStaticProperty()
+                assert 'x' == staticProperty // Apparent variable 'staticProperty' was found in a static scope but doesn't refer to a local variable, static field or class
+            }
+            test()
+        '''
+    }
+
+    @Test
+    void testStaticScriptMethodAsProperty7() {
         def err = shouldFail '''
             def getNonStaticProperty() {
                 'x'
