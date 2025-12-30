@@ -694,21 +694,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (answer == null) answer = FastArray.EMPTY_LIST;
 
         if (!isCallToSuper) {
-            List<CategoryMethod> used = GroovyCategorySupport.getCategoryMethods(name);
-            if (used != null) {
-                FastArray arr;
-                if (answer instanceof MetaMethod) {
-                    arr = new FastArray();
-                    arr.add(answer);
+            List<CategoryMethod> methods = GroovyCategorySupport.getCategoryMethods(name);
+            if (methods != null) {
+                FastArray array;
+                if (answer instanceof FastArray) {
+                    array = ((FastArray) answer).copy();
                 } else {
-                    arr = ((FastArray) answer).copy();
+                    array = new FastArray();
+                    array.add(answer);
                 }
-                for (CategoryMethod cm : used) {
-                    if (!cm.getDeclaringClass().getTheClass().isAssignableFrom(sender))
-                        continue;
-                    filterMatchingMethodForCategory(arr, cm);
+                for (CategoryMethod cm : methods) {
+                    Class<?> cmdc = cm.getDeclaringClass().getTheClass();
+                    if (cmdc.isAssignableFrom(theClass)) // GROOVY-11813: not sender
+                        filterMatchingMethodForCategory(array, cm);
                 }
-                answer = arr;
+                answer = array;
             }
         }
         return answer;
