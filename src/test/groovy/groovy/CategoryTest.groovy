@@ -390,7 +390,7 @@ final class CategoryTest {
     @Test
     void testOverloadedGetterMethod2() {
         assertScript '''
-            class Cat {
+            class C {
                 static String getFoo(Boolean self) {
                     'Boolean'
                 }
@@ -414,7 +414,7 @@ final class CategoryTest {
                 }
             }
 
-            use(Cat) {
+            use(C) {
                 assert 123.foo == 'Integer'
                 assert 4.5d.foo == 'Double'
             }
@@ -428,6 +428,23 @@ final class CategoryTest {
             use(java.util.stream.Stream) {
                 assert [1, 1].iterate(f -> [f[1], f.sum()]).limit(8).toList()*.head() == [1, 1, 2, 3, 5, 8, 13, 21]
                 assert 16.iterate(n -> n < 500, n -> n * 2).toList() == [16, 32, 64, 128, 256]
+            }
+        '''
+    }
+
+    // GROOVY-11813
+    @Test
+    void testCategoryOperatorMethodAndCustomMetaClass() {
+        assertScript '''
+            import groovy.MetaClassCreator
+            import groovy.time.TimeCategory
+
+            GroovySystem.metaClassRegistry.metaClassCreationHandle = new MetaClassCreator()
+
+            use(TimeCategory) {
+                def date = new Date()
+                def duration = 7.months
+                return (date - duration)
             }
         '''
     }
