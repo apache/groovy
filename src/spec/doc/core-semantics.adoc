@@ -2258,11 +2258,5 @@ statically compiled code and dynamic code is barely noticeable. On highly CPU in
 is generated is very close, if not equal, to the one that Java would produce for an equivalent program, the performance
 is greatly improved.
 
-TIP: Using the _invokedynamic_ version of Groovy, which is accessible to people using JDK 7 and above, the performance
-of the dynamic code should be very close to the performance of statically compiled code. Sometimes, it can even be faster!
-There is only one way to determine which version you should choose: measuring. The reason is that depending on your program
-*and* the JVM that you use, the performance can be significantly different. In particular, the _invokedynamic_ version of
-Groovy is very sensitive to the JVM version in use.
-
 include::_type-checking-extensions.adoc[leveloffset=+1]
 
