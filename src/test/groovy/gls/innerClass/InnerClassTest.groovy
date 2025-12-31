@@ -2242,6 +2242,7 @@ final class InnerClassTest {
         def err = shouldFail """
             class Upper {
                 $returnType propertyMissing(String name, Object value) {
+                    throw new MissingPropertyException(name, getClass())
                 }
             }
             class Outer {
@@ -2251,6 +2252,25 @@ final class InnerClassTest {
             new Outer.Inner().missing = 42
         """
         assert err =~ /No such property: missing for class: Outer.Inner/
+    }
+
+    // GROOVY-11823
+    @Test
+    void testNestedPropertyHandling5() {
+        assertScript '''
+            class Upper {
+                Object propertyMissing(String name) {
+                    if (name == 'fizz') return 'buzz'
+                    throw new MissingPropertyException(name, getClass())
+                }
+            }
+            class Outer {
+                static class Inner extends Upper {
+                }
+            }
+            def inner = new Outer.Inner()
+            assert inner.fizz == 'buzz'
+        '''
     }
 
     // GROOVY-7312
