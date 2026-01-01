@@ -2768,7 +2768,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // generic set method
         //----------------------------------------------------------------------
-        // check for a generic get method provided through a category
+        // check for a generic set method provided through a category
         if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodSetter(theClass, "set", true);
             if (method != null) arguments = new Object[]{name, newValue};
@@ -2994,14 +2994,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     //--------------------------------------------------------------------------
 
     /**
-     * adds a MetaMethod to this class. WARNING: this method will not
+     * Adds a MetaMethod to this class. WARNING: this method will not
      * do the necessary steps for multimethod logic and using this
      * method doesn't mean, that a method added here is replacing another
      * method from a parent class completely. These steps are usually done
      * by initialize, which means if you need these steps, you have to add
      * the method before running initialize the first time.
      *
-     * @param method the MetaMethod
      * @see #initialize()
      */
     @Override
@@ -3020,69 +3019,75 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Checks if the metaMethod is a method from the GroovyObject interface such as setProperty, getProperty and invokeMethod
+     * Checks if the metaMethod is getProperty, setProperty, or invokeMethod.
      *
-     * @param metaMethod The metaMethod instance
      * @see GroovyObject
      */
-    protected final void checkIfGroovyObjectMethod(MetaMethod metaMethod) {
+    protected final void checkIfGroovyObjectMethod(final MetaMethod metaMethod) {
         if (metaMethod instanceof ClosureMetaMethod
                 || metaMethod instanceof NewInstanceMetaMethod
                 || metaMethod instanceof MixinInstanceMetaMethod) {
-            if (isGetPropertyMethod(metaMethod)) {
-                getPropertyMethod = metaMethod;
-            } else if (isInvokeMethod(metaMethod)) {
-                invokeMethodMethod = metaMethod;
-            } else if (isSetPropertyMethod(metaMethod)) {
-                setPropertyMethod = metaMethod;
+            switch (metaMethod.getName()) {
+              case GET_PROPERTY_METHOD:
+                if (checkMatch(metaMethod, getPropertyMethod, GETTER_MISSING_ARGS) && metaMethod.getReturnType() != Void.TYPE) {
+                    getPropertyMethod = metaMethod;
+                }
+                break;
+              case SET_PROPERTY_METHOD:
+                if (checkMatch(metaMethod, setPropertyMethod, SETTER_MISSING_ARGS)) {
+                    setPropertyMethod = metaMethod;
+                }
+                break;
+              case INVOKE_METHOD_METHOD:
+                if (checkMatch(metaMethod, invokeMethodMethod, METHOD_MISSING_ARGS)) {
+                    invokeMethodMethod = metaMethod;
+                }
+                break;
             }
         }
     }
 
-    private static boolean isSetPropertyMethod(MetaMethod metaMethod) {
-        return SET_PROPERTY_METHOD.equals(metaMethod.getName()) && metaMethod.getParameterTypes().length == 2;
-    }
-
-    private static boolean isGetPropertyMethod(MetaMethod metaMethod) {
-        return GET_PROPERTY_METHOD.equals(metaMethod.getName());
-    }
-
-    private static boolean isInvokeMethod(MetaMethod metaMethod) {
-        return INVOKE_METHOD_METHOD.equals(metaMethod.getName()) && metaMethod.getParameterTypes().length == 2;
-    }
-
-    private void checkIfStdMethod(MetaMethod method) {
-        checkIfGroovyObjectMethod(method);
-
-        if (isGenericGetMethod(method) && genericGetMethod == null) {
-            genericGetMethod = method;
-        } else if (MetaClassHelper.isGenericSetMethod(method) && genericSetMethod == null) {
-            genericSetMethod = method;
-        }
-        if (method.getName().equals(PROPERTY_MISSING)) {
-            CachedClass[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes.length == 1) {
-                propertyMissingGet = method;
+    private void checkIfStdMethod(final MetaMethod metaMethod) {
+        switch (metaMethod.getName()) {
+          case GET_PROPERTY_METHOD:
+          case SET_PROPERTY_METHOD:
+          case INVOKE_METHOD_METHOD:
+            checkIfGroovyObjectMethod(metaMethod);
+            break;
+          case "get":
+            if (checkMatch(metaMethod, genericGetMethod, GETTER_MISSING_ARGS) && metaMethod.getReturnType() != Void.TYPE) {
+                genericGetMethod = metaMethod;
+            }
+            break;
+          case "set":
+            if (checkMatch(metaMethod, genericSetMethod, SETTER_MISSING_ARGS)) {
+                genericSetMethod = metaMethod;
+            }
+            break;
+          case METHOD_MISSING:
+            if (checkMatch(metaMethod, methodMissing, METHOD_MISSING_ARGS)) {
+                methodMissing = metaMethod;
+            }
+            break;
+          case PROPERTY_MISSING:
+            if (checkMatch(metaMethod, propertyMissingSet, SETTER_MISSING_ARGS)) {
+                propertyMissingSet = metaMethod;
+            } else if (checkMatch(metaMethod, propertyMissingGet, GETTER_MISSING_ARGS) && metaMethod.getReturnType() != Void.TYPE) {
+                propertyMissingGet = metaMethod;
+            }
+            break;
+          default:
+            if (theCachedClass.isNumber) {
+                NumberMathModificationInfo.instance.checkIfStdMethod(metaMethod);
             }
         }
-        if (propertyMissingSet == null && method.getName().equals(PROPERTY_MISSING)) {
-            CachedClass[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes.length == 2) {
-                propertyMissingSet = method;
-            }
-        }
-        if (method.getName().equals(METHOD_MISSING)) {
-            CachedClass[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes.length == 2
-                    && parameterTypes[0].getTheClass() == String.class
-                    && parameterTypes[1].getTheClass() == Object.class) {
-                methodMissing = method;
-            }
-        }
+    }
 
-        if (theCachedClass.isNumber) {
-            NumberMathModificationInfo.instance.checkIfStdMethod(method);
-        }
+    private static boolean checkMatch(final MetaMethod newMethod, final MetaMethod oldMethod, final Class<?>[] arguments) {
+        return newMethod.isValidExactMethod(arguments) && (oldMethod == null
+            // GROOVY-11829: new method may provide closer match to arguments
+            || MetaClassHelper.calculateParameterDistance(arguments, newMethod)
+                <= MetaClassHelper.calculateParameterDistance(arguments, oldMethod));
     }
 
     protected boolean isInitialized() {
@@ -3296,14 +3301,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             matches.add(method);
         }
         return matchesDistance;
-    }
-
-    private static boolean isGenericGetMethod(MetaMethod method) {
-        if ("get".equals(method.getName())) {
-            CachedClass[] parameterTypes = method.getParameterTypes();
-            return parameterTypes.length == 1 && parameterTypes[0].getTheClass() == String.class;
-        }
-        return false;
     }
 
     /**

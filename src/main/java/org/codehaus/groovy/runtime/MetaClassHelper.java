@@ -809,11 +809,6 @@ public class MetaClassHelper {
                 || classToTransformFrom == Byte.class;
     }
 
-    public static boolean isGenericSetMethod(MetaMethod method) {
-        return ("set".equals(method.getName()))
-                && method.getParameterTypes().length == 2;
-    }
-
     protected static boolean isSuperclass(Class clazz, Class superclass) {
         while (clazz != null) {
             if (clazz == superclass) return true;

@@ -18,19 +18,21 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy8065 {
+
     @Test
     void testMapWithCustomSetDuringAsTypeCast() {
         assertScript '''
             class MapWithSet extends LinkedHashMap {
-                void set(String k, String v) {
-                    put(k.toLowerCase(), v.toUpperCase())
+                void set(String k, Object v) {
+                    put(k.toLowerCase(), v?.toString()?.toUpperCase())
                 }
             }
+
             def m = [Foo: 'Bar'] as MapWithSet
             assert m == [foo: 'BAR']
         '''

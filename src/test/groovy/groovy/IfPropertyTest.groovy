@@ -18,31 +18,30 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class IfPropertyTest extends GroovyTestCase {
+final class IfPropertyTest {
 
     def dummy
 
     // This is because normal classes are not extensible, but scripts are extensible by default.
     Object get(String key) {
-        return dummy
+        dummy
     }
 
     void set(Object key, Object value) {
         dummy = value
     }
 
+    @Test
     void testIfNullPropertySet() {
         if (cheese == null) {
             cheese = 1
         }
-        if (cheese != 1) {
-            fail("Didn't change cheese")
-        }
         assert cheese == 1
     }
 
+    @Test
     void testIfNullPropertySetRecheck() {
         if (cheese == null) {
             cheese = 1
@@ -52,5 +51,4 @@ class IfPropertyTest extends GroovyTestCase {
         }
         assert cheese == 2
     }
-
 }

@@ -18,40 +18,39 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-/**
- * Fix for https://issues.apache.org/jira/browse/GROOVY-3871
- */
-class Groovy3871Bug extends GroovyTestCase {
+final class Groovy3871 {
 
-    protected void setUp() {
-        super.setUp()
+    @BeforeEach
+    void setUp() {
+        tearDown()
+    }
+
+    @AfterEach
+    void tearDown() {
         G3871Base.metaClass = null
         G3871Child.metaClass = null
     }
 
-    protected void tearDown() {
-        G3871Base.metaClass = null
-        G3871Child.metaClass = null
-        super.tearDown();
-    }
-
+    @Test
     void testPropertyMissingInheritanceIssue() {
         // defining a propertyMissing on the base class
         G3871Base.metaClass.propertyMissing = { String name -> name }
         def baseInstance = new G3871Base()
-        assert baseInstance.someProp == "someProp"
+        assert baseInstance.someProp == 'someProp'
 
         // the child class inherits the propertyMissing
         def childInstance = new G3871Child()
-        assert childInstance.otherProp == "otherProp"
+        assert childInstance.otherProp == 'otherProp'
 
         // when a propertyMissing is registered for the child
         // it should be used over the inherited one
         G3871Child.metaClass.propertyMissing = { String name -> name.reverse() }
         def otherChildInstance = new G3871Child()
-        assert otherChildInstance.otherProp == "porPrehto"
+        assert otherChildInstance.otherProp == 'porPrehto'
     }
 }
 
@@ -60,4 +59,3 @@ class G3871Base { }
 
 /** a dummy child class */
 class G3871Child extends G3871Base { }
-
