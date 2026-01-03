@@ -27,6 +27,7 @@ import java.util.Objects;
 import static org.apache.groovy.parser.antlr4.GroovyParser.ABSTRACT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEF;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEFAULT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.ASYNC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.FINAL;
 import static org.apache.groovy.parser.antlr4.GroovyParser.NATIVE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.NON_SEALED;
@@ -72,7 +73,8 @@ public class ModifierNode extends ASTNode {
             NON_SEALED, 0,
             FINAL, Opcodes.ACC_FINAL,
             STRICTFP, Opcodes.ACC_STRICT,
-            DEFAULT, 0 // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
+            DEFAULT, 0, // no flag for specifying a default method in the JVM spec, hence no ACC_DEFAULT flag in ASM
+            ASYNC, 0 // a virtual modifier with no corresponding JVM flag
     );
 
     public ModifierNode(Integer type) {
