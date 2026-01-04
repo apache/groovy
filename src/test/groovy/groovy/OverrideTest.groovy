@@ -18,7 +18,7 @@
  */
 package groovy
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -33,15 +33,13 @@ final class OverrideTest {
                 void methodTakeT(T t) { }
                 T methodMakeT() { return null }
             }
-
             interface Intf<U> {
                 def method4()
                 void method5(U u)
                 U method6()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class OverrideAnnotationTest extends Parent<Integer> implements IntfString {
                 @Override method() {}
                 @Override void methodTakeT(Integer arg) {}
@@ -63,15 +61,13 @@ final class OverrideTest {
                 void methodTakeT(T t) { }
                 T methodMakeT() { return null }
             }
-
             interface Intf<U> {
                 def method4()
                 void method5(U u)
                 U method6()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class OverrideAnnotationTest extends Parent<Integer> implements IntfString {
                 @Override method() {}
                 @Override void methodTakeT(arg) {}
@@ -80,11 +76,9 @@ final class OverrideTest {
                 @Override void method5(String arg) {}
                 @Override String method6() {}
             }
-
-            new OverrideAnnotationTest()
         '''
-        assert err.message.contains(/The return type of java.lang.Double methodMakeT() in OverrideAnnotationTest is incompatible with java.lang.Integer in Parent/)
-        assert err.message.contains(/Method 'methodTakeT' from class 'OverrideAnnotationTest' does not override method from its superclass or interfaces but is annotated with @Override./)
+        assert err.message.contains("The return type of java.lang.Double methodMakeT() in OverrideAnnotationTest is incompatible with java.lang.Integer in Parent")
+        assert err.message.contains("Method 'methodTakeT' from class 'OverrideAnnotationTest' does not override method from its superclass or interfaces but is annotated with @Override")
     }
 
     @Test
@@ -93,9 +87,8 @@ final class OverrideTest {
             interface Intf<U> {
                 def method()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class HasSpuriousMethod implements IntfString {
                 @Override method() {}
                 @Override someOtherMethod() {}
@@ -111,9 +104,8 @@ final class OverrideTest {
                 def method()
                 U method6()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class HasMethodWithBadReturnType implements IntfString {
                 @Override method() {}
                 @Override methodReturnsObject() {}
@@ -129,9 +121,8 @@ final class OverrideTest {
                 def method()
                 void method6(U u)
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class HasMethodWithBadArgType implements IntfString {
                 @Override method() {}
                 @Override void methodTakesObject(arg) {}
@@ -150,8 +141,8 @@ final class OverrideTest {
                 }
             }
 
-            one = new C(index:1)
-            two = new C(index:2)
+            def one = new C(index:1)
+            def two = new C(index:2)
             assert one < two
         '''
     }
@@ -162,14 +153,13 @@ final class OverrideTest {
             interface I<T> {
                int handle(long n, T t)
             }
-
             class C implements I<String> {
                 int handle(long n, String something) {
                     1
                 }
             }
 
-            c = new C()
+            def c = new C()
             assert c.handle(5,"hi") == 1
         '''
     }
@@ -196,7 +186,6 @@ final class OverrideTest {
             class C<T> {
                 void proc(T t) {}
             }
-
             class D extends C<String> {
                 @Override
                 void proc(String s) {}
@@ -237,7 +226,7 @@ final class OverrideTest {
                 }
             }
         '''
-        assert err =~ /name clash: m\(I<java.lang.String>\) in class 'C' and m\(I<java.lang.Object>\) in interface 'I' have the same erasure, yet neither overrides the other./
+        assert err.message.contains("name clash: m(I<java.lang.String>) in class 'C' and m(I<java.lang.Object>) in interface 'I' have the same erasure, yet neither overrides the other")
     }
 
     @Test
@@ -246,13 +235,12 @@ final class OverrideTest {
             interface TemplatedInterface {
                 String execute(Map argument)
             }
-
             class TemplatedInterfaceImplementation implements TemplatedInterface {
                 @Override
                 String execute(Map argument = [:]) {
-                    return null
                 }
             }
+
             new TemplatedInterfaceImplementation()
         '''
     }
@@ -263,33 +251,14 @@ final class OverrideTest {
             interface TemplatedInterface {
                 String execute(Map argument)
             }
-
             class TemplatedInterfaceImplementation implements TemplatedInterface {
                 @Override
                 String execute(Map argument, String foo = null) {
                     return foo
                 }
             }
+
             new TemplatedInterfaceImplementation()
         '''
-    }
-
-    // GROOVY-11548
-    @Test
-    void testDefaultMethodDoesNotOverride() {
-        for (kind in ['def', 'final', 'public']) {
-            assertScript """
-                class A {
-                    $kind func() { 'A' }
-                }
-                interface B {
-                    default func() { 'B' }
-                }
-                class C extends A implements B {
-                }
-
-                assert new C().func() == 'A'
-            """
-        }
     }
 }

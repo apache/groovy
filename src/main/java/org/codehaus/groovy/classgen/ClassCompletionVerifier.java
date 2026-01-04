@@ -409,7 +409,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
         // Verifier: checks weaker access of cn's methods against abstract or default interface methods
 
-        // GROOVY-11758: check for non-public final super class method that shadows an interface method
+        // GROOVY-11758, GROOVY-11830: check for non-public super class method that hides public method
         Map<String, MethodNode> interfaceMethods = ClassNodeUtils.getDeclaredMethodsFromInterfaces(cn);
         if (!interfaceMethods.isEmpty()) {
             for (MethodNode cnMethod : cn.getMethods()) {
@@ -419,8 +419,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             }
             for (MethodNode publicMethod : interfaceMethods.values()) {
                 for (MethodNode scMethod : cn.getSuperClass().getMethods(publicMethod.getName())) {
-                    if (scMethod.isFinal() && !scMethod.isPublic() && !scMethod.isPrivate() && !scMethod.isStatic()
-                            && ParameterUtils.parametersEqual(scMethod.getParameters(), publicMethod.getParameters())) {
+                    if (!scMethod.isPublic() && !scMethod.isStatic() && (!scMethod.isPrivate() || !publicMethod.isDefault())
+                                && ParameterUtils.parametersEqual(scMethod.getParameters(), publicMethod.getParameters())) {
                         addWeakerAccessError2(cn, scMethod, publicMethod);
                     }
                 }
@@ -446,7 +446,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private void addWeakerAccessError2(final ClassNode cn, final MethodNode scMethod, final MethodNode ifMethod) {
         StringBuilder msg = new StringBuilder();
-        msg.append("inherited final method ");
+        msg.append(scMethod.isPrivate() ? "private" : (scMethod.isProtected() ? "protected" : "package-private"));
+        msg.append(" method ");
         msg.append(scMethod.getName());
         appendParamsDescription(scMethod.getParameters(), msg);
         msg.append(" from ");

@@ -18,56 +18,84 @@
  */
 package groovy
 
-import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
-final class InterfaceTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-    void testGenericsInInterfaceMembers() {
-        // control
-        shouldCompile '''
+final class InterfaceTest {
+
+    @Test
+    void testGenericsInInterfaceMembers1() {
+        assertScript '''
             interface I {
                 def <T>                      T m1(T x)
                 def <U extends CharSequence> U m2(U x)
                 def <V, W>                   V m3(W x)
                 def <N extends Number>    void m4(   )
             }
+
+            print 'works'
         '''
-        // erroneous
-        shouldNotCompile 'interface I { def <?> m(x) }'
-        shouldNotCompile 'interface I { def <? extends CharSequence> m(x) }'
+    }
+
+    @Test
+    void testGenericsInInterfaceMembers2() {
+        shouldFail '''
+            interface I {
+                def <?> m(x)
+            }
+        '''
+    }
+
+    @Test
+    void testGenericsInInterfaceMembers3() {
+        shouldFail '''
+            interface I {
+                def <? extends CharSequence> m(x)
+            }
+        '''
     }
 
     // GROOVY-5106
+    @Test
     void testReImplementsInterface1() {
         def err = shouldFail '''
             interface I<T> {}
             interface J<T> extends I<T> {}
             class X implements I<String>, J<Number> {}
         '''
-        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> (via X) and I<java.lang.Number> (via J)')
+        assert err.message.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> (via X) and I<java.lang.Number> (via J)')
     }
 
     // GROOVY-5106
+    @Test
     void testReImplementsInterface2() {
         def err = shouldFail '''
             interface I<T> {}
             class X implements I<Number> {}
             class Y extends X implements I<String> {}
         '''
-        assert err.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> (via Y) and I<java.lang.Number> (via X)')
+        assert err.message.contains('The interface I cannot be implemented more than once with different arguments: I<java.lang.String> (via Y) and I<java.lang.Number> (via X)')
     }
 
     // GROOVY-11707
+    @Test
     void testReImplementsInterface3() {
-        shouldCompile '''
+        assertScript '''
             abstract class A implements Comparable {
             }
             abstract class B extends A implements Comparable {
             }
+
+            print 'works'
         '''
     }
 
     // GROOVY-11736
+    @Test
     void testReImplementsInterface4() {
         def err = shouldFail '''
             abstract class A implements Comparable<Object> {
@@ -75,10 +103,11 @@ final class InterfaceTest extends CompilableTestSupport {
             abstract class B extends A implements Comparable {
             }
         '''
-        assert err.contains('The interface Comparable cannot be implemented more than once with different arguments: java.lang.Comparable (via B) and java.lang.Comparable<java.lang.Object> (via A)')
+        assert err.message.contains('The interface Comparable cannot be implemented more than once with different arguments: java.lang.Comparable (via B) and java.lang.Comparable<java.lang.Object> (via A)')
     }
 
     // GROOVY-11803
+    @Test
     void testDefaultInterfaceMethod() {
         assertScript '''
             interface Foo {
@@ -93,25 +122,48 @@ final class InterfaceTest extends CompilableTestSupport {
 
             assert new Baz().barSize() == 3
         '''
-        for (kind in ['default','private','static']) {
-            assertScript """
-                interface Foo {
-                    default int barSize() {
-                        return bar.size()
-                    }
-                    $kind String getBar() {
-                        return 'fizzbuzz'
-                    }
-                }
-                class Baz implements Foo {
-                }
+    }
 
-                assert new Baz().barSize() == 8
-            """
-        }
+    // GROOVY-11803
+    @ParameterizedTest
+    @ValueSource(strings=['default','private','static'])
+    void testDefaultInterfaceMethod2(String kind) {
+        assertScript """
+            interface Foo {
+                default int barSize() {
+                    return bar.size()
+                }
+                $kind String getBar() {
+                    return 'fizzbuzz'
+                }
+            }
+            class Baz implements Foo {
+            }
+
+            assert new Baz().barSize() == 8
+        """
+    }
+
+    // GROOVY-11548
+    @ParameterizedTest
+    @ValueSource(strings=['def','final','public'])
+    void testDefaultInterfaceMethod3(String spec) {
+        assertScript """
+            interface A {
+                default m() { 'A' }
+            }
+            class B {
+                $spec m() { 'B' }
+            }
+            class C extends B implements A {
+            }
+
+            assert new C().m() == 'B'
+        """
     }
 
     // GROOVY-10060
+    @Test
     void testPrivateInterfaceMethod() {
         assertScript '''
             interface Foo {
@@ -120,18 +172,15 @@ final class InterfaceTest extends CompilableTestSupport {
                 default baz() { hello('Foo#baz') }
                 private hello(where) { "hello from $where"}
             }
-
             class Parent {
                 public bar() {
                     hello 'Parent#bar'
                 }
                 private hello(where) { "howdy from $where"}
             }
-
             class Impl1 extends Parent implements Foo {
                 def baz() { 'hi from Impl1#baz' }
             }
-
             class Impl2 extends Parent implements Foo {
             }
 
@@ -147,6 +196,7 @@ final class InterfaceTest extends CompilableTestSupport {
     }
 
     // GROOVY-11237
+    @Test
     void testPublicStaticInterfaceMethod() {
         assertScript '''import static groovy.test.GroovyAssert.shouldFail
             interface Foo {
@@ -168,23 +218,27 @@ final class InterfaceTest extends CompilableTestSupport {
         '''
     }
 
-    // GROOVY-11758
-    void testSuperClassFinalMethodAndInterfaceMethod() {
-        def err = shouldNotCompile '''
+    // GROOVY-11758, GROOVY-11830
+    @ParameterizedTest
+    @ValueSource(strings=['protected final','protected','@PackageScope','private'])
+    void testSuperClassAndInterfaceMethod(String spec) {
+        def err = shouldFail """import groovy.transform.*
             interface A {
                 def m()
             }
             class B {
-                protected final m() {
-                }
+                $spec def m() { 'B' }
             }
             class C extends B implements A {
             }
-        '''
-        assert err =~ /inherited final method m\(\) from B cannot shadow the public method in A/
+        """
+        spec = spec.split()[0]
+        if (spec == '@PackageScope') spec = 'package-private'
+        assert err =~ /$spec method m\(\) from B cannot shadow the public method in A/
     }
 
     // GROOVY-11753
+    @Test
     void testSuperClassCovariantOfParameterizedInterface() {
         assertScript '''
             class A extends B {
