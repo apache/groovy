@@ -412,9 +412,71 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkMethodsForWeakerAccess(final ClassNode cn) {
-        for (MethodNode method : cn.getMethods()) {
-            checkMethodForWeakerAccessPrivileges(method, cn);
+        for (MethodNode cnMethod : cn.getMethods()) {
+            if (!cnMethod.isPublic() && !cnMethod.isStatic()) {
+            sc: for (MethodNode scMethod : cn.getSuperClass().getMethods(cnMethod.getName())) {
+                    if (!scMethod.isStatic()
+                            && !scMethod.isPrivate()
+                            && (cnMethod.isPrivate()
+                            || (cnMethod.isProtected() && scMethod.isPublic())
+                            || (cnMethod.isPackageScope() && (scMethod.isPublic() || scMethod.isProtected())))) {
+                        if (ParameterUtils.parametersEqual(cnMethod.getParameters(), scMethod.getParameters())) {
+                            addWeakerAccessError(cn, cnMethod, scMethod);
+                            break sc;
+                        }
+                    }
+                }
+            }
         }
+
+        // Verifier: checks weaker access of cn's methods against abstract or default interface methods
+
+        // GROOVY-11758, GROOVY-11830: check for non-public super class method that hides public method
+        Map<String, MethodNode> interfaceMethods = ClassNodeUtils.getDeclaredMethodsFromInterfaces(cn);
+        if (!interfaceMethods.isEmpty()) {
+            for (MethodNode cnMethod : cn.getMethods()) {
+                if (!cnMethod.isPrivate() && !cnMethod.isStatic()) {
+                    interfaceMethods.remove(cnMethod.getTypeDescriptor());
+                }
+            }
+            for (MethodNode publicMethod : interfaceMethods.values()) {
+                for (MethodNode scMethod : cn.getSuperClass().getMethods(publicMethod.getName())) {
+                    if (!scMethod.isPublic() && !scMethod.isStatic() && (!scMethod.isPrivate() || !publicMethod.isDefault())
+                                && ParameterUtils.parametersEqual(scMethod.getParameters(), publicMethod.getParameters())) {
+                        addWeakerAccessError2(cn, scMethod, publicMethod);
+                    }
+                }
+            }
+        }
+    }
+
+    private void addWeakerAccessError(final ClassNode cn, final MethodNode cnMethod, final MethodNode scMethod) {
+        StringBuilder msg = new StringBuilder();
+        msg.append(cnMethod.getName());
+        appendParamsDescription(cnMethod.getParameters(), msg);
+        msg.append(" in ");
+        msg.append(cn.getName());
+        msg.append(" cannot override ");
+        msg.append(scMethod.getName());
+        msg.append(" in ");
+        msg.append(scMethod.getDeclaringClass().getName());
+        msg.append("; attempting to assign weaker access privileges; was ");
+        msg.append(scMethod.isPublic() ? "public" : (scMethod.isProtected() ? "protected" : "package-private"));
+
+        addError(msg.toString(), cnMethod);
+    }
+
+    private void addWeakerAccessError2(final ClassNode cn, final MethodNode scMethod, final MethodNode ifMethod) {
+        StringBuilder msg = new StringBuilder();
+        msg.append(scMethod.isPrivate() ? "private" : (scMethod.isProtected() ? "protected" : "package-private"));
+        msg.append(" method ");
+        msg.append(scMethod.getName());
+        appendParamsDescription(scMethod.getParameters(), msg);
+        msg.append(" from ");
+        msg.append(scMethod.getDeclaringClass().getName());
+        msg.append(" cannot shadow the public method in ");
+        msg.append(ifMethod.getDeclaringClass().getName());
+        addError(msg.toString(), cn);
     }
 
     private void checkMethodsForOverridingFinal(final ClassNode cn) {
@@ -459,22 +521,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         msg.append(')');
     }
 
-    private void addWeakerAccessError(final ClassNode cn, final MethodNode method, final Parameter[] parameters, final MethodNode superMethod) {
-        StringBuilder msg = new StringBuilder();
-        msg.append(method.getName());
-        appendParamsDescription(parameters, msg);
-        msg.append(" in ");
-        msg.append(cn.getName());
-        msg.append(" cannot override ");
-        msg.append(superMethod.getName());
-        msg.append(" in ");
-        msg.append(superMethod.getDeclaringClass().getName());
-        msg.append("; attempting to assign weaker access privileges; was ");
-        msg.append(superMethod.isPublic() ? "public" : (superMethod.isProtected() ? "protected" : "package-private"));
-
-        addError(msg.toString(), method);
-    }
-
     @Override
     public void visitMethod(final MethodNode node) {
         inConstructor = false;
@@ -511,21 +557,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         // but we might have varargs set from @Delegate of varargs method, so skip generated
         if (!AnnotatedNodeUtils.isGenerated(node)) {
             checkMethodForModifier(node, isTransient(node.getModifiers()), "transient");
-        }
-    }
-
-    private void checkMethodForWeakerAccessPrivileges(final MethodNode mn, final ClassNode cn) {
-        if (mn.isPublic()) return;
-        Parameter[] params = mn.getParameters();
-        for (MethodNode superMethod : cn.getSuperClass().getMethods(mn.getName())) {
-            Parameter[] superParams = superMethod.getParameters();
-            if (!ParameterUtils.parametersEqual(params, superParams)) continue;
-            if ((mn.isPrivate() && !superMethod.isPrivate())
-                    || (mn.isProtected() && !superMethod.isProtected() && !superMethod.isPackageScope() && !superMethod.isPrivate())
-                    || (!mn.isPrivate() && !mn.isProtected() && !mn.isPublic() && (superMethod.isPublic() || superMethod.isProtected()))) {
-                addWeakerAccessError(cn, mn, params, superMethod);
-                return;
-            }
         }
     }
 

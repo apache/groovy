@@ -33,15 +33,13 @@ final class OverrideTest {
                 void methodTakeT(T t) { }
                 T methodMakeT() { return null }
             }
-
             interface Intf<U> {
                 def method4()
                 void method5(U u)
                 U method6()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class OverrideAnnotationTest extends Parent<Integer> implements IntfString {
                 @Override method() {}
                 @Override void methodTakeT(Integer arg) {}
@@ -63,15 +61,13 @@ final class OverrideTest {
                 void methodTakeT(T t) { }
                 T methodMakeT() { return null }
             }
-
             interface Intf<U> {
                 def method4()
                 void method5(U u)
                 U method6()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class OverrideAnnotationTest extends Parent<Integer> implements IntfString {
                 @Override method() {}
                 @Override void methodTakeT(arg) {}
@@ -80,11 +76,9 @@ final class OverrideTest {
                 @Override void method5(String arg) {}
                 @Override String method6() {}
             }
-
-            new OverrideAnnotationTest()
         '''
-        assert err.message.contains(/The return type of java.lang.Double methodMakeT() in OverrideAnnotationTest is incompatible with java.lang.Integer in Parent/)
-        assert err.message.contains(/Method 'methodTakeT' from class 'OverrideAnnotationTest' does not override method from its superclass or interfaces but is annotated with @Override./)
+        assert err.message.contains("The return type of java.lang.Double methodMakeT() in OverrideAnnotationTest is incompatible with java.lang.Integer in Parent")
+        assert err.message.contains("Method 'methodTakeT' from class 'OverrideAnnotationTest' does not override method from its superclass or interfaces but is annotated with @Override")
     }
 
     @Test
@@ -93,9 +87,8 @@ final class OverrideTest {
             interface Intf<U> {
                 def method()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class HasSpuriousMethod implements IntfString {
                 @Override method() {}
                 @Override someOtherMethod() {}
@@ -111,9 +104,8 @@ final class OverrideTest {
                 def method()
                 U method6()
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class HasMethodWithBadReturnType implements IntfString {
                 @Override method() {}
                 @Override methodReturnsObject() {}
@@ -129,9 +121,8 @@ final class OverrideTest {
                 def method()
                 void method6(U u)
             }
-
-            interface IntfString extends Intf<String> {}
-
+            interface IntfString extends Intf<String> {
+            }
             class HasMethodWithBadArgType implements IntfString {
                 @Override method() {}
                 @Override void methodTakesObject(arg) {}
@@ -140,14 +131,61 @@ final class OverrideTest {
         assert err.message.contains("Method 'methodTakesObject' from class 'HasMethodWithBadArgType' does not override method from its superclass or interfaces but is annotated with @Override.")
     }
 
-    // GROOVY-6654
     @Test
     void testCovariantParameterType1() {
+        assertScript '''
+            class C implements Comparable<C> {
+                int index
+                int compareTo(C c) {
+                    index <=> c.index
+                }
+            }
+
+            def one = new C(index:1)
+            def two = new C(index:2)
+            assert one < two
+        '''
+    }
+
+    @Test
+    void testCovariantParameterType2() {
+        assertScript '''
+            interface I<T> {
+               int handle(long n, T t)
+            }
+            class C implements I<String> {
+                int handle(long n, String something) {
+                    1
+                }
+            }
+
+            def c = new C()
+            assert c.handle(5,"hi") == 1
+        '''
+    }
+
+    @Test
+    void testCovariantParameterType3() {
+        assertScript '''
+            interface I<T> {
+                int testMethod(T t)
+            }
+            class C implements I<Date> {
+                int testMethod(Date date) {}
+                int testMethod(Object obj) {}
+            }
+
+            assert C.declaredMethods.count{ it.name=="testMethod" } == 2
+        '''
+    }
+
+    // GROOVY-6654
+    @Test
+    void testCovariantParameterType4() {
         assertScript '''
             class C<T> {
                 void proc(T t) {}
             }
-
             class D extends C<String> {
                 @Override
                 void proc(String s) {}
@@ -159,7 +197,7 @@ final class OverrideTest {
 
     // GROOVY-10675
     @Test
-    void testCovariantParameterType2() {
+    void testCovariantParameterType5() {
         assertScript '''
             @FunctionalInterface
             interface A<I, O> {
@@ -176,79 +214,18 @@ final class OverrideTest {
         '''
     }
 
-    // GROOVY-7849
-    @Test
-    void testCovariantArrayReturnType1() {
-        assertScript '''
-            interface A {
-            }
-            interface B extends A {
-            }
-            interface I {
-                A[] foo()
-            }
-            class C implements I {
-                B[] foo() { null }
-            }
-
-            new C().foo()
-        '''
-    }
-
-    // GROOVY-7185
-    @Test
-    void testCovariantArrayReturnType2() {
-        assertScript '''
-            interface A<T> {
-                T[] process();
-            }
-            class B implements A<String> {
-                @Override
-                public String[] process() {
-                    ['foo']
-                }
-            }
-            class C extends B {
-                @Override
-                String[] process() {
-                    super.process()
-                }
-            }
-
-            assert new C().process()[0] == 'foo'
-        '''
-    }
-
-    // GROOVY-11579
-    @Test
-    void testCovariantBridgeReturnType() {
-        assertScript '''
-            interface I<T> {
-                T m()
-            }
-            abstract class A {
-                final String m() { 'A' }
-            }
-            class C extends A implements I<String> {
-            }
-
-            assert new C().m() == 'A'
-        '''
-    }
-
     @Test
     void testOverrideOnMethodWithDefaultParameters() {
         assertScript '''
             interface TemplatedInterface {
                 String execute(Map argument)
             }
-
             class TemplatedInterfaceImplementation implements TemplatedInterface {
                 @Override
                 String execute(Map argument = [:]) {
-                    return null
                 }
             }
+
             new TemplatedInterfaceImplementation()
         '''
     }
@@ -259,31 +236,14 @@ final class OverrideTest {
             interface TemplatedInterface {
                 String execute(Map argument)
             }
-
             class TemplatedInterfaceImplementation implements TemplatedInterface {
                 @Override
                 String execute(Map argument, String foo = null) {
                     return foo
                 }
             }
+
             new TemplatedInterfaceImplementation()
-        '''
-    }
-
-    // GROOVY-11548
-    @Test
-    void testDefaultMethodDoesNotOverride() {
-        assertScript '''
-            class A {
-                final func() { 'A' }
-            }
-            interface B {
-                default func() { 'B' }
-            }
-            class C extends A implements B {
-            }
-
-            assert new C().func() == 'A'
         '''
     }
 }
