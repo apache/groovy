@@ -66,6 +66,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.TYPE_PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
 import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.makeCached;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
@@ -268,8 +269,12 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
             }
         }
         if (!typeUseAnnos.isEmpty()) {
-            while (targetType.isArray()) targetType = targetType.getComponentType();
-            targetType.addTypeAnnotations(typeUseAnnos);
+            // GROOVY-11831: void is not a valid target for TYPE_USE annotations (skip for void methods, not constructors)
+            boolean isVoidMethod = (keepTarget == METHOD_TARGET && isPrimitiveVoid(targetType));
+            if (!isVoidMethod) {
+                while (targetType.isArray()) targetType = targetType.getComponentType();
+                targetType.addTypeAnnotations(typeUseAnnos);
+            }
             for (AnnotationNode anno : typeUseAnnos) {
                 if (!anno.isTargetAllowed(keepTarget)) {
                     mixed.remove(anno);
