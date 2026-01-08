@@ -52,7 +52,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_MANDATED;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
@@ -204,26 +204,26 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
             addFieldInit(thisParameter, thisField, block);
         }
 
-        // for each shared variable, add a Reference field
-        for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext();) {
-            Variable var = it.next();
-
-            VariableExpression ve = new VariableExpression(var);
-            ve.setClosureSharedVariable(true);
-            ve.setUseReferenceDirectly(true);
+        // for each shared variable, add a field
+        for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext(); ) { Variable var = it.next();
+            var ve = new VariableExpression(var);
+//            ve.setClosureSharedVariable(true);
+//            ve.setUseReferenceDirectly(true);
             expressions.add(pCount, ve);
 
-            ClassNode referenceType = ClassHelper.REFERENCE_TYPE.getPlainNodeReference();
-            Parameter p = new Parameter(referenceType, "p" + pCount);
+//            ClassNode referenceType = ClassHelper.REFERENCE_TYPE.getPlainNodeReference();
+//            Parameter p = new Parameter(referenceType, "p" + pCount);
+            var p = new Parameter(var.getType(), "p" + pCount);
             p.setOriginType(var.getOriginType());
             parameters.add(pCount++, p);
 
-            VariableExpression initial = new VariableExpression(p);
+            var initial = new VariableExpression(p);
             initial.setSynthetic(true);
-            initial.setUseReferenceDirectly(true);
-            FieldNode pField = innerClass.addFieldFirst(ve.getName(), ACC_PUBLIC | ACC_SYNTHETIC, referenceType, initial);
-            pField.setHolder(true);
-            pField.setOriginType(ClassHelper.getWrapper(var.getOriginType()));
+//            initial.setUseReferenceDirectly(true);
+            FieldNode pField = innerClass.addFieldFirst(ve.getName(), ACC_PRIVATE | ACC_SYNTHETIC, p.getType(), initial);
+//            pField.setOriginType(ClassHelper.getWrapper(p.getOriginType()));
+//            pField.setOriginType(p.getOriginType());
+//            pField.setHolder(true);
         }
 
         innerClass.addConstructor(ACC_SYNTHETIC, parameters.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, block);

@@ -48,17 +48,17 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
     @Override
     protected void assertScript(final String script) throws Exception {
-        CompilationUnit unit = null
-        GroovyShell shell = new GroovyShell(new GroovyClassLoader() {
+        def array = new CompilationUnit[1]
+        def shell = new GroovyShell(new GroovyClassLoader() {
             @Override
             protected CompilationUnit createCompilationUnit(final CompilerConfiguration config, final CodeSource source) {
-                unit = super.createCompilationUnit(config, source)
+                array[0] = super.createCompilationUnit(config, source)
             }
         })
         try {
             shell.evaluate(script, testClassName)
         } finally {
-            if (unit != null) {
+            if (array[0] instanceof CompilationUnit unit) {
                 try {
                     def firstClass = unit.classes.find { it.name == unit.firstClassNode.name }
                     sequence = extractSequence(firstClass.bytes, extractionOptions)
@@ -114,34 +114,36 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
 
     InstructionSequence extractSequence(final byte[] bytes, final Map options = [method: 'run']) {
         def out = new StringBuilderWriter()
-        def tcv
-        tcv = new TraceClassVisitor(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {
+        Reference<TraceClassVisitor> ref = []
+        def tcv = new TraceClassVisitor(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {
+            List getText() { ref.p.text }
             @Override
             MethodVisitor visitMethod(final int access, final String name, final String desc, final String signature, final String... exceptions) {
                 if (options.method == name) {
-                    // last in "tcv.p.text" is a list that will be filled by "super.visit"
-                    tcv.p.text.add(tcv.p.text.size() - 2, '--BEGIN--\n')
+                    // last in "text" is a list that will be filled by "super.visit"
+                    text.add(text.size() - 2, '--BEGIN--\n')
                     try {
                         super.visitMethod(access, name, desc, signature, exceptions)
                     } finally {
-                        tcv.p.text.add('--END--\n')
+                        text.add('--END--\n')
                     }
                 }
             }
             @Override
             FieldVisitor visitField(final int access, final String name, final String desc, final String signature, final Object value) {
                 if (options.field == name) {
-                    // last in "tcv.p.text" is a list that will be filled by "super.visit"
-                    tcv.p.text.add(tcv.p.text.size() - 2, '--BEGIN--\n')
+                    // last in "text" is a list that will be filled by "super.visit"
+                    text.add(text.size() - 2, '--BEGIN--\n')
                     try {
                         super.visitField(access, name, desc, signature, value)
                     } finally {
-                        tcv.p.text.add('--END--\n')
+                        text.add('--END--\n')
                     }
                 }
             }
         }, new PrintWriter(out))
 
+        ref.set(tcv)
         new ClassReader(bytes).accept(tcv, 0)
         new InstructionSequence(instructions: out.toString().split('\n')*.trim())
     }
