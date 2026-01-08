@@ -37,6 +37,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     TemporaryFolder temporaryFolder
     Preferences testPreferences
+    private static final String BASE_DIR = new File(Console.class.classLoader.getResource('groovy/console/ui/ConsoleIcon.png').toURI()).parentFile.parentFile.parentFile.parent
 
     @Override
     protected void setUp() throws Exception {
@@ -195,12 +196,11 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
         testInEDT {
             def swing = new SwingBuilder()
             final String ICON_PATH = '/groovy/console/ui/ConsoleIcon.png'
-            String baseDir = new File('src/main/resources').absolutePath
 
             String resource = ICON_PATH
             GString gresource = "${ICON_PATH}"
-            String path = baseDir + resource
-            String gpath = "$baseDir$resource"
+            String path = BASE_DIR + resource
+            String gpath = "$BASE_DIR$resource"
             File file = new File(path)
             String relativeResource = file.name
             String grelativeResource = "$file.name"
@@ -295,7 +295,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             assert swing.ii.description == '<none>'
 
 
-
             swing.imageIcon(gresource, class: Console, id: 'ii')
             assert swing.ii != null
 
@@ -339,7 +338,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             swing.imageIcon(file: grelativeResource, description: '<none>', class: Console, id: 'ii')
             assert swing.ii != null
             assert swing.ii.description == '<none>'
-
         }
     }
 
@@ -430,6 +428,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
                 console.inputArea.text = 'throw new Exception()'
                 console.runScript(new EventObject([:]))
+                sleep 20
 
                 def doc = console.outputArea.document
                 assert doc.getText(0, doc.length) =~ /java.lang.Exception/
@@ -544,18 +543,21 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
                 console.inputArea.text = 'println "test1"'
                 console.runScript()
+                sleep 20
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert '' == doc2.getText(0, doc2.length).trim()
 
                 console2.inputArea.text = 'println "test2"'
                 console2.runScript()
+                sleep 20
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert 'test2' == doc2.getText(0, doc2.length).trim()
 
                 console2.inputArea.text = 'System.err.println "error2"'
                 console2.runScript()
+                sleep 20
 
                 assert 'test1' == doc.getText(0, doc.length).trim()
                 assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
@@ -591,11 +593,15 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
                 console.inputEditor.textEditor.text = scriptSource
 
                 console.runScript(new EventObject([:]))
+                sleep 20
+
                 assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
 
                 console.outputArea.text = ''
                 console.runScript(new EventObject([:]))
+                sleep 20
+
                 assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
                 assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
             } finally {
