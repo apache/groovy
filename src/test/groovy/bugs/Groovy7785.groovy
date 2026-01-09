@@ -18,13 +18,13 @@
  */
 package bugs
 
-import groovy.test.NotYetImplemented
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable
 
 import static groovy.test.GroovyAssert.assertScript
 
+@DisabledIfEnvironmentVariable(named = "CI", matches = ".*") // runs locally but fails in CI, more investigation needed
 final class Groovy7785 {
-    @NotYetImplemented // run well locally but fails in CI, more investigation needed
     @Test
     void testManyChainedMethodCalls() {
         assertScript '''
