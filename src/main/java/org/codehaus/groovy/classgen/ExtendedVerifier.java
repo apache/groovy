@@ -66,6 +66,7 @@ import static org.codehaus.groovy.ast.AnnotationNode.TYPE_PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
 import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
+import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
 import static org.codehaus.groovy.ast.ClassHelper.makeCached;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
@@ -219,7 +220,9 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         visitAnnotations(node, METHOD_TARGET);
         visitTypeAnnotations(node.getReturnType());
         visitConstructorOrMethod(node);
-        extractTypeUseAnnotations(node.getAnnotations(), node.getReturnType(), METHOD_TARGET);
+        if (!isPrimitiveVoid(node.getReturnType())) {
+            extractTypeUseAnnotations(node.getAnnotations(), node.getReturnType(), METHOD_TARGET);
+        }
     }
 
     //--------------------------------------------------------------------------
