@@ -29,7 +29,7 @@ were renamed due to split package remediation ([GROOVY-10542](https://issues.apa
 The latest released version in the Groovy 2.5.x stream is recommended where JDK7 is required.
 
 | Version  | Supported          | Comment                              |
-|----------| ------------------ |--------------------------------------|
+|----------|--------------------|--------------------------------------|
 | <= 2.4.x | :x:                |                                      |
 | 2.5.x    | :white_check_mark: | Reduced releases on this branch (\*) |
 | 3.0.x    | :white_check_mark: |                                      |
