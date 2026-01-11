@@ -385,8 +385,7 @@ public class IndyInterface {
     }
 
     private static <T> T doWithCallSite(MutableCallSite callSite, Object[] arguments, BiFunction<? super CacheableCallSite, ? super Object, ? extends T> f) {
-        if (callSite instanceof CacheableCallSite) {
-            CacheableCallSite cacheableCallSite = (CacheableCallSite) callSite;
+        if (callSite instanceof CacheableCallSite cacheableCallSite) {
             Object receiver = arguments[0];
 
             if (null == receiver) receiver = NullObject.getNullObject();

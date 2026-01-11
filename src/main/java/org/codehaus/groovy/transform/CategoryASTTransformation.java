@@ -143,8 +143,7 @@ public class CategoryASTTransformation implements ASTTransformation {
 
             @Override
             public Expression transform(final Expression expression) {
-                if (expression instanceof VariableExpression) {
-                    VariableExpression ve = (VariableExpression) expression;
+                if (expression instanceof VariableExpression ve) {
                     if (ve.isThisExpression()) {
                         Expression thisExpression = createThisExpression();
                         thisExpression.setSourcePosition(ve);
@@ -154,16 +153,14 @@ public class CategoryASTTransformation implements ASTTransformation {
                         pe.setSourcePosition(ve);
                         return pe;
                     }
-                } else if (expression instanceof MethodCallExpression) {
-                    MethodCallExpression mce = (MethodCallExpression) expression;
+                } else if (expression instanceof MethodCallExpression mce) {
                     if (inClosure && mce.isImplicitThis() && isThisExpression(mce.getObjectExpression())) {
                         // GROOVY-6510: preserve implicit-this semantics
                         mce.setArguments(transform(mce.getArguments()));
                         mce.setMethod(transform(mce.getMethod()));
                         return mce;
                     }
-                } else if (expression instanceof ClosureExpression) {
-                    ClosureExpression ce = (ClosureExpression) expression;
+                } else if (expression instanceof ClosureExpression ce) {
                     addVariablesToStack(hasImplicitParameter(ce) ? params(param(ClassHelper.OBJECT_TYPE, "it")) : getParametersSafe(ce));
                     ce.getVariableScope().putReferencedLocalVariable(selfParameter.get());
                     addAll(varStack.getLast(), "owner", "delegate", "thisObject");

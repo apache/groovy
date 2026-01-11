@@ -664,8 +664,7 @@ public class WideningCategories {
         if (source.isDerivedFrom(target) || source.implementsInterface(target)) {
             return true;
         }
-        if (target instanceof LowestUpperBoundClassNode) {
-            LowestUpperBoundClassNode lub = (LowestUpperBoundClassNode) target;
+        if (target instanceof LowestUpperBoundClassNode lub) {
             if (implementsInterfaceOrSubclassOf(source, lub.getSuperClass())) {
                 return true;
             }

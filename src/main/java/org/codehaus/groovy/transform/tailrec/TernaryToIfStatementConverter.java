@@ -32,9 +32,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 public class TernaryToIfStatementConverter {
     @SuppressWarnings("Instanceof")
     public Statement convert(ReturnStatement statementWithInnerTernaryExpression) {
-        if (!(statementWithInnerTernaryExpression.getExpression() instanceof TernaryExpression))
+        if (!(statementWithInnerTernaryExpression.getExpression() instanceof TernaryExpression ternary))
             return statementWithInnerTernaryExpression;
-        TernaryExpression ternary = (TernaryExpression) statementWithInnerTernaryExpression.getExpression();
         return ifElseS(ternary.getBooleanExpression(), returnS(ternary.getTrueExpression()), returnS(ternary.getFalseExpression()));
     }
 }

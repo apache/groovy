@@ -720,8 +720,7 @@ public class AsmClassGenerator extends ClassGenerator {
         } else if (type.isArray()) {
             AnnotationVisitor avl = av.visitArray(null);
             ClassNode componentType = type.getComponentType();
-            if (exp instanceof ListExpression) {
-                ListExpression list = (ListExpression) exp;
+            if (exp instanceof ListExpression list) {
                 for (Expression lExp : list.getExpressions()) {
                     visitAnnotationDefaultExpression(avl, componentType, lExp);
                 }
@@ -1813,8 +1812,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // init declarations
         for (int i = 0; i < size; i += 1) {
             Expression expr = expressions.get(i);
-            if (expr instanceof DeclarationExpression) {
-                DeclarationExpression de = (DeclarationExpression) expr;
+            if (expr instanceof DeclarationExpression de) {
                 BinaryExpression be = new BinaryExpression(
                         de.getLeftExpression(),
                         de.getOperation(),
@@ -2317,8 +2315,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public static int argumentSize(final Expression arguments) {
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tupleExpression = (TupleExpression) arguments;
+        if (arguments instanceof TupleExpression tupleExpression) {
             int size = tupleExpression.getExpressions().size();
             return size;
         }

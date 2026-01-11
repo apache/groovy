@@ -390,17 +390,15 @@ public class ModuleNode extends ASTNode {
         List<FieldNode> fields = new ArrayList<>();
         // check for uncontained statements (excluding decl statements)
         for (Statement statement : statementBlock.getStatements()) {
-            if (!(statement instanceof ExpressionStatement)) {
+            if (!(statement instanceof ExpressionStatement es)) {
                 hasUncontainedStatements = true;
                 break;
             }
-            ExpressionStatement es = (ExpressionStatement) statement;
             Expression expression = es.getExpression();
-            if (!(expression instanceof DeclarationExpression)) {
+            if (!(expression instanceof DeclarationExpression de)) {
                 hasUncontainedStatements = true;
                 break;
             }
-            DeclarationExpression de = (DeclarationExpression) expression;
             if (de.isMultipleAssignmentDeclaration()) {
                 List<Expression> variables = de.getTupleExpression().getExpressions();
                 if (!(de.getRightExpression() instanceof ListExpression)) break;

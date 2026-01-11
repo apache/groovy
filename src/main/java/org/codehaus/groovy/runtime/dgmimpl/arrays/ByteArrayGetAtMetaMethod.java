@@ -59,9 +59,8 @@ public class ByteArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
         @Override
         public Object call(Object receiver, Object arg) throws Throwable {
-            if ((receiver instanceof byte[] && arg instanceof Integer)
+            if ((receiver instanceof byte[] objects && arg instanceof Integer)
                     && checkPojoMetaClass()) {
-                final byte[] objects = (byte[]) receiver;
                 return objects[normaliseIndex((Integer) arg, objects.length)];
             } else
                 return super.call(receiver, arg);

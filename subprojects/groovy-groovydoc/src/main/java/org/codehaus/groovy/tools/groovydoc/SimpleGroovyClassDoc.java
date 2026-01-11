@@ -273,8 +273,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         while (nextClass != null && nextClass.getSuperclass() != null && !Object.class.equals(nextClass)) {
             nextClass = nextClass.getSuperclass();
             GroovyClassDoc nextDoc = new ExternalGroovyClassDoc(nextClass);
-            if (prev instanceof SimpleGroovyClassDoc) {
-                SimpleGroovyClassDoc parent = (SimpleGroovyClassDoc) prev;
+            if (prev instanceof SimpleGroovyClassDoc parent) {
                 parent.setSuperClass(nextDoc);
             }
             result.add(0, nextDoc);
@@ -296,8 +295,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             for (GroovyClassDoc t : temp) {
                 if (t instanceof SimpleGroovyClassDoc) {
                     next.addAll(((SimpleGroovyClassDoc)t).getParentInterfaces());
-                } else if (t instanceof ExternalGroovyClassDoc) {
-                    ExternalGroovyClassDoc d = (ExternalGroovyClassDoc) t;
+                } else if (t instanceof ExternalGroovyClassDoc d) {
                     next.addAll(getJavaInterfaces(d));
                 }
             }
@@ -400,10 +398,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
         // resolve property types
         for (GroovyFieldDoc property : properties)  {
-            if (property instanceof SimpleGroovyFieldDoc)  {
-                SimpleGroovyFieldDoc simpleGroovyFieldDoc = (SimpleGroovyFieldDoc) property;
-                if (simpleGroovyFieldDoc.type() instanceof SimpleGroovyType)  {
-                    SimpleGroovyType simpleGroovyType = (SimpleGroovyType) simpleGroovyFieldDoc.type();
+            if (property instanceof SimpleGroovyFieldDoc simpleGroovyFieldDoc)  {
+                if (simpleGroovyFieldDoc.type() instanceof SimpleGroovyType simpleGroovyType)  {
                     GroovyClassDoc propertyTypeClassDoc = resolveClass(rootDoc, simpleGroovyType.qualifiedTypeName());
                     if (propertyTypeClassDoc != null)  {
                         simpleGroovyFieldDoc.setType(propertyTypeClassDoc);
@@ -633,8 +629,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
             if (slashIndex > 0) {
                 String outerName = name.substring(0, slashIndex);
                 GroovyClassDoc gcd = resolveClass(rootDoc, outerName);
-                if (gcd instanceof ExternalGroovyClassDoc) {
-                    ExternalGroovyClassDoc egcd = (ExternalGroovyClassDoc) gcd;
+                if (gcd instanceof ExternalGroovyClassDoc egcd) {
                     String innerName = name.substring(slashIndex+1);
                     Class outerClass = egcd.externalClass();
                     for (Class inner : outerClass.getDeclaredClasses()) {

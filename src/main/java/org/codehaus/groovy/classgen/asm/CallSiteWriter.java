@@ -106,8 +106,7 @@ public class CallSiteWriter {
     public CallSiteWriter(WriterController wc) {
         this.controller = wc;
         ClassNode node = controller.getClassNode();
-        if(node instanceof InterfaceHelperClassNode) {
-            InterfaceHelperClassNode ihcn = (InterfaceHelperClassNode) node;
+        if(node instanceof InterfaceHelperClassNode ihcn) {
             callSites.addAll(ihcn.getCallSites());
         }
     }

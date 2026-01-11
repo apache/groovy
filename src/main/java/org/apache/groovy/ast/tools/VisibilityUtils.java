@@ -94,8 +94,7 @@ public class VisibilityUtils {
     }
 
     private static Visibility getVisibility(final Expression e) {
-        if (e instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) e;
+        if (e instanceof PropertyExpression pe) {
             if (pe.getObjectExpression() instanceof ClassExpression && "groovy.transform.options.Visibility".equals(pe.getObjectExpression().getText())) {
                 return Visibility.valueOf(pe.getPropertyAsString());
             }

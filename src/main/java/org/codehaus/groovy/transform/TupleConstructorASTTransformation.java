@@ -130,8 +130,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean includeFields = memberHasValue(anno, "includeFields", Boolean.TRUE);
             boolean includeProperties = !memberHasValue(anno, "includeProperties", Boolean.FALSE);
@@ -389,16 +388,13 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
     private static DefaultsMode maybeDefaultsMode(final AnnotationNode node, final String name) {
         if (node != null) {
             final Expression member = node.getMember(name);
-            if (member instanceof ConstantExpression) {
-                ConstantExpression ce = (ConstantExpression) member;
+            if (member instanceof ConstantExpression ce) {
                 if (ce.getValue() instanceof DefaultsMode) {
                     return (DefaultsMode) ce.getValue();
                 }
-            } else if (member instanceof PropertyExpression) {
-                PropertyExpression prop = (PropertyExpression) member;
+            } else if (member instanceof PropertyExpression prop) {
                 Expression oe = prop.getObjectExpression();
-                if (oe instanceof ClassExpression) {
-                    ClassExpression ce = (ClassExpression) oe;
+                if (oe instanceof ClassExpression ce) {
                     if ("groovy.transform.DefaultsMode".equals(ce.getType().getName())) {
                         return DefaultsMode.valueOf(prop.getPropertyAsString());
                     }

@@ -246,8 +246,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
             if ( isStatic(mp.getModifiers())) continue; // GROOVY-7682
 
             // skip write-only property: see File
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+            if (mp instanceof MetaBeanProperty mbp) {
                 if (mbp.getField() == null && mbp.getGetter() == null) continue;
             }
 

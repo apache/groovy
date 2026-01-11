@@ -1345,8 +1345,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         @Override
         public Object invokeMethod(String name, Object obj) {
-            if (obj instanceof Object[]) {
-                Object[] args = (Object[]) obj;
+            if (obj instanceof Object[] args) {
                 if (args.length == 1 && args[0] instanceof Closure closure) {
                     registerSubclassInstanceMethod(name, klazz, closure);
                     return null;
@@ -1385,7 +1384,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 return getMetaClass().invokeMethod(this, name, obj);
             }
             catch (MissingMethodException mme) {
-                if (obj instanceof Object[]) {
+                if (obj instanceof Object[] args) {
                     if (STATIC_QUALIFIER.equals(name)) {
                         final StaticDefiningClosure staticDef = new StaticDefiningClosure();
                         var c = (Closure<?>) ((Object[]) obj)[0];
@@ -1394,7 +1393,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                         c.call((Object)null);
                         return null;
                     }
-                    Object[] args = (Object[]) obj;
                     if (args.length == 1 && args[0] instanceof Closure) {
                         registerInstanceMethod(name, (Closure<?>) args[0]);
                     } else if (args.length == 2 && args[0] instanceof Class clazz && args[1] instanceof Closure closure)
@@ -1433,8 +1431,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         @Override
         public Object invokeMethod(String name, Object obj) {
-            if (obj instanceof Object[]) {
-                final Object[] args = (Object[]) obj;
+            if (obj instanceof Object[] args) {
                 if (args.length == 1 && args[0] instanceof Closure closure) {
                     registerStaticMethod(name, closure);
                     return null;

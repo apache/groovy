@@ -85,8 +85,7 @@ public class ValueList extends AbstractList<Object> {
         for (Object obj : list) {
             if (obj == null) continue;
 
-            if (obj instanceof Value) {
-                Value value = (Value) obj;
+            if (obj instanceof Value value) {
                 if (value.isContainer()) {
                     chopContainer(value);
                 } else {
@@ -98,11 +97,9 @@ public class ValueList extends AbstractList<Object> {
 
     private void chopIfNeeded(Object object) {
         if (lazyChop) {
-            if (object instanceof LazyValueMap) {
-                LazyValueMap m = (LazyValueMap) object;
+            if (object instanceof LazyValueMap m) {
                 m.chopMap();
-            } else if (object instanceof ValueList) {
-                ValueList list = (ValueList) object;
+            } else if (object instanceof ValueList list) {
                 list.chopList();
             }
         }
@@ -110,11 +107,9 @@ public class ValueList extends AbstractList<Object> {
 
     static void chopContainer(Value value) {
         Object obj = value.toValue();
-        if (obj instanceof LazyValueMap) {
-            LazyValueMap map = (LazyValueMap) obj;
+        if (obj instanceof LazyValueMap map) {
             map.chopMap();
-        } else if (obj instanceof ValueList) {
-            ValueList list = (ValueList) obj;
+        } else if (obj instanceof ValueList list) {
             list.chopList();
         }
     }

@@ -101,7 +101,7 @@ public class GroovydocManager {
             return;
         }
 
-        if (!(node instanceof AnnotatedNode)) {
+        if (!(node instanceof AnnotatedNode annotatedNode)) {
             return;
         }
 
@@ -109,7 +109,6 @@ public class GroovydocManager {
             return;
         }
 
-        AnnotatedNode annotatedNode = (AnnotatedNode) node;
         AnnotationNode annotationNode = new AnnotationNode(ClassHelper.make(Groovydoc.class));
         annotationNode.addMember(VALUE, new ConstantExpression(docCommentNodeText));
         annotatedNode.addAnnotation(annotationNode);

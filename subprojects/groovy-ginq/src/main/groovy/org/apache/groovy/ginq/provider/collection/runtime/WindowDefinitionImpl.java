@@ -112,8 +112,7 @@ class WindowDefinitionImpl<T, U extends Comparable<? super U>> implements Window
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof WindowDefinitionImpl)) return false;
-        WindowDefinitionImpl<?, ?> that = (WindowDefinitionImpl<?, ?>) o;
+        if (!(o instanceof WindowDefinitionImpl<?, ?> that)) return false;
         return Objects.equals(id, that.id);
     }
 

@@ -158,8 +158,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
         if (expr == null) {
             return null;
         }
-        if (expr instanceof ListExpression) {
-            final ListExpression listExpression = (ListExpression) expr;
+        if (expr instanceof ListExpression listExpression) {
             if (isUndefinedMarkerList(listExpression)) {
                 return null;
             }
@@ -199,8 +198,7 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
         if (expr == null) {
             return null;
         }
-        if (expr instanceof ListExpression) {
-            final ListExpression listExpression = (ListExpression) expr;
+        if (expr instanceof ListExpression listExpression) {
             if (isUndefinedMarkerList(listExpression)) {
                 return null;
             }

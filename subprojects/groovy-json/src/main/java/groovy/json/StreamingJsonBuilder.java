@@ -463,8 +463,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
                         call(name);
                     break;
                     case 1:
-                        if (arr[0] instanceof Closure) {
-                            final Closure callable = (Closure) arr[0];
+                        if (arr[0] instanceof Closure callable) {
                             call(name, callable);
                         } else if (arr[0] instanceof Map) {
                             final Map<String, Map> map = Collections.singletonMap(name, (Map) arr[0]);
@@ -482,8 +481,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
                             final Closure callable = (Closure) second;
                             call(name, (Map)first, callable);
                         }
-                        else if(isClosure && first instanceof Iterable) {
-                            final Iterable coll = (Iterable) first;
+                        else if(isClosure && first instanceof Iterable coll) {
                             final Closure callable = (Closure) second;
                             call(name, coll, callable);
                         }

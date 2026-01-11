@@ -522,8 +522,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 }
             }
 
-            if (args instanceof Object[] && ((Object[]) args).length == 1 && ((Object[]) args)[0] instanceof Closure) {
-                Object[] argsArray = (Object[]) args;
+            if (args instanceof Object[] argsArray && ((Object[]) args).length == 1 && ((Object[]) args)[0] instanceof Closure) {
                 String methodName = METHOD_ALIASES.get(name);
                 if (methodName == null) {
                     return InvokerHelper.invokeMethod(extension, name, args);

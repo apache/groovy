@@ -112,8 +112,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             cNode.addInterface(CLONEABLE_TYPE);
             boolean includeFields = memberHasValue(anno, "includeFields", true);
@@ -313,11 +312,9 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
 
     private static AutoCloneStyle getStyle(AnnotationNode node, String name) {
         final Expression member = node.getMember(name);
-        if (member instanceof PropertyExpression) {
-            PropertyExpression prop = (PropertyExpression) member;
+        if (member instanceof PropertyExpression prop) {
             Expression oe = prop.getObjectExpression();
-            if (oe instanceof ClassExpression) {
-                ClassExpression ce = (ClassExpression) oe;
+            if (oe instanceof ClassExpression ce) {
                 if ("groovy.transform.AutoCloneStyle".equals(ce.getType().getName())) {
                     return AutoCloneStyle.valueOf(prop.getPropertyAsString());
                 }

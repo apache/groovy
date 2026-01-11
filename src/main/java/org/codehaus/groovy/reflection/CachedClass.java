@@ -388,11 +388,9 @@ public class CachedClass {
     }
 
     private void addSubclassExpandos(List<MetaMethod> arr, MetaClass mc) {
-        if (mc instanceof ExpandoMetaClass) {
-            ExpandoMetaClass emc = (ExpandoMetaClass) mc;
+        if (mc instanceof ExpandoMetaClass emc) {
             for (Object mm : emc.getExpandoSubclassMethods()) {
-                if (mm instanceof MetaMethod) {
-                    MetaMethod method = (MetaMethod) mm;
+                if (mm instanceof MetaMethod method) {
                     if (method.getDeclaringClass() == this)
                       arr.add(method);
                 }

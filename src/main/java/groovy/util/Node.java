@@ -77,8 +77,7 @@ public class Node implements Serializable, Cloneable {
     @Override
     public Object clone() {
         Object newValue = value;
-        if (value instanceof NodeList) {
-            NodeList nodes = (NodeList) value;
+        if (value instanceof NodeList nodes) {
             newValue = nodes.clone();
         }
         return new Node(null, name, new HashMap(attributes), newValue);
@@ -368,8 +367,7 @@ public class Node implements Serializable, Cloneable {
         if (value instanceof NodeList) {
             return ((NodeList) value).text();
         }
-        if (value instanceof Collection) {
-            Collection coll = (Collection) value;
+        if (value instanceof Collection coll) {
             String previousText = null;
             StringBuilder sb = null;
             for (Object child : coll) {
@@ -524,8 +522,7 @@ public class Node implements Serializable, Cloneable {
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
         for (Object child : children()) {
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
+            if (child instanceof Node childNode) {
                 Object childNodeName = childNode.name();
                 if (name.matches(childNodeName)) {
                     answer.add(childNode);
@@ -544,11 +541,9 @@ public class Node implements Serializable, Cloneable {
     private NodeList getByName(String name) {
         NodeList answer = new NodeList();
         for (Object child : children()) {
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
+            if (child instanceof Node childNode) {
                 Object childNodeName = childNode.name();
-                if (childNodeName instanceof QName) {
-                    QName qn = (QName) childNodeName;
+                if (childNodeName instanceof QName qn) {
                     if (qn.matches(name)) {
                         answer.add(childNode);
                     }
@@ -590,8 +585,7 @@ public class Node implements Serializable, Cloneable {
         List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
+            if (child instanceof Node childNode) {
                 List children = childNode.depthFirstRest(preorder);
                 if (preorder) answer.add(childNode);
                 if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) answer.addAll(children);
@@ -644,8 +638,7 @@ public class Node implements Serializable, Cloneable {
     private void depthFirstRest(boolean preorder, int level, Closure c) {
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
+            if (child instanceof Node childNode) {
                 if (preorder) callClosureForNode(c, childNode, level);
                 childNode.depthFirstRest(preorder, level + 1, c);
                 if (!preorder) callClosureForNode(c, childNode, level);
@@ -692,8 +685,7 @@ public class Node implements Serializable, Cloneable {
                 } else {
                     stack.push(child);
                 }
-                if (child instanceof Node) {
-                    Node childNode = (Node) child;
+                if (child instanceof Node childNode) {
                     List children = childNode.getDirectChildren();
                     if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(preorder ? children : DefaultGroovyMethods.reverse(children));
                 }
@@ -748,8 +740,7 @@ public class Node implements Serializable, Cloneable {
                 } else {
                     stack.push(new Tuple2<Object, Integer>(child, level));
                 }
-                if (child instanceof Node) {
-                    Node childNode = (Node) child;
+                if (child instanceof Node childNode) {
                     List children = childNode.getDirectChildren();
                     if (children.size() > 1 || (children.size() == 1 && !(children.get(0) instanceof String))) nextLevelChildren.addAll(preorder ? children : DefaultGroovyMethods.reverse(children));
                 }
@@ -783,8 +774,7 @@ public class Node implements Serializable, Cloneable {
         List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
+            if (child instanceof Node childNode) {
                 answer.add(childNode);
             } else if (child instanceof String) {
                 answer.add(child);

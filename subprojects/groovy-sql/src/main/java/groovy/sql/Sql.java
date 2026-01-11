@@ -4334,8 +4334,7 @@ public class Sql implements AutoCloseable {
         int i = 1;
         ParameterMetaData metaData = getParameterMetaDataSafe(statement);
         if (metaData != null) {
-            if (metaData.getParameterCount() == 0 && params.size() == 1 && params.get(0) instanceof Map) {
-                Map paramsMap = (Map) params.get(0);
+            if (metaData.getParameterCount() == 0 && params.size() == 1 && params.get(0) instanceof Map paramsMap) {
                 if (paramsMap.isEmpty()) return;
             }
             // GROOVY-8174: we'd like stricter checking here but many drivers currently in use just aren't consistent enough, so we log
@@ -4369,8 +4368,7 @@ public class Sql implements AutoCloseable {
     protected void setObject(PreparedStatement statement, int i, Object value)
             throws SQLException {
         if (value instanceof InParameter || value instanceof OutParameter) {
-            if (value instanceof InParameter) {
-                InParameter in = (InParameter) value;
+            if (value instanceof InParameter in) {
                 Object val = in.getValue();
                 if (null == val) {
                     statement.setNull(i, in.getType());
@@ -4378,9 +4376,8 @@ public class Sql implements AutoCloseable {
                     statement.setObject(i, val, in.getType());
                 }
             }
-            if (value instanceof OutParameter) {
+            if (value instanceof OutParameter out) {
                 try {
-                    OutParameter out = (OutParameter) value;
                     ((CallableStatement) statement).registerOutParameter(i, out.getType());
                 } catch (ClassCastException e) {
                     throw new SQLException("Cannot register out parameter.");

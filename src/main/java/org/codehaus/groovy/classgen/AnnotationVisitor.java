@@ -107,11 +107,9 @@ public class AnnotationVisitor {
     }
 
     private boolean validateEnumConstant(final Expression exp) {
-        if (exp instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) exp;
+        if (exp instanceof PropertyExpression pe) {
             String name = pe.getPropertyAsString();
-            if (pe.getObjectExpression() instanceof ClassExpression && name != null) {
-                ClassExpression ce = (ClassExpression) pe.getObjectExpression();
+            if (pe.getObjectExpression() instanceof ClassExpression ce && name != null) {
                 ClassNode type = ce.getType();
                 if (type.isEnum()) {
                     boolean ok = false;
@@ -163,8 +161,7 @@ public class AnnotationVisitor {
     protected void visitExpression(final String attrName, final Expression valueExpr, final ClassNode attrType) {
         if (attrType.isArray()) {
             // check needed as @Test(attr = {"elem"}) passes through the parser
-            if (valueExpr instanceof ListExpression) {
-                ListExpression le = (ListExpression) valueExpr;
+            if (valueExpr instanceof ListExpression le) {
                 visitListExpression(attrName, le, attrType.getComponentType());
             } else if (valueExpr instanceof ClosureExpression) {
                 addError("Annotation list attributes must use Groovy notation [el1, el2]", valueExpr);
@@ -275,11 +272,10 @@ public class AnnotationVisitor {
 
     public void checkCircularReference(final ClassNode searchClass, final ClassNode attrType, final Expression startExp) {
         if (!isValidAnnotationClass(attrType)) return;
-        if (!(startExp instanceof AnnotationConstantExpression)) {
+        if (!(startExp instanceof AnnotationConstantExpression ace)) {
             addError("Found '" + startExp.getText() + "' when expecting an Annotation Constant", startExp);
             return;
         }
-        AnnotationConstantExpression ace = (AnnotationConstantExpression) startExp;
         AnnotationNode annotationNode = (AnnotationNode) ace.getValue();
         if (annotationNode.getClassNode().equals(searchClass)) {
             addError("Circular reference discovered in " + searchClass.getName(), startExp);

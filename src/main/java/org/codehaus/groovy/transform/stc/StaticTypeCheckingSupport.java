@@ -785,8 +785,7 @@ public abstract class StaticTypeCheckingSupport {
             valueExpr = ((CastExpression) valueExpr).getExpression();
         if (valueExpr instanceof ConstantExpression) {
             Object value = ((ConstantExpression) valueExpr).getValue();
-            if (!(value instanceof Number)) return true; // null or ...
-            Number number = (Number) value;
+            if (!(value instanceof Number number)) return true; // null or ...
             switch (leftIndex) {
               case 0: // byte
                 switch (rightIndex) {

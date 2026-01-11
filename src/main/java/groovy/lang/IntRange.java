@@ -429,8 +429,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
         if (value instanceof Integer) {
             return (Integer) value >= getFrom() && (Integer) value <= getTo();
         }
-        if (value instanceof BigInteger) {
-            final BigInteger bigint = (BigInteger) value;
+        if (value instanceof BigInteger bigint) {
             return bigint.compareTo(BigInteger.valueOf(getFrom())) >= 0 &&
                     bigint.compareTo(BigInteger.valueOf(getTo())) <= 0;
         }
@@ -439,8 +438,7 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer>, S
 
     @Override
     public boolean containsAll(Collection other) {
-        if (other instanceof IntRange) {
-            final IntRange range = (IntRange) other;
+        if (other instanceof IntRange range) {
             return getFrom() <= range.getFrom() && range.getTo() <= getTo();
         }
         return super.containsAll(other);

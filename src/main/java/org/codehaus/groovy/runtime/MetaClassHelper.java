@@ -910,8 +910,7 @@ public class MetaClassHelper {
 
     private static Class getClassWithNullAndWrapper(Object arg) {
         if (arg == null) return null;
-        if (arg instanceof Wrapper) {
-            Wrapper w = (Wrapper) arg;
+        if (arg instanceof Wrapper w) {
             return w.getType();
         }
         return arg.getClass();

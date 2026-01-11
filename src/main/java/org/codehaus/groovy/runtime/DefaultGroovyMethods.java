@@ -1399,8 +1399,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         catch (GroovyCastException e) {
             MetaClass mc = InvokerHelper.getMetaClass(obj);
-            if (mc instanceof ExpandoMetaClass) {
-                ExpandoMetaClass emc = (ExpandoMetaClass) mc;
+            if (mc instanceof ExpandoMetaClass emc) {
                 Object mixedIn = emc.castToMixedType(obj, type);
                 if (mixedIn != null)
                     return (T) mixedIn;
@@ -2912,8 +2911,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     @SuppressWarnings({"rawtypes"})
     private static Map.Entry getEntry(Object entrySpec) {
-        if (entrySpec instanceof List) {
-            var list = (List) entrySpec;
+        if (entrySpec instanceof List list) {
             // def (key, value) == list
             Object key = list.isEmpty() ? null : list.get(0);
             Object value = list.size() <= 1 ? null : list.get(1);
@@ -3292,8 +3290,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static <C extends Collection> C collectNested(Iterable self, C collector, Closure transform) {
         for (Object element : self) {
-            if (element instanceof Collection) {
-                Collection c = (Collection) element;
+            if (element instanceof Collection c) {
                 collector.add(collectNested(c, createSimilarCollection(collector, c.size()), transform));
             } else {
                 collector.add(transform.call(element));
@@ -4013,9 +4010,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void downto(BigInteger self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
-        if (to instanceof BigDecimal) {
+        if (to instanceof BigDecimal to1) {
             final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
-            final BigDecimal to1 = (BigDecimal) to;
             final BigDecimal selfD = new BigDecimal(self);
             if (selfD.compareTo(to1) >= 0) {
                 for (BigDecimal i = selfD; i.compareTo(to1) >= 0; i = i.subtract(one)) {
@@ -4026,9 +4022,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         MessageFormat.format(
                                 "The argument ({0}) to downto() cannot be greater than the value ({1}) it''s called on.",
                                 to, self));
-        } else if (to instanceof BigInteger) {
+        } else if (to instanceof BigInteger to1) {
             final BigInteger one = BigInteger.valueOf(1);
-            final BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
@@ -4070,8 +4065,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void downto(BigDecimal self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         final BigDecimal one = BigDecimal.valueOf(10, 1);  // Quick way to get "1.0".
-        if (to instanceof BigDecimal) {
-            BigDecimal to1 = (BigDecimal) to;
+        if (to instanceof BigDecimal to1) {
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
@@ -6703,8 +6697,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         continue outer;
                     } else {
                         Object flattened = next;
-                        if (flattened instanceof Optional && flattenOptionals) {
-                            Optional<?> opt = (Optional<?>) flattened;
+                        if (flattened instanceof Optional<?> opt && flattenOptionals) {
                             if (opt.isPresent()) {
                                 flattened = opt.get();
                             } else {
@@ -6713,8 +6706,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         }
                         if (flattenUsing != null) {
                             Object transformed = flattenUsing.call(new Object[]{flattened});
-                            if (transformed instanceof Optional && flattenOptionals) {
-                                Optional<?> opt = (Optional<?>) transformed;
+                            if (transformed instanceof Optional<?> opt && flattenOptionals) {
                                 if (opt.isPresent()) {
                                     transformed = opt.get();
                                 } else {
@@ -6723,8 +6715,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                             }
                             // handle some simple recursive cases to avoid infinite loop
                             boolean returnedSelf = (flattened == transformed);
-                            if (!returnedSelf && transformed instanceof Collection) {
-                                Collection<?> c = (Collection<?>) transformed;
+                            if (!returnedSelf && transformed instanceof Collection<?> c) {
                                 if (!c.isEmpty() && head(c) == transformed) {
                                     returnedSelf = true;
                                 }
@@ -8373,8 +8364,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             throw new NoSuchElementException("Cannot access init() for an empty Iterable");
         }
         Collection<T> result;
-        if (self instanceof Collection) {
-            Collection<T> selfCol = (Collection<T>) self;
+        if (self instanceof Collection<T> selfCol) {
             result = createSimilarCollection(selfCol, selfCol.size() - 1);
         } else {
             result = new ArrayList<>();
@@ -9449,8 +9439,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     @SuppressWarnings("unchecked")
     public static boolean isCase(Class caseValue, Object switchValue) {
-        if (switchValue instanceof Class) {
-            Class val = (Class) switchValue;
+        if (switchValue instanceof Class val) {
             return caseValue.isAssignableFrom(val);
         }
         return caseValue.isInstance(switchValue);
@@ -12403,8 +12392,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         RangeInfo info = subListBorders(self.size(), range);
         List sublist = self.subList(info.from, info.to);
         sublist.clear();
-        if (value instanceof Collection) {
-            Collection col = (Collection) value;
+        if (value instanceof Collection col) {
             if (col.isEmpty()) return;
             sublist.addAll(col);
         } else {
@@ -17273,10 +17261,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void upto(BigInteger self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
-        if (to instanceof BigDecimal) {
+        if (to instanceof BigDecimal to1) {
             final BigDecimal one = BigDecimal.valueOf(10, 1);
             BigDecimal self1 = new BigDecimal(self);
-            BigDecimal to1 = (BigDecimal) to;
             if (self1.compareTo(to1) <= 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
@@ -17286,9 +17273,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         MessageFormat.format(
                                 "The argument ({0}) to upto() cannot be less than the value ({1}) it''s called on.",
                                 to, self));
-        } else if (to instanceof BigInteger) {
+        } else if (to instanceof BigInteger to1) {
             final BigInteger one = BigInteger.valueOf(1);
-            BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
@@ -17326,8 +17312,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void upto(BigDecimal self, Number to, @ClosureParams(FirstParam.class) Closure closure) {
         final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
-        if (to instanceof BigDecimal) {
-            BigDecimal to1 = (BigDecimal) to;
+        if (to instanceof BigDecimal to1) {
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);

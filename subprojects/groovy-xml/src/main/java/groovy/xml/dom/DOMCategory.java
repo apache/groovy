@@ -327,8 +327,7 @@ public class DOMCategory {
     public static Element appendNode(Element self, Object name, String value) {
         Document doc = self.getOwnerDocument();
         Element newChild;
-        if (name instanceof QName) {
-            QName qn = (QName) name;
+        if (name instanceof QName qn) {
             newChild = doc.createElementNS(qn.getNamespaceURI(), qn.getQualifiedName());
         } else {
             newChild = doc.createElement(name.toString());

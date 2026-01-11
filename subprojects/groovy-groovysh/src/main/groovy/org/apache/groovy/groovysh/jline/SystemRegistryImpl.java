@@ -269,8 +269,7 @@ public class SystemRegistryImpl implements SystemRegistry {
     }
 
     public void addCompleter(Completer completer) {
-        if (completer instanceof SystemCompleter) {
-            SystemCompleter sc = (SystemCompleter) completer;
+        if (completer instanceof SystemCompleter sc) {
             if (sc.isCompiled()) {
                 customAggregateCompleter.getCompleters().add(sc);
             } else {

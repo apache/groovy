@@ -277,8 +277,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                         continue;
                     }
 
-                    if (exp instanceof ClassExpression && exp.getType() instanceof EnumConstantClassNode) {
-                        InnerClassNode inner = (InnerClassNode) exp.getType();
+                    if (exp instanceof ClassExpression && exp.getType() instanceof EnumConstantClassNode inner) {
                         for (MethodNode methodNode : enumClass.getMethods()) {
                             if (!methodNode.isAbstract()) continue;
                             MethodNode enumConstMethod = inner.getMethod(methodNode.getName(), methodNode.getParameters());

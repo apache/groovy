@@ -80,8 +80,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
 
         String value = getMemberStringValue(node, "value");
 
-        if (parent instanceof MethodNode) {
-            MethodNode mNode = (MethodNode) parent;
+        if (parent instanceof MethodNode mNode) {
             ClassNode cNode = mNode.getDeclaringClass();
             FieldNode lockExpr = determineLock(value, cNode, mNode.isStatic(), myTypeName);
             if (lockExpr == null) return;

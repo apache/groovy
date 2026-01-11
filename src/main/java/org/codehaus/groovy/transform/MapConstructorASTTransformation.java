@@ -93,8 +93,7 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean includeFields = memberHasValue(anno, "includeFields", Boolean.TRUE);
             boolean includeProperties = !memberHasValue(anno, "includeProperties", Boolean.FALSE);
@@ -227,11 +226,9 @@ public class MapConstructorASTTransformation extends AbstractASTTransformation i
         return new ClassCodeExpressionTransformer() {
             @Override
             public Expression transform(final Expression exp) {
-                if (exp instanceof ClosureExpression) {
-                    ClosureExpression ce = (ClosureExpression) exp;
+                if (exp instanceof ClosureExpression ce) {
                     ce.getCode().visit(this);
-                } else if (exp instanceof VariableExpression) {
-                    VariableExpression ve = (VariableExpression) exp;
+                } else if (exp instanceof VariableExpression ve) {
                     if ("args".equals(ve.getName()) && ve.getAccessedVariable() instanceof DynamicVariable) {
                         VariableExpression newVe = varX(new Parameter(MAP_TYPE, "args"));
                         newVe.setSourcePosition(ve);

@@ -111,8 +111,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         AnnotationNode node = (AnnotationNode) nodes[0];
         DelegateDescription delegate = null;
 
-        if (parent instanceof FieldNode) {
-            FieldNode fieldNode = (FieldNode) parent;
+        if (parent instanceof FieldNode fieldNode) {
 
             delegate = new DelegateDescription();
             delegate.delegate = fieldNode;
@@ -122,8 +121,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
             delegate.owner = fieldNode.getOwner();
             delegate.getOp = varX(fieldNode);
             delegate.origin = "field";
-        } else if (parent instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode) parent;
+        } else if (parent instanceof MethodNode methodNode) {
 
             delegate = new DelegateDescription();
             delegate.delegate = methodNode;

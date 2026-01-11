@@ -67,8 +67,7 @@ public class RecordCompletionASTTransformation extends AbstractASTTransformation
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             MethodNode copyWith = cNode.getMethod("copyWith", params(param(MAP_TYPE, "namedArgs")));
             if (copyWith != null) {
                 adjustCopyWith(cNode, copyWith);
@@ -88,8 +87,7 @@ public class RecordCompletionASTTransformation extends AbstractASTTransformation
         ConstructorNode consNode = cNode.getDeclaredConstructor(params.toArray(Parameter.EMPTY_ARRAY));
         if (consNode != null) {
             Statement code = copyWith.getCode();
-            if (code instanceof ReturnStatement) {
-                ReturnStatement rs = (ReturnStatement) code;
+            if (code instanceof ReturnStatement rs) {
                 Expression expr = rs.getExpression();
                 if (expr instanceof ConstructorCallExpression) {
                     expr.putNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET, consNode);

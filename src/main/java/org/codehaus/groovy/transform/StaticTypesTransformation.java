@@ -54,15 +54,13 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
         Expression extensions = members.get("extensions");
         AnnotatedNode node = (AnnotatedNode) nodes[1];
         StaticTypeCheckingVisitor visitor = null;
-        if (node instanceof ClassNode) {
-            ClassNode classNode = (ClassNode) node;
+        if (node instanceof ClassNode classNode) {
             visitor = newVisitor(source, classNode);
             visitor.setCompilationUnit(compilationUnit);
             addTypeCheckingExtensions(visitor, extensions);
             visitor.initialize();
             visitor.visitClass(classNode);
-        } else if (node instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode) node;
+        } else if (node instanceof MethodNode methodNode) {
             visitor = newVisitor(source, methodNode.getDeclaringClass());
             visitor.setCompilationUnit(compilationUnit);
             addTypeCheckingExtensions(visitor, extensions);
@@ -85,8 +83,7 @@ public class StaticTypesTransformation implements ASTTransformation, Compilation
                     extensions.getText(),
                     compilationUnit
             ));
-        } else if (extensions instanceof ListExpression) {
-            ListExpression list = (ListExpression) extensions;
+        } else if (extensions instanceof ListExpression list) {
             for (Expression ext : list.getExpressions()) {
                 addTypeCheckingExtensions(visitor, ext);
             }

@@ -1391,8 +1391,7 @@ public class Groovyc extends MatchingTask {
         }
 
         ClassLoader loader = getClass().getClassLoader();
-        if (loader instanceof AntClassLoader) {
-            @SuppressWarnings("resource") AntClassLoader antLoader = (AntClassLoader) loader;
+        if (loader instanceof @SuppressWarnings("resource") AntClassLoader antLoader) {
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator, -1);
             List<String> classpath = configuration.getClasspath();
             /*

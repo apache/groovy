@@ -393,8 +393,7 @@ public class GroovyMain {
             System.err.println(e);
             return false;
         } catch (Throwable e) {
-            if (e instanceof InvokerInvocationException) {
-                InvokerInvocationException iie = (InvokerInvocationException) e;
+            if (e instanceof InvokerInvocationException iie) {
                 e = iie.getCause();
             }
             System.err.println("Caught: " + e);

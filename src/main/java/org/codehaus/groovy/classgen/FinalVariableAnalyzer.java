@@ -179,8 +179,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         if (leftExpression instanceof Variable) {
             boolean uninitialized = isDeclaration && rightExpression instanceof EmptyExpression;
             recordAssignment((Variable) leftExpression, isDeclaration, uninitialized, false, expression);
-        } else if (leftExpression instanceof TupleExpression) {
-            TupleExpression te = (TupleExpression) leftExpression;
+        } else if (leftExpression instanceof TupleExpression te) {
             for (Expression next : te.getExpressions()) {
                 if (next instanceof Variable) {
                     recordAssignment((Variable) next, isDeclaration, false, false, next);
@@ -190,13 +189,11 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
     }
 
     private void recordFinalVars(Expression leftExpression) {
-        if (leftExpression instanceof VariableExpression) {
-            VariableExpression var = (VariableExpression) leftExpression;
+        if (leftExpression instanceof VariableExpression var) {
             if (Modifier.isFinal(var.getModifiers())) {
                 declaredFinalVariables.add(var);
             }
-        } else if (leftExpression instanceof TupleExpression) {
-            TupleExpression te = (TupleExpression) leftExpression;
+        } else if (leftExpression instanceof TupleExpression te) {
             for (Expression next : te.getExpressions()) {
                 if (next instanceof Variable) {
                     declaredFinalVariables.add((Variable) next);
@@ -329,8 +326,7 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
             for (int j = i; !done; j++) {
                 Statement branch = branches.get(j);
                 Statement block = branch; // default branch
-                if (branch instanceof CaseStatement) {
-                    CaseStatement caseS = (CaseStatement) branch;
+                if (branch instanceof CaseStatement caseS) {
                     block = caseS.getCode();
                     caseS.getExpression().visit(this);
                 }
@@ -444,10 +440,9 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         if (block instanceof ReturnStatement || block instanceof  ThrowStatement) {
             return true;
         }
-        if (!(block instanceof BlockStatement)) {
+        if (!(block instanceof BlockStatement bs)) {
             return false;
         }
-        BlockStatement bs = (BlockStatement) block;
         if (bs.getStatements().isEmpty()) {
             return false;
         }

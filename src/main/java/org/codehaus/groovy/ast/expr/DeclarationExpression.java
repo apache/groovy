@@ -79,8 +79,7 @@ public class DeclarationExpression extends BinaryExpression {
     private static void check(final Expression left) {
         if (left instanceof VariableExpression) {
             // all good
-        } else if (left instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) left;
+        } else if (left instanceof TupleExpression tuple) {
             if (tuple.getExpressions().isEmpty())
                 throw new GroovyBugError("one element required for left side");
         } else {
@@ -152,8 +151,7 @@ public class DeclarationExpression extends BinaryExpression {
             TupleExpression t = getTupleExpression();
             text.append("def (");
             for (Expression e : t.getExpressions()) {
-                if (e instanceof VariableExpression) {
-                    VariableExpression v = (VariableExpression) e;
+                if (e instanceof VariableExpression v) {
                     if (!v.isDynamicTyped()) {
                         text.append(formatTypeName(v.getOriginType())).append(' ');
                     }

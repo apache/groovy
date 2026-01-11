@@ -27,11 +27,11 @@ import java.lang.reflect.Modifier;
 
 /**
  * This exception is thrown if the runtime is unable to select
- * a method. This class builds the exception text when calling 
+ * a method. This class builds the exception text when calling
  * getMessage.
  * <p>
  * <b>Note:</b> This exception as for internal use only!
- * 
+ *
  * @since Groovy 1.1
  */
 public class MethodSelectionException extends GroovyRuntimeException {
@@ -82,8 +82,7 @@ public class MethodSelectionException extends GroovyRuntimeException {
         for (int i = 0; i < methods.size; i++) {
             buffer.append("\n  ");
             Object methodOrConstructor = methods.get(i);
-            if (methodOrConstructor instanceof MetaMethod) {
-                MetaMethod method = (MetaMethod) methodOrConstructor;
+            if (methodOrConstructor instanceof MetaMethod method) {
                 buffer.append(Modifier.toString(method.getModifiers()));
                 buffer.append(" ").append(method.getReturnType().getName());
                 buffer.append(" ").append(method.getDeclaringClass().getName());

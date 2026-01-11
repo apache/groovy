@@ -49,17 +49,14 @@ public class FinalASTTransformation extends AbstractASTTransformation {
         if (!MY_TYPE.equals(node.getClassNode())) return;
         if (memberHasValue(node, "enabled", false)) return;
 
-        if (candidate instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) candidate;
+        if (candidate instanceof ClassNode cNode) {
             checkModifiers(this, cNode.getModifiers(), cNode, "type " + cNode.getName());
             cNode.setModifiers(cNode.getModifiers() | ACC_FINAL);
-        } else if (candidate instanceof MethodNode) {
+        } else if (candidate instanceof MethodNode mNode) {
             // includes constructors
-            MethodNode mNode = (MethodNode) candidate;
             checkModifiers(this, mNode.getModifiers(), mNode, "method or constructor " + mNode.getName());
             mNode.setModifiers(mNode.getModifiers() | ACC_FINAL);
-        } else if (candidate instanceof FieldNode) {
-            FieldNode fNode = (FieldNode) candidate;
+        } else if (candidate instanceof FieldNode fNode) {
             checkModifiers(this, fNode.getModifiers(), fNode, "field " + fNode.getName());
             fNode.setModifiers(fNode.getModifiers() | ACC_FINAL);
         }

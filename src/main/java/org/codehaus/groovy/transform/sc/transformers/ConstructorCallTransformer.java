@@ -67,13 +67,11 @@ public class ConstructorCallTransformer {
                 && StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(params[params.length - 1].getType(), ClassHelper.MAP_TYPE)
                 && node.getCode() == StaticTypeCheckingVisitor.GENERATED_EMPTY_STATEMENT) {
             Expression arguments = expr.getArguments();
-            if (arguments instanceof TupleExpression) {
-                TupleExpression tupleExpression = (TupleExpression) arguments;
+            if (arguments instanceof TupleExpression tupleExpression) {
                 List<Expression> expressions = tupleExpression.getExpressions();
                 if (expressions.size() == 1 || expressions.size() == 2) { // 2 = inner class case
                     Expression expression = expressions.get(expressions.size() - 1);
-                    if (expression instanceof MapExpression) {
-                        MapExpression map = (MapExpression) expression;
+                    if (expression instanceof MapExpression map) {
                         // check that the node doesn't belong to the list of declared constructors
                         ClassNode declaringClass = node.getDeclaringClass();
                         for (ConstructorNode constructorNode : declaringClass.getDeclaredConstructors()) {

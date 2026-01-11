@@ -482,8 +482,7 @@ public class BinaryExpressionHelper {
         Expression rhsValueLoader = new VariableSlotLoader(rhsType, rhsValueId, operandStack);
 
         // subscript assignment
-        if (leftExpression instanceof BinaryExpression) {
-            var leftBinExpr = (BinaryExpression) leftExpression;
+        if (leftExpression instanceof BinaryExpression leftBinExpr) {
             if (leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET) {
                 assignToArray(expression, leftBinExpr.getLeftExpression(), leftBinExpr.getRightExpression(), rhsValueLoader, leftBinExpr.isSafe());
             }
@@ -740,8 +739,7 @@ public class BinaryExpressionHelper {
 
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        if (leftExpression instanceof BinaryExpression) {
-            BinaryExpression bexp = (BinaryExpression) leftExpression;
+        if (leftExpression instanceof BinaryExpression bexp) {
             if (bexp.getOperation().getType() == LEFT_SQUARE_BRACKET) {
                 evaluateArrayAssignmentWithOperator(method, expression, bexp);
                 return;
@@ -877,8 +875,7 @@ public class BinaryExpressionHelper {
     private VariableSlotLoader loadWithSubscript(final Expression expression) {
         AsmClassGenerator acg = controller.getAcg();
         // if we have a BinaryExpression, check if it is with subscription
-        if (expression instanceof BinaryExpression) {
-            BinaryExpression bexp = (BinaryExpression) expression;
+        if (expression instanceof BinaryExpression bexp) {
             if (bexp.getOperation().getType() == LEFT_SQUARE_BRACKET) {
                 // right expression is the subscript expression
                 // we store the result of the subscription on the stack

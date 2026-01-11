@@ -114,8 +114,7 @@ public class AnnotationCollectorTransform {
             }
             boolean legacySerialization = false;
             final Expression member = collector.getMember("serializeClass");
-            if (member instanceof ClassExpression) {
-                ClassExpression ce = (ClassExpression) member;
+            if (member instanceof ClassExpression ce) {
                 legacySerialization = ce.getType().getName().equals(cn.getName());
             }
             ClassNode helper = cn;
@@ -159,13 +158,11 @@ public class AnnotationCollectorTransform {
         }
 
         private Expression serialize(Expression e) {
-            if (e instanceof AnnotationConstantExpression) {
-                AnnotationConstantExpression ace = (AnnotationConstantExpression) e;
+            if (e instanceof AnnotationConstantExpression ace) {
                 return serialize((AnnotationNode) ace.getValue());
             }
-            if (e instanceof ListExpression) {
+            if (e instanceof ListExpression le) {
                 boolean annotationConstant = false;
-                ListExpression le = (ListExpression) e;
                 List<Expression> list = le.getExpressions();
                 List<Expression> newList = new ArrayList<>(list.size());
                 for (Expression exp: list) {
@@ -216,11 +213,10 @@ public class AnnotationCollectorTransform {
         if (memberValue == null) {
             return Collections.emptyList();
         }
-        if (!(memberValue instanceof ListExpression)) {
+        if (!(memberValue instanceof ListExpression memberListExp)) {
             addError("Annotation collector expected a list of classes, but got a "+memberValue.getClass(), collector, source);
             return Collections.emptyList();
         }
-        ListExpression memberListExp = (ListExpression) memberValue;
         List<Expression> memberList = memberListExp.getExpressions();
         if (memberList.isEmpty()) {
             return Collections.emptyList();
@@ -353,9 +349,8 @@ public class AnnotationCollectorTransform {
                 le.addExpression(new AnnotationConstantExpression(an));
             }
             return le;
-        } else if (o instanceof Object[]) {
+        } else if (o instanceof Object[] values) {
             ListExpression le = new ListExpression();
-            Object[] values = (Object[]) o;
             for (Object val : values) {
                 le.addExpression(makeExpression(val));
             }

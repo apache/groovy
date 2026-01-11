@@ -156,10 +156,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             }
             if (inAnnotation && exp instanceof AnnotationConstantExpression) {
                 ConstantExpression ce = (ConstantExpression) result;
-                if (ce.getValue() instanceof AnnotationNode) {
+                if (ce.getValue() instanceof AnnotationNode an) {
                     // replicate a little bit of AnnotationVisitor here
                     // because we can't wait until later to do this
-                    AnnotationNode an = (AnnotationNode) ce.getValue();
                     Map<String, Expression> attributes = an.getMembers();
                     for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
                         Expression attrExpr = transform(entry.getValue());
@@ -208,8 +207,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             inLeftExpression = true;
             left = transform(be.getLeftExpression());
             inLeftExpression = oldInLeftExpression;
-            if (left instanceof StaticMethodCallExpression) {
-                StaticMethodCallExpression smce = (StaticMethodCallExpression) left;
+            if (left instanceof StaticMethodCallExpression smce) {
                 StaticMethodCallExpression result = new StaticMethodCallExpression(smce.getOwnerType(), smce.getMethod(), right);
                 result.copyNodeMetaData(smce);
                 setSourcePosition(result, be);
@@ -233,9 +231,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 }
                 return result;
             }
-        } else if (v instanceof FieldNode) {
+        } else if (v instanceof FieldNode fn) {
             if (inSpecialConstructorCall) { // GROOVY-8819
-                FieldNode fn = (FieldNode) v;
                 ClassNode declaringClass = fn.getDeclaringClass();
                 if (fn.isStatic() && currentClass.isDerivedFrom(declaringClass)) {
                     Expression result = new PropertyExpression(new ClassExpression(declaringClass), v.getName());
@@ -323,12 +320,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
         inSpecialConstructorCall = cce.isSpecialCall();
         Expression expression = cce.getArguments();
-        if (expression instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) expression;
+        if (expression instanceof TupleExpression tuple) {
             if (tuple.getExpressions().size() == 1) {
                 expression = tuple.getExpression(0);
-                if (expression instanceof NamedArgumentListExpression) {
-                    NamedArgumentListExpression namedArgs = (NamedArgumentListExpression) expression;
+                if (expression instanceof NamedArgumentListExpression namedArgs) {
                     List<MapEntryExpression> entryExpressions = namedArgs.getMapEntryExpressions();
                     entryExpressions.replaceAll(me -> (MapEntryExpression) transformMapEntryExpression(me, cce.getType()));
                 }

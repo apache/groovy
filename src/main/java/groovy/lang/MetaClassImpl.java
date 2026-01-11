@@ -479,8 +479,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             private boolean hasPrivateInMethods(final Class<?> clazz, final MetaMethodIndex.Cache entry) {
-                if (entry.methods instanceof FastArray) {
-                    FastArray methods = (FastArray) entry.methods;
+                if (entry.methods instanceof FastArray methods) {
                     int size = methods.size();
                     var data = methods.getArray();
                     for (int i = 0; i != size; ++i) {
@@ -489,8 +488,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                             return true;
                         }
                     }
-                } else if (entry.methods instanceof MetaMethod) {
-                    MetaMethod method = (MetaMethod) entry.methods;
+                } else if (entry.methods instanceof MetaMethod method) {
                     if (method.isPrivate() && method.getDeclaringClass().getTheClass() == clazz) {
                         return true;
                     }
@@ -508,8 +506,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             @Override
             public void methodNameAction(final Class<?> c, final MetaMethodIndex.Cache e) {
                 Object arrayOrMethod = (useThis ? e.methods : e.methodsForSuper);
-                if (arrayOrMethod instanceof FastArray) {
-                    FastArray methods = (FastArray) arrayOrMethod;
+                if (arrayOrMethod instanceof FastArray methods) {
                     Object[] data = methods.getArray();
                     for (int i = 0; i < methods.size(); i += 1) {
                         MetaMethod method = (MetaMethod) data[i];
@@ -934,8 +931,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             try {
                 return methodMissing.invoke(instance, new Object[]{methodName, arguments});
             } catch (InvokerInvocationException iie) {
-                if (methodMissing instanceof ClosureMetaMethod && iie.getCause() instanceof MissingMethodException) {
-                    MissingMethodException mme = (MissingMethodException) iie.getCause();
+                if (methodMissing instanceof ClosureMetaMethod && iie.getCause() instanceof MissingMethodException mme) {
                     throw new MissingMethodExecutionFailed(mme.getMethod(), mme.getClass(), mme.getArguments(), mme.isStatic(), mme);
                 }
                 throw iie;
@@ -1105,8 +1101,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         MetaMethod method = getMetaMethod(sender, object, methodName, isCallToSuper, arguments);
 
-        if (object instanceof Closure) {
-            final Closure closure = (Closure)object;
+        if (object instanceof Closure closure) {
             final Object owner = closure.getOwner();
 
             if (CALL_METHOD.equals(methodName) || DO_CALL_METHOD.equals(methodName)) {
@@ -1201,8 +1196,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                                     throw mme;
                                 }
                             } catch (InvokerInvocationException iie) {
-                                if (iie.getCause() instanceof MissingMethodException) {
-                                    MissingMethodException mme = (MissingMethodException) iie.getCause();
+                                if (iie.getCause() instanceof MissingMethodException mme) {
                                     if (methodName.equals(mme.getMethod())) {
                                         if (last == null) last = mme;
                                     } else {
@@ -1320,8 +1314,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaClass lookupObjectMetaClass(Object object) {
-        if (object instanceof GroovyObject) {
-            GroovyObject go = (GroovyObject) object;
+        if (object instanceof GroovyObject go) {
             return go.getMetaClass();
         }
         Class ownerClass = object.getClass();
@@ -2206,8 +2199,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         || (!permissivePropertyAccess && !checkAccessible(getClass(), ((CachedField) mp).getDeclaringClass(), mp.getModifiers(), false))) {
                     continue;
                 }
-            } else if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+            } else if (mp instanceof MetaBeanProperty mbp) {
                 // filter out extrinsic properties (DGM, ...)
                 boolean getter = true, setter = true;
                 MetaMethod getterMetaMethod = mbp.getGetter();
@@ -2247,8 +2239,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // Method has been optimized to reach a target of 325 bytecode size, making it JIT'able
         Object ret = null;
 
-        if (methodOrList instanceof MetaMethod) {
-            MetaMethod method = (MetaMethod) methodOrList;
+        if (methodOrList instanceof MetaMethod method) {
             int parameterCount = method.getParameterTypes().length;
             Class<?> returnType = method.getReturnType();
             if (!isGetter && parameterCount == 1
@@ -2260,8 +2251,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     : returnType != Void.TYPE && returnType != Void.class)) {
                 ret = method;
             }
-        } else if (methodOrList instanceof FastArray) {
-            FastArray methods = (FastArray) methodOrList;
+        } else if (methodOrList instanceof FastArray methods) {
             final int n = methods.size();
             final Object[] data = methods.getArray();
             for (int i = 0; i < n; i += 1) {
@@ -2366,8 +2356,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void fillStaticPropertyIndex() {
         BiConsumer<String, MetaProperty> indexStaticProperty = (name, prop) -> {
-            if (prop instanceof CachedField) {
-                CachedField field = (CachedField) prop;
+            if (prop instanceof CachedField field) {
                 if (!field.isStatic()) { prop = null; }
             } else if (prop instanceof MetaBeanProperty) {
                 prop = establishStaticMetaProperty(prop);
@@ -2557,15 +2546,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        if (mp instanceof CachedField) {
-            CachedField mfp = (CachedField) mp;
+        if (mp instanceof CachedField mfp) {
             MetaBeanProperty mbp = new MetaBeanProperty(propName, mfp.getType(),
                     isGetter ? propertyMethod : null,
                     isGetter ? null : propertyMethod);
             mbp.setField(mfp);
             return mbp;
-        } else if (mp instanceof MultipleSetterProperty) {
-            MultipleSetterProperty msp = (MultipleSetterProperty) mp;
+        } else if (mp instanceof MultipleSetterProperty msp) {
             if (isGetter) {
                 // GROOVY-10133: do not replace "isPropName()" with "getPropName()" or ...
                 if (msp.getGetter() == null || !msp.getGetter().getName().startsWith("is")) {
@@ -2573,8 +2560,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
             return msp;
-        } else if (mp instanceof MetaBeanProperty) {
-            MetaBeanProperty mbp = (MetaBeanProperty) mp;
+        } else if (mp instanceof MetaBeanProperty mbp) {
             if (isGetter) {
                 // GROOVY-10133: do not replace "isPropName()" with "getPropName()" or ...
                 if (mbp.getGetter() == null || !mbp.getGetter().getName().startsWith("is")) {
@@ -2879,8 +2865,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         MetaProperty mp = getMetaProperty(sender, attribute, useSuper, isStatic);
         if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+            if (mp instanceof MetaBeanProperty mbp) {
                 mp = mbp.getField();
             }
             try {
@@ -2921,8 +2906,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         MetaProperty mp = getMetaProperty(sender, attribute, useSuper, isStatic);
         if (mp != null) {
-            if (mp instanceof MetaBeanProperty) {
-                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+            if (mp instanceof MetaBeanProperty mbp) {
                 mp = mbp.getField();
             }
             if (mp != null) {
@@ -3158,8 +3142,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private MetaMethod findMethod(CachedMethod aMethod) {
         Object methods = getMethods(theClass, aMethod.getName(), false);
-        if (methods instanceof FastArray) {
-            FastArray m = (FastArray) methods;
+        if (methods instanceof FastArray m) {
             final int len = m.size();
             final Object[] data = m.getArray();
             for (int i = 0; i != len; ++i) {

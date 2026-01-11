@@ -101,8 +101,7 @@ public class ClassInvariantGenerator extends BaseGenerator {
         Statement invariantMethodCall = stmt(callThisX(invariantMethod.getName()));
 
         final Statement statement = method.getCode();
-        if (statement instanceof BlockStatement && !isPrimitiveVoid(method.getReturnType()) && !(method instanceof ConstructorNode)) {
-            final BlockStatement blockStatement = (BlockStatement) statement;
+        if (statement instanceof BlockStatement blockStatement && !isPrimitiveVoid(method.getReturnType()) && !(method instanceof ConstructorNode)) {
 
             final List<ReturnStatement> returnStatements = AssertStatementCreationUtility.getReturnStatements(method);
             for (ReturnStatement returnStatement : returnStatements) {
@@ -111,8 +110,7 @@ public class ClassInvariantGenerator extends BaseGenerator {
 
             if (returnStatements.isEmpty()) blockStatement.addStatement(invariantMethodCall);
 
-        } else if (statement instanceof BlockStatement) {
-            final BlockStatement blockStatement = (BlockStatement) statement;
+        } else if (statement instanceof BlockStatement blockStatement) {
             blockStatement.addStatement(invariantMethodCall);
         } else {
             final BlockStatement assertionBlock = block(statement, invariantMethodCall);

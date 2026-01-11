@@ -81,8 +81,7 @@ public final class GStringUtil {
             if (i < numberOfValues) {
                 final Object value = vs[i];
 
-                if (value instanceof Closure) {
-                    final Closure c = (Closure) value;
+                if (value instanceof Closure c) {
                     int maximumNumberOfParameters = c.getMaximumNumberOfParameters();
 
                     if (maximumNumberOfParameters == 0) {

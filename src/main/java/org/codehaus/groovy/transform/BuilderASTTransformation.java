@@ -83,11 +83,10 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
         if (parent instanceof ClassNode || parent instanceof MethodNode) {
-            if (parent instanceof ClassNode) {
+            if (parent instanceof ClassNode cn) {
                 if (!checkNotInterface((ClassNode) parent, MY_TYPE_NAME)) {
                     return;
                 }
-                ClassNode cn = (ClassNode) parent;
                 if (hasAnnotation(cn, RECORD_TYPE)) {
                     // we'll later create a tuple constructor and move the builder annotation
                     // to it but let's create a mock constructor node for now

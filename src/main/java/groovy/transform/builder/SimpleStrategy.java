@@ -82,13 +82,12 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
 public class SimpleStrategy extends BuilderASTTransformation.AbstractBuilderStrategy {
     @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
-        if (!(annotatedNode instanceof ClassNode)) {
+        if (!(annotatedNode instanceof ClassNode buildee)) {
             String target = annotatedNode.getDeclaringClass().isRecord() ? "records" : annotatedNode.getClass().getSimpleName();
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
                     target + " not supported by " + getClass().getSimpleName(), annotatedNode);
             return;
         }
-        ClassNode buildee = (ClassNode) annotatedNode;
         if (unsupportedAttribute(transform, anno, "builderClassName")) return;
         if (unsupportedAttribute(transform, anno, "buildMethodName")) return;
         if (unsupportedAttribute(transform, anno, "builderMethodName")) return;

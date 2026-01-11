@@ -62,8 +62,7 @@ public class NodeList extends ArrayList {
         NodeList result = new NodeList(size());
         for (int i = 0; i < size(); i++) {
             Object next = get(i);
-            if (next instanceof Node) {
-                Node n = (Node) next;
+            if (next instanceof Node n) {
                 result.add(n.clone());
             } else {
                 result.add(next);
@@ -130,8 +129,7 @@ public class NodeList extends ArrayList {
     public NodeList getAt(String name) {
         NodeList answer = new NodeList();
         for (Object child : this) {
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
+            if (child instanceof Node childNode) {
                 Object temp = childNode.get(name);
                 if (temp instanceof Collection) {
                     answer.addAll((Collection) temp);
@@ -152,8 +150,7 @@ public class NodeList extends ArrayList {
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
         for (Object child : this) {
-            if (child instanceof Node) {
-                Node childNode = (Node) child;
+            if (child instanceof Node childNode) {
                 NodeList temp = childNode.getAt(name);
                 answer.addAll(temp);
             }

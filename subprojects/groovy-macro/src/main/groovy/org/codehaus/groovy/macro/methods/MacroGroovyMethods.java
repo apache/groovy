@@ -177,12 +177,10 @@ public class MacroGroovyMethods {
             return null;
         }
 
-        if (!(macroCallArguments instanceof TupleExpression)) {
+        if (!(macroCallArguments instanceof TupleExpression tupleArguments)) {
             source.addError(new SyntaxException("Call should have TupleExpression as arguments" + '\n', macroCallArguments));
             return null;
         }
-
-        TupleExpression tupleArguments = (TupleExpression) macroCallArguments;
 
         if (tupleArguments.getExpressions() == null) {
             source.addError(new SyntaxException("Call arguments should have expressions" + '\n', tupleArguments));

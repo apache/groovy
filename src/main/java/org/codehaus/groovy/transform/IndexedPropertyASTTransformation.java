@@ -64,8 +64,7 @@ public class IndexedPropertyASTTransformation extends AbstractASTTransformation 
         AnnotationNode node = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(node.getClassNode())) return;
 
-        if (parent instanceof FieldNode) {
-            FieldNode fNode = (FieldNode) parent;
+        if (parent instanceof FieldNode fNode) {
             ClassNode cNode = fNode.getDeclaringClass();
             if (cNode.getProperty(fNode.getName()) == null) {
                 addError("Error during " + MY_TYPE_NAME + " processing. Field '" + fNode.getName() +

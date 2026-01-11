@@ -204,8 +204,7 @@ public class ConfigObject extends GroovyObjectSupport implements Writable, Map, 
             String key = (String) o1;
             Object v = map.get(key);
 
-            if (v instanceof ConfigObject) {
-                ConfigObject value = (ConfigObject) v;
+            if (v instanceof ConfigObject value) {
 
                 if (!value.isEmpty()) {
 

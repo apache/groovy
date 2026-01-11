@@ -97,8 +97,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         ClassNode weavedType = weaved.getOriginType();
         if (exp instanceof BinaryExpression) {
             return transformBinaryExpression((BinaryExpression) exp, weavedType);
-        } else if (exp instanceof MethodCallExpression) {
-            MethodCallExpression mce = (MethodCallExpression) exp;
+        } else if (exp instanceof MethodCallExpression mce) {
             String obj = mce.getObjectExpression().getText();
             if ("super".equals(obj)) {
                 return transformSuperMethodCall(mce); // super.m(x) --> $self.Ttrait$super$m(x)
@@ -108,8 +107,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
         } else if (exp instanceof FieldExpression) {
             FieldNode fn = ((FieldExpression) exp).getField();
             return transformFieldReference(exp, fn, fn.isStatic());
-        } else if (exp instanceof VariableExpression) {
-            VariableExpression vexp = (VariableExpression) exp;
+        } else if (exp instanceof VariableExpression vexp) {
             Variable accessedVariable = vexp.getAccessedVariable();
             if (accessedVariable instanceof FieldNode || accessedVariable instanceof PropertyNode) {
                 if (knownFields.contains(vexp.getName())) {
@@ -134,8 +132,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
             if (vexp.isSuperExpression()) {
                 throwSuperError(vexp);
             }
-        } else if (exp instanceof PropertyExpression) {
-            PropertyExpression pexp = (PropertyExpression) exp;
+        } else if (exp instanceof PropertyExpression pexp) {
             String obj = pexp.getObjectExpression().getText();
             if (pexp.isImplicitThis() || "this".equals(obj)) {
                 String propName = pexp.getPropertyAsString();
@@ -260,8 +257,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         Expression arguments = transform(call.getArguments());
         ArgumentListExpression superCallArgs = new ArgumentListExpression();
-        if (arguments instanceof ArgumentListExpression) {
-            ArgumentListExpression list = (ArgumentListExpression) arguments;
+        if (arguments instanceof ArgumentListExpression list) {
             for (Expression expression : list) {
                 superCallArgs.addExpression(expression);
             }

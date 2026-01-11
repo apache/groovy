@@ -156,9 +156,8 @@ public class ImportNode extends AnnotatedNode {
     @Override
     public boolean equals(Object that) {
         if (that == this) return true;
-        if (!(that instanceof ImportNode)) return false;
+        if (!(that instanceof ImportNode node)) return false;
 
-        ImportNode node = (ImportNode) that;
         if (!Objects.equals(type, node.type))
             return false;
         if (!Objects.equals(alias, node.alias))

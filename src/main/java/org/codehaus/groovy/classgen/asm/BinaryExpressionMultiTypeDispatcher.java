@@ -239,8 +239,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
 
     private static boolean isAssignmentToArray(final BinaryExpression binExp) {
         Expression leftExpression = binExp.getLeftExpression();
-        if (!(leftExpression instanceof BinaryExpression)) return false;
-        BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
+        if (!(leftExpression instanceof BinaryExpression leftBinExpr)) return false;
         return leftBinExpr.getOperation().getType() == LEFT_SQUARE_BRACKET;
     }
 
@@ -335,8 +334,7 @@ public class BinaryExpressionMultiTypeDispatcher extends BinaryExpressionHelper 
 
     private boolean doAssignmentToLocalVariable(final String method, final BinaryExpression binExp) {
         Expression left = binExp.getLeftExpression();
-        if (left instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) left;
+        if (left instanceof VariableExpression ve) {
             Variable v = ve.getAccessedVariable();
             if (v instanceof DynamicVariable) return false;
             if (v instanceof PropertyExpression) return false;

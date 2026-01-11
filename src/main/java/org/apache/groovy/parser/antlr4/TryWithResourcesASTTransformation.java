@@ -113,11 +113,10 @@ public class TryWithResourcesASTTransformation {
         }
 
         Expression targetExpression = ((DeclarationExpression) variableDeclaration.getExpression()).getLeftExpression();
-        if (!(targetExpression instanceof VariableExpression)) {
+        if (!(targetExpression instanceof VariableExpression variableExpression)) {
             throw astBuilder.createParsingFailedException("The expression statement is not a variable delcaration statement", variableDeclaration);
         }
 
-        VariableExpression variableExpression = (VariableExpression) targetExpression;
         variableExpression.setModifiers(variableExpression.getModifiers() | Opcodes.ACC_FINAL);
 
         return variableDeclaration;

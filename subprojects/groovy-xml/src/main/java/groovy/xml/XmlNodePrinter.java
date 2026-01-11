@@ -294,8 +294,7 @@ public class XmlNodePrinter {
         if (namespaceAware) {
             if (object instanceof Node) {
                 printNamespace(((Node) object).name(), ctx);
-            } else if (object instanceof QName) {
-                QName qname = (QName) object;
+            } else if (object instanceof QName qname) {
                 String namespaceUri = qname.getNamespaceURI();
                 if (namespaceUri != null) {
                     String prefix = qname.getPrefix();
@@ -350,8 +349,7 @@ public class XmlNodePrinter {
     protected String getName(Object object) {
         if (object instanceof String) {
             return (String) object;
-        } else if (object instanceof QName) {
-            QName qname = (QName) object;
+        } else if (object instanceof QName qname) {
             if (!namespaceAware) {
                 return qname.getLocalPart();
             }

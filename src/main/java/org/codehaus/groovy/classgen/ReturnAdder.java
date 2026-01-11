@@ -122,15 +122,13 @@ public class ReturnAdder {
             return returnStatement;
         }
 
-        if (statement instanceof SynchronizedStatement) {
-            SynchronizedStatement syncStatement = (SynchronizedStatement) statement;
+        if (statement instanceof SynchronizedStatement syncStatement) {
             Statement code = addReturnsIfNeeded(syncStatement.getCode(), rtype, scope);
             if (doAdd) syncStatement.setCode(code);
             return syncStatement;
         }
 
-        if (statement instanceof IfStatement) {
-            IfStatement ifElseStatement = (IfStatement) statement;
+        if (statement instanceof IfStatement ifElseStatement) {
             Statement ifBlock = addReturnsIfNeeded(ifElseStatement.getIfBlock(), rtype, scope);
             Statement elseBlock = addReturnsIfNeeded(ifElseStatement.getElseBlock(), rtype, scope);
             if (doAdd) {
@@ -140,8 +138,7 @@ public class ReturnAdder {
             return ifElseStatement;
         }
 
-        if (statement instanceof SwitchStatement) {
-            SwitchStatement switchStatement = (SwitchStatement) statement;
+        if (statement instanceof SwitchStatement switchStatement) {
             Statement defaultStatement = switchStatement.getDefaultStatement();
             List<CaseStatement> caseStatements = switchStatement.getCaseStatements();
             for (Iterator<CaseStatement> it = caseStatements.iterator(); it.hasNext(); ) {
@@ -156,8 +153,7 @@ public class ReturnAdder {
             return switchStatement;
         }
 
-        if (statement instanceof TryCatchStatement) {
-            TryCatchStatement tryCatchFinally = (TryCatchStatement) statement;
+        if (statement instanceof TryCatchStatement tryCatchFinally) {
             boolean[] missesReturn = new boolean[1];
             new ReturnAdder(returnStatement -> missesReturn[0] = true)
                     .addReturnsIfNeeded(tryCatchFinally.getFinallyStatement(), rtype, scope);
@@ -177,8 +173,7 @@ public class ReturnAdder {
             return tryCatchFinally;
         }
 
-        if (statement instanceof BlockStatement) {
-            BlockStatement blockStatement = (BlockStatement) statement;
+        if (statement instanceof BlockStatement blockStatement) {
             if (blockStatement.isEmpty()) {
                 ReturnStatement returnStatement = new ReturnStatement(defaultValueX(rtype));
                 returnStatement.copyStatementLabels(blockStatement);
@@ -206,8 +201,7 @@ public class ReturnAdder {
     }
 
     private Statement adjustSwitchCaseCode(final Statement statement, final ClassNode rtype, final VariableScope scope, final boolean lastCase) {
-        if (!statement.isEmpty() && statement instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) statement;
+        if (!statement.isEmpty() && statement instanceof BlockStatement block) {
             int breakIndex = block.getStatements().size() - 1;
             if (block.getStatements().get(breakIndex) instanceof BreakStatement) {
                 if (doAdd) {

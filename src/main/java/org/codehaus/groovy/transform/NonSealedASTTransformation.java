@@ -41,8 +41,7 @@ public class NonSealedASTTransformation extends AbstractASTTransformation {
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!NON_SEALED_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (cNode.isEnum()) {
                 addError("@" + NON_SEALED_CLASS.getSimpleName() + " not allowed for enum", cNode);
                 return;

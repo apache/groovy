@@ -114,7 +114,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
         init(nodes, source);
         AnnotationNode anno = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        if (MY_TYPE.equals(anno.getClassNode()) && parent instanceof ClassNode) { ClassNode type = (ClassNode) parent;
+        if (MY_TYPE.equals(anno.getClassNode()) && parent instanceof ClassNode type) {
             GroovyClassLoader classLoader = compilationUnit != null ? compilationUnit.getTransformLoader() : source.getClassLoader();
             PropertyHandler handler = PropertyHandler.createPropertyHandler(this, classLoader, type);
             if (handler != null

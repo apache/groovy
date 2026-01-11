@@ -530,8 +530,7 @@ public class ObjectRange extends AbstractList<Comparable> implements Range<Compa
         if (operand instanceof Character) {
             return (int) (Character) operand;
         }
-        if (operand instanceof String) {
-            final String string = (String) operand;
+        if (operand instanceof String string) {
 
             if (string.length() == 1) {
                 return (int) string.charAt(0);

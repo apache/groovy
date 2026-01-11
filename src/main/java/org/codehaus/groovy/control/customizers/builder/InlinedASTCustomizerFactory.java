@@ -69,8 +69,7 @@ public class InlinedASTCustomizerFactory extends AbstractFactory implements Post
 
     @Override
     public Object postCompleteNode(final FactoryBuilderSupport factory, final Object parent, final Object node) {
-        if (node instanceof Map) {
-            Map map = (Map) node;
+        if (node instanceof Map map) {
             ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(
                     map,
                     map.containsKey("superClass")?(Class)map.get("superClass"):CompilationCustomizer.class,

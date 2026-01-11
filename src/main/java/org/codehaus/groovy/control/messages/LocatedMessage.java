@@ -48,8 +48,7 @@ public class LocatedMessage extends SimpleMessage {
 
     @Override
     public void write(PrintWriter writer, Janitor janitor) {
-        if (owner instanceof SourceUnit) {
-            SourceUnit source = (SourceUnit) owner;
+        if (owner instanceof SourceUnit source) {
 
             String name = source.getName();
             int line = context.getStartLine();

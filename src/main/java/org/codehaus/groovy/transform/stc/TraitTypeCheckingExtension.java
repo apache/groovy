@@ -72,8 +72,7 @@ public class TraitTypeCheckingExtension extends AbstractTypeCheckingExtension {
             return Collections.singletonList(makeDynamic(call, returnType));
         }
 
-        if (call instanceof MethodCallExpression) {
-            MethodCallExpression mce = (MethodCallExpression) call;
+        if (call instanceof MethodCallExpression mce) {
             ClassNode returnType = mce.getNodeMetaData(TraitASTTransformation.DO_DYNAMIC);
             if (returnType != null) return Collections.singletonList(makeDynamic(call, returnType));
 

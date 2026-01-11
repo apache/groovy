@@ -100,9 +100,8 @@ public class PreconditionGenerator extends BaseGenerator {
         final BlockStatement modifiedMethodCode = block();
         modifiedMethodCode.addStatements(blockStatement.getStatements());
 
-        if (method.getCode() instanceof BlockStatement) {
+        if (method.getCode() instanceof BlockStatement methodBlock) {
 
-            BlockStatement methodBlock = (BlockStatement) method.getCode();
             for (Statement statement : methodBlock.getStatements()) {
                 if (method instanceof ConstructorNode && statement instanceof ExpressionStatement && ((ExpressionStatement) statement).getExpression() instanceof ConstructorCallExpression) {
                     modifiedMethodCode.getStatements().add(0, statement);

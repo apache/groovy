@@ -661,8 +661,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof PartitionCacheKey)) return false;
-            PartitionCacheKey that = (PartitionCacheKey) o;
+            if (!(o instanceof PartitionCacheKey that)) return false;
             return partitionKey.equals(that.partitionKey) && partitionId.equals(that.partitionId);
         }
 
@@ -684,8 +683,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof SortedPartitionCacheKey)) return false;
-            SortedPartitionCacheKey that = (SortedPartitionCacheKey) o;
+            if (!(o instanceof SortedPartitionCacheKey that)) return false;
             return partition == that.partition && orderId.equals(that.orderId);
         }
 
@@ -777,8 +775,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof QueryableCollection)) return false;
-        QueryableCollection<?> that = (QueryableCollection<?>) o;
+        if (!(o instanceof QueryableCollection<?> that)) return false;
         return toList().equals(that.toList());
     }
 

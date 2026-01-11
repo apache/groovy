@@ -68,9 +68,8 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
         @Override
         public Object call(Object receiver, Object[] args) throws Throwable {
-            if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short)
+            if ((receiver instanceof short[] objects && args[0] instanceof Integer && args[1] instanceof Short)
                     && checkPojoMetaClass()) {
-                final short[] objects = (short[]) receiver;
                 objects[normaliseIndex((Integer) args[0], objects.length)] = (Short) args[1];
                 return null;
             } else

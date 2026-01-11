@@ -177,8 +177,7 @@ public class DefaultTypeTransformation {
         if (object instanceof GString) {
             object = object.toString();
         }
-        if (object instanceof String) {
-            String s = (String) object;
+        if (object instanceof String s) {
             if (s.length() == 1) {
                 char c = s.charAt(0);
                 return (int) c;
@@ -213,8 +212,7 @@ public class DefaultTypeTransformation {
     public static char castToChar(Object object) {
         if (object instanceof Character) {
             return (Character) object;
-        } else if (object instanceof Number) {
-            Number value = (Number) object;
+        } else if (object instanceof Number value) {
             return (char) value.intValue();
         } else {
             String text = object.toString();
@@ -374,10 +372,9 @@ public class DefaultTypeTransformation {
         }
 
         Object[] args = null;
-        if (object instanceof Collection) {
+        if (object instanceof Collection collection) {
             // let's try to invoke the constructor with the list as arguments
             // such as for creating a Dimension, Point, Color etc.
-            Collection collection = (Collection) object;
             args = collection.toArray();
         } else if (object instanceof Object[]) {
             args = (Object[]) object;
@@ -504,8 +501,7 @@ public class DefaultTypeTransformation {
             } catch (IOException e) {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
-        } else if (value instanceof MethodClosure) {
-            MethodClosure method = (MethodClosure) value;
+        } else if (value instanceof MethodClosure method) {
             IteratorClosureAdapter<?> adapter = new IteratorClosureAdapter<>(method.getDelegate());
             method.call(adapter);
             return adapter.asList();
@@ -1081,8 +1077,7 @@ public class DefaultTypeTransformation {
     @Deprecated(since = "2.3.0")
     public static Character getCharFromSizeOneString(Object value) {
         if (value instanceof GString) value = value.toString();
-        if (value instanceof String) {
-            String s = (String) value;
+        if (value instanceof String s) {
             if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
             return s.charAt(0);
         } else {

@@ -131,8 +131,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!anno.getClassNode().equals(Traits.TRAIT_CLASSNODE)) return;
         init(nodes, source);
-        if (node instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) node;
+        if (node instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, Traits.TRAIT_TYPE_NAME)) return;
 
             checkInnerClasses(cNode);

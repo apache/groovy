@@ -53,8 +53,7 @@ public class CastExpressionOptimizer {
             }
         } else if (ClassHelper.char_TYPE.equals(cast.getType())) {
             Expression expression = cast.getExpression();
-            if (expression instanceof ConstantExpression) {
-                ConstantExpression ce = (ConstantExpression) expression;
+            if (expression instanceof ConstantExpression ce) {
                 if (ClassHelper.STRING_TYPE.equals(ce.getType())) {
                     String val = (String) ce.getValue();
                     if (val!=null && val.length()==1) {

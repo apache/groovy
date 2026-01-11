@@ -99,10 +99,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+        if (!(nodes[0] instanceof AnnotationNode node) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
         }
-        AnnotationNode node = (AnnotationNode) nodes[0];
 
         if (nodes[1] instanceof ClassNode) {
             addListenerToClass(source, (ClassNode) nodes[1]);

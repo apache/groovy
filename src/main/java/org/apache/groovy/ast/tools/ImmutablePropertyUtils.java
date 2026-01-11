@@ -269,12 +269,11 @@ public class ImmutablePropertyUtils {
         final Expression expression = anno.getMember(MEMBER_KNOWN_IMMUTABLES);
         if (expression == null) return immutables;
 
-        if (!(expression instanceof ListExpression)) {
+        if (!(expression instanceof ListExpression listExpression)) {
             xform.addError("Use the Groovy list notation [el1, el2] to specify known immutable property names via \"" + MEMBER_KNOWN_IMMUTABLES + "\"", anno);
             return immutables;
         }
 
-        final ListExpression listExpression = (ListExpression) expression;
         for (Expression listItemExpression : listExpression.getExpressions()) {
             if (listItemExpression instanceof ConstantExpression) {
                 immutables.add((String) ((ConstantExpression) listItemExpression).getValue());
@@ -294,12 +293,11 @@ public class ImmutablePropertyUtils {
         final Expression expression = anno.getMember(MEMBER_KNOWN_IMMUTABLE_CLASSES);
         if (expression == null) return immutableClasses;
 
-        if (!(expression instanceof ListExpression)) {
+        if (!(expression instanceof ListExpression listExpression)) {
             xform.addError("Use the Groovy list notation [el1, el2] to specify known immutable classes via \"" + MEMBER_KNOWN_IMMUTABLE_CLASSES + "\"", anno);
             return immutableClasses;
         }
 
-        final ListExpression listExpression = (ListExpression) expression;
         for (Expression listItemExpression : listExpression.getExpressions()) {
             if (listItemExpression instanceof ClassExpression) {
                 immutableClasses.add(listItemExpression.getType().getName());

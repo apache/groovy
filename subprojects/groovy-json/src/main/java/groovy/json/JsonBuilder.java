@@ -317,8 +317,7 @@ public class JsonBuilder extends GroovyObjectSupport implements Writable {
             } else if (arr.length == 2) {
                 final Object first = arr[0];
                 final Object second = arr[1];
-                if (second instanceof Closure) {
-                    final Closure closure = (Closure)second;
+                if (second instanceof Closure closure) {
                     if (first instanceof Map) {
                         Map<String, Object> subMap = new LinkedHashMap<>();
                         subMap.putAll(asMap(first));

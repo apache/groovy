@@ -67,8 +67,7 @@ public class GinqASTTransformation extends AbstractASTTransformation {
         AnnotationNode annotationNode = (AnnotationNode) nodes[0];
         if (!GQ_CLASS_NODE.equals(annotationNode.getClassNode())) return;
 
-        if (annotatedNode instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode) annotatedNode;
+        if (annotatedNode instanceof MethodNode methodNode) {
             if (methodNode.isAbstract()) {
                 addError("Error during " + GQ_CLASS_NODE.getName() + " processing: annotation not allowed on abstract method '" + methodNode.getName() + "'", methodNode);
                 return;

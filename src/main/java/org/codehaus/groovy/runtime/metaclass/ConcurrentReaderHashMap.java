@@ -663,7 +663,7 @@ public class ConcurrentReaderHashMap
             count--;
 
             Entry head = e.next;
-            for (Entry p = first; p != e; p = p.next) 
+            for (Entry p = first; p != e; p = p.next)
               head = new Entry(p.hash, p.key, p.value, head);
 
             tab[index] = head;
@@ -693,7 +693,7 @@ public class ConcurrentReaderHashMap
         e.value = null;
         count--;
         Entry head = e.next;
-        for (Entry p = first; p != e; p = p.next) 
+        for (Entry p = first; p != e; p = p.next)
           head = new Entry(p.hash, p.key, p.value, head);
 
         tab[index] = head;
@@ -964,10 +964,9 @@ public class ConcurrentReaderHashMap
     }
     @Override
     public boolean contains(Object o) {
-      if (!(o instanceof Map.Entry))
+      if (!(o instanceof Map.Entry entry))
         return false;
-      Map.Entry entry = (Map.Entry)o;
-      Object v = ConcurrentReaderHashMap.this.get(entry.getKey());
+        Object v = ConcurrentReaderHashMap.this.get(entry.getKey());
       return v != null && v.equals(entry.getValue());
     }
     @Override
@@ -1117,10 +1116,9 @@ public class ConcurrentReaderHashMap
 
     @Override
     public boolean equals(Object o) {
-      if (!(o instanceof Map.Entry))
+      if (!(o instanceof Map.Entry e))
         return false;
-      Map.Entry e = (Map.Entry)o;
-      return (key.equals(e.getKey()) && value.equals(e.getValue()));
+        return (key.equals(e.getKey()) && value.equals(e.getValue()));
     }
 
     @Override

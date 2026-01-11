@@ -537,11 +537,9 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 for (AnnotationNode annotation : annotations) {
                     Expression value = annotation.getMember("value");
                     if (value != null) {
-                        if (value instanceof ConstantExpression) {
-                            ConstantExpression ce = (ConstantExpression) value;
+                        if (value instanceof ConstantExpression ce) {
                             if (TypeCheckingMode.SKIP.toString().equals(ce.getValue().toString())) return true;
-                        } else if (value instanceof PropertyExpression) {
-                            PropertyExpression pe = (PropertyExpression) value;
+                        } else if (value instanceof PropertyExpression pe) {
                             if (TypeCheckingMode.SKIP.toString().equals(pe.getPropertyAsString())) return true;
                         }
                     }
@@ -560,8 +558,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
      * @return true if the inner class node should be skipped
      */
     protected boolean isSkippedInnerClass(final AnnotatedNode node) {
-        if (node instanceof ClassNode) {
-            ClassNode type = (ClassNode) node;
+        if (node instanceof ClassNode type) {
             if (type.getOuterClass() != null) {
                 MethodNode enclosingMethod = type.getEnclosingMethod();
                 if (enclosingMethod != null && isSkipMode(enclosingMethod)) {
@@ -707,8 +704,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } else if (accessedVariable != null) {
             VariableExpression localVariable;
-            if (accessedVariable instanceof Parameter) {
-                Parameter prm = (Parameter) accessedVariable;
+            if (accessedVariable instanceof Parameter prm) {
                 localVariable = new ParameterVariableExpression(prm);
             } else {
                 localVariable = (VariableExpression) accessedVariable;
@@ -971,15 +967,12 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 // propagate closure parameter information
                 if (leftExpression instanceof VariableExpression
                         // GROOVY-11400: save to declared variable; skip field, property, parameter or dynamic variable
-                        && ((VariableExpression) leftExpression).getAccessedVariable() instanceof VariableExpression) {
-                    var targetVariable = (VariableExpression) ((VariableExpression) leftExpression).getAccessedVariable();
-                    if (rightExpression instanceof ClosureExpression) {
-                        var closure = (ClosureExpression) rightExpression;
+                        && ((VariableExpression) leftExpression).getAccessedVariable() instanceof VariableExpression targetVariable) {
+                    if (rightExpression instanceof ClosureExpression closure) {
                         if (!hasImplicitParameter(closure)) // GROOVY-11394: arrow means zero parameters
                             targetVariable.putNodeMetaData(CLOSURE_ARGUMENTS, getParametersSafe(closure));
                     } else if (rightExpression instanceof VariableExpression
-                            && ((VariableExpression) rightExpression).getAccessedVariable() instanceof VariableExpression) {
-                        var sourceVariable = (VariableExpression) ((VariableExpression) rightExpression).getAccessedVariable();
+                            && ((VariableExpression) rightExpression).getAccessedVariable() instanceof VariableExpression sourceVariable) {
                         targetVariable.putNodeMetaData(CLOSURE_ARGUMENTS, sourceVariable.getNodeMetaData(CLOSURE_ARGUMENTS));
                     }
                 }
@@ -1337,13 +1330,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             }
         }
 
-        if (!(rightExpression instanceof ListExpression)) {
+        if (!(rightExpression instanceof ListExpression values)) {
             addStaticTypeError("Multiple assignments without list or tuple on the right-hand side are unsupported in static type checking mode", rightExpression);
             return false;
         }
 
         TupleExpression tuple = (TupleExpression) leftExpression;
-        ListExpression values = (ListExpression) rightExpression;
         List<Expression> tupleExpressions = tuple.getExpressions();
         List<Expression> valueExpressions = values.getExpressions();
 
@@ -2580,14 +2572,12 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
     protected MethodNode typeCheckMapConstructor(final ConstructorCallExpression call, final ClassNode receiver, final Expression arguments) {
         MethodNode node = null;
-        if (arguments instanceof TupleExpression) {
-            TupleExpression texp = (TupleExpression) arguments;
+        if (arguments instanceof TupleExpression texp) {
             List<Expression> expressions = texp.getExpressions();
             // should only get here with size = 2 when inner class constructor
             if (expressions.size() == 1 || expressions.size() == 2) {
                 Expression expression = expressions.get(expressions.size() - 1);
-                if (expression instanceof MapExpression) {
-                    MapExpression argList = (MapExpression) expression;
+                if (expression instanceof MapExpression argList) {
                     checkGroovyConstructorMap(call, receiver, argList);
                     Parameter[] params = expressions.size() == 1
                             ? new Parameter[]{new Parameter(MAP_TYPE, "map")}
@@ -3099,8 +3089,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
      */
     @Deprecated(forRemoval = true, since = "2.5.0")
     protected void checkClosureParameters(final Expression callArguments, final ClassNode receiver) {
-        if (callArguments instanceof ArgumentListExpression) {
-            ArgumentListExpression argList = (ArgumentListExpression) callArguments;
+        if (callArguments instanceof ArgumentListExpression argList) {
             ClosureExpression closure = (ClosureExpression) argList.getExpression(0);
             Parameter[] parameters = closure.getParameters();
             if (parameters.length > 1) {
@@ -3218,8 +3207,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 Expression value = an.getMember("value");
                 if (value instanceof AnnotationConstantExpression) {
                     processNamedParam((AnnotationConstantExpression) value, entries, args, collectedNames);
-                } else if (value instanceof ListExpression) {
-                    ListExpression le = (ListExpression) value;
+                } else if (value instanceof ListExpression le) {
                     for (Expression next : le.getExpressions()) {
                         if (next instanceof AnnotationConstantExpression) {
                             processNamedParam((AnnotationConstantExpression) next, entries, args, collectedNames);
@@ -3320,8 +3308,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     typeParametersResolved = hasTypeArguments;
                 } else {
                     Expression emc = typeCheckingContext.getEnclosingMethodCall();
-                    if (emc instanceof MethodCallExpression) {
-                        MethodCallExpression mce = (MethodCallExpression) emc;
+                    if (emc instanceof MethodCallExpression mce) {
                         if (mce.getArguments() == arguments) {
                             GenericsType[] typeArguments = mce.getGenericsTypes();
                             if (typeArguments != null) {
@@ -3551,7 +3538,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
 
         GenericsType[] typeArguments = null;
         Expression emc = typeCheckingContext.getEnclosingMethodCall(); // GROOVY-7789, GROOVY-11168
-        if (emc instanceof MethodCallExpression) { MethodCallExpression call = (MethodCallExpression) emc;
+        if (emc instanceof MethodCallExpression call) {
             if (arguments == call.getArguments() || InvocationWriter.makeArgumentList(arguments).getExpressions().stream().anyMatch(arg ->
                     arg instanceof ClosureExpression && DefaultGroovyMethods.contains(InvocationWriter.makeArgumentList(call.getArguments()), arg)))
                 typeArguments = call.getGenericsTypes();
@@ -4037,9 +4024,8 @@ out:                if (mn.size() != 1) {
      * @return the inferred closure return type or <em>null</em>
      */
     protected ClassNode getInferredReturnTypeFromWithClosureArgument(final Expression callArguments) {
-        if (!(callArguments instanceof ArgumentListExpression)) return null;
+        if (!(callArguments instanceof ArgumentListExpression argList)) return null;
 
-        ArgumentListExpression argList = (ArgumentListExpression) callArguments;
         ClosureExpression closure = (ClosureExpression) argList.getExpression(0);
 
         visitClosureExpression(closure);
@@ -4681,8 +4667,7 @@ trying: for (ClassNode[] signature : signatures) {
             }
         }
 
-        if (exp instanceof VariableExpression) {
-            VariableExpression var = (VariableExpression) exp;
+        if (exp instanceof VariableExpression var) {
             Variable accessedVariable = var.getAccessedVariable();
             if (accessedVariable instanceof VariableExpression) {
                 if (accessedVariable != var)
@@ -4972,8 +4957,7 @@ trying: for (ClassNode[] signature : signatures) {
 
     protected MethodNode findMethodOrFail(final Expression expr, final ClassNode receiver, final String name, final ClassNode... args) {
         List<MethodNode> methods = findMethod(receiver, name, args);
-        if (methods.isEmpty() && (expr instanceof BinaryExpression)) {
-            BinaryExpression be = (BinaryExpression) expr;
+        if (methods.isEmpty() && (expr instanceof BinaryExpression be)) {
             MethodCallExpression call = callX(be.getLeftExpression(), name, be.getRightExpression());
             methods = extension.handleMissingMethod(receiver, name, args(be.getLeftExpression()), args, call);
         }
@@ -5251,16 +5235,14 @@ trying: for (ClassNode[] signature : signatures) {
             return GenericsUtils.makeClassSafe0(CLASS_Type, new GenericsType(type));
         }
 
-        if (node instanceof VariableExpression) {
-            VariableExpression vexp = (VariableExpression) node;
+        if (node instanceof VariableExpression vexp) {
             type = isTraitSelf(vexp);
             if (type != null) return makeSelf(type);
             if (vexp.isThisExpression()) return makeThis();
             if (vexp.isSuperExpression()) return makeSuper();
 
             Variable variable = vexp.getAccessedVariable();
-            if (variable instanceof FieldNode) {
-                FieldNode fieldNode = (FieldNode) variable;
+            if (variable instanceof FieldNode fieldNode) {
                 ClassNode fieldType = fieldNode.getOriginType();
                 if (!fieldNode.isStatic() && GenericsUtils.hasUnresolvedGenerics(fieldType)) {
                     ClassNode declType = fieldNode.getDeclaringClass(), thisType = typeCheckingContext.getEnclosingClassNode();
@@ -5271,8 +5253,7 @@ trying: for (ClassNode[] signature : signatures) {
             if (variable != vexp && variable instanceof VariableExpression) {
                 return getType((VariableExpression) variable);
             }
-            if (variable instanceof Parameter) {
-                Parameter parameter = (Parameter) variable;
+            if (variable instanceof Parameter parameter) {
                 if (getTemporaryTypesForExpression(vexp).isEmpty()) { // not instanceof
                     // check if the parameter is part of a control structure (for loop)
                     type = typeCheckingContext.controlStructureVariables.get(parameter);
@@ -5331,8 +5312,7 @@ trying: for (ClassNode[] signature : signatures) {
             return inferMapExpressionType((MapExpression) node);
         }
 
-        if (node instanceof RangeExpression) {
-            RangeExpression re = (RangeExpression) node;
+        if (node instanceof RangeExpression re) {
             ClassNode fromType = getType(re.getFrom());
             ClassNode toType = getType(re.getTo());
             if (fromType.equals(toType)) {
@@ -5652,8 +5632,7 @@ trying: for (ClassNode[] signature : signatures) {
                                     ? getCombinedBoundType(argumentType.getGenericsTypes()[0])
                                         : wrapTypeIfNecessary(getInferredReturnType(argument));
                             ClassNode[] p;
-                            if (argument instanceof ClosureExpression) {
-                                ClosureExpression closure = (ClosureExpression) argument;
+                            if (argument instanceof ClosureExpression closure) {
                                 p = extractTypesFromParameters(getParametersSafe(closure));
                             } else { // argument instanceof MethodPointerExpression
                                 List<MethodNode> candidates = argument.getNodeMetaData(MethodNode.class);
@@ -6140,8 +6119,7 @@ out:    for (ClassNode type : todo) {
                         }
                     }
                 }
-            } else if (expression instanceof MethodCallExpression) {
-                MethodCallExpression call = (MethodCallExpression) expression;
+            } else if (expression instanceof MethodCallExpression call) {
                 Expression objectExpression = call.getObjectExpression();
                 if (objectExpression instanceof VariableExpression) {
                     // this should always be the case, but adding a test is safer
@@ -6472,8 +6450,7 @@ out:    for (ClassNode type : todo) {
         @Override
         public void visitVariableExpression(final VariableExpression expression) {
             Variable var = findTargetVariable(expression);
-            if ((!onlySharedVariables || isOuterScopeShared(var)) && var instanceof VariableExpression) {
-                VariableExpression ve = (VariableExpression) var;
+            if ((!onlySharedVariables || isOuterScopeShared(var)) && var instanceof VariableExpression ve) {
                 ClassNode cn = ve.getNodeMetaData(INFERRED_TYPE);
                 if (cn == null) cn = ve.getOriginType();
                 varOrigType.put(ve, cn);

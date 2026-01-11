@@ -1083,8 +1083,7 @@ public class GroovyEngine implements ScriptEngine {
                 try {
                     for (Object o : classesForPackage(domain, shell)) {
                         String name = null;
-                        if (o instanceof Class<?>) {
-                            Class<?> c = (Class<?>) o;
+                        if (o instanceof Class<?> c) {
                             try {
                                 if ((!Modifier.isPublic(c.getModifiers()) && !access.allClasses)
                                         || c.getCanonicalName() == null) {
@@ -1504,10 +1503,9 @@ public class GroovyEngine implements ScriptEngine {
 
         @SuppressWarnings("unchecked")
         private void doIdentifierCandidates(List<Candidate> candidates, Object object, String curBuf) {
-            if (!(object instanceof Map)) {
+            if (!(object instanceof Map<?, ?> map)) {
                 return;
             }
-            Map<?, ?> map = (Map<?, ?>) object;
             if (map.isEmpty() || !(map.keySet().iterator().next() instanceof String)) {
                 return;
             }
@@ -2228,16 +2226,14 @@ public class GroovyEngine implements ScriptEngine {
                 } catch (org.codehaus.groovy.control.MultipleCompilationErrorsException e) {
                     if (e.getErrorCollector().getErrors() != null) {
                         for (Object o : e.getErrorCollector().getErrors()) {
-                            if (o instanceof SyntaxErrorMessage) {
-                                SyntaxErrorMessage sem = (SyntaxErrorMessage) o;
+                            if (o instanceof SyntaxErrorMessage sem) {
                                 out.setErrorIndex(errorIndex(e.getMessage(), sem.getCause()));
                             }
                         }
                     }
                     if (e.getErrorCollector().getWarnings() != null) {
                         for (Object o : e.getErrorCollector().getWarnings()) {
-                            if (o instanceof SyntaxErrorMessage) {
-                                SyntaxErrorMessage sem = (SyntaxErrorMessage) o;
+                            if (o instanceof SyntaxErrorMessage sem) {
                                 out.setErrorIndex(errorIndex(e.getMessage(), sem.getCause()));
                             }
                         }

@@ -59,9 +59,8 @@ public class BooleanArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
         @Override
         public Object call(Object receiver, Object arg) throws Throwable {
-            if ((receiver instanceof boolean[] && arg instanceof Integer)
+            if ((receiver instanceof boolean[] objects && arg instanceof Integer)
                     && checkPojoMetaClass()) {
-                final boolean[] objects = (boolean[]) receiver;
                 return objects[normaliseIndex((Integer) arg, objects.length)];
             } else
                 return super.call(receiver, arg);

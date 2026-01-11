@@ -95,8 +95,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
 
         sourceUnit = source; // support for addError
 
-        if (nodes[1] instanceof DeclarationExpression) {
-            DeclarationExpression de = (DeclarationExpression) nodes[1];
+        if (nodes[1] instanceof DeclarationExpression de) {
             ClassNode declaringClass = de.getDeclaringClass();
             if (!declaringClass.isScript()) {
                 addError("Annotation @" + MY_TYPE.getNameWithoutPackage() + " can only be used within a Script.", de);
@@ -173,8 +172,7 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
     @Override
     public Expression transform(final Expression expr) {
         if (expr == null) return null;
-        if (expr instanceof DeclarationExpression) {
-            DeclarationExpression de = (DeclarationExpression) expr;
+        if (expr instanceof DeclarationExpression de) {
             if (de.getLeftExpression() == candidate.getVariableExpression()) {
                 if (insideScriptBody) {
                     // TODO: make EmptyExpression work
@@ -190,15 +188,13 @@ public class FieldASTTransformation extends ClassCodeExpressionTransformer imple
             // GROOVY-4700, GROOVY-5207, GROOVY-9554
             visitClosureExpression(currentClosure);
             currentClosure = old;
-        } else if (expr instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) expr;
+        } else if (expr instanceof VariableExpression ve) {
             // only need to check the variable name because the Groovy compiler already fails if a variable
             // with the same name exists in the scope; this means a closure cannot shadow a class variable
             if (insideScriptBody && currentClosure != null && ve.getName().equals(variableName)) {
                 adjustToClassVar(ve);
             }
-        } else if (expr instanceof ConstructorCallExpression) {
-            ConstructorCallExpression cce = (ConstructorCallExpression) expr;
+        } else if (expr instanceof ConstructorCallExpression cce) {
             if (insideScriptBody && cce.isUsingAnonymousInnerClass()) {
                 // if a match is found, the compiler will have already set up AIC constructor to have
                 // an argument which isn't needed since we'll be accessing the field; we must undo it

@@ -981,9 +981,8 @@ public class GeneralUtils {
 
             AnnotationNode retentionPolicyAnnotation = annotations.get(0);
             Expression valueExpression = retentionPolicyAnnotation.getMember("value");
-            if (!(valueExpression instanceof PropertyExpression)) continue;
+            if (!(valueExpression instanceof PropertyExpression propertyExpression)) continue;
 
-            PropertyExpression propertyExpression = (PropertyExpression) valueExpression;
             boolean processAnnotation = propertyExpression.getProperty() instanceof ConstantExpression
                     && ("RUNTIME".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue())
                         || "CLASS".equals(((ConstantExpression) (propertyExpression.getProperty())).getValue()));
@@ -1086,17 +1085,14 @@ public class GeneralUtils {
     public static boolean copyStatementsWithSuperAdjustment(final ClosureExpression pre, final BlockStatement body) {
         Statement preCode = pre.getCode();
         boolean changed = false;
-        if (preCode instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) preCode;
+        if (preCode instanceof BlockStatement block) {
             List<Statement> statements = block.getStatements();
             for (int i = 0, n = statements.size(); i < n; i += 1) {
                 Statement statement = statements.get(i);
                 // adjust the first statement if it's a super call
-                if (i == 0 && statement instanceof ExpressionStatement) {
-                    ExpressionStatement es = (ExpressionStatement) statement;
+                if (i == 0 && statement instanceof ExpressionStatement es) {
                     Expression preExp = es.getExpression();
-                    if (preExp instanceof MethodCallExpression) {
-                        MethodCallExpression mce = (MethodCallExpression) preExp;
+                    if (preExp instanceof MethodCallExpression mce) {
                         String name = mce.getMethodAsString();
                         if ("super".equals(name)) {
                             es.setExpression(new ConstructorCallExpression(ClassNode.SUPER, mce.getArguments()));
@@ -1115,8 +1111,7 @@ public class GeneralUtils {
         for (Map.Entry<String, Expression> member : members.entrySet())  {
             if (member.getValue() instanceof ClosureExpression) return true;
 
-            if (member.getValue() instanceof ClassExpression)  {
-                ClassExpression classExpression = (ClassExpression) member.getValue();
+            if (member.getValue() instanceof ClassExpression classExpression)  {
                 Class<?> typeClass = classExpression.getType().isResolved() ? classExpression.getType().redirect().getTypeClass() : null;
                 if (typeClass != null && GeneratedClosure.class.isAssignableFrom(typeClass)) return true;
             }
@@ -1196,8 +1191,7 @@ public class GeneralUtils {
                 || maybeFallsThrough(((IfStatement) statement).getIfBlock());
         } else if (statement instanceof SwitchStatement) {
             // TODO
-        } else if (statement instanceof TryCatchStatement) {
-            TryCatchStatement tryCatch = (TryCatchStatement) statement;
+        } else if (statement instanceof TryCatchStatement tryCatch) {
             if (!maybeFallsThrough(tryCatch.getFinallyStatement())) return false;
             for (CatchStatement cs : tryCatch.getCatchStatements())
                 if (maybeFallsThrough(cs.getCode())) return true;

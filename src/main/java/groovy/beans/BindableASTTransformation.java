@@ -99,11 +99,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+        if (!(nodes[0] instanceof AnnotationNode node) || !(nodes[1] instanceof AnnotatedNode parent)) {
             throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
         }
-        AnnotationNode node = (AnnotationNode) nodes[0];
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
 
         if (VetoableASTTransformation.hasVetoableAnnotation(parent)) {
             // VetoableASTTransformation will handle both @Bindable and @Vetoable

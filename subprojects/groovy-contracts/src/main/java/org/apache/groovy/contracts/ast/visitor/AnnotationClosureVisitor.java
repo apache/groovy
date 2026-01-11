@@ -335,8 +335,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
 
             // in case of a FieldNode, checks whether the FieldNode can be replaced with a Parameter
             Variable accessedVariable = getParameterCandidate(expression.getAccessedVariable());
-            if (accessedVariable instanceof FieldNode) {
-                FieldNode fieldNode = (FieldNode) accessedVariable;
+            if (accessedVariable instanceof FieldNode fieldNode) {
 
                 if (fieldNode.isPrivate() && !classNode.hasProperty(fieldNode.getName())) {
                     // if this is a class invariant we'll change the field node access
@@ -345,8 +344,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                 }
             }
 
-            if (accessedVariable instanceof Parameter) {
-                Parameter parameter = (Parameter) accessedVariable;
+            if (accessedVariable instanceof Parameter parameter) {
                 if ("it".equals(parameter.getName())) {
                     addError("[groovy-contracts] Access to 'it' is not supported.", expression);
                 }
@@ -362,8 +360,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             checkOperation(expression, expression.getOperation());
 
             if (secondPass) {
-                if (expression.getExpression() instanceof VariableExpression) {
-                    VariableExpression variableExpression = (VariableExpression) expression.getExpression();
+                if (expression.getExpression() instanceof VariableExpression variableExpression) {
                     if (variableExpressions.containsKey(variableExpression)) {
                         expression.setExpression(variableExpressions.get(variableExpression));
                     }
@@ -378,8 +375,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             checkOperation(expression, expression.getOperation());
 
             if (secondPass) {
-                if (expression.getExpression() instanceof VariableExpression) {
-                    VariableExpression variableExpression = (VariableExpression) expression.getExpression();
+                if (expression.getExpression() instanceof VariableExpression variableExpression) {
                     if (variableExpressions.containsKey(variableExpression)) {
                         expression.setExpression(variableExpressions.get(variableExpression));
                     }
@@ -394,14 +390,12 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             checkOperation(expression, expression.getOperation());
 
             if (secondPass) {
-                if (expression.getLeftExpression() instanceof VariableExpression) {
-                    VariableExpression variableExpression = (VariableExpression) expression.getLeftExpression();
+                if (expression.getLeftExpression() instanceof VariableExpression variableExpression) {
                     if (variableExpressions.containsKey(variableExpression)) {
                         expression.setLeftExpression(variableExpressions.get(variableExpression));
                     }
                 }
-                if (expression.getRightExpression() instanceof VariableExpression) {
-                    VariableExpression variableExpression = (VariableExpression) expression.getRightExpression();
+                if (expression.getRightExpression() instanceof VariableExpression variableExpression) {
                     if (variableExpressions.containsKey(variableExpression)) {
                         expression.setRightExpression(variableExpressions.get(variableExpression));
                     }
@@ -491,8 +485,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                 // add a cast but only if an explicit cast is not already there and we haven't been here before
                 PropertyExpression propExpr = (PropertyExpression) super.transform(expr);
                 Expression objExpr = propExpr.getObjectExpression();
-                if (objExpr instanceof VariableExpression) {
-                    VariableExpression varExpr = (VariableExpression) objExpr;
+                if (objExpr instanceof VariableExpression varExpr) {
                     if ("old".equals(varExpr.getName())) {
                         String propName = propExpr.getPropertyAsString();
                         ClassNode declaringClass = methodNode.getDeclaringClass();

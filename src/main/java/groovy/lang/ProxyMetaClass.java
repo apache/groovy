@@ -177,8 +177,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
         if (null == interceptor) {
             return super.getProperty(aClass, object, property, useSuper, fromInsideClass);
         }
-        if (interceptor instanceof PropertyAccessInterceptor) {
-            PropertyAccessInterceptor pae = (PropertyAccessInterceptor) interceptor;
+        if (interceptor instanceof PropertyAccessInterceptor pae) {
 
             Object result = pae.beforeGet(object, property);
             if (interceptor.doInvoke()) {
@@ -202,8 +201,7 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
         if (null == interceptor) {
             super.setProperty(aClass, object, property, newValue, useSuper, fromInsideClass);
         }
-        if (interceptor instanceof PropertyAccessInterceptor) {
-            PropertyAccessInterceptor pae = (PropertyAccessInterceptor) interceptor;
+        if (interceptor instanceof PropertyAccessInterceptor pae) {
 
             pae.beforeSet(object, property, newValue);
             if (interceptor.doInvoke()) {

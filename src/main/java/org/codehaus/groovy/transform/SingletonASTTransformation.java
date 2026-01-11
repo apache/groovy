@@ -67,8 +67,7 @@ public class SingletonASTTransformation extends AbstractASTTransformation {
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
 
-        if (parent instanceof ClassNode) {
-            ClassNode classNode = (ClassNode) parent;
+        if (parent instanceof ClassNode classNode) {
             String propertyName = getMemberStringValue(node, "property", "instance");
             boolean isLazy = memberHasValue(node, "lazy", true);
             boolean isStrict = !memberHasValue(node, "strict", false);

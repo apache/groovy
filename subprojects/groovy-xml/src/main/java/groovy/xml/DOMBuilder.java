@@ -73,7 +73,7 @@ public class DOMBuilder extends BuilderSupport {
 
     /**
      * Creates a DocumentBuilder and uses it to parse the XML text read from the given reader, allowing
-     * parser validation and namespace awareness to be controlled. Documents are not allowed to contain 
+     * parser validation and namespace awareness to be controlled. Documents are not allowed to contain
      * DOCYTYPE declarations.
      *
      * @param reader         the reader to read the XML text from
@@ -154,8 +154,7 @@ public class DOMBuilder extends BuilderSupport {
         if (document == null) {
             document = createDocument();
         }
-        if (name instanceof QName) {
-            QName qname = (QName) name;
+        if (name instanceof QName qname) {
             return document.createElementNS(qname.getNamespaceURI(), qname.getQualifiedName());
         } else {
             return document.createElement(name.toString());
@@ -218,8 +217,7 @@ public class DOMBuilder extends BuilderSupport {
             }
             if (key instanceof String) {
                 setStringNS(element, key, value);
-            } else if (key instanceof QName) {
-                QName qname = (QName) key;
+            } else if (key instanceof QName qname) {
                 element.setAttributeNS(qname.getNamespaceURI(), qname.getQualifiedName(), value.toString());
             } else {
                 throw new IllegalArgumentException("The key: " + key + " should be an instance of " + QName.class);

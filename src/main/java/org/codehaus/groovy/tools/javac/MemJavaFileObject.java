@@ -72,8 +72,7 @@ public class MemJavaFileObject extends SimpleJavaFileObject {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof MemJavaFileObject)) return false;
-        MemJavaFileObject that = (MemJavaFileObject) o;
+        if (!(o instanceof MemJavaFileObject that)) return false;
         return Objects.equals(className, that.className);
     }
 

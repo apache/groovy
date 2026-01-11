@@ -56,7 +56,7 @@ public class ShortTypeHandling {
     }
 
     /**
-     * this class requires that the supplied enum is not fitting a 
+     * this class requires that the supplied enum is not fitting a
      * Collection case for casting
      */
     public static Enum castToEnum(Object object, Class<? extends Enum> type) {
@@ -72,8 +72,7 @@ public class ShortTypeHandling {
         if (object==null) return null;
         if (object instanceof Character) {
             return (Character) object;
-        } else if (object instanceof Number) {
-            Number value = (Number) object;
+        } else if (object instanceof Number value) {
             return (char) value.intValue();
         }
         String text = object.toString();

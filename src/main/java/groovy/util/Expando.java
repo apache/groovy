@@ -94,8 +94,7 @@ public class Expando extends GroovyObjectSupport {
         catch (GroovyRuntimeException e) {
             // br should get a "native" property match first. getProperty includes such fall-back logic
             Object value = this.getProperty(name);
-            if (value instanceof Closure) {
-                Closure closure = (Closure) value;
+            if (value instanceof Closure closure) {
                 closure = (Closure) closure.clone();
                 closure.setDelegate(this);
                 return closure.call((Object[]) args);
@@ -115,9 +114,8 @@ public class Expando extends GroovyObjectSupport {
     @Override
     public String toString() {
         Object method = getProperties().get("toString");
-        if (method instanceof Closure) {
+        if (method instanceof Closure closure) {
             // invoke overridden toString closure method
-            Closure closure = (Closure) method;
             closure.setDelegate(this);
             return closure.call().toString();
         } else {
@@ -134,9 +132,8 @@ public class Expando extends GroovyObjectSupport {
     @Override
     public boolean equals(Object obj) {
         Object method = getProperties().get("equals");
-        if (method instanceof Closure) {
+        if (method instanceof Closure closure) {
             // invoke overridden equals closure method
-            Closure closure = (Closure) method;
             closure.setDelegate(this);
             Boolean ret = (Boolean) closure.call(obj);
             return ret;
@@ -154,9 +151,8 @@ public class Expando extends GroovyObjectSupport {
     @Override
     public int hashCode() {
         Object method = getProperties().get("hashCode");
-        if (method instanceof Closure) {
+        if (method instanceof Closure closure) {
             // invoke overridden hashCode closure method
-            Closure closure = (Closure) method;
             closure.setDelegate(this);
             Integer ret = (Integer) closure.call();
             return ret;

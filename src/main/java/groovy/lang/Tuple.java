@@ -91,9 +91,8 @@ public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Tuple)) return false;
+        if (!(o instanceof Tuple that)) return false;
 
-        Tuple that = (Tuple) o;
         int size = size();
         if (size != that.size()) return false;
         for (int i = 0; i < size; i++) {

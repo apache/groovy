@@ -369,17 +369,14 @@ public class OptimizingStatementWriter extends StatementWriter {
 
     private boolean writeDeclarationExtraction(final Statement statement) {
         Expression ex = null;
-        if (statement instanceof ReturnStatement) {
-            ReturnStatement rs = (ReturnStatement) statement;
+        if (statement instanceof ReturnStatement rs) {
             ex = rs.getExpression();
-        } else if (statement instanceof ExpressionStatement) {
-            ExpressionStatement es = (ExpressionStatement) statement;
+        } else if (statement instanceof ExpressionStatement es) {
             ex = es.getExpression();
         } else {
             throw new GroovyBugError("unknown statement type :" + statement.getClass());
         }
-        if (!(ex instanceof DeclarationExpression)) return true;
-        DeclarationExpression declaration = (DeclarationExpression) ex;
+        if (!(ex instanceof DeclarationExpression declaration)) return true;
         ex = declaration.getLeftExpression();
         if (ex instanceof TupleExpression) return false;
 
@@ -398,11 +395,9 @@ public class OptimizingStatementWriter extends StatementWriter {
         assignment.setSourcePosition(declaration);
         assignment.copyNodeMetaData(declaration);
         // replace statement code
-        if (statement instanceof ReturnStatement) {
-            ReturnStatement rs = (ReturnStatement) statement;
+        if (statement instanceof ReturnStatement rs) {
             rs.setExpression(assignment);
-        } else if (statement instanceof ExpressionStatement) {
-            ExpressionStatement es = (ExpressionStatement) statement;
+        } else if (statement instanceof ExpressionStatement es) {
             es.setExpression(assignment);
         } else {
             throw new GroovyBugError("unknown statement type :" + statement.getClass());
@@ -862,8 +857,7 @@ public class OptimizingStatementWriter extends StatementWriter {
          * @returns null if the optimization cannot be applied, otherwise it will return the new target type
          */
         private ClassNode optimizeDivWithIntOrLongTarget(final Expression rhs, final ClassNode assignmentTartgetType) {
-            if (!(rhs instanceof BinaryExpression)) return null;
-            BinaryExpression binExp = (BinaryExpression) rhs;
+            if (!(rhs instanceof BinaryExpression binExp)) return null;
             int op = binExp.getOperation().getType();
             if (op != Types.DIVIDE && op != Types.DIVIDE_EQUAL) return null;
 
@@ -900,8 +894,7 @@ public class OptimizingStatementWriter extends StatementWriter {
 
             // find method call target
             Parameter[] paraTypes = null;
-            if (callArgs instanceof ArgumentListExpression) {
-                ArgumentListExpression args = (ArgumentListExpression) callArgs;
+            if (callArgs instanceof ArgumentListExpression args) {
                 int size = args.getExpressions().size();
                 paraTypes = new Parameter[size];
                 int i = 0;

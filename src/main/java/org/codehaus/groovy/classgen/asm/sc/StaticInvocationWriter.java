@@ -260,8 +260,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         ClassNode enclosingClass = controller.getClassNode();
         ClassNode declaringClass = target.getDeclaringClass();
 
-        if (target instanceof ExtensionMethodNode) {
-            ExtensionMethodNode emn = (ExtensionMethodNode) target;
+        if (target instanceof ExtensionMethodNode emn) {
             MethodVisitor mv = controller.getMethodVisitor();
             MethodNode mn = emn.getExtensionMethodNode();
             Parameter[] parameters = mn.getParameters();
@@ -346,8 +345,7 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     private boolean isClassWithSuper(Expression receiver) {
-        if (receiver instanceof PropertyExpression) {
-            PropertyExpression pexp = (PropertyExpression) receiver;
+        if (receiver instanceof PropertyExpression pexp) {
             return pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString());
         }
         return false;
@@ -524,8 +522,7 @@ public class StaticInvocationWriter extends InvocationWriter {
             varScope.putDeclaredVariable(element);
 
             Expression nextValue;
-            if (origin instanceof MethodCallExpression) {
-                MethodCallExpression oldMCE = (MethodCallExpression) origin;
+            if (origin instanceof MethodCallExpression oldMCE) {
                 MethodCallExpression newMCE = callX(
                         varX(element),
                         oldMCE.getMethod(),

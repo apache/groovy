@@ -408,8 +408,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         Expression conditionExpression = (Expression) this.visit(ctx.ce);
 
-        if (conditionExpression instanceof BinaryExpression) {
-            BinaryExpression binaryExpression = (BinaryExpression) conditionExpression;
+        if (conditionExpression instanceof BinaryExpression binaryExpression) {
 
             if (binaryExpression.getOperation().getType() == Types.ASSIGN) {
                 throw createParsingFailedException("Assignment expression is not allowed in the assert statement", conditionExpression);
@@ -1032,8 +1031,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     }
 
                     Statement exprOrBlockStatement = statements.get(0);
-                    if (exprOrBlockStatement instanceof BlockStatement) {
-                        BlockStatement blockStatement = (BlockStatement) exprOrBlockStatement;
+                    if (exprOrBlockStatement instanceof BlockStatement blockStatement) {
                         List<Statement> branchStatementList = blockStatement.getStatements();
                         if (1 == branchStatementList.size()) {
                             exprOrBlockStatement = branchStatementList.get(0);
@@ -1605,11 +1603,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private ConstructorCallExpression checkThisAndSuperConstructorCall(final Statement statement) {
-        if (!(statement instanceof BlockStatement)) { // method code must be a BlockStatement
+        if (!(statement instanceof BlockStatement blockStatement)) { // method code must be a BlockStatement
             return null;
         }
 
-        BlockStatement blockStatement = (BlockStatement) statement;
         List<Statement> statementList = blockStatement.getStatements();
 
         for (int i = 0, n = statementList.size(); i < n; i += 1) {
@@ -2268,8 +2265,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     List<Expression> expressionList = ((ArgumentListExpression) arguments).getExpressions();
                     if (1 == expressionList.size()) {
                         final Expression expression = expressionList.get(0);
-                        if (expression instanceof MethodCallExpression) {
-                            MethodCallExpression mce = (MethodCallExpression) expression;
+                        if (expression instanceof MethodCallExpression mce) {
                             final Expression methodCallArguments = mce.getArguments();
 
                             // check the method call tails with a closure
@@ -2498,8 +2494,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 return configureAST(createCallMethodCallExpression(baseExpr, argumentsExpr), ctx);
             }
 
-            if (baseExpr instanceof AttributeExpression) { // e.g. obj.@a(1, 2)
-                AttributeExpression attributeExpression = (AttributeExpression) baseExpr;
+            if (baseExpr instanceof AttributeExpression attributeExpression) { // e.g. obj.@a(1, 2)
                 attributeExpression.setSpreadSafe(false); // whether attributeExpression is spread safe or not, we must reset it as false
                 return configureAST(createCallMethodCallExpression(attributeExpression, argumentsExpr, true), ctx);
             }
@@ -2557,18 +2552,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else if (asBoolean(ctx.closureOrLambdaExpression())) {
             ClosureExpression closureExpression = this.visitClosureOrLambdaExpression(ctx.closureOrLambdaExpression());
 
-            if (baseExpr instanceof MethodCallExpression) {
-                MethodCallExpression methodCallExpression = (MethodCallExpression) baseExpr;
+            if (baseExpr instanceof MethodCallExpression methodCallExpression) {
                 Expression argumentsExpression = methodCallExpression.getArguments();
 
-                if (argumentsExpression instanceof ArgumentListExpression) { // normal arguments, e.g. 1, 2
-                    ArgumentListExpression argumentListExpression = (ArgumentListExpression) argumentsExpression;
+                if (argumentsExpression instanceof ArgumentListExpression argumentListExpression) { // normal arguments, e.g. 1, 2
                     argumentListExpression.getExpressions().add(closureExpression);
                     return configureAST(methodCallExpression, ctx);
                 }
 
-                if (argumentsExpression instanceof TupleExpression) { // named arguments, e.g. x: 1, y: 2
-                    TupleExpression tupleExpression = (TupleExpression) argumentsExpression;
+                if (argumentsExpression instanceof TupleExpression tupleExpression) { // named arguments, e.g. x: 1, y: 2
                     NamedArgumentListExpression namedArgumentListExpression = (NamedArgumentListExpression) tupleExpression.getExpression(0);
 
                     if (asBoolean(tupleExpression.getExpressions())) {
@@ -2709,8 +2701,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 .map(this::visitEnhancedArgumentListElement)
                 .forEach(e -> {
 
-                    if (e instanceof MapEntryExpression) {
-                        MapEntryExpression mapEntryExpression = (MapEntryExpression) e;
+                    if (e instanceof MapEntryExpression mapEntryExpression) {
                         validateDuplicatedNamedParameter(mapEntryExpressionList, mapEntryExpression);
 
                         mapEntryExpressionList.add(mapEntryExpression);
@@ -3382,8 +3373,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             var initExpressions = new ArrayList<Expression>();
             for (int i = 0; i < ctx.getChildCount(); i += 1) {
                 var c = ctx.getChild(i);
-                if (c instanceof ArrayInitializerContext) {
-                    var arrayInitializer = (ArrayInitializerContext) c;
+                if (c instanceof ArrayInitializerContext arrayInitializer) {
                     ClassNode subType = elementType.getComponentType();
                     //if (subType == null) produce closure or throw exception
                     arrayInitializer.putNodeMetaData("elementType", subType);
@@ -3536,9 +3526,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private void validateExpressionListElement(final ExpressionListElementContext ctx, final Expression expression) {
-        if (expression instanceof MethodCallExpression && isTrue(expression, IS_COMMAND_EXPRESSION)) {
+        if (expression instanceof MethodCallExpression methodCallExpression && isTrue(expression, IS_COMMAND_EXPRESSION)) {
             // statements like `foo(String a)` is invalid
-            MethodCallExpression methodCallExpression = (MethodCallExpression) expression;
             String methodName = methodCallExpression.getMethodAsString();
             if (methodCallExpression.isImplicitThis() && Character.isUpperCase(methodName.codePointAt(0)) || isPrimitiveType(methodName)) {
                 throw createParsingFailedException("Invalid method declaration", ctx);
@@ -4667,8 +4656,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private CompilationFailedException createParsingFailedException(final Throwable t) {
         if (t instanceof SyntaxException) {
             this.collectSyntaxError((SyntaxException) t);
-        } else if (t instanceof GroovySyntaxError) {
-            GroovySyntaxError groovySyntaxError = (GroovySyntaxError) t;
+        } else if (t instanceof GroovySyntaxError groovySyntaxError) {
 
             this.collectSyntaxError(
                     new SyntaxException(

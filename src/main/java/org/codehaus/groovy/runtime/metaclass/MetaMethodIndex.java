@@ -118,8 +118,7 @@ public class MetaMethodIndex {
 
     private void copyNonPrivateMethods(final Cache from, final Map<String, Cache> to) {
         var fastArrayOrMetaMethod = from.methods;
-        if (fastArrayOrMetaMethod instanceof FastArray) {
-            FastArray fastArray = (FastArray) fastArrayOrMetaMethod;
+        if (fastArrayOrMetaMethod instanceof FastArray fastArray) {
             Cache e = null;
             final int n = fastArray.size();
             Object[] array = fastArray.getArray();
@@ -148,8 +147,7 @@ public class MetaMethodIndex {
 
     private void copyNonPrivateNonNewMetaMethods(final Cache from, final Map<String, Cache> to) {
         var fastArrayOrMetaMethod = from.methods;
-        if (fastArrayOrMetaMethod instanceof FastArray) {
-            FastArray fastArray = (FastArray) fastArrayOrMetaMethod;
+        if (fastArrayOrMetaMethod instanceof FastArray fastArray) {
             Cache e = null;
             final int n = fastArray.size();
             Object[] array = fastArray.getArray();
@@ -180,16 +178,14 @@ public class MetaMethodIndex {
             return toIndex;
         }
 
-        if (o instanceof MetaMethod) {
-            final MetaMethod inIndex = (MetaMethod) o;
+        if (o instanceof MetaMethod inIndex) {
             if (!isMatchingMethod(inIndex, toIndex)) {
                 return new FastArray(new Object[]{inIndex, toIndex});
             }
             return !isOverridden(inIndex, toIndex) ? inIndex : toIndex;
         }
 
-        if (o instanceof FastArray) {
-            final FastArray array = (FastArray) o;
+        if (o instanceof FastArray array) {
             int found = findMatchingMethod(array, toIndex);
             if (found == -1) {
                 array.add(toIndex);

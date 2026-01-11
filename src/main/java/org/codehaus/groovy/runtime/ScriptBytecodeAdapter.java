@@ -64,13 +64,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     public static Throwable unwrap(GroovyRuntimeException gre) {
         if (gre.getCause() == null) {
-            if (gre instanceof MissingPropertyExceptionNoStack) {
-                MissingPropertyExceptionNoStack noStack = (MissingPropertyExceptionNoStack) gre;
+            if (gre instanceof MissingPropertyExceptionNoStack noStack) {
                 return new MissingPropertyException(noStack.getProperty(), noStack.getType());
             }
 
-            if (gre instanceof MissingMethodExceptionNoStack) {
-                MissingMethodExceptionNoStack noStack = (MissingMethodExceptionNoStack) gre;
+            if (gre instanceof MissingMethodExceptionNoStack noStack) {
                 return new MissingMethodException(noStack.getMethod(), noStack.getType(), noStack.getArguments(), noStack.isStatic());
             }
         }

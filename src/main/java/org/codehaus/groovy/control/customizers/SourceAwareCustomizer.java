@@ -54,8 +54,7 @@ public class SourceAwareCustomizer extends DelegatingCustomizer {
     public void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) throws CompilationFailedException {
         String fileName = source.getName();
         ReaderSource reader = source.getSource();
-        if (reader instanceof FileReaderSource) {
-            FileReaderSource file = (FileReaderSource) reader;
+        if (reader instanceof FileReaderSource file) {
             fileName = file.getFile().getName();
         }
         if (acceptSource(source) && acceptClass(classNode) && accept(fileName)) {

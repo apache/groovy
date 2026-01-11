@@ -59,8 +59,7 @@ public class SealedASTTransformation extends AbstractASTTransformation {
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!SEALED_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (cNode.isEnum()) {
                 addError(SEALED_NAME + " not allowed for enum", cNode);
                 return;
@@ -130,11 +129,9 @@ public class SealedASTTransformation extends AbstractASTTransformation {
     private static SealedMode getMode(AnnotationNode node, String name) {
         if (node != null) {
             final Expression member = node.getMember(name);
-            if (member instanceof PropertyExpression) {
-                PropertyExpression prop = (PropertyExpression) member;
+            if (member instanceof PropertyExpression prop) {
                 Expression oe = prop.getObjectExpression();
-                if (oe instanceof ClassExpression) {
-                    ClassExpression ce = (ClassExpression) oe;
+                if (oe instanceof ClassExpression ce) {
                     if ("groovy.transform.SealedMode".equals(ce.getType().getName())) {
                         return SealedMode.valueOf(prop.getPropertyAsString());
                     }

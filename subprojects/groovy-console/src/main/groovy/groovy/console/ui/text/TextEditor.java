@@ -496,8 +496,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
 
     private void setRenderRange(int start, int stop) {
         DocumentFilter documentFilter = ((DefaultStyledDocument) TextEditor.this.getDocument()).getDocumentFilter();
-        if (documentFilter instanceof SmartDocumentFilter) {
-            SmartDocumentFilter smartDocumentFilter = (SmartDocumentFilter) documentFilter;
+        if (documentFilter instanceof SmartDocumentFilter smartDocumentFilter) {
             smartDocumentFilter.setRenderRange(Tuple.tuple(start, stop));
         }
     }

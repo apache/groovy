@@ -512,11 +512,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // a static inner class, because at least one dot is
         // required for this. Example: foo.bar -> foo$bar
         if (!(type instanceof LowerCaseClass || type instanceof ConstructedNestedClass)) {
-            if (type instanceof ConstructedClassWithPackage) {
+            if (type instanceof ConstructedClassWithPackage tmp) {
                 // we replace '.' only in the className part
                 // with '$' to find an inner class. The case that
                 // the package is really a class is handled elsewhere
-                ConstructedClassWithPackage tmp = (ConstructedClassWithPackage) type;
                 String savedName = tmp.className;
                 tmp.className = replaceLastPointWithDollar(savedName);
                 if (resolve(tmp, false, true, true)) {
@@ -833,8 +832,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         StringBuilder name = new StringBuilder(32);
         // this loop builds a name from right to left each name part separated by "."
         for (Expression expr = pe; expr != null && name != null; expr = ((PropertyExpression) expr).getObjectExpression()) {
-            if (expr instanceof VariableExpression) {
-                VariableExpression ve = (VariableExpression) expr;
+            if (expr instanceof VariableExpression ve) {
                 // stop at super and this
                 if (ve.isSuperExpression() || ve.isThisExpression()) {
                     return null;
@@ -1069,8 +1067,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformBinaryExpression(final BinaryExpression be) {
         Expression left = transform(be.getLeftExpression());
-        if (be.getOperation().isA(Types.ASSIGNMENT_OPERATOR) && left instanceof ClassExpression) {
-            ClassExpression ce = (ClassExpression) left;
+        if (be.getOperation().isA(Types.ASSIGNMENT_OPERATOR) && left instanceof ClassExpression ce) {
             String error = "you tried to assign a value to the class '" + ce.getType().getName() + "'";
             if (ce.getType().isScript()) {
                 error += ". Do you have a script with this name?";
@@ -1080,8 +1077,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         if (left instanceof ClassExpression && be.getOperation().isOneOf(
                 new int[]{Types.ARRAY_EXPRESSION, Types.SYNTH_LIST, Types.SYNTH_MAP})) {
-            if (be.getRightExpression() instanceof ListExpression) {
-                ListExpression list = (ListExpression) be.getRightExpression();
+            if (be.getRightExpression() instanceof ListExpression list) {
                 if (list.getExpressions().isEmpty()) {
                     return new ClassExpression(left.getType().makeArray());
                 } else {
@@ -1103,9 +1099,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         return CastExpression.asExpression(left.getType(), me);
                     }
                 }
-            } else if (be.getRightExpression() instanceof SpreadMapExpression) {
+            } else if (be.getRightExpression() instanceof SpreadMapExpression mapExpression) {
                 // we have C[*:map] -> should become (C) map
-                SpreadMapExpression mapExpression = (SpreadMapExpression) be.getRightExpression();
                 Expression right = transform(mapExpression.getExpression());
                 return CastExpression.asExpression(left.getType(), right);
             }
@@ -1181,8 +1176,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         checkingVariableTypeInDeclaration = true;
         Expression left = transform(oldLeft);
         checkingVariableTypeInDeclaration = false;
-        if (left instanceof ClassExpression) {
-            ClassExpression ce = (ClassExpression) left;
+        if (left instanceof ClassExpression ce) {
             addError("you tried to assign a value to the class " + ce.getType().getName(), oldLeft);
             return de;
         }
@@ -1236,13 +1230,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private void checkAnnotationMemberValue(final Expression value) {
-        if (value instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) value;
+        if (value instanceof PropertyExpression pe) {
             if (!(pe.getObjectExpression() instanceof ClassExpression)) {
                 addError("unable to find class '" + pe.getText() + "' for annotation attribute constant", pe.getObjectExpression());
             }
-        } else if (value instanceof ListExpression) {
-            ListExpression le = (ListExpression) value;
+        } else if (value instanceof ListExpression le) {
             for (Expression e : le.getExpressions()) {
                 checkAnnotationMemberValue(e);
             }

@@ -141,9 +141,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     @Override
     protected void evaluateBinaryExpressionWithAssignment(final String method, final BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        if (leftExpression instanceof PropertyExpression
+        if (leftExpression instanceof PropertyExpression pexp
                 && !(leftExpression instanceof AttributeExpression)) {
-            PropertyExpression pexp = (PropertyExpression) leftExpression;
 
             BinaryExpression expressionWithoutAssignment = binX(
                     leftExpression,
@@ -174,9 +173,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
     @Override
     public void evaluateEqual(final BinaryExpression expression, final boolean defineVariable) {
         Expression leftExpression = expression.getLeftExpression();
-        if (leftExpression instanceof PropertyExpression
+        if (leftExpression instanceof PropertyExpression pexp
                 && !(leftExpression instanceof AttributeExpression)) {
-            PropertyExpression pexp = (PropertyExpression) leftExpression;
             if (!defineVariable && makeSetProperty(
                     pexp.getObjectExpression(),
                     pexp.getProperty(),

@@ -117,8 +117,7 @@ public final class CallSiteArray {
     private static CallSite createPojoSite(CallSite callSite, Object receiver, Object[] args) {
         final Class klazz = receiver.getClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
-        if (!GroovyCategorySupport.hasCategoryInCurrentThread() && metaClass instanceof MetaClassImpl) {
-            final MetaClassImpl mci = (MetaClassImpl) metaClass;
+        if (!GroovyCategorySupport.hasCategoryInCurrentThread() && metaClass instanceof MetaClassImpl mci) {
             final ClassInfo info = mci.getTheCachedClass().classInfo;
             if (info.hasPerInstanceMetaClasses()) {
                 return new PerInstancePojoMetaClassSite(callSite, info);

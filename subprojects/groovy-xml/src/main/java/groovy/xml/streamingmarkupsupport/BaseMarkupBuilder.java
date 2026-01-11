@@ -123,8 +123,7 @@ public class BaseMarkupBuilder extends Builder {
 
                 if (arg instanceof Map) {
                     attrs = (Map) arg;
-                } else if (arg instanceof Closure) {
-                    final Closure c = ((Closure) arg);
+                } else if (arg instanceof Closure c) {
 
                     c.setDelegate(this);
                     body = c.asWritable();

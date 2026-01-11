@@ -160,8 +160,7 @@ public class FormatHelper {
             // other primitives
             return formatCollection(DefaultTypeTransformation.arrayAsCollection(arguments), inspect, escapeBackslashes, maxSize, safe);
         }
-        if (arguments instanceof Range) {
-            Range range = (Range) arguments;
+        if (arguments instanceof Range range) {
             try {
                 if (inspect) {
                     return range.inspect();
@@ -489,8 +488,7 @@ public class FormatHelper {
             out.write(toMapString((Map) object));
         } else if (object instanceof Collection) {
             out.write(toListString((Collection) object));
-        } else if (object instanceof Writable) {
-            Writable writable = (Writable) object;
+        } else if (object instanceof Writable writable) {
             writable.writeTo(out);
         } else if (object instanceof InputStream || object instanceof Reader) {
             // Copy stream to stream
@@ -524,8 +522,7 @@ public class FormatHelper {
             out.append(toMapString((Map) object));
         } else if (object instanceof Collection) {
             out.append(toListString((Collection) object));
-        } else if (object instanceof Writable) {
-            Writable writable = (Writable) object;
+        } else if (object instanceof Writable writable) {
             Writer stringWriter = new StringBuilderWriter();
             writable.writeTo(stringWriter);
             out.append(stringWriter.toString());

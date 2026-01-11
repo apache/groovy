@@ -93,12 +93,11 @@ public class ExternalStrategy extends BuilderASTTransformation.AbstractBuilderSt
 
     @Override
     public void build(BuilderASTTransformation transform, AnnotatedNode annotatedNode, AnnotationNode anno) {
-        if (!(annotatedNode instanceof ClassNode)) {
+        if (!(annotatedNode instanceof ClassNode builder)) {
             transform.addError("Error during " + BuilderASTTransformation.MY_TYPE_NAME + " processing: building for " +
                     annotatedNode.getClass().getSimpleName() + " not supported by " + getClass().getSimpleName(), annotatedNode);
             return;
         }
-        ClassNode builder = (ClassNode) annotatedNode;
         String prefix = transform.getMemberStringValue(anno, "prefix", "");
         ClassNode buildee = transform.getMemberClassValue(anno, "forClass");
         if (buildee == null) {

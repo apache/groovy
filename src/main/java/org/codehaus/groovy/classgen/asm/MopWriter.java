@@ -71,10 +71,9 @@ public class MopWriter {
 
         @Override
         public boolean equals(final Object obj) {
-            if (!(obj instanceof MopKey)) {
+            if (!(obj instanceof MopKey other)) {
                 return false;
             }
-            MopKey other = (MopKey) obj;
             return other.name.equals(name) && ParameterUtils.parametersEqual(other.params, params);
         }
     }

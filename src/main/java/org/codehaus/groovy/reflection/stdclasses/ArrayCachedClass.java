@@ -37,8 +37,7 @@ public class ArrayCachedClass extends CachedClass {
         Class paramComponent = getTheClass().getComponentType();
         if (paramComponent.isPrimitive()) {
             argument = DefaultTypeTransformation.convertToPrimitiveArray(argument, paramComponent);
-        } else if (paramComponent == String.class && argument instanceof GString[]) {
-            GString[] strings = (GString[]) argument;
+        } else if (paramComponent == String.class && argument instanceof GString[] strings) {
             String[] ret = new String[strings.length];
             for (int i = 0; i < strings.length; i++) {
                 ret[i] = strings[i].toString();

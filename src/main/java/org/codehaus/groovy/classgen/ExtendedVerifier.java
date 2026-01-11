@@ -405,14 +405,11 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
 
     private static void visitDeprecation(final AnnotatedNode node, final AnnotationNode visited) {
         if (visited.getClassNode().isResolved() && visited.getClassNode().equals(DEPRECATED_TYPE)) {
-            if (node instanceof MethodNode) {
-                MethodNode mn = (MethodNode) node;
+            if (node instanceof MethodNode mn) {
                 mn.setModifiers(mn.getModifiers() | Opcodes.ACC_DEPRECATED);
-            } else if (node instanceof FieldNode) {
-                FieldNode fn = (FieldNode) node;
+            } else if (node instanceof FieldNode fn) {
                 fn.setModifiers(fn.getModifiers() | Opcodes.ACC_DEPRECATED);
-            } else if (node instanceof ClassNode) {
-                ClassNode cn = (ClassNode) node;
+            } else if (node instanceof ClassNode cn) {
                 cn.setModifiers(cn.getModifiers() | Opcodes.ACC_DEPRECATED);
             }
         }
@@ -422,9 +419,8 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     private void visitOverride(final AnnotatedNode node, final AnnotationNode visited) {
         ClassNode annotationType = visited.getClassNode();
         if (annotationType.isResolved() && "java.lang.Override".equals(annotationType.getName())) {
-            if (node instanceof MethodNode && !Boolean.TRUE.equals(node.getNodeMetaData(Verifier.DEFAULT_PARAMETER_GENERATED))) {
+            if (node instanceof MethodNode mNode && !Boolean.TRUE.equals(node.getNodeMetaData(Verifier.DEFAULT_PARAMETER_GENERATED))) {
                 boolean override = false;
-                MethodNode mNode = (MethodNode) node;
                 ClassNode  cNode = mNode.getDeclaringClass();
                 if (mNode.hasDefaultValue()) {
                     List<MethodNode> variants = cNode.getDeclaredMethods(mNode.getName());

@@ -297,8 +297,7 @@ public class DefaultGroovyMethodsSupport {
     }
 
     protected static <T> Queue<T> createSimilarQueue(Queue<T> orig) {
-        if (orig instanceof ArrayBlockingQueue) {
-            ArrayBlockingQueue<T> queue = (ArrayBlockingQueue<T>) orig;
+        if (orig instanceof ArrayBlockingQueue<T> queue) {
             return new ArrayBlockingQueue<>(queue.size() + queue.remainingCapacity());
         } else if (orig instanceof ArrayDeque) {
             return new ArrayDeque<>();

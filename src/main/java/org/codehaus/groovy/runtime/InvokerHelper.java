@@ -114,8 +114,7 @@ public class InvokerHelper {
         if (value.getClass().isArray()) {
             return Arrays.asList((Object[]) value);
         }
-        if (value instanceof Enumeration) {
-            Enumeration e = (Enumeration) value;
+        if (value instanceof Enumeration e) {
             List answer = new ArrayList();
             while (e.hasMoreElements()) {
                 answer.add(e.nextElement());
@@ -159,11 +158,9 @@ public class InvokerHelper {
             object = NullObject.getNullObject();
         }
 
-        if (object instanceof GroovyObject) {
-            GroovyObject pogo = (GroovyObject) object;
+        if (object instanceof GroovyObject pogo) {
             return pogo.getProperty(property);
-        } else if (object instanceof Class) {
-            Class c = (Class) object;
+        } else if (object instanceof Class c) {
             return metaRegistry.getMetaClass(c).getProperty(object, property);
         } else {
             return ((MetaClassRegistryImpl) metaRegistry).getMetaClass(object).getProperty(object, property);
@@ -182,8 +179,7 @@ public class InvokerHelper {
             object = NullObject.getNullObject();
         }
 
-        if (object instanceof GroovyObject) {
-            GroovyObject pogo = (GroovyObject) object;
+        if (object instanceof GroovyObject pogo) {
             pogo.setProperty(property, newValue);
         } else if (object instanceof Class) {
             metaRegistry.getMetaClass((Class) object).setProperty(object, property, newValue);
@@ -234,12 +230,10 @@ public class InvokerHelper {
     }
 
     public static Object unaryMinus(Object value) {
-        if (value instanceof Integer) {
-            Integer number = (Integer) value;
+        if (value instanceof Integer number) {
             return -number;
         }
-        if (value instanceof Long) {
-            Long number = (Long) value;
+        if (value instanceof Long number) {
             return -number;
         }
         if (value instanceof BigInteger) {
@@ -248,20 +242,16 @@ public class InvokerHelper {
         if (value instanceof BigDecimal) {
             return ((BigDecimal) value).negate();
         }
-        if (value instanceof Double) {
-            Double number = (Double) value;
+        if (value instanceof Double number) {
             return -number;
         }
-        if (value instanceof Float) {
-            Float number = (Float) value;
+        if (value instanceof Float number) {
             return -number;
         }
-        if (value instanceof Short) {
-            Short number = (Short) value;
+        if (value instanceof Short number) {
             return (short) -number;
         }
-        if (value instanceof Byte) {
-            Byte number = (Byte) value;
+        if (value instanceof Byte number) {
             return (byte) -number;
         }
         if (value instanceof ArrayList) {
@@ -313,8 +303,7 @@ public class InvokerHelper {
         String regexToCompareTo;
         if (right instanceof String) {
             regexToCompareTo = (String) right;
-        } else if (right instanceof Pattern) {
-            Pattern pattern = (Pattern) right;
+        } else if (right instanceof Pattern pattern) {
             return pattern.matcher(stringToCompare);
         } else {
             regexToCompareTo = FormatHelper.toString(right);
@@ -386,8 +375,7 @@ public class InvokerHelper {
         Map answer = new LinkedHashMap(initialCapacity(values.length / 2));
 
         for (int i = 0, n = values.length; i < n - 1; ) {
-            if ((values[i] instanceof SpreadMap) && (values[i + 1] instanceof Map)) {
-                Map smap = (Map) values[i + 1];
+            if ((values[i] instanceof SpreadMap) && (values[i + 1] instanceof Map smap)) {
                 for (Object e : smap.entrySet()) {
                     Map.Entry entry = (Map.Entry) e;
                     answer.put(entry.getKey(), entry.getValue());
@@ -546,12 +534,10 @@ public class InvokerHelper {
         return createRange(from, to, false, !inclusive);
     }
     public static Object bitwiseNegate(Object value) {
-        if (value instanceof Integer) {
-            Integer number = (Integer) value;
+        if (value instanceof Integer number) {
             return ~number;
         }
-        if (value instanceof Long) {
-            Long number = (Long) value;
+        if (value instanceof Long number) {
             return ~number;
         }
         if (value instanceof BigInteger) {
@@ -603,8 +589,7 @@ public class InvokerHelper {
         }
 
         // if the object is a Class, call a static method from that class
-        if (object instanceof Class) {
-            Class<?> theClass = (Class<?>) object;
+        if (object instanceof Class<?> theClass) {
             MetaClass metaClass = metaRegistry.getMetaClass(theClass);
             return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
         }

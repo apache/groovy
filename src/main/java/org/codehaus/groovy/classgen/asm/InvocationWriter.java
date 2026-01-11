@@ -257,8 +257,7 @@ public class InvocationWriter {
     }
 
     private boolean isClassWithSuper(final Expression exp) {
-        if (exp instanceof PropertyExpression) {
-            PropertyExpression pexp = (PropertyExpression) exp;
+        if (exp instanceof PropertyExpression pexp) {
             return pexp.getObjectExpression() instanceof ClassExpression && "super".equals(pexp.getPropertyAsString());
         }
         return false;
@@ -430,8 +429,7 @@ public class InvocationWriter {
      * if Class.forName(x) is recognized, make a direct method call
      */
     protected boolean makeClassForNameCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments) {
-        if (!(receiver instanceof ClassExpression)) return false;
-        ClassExpression ce = (ClassExpression) receiver;
+        if (!(receiver instanceof ClassExpression ce)) return false;
         if (!ClassHelper.CLASS_Type.equals(ce.getType())) return false;
         String msg = getMethodName(message);
         if (!"forName".equals(msg)) return false;
@@ -452,8 +450,7 @@ public class InvocationWriter {
         ArgumentListExpression ae;
         if (arguments instanceof ArgumentListExpression) {
             ae = (ArgumentListExpression) arguments;
-        } else if (arguments instanceof TupleExpression) {
-            TupleExpression te = (TupleExpression) arguments;
+        } else if (arguments instanceof TupleExpression te) {
             ae = new ArgumentListExpression(te.getExpressions());
         } else {
             ae = new ArgumentListExpression();
@@ -464,8 +461,7 @@ public class InvocationWriter {
 
     protected String getMethodName(final Expression message) {
         String methodName = null;
-        if (message instanceof CastExpression) {
-            CastExpression msg = (CastExpression) message;
+        if (message instanceof CastExpression msg) {
             if (isStringType(msg.getType())) {
                 final Expression methodExpr = msg.getExpression();
                 if (methodExpr instanceof ConstantExpression) {
@@ -474,8 +470,7 @@ public class InvocationWriter {
             }
         }
 
-        if (methodName == null && message instanceof ConstantExpression) {
-            ConstantExpression constantExpression = (ConstantExpression) message;
+        if (methodName == null && message instanceof ConstantExpression constantExpression) {
             methodName = constantExpression.getText();
         }
         return methodName;
@@ -580,8 +575,7 @@ public class InvocationWriter {
 
     protected void writeNormalConstructorCall(final ConstructorCallExpression call) {
         Expression arguments = call.getArguments();
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tupleExpression = (TupleExpression) arguments;
+        if (arguments instanceof TupleExpression tupleExpression) {
             int size = tupleExpression.getExpressions().size();
             if (size == 0) {
                 arguments = MethodCallExpression.NO_ARGUMENTS;
@@ -610,8 +604,7 @@ public class InvocationWriter {
         int i = 0; Parameter[] params = ctor.getParameters();
         for (Expression arg : args) {
             Parameter p = params[Math.min(i++, params.length)];
-            if (arg instanceof VariableExpression) {
-                VariableExpression var = (VariableExpression) arg;
+            if (arg instanceof VariableExpression var) {
                 loadVariableWithReference(var);
             } else {
                 arg.visit(controller.getAcg());

@@ -336,8 +336,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             TupleExpression tupleExpression = (TupleExpression) call.getArguments();
             if (1 == tupleExpression.getExpressions().size()) {
                 Expression firstExpression = tupleExpression.getExpressions().get(0);
-                if (firstExpression instanceof MethodCallExpression) {
-                    MethodCallExpression mce = (MethodCallExpression) firstExpression;
+                if (firstExpression instanceof MethodCallExpression mce) {
                     if (KW_DISTINCT.equals(mce.getMethodAsString())) {
                         tupleExpression = (TupleExpression) mce.getArguments();
                         currentGinqExpression.putNodeMetaData(GINQ_SELECT_DISTINCT, true);
@@ -345,8 +344,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
                 }
             } else {
                 for (Expression expression : tupleExpression.getExpressions()) {
-                    if (expression instanceof MethodCallExpression) {
-                        MethodCallExpression mce = (MethodCallExpression) expression;
+                    if (expression instanceof MethodCallExpression mce) {
                         if (KW_DISTINCT.equals(mce.getMethodAsString())) {
                             this.collectSyntaxError(new GinqSyntaxError(
                                     "Invalid usage of `distinct`",

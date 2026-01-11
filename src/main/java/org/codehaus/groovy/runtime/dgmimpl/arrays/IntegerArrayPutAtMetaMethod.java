@@ -68,9 +68,8 @@ public class IntegerArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
         @Override
         public Object call(Object receiver, Object[] args) throws Throwable {
-            if ((receiver instanceof int[] && args[0] instanceof Integer && args[1] instanceof Integer)
+            if ((receiver instanceof int[] objects && args[0] instanceof Integer && args[1] instanceof Integer)
                     && checkPojoMetaClass()) {
-                final int[] objects = (int[]) receiver;
                 objects[normaliseIndex((Integer) args[0], objects.length)] = (Integer) args[1];
                 return null;
             } else

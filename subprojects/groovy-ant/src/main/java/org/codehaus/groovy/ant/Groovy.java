@@ -721,8 +721,7 @@ public class Groovy extends Java {
      * @return the name to use when compiling the script
      */
     private String computeScriptName() {
-        if (src instanceof FileResource) {
-            FileResource fr = (FileResource) src;
+        if (src instanceof FileResource fr) {
             return fr.getFile().getAbsolutePath();
         } else {
             String name = PREFIX;

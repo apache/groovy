@@ -233,9 +233,8 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         boolean isStatic = innerClass.isStaticClass();
         if (!isStatic) {
             if (currentMethod != null) {
-                if (currentMethod instanceof ConstructorNode) {
+                if (currentMethod instanceof ConstructorNode ctor) {
                     boolean[] precedesSuperOrThisCall = new boolean[1];
-                    ConstructorNode ctor = (ConstructorNode) currentMethod;
                     GroovyCodeVisitor visitor = new CodeVisitorSupport() {
                         @Override
                         public void visitConstructorCallExpression(ConstructorCallExpression cce) {

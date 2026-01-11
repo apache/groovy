@@ -74,8 +74,7 @@ public class ConstructorNodeUtils {
     public static ConstructorCallExpression getFirstIfSpecialConstructorCall(final Statement code) {
         if (code == null) return null;
 
-        if (code instanceof BlockStatement) {
-            final BlockStatement block = (BlockStatement) code;
+        if (code instanceof BlockStatement block) {
             final List<Statement> statementList = block.getStatements();
             if (statementList.isEmpty()) return null;
             // handle blocks of blocks
@@ -85,8 +84,7 @@ public class ConstructorNodeUtils {
         if (!(code instanceof ExpressionStatement)) return null;
 
         Expression expression = ((ExpressionStatement) code).getExpression();
-        if (!(expression instanceof ConstructorCallExpression)) return null;
-        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
+        if (!(expression instanceof ConstructorCallExpression cce)) return null;
         if (cce.isSpecialCall()) return cce;
         return null;
     }

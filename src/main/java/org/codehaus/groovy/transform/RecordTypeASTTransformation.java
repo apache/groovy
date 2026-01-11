@@ -501,11 +501,9 @@ public class RecordTypeASTTransformation extends AbstractASTTransformation imple
     private static RecordTypeMode getMode(AnnotationNode node, String name) {
         if (node != null) {
             final Expression member = node.getMember(name);
-            if (member instanceof PropertyExpression) {
-                PropertyExpression prop = (PropertyExpression) member;
+            if (member instanceof PropertyExpression prop) {
                 Expression oe = prop.getObjectExpression();
-                if (oe instanceof ClassExpression) {
-                    ClassExpression ce = (ClassExpression) oe;
+                if (oe instanceof ClassExpression ce) {
                     if ("groovy.transform.RecordTypeMode".equals(ce.getType().getName())) {
                         return RecordTypeMode.valueOf(prop.getPropertyAsString());
                     }

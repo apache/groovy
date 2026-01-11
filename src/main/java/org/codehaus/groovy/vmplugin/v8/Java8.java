@@ -364,19 +364,16 @@ public class Java8 implements VMPlugin {
         String typeName = definition.getClassNode().getName();
         if ("java.lang.annotation.Retention".equals(typeName)) {
             Expression exp = definition.getMember("value");
-            if (!(exp instanceof PropertyExpression)) return;
-            PropertyExpression pe = (PropertyExpression) exp;
+            if (!(exp instanceof PropertyExpression pe)) return;
             String name = pe.getPropertyAsString();
             RetentionPolicy policy = RetentionPolicy.valueOf(name);
             setRetentionPolicy(policy, root);
         } else if ("java.lang.annotation.Target".equals(typeName)) {
             Expression exp = definition.getMember("value");
-            if (!(exp instanceof ListExpression)) return;
-            ListExpression list = (ListExpression) exp;
+            if (!(exp instanceof ListExpression list)) return;
             int targets = 0;
             for (Expression e : list.getExpressions()) {
-                if (!(e instanceof PropertyExpression)) return;
-                PropertyExpression element = (PropertyExpression) e;
+                if (!(e instanceof PropertyExpression element)) return;
                 String name = element.getPropertyAsString();
                 ElementType type = ElementType.valueOf(name);
                 Integer target = elementTypeToTarget.get(type);
@@ -611,8 +608,7 @@ public class Java8 implements VMPlugin {
             return false;
         }
 
-        if (accessibleObject instanceof Constructor) {
-            Constructor<?> c = (Constructor<?>) accessibleObject;
+        if (accessibleObject instanceof Constructor<?> c) {
             if (c.getDeclaringClass() == Class.class) {
                 return false; // Cannot make a java.lang.Class constructor accessible
             }

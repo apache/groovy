@@ -192,9 +192,8 @@ public class Java9 extends Java8 {
 
     @Override
     public MetaMethod transformMetaMethod(final MetaClass metaClass, final MetaMethod metaMethod, Class<?> caller) {
-        if (metaMethod instanceof CachedMethod) {
+        if (metaMethod instanceof CachedMethod cachedMethod) {
             if (caller == null) caller = ReflectionUtils.class;
-            CachedMethod  cachedMethod = (CachedMethod) metaMethod;
             CachedClass declaringClass = metaMethod.getDeclaringClass();
             Optional<CachedMethod> transformedMethod = Optional.ofNullable(cachedMethod.getTransformedMethod());
             if (transformedMethod.isEmpty()
@@ -282,11 +281,10 @@ public class Java9 extends Java8 {
             throw new IllegalCallerException(); // should not happen
         }
 
-        if (!(accessibleObject instanceof Member)) {
+        if (!(accessibleObject instanceof Member member)) {
             throw new IllegalArgumentException("accessibleObject should be a member of type: " + accessibleObject); // should not happen
         }
 
-        Member member = (Member) accessibleObject;
         Class<?> declaringClass = member.getDeclaringClass();
 
         Module callerModule = callerClass.getModule();

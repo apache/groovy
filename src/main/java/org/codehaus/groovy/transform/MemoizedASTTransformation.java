@@ -77,8 +77,7 @@ public class MemoizedASTTransformation extends AbstractASTTransformation {
         init(nodes, source);
         AnnotationNode annotationNode = (AnnotationNode) nodes[0];
         AnnotatedNode annotatedNode = (AnnotatedNode) nodes[1];
-        if (MY_TYPE.equals(annotationNode.getClassNode()) && annotatedNode instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode) annotatedNode;
+        if (MY_TYPE.equals(annotationNode.getClassNode()) && annotatedNode instanceof MethodNode methodNode) {
             if (methodNode.isAbstract()) {
                 addError("Annotation " + MY_TYPE_NAME + " cannot be used for abstract methods.", methodNode);
                 return;

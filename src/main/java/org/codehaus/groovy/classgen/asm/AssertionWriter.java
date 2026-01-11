@@ -206,15 +206,12 @@ public class AssertionWriter {
     }
 
     private static void addVariableNames(final Expression expression, final List<String> list) {
-        if (expression instanceof BooleanExpression) {
-            BooleanExpression boolExp = (BooleanExpression) expression;
+        if (expression instanceof BooleanExpression boolExp) {
             addVariableNames(boolExp.getExpression(), list);
-        } else if (expression instanceof BinaryExpression) {
-            BinaryExpression binExp = (BinaryExpression) expression;
+        } else if (expression instanceof BinaryExpression binExp) {
             addVariableNames(binExp.getLeftExpression(), list);
             addVariableNames(binExp.getRightExpression(), list);
-        } else if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
+        } else if (expression instanceof VariableExpression varExp) {
             list.add(varExp.getName());
         }
     }

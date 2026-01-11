@@ -115,9 +115,8 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
             addDispatcherMethods(node);
         }
 
-        if (node instanceof InnerClassNode) {
+        if (node instanceof InnerClassNode innerClass) {
             thisField = node.getField("this$0");
-            InnerClassNode innerClass = (InnerClassNode) node;
             if (innerClass.getVariableScope() == null && node.getDeclaredConstructors().isEmpty()) {
                 // add empty default constructor
                 addGeneratedConstructor(innerClass, ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);

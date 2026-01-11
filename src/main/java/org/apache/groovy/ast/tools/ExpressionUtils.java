@@ -200,8 +200,7 @@ public final class ExpressionUtils {
      * @return original or transformed expression
      */
     public static Expression transformInlineConstants(final Expression exp) {
-        if (exp instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) exp;
+        if (exp instanceof PropertyExpression pe) {
             if (pe.getObjectExpression() instanceof ClassExpression) {
                 ClassNode clazz = pe.getObjectExpression().getType();
                 FieldNode field = ClassNodeUtils.getField(clazz, pe.getPropertyAsString());
@@ -212,10 +211,8 @@ public final class ExpressionUtils {
                     }
                 }
             }
-        } else if (exp instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) exp;
-            if (ve.getAccessedVariable() instanceof FieldNode) {
-                FieldNode field = (FieldNode) ve.getAccessedVariable();
+        } else if (exp instanceof VariableExpression ve) {
+            if (ve.getAccessedVariable() instanceof FieldNode field) {
                 if (!field.isEnum() && field.isFinal() && field.isStatic()) {
                     Expression value = transformInlineConstants(field.getInitialValueExpression(), field.getType()); // GROOVY-11207, GROOVY-10068
                     if (value instanceof ConstantExpression) {
@@ -223,8 +220,7 @@ public final class ExpressionUtils {
                     }
                 }
             }
-        } else if (exp instanceof BinaryExpression) {
-            BinaryExpression be = (BinaryExpression) exp;
+        } else if (exp instanceof BinaryExpression be) {
             Expression lhs = transformInlineConstants(be.getLeftExpression());
             Expression rhs = transformInlineConstants(be.getRightExpression());
             if (be.getOperation().getType() == PLUS // GROOVY-9855: inline string concat
@@ -262,8 +258,7 @@ public final class ExpressionUtils {
      * @return the transformed type or the original if no transformation was possible
      */
     public static Expression transformInlineConstants(final Expression exp, final ClassNode attrType) {
-        if (exp instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) exp;
+        if (exp instanceof PropertyExpression pe) {
             Expression e = pe.getObjectExpression();
             ClassNode cn;
             FieldNode fn;
@@ -289,10 +284,8 @@ public final class ExpressionUtils {
                     }
                 }*/
             }
-        } else if (exp instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) exp;
-            if (ve.getAccessedVariable() instanceof FieldNode) {
-                FieldNode fn = (FieldNode) ve.getAccessedVariable();
+        } else if (exp instanceof VariableExpression ve) {
+            if (ve.getAccessedVariable() instanceof FieldNode fn) {
                 if (fn.isStatic() && fn.isFinal()) {
                     Expression e = transformInlineConstants(fn.getInitialValueExpression(), attrType);
                     if (e != null) {
@@ -303,20 +296,17 @@ public final class ExpressionUtils {
         } else if (exp instanceof ConstantExpression) {
             Object value = ((ConstantExpression) exp).getValue();
             ClassNode targetType = ClassHelper.getWrapper(attrType);
-            if (value instanceof Integer) {
-                Integer integer = (Integer) value;
+            if (value instanceof Integer integer) {
                 ConstantExpression constantExpression = transformNumberConstantExpression(exp, targetType, integer);
                 if (constantExpression != null) return constantExpression;
-            } else if (value instanceof BigDecimal) {
-                BigDecimal decimal = (BigDecimal) value;
+            } else if (value instanceof BigDecimal decimal) {
                 if (ClassHelper.isWrapperFloat(targetType)) {
                     return configure(exp, new ConstantExpression(decimal.floatValue(), true));
                 }
                 if (ClassHelper.isWrapperDouble(targetType)) {
                     return configure(exp, new ConstantExpression(decimal.doubleValue(), true));
                 }
-            } else if (value instanceof String) {
-                String string = (String) value;
+            } else if (value instanceof String string) {
                 if (ClassHelper.isWrapperCharacter(targetType) && string.length() == 1) {
                     return configure(exp, new ConstantExpression(string.charAt(0), true));
                 }

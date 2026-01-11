@@ -45,8 +45,7 @@ public class StatementMetaTypeChooser implements TypeChooser {
         if (meta != null) type = meta.type;
         if (type != null) return type;
 
-        if (exp instanceof VariableExpression) {
-            VariableExpression vexp = (VariableExpression) exp;
+        if (exp instanceof VariableExpression vexp) {
             if (vexp.isClosureSharedVariable()) return vexp.getType();
             if (vexp.isSuperExpression()) return current.getSuperClass();
 

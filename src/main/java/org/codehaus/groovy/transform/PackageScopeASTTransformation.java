@@ -189,8 +189,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
         List<groovy.transform.PackageScopeTarget> list = new ArrayList<groovy.transform.PackageScopeTarget>();
         if (expr instanceof PropertyExpression) {
             list.add(extractTarget((PropertyExpression) expr));
-        } else if (expr instanceof ListExpression) {
-            final ListExpression expressionList = (ListExpression) expr;
+        } else if (expr instanceof ListExpression expressionList) {
             final List<Expression> expressions = expressionList.getExpressions();
             for (Expression ex : expressions) {
                 if (ex instanceof PropertyExpression) {
@@ -203,8 +202,7 @@ public class PackageScopeASTTransformation extends AbstractASTTransformation {
 
     private static groovy.transform.PackageScopeTarget extractTarget(PropertyExpression expr) {
         Expression oe = expr.getObjectExpression();
-        if (oe instanceof ClassExpression) {
-            ClassExpression ce = (ClassExpression) oe;
+        if (oe instanceof ClassExpression ce) {
             if ("groovy.transform.PackageScopeTarget".equals(ce.getType().getName())) {
                 Expression prop = expr.getProperty();
                 if (prop instanceof ConstantExpression) {

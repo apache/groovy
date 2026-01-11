@@ -177,8 +177,7 @@ public class InvokeDynamicWriter extends InvocationWriter {
     }
 
     private Expression correctReceiverForInterfaceCall(final Expression receiver) {
-        if (receiver instanceof PropertyExpression) {
-            PropertyExpression pexp = (PropertyExpression) receiver;
+        if (receiver instanceof PropertyExpression pexp) {
             if (pexp.getObjectExpression() instanceof ClassExpression
                      && pexp.getProperty() instanceof ConstantExpression) {
                 String name = pexp.getProperty().getText();

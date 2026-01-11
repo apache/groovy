@@ -86,8 +86,7 @@ public class LazyASTTransformation extends AbstractASTTransformation {
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
 
-        if (parent instanceof FieldNode) {
-            final FieldNode fieldNode = (FieldNode) parent;
+        if (parent instanceof FieldNode fieldNode) {
             visitField(this, node, fieldNode);
         }
     }

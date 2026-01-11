@@ -474,8 +474,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         Object val = node.getMember("systemClassLoader");
         if (!(val instanceof ConstantExpression)) return;
         Object systemClassLoaderObject = ((ConstantExpression)val).getValue();
-        if (!(systemClassLoaderObject instanceof Boolean)) return;
-        Boolean systemClassLoader = (Boolean) systemClassLoaderObject;
+        if (!(systemClassLoaderObject instanceof Boolean systemClassLoader)) return;
         if (systemClassLoader) loader = ClassLoader.getSystemClassLoader();
     }
 
@@ -520,8 +519,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         Object val = node.getMember("value");
         if (!(val instanceof ConstantExpression)) return;
         Object allParts = ((ConstantExpression)val).getValue();
-        if (!(allParts instanceof String)) return;
-        String allstr = (String) allParts;
+        if (!(allParts instanceof String allstr)) return;
 
         // strip off trailing attributes
         boolean done = false;
@@ -575,8 +573,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     }
 
     private void extractGrab(final Expression init, final ConstantExpression ce) {
-        if (ce.getValue() instanceof AnnotationNode) {
-            AnnotationNode annotation = (AnnotationNode) ce.getValue();
+        if (ce.getValue() instanceof AnnotationNode annotation) {
             if ((init != null) && (annotation.getMember("initClass") != null)) {
                 annotation.setMember("initClass", init);
             }

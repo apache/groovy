@@ -63,8 +63,7 @@ public class HandleMetaClass extends DelegatingMetaClass {
           if (object != NONE) {
               final MetaClass metaClass = delegate;
               delegate = new ExpandoMetaClass(delegate.getTheClass(), false, true);
-              if (metaClass instanceof ExpandoMetaClass) {
-                  ExpandoMetaClass emc = (ExpandoMetaClass) metaClass;
+              if (metaClass instanceof ExpandoMetaClass emc) {
                   for (MetaMethod method : emc.getExpandoMethods())
                     ((ExpandoMetaClass)delegate).registerInstanceMethod(method);
               }

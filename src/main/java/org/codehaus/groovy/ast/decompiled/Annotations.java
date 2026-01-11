@@ -66,8 +66,7 @@ class Annotations {
             return type != null ? new ClassExpression(type) : null;
         }
 
-        if (value instanceof EnumConstantWrapper) {
-            EnumConstantWrapper wrapper = (EnumConstantWrapper) value;
+        if (value instanceof EnumConstantWrapper wrapper) {
             return new PropertyExpression(new ClassExpression(resolver.resolveType(Type.getType(wrapper.enumDesc))), wrapper.constant);
         }
 

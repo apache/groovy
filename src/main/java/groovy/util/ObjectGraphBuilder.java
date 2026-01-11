@@ -152,10 +152,9 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public void setChildPropertySetter(final Object childPropertySetter) {
         if (childPropertySetter instanceof ChildPropertySetter) {
             this.childPropertySetter = (ChildPropertySetter) childPropertySetter;
-        } else if (childPropertySetter instanceof Closure) {
+        } else if (childPropertySetter instanceof Closure cls) {
             final ObjectGraphBuilder self = this;
             this.childPropertySetter = (parent, child, parentName, propertyName) -> {
-                Closure cls = (Closure) childPropertySetter;
                 cls.setDelegate(self);
                 cls.call(parent, child, parentName, propertyName);
             };
@@ -181,15 +180,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             this.classNameResolver = (ClassNameResolver) classNameResolver;
         } else if (classNameResolver instanceof String) {
             this.classNameResolver = classname -> makeClassName((String) classNameResolver, classname);
-        } else if (classNameResolver instanceof Closure) {
+        } else if (classNameResolver instanceof Closure cls) {
             final ObjectGraphBuilder self = this;
             this.classNameResolver = classname -> {
-                Closure cls = (Closure) classNameResolver;
                 cls.setDelegate(self);
                 return (String) cls.call(new Object[]{classname});
             };
-        } else if (classNameResolver instanceof Map) {
-            Map classNameResolverOptions = (Map) classNameResolver;
+        } else if (classNameResolver instanceof Map classNameResolverOptions) {
 
             String resolverName = (String) classNameResolverOptions.get(CLASSNAME_RESOLVER_KEY);
 
@@ -223,10 +220,9 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             this.identifierResolver = (IdentifierResolver) identifierResolver;
         } else if (identifierResolver instanceof String) {
             this.identifierResolver = nodeName -> (String) identifierResolver;
-        } else if (identifierResolver instanceof Closure) {
+        } else if (identifierResolver instanceof Closure cls) {
             final ObjectGraphBuilder self = this;
             this.identifierResolver = nodeName -> {
-                Closure cls = (Closure) identifierResolver;
                 cls.setDelegate(self);
                 return (String) cls.call(new Object[]{nodeName});
             };
@@ -250,10 +246,9 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public void setNewInstanceResolver(final Object newInstanceResolver) {
         if (newInstanceResolver instanceof NewInstanceResolver) {
             this.newInstanceResolver = (NewInstanceResolver) newInstanceResolver;
-        } else if (newInstanceResolver instanceof Closure) {
+        } else if (newInstanceResolver instanceof Closure cls) {
             final ObjectGraphBuilder self = this;
             this.newInstanceResolver = (klass, attributes) -> {
-                Closure cls = (Closure) newInstanceResolver;
                 cls.setDelegate(self);
                 return cls.call(klass, attributes);
             };
@@ -272,10 +267,9 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             this.referenceResolver = (ReferenceResolver) referenceResolver;
         } else if (referenceResolver instanceof String) {
             this.referenceResolver = nodeName -> (String) referenceResolver;
-        } else if (referenceResolver instanceof Closure) {
+        } else if (referenceResolver instanceof Closure cls) {
             final ObjectGraphBuilder self = this;
             this.referenceResolver = nodeName -> {
-                Closure cls = (Closure) referenceResolver;
                 cls.setDelegate(self);
                 return (String) cls.call(new Object[]{nodeName});
             };
@@ -411,8 +405,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
                     if (Collection.class.isAssignableFrom(klass)) {
                         Type type = currentNode.getClass().getDeclaredField(classname).getGenericType();
-                        if (type instanceof ParameterizedType) {
-                            ParameterizedType ptype = (ParameterizedType) type;
+                        if (type instanceof ParameterizedType ptype) {
                             Type[] actualTypeArguments = ptype.getActualTypeArguments();
                             if (actualTypeArguments.length != 1) {
                                 throw new RuntimeException("can't determine class name for collection field " + classname + " with multiple generics");

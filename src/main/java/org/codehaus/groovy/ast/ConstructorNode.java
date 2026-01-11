@@ -42,8 +42,7 @@ public class ConstructorNode extends MethodNode {
         if (!(code instanceof ExpressionStatement)) return false;
 
         Expression expression = ((ExpressionStatement) code).getExpression();
-        if (!(expression instanceof ConstructorCallExpression)) return false;
-        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
+        if (!(expression instanceof ConstructorCallExpression cce)) return false;
         return cce.isSpecialCall();
     }
 

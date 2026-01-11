@@ -178,8 +178,7 @@ public class DomToGroovy {
 
     private void printChildren(Element element, Map namespaces, boolean endWithComma, boolean hasAttributes, NodeList list, int length) {
         Node node = list.item(0);
-        if (length == 1 && node instanceof Text) {
-            Text textNode = (Text) node;
+        if (length == 1 && node instanceof Text textNode) {
             String text = getTextNodeData(textNode);
             if (hasAttributes) print(", ");
             printQuoted(text);

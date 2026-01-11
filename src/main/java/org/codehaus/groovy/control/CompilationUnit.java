@@ -943,8 +943,7 @@ public class CompilationUnit extends ProcessingUnit {
                     if (errorCollector != null) {
                         unit.getErrorCollector().addCollectorContents(errorCollector);
                     } else {
-                        if (e instanceof GroovyRuntimeException) {
-                            GroovyRuntimeException gre = (GroovyRuntimeException) e;
+                        if (e instanceof GroovyRuntimeException gre) {
                             context = Optional.ofNullable(gre.getModule()).map(ModuleNode::getContext).orElse(context);
                         }
                         if (context != null) {

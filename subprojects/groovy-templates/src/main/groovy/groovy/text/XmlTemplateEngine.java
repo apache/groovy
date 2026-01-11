@@ -239,8 +239,7 @@ public class XmlTemplateEngine extends TemplateEngine {
         @Override
         protected boolean printSpecialNode(Node node) {
             Object name = node.name();
-            if (name instanceof QName) {
-                QName qn = (QName) name;
+            if (name instanceof QName qn) {
                 // check uri and for legacy cases just check prefix name (not recommended)
                 if ("http://groovy.codehaus.org/2005/gsp".equals(qn.getNamespaceURI()) || "gsp".equals(qn.getPrefix())) {
                     String s = qn.getLocalPart();

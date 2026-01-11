@@ -705,8 +705,7 @@ public class JavaStubGenerator {
             }
             return null;
         }
-        if (arg instanceof MethodCallExpression) { // GROOVY-10122
-            MethodCallExpression mce = (MethodCallExpression) arg;
+        if (arg instanceof MethodCallExpression mce) { // GROOVY-10122
             if (ExpressionUtils.isThisExpression(mce.getObjectExpression())) {
                 MethodNode mn = ctor.getDeclaringClass().tryFindPossibleMethod(mce.getMethodAsString(), mce.getArguments());
                 if (mn != null) return mn.getReturnType();
@@ -761,8 +760,7 @@ public class JavaStubGenerator {
         } else {
             if (classNode.isAnnotationDefinition() && methodNode.hasAnnotationDefault()) {
                 Statement fs = methodNode.getFirstStatement();
-                if (fs instanceof ExpressionStatement) {
-                    ExpressionStatement es = (ExpressionStatement) fs;
+                if (fs instanceof ExpressionStatement es) {
                     Expression re = es.getExpression();
                     ClassNode rt = methodNode.getReturnType();
                     Consumer<Expression> valuePrinter = (value) -> {
@@ -784,9 +782,8 @@ public class JavaStubGenerator {
                     };
 
                     out.print(" default ");
-                    if (re instanceof ListExpression) {
+                    if (re instanceof ListExpression le) {
                         out.print("{ ");
-                        ListExpression le = (ListExpression) re;
                         boolean first = true;
                         for (Expression e : le.getExpressions()) {
                             if (first) first = false; else out.print(", ");
@@ -982,15 +979,13 @@ public class JavaStubGenerator {
     private String getAnnotationValue(final Object memberValue) {
         String val = "null";
         boolean replaceDollars = true;
-        if (memberValue instanceof ListExpression) {
+        if (memberValue instanceof ListExpression le) {
             StringJoiner sj = new StringJoiner(",", "{", "}");
-            ListExpression le = (ListExpression) memberValue;
             for (Expression e : le.getExpressions()) {
                 sj.add(getAnnotationValue(e));
             }
             val = sj.toString();
-        } else if (memberValue instanceof ConstantExpression) {
-            ConstantExpression ce = (ConstantExpression) memberValue;
+        } else if (memberValue instanceof ConstantExpression ce) {
             Object constValue = ce.getValue();
             if (constValue instanceof AnnotationNode) {
                 Writer writer = new StringBuilderWriter();

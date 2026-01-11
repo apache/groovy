@@ -59,9 +59,8 @@ public class LongArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
         @Override
         public Object call(Object receiver, Object arg) throws Throwable {
-            if ((receiver instanceof long[] && arg instanceof Integer)
+            if ((receiver instanceof long[] objects && arg instanceof Integer)
                     && checkPojoMetaClass()) {
-                final long[] objects = (long[]) receiver;
                 return objects[normaliseIndex((Integer) arg, objects.length)];
             } else
                 return super.call(receiver, arg);

@@ -55,8 +55,7 @@ public class RecordComponentNode extends AnnotatedNode {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof RecordComponentNode)) return false;
-        RecordComponentNode that = (RecordComponentNode) o;
+        if (!(o instanceof RecordComponentNode that)) return false;
         return name.equals(that.name) && getDeclaringClass().equals(that.getDeclaringClass());
     }
 

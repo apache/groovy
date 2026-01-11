@@ -57,8 +57,7 @@ public abstract class AtnManager {
             while (true) {
                 try {
                     Reference<? extends AtnWrapper> reference = atnWrapperReferenceQueue.remove();
-                    if (reference instanceof AtnWrapperSoftReference && shouldClearDfaCache() && isSmartCleanupEnabled()) {
-                        AtnWrapperSoftReference atnWrapperSoftReference = (AtnWrapperSoftReference) reference;
+                    if (reference instanceof AtnWrapperSoftReference atnWrapperSoftReference && shouldClearDfaCache() && isSmartCleanupEnabled()) {
                         atnWrapperSoftReference.getAtnManager().getAtnWrapper(false).clearDFA();
                     }
                 } catch (Throwable t) {

@@ -722,8 +722,7 @@ out:        for (ClassNode sc : superTypes) {
     }
 
     private void checkSuperOrThisOnLHS(final Expression expression) {
-        if (!(expression instanceof VariableExpression)) return;
-        VariableExpression ve = (VariableExpression) expression;
+        if (!(expression instanceof VariableExpression ve)) return;
         if (ve.isThisExpression()) {
             addError("cannot have 'this' as LHS of an assignment", expression);
         } else if (ve.isSuperExpression()) {
@@ -734,21 +733,18 @@ out:        for (ClassNode sc : superTypes) {
     private void checkFinalFieldAccess(final Expression expression) {
         if (!(expression instanceof VariableExpression) && !(expression instanceof PropertyExpression)) return;
         Variable v = null;
-        if (expression instanceof VariableExpression) {
-            VariableExpression ve = (VariableExpression) expression;
+        if (expression instanceof VariableExpression ve) {
             v = ve.getAccessedVariable();
         } else {
             PropertyExpression propExp = ((PropertyExpression) expression);
             Expression objectExpression = propExp.getObjectExpression();
-            if (objectExpression instanceof VariableExpression) {
-                VariableExpression varExp = (VariableExpression) objectExpression;
+            if (objectExpression instanceof VariableExpression varExp) {
                 if (varExp.isThisExpression()) {
                     v = currentClass.getDeclaredField(propExp.getPropertyAsString());
                 }
             }
         }
-        if (v instanceof FieldNode) {
-            FieldNode fn = (FieldNode) v;
+        if (v instanceof FieldNode fn) {
 
             /*
              *  if it is static final but not accessed inside a static constructor, or,
@@ -817,8 +813,7 @@ out:        for (ClassNode sc : superTypes) {
     public void visitMethodCallExpression(final MethodCallExpression mce) {
         super.visitMethodCallExpression(mce);
         Expression aexp = mce.getArguments();
-        if (aexp instanceof TupleExpression) {
-            TupleExpression arguments = (TupleExpression) aexp;
+        if (aexp instanceof TupleExpression arguments) {
             for (Expression e : arguments.getExpressions()) {
                 checkForInvalidDeclaration(e);
             }
@@ -877,8 +872,7 @@ out:        for (ClassNode sc : superTypes) {
 
     private void checkStringExceedingMaximumLength(final ConstantExpression expression) {
         Object value = expression.getValue();
-        if (value instanceof String) {
-            String s = (String) value;
+        if (value instanceof String s) {
             if (s.length() > 65535) {
                 addError("String too long. The given string is " + s.length() + " Unicode code units long, but only a maximum of 65535 is allowed.", expression);
             }
@@ -916,11 +910,9 @@ out:        for (ClassNode sc : superTypes) {
     }
 
     private static String getRefDescriptor(final ASTNode ref) {
-        if (ref instanceof FieldNode) {
-            FieldNode f = (FieldNode) ref;
+        if (ref instanceof FieldNode f) {
             return "the field "+f.getName()+" ";
-        } else if (ref instanceof PropertyNode) {
-            PropertyNode p = (PropertyNode) ref;
+        } else if (ref instanceof PropertyNode p) {
             return "the property "+p.getName()+" ";
         } else if (ref instanceof ConstructorNode) {
             return "the constructor "+ref.getText()+" ";

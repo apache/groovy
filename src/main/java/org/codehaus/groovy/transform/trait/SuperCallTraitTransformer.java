@@ -94,10 +94,8 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
             exp.getLeftExpression().putNodeMetaData("assign.target", exp.getOperation());
 
         Expression trn = super.transform(exp);
-        if (trn instanceof BinaryExpression) {
-            BinaryExpression bin = (BinaryExpression) trn;
-            if (bin.getOperation().getType() == Types.ASSIGN && bin.getLeftExpression() instanceof PropertyExpression) {
-                PropertyExpression leftExpression = (PropertyExpression) bin.getLeftExpression();
+        if (trn instanceof BinaryExpression bin) {
+            if (bin.getOperation().getType() == Types.ASSIGN && bin.getLeftExpression() instanceof PropertyExpression leftExpression) {
                 ClassNode traitType = getTraitSuperTarget(leftExpression.getObjectExpression());
                 if (traitType != null) {
                     ClassNode helperType = getHelper(traitType);
@@ -223,8 +221,7 @@ class SuperCallTraitTransformer extends ClassCodeExpressionTransformer {
     }
 
     private ClassNode getTraitSuperTarget(final Expression exp) {
-        if (exp instanceof PropertyExpression) {
-            PropertyExpression pexp = (PropertyExpression) exp;
+        if (exp instanceof PropertyExpression pexp) {
             Expression objExp = pexp.getObjectExpression();
             if (objExp instanceof ClassExpression) {
                 ClassNode type = objExp.getType();

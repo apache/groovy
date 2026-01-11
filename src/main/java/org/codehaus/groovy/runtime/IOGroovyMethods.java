@@ -646,8 +646,7 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String readLine(Reader self) throws IOException {
-        if (self instanceof BufferedReader) {
-            BufferedReader br = (BufferedReader) self;
+        if (self instanceof BufferedReader br) {
             return br.readLine();
         }
         if (self.markSupported()) {

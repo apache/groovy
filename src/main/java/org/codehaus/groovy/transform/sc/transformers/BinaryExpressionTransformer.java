@@ -178,9 +178,8 @@ public class BinaryExpressionTransformer {
         if (directMCT != null) {
             Expression left = staticCompilationTransformer.transform(bin.getLeftExpression());
             Expression right = staticCompilationTransformer.transform(bin.getRightExpression());
-            if (left instanceof PropertyExpression) {
+            if (left instanceof PropertyExpression pe) {
                 // transform "a.x = val" into "def tmp = val; a.setX(tmp); tmp"
-                PropertyExpression pe = (PropertyExpression) left;
                 return transformAssignmentToSetterCall(
                         pe.getObjectExpression(), // "a"
                         directMCT, // "setX"
@@ -419,8 +418,7 @@ public class BinaryExpressionTransformer {
             // call handles the operation, so we must add the assignment now
             expr = binX(left, Token.newSymbol(Types.ASSIGN, operation.getStartLine(), operation.getStartColumn()), call);
             // GROOVY-5746: one execution of receiver and subscript
-            if (left instanceof BinaryExpression) {
-                BinaryExpression be = (BinaryExpression) left;
+            if (left instanceof BinaryExpression be) {
                 if (be.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
                     be.setLeftExpression(transformRepeatedReference(be.getLeftExpression()));
                     be.setRightExpression(transformRepeatedReference(be.getRightExpression()));

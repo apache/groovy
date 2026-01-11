@@ -99,11 +99,9 @@ public enum MacroBuilder {
         ClassCodeExpressionTransformer trn = new ClassCodeExpressionTransformer() {
             @Override
             public Expression transform(Expression expression) {
-                if (!(expression instanceof MethodCallExpression)) {
+                if (!(expression instanceof MethodCallExpression call)) {
                     return super.transform(expression);
                 }
-
-                MethodCallExpression call = (MethodCallExpression) expression;
 
                 if (!DOLLAR_VALUE.equals(call.getMethodAsString())) {
                     return super.transform(expression);

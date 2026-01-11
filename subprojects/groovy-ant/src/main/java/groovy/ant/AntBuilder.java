@@ -250,8 +250,7 @@ public class AntBuilder extends BuilderSupport {
         }
 
         // as in Target.execute()
-        if (node instanceof Task) {
-            Task task = (Task) node;
+        if (node instanceof Task task) {
             final String taskName = task.getTaskName();
 
             if ("antcall".equals(taskName) && parent == null) {
@@ -417,8 +416,7 @@ public class AntBuilder extends BuilderSupport {
         String tagName = name.toString();
         String ns = "";
 
-        if (name instanceof QName) {
-            QName q = (QName) name;
+        if (name instanceof QName q) {
             tagName = q.getLocalPart();
             ns = q.getNamespaceURI();
         }

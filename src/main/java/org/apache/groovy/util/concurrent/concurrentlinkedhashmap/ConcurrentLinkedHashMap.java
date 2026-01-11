@@ -1411,11 +1411,10 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
     @Override
     public boolean contains(Object obj) {
-      if (!(obj instanceof Entry<?, ?>)) {
+      if (!(obj instanceof Entry<?, ?> entry)) {
         return false;
       }
-      Entry<?, ?> entry = (Entry<?, ?>) obj;
-      Node<K, V> node = map.data.get(entry.getKey());
+        Node<K, V> node = map.data.get(entry.getKey());
       return (node != null) && (node.getValue().equals(entry.getValue()));
     }
 
@@ -1426,11 +1425,10 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
     @Override
     public boolean remove(Object obj) {
-      if (!(obj instanceof Entry<?, ?>)) {
+      if (!(obj instanceof Entry<?, ?> entry)) {
         return false;
       }
-      Entry<?, ?> entry = (Entry<?, ?>) obj;
-      return map.remove(entry.getKey(), entry.getValue());
+        return map.remove(entry.getKey(), entry.getValue());
     }
   }
 

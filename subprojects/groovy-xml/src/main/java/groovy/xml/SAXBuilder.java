@@ -134,8 +134,7 @@ public class SAXBuilder extends BuilderSupport {
         String localName;
         String qualifiedName;
 
-        if (name instanceof QName) {
-            QName qname = (QName) name;
+        if (name instanceof QName qname) {
             uri = qname.getNamespaceURI();
             localName = qname.getLocalPart();
             qualifiedName = qname.getQualifiedName();

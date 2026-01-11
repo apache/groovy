@@ -702,18 +702,15 @@ public class ClassNode extends AnnotatedNode {
     public void positionStmtsAfterEnumInitStmts(List<Statement> staticFieldInitializerStatements) {
         MethodNode constructor = getOrAddStaticInitializer();
         Statement statement = constructor.getCode();
-        if (statement instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) statement;
+        if (statement instanceof BlockStatement block) {
             // add given statements for explicitly declared static fields just after enum-special fields
             // are found - the $VALUES binary expression marks the end of such fields.
             List<Statement> blockStatements = block.getStatements();
             for (ListIterator<Statement> it = blockStatements.listIterator(); it.hasNext(); ) {
                 Statement stmt = it.next();
                 if (stmt instanceof ExpressionStatement &&
-                        ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
-                    BinaryExpression bExp = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
-                    if (bExp.getLeftExpression() instanceof FieldExpression) {
-                        FieldExpression fExp = (FieldExpression) bExp.getLeftExpression();
+                        ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression bExp) {
+                    if (bExp.getLeftExpression() instanceof FieldExpression fExp) {
                         if ("$VALUES".equals(fExp.getFieldName())) {
                             for (Statement initStmt : staticFieldInitializerStatements) {
                                 it.add(initStmt);

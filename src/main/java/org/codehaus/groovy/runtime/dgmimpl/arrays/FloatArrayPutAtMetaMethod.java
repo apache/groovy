@@ -68,9 +68,8 @@ public class FloatArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
         @Override
         public Object call(Object receiver, Object[] args) throws Throwable {
-            if ((receiver instanceof float[] && args[0] instanceof Integer && args[1] instanceof Float)
+            if ((receiver instanceof float[] objects && args[0] instanceof Integer && args[1] instanceof Float)
                     && checkPojoMetaClass()) {
-                final float[] objects = (float[]) receiver;
                 objects[normaliseIndex((Integer) args[0], objects.length)] = (Float) args[1];
                 return null;
             } else

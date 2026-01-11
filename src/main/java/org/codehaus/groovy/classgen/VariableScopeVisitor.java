@@ -355,8 +355,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         if (expression instanceof VariableExpression) {
             checkForFinal.accept((VariableExpression) expression, expression);
-        } else if (expression instanceof TupleExpression) {
-            TupleExpression tuple = (TupleExpression) expression;
+        } else if (expression instanceof TupleExpression tuple) {
             for (Expression tupleExpression : tuple.getExpressions()) {
                 checkForFinal.accept((VariableExpression) tupleExpression, expression);
             }
@@ -371,8 +370,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private void checkPropertyOnExplicitThis(final PropertyExpression expression) {
         if (!currentScope.isInStaticContext()) return;
         Expression object = expression.getObjectExpression();
-        if (!(object instanceof VariableExpression)) return;
-        VariableExpression ve = (VariableExpression) object;
+        if (!(object instanceof VariableExpression ve)) return;
         if (!"this".equals(ve.getName())) return;
         String name = expression.getPropertyAsString();
         if (name == null || "class".equals(name)) return;

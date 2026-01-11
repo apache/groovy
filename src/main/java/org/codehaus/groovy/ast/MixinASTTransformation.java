@@ -54,8 +54,7 @@ public class MixinASTTransformation extends AbstractASTTransformation {
         Expression useClasses = null;
         if (value instanceof ClassExpression) {
             useClasses = value;
-        } else if (value instanceof ListExpression) {
-            ListExpression listExpression = (ListExpression) value;
+        } else if (value instanceof ListExpression listExpression) {
             for (Expression ex : listExpression.getExpressions()) {
                 if (!(ex instanceof ClassExpression))
                     return;
@@ -66,8 +65,7 @@ public class MixinASTTransformation extends AbstractASTTransformation {
             return;
         }
 
-        if (target instanceof ClassNode) {
-            ClassNode targetClass = (ClassNode) target;
+        if (target instanceof ClassNode targetClass) {
 
             MethodNode clinit = targetClass.getDeclaredMethod("<clinit>", Parameter.EMPTY_ARRAY);
             if (clinit == null) {

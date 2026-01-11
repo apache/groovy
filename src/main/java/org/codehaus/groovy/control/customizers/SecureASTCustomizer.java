@@ -1100,19 +1100,16 @@ public class SecureASTCustomizer extends CompilationCustomizer {
                 try {
                     if (expression instanceof ConstructorCallExpression) {
                         assertImportIsAllowed(expression.getType().getName());
-                    } else if (expression instanceof MethodCallExpression) {
-                        MethodCallExpression expr = (MethodCallExpression) expression;
+                    } else if (expression instanceof MethodCallExpression expr) {
                         ClassNode objectExpressionType = expr.getObjectExpression().getType();
                         final String typename = getExpressionType(objectExpressionType).getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getMethodAsString(), typename);
-                    } else if (expression instanceof StaticMethodCallExpression) {
-                        StaticMethodCallExpression expr = (StaticMethodCallExpression) expression;
+                    } else if (expression instanceof StaticMethodCallExpression expr) {
                         final String typename = expr.getOwnerType().getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getMethod(), typename);
-                    } else if (expression instanceof MethodPointerExpression) {
-                        MethodPointerExpression expr = (MethodPointerExpression) expression;
+                    } else if (expression instanceof MethodPointerExpression expr) {
                         final String typename = expr.getType().getName();
                         assertImportIsAllowed(typename);
                         assertStaticImportIsAllowed(expr.getText(), typename);

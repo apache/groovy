@@ -70,8 +70,7 @@ public class NullCheckASTTransformation extends AbstractASTTransformation {
         if (!NULL_CHECK_TYPE.equals(anno.getClassNode())) return;
         boolean includeGenerated = isIncludeGenerated(anno);
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, NULL_CHECK_NAME)) return;
             for (ConstructorNode cn : cNode.getDeclaredConstructors()) {
                 adjustMethod(cn, includeGenerated);

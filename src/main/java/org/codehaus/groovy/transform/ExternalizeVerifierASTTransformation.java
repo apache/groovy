@@ -55,8 +55,7 @@ public class ExternalizeVerifierASTTransformation extends AbstractASTTransformat
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (!hasNoArgConstructor(cNode)) {
                 addError(MY_TYPE_NAME + ": An Externalizable class requires a no-arg constructor but none found", cNode);
             }

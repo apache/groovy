@@ -68,8 +68,7 @@ public class RawJavaFileObject extends SimpleJavaFileObject {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof RawJavaFileObject)) return false;
-        RawJavaFileObject that = (RawJavaFileObject) o;
+        if (!(o instanceof RawJavaFileObject that)) return false;
         return Objects.equals(uri, that.uri);
     }
 

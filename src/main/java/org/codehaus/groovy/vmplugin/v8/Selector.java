@@ -418,8 +418,7 @@ public abstract class Selector {
             if (LOG_ENABLED) LOG.info("getting constructor");
             Object[] newArgs = removeRealReceiver(args);
             method = mci.retrieveConstructor(newArgs);
-            if (method instanceof MetaConstructor) {
-                MetaConstructor mcon = (MetaConstructor) method;
+            if (method instanceof MetaConstructor mcon) {
                 if (mcon.isBeanConstructor()) {
                     if (LOG_ENABLED) LOG.info("do beans constructor");
                     beanConstructor = true;
@@ -433,9 +432,8 @@ public abstract class Selector {
         @Override
         public void setHandleForMetaMethod() {
             if (method == null) return;
-            if (method instanceof MetaConstructor) {
+            if (method instanceof MetaConstructor mc) {
                 if (LOG_ENABLED) LOG.info("meta method is MetaConstructor instance");
-                MetaConstructor mc = (MetaConstructor) method;
                 isVargs = mc.isVargsMethod();
                 Constructor<?> con = mc.getCachedConstrcutor().getCachedConstructor();
                 try {
@@ -594,8 +592,7 @@ public abstract class Selector {
             var receiver = getCorrectedReceiver();
             if (receiver instanceof GroovyObject) {
                 mc = ((GroovyObject) receiver).getMetaClass();
-            } else if (receiver instanceof Class) {
-                Class<?> c = (Class<?>) receiver;
+            } else if (receiver instanceof Class<?> c) {
                 mc = GroovySystem.getMetaClassRegistry().getMetaClass(c);
                 cache &= !ClassInfo.getClassInfo(c).hasPerInstanceMetaClasses();
             } else {
@@ -662,9 +659,8 @@ public abstract class Selector {
                 metaMethod = ((ReflectionMetaMethod) metaMethod).getCachedMethod();
             }
 
-            if (metaMethod instanceof CachedMethod) {
+            if (metaMethod instanceof CachedMethod cm) {
                 isVargs = metaMethod.isVargsMethod();
-                CachedMethod cm = (CachedMethod) metaMethod;
                 VMPlugin vmplugin = VMPluginFactory.getPlugin();
                 cm = (CachedMethod) vmplugin.transformMetaMethod(mc, cm, sender);
                 try {
@@ -935,8 +931,7 @@ public abstract class Selector {
             MethodHandle fallback = callSite.getFallbackTarget();
 
             // special guards for receiver
-            if (receiver instanceof GroovyObject) {
-                GroovyObject go = (GroovyObject) receiver;
+            if (receiver instanceof GroovyObject go) {
                 MetaClass mc = go.getMetaClass();
                 MethodHandle test = SAME_MC.bindTo(mc);
                 // drop dummy receiver

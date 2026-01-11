@@ -97,8 +97,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
-        if (parent instanceof ClassNode) {
-            ClassNode cNode = (ClassNode) parent;
+        if (parent instanceof ClassNode cNode) {
             if (!checkNotInterface(cNode, MY_TYPE_NAME)) return;
             boolean includeSuper = memberHasValue(anno, "includeSuper", true);
             boolean includeSuperProperties = memberHasValue(anno, "includeSuperProperties", true);

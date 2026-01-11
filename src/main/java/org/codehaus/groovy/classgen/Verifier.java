@@ -740,8 +740,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 private boolean isThisObjectExpression(final MethodCallExpression mce) {
                     if (mce.isImplicitThis()) {
                         return true;
-                    } else if (mce.getObjectExpression() instanceof VariableExpression) {
-                        VariableExpression var = (VariableExpression) mce.getObjectExpression();
+                    } else if (mce.getObjectExpression() instanceof VariableExpression var) {
                         return var.isThisExpression() || var.isSuperExpression();
                     } else {
                         return false;
@@ -960,8 +959,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
                 @Override
                 public void visitVariableExpression(final VariableExpression e) {
-                    if (e.getAccessedVariable() instanceof Parameter) {
-                        Parameter p = (Parameter) e.getAccessedVariable();
+                    if (e.getAccessedVariable() instanceof Parameter p) {
                         if (!Arrays.asList(params).contains(p) && Arrays.asList(method.getParameters()).contains(p)) { // GROOVY-10602
                             VariableScope blockScope = block.getVariableScope();
                             VariableExpression localVariable = (VariableExpression) blockScope.getDeclaredVariable(p.getName());
@@ -1039,10 +1037,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 if (argument instanceof CastExpression) {
                     argument = ((CastExpression) argument).getExpression();
                 }
-                if (argument instanceof VariableExpression) {
-                    VariableExpression v = (VariableExpression) argument;
-                    if (v.getAccessedVariable() instanceof Parameter) {
-                        Parameter p = (Parameter) v.getAccessedVariable();
+                if (argument instanceof VariableExpression v) {
+                    if (v.getAccessedVariable() instanceof Parameter p) {
                         if (p.getInitialExpression() instanceof ConstantExpression && !Arrays.asList(params).contains(p)){
                             // for simple default value, replace argument "(Type) param" with "(Type) <<param's default>>"
                             it.set(castX(method.getParameters()[it.nextIndex() - 1].getType(), p.getInitialExpression()));
@@ -1053,8 +1049,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             GroovyCodeVisitor visitor = new CodeVisitorSupport() {
                 @Override
                 public void visitVariableExpression(final VariableExpression e) {
-                    if (e.getAccessedVariable() instanceof Parameter) {
-                        Parameter p = (Parameter) e.getAccessedVariable();
+                    if (e.getAccessedVariable() instanceof Parameter p) {
                         if (p.hasInitialExpression() && !Arrays.asList(params).contains(p)) {
                             String error = String.format(
                                     "The generated constructor \"%s(%s)\" references parameter '%s' which has been replaced by a default value expression.",
@@ -1300,8 +1295,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             Statement stmt = it.next();
             if (stmt instanceof ExpressionStatement
-                    && ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression) {
-                BinaryExpression expr = (BinaryExpression) ((ExpressionStatement) stmt).getExpression();
+                    && ((ExpressionStatement) stmt).getExpression() instanceof BinaryExpression expr) {
 
                 if (expr.getOperation().getType() == Types.ASSIGN
                         && expr.getLeftExpression() instanceof FieldExpression
@@ -1334,8 +1328,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 // initialized first so that code dependent on them does not see their values as empty
                 Expression initialValueExpression = fieldNode.getInitialValueExpression();
                 Expression transformed = transformInlineConstants(initialValueExpression, fieldNode.getType());
-                if (transformed instanceof ConstantExpression) {
-                    ConstantExpression cexp = (ConstantExpression) transformed;
+                if (transformed instanceof ConstantExpression cexp) {
                     cexp = transformToPrimitiveConstantIfPossible(cexp);
                     if (fieldNode.isFinal() && ClassHelper.isStaticConstantInitializerType(cexp.getType()) && cexp.getType().equals(fieldNode.getType())) {
                         fieldNode.setInitialValueExpression(transformed);
@@ -1416,8 +1409,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     public static long getTimestamp(final Class<?> clazz) {
-        if (clazz.getClassLoader() instanceof GroovyClassLoader.InnerLoader) {
-            GroovyClassLoader.InnerLoader innerLoader = (GroovyClassLoader.InnerLoader) clazz.getClassLoader();
+        if (clazz.getClassLoader() instanceof GroovyClassLoader.InnerLoader innerLoader) {
             return innerLoader.getTimeStamp();
         }
 

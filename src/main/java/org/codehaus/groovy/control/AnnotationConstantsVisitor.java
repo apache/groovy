@@ -51,11 +51,9 @@ public class AnnotationConstantsVisitor extends ClassCodeVisitorSupport {
     protected void visitConstructorOrMethod(final MethodNode node, final boolean isConstructor) {
         if (annotationDef) {
             Statement statement = node.getFirstStatement();
-            if (statement instanceof ReturnStatement) {
-                ReturnStatement rs = (ReturnStatement) statement;
+            if (statement instanceof ReturnStatement rs) {
                 rs.setExpression(transformInlineConstants(rs.getExpression(), node.getReturnType()));
-            } else if (statement instanceof ExpressionStatement) {
-                ExpressionStatement es = (ExpressionStatement) statement;
+            } else if (statement instanceof ExpressionStatement es) {
                 es.setExpression(transformInlineConstants(es.getExpression(), node.getReturnType()));
             }
         }

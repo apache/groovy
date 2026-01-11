@@ -57,8 +57,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
         Map<String,Expression> members = ((AnnotationNode) nodes[0]).getMembers();
         Expression extensions = members.get("extensions");
         StaticTypeCheckingVisitor visitor = null;
-        if (target instanceof ClassNode) {
-            ClassNode classNode = (ClassNode) target;
+        if (target instanceof ClassNode classNode) {
             visitor = newVisitor(source, classNode);
             visitor.setCompilationUnit(compilationUnit);
             addTypeCheckingExtensions(visitor, extensions);
@@ -66,8 +65,7 @@ public class StaticCompileTransformation extends StaticTypesTransformation {
             target.putNodeMetaData(STATIC_COMPILE_NODE, !visitor.isSkipMode(target));
             visitor.initialize();
             visitor.visitClass(classNode);
-        } else if (target instanceof MethodNode) {
-            MethodNode methodNode = (MethodNode) target;
+        } else if (target instanceof MethodNode methodNode) {
             ClassNode declaringClass = methodNode.getDeclaringClass();
             visitor = newVisitor(source, declaringClass);
             visitor.setCompilationUnit(compilationUnit);

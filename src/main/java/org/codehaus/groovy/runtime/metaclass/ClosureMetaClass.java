@@ -196,8 +196,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             return null;
         }
 
-        if (delegate instanceof Class) {
-            for (var type = (Class<?>) delegate; type != Object.class && type != null; type = type.getSuperclass()) {
+        if (delegate instanceof Class<?> type) {
+            for (; type != Object.class && type != null; type = type.getSuperclass()) {
                 MetaMethod method = registry.getMetaClass(type).getStaticMetaMethod(methodName, argClasses);
                 if (method != null) {
                     return method;

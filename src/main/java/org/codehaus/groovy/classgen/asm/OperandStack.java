@@ -574,8 +574,7 @@ public class OperandStack {
     }
 
     public void pushDynamicName(final Expression name) {
-        if (name instanceof ConstantExpression) {
-            ConstantExpression ce = (ConstantExpression) name;
+        if (name instanceof ConstantExpression ce) {
             Object value = ce.getValue();
             if (value instanceof String) {
                 pushConstant(ce);

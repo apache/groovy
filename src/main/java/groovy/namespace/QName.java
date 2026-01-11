@@ -172,13 +172,11 @@ public class QName implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
-        if (o instanceof QName) {
-            final QName qName = (QName) o;
+        if (o instanceof QName qName) {
             if (!namespaceURI.equals(qName.namespaceURI)) return false;
             return localPart.equals(qName.localPart);
 
-        } else if (o instanceof String) {
-            final String string = (String)o;
+        } else if (o instanceof String string) {
             if (string.isEmpty()) return false;
             int lastColonIndex = string.lastIndexOf(':');
             if (lastColonIndex < 0 || lastColonIndex == string.length() - 1) return false;
@@ -213,12 +211,10 @@ public class QName implements Serializable {
     public boolean matches(Object o) {
         if (this == o) return true;
         if (o == null) return false;
-        if (o instanceof QName) {
-            final QName qName = (QName) o;
+        if (o instanceof QName qName) {
             if (!namespaceURI.equals(qName.namespaceURI) && !"*".equals(namespaceURI) && !"*".equals(qName.namespaceURI)) return false;
             return localPart.equals(qName.localPart) || "*".equals(localPart) || "*".equals(qName.localPart);
-        } else if (o instanceof String) {
-            final String string = (String)o;
+        } else if (o instanceof String string) {
             if (string.isEmpty()) return false;
             // try matching against 'prefix:localname'
             int lastColonIndex = string.lastIndexOf(':');

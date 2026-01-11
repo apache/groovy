@@ -121,11 +121,9 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
      */
     private void lazyChopIfNeeded(Object object) {
         if (lazyChop) {
-            if (object instanceof LazyValueMap) {
-                LazyValueMap m = (LazyValueMap) object;
+            if (object instanceof LazyValueMap m) {
                 m.chopMap();
-            } else if (object instanceof ValueList) {
-                ValueList list = (ValueList) object;
+            } else if (object instanceof ValueList list) {
                 list.chopList();
             }
         }
@@ -159,18 +157,15 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
             for (Map.Entry<String, Object> entry : map.entrySet()) {
 
                 Object object = entry.getValue();
-                if (object instanceof Value) {
-                    Value value = (Value) object;
+                if (object instanceof Value value) {
                     if (value.isContainer()) {
                         chopContainer(value);
                     } else {
                         value.chop();
                     }
-                } else if (object instanceof LazyValueMap) {
-                    LazyValueMap m = (LazyValueMap) object;
+                } else if (object instanceof LazyValueMap m) {
                     m.chopMap();
-                } else if (object instanceof ValueList) {
-                    ValueList list = (ValueList) object;
+                } else if (object instanceof ValueList list) {
                     list.chopList();
                 }
             }
@@ -180,11 +175,9 @@ public class LazyValueMap extends AbstractMap<String, Object> implements ValueMa
     /* We need to chop up this child container. */
     private static void chopContainer(Value value) {
         Object obj = value.toValue();
-        if (obj instanceof LazyValueMap) {
-            LazyValueMap map = (LazyValueMap) obj;
+        if (obj instanceof LazyValueMap map) {
             map.chopMap();
-        } else if (obj instanceof ValueList) {
-            ValueList list = (ValueList) obj;
+        } else if (obj instanceof ValueList list) {
             list.chopList();
         }
     }

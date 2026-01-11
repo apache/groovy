@@ -59,8 +59,7 @@ public class JmxEventListener implements NotificationListener {
         if (event != null) {
             Object del = event.get("managedObject");
             Object callback = event.get("callback");
-            if (callback != null && callback instanceof Closure) {
-                Closure closure = (Closure) callback;
+            if (callback != null && callback instanceof Closure closure) {
                 closure.setDelegate(del);
                 if (closure.getMaximumNumberOfParameters() == 1)
                     closure.call(buildOperationNotificationPacket(notification));

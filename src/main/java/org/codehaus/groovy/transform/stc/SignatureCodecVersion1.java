@@ -58,16 +58,14 @@ public class SignatureCodecVersion1 implements SignatureCodec {
 
     private void doEncode(final ClassNode node, DataOutputStream dos) throws IOException {
         dos.writeUTF(node.getClass().getSimpleName());
-        if (node instanceof UnionTypeClassNode) {
-            UnionTypeClassNode union = (UnionTypeClassNode) node;
+        if (node instanceof UnionTypeClassNode union) {
             ClassNode[] delegates = union.getDelegates();
             dos.writeInt(delegates.length);
             for (ClassNode delegate : delegates) {
                 doEncode(delegate, dos);
             }
             return;
-        } else if (node instanceof WideningCategories.LowestUpperBoundClassNode) {
-            WideningCategories.LowestUpperBoundClassNode lub = (WideningCategories.LowestUpperBoundClassNode) node;
+        } else if (node instanceof WideningCategories.LowestUpperBoundClassNode lub) {
             dos.writeUTF(lub.getLubName());
             doEncode(lub.getUnresolvedSuperClass(), dos);
             ClassNode[] interfaces = lub.getInterfaces();

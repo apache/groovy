@@ -84,12 +84,10 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
     @Override
     public void visit(ASTNode[] nodes, SourceUnit source) {
         sourceUnit = source;
-        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode anno) || !(nodes[1] instanceof AnnotatedNode parent)) {
             throw new GroovyBugError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
         }
 
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
-        AnnotationNode anno = (AnnotationNode) nodes[0];
         if (!MY_TYPE.equals(anno.getClassNode())) return;
 
         addIfFound(anno, nameTable, "plus");
@@ -122,8 +120,7 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
     @Override
     public Expression transform(Expression expr) {
         if (expr == null) return null;
-        if (expr instanceof BinaryExpression) {
-            final BinaryExpression be = (BinaryExpression) expr;
+        if (expr instanceof BinaryExpression be) {
             int type = be.getOperation().getType();
             String oldName = getOperationName(type);
             if (nameTable.containsKey(oldName)) {
@@ -137,8 +134,7 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
                 result.setSourcePosition(be);
                 return result;
             }
-        } else if (expr instanceof ClosureExpression) {
-            ClosureExpression ce = (ClosureExpression) expr;
+        } else if (expr instanceof ClosureExpression ce) {
             ce.getCode().visit(this);
         }
         return expr.transformExpression(this);

@@ -361,8 +361,7 @@ public class ConsoleTextEditor extends JScrollPane {
             doc.setDocumentFilter(documentFilter);
 
             disableMatchingHighlighter();
-            if (documentFilter instanceof SmartDocumentFilter) {
-                final SmartDocumentFilter smartDocumentFilter = (SmartDocumentFilter) documentFilter;
+            if (documentFilter instanceof SmartDocumentFilter smartDocumentFilter) {
                 enableMatchingHighlighter(smartDocumentFilter);
             }
         } catch (ReflectiveOperationException e) {
