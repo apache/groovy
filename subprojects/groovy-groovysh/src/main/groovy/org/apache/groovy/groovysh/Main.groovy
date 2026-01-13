@@ -290,7 +290,14 @@ class Main {
         }
     }
 
-    static void main(String[] args) {
+    /**
+     * Programmatic entry point for embedding groovysh.
+     *
+     * @param args CLI-like arguments (same as {@link #main(String[])}).
+     * @param initialBindings binding variables for the GroovyEngine
+     * @return process exit code (0 for success)
+     */
+    static int start(String[] args = new String[0], Map<String, ?> initialBindings = Collections.emptyMap()) {
         def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
             header: messages['cli.option.header'])
         cli.with {
@@ -311,18 +318,18 @@ class Main {
         OptionAccessor options = cli.parse(args)
 
         if (options == null) {
-            // CliBuilder prints error, but does not exit
-            System.exit(22) // Invalid Args
+            // CliBuilder prints error
+            return 22 // Invalid Args
         }
 
         if (options.h) {
             cli.usage()
-            System.exit(0)
+            return 0
         }
 
         if (options.V) {
             println render(messages.format('cli.info.version', GroovySystem.version))
-            System.exit(0)
+            return 0
         }
         String evaluate = options.e ?: null
 
@@ -359,6 +366,15 @@ class Main {
 
             // ScriptEngine and command registries
             GroovyEngine scriptEngine = new GroovyEngine()
+
+            if (initialBindings) {
+                initialBindings.each { k, v ->
+                    if (k != null) {
+                        scriptEngine.put(k, v)
+                    }
+                }
+            }
+
             scriptEngine.put('ROOT', rootURL.toString())
             if (!scriptEngine.hasVariable('CONSOLE_OPTIONS')) {
                 scriptEngine.put('CONSOLE_OPTIONS', [:])
@@ -506,6 +522,12 @@ class Main {
             }
         } catch (Throwable t) {
             t.printStackTrace()
+            return 1
         }
+        return 0
+    }
+
+    static void main(String[] args) {
+        System.exit(start(args))
     }
 }
