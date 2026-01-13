@@ -1449,18 +1449,18 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * according to a closure which returns true if the line should be included.
      * Both Reader and Writer are closed after the operation.
      *
-     * @param reader  a reader, closed after the call
-     * @param writer  a writer, closed after the call
-     * @param closure the closure which returns booleans
+     * @param reader    a reader, closed after the call
+     * @param writer    a writer, closed after the call
+     * @param predicate the closure which returns booleans
      * @throws IOException if an IOException occurs.
      * @since 1.0
      */
-    public static void filterLine(Reader reader, Writer writer, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure closure) throws IOException {
+    public static void filterLine(Reader reader, Writer writer, @ClosureParams(value=SimpleType.class, options="java.lang.String") Closure predicate) throws IOException {
         BufferedReader br = new BufferedReader(reader);
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
         try {
-            BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+            BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
             while ((line = br.readLine()) != null) {
                 if (bcw.call(line)) {
                     bw.write(line);
@@ -1489,21 +1489,21 @@ public class IOGroovyMethods extends DefaultGroovyMethodsSupport {
      * used to stream the filtered lines to a destination.  The closure should
      * return <code>true</code> if the line should be passed to the writer.
      *
-     * @param reader  this reader
-     * @param closure a closure used for filtering
+     * @param reader    this reader
+     * @param predicate a closure used for filtering
      * @return a Writable which will use the closure to filter each line
      *         from the reader when the Writable#writeTo(Writer) is called.
      * @since 1.0
      */
-    public static Writable filterLine(Reader reader, @ClosureParams(value=SimpleType.class, options="java.lang.String") final Closure closure) {
-        final BufferedReader br = new BufferedReader(reader);
+    public static Writable filterLine(final Reader reader, @ClosureParams(value=SimpleType.class, options="java.lang.String") final Closure predicate) {
         return new Writable() {
             @Override
             public Writer writeTo(Writer out) throws IOException {
+                final BufferedReader br = new BufferedReader(reader);
                 try {
                     BufferedWriter bw = new BufferedWriter(out);
                     String line;
-                    BooleanClosureWrapper bcw = new BooleanClosureWrapper(closure);
+                    BooleanClosureWrapper bcw = new BooleanClosureWrapper(predicate);
                     while ((line = br.readLine()) != null) {
                         if (bcw.call(line)) {
                             bw.write(line);
