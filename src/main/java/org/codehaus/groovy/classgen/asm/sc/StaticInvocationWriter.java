@@ -46,7 +46,6 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
-import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.ExpressionAsVariableSlot;
 import org.codehaus.groovy.classgen.asm.InvocationWriter;
@@ -467,6 +466,11 @@ public class StaticInvocationWriter extends InvocationWriter {
     }
 
     @Override
+    protected boolean makeCachedCall(final Expression origin, final ClassExpression sender, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean containsSpreadExpression) {
+        return false;
+    }
+
+    @Override
     public void makeCall(final Expression origin, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
         if (origin.getNodeMetaData(StaticTypesMarker.DYNAMIC_RESOLUTION) != null) {
             if (origin instanceof MethodCallExpression) ((MethodCallExpression) origin).setMethodTarget(null); // ensure dynamic resolve
@@ -598,17 +602,11 @@ public class StaticInvocationWriter extends InvocationWriter {
                 mv.visitLabel(ifnull);
             }
         } else {
-            if (origin instanceof AttributeExpression && (adapter == AsmClassGenerator.getField || adapter == AsmClassGenerator.getGroovyObjectField)) {
-                CallSiteWriter callSiteWriter = controller.getCallSiteWriter();
-                String fieldName = ((AttributeExpression) origin).getPropertyAsString();
-                if (fieldName != null && callSiteWriter instanceof StaticTypesCallSiteWriter) {
-                    ClassNode receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
-                    if (((StaticTypesCallSiteWriter) callSiteWriter).makeGetField(receiver, receiverType, fieldName, safe, false)) {
-                        return;
-                    }
-                }
+            boolean tryGetField = (adapter == AsmClassGenerator.getField
+                    || adapter == AsmClassGenerator.getGroovyObjectField);
+            if (!tryGetField || !makeGetField(origin, receiver, safe)) { // GETFIELD or GETSTATIC
+                super.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
             }
-            super.makeCall(origin, receiver, message, arguments, adapter, safe, spreadSafe, implicitThis);
         }
     }
 
@@ -638,6 +636,20 @@ public class StaticInvocationWriter extends InvocationWriter {
                 makeCall(origin, pexp, message, arguments, adapter, safe, spreadSafe, false);
             }
             return true;
+        }
+        return false;
+    }
+
+    private boolean makeGetField(final Expression origin, final Expression receiver, final boolean safe) {
+        if (origin instanceof AttributeExpression && controller.getCallSiteWriter() instanceof StaticTypesCallSiteWriter) {
+            String fieldName = ((AttributeExpression) origin).getPropertyAsString();
+            if (fieldName != null) {
+                ClassNode receiverType = receiver.getType();
+                if (!(receiver instanceof ClassExpression)) { // GROOVY-11840
+                    receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
+                }
+                return ((StaticTypesCallSiteWriter) controller.getCallSiteWriter()).makeGetField(receiver, receiverType, fieldName, safe, /*implicitThis:*/false);
+            }
         }
         return false;
     }
@@ -714,10 +726,5 @@ public class StaticInvocationWriter extends InvocationWriter {
             }
             return type;
         }
-    }
-
-    @Override
-    protected boolean makeCachedCall(final Expression origin, final ClassExpression sender, final Expression receiver, final Expression message, final Expression arguments, final MethodCallerMultiAdapter adapter, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean containsSpreadExpression) {
-        return false;
     }
 }

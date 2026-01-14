@@ -815,8 +815,8 @@ final class InnerClassTest {
                     @Override
                     void run() {
                         try {
-                            if (!flag) {
-                                // do work
+                            if (flag) {
+                                assert false : 'boolean conversion'
                             }
                         } catch (e) {
                             error = e
