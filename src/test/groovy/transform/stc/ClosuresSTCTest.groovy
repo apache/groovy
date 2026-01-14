@@ -660,6 +660,26 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11840
+    void testAccessStaticFieldFromNestedClosure2() {
+        assertScript '''
+            class C {
+                private static final boolean FLAG = false
+
+                static main(args) {
+                    (1..100).each {
+                        if (FLAG) {
+                            assert false : 'boolean conversion'
+                        }
+                        if (FLAG == true) {
+                            assert false : 'boolean comparison'
+                        }
+                    }
+                }
+            }
+        '''
+    }
+
     // GROOVY-11360
     void testLexicalScopeVersusGetDynamicProperty() {
         assertScript '''

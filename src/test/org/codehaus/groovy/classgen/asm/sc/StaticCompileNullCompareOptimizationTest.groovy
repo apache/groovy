@@ -195,7 +195,33 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ''')
         assert bytecode.hasSequence([
             'ALOAD 1',
+            'DUP',
+            'IFNONNULL L1',
+            'POP',
+            'ICONST_0',
+            'GOTO L2',
+            'L1',
             config.indyEnabled ? 'INVOKEDYNAMIC cast(Ljava/lang/Object;)Z' : 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z'
+        ])
+    }
+
+    void testNoGroovyTruthOptimizationForString() {
+        def bytecode = compile(method:'m', '''
+            @groovy.transform.CompileStatic
+            void m(String x) {
+                if (x) {
+                }
+            }
+        ''')
+        assert bytecode.hasSequence([
+            'ALOAD 1',
+            'DUP',
+            'IFNONNULL L1',
+            'POP',
+            'ICONST_0',
+            'GOTO L2',
+            'L1',
+            config.indyEnabled ? 'INVOKEDYNAMIC cast(Ljava/lang/String;)Z' : 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z'
         ])
     }
 
@@ -211,13 +237,13 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ''')
         assert bytecode.hasSequence([
             'ALOAD 1',
-            'IFNULL L1',
-            'ICONST_1',
-            'GOTO L2',
-            'L1',
+            'DUP',
+            'IFNONNULL L1',
+            'POP',
             'ICONST_0',
-            'L2',
-            'IFEQ L3'
+            'GOTO L2',
+            'POP',
+            'ICONST_1'
         ])
         if (config.indyEnabled)
             assert !bytecode.hasSequence(['INVOKEDYNAMIC cast(LA$B;)Z'])
@@ -237,13 +263,13 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ''')
         assert bytecode.hasSequence([
             'ALOAD 1',
-            'IFNULL L1',
-            'ICONST_1',
-            'GOTO L2',
-            'L1',
+            'DUP',
+            'IFNONNULL L1',
+            'POP',
             'ICONST_0',
-            'L2',
-            'IFEQ L3'
+            'GOTO L2',
+            'POP',
+            'ICONST_1'
         ])
         if (config.indyEnabled)
             assert !bytecode.hasSequence(['INVOKEDYNAMIC cast(LA$B;)Z'])
@@ -263,6 +289,12 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ''')
         assert bytecode.hasSequence([
             'ALOAD 1',
+            'DUP',
+            'IFNONNULL L1',
+            'POP',
+            'ICONST_0',
+            'GOTO L2',
+            'L1',
             config.indyEnabled ? 'INVOKEDYNAMIC cast(LA$B;)Z' : 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z'
         ])
     }
@@ -285,6 +317,12 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ''')
         assert bytecode.hasSequence([
             'ALOAD 1',
+            'DUP',
+            'IFNONNULL L1',
+            'POP',
+            'ICONST_0',
+            'GOTO L2',
+            'L1',
             config.indyEnabled ? 'INVOKEDYNAMIC cast(LC;)Z' : 'INVOKESTATIC org/codehaus/groovy/runtime/typehandling/DefaultTypeTransformation.booleanUnbox (Ljava/lang/Object;)Z'
         ])
     }
