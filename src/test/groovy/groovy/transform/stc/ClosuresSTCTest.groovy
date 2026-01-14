@@ -779,7 +779,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     // GROOVY-6343
     void testAccessStaticFieldFromNestedClosure() {
         assertScript '''
-            class A {
+            class C {
               public static final CONST = "a"
 
               static List doSomething() {
@@ -790,8 +790,28 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
                 }
               }
             }
-            def result = A.doSomething()
+            def result = C.doSomething()
             assert result == [['a','a'],['a','a']]
+        '''
+    }
+
+    // GROOVY-11840
+    void testAccessStaticFieldFromNestedClosure2() {
+        assertScript '''
+            class C {
+                private static final boolean FLAG = false
+
+                static main(args) {
+                    (1..100).each {
+                        if (FLAG) {
+                            assert false : 'boolean conversion'
+                        }
+                        if (FLAG == true) {
+                            assert false : 'boolean comparison'
+                        }
+                    }
+                }
+            }
         '''
     }
 

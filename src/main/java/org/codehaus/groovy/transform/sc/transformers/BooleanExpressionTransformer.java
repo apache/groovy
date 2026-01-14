@@ -66,12 +66,10 @@ class BooleanExpressionTransformer {
         } while (expr instanceof BooleanExpression);
 
         if (!(expr instanceof BinaryExpression)) {
-            expr = transformer.transform(expr);
-            ClassNode type = transformer.getTypeChooser().resolveType(expr, transformer.getClassNode());
-            Expression opt = new OptimizingBooleanExpression(expr, type);
-            if (reverse) opt = new NotExpression(opt);
-            opt.setSourcePosition(boolX);
-            return opt;
+            expr = new OptimizingBooleanExpression(transformer.transform(expr));
+            if (reverse) expr = new NotExpression(expr);
+            expr.setSourcePosition(boolX);
+            return expr;
         }
 
         return transformer.superTransform(boolX);
@@ -81,17 +79,13 @@ class BooleanExpressionTransformer {
 
     private static class OptimizingBooleanExpression extends BooleanExpression {
 
-        private final ClassNode type;
-
-        OptimizingBooleanExpression(final Expression expression, final ClassNode type) {
+        OptimizingBooleanExpression(final Expression expression) {
             super(expression);
-            // we must use the redirect node, otherwise InnerClassNode would not have the "correct" type
-            this.type = type.redirect();
         }
 
         @Override
         public Expression transformExpression(final ExpressionTransformer transformer) {
-            Expression opt = new OptimizingBooleanExpression(transformer.transform(getExpression()), type);
+            Expression opt = new OptimizingBooleanExpression(transformer.transform(getExpression()));
             opt.setSourcePosition(this);
             opt.copyNodeMetaData(this);
             return opt;
@@ -107,58 +101,37 @@ class BooleanExpressionTransformer {
                 int mark = os.getStackLength();
                 getExpression().visit(visitor);
 
-                if (ClassHelper.isPrimitiveType(type) && !ClassHelper.isPrimitiveVoid(type)) { // GROOVY-10920
-                    if (ClassHelper.isPrimitiveBoolean(type)) {
-                        os.doGroovyCast(ClassHelper.boolean_TYPE);
-                    } else {
-                        BytecodeHelper.convertPrimitiveToBoolean(mv, type);
-                        os.replace(ClassHelper.boolean_TYPE);
-                    }
-                    return;
-                }
+                ClassNode type = os.getTopOperand(); // GROOVY-6270, GROOVY-9501, GROOVY-9569, GROOVY-10920, GROOVY-11840
 
-                if (ClassHelper.isWrapperBoolean(type)) {
-                    Label unbox = new Label();
-                    Label exit = new Label();
-                    // check for null
+                if (ClassHelper.isPrimitiveType(type)) {
+                    BytecodeHelper.convertPrimitiveToBoolean(mv, type);
+                } else {
                     mv.visitInsn(DUP);
-                    mv.visitJumpInsn(IFNONNULL, unbox);
+                    Label end = new Label();
+                    Label asBoolean = new Label();
+                    mv.visitJumpInsn(IFNONNULL, asBoolean);
+
+                    // null => false
                     mv.visitInsn(POP);
                     mv.visitInsn(ICONST_0);
-                    mv.visitJumpInsn(GOTO, exit);
-                    mv.visitLabel(unbox);
-                    if (!os.getTopOperand().equals(type)) BytecodeHelper.doCast(mv, type); // GROOVY-6270
-                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
-                    mv.visitLabel(exit);
-                    os.replace(ClassHelper.boolean_TYPE);
-                    return;
+                    mv.visitJumpInsn(GOTO, end);
+
+                    mv.visitLabel(asBoolean);
+                    if (ClassHelper.isWrapperBoolean(type)) {
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false);
+                    } else if (replaceAsBooleanWithCompareToNull(type, controller.getSourceUnit().getClassLoader())) {
+                        // value => true
+                        mv.visitInsn(POP);
+                        mv.visitInsn(ICONST_1);
+                    } else {
+                        os.castToBool(mark, true);
+                    }
+                    mv.visitLabel(end);
                 }
-
-                mv.visitInsn(DUP);
-                Label end = new Label();
-                Label asBoolean = new Label();
-                mv.visitJumpInsn(IFNONNULL, asBoolean);
-
-                // null => false
-                mv.visitInsn(POP);
-                mv.visitInsn(ICONST_0);
-                mv.visitJumpInsn(GOTO, end);
-
-                mv.visitLabel(asBoolean);
-                ClassLoader loader = controller.getSourceUnit().getClassLoader();
-                if (replaceAsBooleanWithCompareToNull(type, loader)) {
-                    // value => true
-                    mv.visitInsn(POP);
-                    mv.visitInsn(ICONST_1);
-                } else {
-                    os.castToBool(mark, true);
-                }
-                mv.visitLabel(end);
                 os.replace(ClassHelper.boolean_TYPE);
-                return;
+            } else {
+                super.visit(visitor);
             }
-
-            super.visit(visitor);
         }
 
         /**
@@ -172,7 +145,7 @@ class BooleanExpressionTransformer {
         private static boolean replaceAsBooleanWithCompareToNull(final ClassNode type, final ClassLoader dgmProvider) {
             if (type.getMethod("asBoolean", Parameter.EMPTY_ARRAY) != null) {
                 // GROOVY-10711
-            } else if (Modifier.isFinal(type.getModifiers()) || isEffectivelyFinal(type)) {
+            } else if (Modifier.isFinal(type.getModifiers()) || isEffectivelyFinal(type.redirect())) {
                 List<MethodNode> asBoolean = findDGMMethodsByNameAndArguments(dgmProvider, type, "asBoolean", ClassNode.EMPTY_ARRAY);
                 if (asBoolean.size() == 1) {
                     MethodNode theAsBoolean = asBoolean.get(0);
