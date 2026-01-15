@@ -297,7 +297,7 @@ class Main {
      * @param initialBindings binding variables for the GroovyEngine
      * @return process exit code (0 for success)
      */
-    static int start(String[] args = new String[0], Map<String, ?> initialBindings = Collections.emptyMap()) {
+    static int start(Map<String, ?> initialBindings = Collections.emptyMap(), String[] args = new String[0]) {
         def cli = new CliBuilderInternal(usage: 'groovysh [options] [...]', stopAtNonOption: false,
             header: messages['cli.option.header'])
         cli.with {
@@ -525,6 +525,16 @@ class Main {
             return 1
         }
         return 0
+    }
+
+    /**
+     * Programmatic entry point for embedding groovysh.
+     *
+     * @param args CLI-like arguments (same as {@link #main(String[])}).
+     * @return process exit code (0 for success)
+     */
+    static int start(String[] args) {
+        start([:], args)
     }
 
     static void main(String[] args) {
