@@ -27,7 +27,9 @@ class ProgrammaticStartTest extends GroovyTestCase {
 
     void testStartMethodIsPresentAndCallable() {
         // We just verify it accepts parameters and doesn't throw on trivial help/version paths.
-        int rc = Main.start(['--help'] as String[], [foo: 1])
+        int rc = Main.start(foo: 1, '--help')
+        assert rc == 0
+        rc = Main.start('--version')
         assert rc == 0
     }
 }
