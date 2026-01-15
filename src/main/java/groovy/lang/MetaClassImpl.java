@@ -109,7 +109,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 
 import static groovy.lang.Tuple.tuple;
@@ -154,12 +153,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected final boolean isMap;
     protected final MetaMethodIndex metaMethodIndex;
 
-    private static Map<String, MetaProperty> subMap(Map<CachedClass, LinkedHashMap<String, MetaProperty>> map, CachedClass key) {
+    private static Map<String, MetaProperty> subMap(Map<CachedClass, Map<String, MetaProperty>> map, CachedClass key) {
         return map.computeIfAbsent(key, k -> new LinkedHashMap<>());
     }
-    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndexForSuper = new LinkedHashMap<>();
-    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndex = new LinkedHashMap<>();
+    private final Map<CachedClass, Map<String, MetaProperty>> classPropertyIndexForSuper = new ConcurrentHashMap<>();
+    private final Map<CachedClass, Map<String, MetaProperty>> classPropertyIndex = new ConcurrentHashMap<>();
     private final Map<String, MetaProperty> staticPropertyIndex = new LinkedHashMap<>();
+
     private final Map<String, MetaMethod> listeners = new LinkedHashMap<>();
     private final List<MetaMethod> allMethods = new ArrayList<>();
     private final Set<MetaMethod> newGroovyMethodsSet = new LinkedHashSet<>();
@@ -269,10 +269,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     @Override
     public List<MetaMethod> respondsTo(final Object obj, final String name) {
         Object o = getMethods(getTheClass(), name, false);
-        if (o instanceof FastArray) {
-            @SuppressWarnings("unchecked")
-            List<MetaMethod> l = ((FastArray) o).toList();
-            return l;
+        if (o instanceof FastArray array) {
+            return (List<MetaMethod>) array.toList();
         }
         return Collections.singletonList((MetaMethod) o);
     }
@@ -2486,7 +2484,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void applyStrayPropertyMethods(Iterable<CachedClass> classes, Map<CachedClass, LinkedHashMap<String, MetaProperty>> propertyIndex, boolean isThis) {
+    private void applyStrayPropertyMethods(Iterable<CachedClass> classes, Map<CachedClass, Map<String, MetaProperty>> propertyIndex, boolean isThis) {
         for (CachedClass cc : classes) {
             applyStrayPropertyMethods(cc, subMap(propertyIndex, cc), isThis);
         }
@@ -2511,25 +2509,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             Object propertyMethods = filterPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter, isBooleanGetter);
             if (propertyMethods == null) continue;
 
-            String propName = getPropName(methodName);
-            if (propertyMethods instanceof MetaMethod) {
-                createMetaBeanProperty(target, propName, isGetter, (MetaMethod) propertyMethods);
+            String propertyName = BeanUtils.decapitalize(methodName.substring(isBooleanGetter ? 2 : 3));
+            if (propertyMethods instanceof MetaMethod propertyMethod) {
+                createMetaBeanProperty(target, propertyName, isGetter, propertyMethod);
             } else {
                 for (MetaMethod m : (Iterable<MetaMethod>) propertyMethods) {
-                    createMetaBeanProperty(target, propName, isGetter, m);
+                    createMetaBeanProperty(target, propertyName, isGetter, m);
                 }
             }
         }
-    }
-
-    private static final ConcurrentMap<String, String> PROP_NAMES = new ConcurrentHashMap<>(1024);
-
-    private static String getPropName(String methodName) {
-        return PROP_NAMES.computeIfAbsent(methodName, k -> {
-            // assume "is" or "[gs]et"
-            return BeanUtils.decapitalize(methodName.startsWith("is")
-                    ? methodName.substring(2) : methodName.substring(3));
-        });
     }
 
     private static MetaProperty makeReplacementMetaProperty(MetaProperty mp, String propName, boolean isGetter, MetaMethod propertyMethod) {
@@ -3833,10 +3821,6 @@ out:    if (metaClass instanceof MetaClassImpl metaClassImpl) {
 
         @Override
         public CachedClass getDeclaringClass() {
-            return null;
-        }
-
-        public ParameterTypes getParamTypes() {
             return null;
         }
 
