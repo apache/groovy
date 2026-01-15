@@ -291,23 +291,33 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     @Override
     public MetaProperty getMetaProperty(final String name) {
-        MetaProperty metaProperty = null;
+        MetaProperty metaProperty;
 
-        Map<String, MetaProperty> propertyMap = subMap(classPropertyIndex, theCachedClass);
-        metaProperty = propertyMap.get(name);
-        if (metaProperty == null) {
-            metaProperty = staticPropertyIndex.get(name);
-            if (metaProperty == null) {
-                propertyMap = subMap(classPropertyIndexForSuper, theCachedClass);
-                metaProperty = propertyMap.get(name);
-                if (metaProperty == null) {
-                    MetaBeanProperty property = findPropertyInClassHierarchy(name, theCachedClass);
-                    if (property != null) {
-                        onSuperPropertyFoundInHierarchy(property);
-                        metaProperty = property;
-                    }
-                }
+        var propertyMap = classPropertyIndex.get(theCachedClass);
+        if (propertyMap != null) {
+            metaProperty = propertyMap.get(name);
+            if (metaProperty != null) {
+                return metaProperty;
             }
+        }
+
+        metaProperty = staticPropertyIndex.get(name);
+        if (metaProperty != null) {
+            return metaProperty;
+        }
+
+        propertyMap = classPropertyIndexForSuper.get(theCachedClass);
+        if (propertyMap != null) {
+            metaProperty = propertyMap.get(name);
+            if (metaProperty != null) {
+                return metaProperty;
+            }
+        }
+
+        var metaBeanProperty = findPropertyInClassHierarchy(name, theCachedClass);
+        if (metaBeanProperty != null) {
+            metaProperty = metaBeanProperty;
+            onSuperPropertyFoundInHierarchy(metaBeanProperty);
         }
 
         return metaProperty;
