@@ -153,12 +153,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected final boolean isMap;
     protected final MetaMethodIndex metaMethodIndex;
 
-    private static Map<String, MetaProperty> subMap(Map<CachedClass, LinkedHashMap<String, MetaProperty>> map, CachedClass key) {
+    private static Map<String, MetaProperty> subMap(Map<CachedClass, Map<String, MetaProperty>> map, CachedClass key) {
         return map.computeIfAbsent(key, k -> new LinkedHashMap<>());
     }
-    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndexForSuper = new LinkedHashMap<>();
-    private final Map<CachedClass, LinkedHashMap<String, MetaProperty>> classPropertyIndex = new LinkedHashMap<>();
+    private final Map<CachedClass, Map<String, MetaProperty>> classPropertyIndexForSuper = new ConcurrentHashMap<>();
+    private final Map<CachedClass, Map<String, MetaProperty>> classPropertyIndex = new ConcurrentHashMap<>();
     private final Map<String, MetaProperty> staticPropertyIndex = new LinkedHashMap<>();
+
     private final Map<String, MetaMethod> listeners = new LinkedHashMap<>();
     private final List<MetaMethod> allMethods = new ArrayList<>();
     private final Set<MetaMethod> newGroovyMethodsSet = new LinkedHashSet<>();
@@ -2483,7 +2484,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private void applyStrayPropertyMethods(Iterable<CachedClass> classes, Map<CachedClass, LinkedHashMap<String, MetaProperty>> propertyIndex, boolean isThis) {
+    private void applyStrayPropertyMethods(Iterable<CachedClass> classes, Map<CachedClass, Map<String, MetaProperty>> propertyIndex, boolean isThis) {
         for (CachedClass cc : classes) {
             applyStrayPropertyMethods(cc, subMap(propertyIndex, cc), isThis);
         }
