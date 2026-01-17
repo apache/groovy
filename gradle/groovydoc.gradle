@@ -24,9 +24,9 @@ allprojects {
         dependsOn( { project(':groovy-docgenerator').classes })
         groovyClasspath = files(
                 rootProject.compileJava.classpath,
-                rootProject.bootstrapJar.archivePath,
-                { project(':groovy-docgenerator').compileJava.destinationDir },
-                { project(':groovy-groovydoc').compileJava.destinationDir },
+                rootProject.bootstrapJar.archiveFile,
+                { project(':groovy-docgenerator').compileJava.destinationDirectory },
+                { project(':groovy-groovydoc').compileJava.destinationDirectory },
                 { project(':groovy-groovydoc').sourceSets.main.runtimeClasspath },
                 { project(':groovy-ant').sourceSets.main.runtimeClasspath },
                 { project(':groovy-templates').sourceSets.main.runtimeClasspath },

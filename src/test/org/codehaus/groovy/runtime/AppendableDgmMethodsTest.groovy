@@ -38,6 +38,9 @@ class AppendableDgmMethodsTest extends GroovyTestCase {
             f.format(" %tY", Date.parse('dd MM yyyy', '01 01 2001'))
             f.format(Locale.FRANCE, " e = %+10.4f", Math.E)
         }
-        assert store.join('') == 'hello [a:1, b:2] 2001 e =    +2,7183'
+        def result = store.join('')
+        // Java 25 CLDR locale data uses '.' for French decimal separator, earlier JDKs used ','
+        assert result == 'hello [a:1, b:2] 2001 e =    +2,7183' ||
+               result == 'hello [a:1, b:2] 2001 e =    +2.7183'
     }
 }

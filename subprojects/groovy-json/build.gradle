@@ -30,9 +30,10 @@ eclipse.classpath.file.whenMerged {
     entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-groovydoc'] }
 }
 
-tasks.named('rat') {
-    excludes += [
-            // test file
-            'src/test/resources/groovy9802.json'
-    ]
-}
+// Disabled for Gradle 9.x - rat plugin not available
+// tasks.named('rat') {
+//     excludes += [
+//             // test file
+//             'src/test/resources/groovy9802.json'
+//     ]
+// }

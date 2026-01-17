@@ -17,31 +17,35 @@ name: "Distribute Groovy SNAPSHOT"
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
+env:
+  DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+
 jobs:
   dist:
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ubuntu-latest]
-        java: [11.0.6]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java }}
+          distribution: 'zulu'
+          java-version: '21'
+          check-latest: true
+      - uses: gradle/actions/setup-gradle@v4
       - name: Build and package
-        run: ./gradlew clean dist --no-build-cache --no-scan
+        run: ./gradlew clean dist --no-build-cache
         timeout-minutes: 60
       - name: Move binary distribution
-        run:  mkdir target/distributions/binary/ && mv target/distributions/apache-groovy-binary-*.zip target/distributions/binary/
+        run: mkdir target/distributions/binary/ && mv target/distributions/apache-groovy-binary-*.zip target/distributions/binary/
       - name: Move src distribution
-        run:  mkdir target/distributions/src/ && mv target/distributions/apache-groovy-src-*.zip target/distributions/src/
+        run: mkdir target/distributions/src/ && mv target/distributions/apache-groovy-src-*.zip target/distributions/src/
       - name: Move docs distribution
-        run:  mkdir target/distributions/docs/ && mv target/distributions/apache-groovy-docs-*.zip target/distributions/docs/
+        run: mkdir target/distributions/docs/ && mv target/distributions/apache-groovy-docs-*.zip target/distributions/docs/
       - name: Move sdk distribution
-        run:  mkdir target/distributions/sdk/ && mv target/distributions/apache-groovy-sdk-*.zip target/distributions/sdk/
+        run: mkdir target/distributions/sdk/ && mv target/distributions/apache-groovy-sdk-*.zip target/distributions/sdk/
       - name: Upload binary distribution
         uses: actions/upload-artifact@v4
         with:

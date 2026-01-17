@@ -21,7 +21,10 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import org.codehaus.groovy.gradle.JarJarTask
 
 group = 'org.codehaus.groovy'
-archivesBaseName = 'groovy'
+
+base {
+    archivesName = 'groovy'
+}
 
 ext.srcSpec = copySpec {
     from(projectDir) {
@@ -97,7 +100,8 @@ def excludedFromManifest = [
         'Created-By'
 ]
 
-ext.allManifest = manifest {
+// In Gradle 9.x, manifest() at project level is accessed via java extension
+ext.allManifest = java.manifest {
     attributes(
             'Extension-Name': 'groovy',
             'Specification-Title': 'Groovy: a powerful, dynamic language for the JVM',
@@ -161,12 +165,31 @@ ext.subprojectOsgiManifest = {
 }
 
 allprojects {
+    // Skip binary-compatibility and performance subprojects - they don't produce artifacts for distribution
+    if (project.name in ['binary-compatibility', 'performance']) {
+        return
+    }
+
     boolean isRoot = project == rootProject
+
+    // Create local tools configuration for jarjar tasks in subprojects (Gradle 9.x isolation fix)
+    def localToolsConfig
+    if (isRoot) {
+        localToolsConfig = configurations.tools
+    } else {
+        localToolsConfig = configurations.maybeCreate('localTools')
+        dependencies {
+            localTools "org.pantsbuild:jarjar:1.7.2"
+            localTools "org.jboss.bridger:bridger:1.6.Final@jar"
+            localTools "org.ow2.asm:asm:$asmVersion"
+            localTools "org.ow2.asm:asm-tree:$asmVersion"
+        }
+    }
 
     def producedJars = [jar]
     jar {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        appendix = 'raw'
+        archiveAppendix = 'raw'
         manifest {
             from(allManifest) {
                 eachEntry { details ->
@@ -179,14 +202,14 @@ allprojects {
     }
     if (rootProject.indyCapable()) {
         task jarWithIndy(type: Jar) {
-            dependsOn compileGroovyWithIndy
+            dependsOn compileGroovyWithIndy, processResources
             duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-            classifier = 'indy'
-            appendix = 'raw'
-            from sourceSets.main.java.outputDir
-            from sourceSets.main.groovy.outputDir
-            from compileGroovyWithIndy.destinationDir
-            from "${project.buildDir}/resources/main"
+            archiveClassifier = 'indy'
+            archiveAppendix = 'raw'
+            from sourceSets.main.java.classesDirectory
+            from sourceSets.main.groovy.classesDirectory
+            from compileGroovyWithIndy.destinationDirectory
+            from sourceSets.main.output.resourcesDir
         }
         producedJars << jarWithIndy
     }
@@ -207,7 +230,7 @@ allprojects {
 
         task "jar${arch.name}"(type: JarJarTask) {
             dependsOn arch
-            from = file(arch.archivePath)
+            from = arch.archiveFile.get().asFile
             if (project == rootProject) {
                 repackagedLibraries = files(configurations.runtimeClasspath.incoming.artifactView {
                     componentFilter { component ->
@@ -222,7 +245,7 @@ allprojects {
             } else {
                 repackagedLibraries = files()
             }
-            jarjarToolClasspath = rootProject.configurations.tools
+            jarjarToolClasspath = localToolsConfig
             untouchedFiles = [
                     'groovy/cli/picocli/CliBuilder*.class',
                     'groovy/cli/picocli/OptionAccessor*.class'
@@ -242,7 +265,7 @@ allprojects {
                                  'org/objectweb/asm/util/ASMifier.class',
                                  'org/objectweb/asm/util/Trace*']
             ]
-            outputFile = file("$buildDir/libs/${arch.baseName}-${arch.version}${arch.classifier ? '-' + arch.classifier : ''}.jar")
+            outputFile = file("$buildDir/libs/${arch.archiveBaseName.get()}-${arch.archiveVersion.get()}${arch.archiveClassifier.getOrElse('') ? '-' + arch.archiveClassifier.get() : ''}.jar")
 
             withManifest {
                 def moduleName = "org.codehaus.${project.name.replace('-', '.')}"
@@ -276,7 +299,7 @@ allprojects {
             } else {
                 repackagedLibraries = files()
             }
-            jarjarToolClasspath = rootProject.configurations.tools
+            jarjarToolClasspath = localToolsConfig
             patterns = [
                     'com.googlecode.openbeans.**': 'groovyjarjaropenbeans.@1',
                     'org.apache.harmony.beans.**': 'groovyjarjarharmonybeans.@1',
@@ -290,7 +313,7 @@ allprojects {
             includedResources = [
                     ("$rootProject.projectDir/notices/${isRoot ? 'NOTICE-GROOIDJARJAR' : 'NOTICE-GROOID'}".toString()): 'META-INF/NOTICE'
             ]
-            outputFile = file("$buildDir/libs/${jar.baseName}-${jar.version}-grooid.jar")
+            outputFile = file("$buildDir/libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-grooid.jar")
         }
     }
 }
@@ -331,31 +354,31 @@ task sourceAllJar(type: Jar, dependsOn: { modules()*.sourceJar + rootProject.sou
     modules()*.sourceJar.each {
         with it.rootSpec
     }
-    baseName = 'groovy-all'
-    classifier = 'sources'
+    archiveBaseName = 'groovy-all'
+    archiveClassifier = 'sources'
 }
 
 allprojects {
     task javadocJar(type: Jar, dependsOn: javadoc) {
         from javadoc.destinationDir
-        classifier = 'javadoc'
+        archiveClassifier = 'javadoc'
     }
     task groovydocJar(type: Jar, dependsOn: groovydoc) {
         from groovydoc.destinationDir
-        classifier = 'groovydoc'
+        archiveClassifier = 'groovydoc'
     }
 }
 
 task javadocAllJar(type: Jar, dependsOn: javadocAll) {
-    baseName = 'groovy-all'
+    archiveBaseName = 'groovy-all'
     from javadocAll.destinationDir
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
 }
 
 task groovydocAllJar(type: Jar, dependsOn: groovydocAll) {
-    baseName = 'groovy-all'
+    archiveBaseName = 'groovy-all'
     from groovydocAll.destinationDir
-    classifier = 'groovydoc'
+    archiveClassifier = 'groovydoc'
 }
 
 evaluationDependsOn('groovy-jaxb')
@@ -381,25 +404,27 @@ ext.distSpec = copySpec {
         }
         from('src/bin/groovy.icns')
     }
-    modules().configurations.runtimeClasspath.each { conf ->
-        into('lib') {
-            from(conf) {
-                exclude {
-                    it.file.name.contains('livetribe-jsr223') ||
-                            it.file.name.matches(/groovy-\d.*/) ||
-                            it.file.name.startsWith('asm-') ||
-                            it.file.name.startsWith('antlr-') ||
-                            it.file.name.startsWith('antlr4-') ||
-                            it.file.name.startsWith('openbeans-') ||
-                            it.file.name.startsWith('ST4') ||
-                            it.file.name.startsWith('picocli-')
-                }
+    // Defer module runtimeClasspath resolution to execution time for Gradle 9.x compatibility
+    into('lib') {
+        from {
+            modules().collectMany { proj ->
+                proj.configurations.runtimeClasspath.files
+            }.findAll { f ->
+                !(f.name.contains('livetribe-jsr223') ||
+                        f.name.matches(/groovy-\d.*/) ||
+                        f.name.startsWith('asm-') ||
+                        f.name.startsWith('antlr-') ||
+                        f.name.startsWith('antlr4-') ||
+                        f.name.startsWith('openbeans-') ||
+                        f.name.startsWith('ST4') ||
+                        f.name.startsWith('picocli-'))
             }
         }
     }
+    // Defer jaxb configuration resolution to execution time for Gradle 9.x compatibility
     into('lib/extras-jaxb') {
-        from project(':groovy-jaxb').configurations.jaxb
-        from project(':groovy-jaxb').configurations.jaxbRuntime
+        from { project(':groovy-jaxb').configurations.jaxb.files }
+        from { project(':groovy-jaxb').configurations.jaxbRuntime.files }
     }
     if (!rootProject.hasProperty('skipIndy')) {
         into('indy') {
@@ -409,10 +434,10 @@ ext.distSpec = copySpec {
     }
     if (!rootProject.hasProperty('skipGrooid')) {
         into('grooid') {
-            from { new File(jar.archivePath.parent, "${jar.baseName}-${jar.version}-grooid.jar") }
+            from { new File(jar.archiveFile.get().asFile.parent, "${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-grooid.jar") }
             from {
                 modules()*.jar.collect { j ->
-                    new File(j.archivePath.parent, "${j.baseName}-${j.version}-grooid.jar")
+                    new File(j.archiveFile.get().asFile.parent, "${j.archiveBaseName.get()}-${j.archiveVersion.get()}-grooid.jar")
                 }
             }
         }
@@ -423,7 +448,9 @@ ext.distSpec = copySpec {
     into('bin') {
         from('src/bin') {
             filter(ReplaceTokens, tokens: [GROOVYJAR: jarjar.archiveName])
-            fileMode = 0755
+            filePermissions {
+                unix('rwxr-xr-x')
+            }
             exclude 'groovy.icns'
         }
         from('subprojects/groovy-docgenerator/src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
@@ -446,8 +473,8 @@ ext.distSpec = copySpec {
 }
 
 task distBin(type: Zip) {
-    baseName = 'apache-groovy'
-    appendix = 'binary'
+    archiveBaseName = 'apache-groovy'
+    archiveAppendix = 'binary'
     into("groovy-$version") {
         with distSpec
     }
@@ -459,18 +486,20 @@ task distBin(type: Zip) {
 }
 
 task distDoc(type: Zip, dependsOn: doc) {
-    baseName = 'apache-groovy'
-    appendix = 'docs'
+    archiveBaseName = 'apache-groovy'
+    archiveAppendix = 'docs'
     into("groovy-$version") {
         with docSpec
     }
 }
+// Add syncDoc dependency after it's defined (Gradle 9.x task ordering fix)
+distDoc.dependsOn { tasks.findByName('syncDoc') }
 
 task syncDoc(type: Copy, dependsOn: doc) {
     inputs.files javadoc.outputs.files
     inputs.files groovydoc.outputs.files
 
-    destinationDir(file("$buildDir/html"))
+    destinationDir = file("$buildDir/html")
     into('api') {
         from javadoc.destinationDir
     }
@@ -481,8 +510,8 @@ task syncDoc(type: Copy, dependsOn: doc) {
 }
 
 task distSrc(type: Zip) {
-    baseName = 'apache-groovy'
-    appendix = 'src'
+    archiveBaseName = 'apache-groovy'
+    archiveAppendix = 'src'
     into("groovy-$version")
     with srcSpec
 }
@@ -519,9 +548,9 @@ distBin.dependsOn checkNoSnapshotVersions
 
 task dist(type: Zip, dependsOn: [checkCompatibility, distBin, distSrc, distDoc, syncDoc]) {
     description = 'Generates the binary, sources, documentation and full distributions'
-    baseName = 'apache-groovy'
+    archiveBaseName = 'apache-groovy'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    appendix 'sdk'
+    archiveAppendix = 'sdk'
     into "groovy-$version"
     from("$projectDir/licenses/LICENSE-SDK")
     from("$projectDir/notices/NOTICE-SDK")

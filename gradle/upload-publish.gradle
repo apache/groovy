@@ -1,0 +1,207 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+// Maven publishing configuration using maven-publish plugin (Gradle 9.x compatible)
+// This replaces the legacy upload.gradle that used the deprecated maven plugin
+//
+// NOTE: This script only configures the root project publishing.
+// Subprojects need to apply their own maven-publish configuration.
+
+boolean isUsingArtifactory = rootProject.hasProperty('artifactoryUser') && rootProject.artifactoryUser &&
+        rootProject.hasProperty('artifactoryPassword') && rootProject.artifactoryPassword
+
+if (isUsingArtifactory) {
+    logger.lifecycle 'Deployment environment set to Artifactory'
+}
+
+def embedded = ['asm', 'asm-util', 'asm-analysis', 'asm-tree', 'asm-commons', 'antlr', 'picocli', 'openbeans']
+
+apply from: "${rootProject.projectDir}/gradle/pomconfigurer-publish.gradle"
+apply from: 'gradle/backports-publish.gradle'
+
+// Helper methods for deriving file names
+ext.basename = { String s -> s.take(s.lastIndexOf('.')) }
+ext.deriveFile = { File archive, String suffix -> new File(archive.parent, basename(archive.name) + "-${suffix}.jar") }
+
+// Export the removeJarjaredDependencies closure for subprojects
+ext.removeJarjaredDependencies = { pomXml ->
+    def dependenciesNode = pomXml.asNode().dependencies
+    if (dependenciesNode) {
+        def toRemove = []
+        dependenciesNode.first()?.dependency?.each { dep ->
+            def groupId = dep.groupId?.text()
+            def artifactId = dep.artifactId?.text()
+            if (groupId == 'org.codehaus.groovy' || embedded.contains(artifactId)) {
+                toRemove << dep
+            }
+        }
+        toRemove.each { dependenciesNode.first().remove(it) }
+    }
+}
+
+// Apply maven-publish plugin to root project
+apply plugin: 'maven-publish'
+
+publishing {
+    repositories {
+        maven {
+            name = 'localRepo'
+            url = layout.buildDirectory.dir('repo')
+        }
+    }
+
+    publications {
+        maven(MavenPublication) {
+            // Use jarjar output as the main artifact
+            artifact(jarjar.outputFile) {
+                builtBy jarjar
+            }
+
+            artifact(sourceJar) {
+                classifier = 'sources'
+            }
+
+            artifact(javadocJar) {
+                classifier = 'javadoc'
+            }
+
+            artifact(groovydocJar) {
+                classifier = 'groovydoc'
+            }
+
+            // Add indy jar if capable
+            if (rootProject.indyCapable()) {
+                artifact(jarjarWithIndy.outputFile) {
+                    classifier = 'indy'
+                    builtBy jarjarWithIndy
+                }
+            }
+
+            pom {
+                configurePom(it)
+            }
+
+            pom.withXml {
+                removeJarjaredDependencies(delegate)
+                tweakPomDependencies(delegate, project)
+            }
+        }
+
+        // groovy-all POM (aggregates all non-optional modules)
+        groovyAll(MavenPublication) {
+            artifactId = 'groovy-all'
+            pom {
+                configurePom(it)
+                packaging = 'pom'
+                withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    def optionalModules = [
+                        'groovy-bsf',
+                        'groovy-cli-commons',
+                        'groovy-dateutil',
+                        'groovy-jaxb',
+                        'groovy-yaml'
+                    ]
+                    rootProject.allprojects { proj ->
+                        if (proj.name.startsWith('groovy') && !optionalModules.contains(proj.name)) {
+                            def depNode = dependenciesNode.appendNode('dependency')
+                            depNode.appendNode('groupId', proj.group)
+                            depNode.appendNode('artifactId', proj.name)
+                            depNode.appendNode('version', proj.version)
+                        }
+                    }
+                }
+            }
+        }
+
+        // groovy-bom (Bill of Materials)
+        groovyBom(MavenPublication) {
+            artifactId = 'groovy-bom'
+            pom {
+                configurePom(it)
+                packaging = 'pom'
+                withXml {
+                    def depMgmt = asNode().appendNode('dependencyManagement')
+                    def dependenciesNode = depMgmt.appendNode('dependencies')
+                    rootProject.allprojects { proj ->
+                        if (proj.name.startsWith('groovy')) {
+                            def depNode = dependenciesNode.appendNode('dependency')
+                            depNode.appendNode('groupId', proj.group)
+                            depNode.appendNode('artifactId', proj.name)
+                            depNode.appendNode('version', proj.version)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Backport publications
+rootProject.backports.each { pkg, classList ->
+    publishing {
+        publications {
+            "backport${pkg.capitalize()}"(MavenPublication) {
+                artifactId = "groovy-backports-$pkg"
+                artifact(tasks.named("backport${pkg}Jar").get())
+                artifact(tasks.named("backport${pkg}JavadocJar").get()) {
+                    classifier = 'javadoc'
+                }
+                artifact(tasks.named("backport${pkg}SourcesJar").get()) {
+                    classifier = 'sources'
+                }
+                pom {
+                    configurePom(it)
+                }
+            }
+        }
+    }
+}
+
+// Sign publications for release versions
+if (rootProject.isReleaseVersion) {
+    signing {
+        sign publishing.publications.maven
+        sign publishing.publications.groovyAll
+        sign publishing.publications.groovyBom
+        rootProject.backports.each { pkg, classList ->
+            sign publishing.publications["backport${pkg.capitalize()}"]
+        }
+    }
+}
+
+// Configure task dependencies
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn checkCompatibility
+    dependsOn jarjar
+    dependsOn sourceJar
+    dependsOn javadocJar
+    dependsOn groovydocJar
+    dependsOn backportJars
+    if (rootProject.indyCapable()) {
+        dependsOn jarjarWithIndy
+    }
+}
+
+// Convenience task aliases for compatibility
+tasks.register('install') {
+    group = 'Publishing'
+    description = 'Publishes to local Maven repository (compatibility alias for publishToMavenLocal)'
+    dependsOn 'publishToMavenLocal'
+}
