@@ -123,6 +123,8 @@ final class MetaClassTest {
         DymmyClass dymmyClass = new DymmyClass();
         MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
         metaClass.setProperty(dymmyClass, "anInt", Integer.valueOf(10));
+
+        assertEquals(10, dymmyClass.getAnInt());
     }
 
     @Test
@@ -177,6 +179,18 @@ final class MetaClassTest {
 
         // test Integer[]
         metaClass.setProperty(dymmyClass, "integers", list);
+    }
+
+    // GROOVY-11745
+    @Test
+    void testSetPropertyWithoutSender() {
+        MetaClass metaClass = new MetaClassImpl(DymmyClass.class);
+        metaClass.initialize();
+
+        DymmyClass dymmyClass = new DymmyClass();
+        metaClass.setProperty(null, dymmyClass, "anInt", 1234, false, false);
+
+        assertEquals(1234, dymmyClass.getAnInt());
     }
 
     @Test

@@ -2808,7 +2808,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaProperty getMetaProperty(final Class<?> clazz, final String name, final boolean useSuper, final boolean useStatic) {
-        CachedClass cachedClass = (clazz == theClass ? theCachedClass : ReflectionCache.getCachedClass(clazz));
+        CachedClass cachedClass = (clazz == null || clazz == theClass) ? theCachedClass : ReflectionCache.getCachedClass(clazz);
 
         Map<String, MetaProperty> propertyMap;
         if (useStatic) {
