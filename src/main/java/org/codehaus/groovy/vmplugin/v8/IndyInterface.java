@@ -162,6 +162,21 @@ public class IndyInterface {
      */
     private static final MethodHandle SELECT_METHOD;
 
+    /**
+     * handle for the fromCacheHandle method
+     */
+    private static final MethodHandle FROM_CACHE_HANDLE_METHOD;
+
+    /**
+     * handle for the selectMethodHandle method
+     */
+    private static final MethodHandle SELECT_METHOD_HANDLE_METHOD;
+
+    /**
+     * shared invoker for cached method handles
+     */
+    private static final MethodHandle CACHED_INVOKER;
+
     static {
 
         try {
@@ -177,6 +192,22 @@ public class IndyInterface {
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
+
+        try {
+            MethodType handleMt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
+            FROM_CACHE_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "fromCacheHandle", handleMt);
+        } catch (Exception e) {
+            throw new GroovyBugError(e);
+        }
+
+        try {
+            MethodType handleMt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
+            SELECT_METHOD_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethodHandle", handleMt);
+        } catch (Exception e) {
+            throw new GroovyBugError(e);
+        }
+
+        CACHED_INVOKER = MethodHandles.exactInvoker(MethodType.methodType(Object.class, Object[].class));
     }
 
     protected static SwitchPoint switchPoint = new SwitchPoint();
@@ -254,19 +285,39 @@ public class IndyInterface {
      * Makes a fallback method for an invalidated method selection
      */
     protected static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
-        return make(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, SELECT_METHOD);
+        return makeBoothandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, SELECT_METHOD_HANDLE_METHOD);
     }
 
     /**
      * Makes an adapter method for method selection, i.e. get the cached methodhandle(fast path) or fallback
      */
     private static MethodHandle makeAdapter(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
-        return make(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, FROM_CACHE_METHOD);
+        return makeBoothandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
     }
 
-    private static MethodHandle make(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall, MethodHandle originalMH) {
-        MethodHandle mh = MethodHandles.insertArguments(originalMH, 0, mc, sender, name, callID, safeNavigation, thisCall, spreadCall, /*dummy receiver:*/ 1);
-        return mh.asCollector(Object[].class, type.parameterCount()).asType(type);
+    private static MethodHandle makeBoothandle(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall, MethodHandle handleReturningMh) {
+        // Step 1: bind site-constant arguments (incl dummy receiver marker)
+        MethodHandle fromCacheBound = MethodHandles.insertArguments(
+            handleReturningMh,
+            0, mc, sender, name, callID,
+            safeNavigation, thisCall, spreadCall,
+            /*dummy receiver*/ 1
+        );
+        // fromCacheBound: (Object receiver, Object[] args) → MethodHandle
+
+        // Step 2: fold into the shared invoker (MethodHandle, Object[]) → Object
+        MethodHandle boothandle = MethodHandles.foldArguments(
+            CACHED_INVOKER, // (MethodHandle, Object[]) → Object
+            fromCacheBound  // (Object, Object[]) → MethodHandle
+        );
+        // boothandle: (Object receiver, Object[] args) → Object
+
+        // Step 3: adapt to callsite type: collect all arguments into Object[] and then asType
+        boothandle = boothandle
+            .asCollector(Object[].class, type.parameterCount())
+            .asType(type);
+
+        return boothandle;
     }
 
     private static class FallbackSupplier {
@@ -304,8 +355,18 @@ public class IndyInterface {
 
     /**
      * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
+     * @deprecated Use the new boothandle-based approach instead.
      */
+    @Deprecated
     public static Object fromCache(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+        MethodHandle mh = fromCacheHandle(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+        return mh.invokeExact(arguments);
+    }
+
+    /**
+     * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
+     */
+    private static MethodHandle fromCacheHandle(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         MethodHandleWrapper mhw =
@@ -341,7 +402,7 @@ public class IndyInterface {
             mhw.resetLatestHitCount();
         }
 
-        return mhw.getCachedMethodHandle().invokeExact(arguments);
+        return mhw.getCachedMethodHandle();
     }
 
     private static boolean bypassCache(Boolean spreadCall, Object[] arguments) {
@@ -352,8 +413,18 @@ public class IndyInterface {
 
     /**
      * Core method for indy method selection using runtime types.
+     * @deprecated Use the new boothandle-based approach instead.
      */
+    @Deprecated
     public static Object selectMethod(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
+        MethodHandle mh = selectMethodHandle(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
+        return mh.invokeExact(arguments);
+    }
+
+    /**
+     * Core method for indy method selection using runtime types.
+     */
+    private static MethodHandle selectMethodHandle(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         MethodHandleWrapper mhw = fallback(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
         MethodHandle defaultTarget = callSite.getDefaultTarget();
@@ -370,7 +441,7 @@ public class IndyInterface {
             doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), mhw));
         }
 
-        return mhw.getCachedMethodHandle().invokeExact(arguments);
+        return mhw.getCachedMethodHandle();
     }
 
     private static MethodHandleWrapper fallback(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) {
