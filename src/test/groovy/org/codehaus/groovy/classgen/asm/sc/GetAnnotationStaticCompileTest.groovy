@@ -19,17 +19,16 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
  */
-class GetAnnotationStaticCompileTest extends AbstractBytecodeTestCase {
+final class GetAnnotationStaticCompileTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testGetAnnotationShouldNotProduceProxy() {
-        def bytecode = compile([method:'m'],'''import java.lang.annotation.Retention
-            import java.lang.annotation.RetentionPolicy
-            import java.lang.annotation.Target
-            import java.lang.annotation.ElementType
+        def bytecode = compile([method:'m'],'''import java.lang.annotation.*
             @Retention(RetentionPolicy.RUNTIME)
             @Target([ElementType.TYPE])
             public @interface MyAnnotation {
@@ -49,6 +48,4 @@ class GetAnnotationStaticCompileTest extends AbstractBytecodeTestCase {
         println bytecode
         clazz.newInstance().main()
     }
-
 }
-

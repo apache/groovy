@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -27,6 +28,7 @@ import static groovy.test.GroovyAssert.shouldFail
  */
 final class StaticCompileMathTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testIntSum() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -39,6 +41,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testLongSum() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -51,6 +54,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testShortSum() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -63,6 +67,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testFloatSum() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -75,6 +80,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testDoubleSum() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -87,6 +93,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testDoublePlusInt() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -99,6 +106,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testIntMinusDouble() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -111,6 +119,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testIntMinusBigDec() {
         extractionOptions = [method: 'm', print:true]
         assertScript '''
@@ -122,6 +131,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testIntPlusBigDec() {
         extractionOptions = [method: 'm', print:true]
         assertScript '''
@@ -133,6 +143,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testIntMultiplyBigDec() {
         extractionOptions = [method: 'm', print:true]
         assertScript '''
@@ -144,6 +155,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testIntDivBigDec() {
         extractionOptions = [method: 'm', print:true]
         assertScript '''
@@ -155,6 +167,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompilePiComputationWithPrimitives() {
 //        extractionOptions = [method: 'doIt', print:true]
         assertScript '''@groovy.transform.CompileStatic
@@ -175,6 +188,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompilePiComputationWithPrimitivesAndRangeLoop() {
 //        extractionOptions = [method: 'doIt', print:true]
         assertScript '''@groovy.transform.CompileStatic
@@ -195,6 +209,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompileLeftShiftEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -207,6 +222,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompileRightShiftEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -219,6 +235,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompilePlusEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -231,6 +248,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompileMinusEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -243,6 +261,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompileDivideEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -264,6 +283,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         assert err =~ /Cannot assign value of type java.math.BigDecimal to variable of type int/
     }
 
+    @Test
     void testStaticCompileMultiplyEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -276,6 +296,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompilePowerEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -288,6 +309,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testStaticCompileModEquals() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -300,6 +322,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testPrimitiveIntCompareNotEqualShouldUseFastPath() {
         def source = '''
         @groovy.transform.CompileStatic
@@ -319,6 +342,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testPrimitiveLongCompareNotEqualShouldUseFastPath() {
         def source = '''
         @groovy.transform.CompileStatic

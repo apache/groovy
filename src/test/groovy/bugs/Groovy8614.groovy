@@ -19,12 +19,14 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 /**
- * see Groovy3830Bug for tests when call sites are present
+ * See {@link Groovy3830Bug} for tests when call sites are present.
  */
-class Groovy8614Bug extends AbstractBytecodeTestCase {
+final class Groovy8614 extends AbstractBytecodeTestCase {
 
+    @Test
     void testNestedInterfaceHelperClassNotGeneratedIfNoCallsites() {
         def bytecode = compile('classNamePattern': 'X', '''
             class X {
@@ -34,6 +36,7 @@ class Groovy8614Bug extends AbstractBytecodeTestCase {
         assert !bytecode.hasSequence(['static synthetic INNERCLASS X$Y$1 X 1'])
     }
 
+    @Test
     void testDoubleNestedInterfaceHelperClassNotGeneratedIfNoCallsites() {
         def bytecode = compile('classNamePattern': 'X\\$Y', '''
             class X {
@@ -46,6 +49,7 @@ class Groovy8614Bug extends AbstractBytecodeTestCase {
     }
 
     //GROOVY-5082
+    @Test
     void testInterfaceHelperClassNotGeneratedIfNoCallsites() {
         def bytecode = compile('classNamePattern': 'X', '''
             interface X {
@@ -54,5 +58,4 @@ class Groovy8614Bug extends AbstractBytecodeTestCase {
         ''')
         assert !bytecode.hasSequence(['static synthetic INNERCLASS X$1 X 1'])
     }
-
 }

@@ -18,11 +18,11 @@
  */
 package org.codehaus.groovy.classgen.asm
 
-import groovy.test.GroovyTestCase
 import org.apache.groovy.io.StringBuilderWriter
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
+import org.junit.jupiter.api.BeforeEach
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.FieldVisitor
@@ -34,19 +34,17 @@ import java.security.CodeSource
 /**
  * Abstract test case to extend to check the instructions we generate in the bytecode of groovy programs.
  */
-abstract class AbstractBytecodeTestCase extends GroovyTestCase {
+abstract class AbstractBytecodeTestCase {
 
     Class clazz
     Map extractionOptions
     InstructionSequence sequence
 
-    @Override
-    protected void setUp() {
-        super.setUp()
+    @BeforeEach
+    void setUp() {
         extractionOptions = [method: 'run']
     }
 
-    @Override
     protected void assertScript(final String script) throws Exception {
         CompilationUnit unit = null
         GroovyShell shell = new GroovyShell(new GroovyClassLoader() {
@@ -56,7 +54,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
             }
         })
         try {
-            shell.evaluate(script, testClassName)
+            shell.evaluate(script, this.class.simpleName)
         } finally {
             if (unit != null) {
                 try {
@@ -76,7 +74,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
      * @param scriptText the script to compile
      * @return the decompiled <code>InstructionSequence</code>
      */
-    InstructionSequence compile(Map options = [:], final String scriptText) {
+    protected InstructionSequence compile(Map options = [:], final String scriptText) {
         options = [method: 'run', classNamePattern: '.*script', *: options]
         sequence = null
         clazz = null
@@ -112,7 +110,7 @@ abstract class AbstractBytecodeTestCase extends GroovyTestCase {
         sequence
     }
 
-    InstructionSequence extractSequence(final byte[] bytes, final Map options = [method: 'run']) {
+    protected InstructionSequence extractSequence(final byte[] bytes, final Map options = [method: 'run']) {
         def out = new StringBuilderWriter()
         def tcv
         tcv = new TraceClassVisitor(new ClassVisitor(CompilerConfiguration.ASM_API_VERSION) {

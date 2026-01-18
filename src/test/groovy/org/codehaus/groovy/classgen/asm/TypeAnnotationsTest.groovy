@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.junit.jupiter.api.Test
+
 final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
 
     private final String imports = '''\
@@ -26,6 +28,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         |import static java.lang.annotation.RetentionPolicy.*
         |'''.stripMargin()
 
+    @Test
     void testTypeAnnotationsForConstructor1() {
         def bytecode = compile(classNamePattern: 'HasConstructor', method: '<init>', imports + '''
             @Retention(RUNTIME) @Target(CONSTRUCTOR) @interface CtorAnno  { }
@@ -44,6 +47,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testTypeAnnotationsForConstructor2() {
         def bytecode = compile(classNamePattern: 'Foo.Bar', method: '<init>', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { String value() }
@@ -66,6 +70,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11184
+    @Test
     void testTypeAnnotationsForConstructor3() {
         def bytecode = compile(classNamePattern: 'Foo.Bar', method: '<init>', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { String value() }
@@ -92,6 +97,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testTypeAnnotationsForMethod1() {
         def bytecode = compile(method: 'foo', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
@@ -125,6 +131,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testTypeAnnotationsForMethod2() {
         def bytecode = compile(method: 'foo', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeParameterAnno { }
@@ -159,6 +166,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testTypeAnnotationsForMethod3() {
         def bytecode = compile(classNamePattern: 'Foo', method: 'get', imports + '''
             @Retention(RUNTIME) @Target(PARAMETER) @interface ParameterAnno { }
@@ -208,6 +216,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-9154
+    @Test
     void testTypeAnnotationsForMethod4() {
         def bytecode = compile(classNamePattern: 'Foo', method: 'sizeZeroOrPositive', '''\
             @Grab("net.jqwik:jqwik:1.9.3")
@@ -233,6 +242,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11184
+    @Test
     void testTypeAnnotationsForMethod5() {
         def bytecode = compile(classNamePattern: 'Foo', method: 'bar', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { String value() }
@@ -258,6 +268,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11479
+    @Test
     void testTypeAnnotationsForClosure() {
         def bytecode = compile(classNamePattern: 'Foo\\$_closure1', method: 'doCall', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
@@ -276,6 +287,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11479
+    @Test
     void testTypeAnnotationsForLambda() {
         def bytecode = compile(classNamePattern: 'Foo\\$_lambda1', method: 'doCall', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }
@@ -293,6 +305,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testTypeAnnotationsForField1() {
         def bytecode = compile(classNamePattern: 'Foo', field: 'foo', imports + '''
             @Retention(RUNTIME) @Target(FIELD) @interface FieldAnno { String value() }
@@ -319,6 +332,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testTypeAnnotationsForField2() {
         def bytecode = compile(classNamePattern: 'Bar', field: 'numbers', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno4 { }
@@ -340,6 +354,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11179
+    @Test
     void testTypeAnnotationsForClass() {
         def bytecode = compile(classNamePattern: 'Baz', imports + '''
             @Retention(RUNTIME) @Target(TYPE) @interface TypeAnno { String value() }
@@ -382,6 +397,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
     /**
      * @see https://docs.oracle.com/javase/specs/jls/se11/html/jls-9.html#jls-9.7.4
      */
+    @Test
     void testTypeAnnotationsForArray() {
         def bytecode = compile(classNamePattern: 'Foo', method: 'bar', imports + '''
             @Retention(RUNTIME) @Target(TYPE_USE) @interface TypeAnno0 { }

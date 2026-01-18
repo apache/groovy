@@ -21,12 +21,14 @@ package bugs
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * This test requires the test classes executed are compiled and on the
  * classpath and not in the same compilation unit.
  */
-class Groovy8144Bug extends AbstractBytecodeTestCase {
+class Groovy8144 extends AbstractBytecodeTestCase {
 
     GroovyShell shell
 
@@ -34,26 +36,29 @@ class Groovy8144Bug extends AbstractBytecodeTestCase {
         ['asmResolving': Boolean.TRUE]
     }
 
-    @Override
-    void setUp() {
+    @BeforeEach
+    void moreSetUp() {
         CompilerConfiguration config = new CompilerConfiguration()
         config.optimizationOptions.putAll(getOptions())
         shell = new GroovyShell(config)
     }
 
+    @Test
     void testMethodInheritedFromNonPublicAbstractBaseClass() {
         checkAnswer('Groovy8144A')
     }
 
+    @Test
     void testMethodInheritedFromPublicAbstractBaseClass() {
         checkAnswer('Groovy8144B')
     }
 
+    @Test
     void testMethodInheritedFromPublicBaseClass() {
         checkAnswer('Groovy8144C')
     }
 
-    void checkAnswer(String testClassName) {
+    private void checkAnswer(String testClassName) {
         String code = """
             import org.codehaus.groovy.dummy.${testClassName}
 
@@ -81,7 +86,7 @@ class Groovy8144Bug extends AbstractBytecodeTestCase {
     }
 }
 
-class Groovy8144BugAsmResolveOff extends Groovy8144Bug {
+final class Groovy8144_AsmResolveOff extends Groovy8144 {
     @Override
     protected Map<String, Boolean> getOptions() {
         ['asmResolving': Boolean.FALSE]

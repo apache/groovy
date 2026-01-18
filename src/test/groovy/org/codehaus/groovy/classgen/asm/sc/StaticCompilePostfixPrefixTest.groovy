@@ -19,8 +19,11 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
-class StaticCompilePostfixPrefixTest extends AbstractBytecodeTestCase {
+final class StaticCompilePostfixPrefixTest extends AbstractBytecodeTestCase {
+
+    @Test
     void testPostfixOnInt() {
         def bytecode = compile([method:'m'], '''@groovy.transform.CompileStatic
             void m() {
@@ -44,6 +47,7 @@ class StaticCompilePostfixPrefixTest extends AbstractBytecodeTestCase {
         clazz.newInstance().m()
     }
 
+    @Test
     void testPostfixOnDate() {
         def bytecode = compile([method:'m'],'''@groovy.transform.CompileStatic
             void m() {
@@ -71,6 +75,7 @@ class StaticCompilePostfixPrefixTest extends AbstractBytecodeTestCase {
         clazz.newInstance().m()
     }
 
+    @Test
     void testPrefixOnInt() {
         def bytecode = compile([method:'m'],'''@groovy.transform.CompileStatic
          void m() {
@@ -93,6 +98,7 @@ class StaticCompilePostfixPrefixTest extends AbstractBytecodeTestCase {
         clazz.newInstance().m()
     }
 
+    @Test
     void testPrefixOnDate() {
         def bytecode = compile([method:'m'],'''@groovy.transform.CompileStatic
             void m() {
@@ -115,5 +121,4 @@ class StaticCompilePostfixPrefixTest extends AbstractBytecodeTestCase {
             }
         ''')
     }
-
 }
