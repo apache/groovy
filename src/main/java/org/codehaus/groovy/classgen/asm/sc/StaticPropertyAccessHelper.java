@@ -45,26 +45,29 @@ public abstract class StaticPropertyAccessHelper {
             final boolean spreadSafe,
             final boolean returnValue,
             final Expression sourceExpression) {
+        MethodCallExpression call;
+        Expression result;
         if (returnValue) {
-            TemporaryVariableExpression tmp = new TemporaryVariableExpression(valueExpression);
-            PoppingMethodCallExpression call = new PoppingMethodCallExpression(receiver, setterMethod, tmp);
-            call.setSafe(safe);
-            call.setSpreadSafe(spreadSafe);
-            call.setImplicitThis(implicitThis);
-            call.setSourcePosition(sourceExpression);
-            PoppingListOfExpressionsExpression list = new PoppingListOfExpressionsExpression(tmp, call);
-            list.setSourcePosition(sourceExpression);
-            return list;
+            var temp = new TemporaryVariableExpression(valueExpression);
+            var pmce = new PoppingMethodCallExpression(receiver, setterMethod, temp);
+            result = new PoppingListOfExpressionsExpression(temp, pmce);
+            result.setSourcePosition(sourceExpression);
+            call = pmce;
         } else {
-            MethodCallExpression call = new MethodCallExpression(receiver, setterMethod.getName(), valueExpression);
-            call.setSafe(safe);
-            call.setSpreadSafe(spreadSafe);
-            call.setImplicitThis(implicitThis);
+            call = new MethodCallExpression(receiver, setterMethod.getName(), valueExpression);
             call.setMethodTarget(setterMethod);
-            call.setSourcePosition(sourceExpression);
-            return call;
+            result = call;
         }
+        call.setSafe(safe);
+        call.setSpreadSafe(spreadSafe);
+        call.setImplicitThis(implicitThis);
+        call.setNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE, Boolean.TRUE); // GROOVY-11843
+        call.setSourcePosition(sourceExpression);
+
+        return result;
     }
+
+    //--------------------------------------------------------------------------
 
     private static class PoppingListOfExpressionsExpression extends ListOfExpressionsExpression {
 

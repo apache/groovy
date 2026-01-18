@@ -163,7 +163,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     expressionWithoutAssignment,
                     pexp.isSafe(),
                     pexp.isSpreadSafe(),
-                    pexp.isImplicitThis())) {
+                    pexp.isImplicitThis(),
+                    true)) { // TODO: GROOVY-11843
                 return;
             }
         }
@@ -181,7 +182,8 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     expression.getRightExpression(),
                     pexp.isSafe(),
                     pexp.isSpreadSafe(),
-                    pexp.isImplicitThis())) {
+                    pexp.isImplicitThis(),
+                    !Boolean.TRUE.equals(expression.getNodeMetaData(ELIDE_EXPRESSION_VALUE)))) { // GROOVY-11843
                 return;
             }
             // GROOVY-5620: spread-safe operator on LHS is not supported
@@ -241,7 +243,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
         result.visit(controller.getAcg());
     }
 
-    private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
+    private boolean makeSetProperty(final Expression receiver, final Expression message, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis, final boolean returnValue) {
         var receiverType = controller.getTypeChooser().resolveType(receiver, controller.getClassNode());
         var thisReceiver = isThisExpression(receiver);
         var propertyName = message.getText();
@@ -282,7 +284,7 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
                     implicitThis,
                     safe,
                     spreadSafe,
-                    true, // to be replaced with a proper test whether a return value should be used or not
+                    returnValue,
                     message
             );
             call.visit(controller.getAcg());

@@ -23,7 +23,7 @@ import groovy.transform.stc.ConstructorsSTCTest
 /**
  * Unit tests for static compilation: constructors.
  */
-class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
+final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
 
     void testMapConstructorError() {
         assertScript '''
@@ -40,9 +40,22 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
             class Person {
                 String name
             }
-
             C.test()
         '''
+    }
+
+    // GROOVY-11843
+    void testMapConstructorOptimization() {
+        assertScript '''
+            class C {
+                int i, j, k
+            }
+            new C(i:1, j:2, k:3)
+        '''
+        String script = astTrees.find{ it.key != 'C' }.value[1]
+        Number offset = script.indexOf('run()Ljava/lang/Object;')
+        String method = script.substring(offset, script.indexOf('\n' + System.lineSeparator(), offset) + 1)
+        assert method.count('ACONST_NULL') == 0
     }
 
     void testPrivateConstructorFromClosure() {
