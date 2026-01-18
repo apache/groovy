@@ -153,16 +153,6 @@ public class IndyInterface {
     public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     /**
-     * handle for the fromCache method
-     */
-    private static final MethodHandle FROM_CACHE_METHOD;
-
-    /**
-     * handle for the selectMethod method
-     */
-    private static final MethodHandle SELECT_METHOD;
-
-    /**
      * handle for the fromCacheHandle method
      */
     private static final MethodHandle FROM_CACHE_HANDLE_METHOD;
@@ -180,28 +170,8 @@ public class IndyInterface {
     static {
 
         try {
-            MethodType mt = MethodType.methodType(Object.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
-            FROM_CACHE_METHOD = LOOKUP.findStatic(IndyInterface.class, "fromCache", mt);
-        } catch (Exception e) {
-            throw new GroovyBugError(e);
-        }
-
-        try {
-            MethodType mt = MethodType.methodType(Object.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
-            SELECT_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethod", mt);
-        } catch (Exception e) {
-            throw new GroovyBugError(e);
-        }
-
-        try {
             MethodType handleMt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
             FROM_CACHE_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "fromCacheHandle", handleMt);
-        } catch (Exception e) {
-            throw new GroovyBugError(e);
-        }
-
-        try {
-            MethodType handleMt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
             SELECT_METHOD_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethodHandle", handleMt);
         } catch (Exception e) {
             throw new GroovyBugError(e);
