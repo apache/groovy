@@ -20,9 +20,14 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 import org.codehaus.groovy.runtime.MethodClosure
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 final class StaticCompilationTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testEmptyMethod() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() { }
@@ -33,6 +38,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testPrimitiveReturn1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             int m() { 1 }
@@ -44,6 +50,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testPrimitiveReturn2() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             long m() { 1L }
@@ -55,6 +62,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testPrimitiveReturn3() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             short m() { 1 }
@@ -67,6 +75,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testPrimitiveReturn4() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             byte m() { 1 }
@@ -79,6 +88,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testParameterReturns() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             int m(int i) { i }
@@ -106,6 +116,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
+    @Test
     void testEmptyDeclaration0() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -122,6 +133,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testEmptyDeclaration1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             int m() {
@@ -139,6 +151,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
+    @Test
     void testSingleAssignment0() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -155,6 +168,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testSingleAssignment1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             int m() {
@@ -172,6 +186,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
+    @Test
     void testSingleAssignment2() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             class C {
@@ -194,6 +209,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
+    @Test
     void testSingleAssignment3() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             class C {
@@ -236,6 +252,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
+    @Test
     void testSubscriptAssignment1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m(int[] i) {
@@ -261,6 +278,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11288
+    @Test
     void testSubscriptAssignment2() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m(int[] i) {
@@ -279,6 +297,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11286
+    @Test
     void testVoidMethod1() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -298,6 +317,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11286
+    @Test
     void testVoidMethod2() {
         assert compile(method: 'm', '''import static java.lang.System.gc
             @groovy.transform.CompileStatic
@@ -316,6 +336,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11286
+    @Test
     void testVoidMethod3() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -349,6 +370,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11286, GROOVY-11453
+    @Test
     void testVoidMethod4() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m(List<C> list) {
@@ -431,6 +453,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-11630
+    @Test
     void testVoidMethod5() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -449,6 +472,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testIntLeftShift() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -462,6 +486,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testLongLeftShift() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -475,7 +500,8 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
-    void _testPlusPlus() {
+    @Disabled @Test
+    void testPlusPlus() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m(int i) {
                 i++
@@ -485,7 +511,8 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
-    void _testMinusMinus() {
+    @Disabled @Test
+    void testMinusMinus() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m(int i) {
                 i--
@@ -495,6 +522,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testPlusEquals() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             int m() {
@@ -522,6 +550,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testPlusEqualsFromArgs() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m(int i, int j) {
@@ -542,6 +571,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testFlow() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             String m(String str) {
@@ -569,6 +599,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testInstanceOf() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m(Object str) {
@@ -584,6 +615,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testShouldGenerateDirectConstructorCall() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             class Foo {
@@ -600,6 +632,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testShouldGenerateDirectArrayConstruct() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -615,6 +648,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testShouldGenerateDirectBooleanArrayConstruct() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -632,6 +666,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testShouldTriggerDirectCallToOuterClassGetter() {
         assert compile(method: 'fromInner', classNamePattern: '.*Inner.*', '''
             class Holder {
@@ -667,6 +702,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testShouldOptimizeBytecodeByAvoidingCreationOfMopMethods() {
         def clazz = new GroovyShell().evaluate '''import groovy.transform.*
             @CompileStatic
@@ -685,6 +721,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
         assert mopMethods.isEmpty()
     }
 
+    @Test
     void testShouldNotOptimizeBytecodeForMopMethodsBecauseOfSkip() {
         def clazz = new GroovyShell().evaluate '''import groovy.transform.*
             @CompileStatic
@@ -705,6 +742,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-7124
+    @Test
     void testUseInvokeVirtualPreferredOverInvokeInterface() {
         assert compile(method: 'foo', classNamePattern: 'B', '''
             interface A {
@@ -720,6 +758,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
         ''').hasStrictSequence(['INVOKEVIRTUAL B.m'])
     }
 
+    @Test
     void testShouldNotTryToCastToSupposedDelegateType() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -736,6 +775,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testShouldOptimizeCharInit() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -748,6 +788,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testShouldOptimizeCharComparison() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -782,6 +823,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testForEachLoopOptimization() {
         def loop_init = [
                 'ALOAD', // load array (might be more complex than just ALOAD in general case)
@@ -910,6 +952,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
         }
     }
 
+    @Test
     void testCompareWithCharOptimization() {
         String code = '''
             @groovy.transform.CompileStatic
@@ -934,6 +977,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
         assertScript(code)
     }
 
+    @Test
     void testShouldRemoveUnnecessaryCast() {
         assert compile(method: 'm', '''@groovy.transform.CompileStatic
             void m() {
@@ -948,6 +992,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             ])
     }
 
+    @Test
     void testInstanceMethodReference() {
         // dynamic case should be a method closure
         assert String::toUpperCase instanceof MethodClosure
@@ -974,6 +1019,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-6925
+    @Test
     void testOuterSCInnerSTC() {
         assert compile(classNamePattern: 'C', method: 'test', '''
             import groovy.transform.*

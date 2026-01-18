@@ -18,8 +18,12 @@
  */
 package org.codehaus.groovy.classgen.asm
 
-class CovariantReturnBytecodeTest extends AbstractBytecodeTestCase {
-    void testCovariance(){
+import org.junit.jupiter.api.Test
+
+final class CovariantReturnBytecodeTest extends AbstractBytecodeTestCase {
+
+    @Test
+    void testCovariance() {
         def code = compile (method:'super$3$attach', classNamePattern:'C', '''
             abstract class A {
                 A attach(){return this}

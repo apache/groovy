@@ -19,8 +19,11 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy8289Bug extends AbstractBytecodeTestCase {
+final class Groovy8289 extends AbstractBytecodeTestCase {
+
+    @Test
     void testNoArgCtorLines() {
         def bytecode = compile '''\
             @groovy.transform.CompileStatic
@@ -43,6 +46,7 @@ class Groovy8289Bug extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-9199
+    @Test
     void testTryFinallyLines() {
         def bytecode = compile '''\
             def m(p) {

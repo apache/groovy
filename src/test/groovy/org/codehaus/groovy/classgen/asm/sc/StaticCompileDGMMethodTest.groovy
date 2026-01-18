@@ -19,8 +19,11 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
-class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
+final class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
+
+    @Test
     void testShouldCallToIntegerOnString() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -35,6 +38,7 @@ class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testShouldCallToIntegerOnGString() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -50,6 +54,7 @@ class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testEach() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -63,6 +68,7 @@ class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testCollect() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -75,5 +81,4 @@ class StaticCompileDGMMethodTest extends AbstractBytecodeTestCase {
         ''')
         clazz.newInstance().run()
     }
-
 }

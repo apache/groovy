@@ -19,6 +19,7 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 final class Groovy9530 extends AbstractBytecodeTestCase {
 
@@ -30,6 +31,7 @@ final class Groovy9530 extends AbstractBytecodeTestCase {
         }
     }
 
+    @Test
     void testConstantInlining() {
         def bytecode = compile '''import bugs.Groovy9530.StaticClass
             class C {

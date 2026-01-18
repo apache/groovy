@@ -19,13 +19,16 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 final class Groovy10565 extends AbstractBytecodeTestCase {
 
+    @Test
     void testPermittedSubclassName() {
-        if (!isAtLeastJdk('17.0')) return
+        assumeTrue(isAtLeastJdk('17.0'))
 
         def bytecode = compile '''
             package example

@@ -19,10 +19,12 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 final class Groovy6954 extends AbstractBytecodeTestCase {
 
     // GROOVY-11376
+    @Test
     void testSetMapDotField() {
         assertScript '''import groovy.transform.*
             @CompileStatic
@@ -60,6 +62,7 @@ final class Groovy6954 extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testSetMapDotProperty() {
         extractionOptions.method = 'put'
 
@@ -81,6 +84,7 @@ final class Groovy6954 extends AbstractBytecodeTestCase {
         ], sequence.indexOf('--BEGIN--'))
     }
 
+    @Test
     void testSafeSetMapDotProperty() {
         extractionOptions.method = 'put'
 
@@ -101,6 +105,7 @@ final class Groovy6954 extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testChainSetMapDotProperty() {
         assertScript '''
             @groovy.transform.CompileStatic
