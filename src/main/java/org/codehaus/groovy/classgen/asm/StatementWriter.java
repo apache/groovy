@@ -74,11 +74,14 @@ public class StatementWriter {
     }
 
     protected void writeStatementLabel(final Statement statement) {
-        Optional.ofNullable(statement.getStatementLabels()).ifPresent(labels -> {
-            labels.stream().map(controller.getCompileStack()::createLocalLabel).forEach(label -> {
-                controller.getMethodVisitor().visitLabel(label);
-            });
-        });
+        List<String> labels = statement.getStatementLabels();
+        if (labels != null) {
+            CompileStack  cs = controller.getCompileStack ();
+            MethodVisitor mv = controller.getMethodVisitor();
+            for (String label : labels) {
+                mv.visitLabel(cs.createLocalLabel(label));
+            }
+        }
     }
 
     public void writeBlockStatement(final BlockStatement block) {
@@ -323,24 +326,21 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitIfElse");
         writeStatementLabel(statement);
 
-        CompileStack compileStack = controller.getCompileStack();
-        compileStack.pushState();
-
+        Label exitPath = controller.getCompileStack().pushBreakable(statement.getStatementLabels()); // GROOVY-7463
         statement.getBooleanExpression().visit(controller.getAcg());
         Label elsePath = controller.getOperandStack().jump(IFEQ);
         statement.getIfBlock().visit(controller.getAcg());
-        compileStack.pop();
+        controller.getCompileStack().pop();
 
         MethodVisitor mv = controller.getMethodVisitor();
         if (statement.getElseBlock().isEmpty()) {
             mv.visitLabel(elsePath);
         } else {
-            Label exitPath = new Label();
             mv.visitJumpInsn(GOTO, exitPath);
             mv.visitLabel(elsePath);
             statement.getElseBlock().visit(controller.getAcg());
-            mv.visitLabel(exitPath);
         }
+        mv.visitLabel(exitPath);
     }
 
     public void writeTryCatchFinally(final TryCatchStatement statement) {
@@ -521,22 +521,18 @@ public class StatementWriter {
         controller.getAcg().onLineNumber(statement, "visitBreakStatement");
         writeStatementLabel(statement);
 
-        String name = statement.getLabel();
-        Label breakLabel = controller.getCompileStack().getNamedBreakLabel(name);
-        controller.getCompileStack().applyFinallyBlocks(breakLabel, true);
-
-        controller.getMethodVisitor().visitJumpInsn(GOTO, breakLabel);
+        Label label = controller.getCompileStack().getNamedBreakLabel(statement.getLabel());
+        controller.getCompileStack().applyFinallyBlocks(label, true);
+        controller.getMethodVisitor().visitJumpInsn(GOTO, label);
     }
 
     public void writeContinue(final ContinueStatement statement) {
         controller.getAcg().onLineNumber(statement, "visitContinueStatement");
         writeStatementLabel(statement);
 
-        String name = statement.getLabel();
-        Label continueLabel = controller.getCompileStack().getContinueLabel();
-        if (name != null) continueLabel = controller.getCompileStack().getNamedContinueLabel(name);
-        controller.getCompileStack().applyFinallyBlocks(continueLabel, false);
-        controller.getMethodVisitor().visitJumpInsn(GOTO, continueLabel);
+        Label label = controller.getCompileStack().getNamedContinueLabel(statement.getLabel());
+        controller.getCompileStack().applyFinallyBlocks(label, false);
+        controller.getMethodVisitor().visitJumpInsn(GOTO, label);
     }
 
     public void writeSynchronized(final SynchronizedStatement statement) {

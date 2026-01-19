@@ -20,21 +20,64 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assertions.fail
 
 final class BreakContinueLabelTest {
 
     @Test
-    void testDeclareSimpleLabel() {
-        label_1: assert true
+    void testDeclareSimpleLabels() {
+        label_1: print('foo')
         label_2:
-        assert true
+        print('bar')
+    }
+
+    // GROOVY-7463
+    @Test
+    void testBreakLabelInIfStatement() {
+        boolean flag = true
+        label:
+        if (flag) {
+            print('foo')
+            if (flag) {
+                break label
+                fail()
+            }
+            fail()
+        } else {
+            fail()
+        }
+        print('bar')
+    }
+
+    // GROOVY-7463
+    @Test
+    void testBreakLabelInIfStatement2() {
+        int i = 0
+        boolean flag = true
+        label:
+        if (flag) {
+            print('foo')
+            try {
+                if (flag) {
+                    print('bar')
+                    break label
+                    fail()
+                }
+                fail()
+            } finally {
+                i += 1
+            }
+            fail()
+        }
+        print('baz')
+        assert i == 1
     }
 
     @Test
     void testBreakLabelInSimpleForLoop() {
-        label_1: for (i in [1]) {
-            break label_1
+        label: for (i in [1]) {
+            break label;
             assert false
         }
     }
@@ -42,8 +85,8 @@ final class BreakContinueLabelTest {
     @Test
     void testBreakLabelInNestedForLoop() {
         label: for (i in [1]) {
-            for (j in [1]){
-                break label
+            for (j in [1]) {
+                break label;
                 assert false : 'did not break inner loop'
             }
             assert false : 'did not break outer loop'
@@ -51,7 +94,28 @@ final class BreakContinueLabelTest {
     }
 
     @Test
-    void testUnlabelledBreakInNestedForLoop() {
+    void testBreakLabelInForLoopTryFinally() {
+        int i = 0
+        out:
+        for (j in 1..2) {
+            try {
+                try {
+                    break out
+                    assert false
+                } finally {
+                    i += 10
+                }
+                assert false
+            } finally {
+                i += 1
+            }
+            assert false
+        }
+        assert i == 11
+    }
+
+    @Test
+    void testBreakInNestedForLoop() {
         def reached = false
         for (i in [1]) {
             for (j in [1]) {
@@ -75,7 +139,7 @@ final class BreakContinueLabelTest {
     void testBreakLabelInNestedWhileLoop() {
         def count = 0
         label: while (count < 1) {
-            count++
+            count += 1
             while (true) {
                 break label
                 assert false : 'did not break inner loop'
@@ -88,7 +152,7 @@ final class BreakContinueLabelTest {
     void testBreakLabelInNestedMixedForAndWhileLoop() {
         def count = 0
         label_1: while (count < 1) {
-            count++
+            count += 1
             for (i in [1]) {
                 break label_1
                 assert false : 'did not break inner loop'
@@ -106,8 +170,8 @@ final class BreakContinueLabelTest {
 
     // GROOVY-11739
     @Test
-    void testUnlabelledContinueWithinDoWhileLoop() {
-        int i = 0;
+    void testContinueWithinDoWhileLoop() {
+        int i = 0
         do {
             i += 1
             if (i > 1000) break // prevent infinite loop
@@ -118,7 +182,7 @@ final class BreakContinueLabelTest {
     }
 
     @Test
-    void testUnlabelledContinueInNestedForLoop() {
+    void testContinueInNestedForLoop() {
         def log = ''
         for (i in [1,2]) {
             log += i
@@ -142,6 +206,25 @@ final class BreakContinueLabelTest {
             log += 'never reached'
         }
         assert log == '1323'
+    }
+
+    // GROOVY-3908
+    @Test
+    void testContinueOutsideOfLoop() {
+        shouldFail '''
+            continue
+        '''
+        shouldFail '''
+            if (true) continue
+        '''
+        shouldFail '''
+            xx: if (true) continue xx
+        '''
+        shouldFail '''
+            switch (value) {
+              case "foobar": continue
+            }
+        '''
     }
 
     @Test

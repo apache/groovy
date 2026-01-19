@@ -18,11 +18,13 @@
  */
 package semantics
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class LabelsTest extends GroovyTestCase {
+final class LabelsTest {
+
+    @Test
     void testLabels() {
-        // tag::test_labels[]
+        // tag::labels[]
         given:
             def x = 1
             def y = 2
@@ -30,20 +32,21 @@ class LabelsTest extends GroovyTestCase {
             def z = x+y
         then:
             assert z == 3
-        // end::test_labels[]
+        // end::labels[]
     }
 
+    @Test
     void testUseOfLabel() {
-        // tag::label_bad_practice[]
-        for (int i=0;i<10;i++) {
-            for (int j=0;j<i;j++) {
+        // tag::break_label[]
+        out:for (int i=0; i<9; i++) {
+            for (int j=0; j<i; j++) {
                 println "j=$j"
                 if (j == 5) {
-                    break exit
+                    break out
                 }
             }
-            exit: println "i=$i"
+            println "i=$i"
         }
-        // end::label_bad_practice[]
+        // end::break_label[]
     }
 }
