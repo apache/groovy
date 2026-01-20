@@ -20,192 +20,240 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.fail
 
 final class BreakContinueLabelTest {
 
     @Test
     void testDeclareSimpleLabels() {
-        label_1: print('foo')
-        label_2:
-        print('bar')
+        assertScript '''
+            label_1: print('foo')
+            label_2:
+            print('bar')
+        '''
     }
 
     // GROOVY-7463
     @Test
     void testBreakLabelInIfStatement() {
-        boolean flag = true
-        label:
-        if (flag) {
-            print('foo')
+        assertScript '''
+            boolean flag = true
+            label:
             if (flag) {
-                break label
-                fail()
+                print('foo')
+                if (flag) {
+                    break label
+                    assert false
+                }
+                assert false
+            } else {
+                assert false
             }
-            fail()
-        } else {
-            fail()
-        }
-        print('bar')
+            print('bar')
+        '''
     }
 
     // GROOVY-7463
     @Test
     void testBreakLabelInIfStatement2() {
-        int i = 0
-        boolean flag = true
-        label:
-        if (flag) {
-            print('foo')
-            try {
-                if (flag) {
-                    print('bar')
-                    break label
-                    fail()
+        assertScript '''
+            int i = 0
+            boolean flag = true
+            label:
+            if (flag) {
+                print('foo')
+                try {
+                    if (flag) {
+                        print('bar')
+                        break label;
+                        assert false
+                    }
+                    assert false
+                } finally {
+                    i += 1
                 }
-                fail()
-            } finally {
-                i += 1
+                assert false
             }
-            fail()
-        }
-        print('baz')
-        assert i == 1
+            print('baz')
+            assert i == 1
+        '''
     }
 
     @Test
     void testBreakLabelInSimpleForLoop() {
-        label: for (i in [1]) {
-            break label;
-            assert false
-        }
+        assertScript '''
+            label: for (i in [1]) {
+                break label;
+                assert false
+            }
+        '''
+    }
+
+    // GROOVY-7617
+    @Test
+    void testBreakLabelInSecondForLoop() {
+        def err = shouldFail '''
+            @groovy.transform.TimedInterrupt(1)
+            void test() {
+                first:
+                for (i in [1]) {
+                    break first // okay
+                    assert false
+                }
+                for (j in [2]) {
+                    break first // fail
+                    assert false
+                }
+            }
+
+            test()
+        '''
+        assert err =~ /cannot break to label 'first' from here/
     }
 
     @Test
     void testBreakLabelInNestedForLoop() {
-        label: for (i in [1]) {
-            for (j in [1]) {
-                break label;
-                assert false : 'did not break inner loop'
+        assertScript '''
+            label: for (i in [1]) {
+                for (j in [1]) {
+                    break label;
+                    assert false : 'did not break inner loop'
+                }
+                assert false : 'did not break outer loop'
             }
-            assert false : 'did not break outer loop'
-        }
+        '''
     }
 
     @Test
     void testBreakLabelInForLoopTryFinally() {
-        int i = 0
-        out:
-        for (j in 1..2) {
-            try {
+        assertScript '''
+            int i = 0
+            out:
+            for (j in 1..2) {
                 try {
-                    break out
+                    try {
+                        break out
+                        assert false
+                    } finally {
+                        i += 10
+                    }
                     assert false
                 } finally {
-                    i += 10
+                    i += 1
                 }
                 assert false
-            } finally {
-                i += 1
             }
-            assert false
-        }
-        assert i == 11
+            assert i == 11
+        '''
     }
 
     @Test
     void testBreakInNestedForLoop() {
-        def reached = false
-        for (i in [1]) {
-            for (j in [1]) {
-                break
-                assert false : 'did not break inner loop'
+        assertScript '''
+            def reached = false
+            for (i in [1]) {
+                for (j in [1]) {
+                    break
+                    assert false : 'did not break inner loop'
+                }
+                reached = true
             }
-            reached = true
-        }
-        assert reached : 'must not break outer loop'
+            assert reached : 'must not break outer loop'
+        '''
     }
 
     @Test
     void testBreakLabelInSimpleWhileLoop() {
-        label_1: while (true) {
-            break label_1
-            assert false
-        }
+        assertScript '''
+            label: while (true) {
+                break label;
+                assert false
+            }
+        '''
     }
 
     @Test
     void testBreakLabelInNestedWhileLoop() {
-        def count = 0
-        label: while (count < 1) {
-            count += 1
-            while (true) {
-                break label
-                assert false : 'did not break inner loop'
+        assertScript '''
+            def count = 0
+            label: while (count < 1) {
+                count += 1
+                while (true) {
+                    break label
+                    assert false : 'did not break inner loop'
+                }
+                assert false : 'did not break outer loop'
             }
-            assert false : 'did not break outer loop'
-        }
+        '''
     }
 
     @Test
     void testBreakLabelInNestedMixedForAndWhileLoop() {
-        def count = 0
-        label_1: while (count < 1) {
-            count += 1
-            for (i in [1]) {
-                break label_1
-                assert false : 'did not break inner loop'
+        assertScript '''
+            def count = 0
+            label_1: while (count < 1) {
+                count += 1
+                for (i in [1]) {
+                    break label_1
+                    assert false : 'did not break inner loop'
+                }
+                assert false : 'did not break outer loop'
             }
-            assert false : 'did not break outer loop'
-        }
-        label_2: for (i in [1]) {
-            while (true) {
-                break label_2
-                assert false : 'did not break inner loop'
+            label_2: for (i in [1]) {
+                while (true) {
+                    break label_2
+                    assert false : 'did not break inner loop'
+                }
+                assert false : 'did not break outer loop'
             }
-            assert false : 'did not break outer loop'
-        }
+        '''
     }
 
     // GROOVY-11739
     @Test
     void testContinueWithinDoWhileLoop() {
-        int i = 0
-        do {
-            i += 1
-            if (i > 1000) break // prevent infinite loop
-            continue // control should pass to condition
-        } while (i < 100)
+        assertScript '''
+            int i = 0
+            do {
+                i += 1
+                if (i > 1000) break // prevent infinite loop
+                continue // control should pass to condition
+            } while (i < 100)
 
-        assert i == 100
+            assert i == 100
+        '''
     }
 
     @Test
     void testContinueInNestedForLoop() {
-        def log = ''
-        for (i in [1,2]) {
-            log += i
-            for (j in [3,4]) {
-                if (j==3) continue
-                log += j
+        assertScript '''
+            def log = ''
+            for (i in [1,2]) {
+                log += i
+                for (j in [3,4]) {
+                    if (j==3) continue
+                    log += j
+                }
             }
-        }
-        assert log == '1424'
+            assert log == '1424'
+        '''
     }
 
     @Test
     void testContinueLabelInNestedForLoop() {
-        def log = ''
-        label: for (i in [1,2]) {
-            log += i
-            for (j in [3,4]) {
-                if (j==4) continue label
-                log += j
+        assertScript '''
+            def log = ''
+            label: for (i in [1,2]) {
+                log += i
+                for (j in [3,4]) {
+                    if (j==4) continue label
+                    log += j
+                }
+                log += 'never reached'
             }
-            log += 'never reached'
-        }
-        assert log == '1323'
+            assert log == '1323'
+        '''
     }
 
     // GROOVY-3908
@@ -229,44 +277,50 @@ final class BreakContinueLabelTest {
 
     @Test
     void testBreakToLastLabelSucceeds() {
-        one:
-        two:
-        three:
-        for (i in 1..2) {
-            break three
-            fail()
-        }
+        assertScript '''
+            one:
+            two:
+            three:
+            for (i in 1..2) {
+                break three
+                assert false
+            }
+        '''
     }
 
     @Test
     void testMultipleLabelSupport() {
-        def visited = []
-        label1:
-        label2:
-        label3:
-        for (int i = 0; i < 9; i++) {
-          visited << i
-          if (i == 1) continue label1
-          visited << 10 + i
-          if (i == 3) continue label2
-          visited << 100 + i
-          if (i == 5) break label3
-        }
-        assert visited == [0, 10, 100, 1, 2, 12, 102, 3, 13, 4, 14, 104, 5, 15, 105]
+        assertScript '''
+            def visited = []
+            label1:
+            label2:
+            label3:
+            for (int i = 0; i < 9; i++) {
+              visited << i
+              if (i == 1) continue label1
+              visited << 10 + i
+              if (i == 3) continue label2
+              visited << 100 + i
+              if (i == 5) break label3
+            }
+            assert visited == [0, 10, 100, 1, 2, 12, 102, 3, 13, 4, 14, 104, 5, 15, 105]
+        '''
     }
 
     // this is in accordance with Java; Spock Framework relies on this
     @Test
     void testLabelCanOccurMultipleTimesInSameScope() {
-        one:
-        for (i in 1..2) {
-            break one
-            fail()
-        }
-        one:
-        for (i in 1..2) {
-            break one
-            fail()
-        }
+        assertScript '''
+            one:
+            for (i in 1..2) {
+                break one
+                assert false
+            }
+            one:
+            for (i in 1..2) {
+                break one
+                assert false
+            }
+        '''
     }
 }

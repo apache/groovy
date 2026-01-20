@@ -19,30 +19,40 @@
 package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * This class checks the handling of labels in the AST
  */
-public class LabelVerifier extends ClassCodeVisitorSupport {
+public class LabelVerifier extends PrePostStatementVisitor {
 
     boolean inIf, inLoop, inSwitch;
     private final SourceUnit source;
-    private Set<String> visitedLabels;
-    private List<BreakStatement> breakLabels;
-    private List<ContinueStatement> continueLabels;
+    private Set<String> availableLabels;
+    private Map<String, Statement> undefinedLabels;
 
     public LabelVerifier(SourceUnit src) {
         source = src;
@@ -54,25 +64,25 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
     }
 
     protected void assertNoLabelsMissed() {
-        // TODO: Report multiple missing labels of the same name only once?
-        for (ContinueStatement element : continueLabels) {
-            addError("continue to missing label", element);
-        }
-        for (BreakStatement element : breakLabels) {
-            addError("break to missing label", element);
+        for (Map.Entry<String, Statement> entry : undefinedLabels.entrySet()) {
+            String kind = (entry.getValue() instanceof BreakStatement ? "break" : "continue");
+            addError(String.format("cannot %s to label '%s' from here", kind, entry.getKey()), entry.getValue());
         }
     }
 
     @Override
-    public void visitStatement(Statement s) {
+    protected void visitStatement(Statement s) {
         List<String> labels = s.getStatementLabels();
-        if (labels != null && visitedLabels != null) {
-            for (String label : labels) {
-                visitedLabels.add(label);
+        if (labels != null) {
+            availableLabels.addAll(labels);
+        }
+    }
 
-                breakLabels.removeIf(breakStatement -> breakStatement.getLabel().equals(label));
-                continueLabels.removeIf(continueStatement -> continueStatement.getLabel().equals(label));
-            }
+    @Override
+    protected void postVisitStatement(Statement s) {
+        List<String> labels = s.getStatementLabels();
+        if (labels != null) {
+            availableLabels.removeAll(labels); // GROOVY-7617
         }
     }
 
@@ -82,9 +92,8 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         inLoop   = false;
         inSwitch = false;
 
-        visitedLabels  = new HashSet<>();
-        breakLabels    = new LinkedList<>();
-        continueLabels = new LinkedList<>();
+        availableLabels = new HashSet<>();
+        undefinedLabels = new HashMap<>();
 
         super.visitClassCodeContainer(code);
 
@@ -102,6 +111,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         cond.getIfBlock().visit(this);
         cond.getElseBlock().visit(this);
         inIf = oldInIf;
+        postVisitStatement(cond);
     }
 
     @Override
@@ -112,6 +122,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         inLoop = true;
         loop.getLoopBlock().visit(this);
         inLoop = oldInLoop;
+        postVisitStatement(loop);
     }
 
     @Override
@@ -122,6 +133,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         inLoop = true;
         loop.getLoopBlock().visit(this);
         inLoop = oldInLoop;
+        postVisitStatement(loop);
     }
 
     @Override
@@ -132,6 +144,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         loop.getLoopBlock().visit(this);
         inLoop = oldInLoop;
         loop.getBooleanExpression().visit(this);
+        postVisitStatement(loop);
     }
 
     @Override
@@ -143,6 +156,7 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         switchStatement.getCaseStatements().forEach(this::visit);
         switchStatement.getDefaultStatement().visit(this);
         inSwitch = oldInSwitch;
+        postVisitStatement(switchStatement);
     }
 
     @Override
@@ -156,11 +170,10 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
             if (!inLoop && !inIf) { // GROOVY-7463
                 addError("the break statement with named label is only allowed inside control statements", breakStatement);
             }
-            if (!visitedLabels.contains(label)) {
-                breakLabels.add(breakStatement);
+            if (!availableLabels.contains(label)) {
+                undefinedLabels.put(label, breakStatement);
             }
         }
-        super.visitBreakStatement(breakStatement);
     }
 
     @Override
@@ -170,10 +183,122 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
         }
         String label = continueStatement.getLabel();
         if (label != null) {
-            if (!visitedLabels.contains(label)) {
-                continueLabels.add(continueStatement);
+            if (!availableLabels.contains(label)) {
+                undefinedLabels.put(label, continueStatement);
             }
         }
-        super.visitContinueStatement(continueStatement);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+abstract class PrePostStatementVisitor extends ClassCodeVisitorSupport {
+
+    @Override
+    protected abstract void visitStatement(Statement statement);
+
+    protected abstract void postVisitStatement(Statement statement);
+
+    @Override
+    public void visitAssertStatement(AssertStatement statement) {
+        super.visitAssertStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitBlockStatement(BlockStatement statement) {
+        super.visitBlockStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitBreakStatement(BreakStatement statement) {
+        super.visitBreakStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitCaseStatement(CaseStatement statement) {
+        super.visitCaseStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitCatchStatement(CatchStatement statement) {
+        super.visitCatchStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitContinueStatement(ContinueStatement statement) {
+        super.visitContinueStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitDoWhileLoop(DoWhileStatement statement) {
+        super.visitDoWhileLoop(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitEmptyStatement(EmptyStatement statement) {
+        visitStatement(statement); // TODO: Move to super?
+        super.visitEmptyStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitExpressionStatement(ExpressionStatement statement) {
+        super.visitExpressionStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitForLoop(ForStatement statement) {
+        super.visitForLoop(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitIfElse(IfStatement statement) {
+        super.visitIfElse(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitReturnStatement(ReturnStatement statement) {
+        super.visitReturnStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitSwitch(SwitchStatement statement) {
+        super.visitSwitch(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitSynchronizedStatement(SynchronizedStatement statement) {
+        super.visitSynchronizedStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitThrowStatement(ThrowStatement statement) {
+        super.visitThrowStatement(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitTryCatchFinally(TryCatchStatement statement) {
+        super.visitTryCatchFinally(statement);
+        postVisitStatement(statement);
+    }
+
+    @Override
+    public void visitWhileLoop(WhileStatement statement) {
+        super.visitWhileLoop(statement);
+        postVisitStatement(statement);
     }
 }
