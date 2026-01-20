@@ -87,15 +87,24 @@ public class StatementWriter {
     public void writeBlockStatement(final BlockStatement block) {
         writeStatementLabel(block);
 
-        int mark = controller.getOperandStack().getStackLength();
         CompileStack compileStack = controller.getCompileStack();
+        OperandStack operandStack = controller.getOperandStack();
+
+        int mark = operandStack.getStackLength();
         compileStack.pushVariableScope(block.getVariableScope());
+        List<String> labels = block.getStatementLabels(); // GROOVY-6844
+        Label end = (labels != null && !labels.isEmpty()) ? compileStack.pushBreakable(labels) : null;
+
         for (Statement statement : block.getStatements()) {
             statement.visit(controller.getAcg());
         }
-        compileStack.pop();
 
-        controller.getOperandStack().popDownTo(mark);
+        if (end != null) {
+            controller.getMethodVisitor().visitLabel(end);
+            compileStack.pop();
+        }
+        compileStack.pop();
+        operandStack.popDownTo(mark);
     }
 
     public void writeForStatement(final ForStatement statement) {

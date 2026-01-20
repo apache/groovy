@@ -26,7 +26,7 @@ import static groovy.test.GroovyAssert.shouldFail
 final class BreakContinueLabelTest {
 
     @Test
-    void testDeclareSimpleLabels() {
+    void testDeclareLabels() {
         assertScript '''
             label_1: print('foo')
             label_2:
@@ -207,6 +207,29 @@ final class BreakContinueLabelTest {
                 }
                 assert false : 'did not break outer loop'
             }
+        '''
+    }
+
+    // GROOVY-6844
+    @Test
+    void testBreakLabelInForLoopWithinBlockStatement() {
+        assertScript '''
+            int i = 0
+            out: {
+                i += 1
+                for (j in 1..3) {
+                    try {
+                        i += 10
+                        break out
+                        assert false : 'did not break try properly'
+                    } finally {
+                        i += 100
+                    }
+                    assert false : 'did not break loop properly'
+                }
+                assert false : 'did not break block properly'
+            }
+            assert i == 111
         '''
     }
 
