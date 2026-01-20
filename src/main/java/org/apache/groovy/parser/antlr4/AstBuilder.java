@@ -458,12 +458,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public Statement visitLoopStmtAlt(final LoopStmtAltContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
-        visitingLoopStatementCount += 1;
         try {
             return configureAST((Statement) this.visit(ctx.loopStatement()), ctx);
         } finally {
             switchExpressionRuleContextStack.pop();
-            visitingLoopStatementCount -= 1;
         }
     }
 
@@ -723,7 +721,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public SwitchStatement visitSwitchStatement(final SwitchStatementContext ctx) {
         switchExpressionRuleContextStack.push(ctx);
-        visitingSwitchStatementCount += 1;
         try {
             List<Statement> statementList =
                     ctx.switchBlockStatementGroup().stream()
@@ -762,7 +759,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                     ctx);
         } finally {
             switchExpressionRuleContextStack.pop();
-            visitingSwitchStatementCount -= 1;
         }
     }
 
@@ -847,10 +843,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public BreakStatement visitBreakStatement(final BreakStatementContext ctx) {
-        if (visitingLoopStatementCount == 0 && visitingSwitchStatementCount == 0) {
-            throw createParsingFailedException("break statement is only allowed inside loops or switches", ctx);
-        }
-
         if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
             throw createParsingFailedException("switch expression does not support `break`", ctx);
         }
@@ -876,10 +868,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ContinueStatement visitContinueStatement(final ContinueStatementContext ctx) {
-        if (visitingLoopStatementCount == 0) {
-            throw createParsingFailedException("continue statement is only allowed inside loops", ctx);
-        }
-
         if (switchExpressionRuleContextStack.peek() instanceof SwitchExpressionContext) {
             throw createParsingFailedException("switch expression does not support `continue`", ctx);
         }
@@ -889,7 +877,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                 : null;
 
         return configureAST(new ContinueStatement(label), ctx);
-
     }
 
     @Override
@@ -4760,8 +4747,6 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private Tuple2<GroovyParserRuleContext, Exception> numberFormatError;
 
     private int visitingClosureCount;
-    private int visitingLoopStatementCount;
-    private int visitingSwitchStatementCount;
     private int visitingAssertStatementCount;
     private int visitingArrayInitializerCount;
 

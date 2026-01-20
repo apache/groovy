@@ -33,9 +33,9 @@ import org.objectweb.asm.TypePath;
 import org.objectweb.asm.TypeReference;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -471,108 +471,140 @@ public class CompileStack {
     /**
      * Should be called when descending into a loop that defines
      * also a scope. Calls pushVariableScope and prepares labels
-     * for a loop structure. Creates a element for the state stack
-     * so pop has to be called later, TODO: @Deprecate
+     * for a loop structure. Creates an element for the state stack
+     * so pop has to be called later
      */
-    public void pushLoop(final VariableScope scope, final String labelName) {
+    public void pushLoop(final VariableScope scope, final List<String> labelNames) {
         pushVariableScope(scope);
         continueLabel = new Label();
         breakLabel = new Label();
-        if (labelName != null) {
-            initLoopLabels(labelName);
+        if (labelNames != null) {
+            for (String labelName: labelNames) {
+                if (labelName == null) continue;
+                namedLoopBreakLabel.put(labelName, breakLabel);
+                namedLoopContinueLabel.put(labelName, continueLabel);
+            }
         }
     }
 
     /**
      * Should be called when descending into a loop that defines
      * also a scope. Calls pushVariableScope and prepares labels
-     * for a loop structure. Creates an element for the state stack
-     * so pop has to be called later
+     * for a loop structure. Creates a element for the state stack
+     * so pop has to be called later.
      */
-    public void pushLoop(final VariableScope el, final List<String> labelNames) {
-        pushVariableScope(el);
-        continueLabel = new Label();
-        breakLabel = new Label();
-        if (labelNames != null) {
-            for (String labelName : labelNames) {
-                initLoopLabels(labelName);
-            }
-        }
-    }
-
-    private void initLoopLabels(final String labelName) {
-        namedLoopBreakLabel.put(labelName, breakLabel);
-        namedLoopContinueLabel.put(labelName, continueLabel);
+    @Deprecated(since = "6.0.0")
+    public void pushLoop(final VariableScope scope, final String labelName) {
+        pushLoop(scope, Collections.singletonList(labelName));
     }
 
     /**
-     * Should be called when descending into a loop that does
-     * not define a scope. Creates a element for the state stack
-     * so pop has to be called later, TODO: @Deprecate
-     */
-    public void pushLoop(final String labelName) {
-        pushState();
-        continueLabel = new Label();
-        breakLabel = new Label();
-        initLoopLabels(labelName);
-    }
-
-    /**
-     * Should be called when descending into a loop that does
-     * not define a scope. Creates an element for the state stack
-     * so pop has to be called later
+     * Should be called when descending into a loop that does not define a scope
+     * Creates a element for the state stack so pop has to be called later.
      */
     public void pushLoop(final List<String> labelNames) {
         pushState();
         continueLabel = new Label();
         breakLabel = new Label();
         if (labelNames != null) {
-            for (String labelName : labelNames) {
-                initLoopLabels(labelName);
+            for (String labelName: labelNames) {
+                if (labelName == null) continue;
+                namedLoopBreakLabel.put(labelName, breakLabel);
+                namedLoopContinueLabel.put(labelName, continueLabel);
             }
         }
     }
 
     /**
-     * Used for <code>break foo</code> inside a loop to end the
-     * execution of the marked loop. This method will return the
-     * break label of the loop if there is one found for the name.
-     * If not, the current break label is returned.
+     * Should be called when descending into a loop that does not define a scope.
+     * Creates a element for the state stack so pop has to be called later.
      */
-    public Label getNamedBreakLabel(final String name) {
-        Label label = getBreakLabel();
-        Label endLabel = null;
-        if (name != null)
-            endLabel = namedLoopBreakLabel.get(name);
-        if (endLabel != null)
-            label = endLabel;
-        return label;
+    @Deprecated(since = "6.0.0")
+    public void pushLoop(final String labelName) {
+        pushLoop(Collections.singletonList(labelName));
     }
 
     /**
-     * Used for <code>continue foo</code> inside a loop to continue
-     * the execution of the marked loop. This method will return
-     * the break label of the loop if there is one found for the
-     * name. If not, getLabel is used.
-     */
-    public Label getNamedContinueLabel(final String name) {
-        Label label = getLabel(name);
-        Label endLabel = null;
-        if (name != null)
-            endLabel = namedLoopContinueLabel.get(name);
-        if (endLabel != null)
-            label = endLabel;
-        return label;
-    }
-
-    /**
-     * Creates a new break label and an element for the state stack
-     * so pop has to be called later
+     * Creates a new break label and an element for the state stack so pop has
+     * to be called later.
+     *
+     * @return the break label
      */
     public Label pushSwitch() {
         pushState();
         breakLabel = new Label();
         return breakLabel;
+    }
+
+    /**
+     * Creates a new break label and an element for the state stack so pop has
+     * to be called later.
+     *
+     * @return the break label
+     */
+    public Label pushBreakable(final List<String> labelNames) {
+        pushState();
+        Label namedBreakLabel = new Label();
+        if (labelNames != null) {
+            for (String labelName: labelNames) {
+                if (labelName == null) continue;
+                namedLoopBreakLabel.put(labelName, namedBreakLabel);
+            }
+        }
+        return namedBreakLabel;
+    }
+
+    /**
+     * @return the {@code break} label for name
+     */
+    public Label getNamedBreakLabel(final String name) {
+        Label label;
+        if (name == null) {
+            label = getBreakLabel();
+            if (label == null) throw new GroovyBugError("cannot break");
+        } else {
+            label = namedLoopBreakLabel.get(name);
+            if (label == null) throw new GroovyBugError("undefined break label '" + name + "'");
+        }
+        return label;
+    }
+
+    /**
+     * @return the {@code continue} label for name
+     */
+    public Label getNamedContinueLabel(final String name) {
+        Label label;
+        if (name == null) {
+            label = getContinueLabel();
+            if (label == null) throw new GroovyBugError("cannot continue");
+        } else {
+            label = namedLoopContinueLabel.get(name);
+            if (label == null) {
+                label = superBlockNamedLabels.get(name);
+                if (label == null) throw new GroovyBugError("undefined continue label '" + name + "'");
+            }
+        }
+        return label;
+    }
+
+    /**
+     * Returns the label for the given name.
+     */
+    public Label getLabel(final String name) {
+        if (name == null) return null;
+        var label = superBlockNamedLabels.get(name);
+        if (label == null) {
+            label = createLocalLabel(name);
+        }
+        return label;
+    }
+
+    /**
+     * Creates or returns the label for the given name.
+     */
+    public Label createLocalLabel(final String name) {
+        if (name == null) return null;
+        return currentBlockNamedLabels.computeIfAbsent(name, k -> new Label());
     }
 
     /**
@@ -743,50 +775,38 @@ public class CompileStack {
         nextVariableIndex += 1;
     }
 
-    /**
-     * Returns the label for the given name
-     */
-    public Label getLabel(final String name) {
-        if (name == null) return null;
-        Label l = superBlockNamedLabels.get(name);
-        if (l == null) {
-            l = createLocalLabel(name);
-        }
-        return l;
-    }
-
-    /**
-     * creates a new named label
-     */
-    public Label createLocalLabel(final String name) {
-        Label l = currentBlockNamedLabels.computeIfAbsent(name, k -> new Label());
-        return l;
-    }
-
     public void applyFinallyBlocks(final Label label, final boolean isBreakLabel) {
-        // first find the state defining the label. That is the state
-        // directly after the state not knowing this label. If no state
-        // in the list knows that label, then the defining state is the
-        // current state.
-        StateStackElement result = null;
-        for (Iterator<StateStackElement> iter = stateStack.descendingIterator(); iter.hasNext(); ) {
-            StateStackElement element = iter.next();
-
-            if (!element.currentBlockNamedLabels.containsValue(label)) {
-                if (isBreakLabel && element.breakLabel != label) {
-                    result = element;
-                    break;
+        StateStackElement before = null;
+        search: {
+            StateStackElement sse = null;
+            for (StateStackElement element : stateStack) {
+                if ((isBreakLabel ? element.breakLabel : element.continueLabel) == label
+                        || element.currentBlockNamedLabels.containsValue(label)) {
+                    before = sse; // the state before label was declared
+                    break search;
                 }
-                if (!isBreakLabel && element.continueLabel != label) {
-                    result = element;
-                    break;
+                sse = element;
+            }
+            if (isBreakLabel) {
+                String name = null; // try to recover the break label's name
+                for (Map.Entry<String,Label> e : namedLoopBreakLabel.entrySet()) {
+                    if (e.getValue() == label) {
+                        name = e.getKey();
+                        break;
+                    }
+                }
+                for (var it = stateStack.descendingIterator(); it.hasNext(); ) {
+                    if (it.next().currentBlockNamedLabels.containsKey(name)) {
+                        before = it.hasNext() ? it.next() : null;
+                        break;
+                    }
                 }
             }
         }
 
-        Collection<BlockRecorder> blockRecorders = new LinkedList<>(finallyBlocks);
-        if (result != null) {
-            blockRecorders.removeAll(result.finallyBlocks);
+        var blockRecorders = new LinkedList<>(finallyBlocks);
+        if (before != null) {
+            blockRecorders.removeAll(before.finallyBlocks);
         }
         applyBlockRecorder(blockRecorders);
     }
