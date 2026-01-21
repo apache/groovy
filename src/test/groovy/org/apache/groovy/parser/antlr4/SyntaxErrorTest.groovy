@@ -22,8 +22,8 @@ import groovy.test.NotYetImplemented
 import groovy.transform.AutoFinal
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 
 import static org.apache.groovy.parser.antlr4.util.ASTComparatorCategory.LOCATION_IGNORE_LIST
 
@@ -285,7 +285,17 @@ final class SyntaxErrorTest {
 
     @Test
     void 'groovy core - AnnotationDeclaration 1'() {
-        TestUtils.doRunAndShouldFail('fail/AnnotationDeclaration_01x.groovy')
+        expectParseError '''\
+            |@interface A {
+            |    void a()
+            |}
+            |'''.stripMargin(), '''\
+            |annotation method cannot have void return type @ line 2, column 5.
+            |       void a()
+            |       ^
+            |
+            |1 error
+            |'''.stripMargin()
     }
 
     @Test
@@ -379,7 +389,17 @@ final class SyntaxErrorTest {
 
     @Test
     void 'groovy core - InterfaceDeclaration 1'() {
-        TestUtils.shouldFail('fail/InterfaceDeclaration_01.groovy')
+        expectParseError '''\
+            |interface Foo {
+            |    def doit( String param = "Groovy", int o )
+            |}
+            |'''.stripMargin(), '''\
+            |Cannot specify default value for method parameter 'param = Groovy' inside an interface @ line 2, column 15.
+            |       def doit( String param = "Groovy", int o )
+            |                 ^
+            |
+            |1 error
+            |'''.stripMargin()
     }
 
     @Test
@@ -389,6 +409,22 @@ final class SyntaxErrorTest {
             |'''.stripMargin(), '''\
             |No implements clause allowed for interface declaration @ line 1, column 13.
             |   interface I implements Serializable {}
+            |               ^
+            |
+            |1 error
+            |'''.stripMargin()
+    }
+
+    // GROOVY-11208
+    @Test
+    void 'groovy core - InterfaceDeclaration 3'() {
+        expectParseError '''\
+            |interface I {
+            |    def m() default {1}
+            |}
+            |'''.stripMargin(), '''\
+            |Unexpected input: 'default' @ line 2, column 13.
+            |       def m() default {1}
             |               ^
             |
             |1 error
@@ -600,10 +636,10 @@ final class SyntaxErrorTest {
                 compile(Phases.CONVERSION)
                 getAST()
             }
-            Assert.fail('expected parse to fail')
+            Assertions.fail('expected parse to fail')
         } catch (e) {
             def line = (expect =~ /@ line (\d+),/)[0][1]
-            Assert.assertEquals("startup failed:\ntest.groovy: $line: $expect".toString(), e.message.replace('\r\n', '\n'))
+            Assertions.assertEquals("startup failed:\ntest.groovy: $line: $expect".toString(), e.message.replace('\r\n', '\n'))
         }
     }
 

@@ -16,23 +16,26 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
 
-def closureClass = NestedAnnotationWithDefault.getAnnotation(AnnWithNestedAnnWithDefault).elem().elem()
+@Retention(RetentionPolicy.RUNTIME)
+@interface ClassValueWithDefault {
+    Class value() default { 1 + 2 }
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+@interface AnnotationValue {
+    ClassValueWithDefault value()
+}
+
+@AnnotationValue(@ClassValueWithDefault())
+class TypeWithAnnotationWithAnnotationWithClosure {
+}
+
+def closureClass = TypeWithAnnotationWithAnnotationWithClosure.getAnnotation(AnnotationValue).value().value()
 def closure = closureClass.newInstance(null, null)
-assert closure.call() == 3
+def value = closure.call()
 
-
-@AnnWithNestedAnnWithDefault(elem = @AnnWithDefaultValue())
-class NestedAnnotationWithDefault {}
-
-@Retention(RetentionPolicy.RUNTIME)
-@interface AnnWithDefaultValue {
-    Class elem() default { 1 + 2 }
-}
-
-@Retention(RetentionPolicy.RUNTIME)
-@interface AnnWithNestedAnnWithDefault {
-    AnnWithDefaultValue elem()
-}
+assert value instanceof Integer
+assert value == 3

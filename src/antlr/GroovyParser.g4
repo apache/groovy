@@ -275,15 +275,16 @@ memberDeclaration[int t]
 
 /**
  *  t   0: *class member* all kinds of method declaration AND constructor declaration,
- *      1: normal method declaration, 2: abstract method declaration
- *      3: normal method declaration OR abstract method declaration
+ *      1: normal method declaration,
+ *      2: abstract method declaration
+ *      3: method declaration OR abstract method declaration
  *  ct  9: script, other see the comment of classDeclaration
  */
 methodDeclaration[int t, int ct]
     :   modifiersOpt typeParameters? (returnType[$ct] nls)?
         methodName formalParameters
-        (
-            DEFAULT nls elementValue
+        (   { $ct == 3 }? // GROOVY-11208: @interface only
+            (DEFAULT nls elementValue)
         |
             (nls THROWS nls qualifiedClassNameList)?
             (nls methodBody)?

@@ -145,7 +145,8 @@ final class GroovyParserTest {
         doTest('core/Annotation_07.groovy')
         doTest('core/Annotation_08.groovy')
         doTest('core/Annotation_09.groovy')
-        doRunAndTestAntlr4('core/Annotation_10x.groovy')
+        doTest('core/AnnotationDeclaration_01.groovy')
+        doRunAndTestAntlr4('core/AnnotationDeclaration_02.groovy')
     }
 
     @Test
@@ -411,11 +412,6 @@ final class GroovyParserTest {
         doRunAndTestAntlr4('core/RecordDeclaration_12x.groovy')
         doRunAndTestAntlr4('core/RecordDeclaration_13x.groovy')
         doRunAndTestAntlr4('core/RecordDeclaration_14x.groovy')
-    }
-
-    @Test
-    void 'groovy core - AnnotationDeclaration'() {
-        doTest('core/AnnotationDeclaration_01.groovy')
     }
 
     @Test
