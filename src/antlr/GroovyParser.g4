@@ -543,6 +543,7 @@ elementValue
 
 elementValueArrayInitializer
     :   LBRACK (elementValue (COMMA elementValue)* COMMA?)? RBRACK
+    |   LBRACE (elementValue COMMA)+ elementValue? RBRACE // avoid ambiguity with closure
     ;
 
 // STATEMENTS / BLOCKS

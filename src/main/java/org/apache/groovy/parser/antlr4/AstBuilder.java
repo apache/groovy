@@ -159,10 +159,8 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.closureX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.localVarX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
@@ -1820,19 +1818,24 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     private MethodNode createMethodNodeForClass(final MethodDeclarationContext ctx, final ModifierManager modifierManager, final String methodName, final ClassNode returnType, final Parameter[] parameters, final ClassNode[] exceptions, Statement code, final ClassNode classNode, int modifiers) {
-        if (asBoolean(ctx.elementValue())) { // the code of annotation method
-            code = configureAST(
-                    new ExpressionStatement(
-                            this.visitElementValue(ctx.elementValue())),
-                    ctx.elementValue());
-
+        ElementValueContext elementValue = ctx.elementValue();
+        if (asBoolean(elementValue)) {
+            assert this.isAnnotationDeclaration(classNode);
+            Expression defaultValue = this.visitElementValue(elementValue);
+            if (returnType.isArray() && defaultValue instanceof ClosureExpression closure // GROOVY-11492
+                    && ClosureUtils.hasImplicitParameter(closure) && closure.getCode() instanceof BlockStatement block) {
+                defaultValue = listX(block.getStatements().stream().map(s -> ((ExpressionStatement) s).getExpression()).toList());
+            }
+            code = configureAST(stmt(defaultValue), elementValue);
         }
 
-        modifiers |= !modifierManager.containsAny(STATIC) && classNode.isInterface() && !(isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && modifierManager.containsAny(DEFAULT, PRIVATE)) ? Opcodes.ACC_ABSTRACT : 0;
-        MethodNode methodNode = new MethodNode(methodName, modifiers, returnType, parameters, exceptions, code);
-        classNode.addMethod(methodNode);
+        if (classNode.isInterface() && !modifierManager.containsAny(STATIC) && !(isTrue(classNode, IS_INTERFACE_WITH_DEFAULT_METHODS) && modifierManager.containsAny(DEFAULT, PRIVATE))) {
+            modifiers |= Opcodes.ACC_ABSTRACT;
+        }
 
-        methodNode.setAnnotationDefault(asBoolean(ctx.elementValue()));
+        MethodNode methodNode = new MethodNode(methodName, modifiers, returnType, parameters, exceptions, code);
+        methodNode.setAnnotationDefault(asBoolean(elementValue));
+        classNode.addMethod(methodNode);
         return methodNode;
     }
 
@@ -2246,34 +2249,19 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      *        ,it may be a command expression
      */
     private void validateInvalidMethodDefinition(final Expression baseExpr, final Expression arguments) {
-        if (baseExpr instanceof VariableExpression) {
-            if (isBuiltInType(baseExpr) || Character.isUpperCase(baseExpr.getText().codePointAt(0))) {
-                if (arguments instanceof ArgumentListExpression) {
-                    List<Expression> expressionList = ((ArgumentListExpression) arguments).getExpressions();
-                    if (1 == expressionList.size()) {
-                        final Expression expression = expressionList.get(0);
-                        if (expression instanceof MethodCallExpression mce) {
-                            final Expression methodCallArguments = mce.getArguments();
-
-                            // check the method call tails with a closure
-                            if (methodCallArguments instanceof ArgumentListExpression) {
-                                List<Expression> methodCallArgumentExpressionList = ((ArgumentListExpression) methodCallArguments).getExpressions();
-                                final int argumentCnt = methodCallArgumentExpressionList.size();
-                                if (argumentCnt > 0) {
-                                    final Expression lastArgumentExpression = methodCallArgumentExpressionList.get(argumentCnt - 1);
-                                    if (lastArgumentExpression instanceof ClosureExpression) {
-                                        if (ClosureUtils.hasImplicitParameter(((ClosureExpression) lastArgumentExpression))) {
-                                            throw createParsingFailedException(
-                                                    "Method definition not expected here",
-                                                    tuple(baseExpr.getLineNumber(), baseExpr.getColumnNumber()),
-                                                    tuple(expression.getLastLineNumber(), expression.getLastColumnNumber())
-                                            );
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+        if (baseExpr instanceof VariableExpression && arguments instanceof ArgumentListExpression argsList
+                && (isBuiltInType(baseExpr) || Character.isUpperCase(baseExpr.getText().codePointAt(0)))) {
+            List<Expression> exprList = argsList.getExpressions();
+            if (exprList.size() == 1
+                    && exprList.get(0) instanceof MethodCallExpression callExpr
+                    && callExpr.getArguments() instanceof ArgumentListExpression callArgs) {
+                exprList = callArgs.getExpressions(); // check the method call tails with a closure
+                if (!exprList.isEmpty() && last(exprList) instanceof ClosureExpression closure && ClosureUtils.hasImplicitParameter(closure)) {
+                    throw createParsingFailedException(
+                            "Method definition not expected here",
+                            tuple(baseExpr.getLineNumber(), baseExpr.getColumnNumber()),
+                            tuple(callExpr.getLastLineNumber(), callExpr.getLastColumnNumber())
+                    );
                 }
             }
         }
@@ -4226,7 +4214,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
     @Override
     public ListExpression visitElementValueArrayInitializer(final ElementValueArrayInitializerContext ctx) {
-        return configureAST(new ListExpression(ctx.elementValue().stream().map(this::visitElementValue).collect(Collectors.toList())), ctx);
+        return configureAST(listX(ctx.elementValue().stream().map(this::visitElementValue).toList()), ctx);
     }
 
     @Override

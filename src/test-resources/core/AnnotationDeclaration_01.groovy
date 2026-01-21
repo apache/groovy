@@ -16,8 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.codehaus.groovy.transform.GroovyASTTransformationClass
-
+import org.codehaus.groovy.transform.*
 import java.lang.annotation.Documented
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
@@ -58,4 +57,11 @@ import java.lang.annotation.Target
 
 @interface C {
     String name() default ''
+}
+
+//GROOVY-11492
+@interface D {
+    String[] zero() default { }
+    String[] one () default { "foo" }
+    String[] two () default { "foo", "bar" }
 }

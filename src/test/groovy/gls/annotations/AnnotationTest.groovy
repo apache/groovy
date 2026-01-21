@@ -19,7 +19,9 @@
 package gls.annotations
 
 import groovy.test.NotYetImplemented
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -73,7 +75,7 @@ final class AnnotationTest {
      */
     @Test
     void testOmittingBracketsForSingleValueArrayParameter() {
-        shell.parse '''
+        assertScript shell, '''
             import gls.annotations.*
 
             class Book {}
@@ -97,7 +99,7 @@ final class AnnotationTest {
         // If this should be changed, then further discussion is needed.
         shouldFail shell, '''
             @interface X {
-                int x() default "1" // must be integer
+                int x() default '1' // must be integer
             }
         '''
 
@@ -138,46 +140,75 @@ final class AnnotationTest {
         assertScript shell, '''
             @Retention(RetentionPolicy.RUNTIME)
             @Target(ElementType.TYPE)
-            @interface Temp {
-                String[] bar() default '1' // coerced to list as per Java but must be correct type
+            @interface A {
+                String[] values() default '1' // coerced to list as per Java but must be correct type
             }
 
-            @Temp
-            class Bar {}
-
-            assert Bar.getAnnotation(Temp).bar() == ['1']
+            @A class B { }
+            String[] array = ['1']
+            assert B.getAnnotation(A).values() == array
         '''
 
-        shouldFail shell, '''
-            @interface X {
-                String[] x() default ["1",2] // list must contain elements of correct type
+        def err = shouldFail shell, '''
+            @interface A {
+                String[] values() default ['1',2] // list must contain elements of correct type
             }
         '''
+        assert err =~ /Attribute 'values' should have type 'java.lang.String'; but found type 'int' in @A/
+    }
 
-        shell.parse '''
-            @interface X {
-                String[] x() default ["a","b"]
+    // GROOVY-11492
+    @ParameterizedTest
+    @ValueSource(strings=['','"a"','"a","b"','"a","b",'])
+    void testArrayDefault2(String values) {
+        assertScript shell, """
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface A {
+                String[] values() default [$values]
             }
-        '''
+
+            @A class B { }
+            String[] array = [$values]
+            assert B.getAnnotation(A).values() == array
+        """
+
+        assertScript shell, """
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface A {
+                String[] values() default {$values}
+            }
+
+            @A class B { }
+            String[] array = [$values]
+            assert B.getAnnotation(A).values() == array
+        """
     }
 
     @Test
     void testClassDefault() {
+        shell.parse '''
+            @interface A {
+                Class c() default Number
+            }
+        '''
+
+        shell.parse '''
+            @interface A {
+                Class c() default Number.class
+            }
+        '''
+
+        shell.parse '''
+            @interface A {
+                Class c() default { -> } // closure
+            }
+        '''
+
         shouldFail shell, '''
-            @interface X {
-                Class x() default "1" // must be list
-            }
-        '''
-
-        shell.parse '''
-            @interface X {
-                Class x() default Number.class // class with .class
-            }
-        '''
-
-        shell.parse '''
-            @interface X {
-                Class x() default Number
+            @interface A {
+                Class c() default '1' // must be class
             }
         '''
     }
@@ -186,7 +217,7 @@ final class AnnotationTest {
     void testEnumDefault() {
         shouldFail shell, '''
             @interface X {
-                ElementType x() default "1" // must be Enum
+                ElementType x() default '1' // must be Enum
             }
         '''
 
@@ -207,7 +238,7 @@ final class AnnotationTest {
     void testAnnotationDefault() {
         shouldFail shell, '''
             @interface X {
-                Target x() default "1" // must be Annotation
+                Target x() default '1' // must be Annotation
             }
         '''
 
@@ -250,7 +281,7 @@ final class AnnotationTest {
     void testParameter() {
         shouldFail shell, '''
             @interface X {
-                String x(int x) default "" // annotation members can't have parameters
+                String x(int x) default '' // annotation members can't have parameters
             }
         '''
     }
@@ -300,22 +331,22 @@ final class AnnotationTest {
                 String stringValue()
                 int intValue()
                 int defaultInt() default 1
-                String defaultString() default ""
+                String defaultString() default ''
                 Class defaultClass() default Integer.class
                 ElementType defaultEnum() default ElementType.TYPE
                 Target defaultAnnotation() default @Target([ElementType.TYPE])
             }
 
-            @MyAnnotation(stringValue = "for class", intValue = 100)
+            @MyAnnotation(stringValue = 'for class', intValue = 100)
             class Foo {}
 
             Annotation[] annotations = Foo.class.annotations
             assert annotations.size() == 1
             MyAnnotation my = annotations[0]
-            assert my.stringValue() == "for class"
+            assert my.stringValue() == 'for class'
             assert my.intValue() == 100
             assert my.defaultInt() == 1
-            assert my.defaultString() == ""
+            assert my.defaultString() == ''
             assert my.defaultClass() == Integer
 
             assert my.defaultEnum() == ElementType.TYPE
