@@ -255,17 +255,17 @@ public class IndyInterface {
      * Makes a fallback method for an invalidated method selection
      */
     protected static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
-        return makeBoothandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, SELECT_METHOD_HANDLE_METHOD);
+        return makeBootHandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, SELECT_METHOD_HANDLE_METHOD);
     }
 
     /**
-     * Makes an adapter method for method selection, i.e. get the cached methodhandle(fast path) or fallback
+     * Makes an adapter method for method selection, i.e. get the cached methodHandle(fast path) or fallback
      */
     private static MethodHandle makeAdapter(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
-        return makeBoothandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
+        return makeBootHandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
     }
 
-    private static MethodHandle makeBoothandle(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall, MethodHandle handleReturningMh) {
+    private static MethodHandle makeBootHandle(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall, MethodHandle handleReturningMh) {
         // Step 1: bind site-constant arguments (incl dummy receiver marker)
         MethodHandle fromCacheBound = MethodHandles.insertArguments(
             handleReturningMh,
@@ -276,18 +276,18 @@ public class IndyInterface {
         // fromCacheBound: (Object receiver, Object[] args) → MethodHandle
 
         // Step 2: fold into the shared invoker (MethodHandle, Object[]) → Object
-        MethodHandle boothandle = MethodHandles.foldArguments(
+        MethodHandle bootHandle = MethodHandles.foldArguments(
             CACHED_INVOKER, // (MethodHandle, Object[]) → Object
             fromCacheBound  // (Object, Object[]) → MethodHandle
         );
-        // boothandle: (Object receiver, Object[] args) → Object
+        // bootHandle: (Object receiver, Object[] args) → Object
 
         // Step 3: adapt to callsite type: collect all arguments into Object[] and then asType
-        boothandle = boothandle
+        bootHandle = bootHandle
             .asCollector(Object[].class, type.parameterCount())
             .asType(type);
 
-        return boothandle;
+        return bootHandle;
     }
 
     private static class FallbackSupplier {
@@ -324,8 +324,8 @@ public class IndyInterface {
     }
 
     /**
-     * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
-     * @deprecated Use the new boothandle-based approach instead.
+     * Get the cached methodHandle. if the related methodHandle is not found in the inline cache, cache and return it.
+     * @deprecated Use the new bootHandle-based approach instead.
      */
     @Deprecated
     public static Object fromCache(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
@@ -334,7 +334,7 @@ public class IndyInterface {
     }
 
     /**
-     * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
+     * Get the cached methodHandle. if the related methodHandle is not found in the inline cache, cache and return it.
      */
     private static MethodHandle fromCacheHandle(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
