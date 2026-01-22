@@ -383,7 +383,7 @@ public class IndyInterface {
 
     /**
      * Core method for indy method selection using runtime types.
-     * @deprecated Use the new boothandle-based approach instead.
+     * @deprecated Use the new bootHandle-based approach instead.
      */
     @Deprecated
     public static Object selectMethod(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
@@ -406,7 +406,7 @@ public class IndyInterface {
         }
 
         if (callSite.getTarget() == defaultTarget) {
-            // correct the stale methodhandle in the inline cache of callsite
+            // correct the stale methodHandle in the inline cache of callsite
             // it is important but impacts the performance somehow when cache misses frequently
             doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), mhw));
         }
