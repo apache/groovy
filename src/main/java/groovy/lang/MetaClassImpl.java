@@ -1437,27 +1437,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return null;
     }
 
-    public MetaMethod retrieveStaticMethod(String methodName, Object[] arguments) {
-        final MetaMethodIndex.Cache e = metaMethodIndex.getMethods(theClass, methodName);
-        MetaMethodIndex.MetaMethodCache cacheEntry;
-        if (e != null) {
-            cacheEntry = e.cachedStaticMethod;
-
-            if (cacheEntry != null &&
-                    MetaClassHelper.sameClasses(cacheEntry.params, arguments, e.staticMethods instanceof MetaMethod)) {
-                return cacheEntry.method;
-            }
-
-            final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-            cacheEntry = new MetaMethodIndex.MetaMethodCache(classes, pickStaticMethod(methodName, classes));
-
-            e.cachedStaticMethod = cacheEntry;
-
-            return cacheEntry.method;
-        }
-        return pickStaticMethod(methodName, MetaClassHelper.convertToTypeArray(arguments));
-    }
-
     public MetaMethod getMethodWithoutCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
         MetaMethod method = null;
         Object methods = getMethods(sender, methodName, isCallToSuper);
@@ -1467,77 +1446,75 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
+    public MetaMethod retrieveStaticMethod(final String methodName, final Object[] arguments) {
+        MetaMethodIndex.Cache e = metaMethodIndex.getMethods(theClass, methodName);
+        if (e != null) {
+            MetaMethodIndex.MetaMethodCache cacheEntry = e.cachedStaticMethod;
+
+            if (cacheEntry != null && MetaClassHelper.sameClasses(cacheEntry.params, arguments, e.staticMethods instanceof MetaMethod)) {
+                return cacheEntry.method;
+            }
+
+            Class<?>[] classes = MetaClassHelper.convertToTypeArray(arguments);
+            cacheEntry = new MetaMethodIndex.MetaMethodCache(classes, pickStaticMethod(methodName, classes));
+
+            e.cachedStaticMethod = cacheEntry;
+
+            return cacheEntry.method;
+        }
+
+        return pickStaticMethod(methodName, MetaClassHelper.convertToTypeArray(arguments));
+    }
+
     @Override
-    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+    public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
         checkInitalised();
 
-        final Class sender = object instanceof Class ? (Class) object : object.getClass();
-        if (sender != theClass) {
-            MetaClass mc = registry.getMetaClass(sender);
-            return mc.invokeStaticMethod(sender, methodName, arguments);
-        }
-        if (sender == Class.class) {
-            return invokeMethod(object, methodName, arguments);
+        {
+            var sender = object instanceof Class ? (Class<?>) object : object.getClass();
+            if (sender != theClass) { MetaClass mc = registry.getMetaClass(sender);
+                return mc.invokeStaticMethod(sender, methodName, arguments);
+            }
+            if (sender == Class.class) {
+                return invokeMethod(object, methodName, arguments);
+            }
         }
 
-        if (arguments == null) arguments = EMPTY_ARGUMENTS;
+        Object[] nonNullArguments = arguments != null ? arguments.clone() : EMPTY_ARGUMENTS;
 
-        MetaMethod method = retrieveStaticMethod(methodName, arguments);
         // let's try to use the cache to find the method
-
+        MetaMethod method = retrieveStaticMethod(methodName, nonNullArguments);
         if (method != null) {
-            MetaClassHelper.unwrap(arguments);
-            return method.doMethodInvoke(object, arguments);
-        }
-        Object prop = null;
-        try {
-            prop = getProperty(theClass, theClass, methodName, false, false);
-        } catch (MissingPropertyException mpe) {
-            // ignore
+            MetaClassHelper.unwrap(nonNullArguments);
+            return method.doMethodInvoke(object, nonNullArguments);
         }
 
-        if (prop instanceof Closure) {
-            return invokeStaticClosureProperty(arguments, prop);
-        }
+        Class<?>[] argumentTypes = MetaClassHelper.convertToTypeArray(nonNullArguments);
+        MetaClassHelper.unwrap(nonNullArguments);
 
-        Object[] originalArguments = arguments.clone();
-        MetaClassHelper.unwrap(arguments);
-
-        Class superClass = sender.getSuperclass();
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-        while (superClass != Object.class && superClass != null) {
+        for (var superClass = theClass.getSuperclass(); superClass != null; superClass = superClass.getSuperclass()) {
             MetaClass mc = registry.getMetaClass(superClass);
-            method = mc.getStaticMetaMethod(methodName, argClasses);
-            if (method != null) return method.doMethodInvoke(object, arguments);
-
-            try {
-                prop = mc.getProperty(superClass, superClass, methodName, false, false);
-            } catch (MissingPropertyException mpe) {
-                // ignore
-            }
-
-            if (prop instanceof Closure) {
-                return invokeStaticClosureProperty(originalArguments, prop);
-            }
-
-            superClass = superClass.getSuperclass();
+            method = mc.getStaticMetaMethod(methodName, argumentTypes);
+            if (method != null) return method.doMethodInvoke(object, nonNullArguments);
         }
 
-        if (prop != null) {
-            MetaClass propMC = registry.getMetaClass(prop.getClass());
-            return propMC.invokeMethod(prop, CALL_METHOD, arguments);
+        Object propertyValue = null; // GROOVY-3284, GROOVY-3422, GROOVY-9779
+        try {
+            propertyValue = getProperty(theClass, theClass, methodName, false, false);
+        } catch (MissingPropertyException ignore) {
+        }
+        if (propertyValue != null) {
+            if (propertyValue instanceof Closure closure) {
+                return closure.getMetaClass().invokeMethod(theClass, closure, DO_CALL_METHOD, arguments, false, false);
+            } else {
+                return registry.getMetaClass(propertyValue.getClass()).invokeMethod(propertyValue, CALL_METHOD, arguments);
+            }
         }
 
-        return invokeStaticMissingMethod(sender, methodName, arguments);
+        return invokeStaticMissingMethod(theClass, methodName, nonNullArguments);
     }
 
-    private static Object invokeStaticClosureProperty(Object[] originalArguments, Object prop) {
-        Closure closure = (Closure) prop;
-        MetaClass delegateMetaClass = closure.getMetaClass();
-        return delegateMetaClass.invokeMethod(closure.getClass(), closure, DO_CALL_METHOD, originalArguments, false, false);
-    }
-
-    private Object invokeStaticMissingMethod(Class sender, String methodName, Object[] arguments) {
+    private Object invokeStaticMissingMethod(final Class<?> sender, final String methodName, final Object[] arguments) {
         MetaMethod metaMethod = getStaticMetaMethod(STATIC_METHOD_MISSING, METHOD_MISSING_ARGS);
         if (metaMethod != null) {
             return metaMethod.invoke(sender, new Object[]{methodName, arguments});
@@ -1545,24 +1522,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         throw new MissingMethodException(methodName, sender, arguments, true);
     }
 
-    private MetaMethod pickStaticMethod(String methodName, Class[] arguments) throws MethodSelectionException {
+    private MetaMethod pickStaticMethod(final String methodName, final Class<?>[] argumentTypes) throws MethodSelectionException {
         MetaMethod method = null;
         MethodSelectionException mse = null;
         Object methods = getStaticMethods(theClass, methodName);
 
         if (!(methods instanceof FastArray) || !((FastArray) methods).isEmpty()) {
             try {
-                method = (MetaMethod) chooseMethod(methodName, methods, arguments);
+                method = (MetaMethod) chooseMethod(methodName, methods, argumentTypes);
             } catch (MethodSelectionException msex) {
                 mse = msex;
             }
         }
         if (method == null && theClass != Class.class) {
             MetaClass cmc = registry.getMetaClass(Class.class);
-            method = cmc.pickMethod(methodName, arguments);
+            method = cmc.pickMethod(methodName, argumentTypes);
         }
         if (method == null) {
-            method = (MetaMethod) chooseMethod(methodName, methods, arguments);
+            method = (MetaMethod) chooseMethod(methodName, methods, argumentTypes);
         }
 
         if (method == null && mse != null) {
