@@ -251,16 +251,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                 }
         );
 
-        addMissingHandler(node,
-                "$static_methodMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
-                (methodBody, parameters) -> {
-                    setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
-                }
-        );
-
         ClassNode[] nameValueTypes = {STRING_TYPE, OBJECT_TYPE};
         MethodNode propertyMissing = getMethod(node, "propertyMissing", (m) -> !m.isStatic() && !m.isPrivate()
                 && Arrays.equals(Arrays.stream(m.getParameters()).map(Parameter::getType).toArray(),nameValueTypes));
@@ -293,16 +283,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         );
 
         addMissingHandler(node,
-                "$static_propertyMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                VOID_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
-                (methodBody, parameters) -> {
-                    setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        addMissingHandler(node,
                 "propertyMissing",
                 ACC_PUBLIC,
                 OBJECT_TYPE,
@@ -323,16 +303,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
                                 })
                         );
                     }
-                }
-        );
-
-        addMissingHandler(node,
-                "$static_propertyMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name")),
-                (methodBody, parameters) -> {
-                    setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
                 }
         );
     }

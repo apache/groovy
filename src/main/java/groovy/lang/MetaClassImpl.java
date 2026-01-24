@@ -1487,7 +1487,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        return invokeStaticMissingMethod(theClass, methodName, nonNullArguments);
+        try {
+            return invokeStaticMissingMethod(theClass, methodName, nonNullArguments);
+        } catch (MissingMethodException missing) {
+            Class<?> outerClass = theClass.getEnclosingClass();
+            if (outerClass != null) {
+                try {
+                    MetaClass omc = registry.getMetaClass(outerClass);
+                    return omc.invokeStaticMethod(outerClass, methodName, arguments);
+                } catch (MissingMethodException mme) {
+                    missing.addSuppressed(mme);
+                }
+            }
+            throw missing;
+        }
     }
 
     private Object invokeStaticMissingMethod(final Class<?> sender, final String methodName, final Object[] arguments) {
@@ -1495,7 +1508,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (metaMethod != null) {
             return metaMethod.invoke(sender, new Object[]{methodName, arguments});
         }
-        throw new MissingMethodException(methodName, sender, arguments, true);
+        throw new MissingMethodExceptionNoStack(methodName, sender, arguments, true);
     }
 
     private MetaMethod pickStaticMethod(final String methodName, final Class<?>[] argumentTypes) throws MethodSelectionException {
@@ -1876,16 +1889,55 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // missing property protocol
         //----------------------------------------------------------------------
-        return invokeMissingProperty(object, name, null, true);
+        try {
+            return invokeMissingProperty(object, name, null, true);
+        } catch (MissingPropertyException mpe) {
+            if (false && sender == theClass) {
+                Class<?> outerClass = theClass.getEnclosingClass();
+                if (outerClass != null) {
+                    MetaClass omc = registry.getMetaClass(outerClass);
+                    try {
+                        Object outer = outerClass;
+                        if ((theClass.getModifiers() & Opcodes.ACC_STATIC) == 0) {
+                            try {
+                                theClass.getDeclaredField("this$0");
+                                outer = getAttribute(object, "this$0");
+                            } catch (NoSuchFieldException e) {
+                            }
+                        }
+                        return omc.getProperty(outerClass, outer, name, false, false);
+                    } catch (MissingPropertyException suppressed) {
+                        mpe.addSuppressed(suppressed);
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+            }
+            throw mpe;
+        }
     }
 
     private Object getClassProperty(final Class<?> sender, final Class<?> receiver, final String name) throws MissingPropertyException {
         try {
             MetaClass cmc = registry.getMetaClass(Class.class);
             return cmc.getProperty(Class.class, receiver, name, false, false);
-        } catch (MissingPropertyException ignore) {
+        } catch (MissingPropertyException ignored) {
+        }
+
+        try {
             // try $static_propertyMissing / throw MissingPropertyException
             return invokeStaticMissingProperty(receiver, name, null, true);
+        } catch (MissingPropertyException missing) {
+            Class<?> outerClass = theClass.getEnclosingClass();
+            if (outerClass != null && sender.isNestmateOf(outerClass)) {
+                try {
+                    MetaClass omc = registry.getMetaClass(outerClass);
+                    return omc.getProperty(sender, outerClass, name, false, false);
+                } catch (MissingPropertyException mpe) {
+                    missing.addSuppressed(mpe);
+                }
+            }
+            throw missing;
         }
     }
 
@@ -2014,7 +2066,32 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return new ReadOnlyMetaProperty(name) {
             @Override
             public Object getProperty(final Object receiver) {
-                return invokeMissingProperty(receiver, getName(), null, true);
+                try {
+                    return invokeMissingProperty(receiver, getName(), null, true);
+                } catch (MissingPropertyException mpe) {
+                    if (false && sender == theClass) {
+                        Class<?> outerClass = theClass.getEnclosingClass();
+                        if (outerClass != null) {
+                            MetaClass omc = registry.getMetaClass(outerClass);
+                            try {
+                                Object outer = outerClass;
+                                if ((theClass.getModifiers() & Opcodes.ACC_STATIC) == 0) {
+                                    try {
+                                        theClass.getDeclaredField("this$0");
+                                        outer = getAttribute(receiver, "this$0");
+                                    } catch (NoSuchFieldException e) {
+                                    }
+                                }
+                                return omc.getProperty(outerClass, outer, name, false, false);
+                            } catch (MissingPropertyException suppressed) {
+                                mpe.addSuppressed(suppressed);
+                            } catch (Throwable t) {
+                                t.printStackTrace();
+                            }
+                        }
+                    }
+                    throw mpe;
+                }
             }
         };
     }
@@ -2757,7 +2834,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (!isStatic) {
             invokeMissingProperty(object, name, newValue, false);
         } else {
-            invokeStaticMissingProperty(object, name, newValue, false);
+            try {
+                invokeStaticMissingProperty(object, name, newValue, false);
+            } catch (MissingPropertyException missing) {
+                Class<?> outerClass = theClass.getEnclosingClass();
+                if (outerClass != null && sender.isNestmateOf(outerClass)) {
+                    try {
+                        MetaClass omc = registry.getMetaClass(outerClass);
+                        omc.setProperty(sender, outerClass, name, newValue, false, false);
+                        return;
+                    } catch (MissingPropertyException mpe) {
+                        missing.addSuppressed(mpe);
+                    }
+                }
+                throw missing;
+            }
         }
     }
 
