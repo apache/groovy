@@ -27,11 +27,13 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -54,17 +56,22 @@ import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.callSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ifS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.notX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
@@ -341,6 +348,9 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
             final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
         MethodNode method = innerClass.getDeclaredMethod(methodName, parameters);
         if (method == null) {
+            ClassNode mme = ClassHelper.make(groovy.lang.MissingMethodException.class);
+            ClassNode mpe = ClassHelper.make(groovy.lang.MissingPropertyException.class);
+
             // try {
             //   <consumer dispatch>
             // } catch (MissingMethodException notFound) {
@@ -352,10 +362,10 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
             Expression selfType = varX("this");
             if ((modifiers & ACC_STATIC) == 0) selfType = callX(selfType, "getClass");
             if (methodName.endsWith("methodMissing")) {
-                exceptionT = ClassHelper.make(groovy.lang.MissingMethodException.class);
+                exceptionT = mme;
                 newException = ctorX(exceptionT, args(propX(varX(catchParam),"method"), selfType, propX(varX(catchParam),"arguments")));
             } else {
-                exceptionT = ClassHelper.make(groovy.lang.MissingPropertyException.class);
+                exceptionT = mpe;
                 newException = ctorX(exceptionT, args(propX(varX(catchParam), "property"), selfType, propX(varX(catchParam), "cause")));
             }
             catchParam.setType(exceptionT);
@@ -365,7 +375,30 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
             TryCatchStatement tryCatch = tryCatchS(handleMissing);
             tryCatch.addCatch(catchS(catchParam, throwS(newException)));
 
-            innerClass.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, tryCatch);
+            Statement methodBody = tryCatch;
+            if ((modifiers & ACC_STATIC) == 0) { // GROOVY-11823
+                // if (!"methodMissing".equals(name))
+                Expression noRecursion = notX(callX(constX(methodName), "equals", varX(parameters[0])));
+                // try {
+                //   return super.methodMissing(name,args)
+                // } catch (MissingMethodException ignore) {
+                // } catch (MissingPropertyException ignore) {
+                // }
+                BlockStatement trySuperClass = block();
+                if (!ClassHelper.isPrimitiveVoid(returnType)) {
+                    trySuperClass.addStatement(returnS(callSuperX(methodName, args(parameters))));
+                } else {
+                    trySuperClass.addStatement(stmt(callSuperX(methodName, args(parameters))));
+                    trySuperClass.addStatement(returnS(ConstantExpression.EMPTY_EXPRESSION));
+                }
+                tryCatch = tryCatchS(trySuperClass);
+                tryCatch.addCatch(catchS(param(mme, "ignore"), block()));
+                if (methodName.equals("propertyMissing"))
+                  tryCatch.addCatch(catchS(param(mpe, "ignore"), block()));
+
+                methodBody = block(ifS(noRecursion, tryCatch), methodBody);
+            }
+            innerClass.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, methodBody);
 
             // if there is a user-defined method, add compiler error and continue
         } else if (isStatic(innerClass) && (method.getModifiers() & ACC_SYNTHETIC) == 0) {
