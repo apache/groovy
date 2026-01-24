@@ -18,8 +18,6 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.MissingMethodException;
-import groovy.lang.MissingPropertyException;
 import groovy.transform.CompileStatic;
 import groovy.transform.stc.POJO;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -90,10 +88,6 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
     private FieldNode thisField;
     private final SourceUnit sourceUnit;
 
-    private static final String
-            CLOSURE_INTERNAL_NAME   = BytecodeHelper.getClassInternalName(CLOSURE_TYPE),
-            CLOSURE_DESCRIPTOR      = BytecodeHelper.getTypeDescription(CLOSURE_TYPE);
-
     public InnerClassCompletionVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
     }
@@ -124,8 +118,8 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
             super.visitClass(node);
 
-            boolean innerPojo = hasAnnotation(node, ClassHelper.make(POJO.class))
-                    && hasAnnotation(node, ClassHelper.make(CompileStatic.class));
+            boolean innerPojo = hasAnnotation(node, new ClassNode(POJO.class))
+                    && hasAnnotation(node, new ClassNode(CompileStatic.class));
             if (!innerPojo) {
                 addMopMethods(innerClass);
             }
@@ -213,11 +207,11 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, method.getParameters());
     }
 
-    private void getThis(MethodVisitor mv, String classInternalName, String outerClassDescriptor, String innerClassInternalName) {
+    private void getThis(final MethodVisitor mv, final String classInternalName, final String outerClassDescriptor, final String innerClassInternalName) {
         mv.visitVarInsn(ALOAD, 0);
         if (thisField != null && CLOSURE_TYPE.equals(thisField.getType())) {
-            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", CLOSURE_DESCRIPTOR);
-            mv.visitMethodInsn(INVOKEVIRTUAL, CLOSURE_INTERNAL_NAME, "getThisObject", "()Ljava/lang/Object;", false);
+            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", BytecodeHelper.getTypeDescription(CLOSURE_TYPE));
+            mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(CLOSURE_TYPE), "getThisObject", "()Ljava/lang/Object;", false);
             mv.visitTypeInsn(CHECKCAST, innerClassInternalName);
         } else {
             mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
@@ -347,26 +341,31 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
             final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
         MethodNode method = innerClass.getDeclaredMethod(methodName, parameters);
         if (method == null) {
+            // try {
+            //   <consumer dispatch>
+            // } catch (MissingMethodException notFound) {
+            //   throw new MissingMethodException(notFound.method, this, notFound.arguments)
+            // }
             Parameter catchParam = param(OBJECT_TYPE, "notFound"); // dummy type
             ClassNode exceptionT;
             Expression newException;
             Expression selfType = varX("this");
             if ((modifiers & ACC_STATIC) == 0) selfType = callX(selfType, "getClass");
             if (methodName.endsWith("methodMissing")) {
-                exceptionT = ClassHelper.make(MissingMethodException.class);
+                exceptionT = ClassHelper.make(groovy.lang.MissingMethodException.class);
                 newException = ctorX(exceptionT, args(propX(varX(catchParam),"method"), selfType, propX(varX(catchParam),"arguments")));
             } else {
-                exceptionT = ClassHelper.make(MissingPropertyException.class);
+                exceptionT = ClassHelper.make(groovy.lang.MissingPropertyException.class);
                 newException = ctorX(exceptionT, args(propX(varX(catchParam), "property"), selfType, propX(varX(catchParam), "cause")));
             }
-
             catchParam.setType(exceptionT);
             catchParam.setOriginType(exceptionT);
             BlockStatement handleMissing = block();
             consumer.accept(handleMissing, parameters);
-            TryCatchStatement methodBody = tryCatchS(handleMissing);
-            methodBody.addCatch(catchS(catchParam, throwS(newException)));
-            innerClass.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, methodBody);
+            TryCatchStatement tryCatch = tryCatchS(handleMissing);
+            tryCatch.addCatch(catchS(catchParam, throwS(newException)));
+
+            innerClass.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, tryCatch);
 
             // if there is a user-defined method, add compiler error and continue
         } else if (isStatic(innerClass) && (method.getModifiers() & ACC_SYNTHETIC) == 0) {

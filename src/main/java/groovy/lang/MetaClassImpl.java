@@ -832,64 +832,43 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaBeanProperty property = findPropertyInClassHierarchy(propertyName, theCachedClass);
         if (property != null) {
             onSuperPropertyFoundInHierarchy(property);
-            if (!isGetter) {
+            if (isGetter) {
+                return property.getProperty(instance);
+            } else {
                 property.setProperty(instance, optionalValue);
                 return null;
             }
-            return property.getProperty(instance);
         }
 
-        // look for getProperty or setProperty overrides
+        // look for getProperty or setProperty
         if (isGetter) {
-            final Class<?>[] getPropertyArgs = {String.class};
-            final MetaMethod method = findMethodInClassHierarchy(instance.getClass(), GET_PROPERTY_METHOD, getPropertyArgs, this);
+            MetaMethod method = findMethodInClassHierarchy(instance.getClass(), GET_PROPERTY_METHOD, GETTER_MISSING_ARGS, this);
             if (method instanceof ClosureMetaMethod) {
                 onGetPropertyFoundInHierarchy(method);
                 return method.invoke(instance, new Object[]{propertyName});
             }
         } else {
-            final Class<?>[] setPropertyArgs = {String.class, Object.class};
-            final MetaMethod method = findMethodInClassHierarchy(instance.getClass(), SET_PROPERTY_METHOD, setPropertyArgs, this);
+            MetaMethod method = findMethodInClassHierarchy(instance.getClass(), SET_PROPERTY_METHOD, SETTER_MISSING_ARGS, this);
             if (method instanceof ClosureMetaMethod) {
                 onSetPropertyFoundInHierarchy(method);
                 return method.invoke(instance, new Object[]{propertyName, optionalValue});
             }
         }
 
-        try {
-            if (!(instance instanceof Class)) {
-                if (isGetter) {
-                    if (propertyMissingGet != null) {
-                        return propertyMissingGet.invoke(instance, new Object[]{propertyName});
-                    }
-                } else {
-                    if (propertyMissingSet != null) {
-                        return propertyMissingSet.invoke(instance, new Object[]{propertyName, optionalValue});
-                    }
+        if (!(instance instanceof Class)) {
+            MetaMethod propertyMissing = isGetter ? propertyMissingGet : propertyMissingSet;
+            if (propertyMissing != null) {
+                var arguments = isGetter ? new Object[]{propertyName}
+                                         : new Object[]{propertyName, optionalValue};
+                try {
+                    return propertyMissing.invoke(instance, arguments);
+                } catch (InvokerInvocationException iie) {
+                    throw iie.getCause() instanceof MissingPropertyException mpe ? mpe : iie;
                 }
-            }
-        } catch (InvokerInvocationException iie) {
-            boolean shouldHandle = isGetter && propertyMissingGet != null;
-            if (!shouldHandle) shouldHandle = !isGetter && propertyMissingSet != null;
-            if (shouldHandle && iie.getCause() instanceof MissingPropertyException) {
-                throw (MissingPropertyException) iie.getCause();
-            }
-            throw iie;
-        }
-
-        Class<?> theClass = instance instanceof Class ? (Class<?>) instance : instance.getClass();
-        if (instance instanceof Class && theClass != Class.class) {
-            final MetaProperty metaProperty = InvokerHelper.getMetaClass(Class.class).hasProperty(instance, propertyName);
-            if (metaProperty != null) {
-                if (isGetter) {
-                    return metaProperty.getProperty(instance);
-                }
-                metaProperty.setProperty(instance, optionalValue);
-                return null;
             }
         }
 
-        throw new MissingPropertyExceptionNoStack(propertyName, theClass);
+        throw new MissingPropertyExceptionNoStack(propertyName, instance instanceof Class ? (Class<?>) instance : instance.getClass());
     }
 
     private Object invokeMissingMethod(final Object instance, final String methodName, final Object[] arguments, final RuntimeException original, final boolean isCallToSuper) {
@@ -973,33 +952,29 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * Hook to deal with the case of MissingProperty for static properties. The method will look attempt to look up
-     * "propertyMissing" handlers and invoke them otherwise thrown a MissingPropertyException
+     * Hook to deal with the case of missing property for static properties. The
+     * method attempts to look up "$static_propertyMissing" handlers and invoke
+     * them otherwise throws a MissingPropertyException.
      *
-     * @param instance      The instance
-     * @param propertyName  The name of the property
-     * @param optionalValue The value in the case of a setter
-     * @param isGetter      True if it's a getter
-     * @return The value in the case of a getter or a MissingPropertyException
+     * @param instance      the class instance
+     * @param propertyName  the name of the property
+     * @param optionalValue the value in the case of a setter
+     * @param isGetter      true for property read, false for property write
+     * @return The value in the case of a getter or null in the case of a setter.
+     * @throws MissingPropertyException
      */
-    protected Object invokeStaticMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
-        MetaClass mc = instance instanceof Class ? registry.getMetaClass((Class<?>) instance) : this;
-        if (isGetter) {
-            MetaMethod propertyMissing = mc.getMetaMethod(STATIC_PROPERTY_MISSING, GETTER_MISSING_ARGS);
-            if (propertyMissing != null) {
-                return propertyMissing.invoke(instance, new Object[]{propertyName});
-            }
-        } else {
-            MetaMethod propertyMissing = mc.getMetaMethod(STATIC_PROPERTY_MISSING, SETTER_MISSING_ARGS);
-            if (propertyMissing != null) {
-                return propertyMissing.invoke(instance, new Object[]{propertyName, optionalValue});
+    protected Object invokeStaticMissingProperty(final Object instance, final String propertyName, final Object optionalValue, final boolean isGetter) {
+        MetaMethod propertyMissing = getMetaMethod(STATIC_PROPERTY_MISSING, isGetter ? GETTER_MISSING_ARGS : SETTER_MISSING_ARGS);
+        if (propertyMissing != null) {
+            var arguments = isGetter ? new Object[]{propertyName} : new Object[]{propertyName, optionalValue};
+            try {
+                return propertyMissing.invoke(instance, arguments);
+            } catch (InvokerInvocationException iie) {
+                throw iie.getCause() instanceof MissingPropertyException mpe ? mpe : iie;
             }
         }
 
-        if (instance instanceof Class) {
-            throw new MissingPropertyException(propertyName, (Class<?>) instance);
-        }
-        throw new MissingPropertyException(propertyName, theClass);
+        throw new MissingPropertyExceptionNoStack(propertyName, theClass);
     }
 
     /**
@@ -1322,13 +1297,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaClass lookupObjectMetaClass(Object object) {
-        if (object instanceof GroovyObject go) {
-            return go.getMetaClass();
+        if (object instanceof GroovyObject groovyObject) {
+            return groovyObject.getMetaClass();
         }
-        Class ownerClass = object.getClass();
-        if (ownerClass == Class.class) ownerClass = (Class) object;
-        MetaClass metaClass = registry.getMetaClass(ownerClass);
-        return metaClass;
+        Class<?> ownerClass = object.getClass();
+        if (ownerClass == Class.class) {
+            ownerClass = (Class<?>) object;
+        }
+        return registry.getMetaClass(ownerClass);
     }
 
     private static Object invokeMethodOnGroovyObject(String methodName, Object[] originalArguments, Object owner) {
@@ -1818,9 +1794,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    /**
-     * @return the given property's value on the object
-     */
     @Override
     public Object getProperty(final Class sender, final Object object, final String name, final boolean useSuper, final boolean fromInsideClass) {
 
@@ -1904,37 +1877,42 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //------------------------------------------------------------------
             MetaMethod metaMethod = VM_PLUGIN.transformMetaMethod(this, method);
             return metaMethod.doMethodInvoke(object, arguments);
-        } else {
-            //------------------------------------------------------------------
-            // special cases -- maybe these cases should be special MetaClasses!
-            //------------------------------------------------------------------
-            if (isStatic) {
-                MetaClass cmc = registry.getMetaClass(Class.class);
-                return cmc.getProperty(Class.class, object, name, false, false);
-            }
-            if (object instanceof Collection) {
-                return DefaultGroovyMethods.getAt((Collection<?>) object, name);
-            }
-            if (object instanceof Object[]) {
-                return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
-            }
-            MetaMethod addListenerMethod = listeners.get(name);
-            if (addListenerMethod != null) {
-                // TODO: one day we could try return the previously registered Closure listener for easy removal
-                return null;
-            }
+        }
+
+        //------------------------------------------------------------------
+        // special cases -- maybe these cases should be special MetaClasses!
+        //------------------------------------------------------------------
+        if (isStatic) {
+            return getClassProperty(sender, (Class<?>) object, name);
+        }
+        if (object instanceof Collection) {
+            return DefaultGroovyMethods.getAt((Collection<?>) object, name);
+        }
+        if (object instanceof Object[]) {
+            return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
+        }
+        if (listeners.get(name) != null) {
+            // TODO: one day we could try return the previously registered Closure listener for easy removal
+            return null;
         }
 
         //----------------------------------------------------------------------
         // missing property protocol
         //----------------------------------------------------------------------
-        if (object instanceof Class) {
-            return invokeStaticMissingProperty(object, name, null, true);
-        }
         return invokeMissingProperty(object, name, null, true);
     }
 
-    public MetaProperty getEffectiveGetMetaProperty(final Class sender, final Object object, String name, final boolean useSuper) {
+    private Object getClassProperty(final Class<?> sender, final Class<?> receiver, final String name) throws MissingPropertyException {
+        try {
+            MetaClass cmc = registry.getMetaClass(Class.class);
+            return cmc.getProperty(Class.class, receiver, name, false, false);
+        } catch (MissingPropertyException ignore) {
+            // try $static_propertyMissing / throw MissingPropertyException
+            return invokeStaticMissingProperty(receiver, name, null, true);
+        }
+    }
+
+    public MetaProperty getEffectiveGetMetaProperty(final Class sender, final Object object, final String name, final boolean useSuper) {
 
         //----------------------------------------------------------------------
         // handling of static
@@ -2022,12 +2000,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // special cases
         //----------------------------------------------------------------------
-        if (theClass != Class.class && object instanceof Class) {
+        if (isStatic) {
             return new ReadOnlyMetaProperty(name) {
                 @Override
                 public Object getProperty(final Object receiver) {
-                    MetaClass cmc = registry.getMetaClass(Class.class);
-                    return cmc.getProperty(Class.class, receiver, getName(), false, false);
+                    return getClassProperty(sender, (Class<?>) receiver, getName());
                 }
             };
         }
@@ -2047,8 +2024,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             };
         }
-        MetaMethod addListenerMethod = listeners.get(name);
-        if (addListenerMethod != null) {
+        if (listeners.get(name) != null) {
             return new ReadOnlyMetaProperty(name) {
                 @Override
                 public Object getProperty(final Object receiver) { return null; }
@@ -2056,16 +2032,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //----------------------------------------------------------------------
-        // error due to missing method/field
+        // missing property protocol
         //----------------------------------------------------------------------
-        if (isStatic || object instanceof Class) {
-            return new ReadOnlyMetaProperty(name) {
-                @Override
-                public Object getProperty(final Object receiver) {
-                    return invokeStaticMissingProperty(receiver, getName(), null, true);
-                }
-            };
-        }
         return new ReadOnlyMetaProperty(name) {
             @Override
             public Object getProperty(final Object receiver) {
@@ -2792,6 +2760,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         //----------------------------------------------------------------------
+        // metaClass property
+        //----------------------------------------------------------------------
+        if (isStatic && name.equals("metaClass")) {
+            MetaClass cmc = registry.getMetaClass(Class.class);
+            cmc.setProperty(Class.class, object, name, newValue, false, false);
+            return;
+        }
+
+        //----------------------------------------------------------------------
         // missing property protocol
         //----------------------------------------------------------------------
         if (ambiguousListener) {
@@ -2800,10 +2777,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (mp != null) {
             throw new ReadOnlyPropertyException(name, theClass);
         }
-        if (object instanceof Class && !"metaClass".equals(name)) {
-            invokeStaticMissingProperty(object, name, newValue, false);
-        } else {
+        if (!isStatic) {
             invokeMissingProperty(object, name, newValue, false);
+        } else {
+            invokeStaticMissingProperty(object, name, newValue, false);
         }
     }
 
