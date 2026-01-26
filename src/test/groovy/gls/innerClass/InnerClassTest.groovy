@@ -50,10 +50,10 @@ final class InnerClassTest {
         assertScript '''import Foo as Bar
             class Foo {}
 
-            def regular = new Bar()
-            def anonymous = new Bar() {}
-            assert regular.class.name == 'Foo'
-            assert anonymous.class.superclass.name == 'Foo'
+            def obj = new Bar()
+            def aic = new Bar() {}
+            assert obj.class.name == 'Foo'
+            assert aic.class.superclass.name == 'Foo'
         '''
 
         assertScript '''import static Baz.Foo as Bar
@@ -61,24 +61,31 @@ final class InnerClassTest {
                 static class Foo {}
             }
 
-            def regular = new Bar()
-            def anonymous = new Bar() {}
-            assert regular.class.name == 'Baz$Foo'
-            assert anonymous.class.superclass.name == 'Baz$Foo'
+            def obj = new Bar()
+            def aic = new Bar() {}
+            assert obj.class.name == 'Baz$Foo'
+            assert aic.class.superclass.name == 'Baz$Foo'
         '''
     }
 
-    // GROOVY-10840
+    // GROOVY-11846
     @Test
-    void testArrayAIC() {
+    void testInnerAIC() {
         assertScript '''
-            class BAIS extends ByteArrayInputStream {
-                BAIS(String input) {
-                    super(input.bytes)
+            class C {
+                def m() {
+                    return { ->
+                        new Object() {
+                        }
+                    }
                 }
             }
 
-            assert new BAIS('input').available() >= 5
+            def obj = new C().m() ()
+            def aic = obj.getClass()
+            assert aic.getName() == 'C$1'
+            assert aic.getEnclosingClass().getName() == 'C$_m_closure1'
+            assert aic.getEnclosingMethod().getName() == 'doCall' : 'not m()'
         '''
     }
 
@@ -252,14 +259,14 @@ final class InnerClassTest {
             }
 
             class Two extends One {
-              Two() {
-                super(new Object() { // AIC before special ctor call completes
-                  int hashCode() {
-                    hash() // should be able to call static method safely
-                  }
-                })
-              }
-              static int hash() { 42 }
+                Two() {
+                    super(new Object() { // AIC before special ctor call completes
+                        int hashCode() {
+                            hash() // should be able to call static method safely
+                        }
+                    })
+                }
+                static int hash() { 42 }
             }
 
             def obj = new Two()
@@ -408,6 +415,7 @@ final class InnerClassTest {
             class A {
                 static class B {}
             }
+
             assert A.declaredClasses.length == 1
             assert A.declaredClasses[0] == A.B
         '''
@@ -440,6 +448,7 @@ final class InnerClassTest {
                     final String foo = 'foo'
                 }
             }
+
             def b = new A.B(new A())
             assert b.foo == 'foo'
         '''
@@ -483,6 +492,7 @@ final class InnerClassTest {
             class A {
                 class B {}
             }
+
             def x = new A.B() // requires reference to A
         '''
     }
@@ -1464,23 +1474,26 @@ final class InnerClassTest {
     @Test
     void testInnerClassDotThisUsage2() {
         assertScript '''
-            interface X {
+            interface A {
                 def m()
             }
-
-            class A {
+            class B {
                 def foo() {
-                    def c = {
-                        return new X(){def m(){
-                            A.this
-                         } }
+                    def x = { ->
+                        return new A() {
+                            @Override
+                            def m() {
+                                B.this
+                            }
+                        }
                     }
-                    return c().m()
+                    return x().m()
                 }
             }
-            class B extends A {}
-            def b = new B()
-            assert b.foo() instanceof B
+            class C extends B {
+            }
+            def c = new C()
+            assert c.foo() instanceof C
         '''
     }
 
