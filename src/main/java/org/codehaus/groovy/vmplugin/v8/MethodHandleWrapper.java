@@ -28,18 +28,30 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 class MethodHandleWrapper {
     private final MethodHandle cachedMethodHandle;
+    private final MethodHandle directMethodHandle;
     private final MethodHandle targetMethodHandle;
     private final boolean canSetTarget;
     private final AtomicLong latestHitCount = new AtomicLong(0);
 
-    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, boolean canSetTarget) {
+    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle directMethodHandle, MethodHandle targetMethodHandle, boolean canSetTarget) {
         this.cachedMethodHandle = cachedMethodHandle;
+        this.directMethodHandle = directMethodHandle;
         this.targetMethodHandle = targetMethodHandle;
         this.canSetTarget = canSetTarget;
     }
 
     public MethodHandle getCachedMethodHandle() {
         return cachedMethodHandle;
+    }
+
+    /**
+     * Returns a method handle suitable for direct invocation from the cache.
+     * This handle has metaclass/category guards but NOT argument type guards,
+     * which is safe when caching by full argument signature since the types
+     * are already known to match.
+     */
+    public MethodHandle getDirectMethodHandle() {
+        return directMethodHandle != null ? directMethodHandle : cachedMethodHandle;
     }
 
     public MethodHandle getTargetMethodHandle() {
@@ -67,10 +79,10 @@ class MethodHandleWrapper {
     }
 
     private static class NullMethodHandleWrapper extends MethodHandleWrapper {
-        public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper(null, null, false);
+        public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper(null, null, null, false);
 
-        private NullMethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, boolean canSetTarget) {
-            super(cachedMethodHandle, targetMethodHandle, canSetTarget);
+        private NullMethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle directMethodHandle, MethodHandle targetMethodHandle, boolean canSetTarget) {
+            super(cachedMethodHandle, directMethodHandle, targetMethodHandle, canSetTarget);
         }
     }
 }
