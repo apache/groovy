@@ -109,12 +109,6 @@ public abstract class Selector {
     public MethodType targetType, currentType;
     public String name;
     public MethodHandle handle;
-    /**
-     * Stores the method handle before argument type guards are applied.
-     * This can be used for direct invocation when caching by full argument signature,
-     * avoiding redundant type checks since the signature already encodes the types.
-     */
-    public MethodHandle handleBeforeArgGuards;
     public boolean useMetaClass = false, cache = true;
     public MutableCallSite callSite;
     public Class<?> sender;
@@ -947,23 +941,18 @@ public abstract class Selector {
                 }
             }
 
-            // Skip the global switchpoint guard.
+            // Skip the global switchpoint guard by default.
             // The switchpoint causes ALL call sites to fail when ANY metaclass changes.
             // In Grails and similar frameworks with frequent metaclass changes, this causes
             // massive guard failures and performance degradation.
             // The other guards (metaclass identity, class receiver, category) should be
-            // sufficient. 
+            // sufficient, combined with cache invalidation on metaclass changes.
             // 
             // If you need strict metaclass change detection, set groovy.indy.switchpoint.guard=true
             if (SystemUtil.getBooleanSafe("groovy.indy.switchpoint.guard")) {
                 handle = switchPoint.guardWithTest(handle, fallback);
                 if (LOG_ENABLED) LOG.info("added switch point guard");
             }
-
-            // Save the handle BEFORE argument type guards are applied.
-            // This version can be used for direct invocation when caching by full argument signature,
-            // since the signature already encodes the types and type checks would be redundant.
-            handleBeforeArgGuards = handle;
 
             java.util.function.Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
@@ -1007,7 +996,7 @@ public abstract class Selector {
          * do the actual call site target set, if the call is supposed to be cached
          */
         public void doCallSiteTargetSet() {
-            if (LOG_ENABLED) LOG.info("call site stays uncached (target setting disabled)");
+            if (LOG_ENABLED) LOG.info("call site stays uncached");
             /*
             if (!cache) {
                 if (LOG_ENABLED) LOG.info("call site stays uncached");
