@@ -98,8 +98,12 @@ public class GroovyDocTool {
         if (version == null) {
             version = "JAVA_" + Runtime.version().feature();
             boolean previewEnabled = java.lang.management.ManagementFactory.getRuntimeMXBean().getInputArguments().contains("--enable-preview");
-            if (previewEnabled) {
-                version += "_PREVIEW";
+            if (previewEnabled) version += "_PREVIEW";
+
+            try {
+                return ParserConfiguration.LanguageLevel.valueOf(version);
+            } catch (IllegalArgumentException e) {
+                return ParserConfiguration.LanguageLevel.BLEEDING_EDGE;
             }
         }
 
