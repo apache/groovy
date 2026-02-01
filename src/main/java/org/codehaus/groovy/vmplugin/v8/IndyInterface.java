@@ -53,6 +53,13 @@ import java.util.stream.Stream;
 public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 10_000L);
     private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 10_000L);
+    /**
+     * Initial capacity for the call site registry used to track all active call sites
+     * for cache invalidation when metaclass changes occur. The default of 1024 balances
+     * memory usage against resize overhead. Tune via {@code groovy.indy.callsite.initial.capacity}
+     * system property for larger applications.
+     */
+    private static final int INDY_CALLSITE_INITIAL_CAPACITY = SystemUtil.getIntegerSafe("groovy.indy.callsite.initial.capacity", 1024);
 
     /**
      * flags for method and property calls
@@ -176,7 +183,7 @@ public class IndyInterface {
      * Weak set of all CacheableCallSites. Used to invalidate caches when metaclass changes.
      * Uses WeakReferences so call sites can be garbage collected when no longer referenced.
      */
-    private static final Set<WeakReference<CacheableCallSite>> ALL_CALL_SITES = ConcurrentHashMap.newKeySet();
+    private static final Set<WeakReference<CacheableCallSite>> ALL_CALL_SITES = ConcurrentHashMap.newKeySet(INDY_CALLSITE_INITIAL_CAPACITY);
 
     static {
         GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> invalidateSwitchPoints());
