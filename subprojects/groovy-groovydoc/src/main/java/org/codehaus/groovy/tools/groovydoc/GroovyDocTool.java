@@ -96,7 +96,7 @@ public class GroovyDocTool {
             .orElse(null);
 
         if (version == null) {
-            return null;
+            version = "JAVA_" + Runtime.version().feature();
         }
 
         try {
@@ -112,6 +112,7 @@ public class GroovyDocTool {
             log.debug("Loading source files for " + filenames);
         }
 
+        // The default language level is POPULAR(i.e. JAVA_11) in JavaParser 3.28.0
         ParserConfiguration.LanguageLevel previousLanguageLevel = StaticJavaParser.getParserConfiguration().getLanguageLevel();
         try {
             if(javaLanguageLevel != null) {
