@@ -128,17 +128,22 @@ public class CacheableCallSite extends MutableCallSite {
     /**
      * Clear the cache entirely. Called when metaclass changes to ensure
      * stale method handles are discarded.
+     * <p>
+     * The volatile field {@code latestHitMethodHandleWrapperSoftReference} is cleared
+     * outside the synchronized block to be consistent with {@link #getAndPut}, which
+     * also accesses this field outside the lock. Volatile provides sufficient visibility
+     * guarantees for this field.
      */
     public void clearCache() {
-        // Clear the latest hit reference
+        // Clear the latest hit reference using volatile semantics
         latestHitMethodHandleWrapperSoftReference = null;
         
-        // Clear the LRU cache
+        // Clear the LRU cache under lock to synchronize with concurrent getAndPut operations
         synchronized (lruCache) {
             lruCache.clear();
         }
         
-        // Reset fallback count
+        // Reset fallback count (atomic operation, doesn't need to be in sync block)
         fallbackCount.set(0);
     }
 }

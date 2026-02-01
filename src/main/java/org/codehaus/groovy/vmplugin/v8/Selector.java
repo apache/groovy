@@ -126,9 +126,17 @@ public abstract class Selector {
     private static final CallType[] CALL_TYPE_VALUES = CallType.values();
 
     /**
-     * Whether to use global SwitchPoint guard for metaclass changes.
-     * Default is false for better performance in frameworks with frequent metaclass changes.
-     * Set groovy.indy.switchpoint.guard=true to enable strict metaclass change detection.
+     * Whether to use a global SwitchPoint guard for metaclass changes.
+     * <p>
+     * <strong>Default is {@code false}</strong> to avoid the performance cost of globally
+     * invalidating all indy call sites whenever <em>any</em> metaclass changes.
+     * Enabling this will significantly degrade performance in frameworks or applications
+     * with frequent metaclass changes (for example, Grails), because every such change
+     * forces all guarded call sites to be re-linked.
+     * <p>
+     * Set {@code groovy.indy.switchpoint.guard=true} <strong>only</strong> for specific
+     * debugging or backward-compatibility scenarios where strict metaclass change
+     * detection is required, and not for general production use.
      */
     private static final boolean INDY_SWITCHPOINT_GUARD = SystemUtil.getBooleanSafe("groovy.indy.switchpoint.guard");
 
@@ -948,14 +956,7 @@ public abstract class Selector {
                 }
             }
 
-            // Skip the global switchpoint guard by default.
-            // The switchpoint causes ALL call sites to fail when ANY metaclass changes.
-            // In Grails and similar frameworks with frequent metaclass changes, this causes
-            // massive guard failures and performance degradation.
-            // The other guards (metaclass identity, class receiver, category) should be
-            // sufficient, combined with cache invalidation on metaclass changes.
-            // 
-            // If you need strict metaclass change detection, set groovy.indy.switchpoint.guard=true
+            // Apply global switchpoint guard if enabled (disabled by default for performance)
             if (INDY_SWITCHPOINT_GUARD) {
                 handle = switchPoint.guardWithTest(handle, fallback);
                 if (LOG_ENABLED) LOG.info("added switch point guard");
