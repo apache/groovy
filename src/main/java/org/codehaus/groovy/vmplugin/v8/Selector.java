@@ -126,6 +126,13 @@ public abstract class Selector {
     private static final CallType[] CALL_TYPE_VALUES = CallType.values();
 
     /**
+     * Whether to use global SwitchPoint guard for metaclass changes.
+     * Default is false for better performance in frameworks with frequent metaclass changes.
+     * Set groovy.indy.switchpoint.guard=true to enable strict metaclass change detection.
+     */
+    private static final boolean INDY_SWITCHPOINT_GUARD = SystemUtil.getBooleanSafe("groovy.indy.switchpoint.guard");
+
+    /**
      * Returns the Selector
      */
     public static Selector getSelector(MutableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
@@ -949,7 +956,7 @@ public abstract class Selector {
             // sufficient, combined with cache invalidation on metaclass changes.
             // 
             // If you need strict metaclass change detection, set groovy.indy.switchpoint.guard=true
-            if (SystemUtil.getBooleanSafe("groovy.indy.switchpoint.guard")) {
+            if (INDY_SWITCHPOINT_GUARD) {
                 handle = switchPoint.guardWithTest(handle, fallback);
                 if (LOG_ENABLED) LOG.info("added switch point guard");
             }
