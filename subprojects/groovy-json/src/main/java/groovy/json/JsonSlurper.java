@@ -318,23 +318,13 @@ public class JsonSlurper {
     }
 
     private JsonParser createParser() {
-        switch (type) {
-            case LAX:
-                return new JsonParserLax(false, chop, lazyChop, checkDates);
-
-            case CHAR_BUFFER:
-                return new JsonParserCharArray();
-
-            case CHARACTER_SOURCE:
-                return new JsonParserUsingCharacterSource();
-
-
-            case INDEX_OVERLAY:
-                return new JsonFastParser(false, chop, lazyChop, checkDates);
-
-            default:
-                return new JsonParserCharArray();
-        }
+        return switch (type) {
+            case LAX -> new JsonParserLax(false, chop, lazyChop, checkDates);
+            case CHAR_BUFFER -> new JsonParserCharArray();
+            case CHARACTER_SOURCE -> new JsonParserUsingCharacterSource();
+            case INDEX_OVERLAY -> new JsonFastParser(false, chop, lazyChop, checkDates);
+            default -> new JsonParserCharArray();
+        };
     }
 
     /**

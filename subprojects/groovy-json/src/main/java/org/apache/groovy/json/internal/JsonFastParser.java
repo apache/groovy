@@ -113,45 +113,21 @@ public class JsonFastParser extends JsonParserCharArray {
     private Value decodeValueOverlay() {
         skipWhiteSpace();
 
-        switch (__currentChar) {
-            case '"':
-                return decodeStringOverlay();
-
-            case '{':
-                return decodeJsonObjectLazyFinalParse();
-
-            case 't':
-                return decodeTrue() ? ValueContainer.TRUE : ValueContainer.FALSE;
-
-            case 'f':
-                return !decodeFalse() ? ValueContainer.FALSE : ValueContainer.TRUE;
-
-            case 'n':
-                return decodeNull() == null ? ValueContainer.NULL : ValueContainer.NULL;
-
-            case '[':
-                return decodeJsonArrayOverlay();
-
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-            case '0':
-                return decodeNumberOverlay(false);
-
-            case '-':
-                return decodeNumberOverlay(true);
-
-            default:
+        return switch (__currentChar) {
+            case '"' -> decodeStringOverlay();
+            case '{' -> decodeJsonObjectLazyFinalParse();
+            case 't' -> decodeTrue() ? ValueContainer.TRUE : ValueContainer.FALSE;
+            case 'f' -> !decodeFalse() ? ValueContainer.FALSE : ValueContainer.TRUE;
+            case 'n' -> decodeNull() == null ? ValueContainer.NULL : ValueContainer.NULL;
+            case '[' -> decodeJsonArrayOverlay();
+            case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> decodeNumberOverlay(false);
+            case '-' -> decodeNumberOverlay(true);
+            default -> {
                 complain("Unable to determine the " +
-                        "current character, it is not a string, number, array, or object");
-                return null;
-        }
+                    "current character, it is not a string, number, array, or object");
+                yield null;
+            }
+        };
     }
 
     private Value decodeNumberOverlay(final boolean minus) {

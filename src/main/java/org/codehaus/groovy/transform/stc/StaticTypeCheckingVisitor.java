@@ -6331,12 +6331,10 @@ out:    for (ClassNode type : todo) {
 
     public static class SignatureCodecFactory {
         public static SignatureCodec getCodec(final int version, final ClassLoader classLoader) {
-            switch (version) {
-              case 1:
-                return new SignatureCodecVersion1(classLoader);
-              default:
-                return null;
-            }
+            return switch (version) {
+                case 1 -> new SignatureCodecVersion1(classLoader);
+                default -> null;
+            };
         }
     }
 

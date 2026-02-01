@@ -201,17 +201,18 @@ public class SignatureCodecVersion1 implements SignatureCodec {
             }
         } else {
             // primitive type
-            switch (typeCode) {
-                case 'I': result = int_TYPE; break;
-                case 'Z': result = boolean_TYPE; break;
-                case 'B': result = byte_TYPE; break;
-                case 'C': result = char_TYPE; break;
-                case 'S': result = short_TYPE; break;
-                case 'D': result = double_TYPE; break;
-                case 'F': result = float_TYPE; break;
-                case 'J': result = long_TYPE; break;
-                case 'V': result = VOID_TYPE; break;
-            }
+            result = switch (typeCode) {
+                case 'I' -> int_TYPE;
+                case 'Z' -> boolean_TYPE;
+                case 'B' -> byte_TYPE;
+                case 'C' -> char_TYPE;
+                case 'S' -> short_TYPE;
+                case 'D' -> double_TYPE;
+                case 'F' -> float_TYPE;
+                case 'J' -> long_TYPE;
+                case 'V' -> VOID_TYPE;
+                default -> result;
+            };
         }
         return result;
     }

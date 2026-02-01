@@ -128,22 +128,19 @@ public abstract class Selector {
      */
     public static Selector getSelector(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
         CallType callType = CALL_TYPE_VALUES[callID];
-        switch (callType) {
-            case INIT:
-                return new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case METHOD:
-                return new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case GET:
-                return new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case SET:
-                throw new GroovyBugError("your call tried to do a property set, which is not supported.");
-            case CAST:
-                return new CastSelector(callSite, arguments);
-            case INTERFACE:
-                return new InterfaceSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            default:
-                throw new GroovyBugError("unexpected call type");
-        }
+        return switch (callType) {
+            case INIT ->
+                new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case METHOD ->
+                new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case GET ->
+                new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case SET -> throw new GroovyBugError("your call tried to do a property set, which is not supported.");
+            case CAST -> new CastSelector(callSite, arguments);
+            case INTERFACE ->
+                new InterfaceSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            default -> throw new GroovyBugError("unexpected call type");
+        };
     }
 
     /**

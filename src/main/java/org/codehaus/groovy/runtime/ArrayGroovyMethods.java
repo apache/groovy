@@ -68,7 +68,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -82,16 +81,16 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
+import java.util.function.DoublePredicate;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
+import java.util.function.IntPredicate;
 import java.util.function.IntUnaryOperator;
 import java.util.function.LongConsumer;
+import java.util.function.LongPredicate;
 import java.util.function.LongUnaryOperator;
 import java.util.function.Predicate;
-import java.util.function.IntPredicate;
-import java.util.function.LongPredicate;
-import java.util.function.DoublePredicate;
 
 /**
  * Defines new groovy methods which appear on arrays inside the Groovy environment.
@@ -6612,15 +6611,14 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static <T> T[] minus(T[] self, Object[] removeMe) {
-        switch (removeMe.length) {
-          case 0:
-            return self.clone();
-          case 1:
-            return ArrayGroovyMethods.minus(self, removeMe[0]);
-          default:
-            Collection<T> temp = DefaultGroovyMethods.minus((Collection<T>) toList(self), Arrays.asList(removeMe));
-            return temp.toArray(createSimilarArray(self, temp.size()));
-        }
+        return switch (removeMe.length) {
+            case 0 -> self.clone();
+            case 1 -> ArrayGroovyMethods.minus(self, removeMe[0]);
+            default -> {
+                Collection<T> temp = DefaultGroovyMethods.minus((Collection<T>) toList(self), Arrays.asList(removeMe));
+                yield temp.toArray(createSimilarArray(self, temp.size()));
+            }
+        };
     }
 
     /**

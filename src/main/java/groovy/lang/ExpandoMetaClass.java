@@ -720,16 +720,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     public static boolean isValidExpandoProperty(String property) {
-        switch (property) {
-        case META_CLASS_PROPERTY:
-        case CLASS_PROPERTY:
-        case META_METHODS:
-        case METHODS:
-        case PROPERTIES:
-            return false;
-        default:
-            return true;
-        }
+        return switch (property) {
+            case META_CLASS_PROPERTY, CLASS_PROPERTY, META_METHODS, METHODS, PROPERTIES -> false;
+            default -> true;
+        };
     }
 
     /* (non-Javadoc)

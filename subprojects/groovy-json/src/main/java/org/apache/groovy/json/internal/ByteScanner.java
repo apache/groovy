@@ -29,29 +29,14 @@ public class ByteScanner {
      * @return the encoded nibble (1/2 byte).
      */
     protected static int encodeNibbleToHexAsciiCharByte(final int nibble) {
-        switch (nibble) {
-            case 0x00:
-            case 0x01:
-            case 0x02:
-            case 0x03:
-            case 0x04:
-            case 0x05:
-            case 0x06:
-            case 0x07:
-            case 0x08:
-            case 0x09:
-                return nibble + 0x30; // 0x30('0') - 0x39('9')
-            case 0x0A:
-            case 0x0B:
-            case 0x0C:
-            case 0x0D:
-            case 0x0E:
-            case 0x0F:
-                return nibble + 0x57; // 0x41('a') - 0x46('f')
-            default:
+        return switch (nibble) {
+            case 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 -> nibble + 0x30; // 0x30('0') - 0x39('9')
+            case 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F -> nibble + 0x57; // 0x41('a') - 0x46('f')
+            default -> {
                 die("illegal nibble: " + nibble);
-                return -1;
-        }
+                yield -1;
+            }
+        };
     }
 
     /**

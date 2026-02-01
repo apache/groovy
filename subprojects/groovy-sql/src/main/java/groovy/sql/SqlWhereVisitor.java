@@ -91,15 +91,11 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     }
 
     protected String tokenAsSql(Token token) {
-        switch (token.getType()) {
-            case Types.COMPARE_EQUAL:
-                return "=";
-            case Types.LOGICAL_AND:
-                return "and";
-            case Types.LOGICAL_OR:
-                return "or";
-            default:
-                return token.getText();
-        }
+        return switch (token.getType()) {
+            case Types.COMPARE_EQUAL -> "=";
+            case Types.LOGICAL_AND -> "and";
+            case Types.LOGICAL_OR -> "or";
+            default -> token.getText();
+        };
     }
 }

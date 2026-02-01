@@ -80,12 +80,10 @@ public class FinalVariableAnalyzer extends ClassCodeVisitorSupport {
         }
 
         public VariableState getNext() {
-            switch (this) {
-                case is_uninitialized:
-                    return is_final;
-                default:
-                    return is_var;
-            }
+            return switch (this) {
+                case is_uninitialized -> is_final;
+                default -> is_var;
+            };
         }
 
         public boolean isFinal() {

@@ -24,17 +24,12 @@ import java.util.function.Function;
 public class StandardXmlFilter implements Function<Character, Optional<String>> {
     @Override
     public Optional<String> apply(Character ch) {
-        String result = null;
-        switch (ch) {
-            case '&':
-                result = "&amp;";
-                break;
-            case '<':
-                result = "&lt;";
-                break;
-            case '>':
-                result = "&gt;";
-        }
+        String result = switch (ch) {
+            case '&' -> "&amp;";
+            case '<' -> "&lt;";
+            case '>' -> "&gt;";
+            default -> null;
+        };
         return Optional.ofNullable(result);
     }
 }

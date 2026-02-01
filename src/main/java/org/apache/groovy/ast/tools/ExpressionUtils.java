@@ -138,42 +138,20 @@ public final class ExpressionUtils {
                     Number left  = safeNumber((ConstantExpression) leftX);
                     Number right = safeNumber((ConstantExpression) rightX);
                     if (left == null || right == null) return null;
-                    Number result = null;
-                    switch (opType) {
-                      case PLUS:
-                        result = NumberMath.add(left, right);
-                        break;
-                      case MINUS:
-                        result = NumberMath.subtract(left, right);
-                        break;
-                      case MULTIPLY:
-                        result = NumberMath.multiply(left, right);
-                        break;
-                      case DIVIDE:
-                        result = NumberMath.divide(left, right);
-                        break;
-                      case LEFT_SHIFT:
-                        result = NumberMath.leftShift(left, right);
-                        break;
-                      case RIGHT_SHIFT:
-                        result = NumberMath.rightShift(left, right);
-                        break;
-                      case RIGHT_SHIFT_UNSIGNED:
-                        result = NumberMath.rightShiftUnsigned(left, right);
-                        break;
-                      case BITWISE_AND:
-                        result = NumberMath.and(left, right);
-                        break;
-                      case BITWISE_OR:
-                        result = NumberMath.or(left, right);
-                        break;
-                      case BITWISE_XOR:
-                        result = NumberMath.xor(left, right);
-                        break;
-                      case POWER:
-                        result = DefaultGroovyMethods.power(left, right);
-                        break;
-                    }
+                    Number result = switch (opType) {
+                        case PLUS -> NumberMath.add(left, right);
+                        case MINUS -> NumberMath.subtract(left, right);
+                        case MULTIPLY -> NumberMath.multiply(left, right);
+                        case DIVIDE -> NumberMath.divide(left, right);
+                        case LEFT_SHIFT -> NumberMath.leftShift(left, right);
+                        case RIGHT_SHIFT -> NumberMath.rightShift(left, right);
+                        case RIGHT_SHIFT_UNSIGNED -> NumberMath.rightShiftUnsigned(left, right);
+                        case BITWISE_AND -> NumberMath.and(left, right);
+                        case BITWISE_OR -> NumberMath.or(left, right);
+                        case BITWISE_XOR -> NumberMath.xor(left, right);
+                        case POWER -> DefaultGroovyMethods.power(left, right);
+                        default -> null;
+                    };
                     if (result != null) {
                         ConstantExpression constantExpression = transformNumberConstantExpression(be, wrapperType, result);
                         if (constantExpression != null) return constantExpression;

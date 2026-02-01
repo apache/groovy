@@ -268,16 +268,12 @@ public final class DateTimeExtensions {
         if (!self.getClass().equals(other.getClass())) {
             throw new GroovyRuntimeException("Temporal arguments must be of the same type.");
         }
-        switch ((ChronoUnit) defaultUnitFor(self)) {
-            case YEARS:
-                return DateTimeStaticExtensions.between(null, (Year) self, (Year) other);
-            case MONTHS:
-                return DateTimeStaticExtensions.between(null, (YearMonth) self, (YearMonth) other);
-            case DAYS:
-                return ChronoPeriod.between((ChronoLocalDate) self, (ChronoLocalDate) other);
-            default:
-                return Duration.between(self, other);
-        }
+        return switch ((ChronoUnit) defaultUnitFor(self)) {
+            case YEARS -> DateTimeStaticExtensions.between(null, (Year) self, (Year) other);
+            case MONTHS -> DateTimeStaticExtensions.between(null, (YearMonth) self, (YearMonth) other);
+            case DAYS -> ChronoPeriod.between((ChronoLocalDate) self, (ChronoLocalDate) other);
+            default -> Duration.between(self, other);
+        };
     }
 
     /* ******** java.time.temporal.TemporalAccessor extension methods ******** */

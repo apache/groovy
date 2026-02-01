@@ -476,27 +476,14 @@ public class Types {
                 break;
 
             case INFIX_OPERATOR:
-                switch (specific) {
-                    case DOT:
-                    case NAVIGATE:
-                    case LOGICAL_OR:
-                    case LOGICAL_AND:
-                    case BITWISE_OR:
-                    case BITWISE_AND:
-                    case BITWISE_XOR:
-                    case LEFT_SHIFT:
-                    case RIGHT_SHIFT:
-                    case RIGHT_SHIFT_UNSIGNED:
-                    case FIND_REGEX:
-                    case MATCH_REGEX:
-                    case DOT_DOT:
-                    case DOT_DOT_DOT:
-                    case KEYWORD_INSTANCEOF:
-                        return true;
-                }
-
-                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
-                        || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL) || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
+                return switch (specific) {
+                    case DOT, NAVIGATE, LOGICAL_OR, LOGICAL_AND, BITWISE_OR, BITWISE_AND, BITWISE_XOR, LEFT_SHIFT,
+                         RIGHT_SHIFT, RIGHT_SHIFT_UNSIGNED, FIND_REGEX, MATCH_REGEX, DOT_DOT, DOT_DOT_DOT,
+                         KEYWORD_INSTANCEOF -> true;
+                    default ->
+                        (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= ELVIS_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                            || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL) || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
+                };
 
             case PREFIX_OR_INFIX_OPERATOR:
                 switch (specific) {
@@ -670,45 +657,25 @@ public class Types {
 
             case UNSAFE_OVER_NEWLINES:
                 if (ofType(specific, SYMBOL)) {
-                    switch (specific) {
-                        case LEFT_CURLY_BRACE:
-                        case LEFT_PARENTHESIS:
-                        case LEFT_SQUARE_BRACKET:
-                        case PLUS:
-                        case PLUS_PLUS:
-                        case MINUS:
-                        case MINUS_MINUS:
-                        case REGEX_PATTERN:
-                        case NOT:
-                            return true;
-                    }
+                    return switch (specific) {
+                        case LEFT_CURLY_BRACE, LEFT_PARENTHESIS, LEFT_SQUARE_BRACKET, PLUS, PLUS_PLUS, MINUS,
+                             MINUS_MINUS, REGEX_PATTERN, NOT -> true;
+                        default -> false;
+                    };
 
-                    return false;
                 }
 
-                switch (specific) {
-                    case KEYWORD_INSTANCEOF:
-                    case GSTRING_EXPRESSION_START:
-                    case GSTRING_EXPRESSION_END:
-                    case GSTRING_END:
-                        return false;
-                }
-
-                return true;
+                return switch (specific) {
+                    case KEYWORD_INSTANCEOF, GSTRING_EXPRESSION_START, GSTRING_EXPRESSION_END, GSTRING_END -> false;
+                    default -> true;
+                };
 
             case PRECLUDES_CAST_OPERATOR:
-                switch (specific) {
-                    case PLUS:
-                    case MINUS:
-                    case PREFIX_MINUS:
-                    case PREFIX_MINUS_MINUS:
-                    case PREFIX_PLUS:
-                    case PREFIX_PLUS_PLUS:
-                    case LEFT_PARENTHESIS:
-                        return false;
-                }
-
-                return !ofType(specific, COMPLEX_EXPRESSION);
+                return switch (specific) {
+                    case PLUS, MINUS, PREFIX_MINUS, PREFIX_MINUS_MINUS, PREFIX_PLUS, PREFIX_PLUS_PLUS,
+                         LEFT_PARENTHESIS -> false;
+                    default -> !ofType(specific, COMPLEX_EXPRESSION);
+                };
 
 
             case OPERATOR_EXPRESSION:

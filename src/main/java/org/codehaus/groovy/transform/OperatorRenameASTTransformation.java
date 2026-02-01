@@ -146,61 +146,22 @@ public class OperatorRenameASTTransformation extends ClassCodeExpressionTransfor
     }
 
     static String getOperationName(final int op) {
-        switch (op) {
-            case COMPARE_TO:
-                return "compareTo";
-
-            case BITWISE_AND:
-            case BITWISE_AND_EQUAL:
-                return "and";
-
-            case BITWISE_OR:
-            case BITWISE_OR_EQUAL:
-                return "or";
-
-            case BITWISE_XOR:
-            case BITWISE_XOR_EQUAL:
-                return "xor";
-
-            case PLUS:
-            case PLUS_EQUAL:
-                return "plus";
-
-            case MINUS:
-            case MINUS_EQUAL:
-                return "minus";
-
-            case MULTIPLY:
-            case MULTIPLY_EQUAL:
-                return "multiply";
-
-            case DIVIDE:
-            case DIVIDE_EQUAL:
-                return "div";
-
-            case REMAINDER:
-            case REMAINDER_EQUAL:
-                return "remainder";
-
-            case POWER:
-            case POWER_EQUAL:
-                return "power";
-
-            case LEFT_SHIFT:
-            case LEFT_SHIFT_EQUAL:
-                return "leftShift";
-
-            case RIGHT_SHIFT:
-            case RIGHT_SHIFT_EQUAL:
-                return "rightShift";
-
-            case RIGHT_SHIFT_UNSIGNED:
-            case RIGHT_SHIFT_UNSIGNED_EQUAL:
-                return "rightShiftUnsigned";
-
-            default:
-                return null;
-        }
+        return switch (op) {
+            case COMPARE_TO -> "compareTo";
+            case BITWISE_AND, BITWISE_AND_EQUAL -> "and";
+            case BITWISE_OR, BITWISE_OR_EQUAL -> "or";
+            case BITWISE_XOR, BITWISE_XOR_EQUAL -> "xor";
+            case PLUS, PLUS_EQUAL -> "plus";
+            case MINUS, MINUS_EQUAL -> "minus";
+            case MULTIPLY, MULTIPLY_EQUAL -> "multiply";
+            case DIVIDE, DIVIDE_EQUAL -> "div";
+            case REMAINDER, REMAINDER_EQUAL -> "remainder";
+            case POWER, POWER_EQUAL -> "power";
+            case LEFT_SHIFT, LEFT_SHIFT_EQUAL -> "leftShift";
+            case RIGHT_SHIFT, RIGHT_SHIFT_EQUAL -> "rightShift";
+            case RIGHT_SHIFT_UNSIGNED, RIGHT_SHIFT_UNSIGNED_EQUAL -> "rightShiftUnsigned";
+            default -> null;
+        };
     }
 
 }

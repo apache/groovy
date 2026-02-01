@@ -173,32 +173,20 @@ public class AnnotationNode extends ASTNode {
     }
 
     public static String targetToName(int target) {
-        switch(target) {
-            case TYPE_TARGET:
-                return "TYPE";
-            case CONSTRUCTOR_TARGET:
-                return "CONSTRUCTOR";
-            case METHOD_TARGET:
-                return "METHOD";
-            case FIELD_TARGET:
-                return "FIELD";
-            case PARAMETER_TARGET:
-                return "PARAMETER";
-            case LOCAL_VARIABLE_TARGET:
-                return "LOCAL_VARIABLE";
-            case ANNOTATION_TARGET:
-                return "ANNOTATION";
-            case PACKAGE_TARGET:
-                return "PACKAGE";
-            case TYPE_PARAMETER_TARGET:
-                return "TYPE_PARAMETER";
-            case TYPE_USE_TARGET:
-                return "TYPE_USE";
-            case RECORD_COMPONENT_TARGET:
-                return "RECORD_COMPONENT";
-            default:
-                return "unknown target";
-        }
+        return switch (target) {
+            case TYPE_TARGET -> "TYPE";
+            case CONSTRUCTOR_TARGET -> "CONSTRUCTOR";
+            case METHOD_TARGET -> "METHOD";
+            case FIELD_TARGET -> "FIELD";
+            case PARAMETER_TARGET -> "PARAMETER";
+            case LOCAL_VARIABLE_TARGET -> "LOCAL_VARIABLE";
+            case ANNOTATION_TARGET -> "ANNOTATION";
+            case PACKAGE_TARGET -> "PACKAGE";
+            case TYPE_PARAMETER_TARGET -> "TYPE_PARAMETER";
+            case TYPE_USE_TARGET -> "TYPE_USE";
+            case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
+            default -> "unknown target";
+        };
     }
 
     @Override

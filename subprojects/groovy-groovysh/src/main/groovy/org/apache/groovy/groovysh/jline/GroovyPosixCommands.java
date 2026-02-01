@@ -399,26 +399,12 @@ public class GroovyPosixCommands extends PosixCommands {
         Map<String, String> colorMap = getLsColorMap(context);
 
         String color = opt.isSet("color") ? opt.get("color") : "auto";
-        boolean colored;
-        switch (color) {
-            case "always":
-            case "yes":
-            case "force":
-                colored = true;
-                break;
-            case "never":
-            case "no":
-            case "none":
-                colored = false;
-                break;
-            case "auto":
-            case "tty":
-            case "if-tty":
-                colored = context.isTty();
-                break;
-            default:
-                throw new IllegalArgumentException("invalid argument '" + color + "' for '--color'");
-        }
+        boolean colored = switch (color) {
+            case "always", "yes", "force" -> true;
+            case "never", "no", "none" -> false;
+            case "auto", "tty", "if-tty" -> context.isTty();
+            default -> throw new IllegalArgumentException("invalid argument '" + color + "' for '--color'");
+        };
         Map<String, String> colors =
             colored ? (colorMap != null ? colorMap : getLsColorMap(DEFAULT_LS_COLORS)) : Collections.emptyMap();
 
@@ -772,26 +758,12 @@ public class GroovyPosixCommands extends PosixCommands {
         boolean invert = opt.isSet("invert-match");
         boolean lineNumber = opt.isSet("line-number");
         String color = opt.isSet("color") ? opt.get("color") : "auto";
-        boolean colored;
-        switch (color) {
-            case "always":
-            case "yes":
-            case "force":
-                colored = true;
-                break;
-            case "never":
-            case "no":
-            case "none":
-                colored = false;
-                break;
-            case "auto":
-            case "tty":
-            case "if-tty":
-                colored = context.isTty();
-                break;
-            default:
-                throw new IllegalArgumentException("invalid argument '" + color + "' for '--color'");
-        }
+        boolean colored = switch (color) {
+            case "always", "yes", "force" -> true;
+            case "never", "no", "none" -> false;
+            case "auto", "tty", "if-tty" -> context.isTty();
+            default -> throw new IllegalArgumentException("invalid argument '" + color + "' for '--color'");
+        };
         Map<String, String> colors =
             colored ? (colorMap != null ? colorMap : getColorMap(DEFAULT_GREP_COLORS)) : Collections.emptyMap();
 

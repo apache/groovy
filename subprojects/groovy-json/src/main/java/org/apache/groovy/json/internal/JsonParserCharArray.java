@@ -169,51 +169,18 @@ public class JsonParserCharArray extends BaseJsonParser {
         Object value = null;
         skipWhiteSpace();
 
-        switch (__currentChar) {
-            case '"':
-                value = decodeString();
-                break;
-
-            case 't':
-                value = decodeTrue();
-                break;
-
-            case 'f':
-                value = decodeFalse();
-                break;
-
-            case 'n':
-                value = decodeNull();
-                break;
-
-            case '[':
-                value = decodeJsonArray();
-                break;
-
-            case '{':
-                value = decodeJsonObject();
-                break;
-
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                value = decodeNumber();
-                break;
-            case '-':
-                value = decodeNumber();
-                break;
-
-            default:
-                throw new JsonException(exceptionDetails("Unable to determine the " +
-                        "current character, it is not a string, number, array, or object"));
-        }
+        value = switch (__currentChar) {
+            case '"' -> decodeString();
+            case 't' -> decodeTrue();
+            case 'f' -> decodeFalse();
+            case 'n' -> decodeNull();
+            case '[' -> decodeJsonArray();
+            case '{' -> decodeJsonObject();
+            case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> decodeNumber();
+            case '-' -> decodeNumber();
+            default -> throw new JsonException(exceptionDetails("Unable to determine the " +
+                "current character, it is not a string, number, array, or object"));
+        };
 
 
 

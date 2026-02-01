@@ -484,19 +484,11 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static boolean isBoolIntrinsicOp(final int op) {
-        switch (op) {
-            case LOGICAL_AND:
-            case LOGICAL_OR:
-            case COMPARE_NOT_IDENTICAL:
-            case COMPARE_IDENTICAL:
-            case MATCH_REGEX:
-            case KEYWORD_INSTANCEOF:
-            case COMPARE_NOT_INSTANCEOF:
-            case IMPLIES:
-                return true;
-            default:
-                return false;
-        }
+        return switch (op) {
+            case LOGICAL_AND, LOGICAL_OR, COMPARE_NOT_IDENTICAL, COMPARE_IDENTICAL, MATCH_REGEX, KEYWORD_INSTANCEOF,
+                 COMPARE_NOT_INSTANCEOF, IMPLIES -> true;
+            default -> false;
+        };
     }
 
     static boolean isPowerOperator(final int op) {
@@ -504,86 +496,32 @@ public abstract class StaticTypeCheckingSupport {
     }
 
     static String getOperationName(final int op) {
-        switch (op) {
-            case COMPARE_EQUAL:
-            case COMPARE_NOT_EQUAL:
+        return switch (op) {
+            case COMPARE_EQUAL, COMPARE_NOT_EQUAL ->
                 // this is only correct in this specific context; normally
                 // we would have to compile against compareTo if available
                 // but since we don't compile here, this one is enough
-                return "equals";
-
-            case COMPARE_TO:
-            case COMPARE_LESS_THAN:
-            case COMPARE_LESS_THAN_EQUAL:
-            case COMPARE_GREATER_THAN:
-            case COMPARE_GREATER_THAN_EQUAL:
-                return "compareTo";
-
-            case BITWISE_AND:
-            case BITWISE_AND_EQUAL:
-                return "and";
-
-            case BITWISE_OR:
-            case BITWISE_OR_EQUAL:
-                return "or";
-
-            case BITWISE_XOR:
-            case BITWISE_XOR_EQUAL:
-                return "xor";
-
-            case PLUS:
-            case PLUS_EQUAL:
-                return "plus";
-
-            case MINUS:
-            case MINUS_EQUAL:
-                return "minus";
-
-            case MULTIPLY:
-            case MULTIPLY_EQUAL:
-                return "multiply";
-
-            case DIVIDE:
-            case DIVIDE_EQUAL:
-                return "div";
-
-            case INTDIV:
-            case INTDIV_EQUAL:
-                return "intdiv";
-
-            case MOD:
-            case MOD_EQUAL:
-                return "mod";
-
-            case REMAINDER:
-            case REMAINDER_EQUAL:
-                return "remainder";
-
-            case POWER:
-            case POWER_EQUAL:
-                return "power";
-
-            case LEFT_SHIFT:
-            case LEFT_SHIFT_EQUAL:
-                return "leftShift";
-
-            case RIGHT_SHIFT:
-            case RIGHT_SHIFT_EQUAL:
-                return "rightShift";
-
-            case RIGHT_SHIFT_UNSIGNED:
-            case RIGHT_SHIFT_UNSIGNED_EQUAL:
-                return "rightShiftUnsigned";
-
-            case KEYWORD_IN:
-                return "isCase";
-
-            case COMPARE_NOT_IN:
-                return "isNotCase";
-
-            default:
-                return null;
-        }
+                "equals";
+            case COMPARE_TO, COMPARE_LESS_THAN, COMPARE_LESS_THAN_EQUAL, COMPARE_GREATER_THAN,
+                 COMPARE_GREATER_THAN_EQUAL -> "compareTo";
+            case BITWISE_AND, BITWISE_AND_EQUAL -> "and";
+            case BITWISE_OR, BITWISE_OR_EQUAL -> "or";
+            case BITWISE_XOR, BITWISE_XOR_EQUAL -> "xor";
+            case PLUS, PLUS_EQUAL -> "plus";
+            case MINUS, MINUS_EQUAL -> "minus";
+            case MULTIPLY, MULTIPLY_EQUAL -> "multiply";
+            case DIVIDE, DIVIDE_EQUAL -> "div";
+            case INTDIV, INTDIV_EQUAL -> "intdiv";
+            case MOD, MOD_EQUAL -> "mod";
+            case REMAINDER, REMAINDER_EQUAL -> "remainder";
+            case POWER, POWER_EQUAL -> "power";
+            case LEFT_SHIFT, LEFT_SHIFT_EQUAL -> "leftShift";
+            case RIGHT_SHIFT, RIGHT_SHIFT_EQUAL -> "rightShift";
+            case RIGHT_SHIFT_UNSIGNED, RIGHT_SHIFT_UNSIGNED_EQUAL -> "rightShiftUnsigned";
+            case KEYWORD_IN -> "isCase";
+            case COMPARE_NOT_IN -> "isNotCase";
+            default -> null;
+        };
     }
 
     static boolean isShiftOperation(final String name) {
@@ -596,31 +534,17 @@ public abstract class StaticTypeCheckingSupport {
      * their variants with equals.
      */
     static boolean isOperationInGroup(final int op) {
-        switch (op) {
-            case PLUS:
-            case PLUS_EQUAL:
-            case MINUS:
-            case MINUS_EQUAL:
-            case MULTIPLY:
-            case MULTIPLY_EQUAL:
-                return true;
-            default:
-                return false;
-        }
+        return switch (op) {
+            case PLUS, PLUS_EQUAL, MINUS, MINUS_EQUAL, MULTIPLY, MULTIPLY_EQUAL -> true;
+            default -> false;
+        };
     }
 
     static boolean isBitOperator(final int op) {
-        switch (op) {
-            case BITWISE_OR_EQUAL:
-            case BITWISE_OR:
-            case BITWISE_AND_EQUAL:
-            case BITWISE_AND:
-            case BITWISE_XOR_EQUAL:
-            case BITWISE_XOR:
-                return true;
-            default:
-                return false;
-        }
+        return switch (op) {
+            case BITWISE_OR_EQUAL, BITWISE_OR, BITWISE_AND_EQUAL, BITWISE_AND, BITWISE_XOR_EQUAL, BITWISE_XOR -> true;
+            default -> false;
+        };
     }
 
     public static boolean isAssignment(final int op) {
@@ -788,45 +712,31 @@ public abstract class StaticTypeCheckingSupport {
             if (!(value instanceof Number number)) return true; // null or ...
             switch (leftIndex) {
               case 0: // byte
-                switch (rightIndex) {
-                  case 1:
-                    return Short  .compare(number.byteValue(), number. shortValue()) != 0;
-                  case 2:
-                    return Integer.compare(number.byteValue(), number.   intValue()) != 0;
-                  case 3:
-                    return Long   .compare(number.byteValue(), number.  longValue()) != 0;
-                  case 4:
-                    return Float  .compare(number.byteValue(), number. floatValue()) != 0;
-                  default:
-                    return Double .compare(number.byteValue(), number.doubleValue()) != 0;
-                }
+                  return switch (rightIndex) {
+                      case 1 -> Short.compare(number.byteValue(), number.shortValue()) != 0;
+                      case 2 -> Integer.compare(number.byteValue(), number.intValue()) != 0;
+                      case 3 -> Long.compare(number.byteValue(), number.longValue()) != 0;
+                      case 4 -> Float.compare(number.byteValue(), number.floatValue()) != 0;
+                      default -> Double.compare(number.byteValue(), number.doubleValue()) != 0;
+                  };
               case 1: // short
-                switch (rightIndex) {
-                  case 2:
-                    return Integer.compare(number.shortValue(), number.   intValue()) != 0;
-                  case 3:
-                    return Long   .compare(number.shortValue(), number.  longValue()) != 0;
-                  case 4:
-                    return Float  .compare(number.shortValue(), number. floatValue()) != 0;
-                  default:
-                    return Double .compare(number.shortValue(), number.doubleValue()) != 0;
-                }
+                  return switch (rightIndex) {
+                      case 2 -> Integer.compare(number.shortValue(), number.intValue()) != 0;
+                      case 3 -> Long.compare(number.shortValue(), number.longValue()) != 0;
+                      case 4 -> Float.compare(number.shortValue(), number.floatValue()) != 0;
+                      default -> Double.compare(number.shortValue(), number.doubleValue()) != 0;
+                  };
               case 2: // int
-                switch (rightIndex) {
-                  case 3:
-                    return Long  .compare(number.intValue(), number.  longValue()) != 0;
-                  case 4:
-                    return Float .compare(number.intValue(), number. floatValue()) != 0;
-                  default:
-                    return Double.compare(number.intValue(), number.doubleValue()) != 0;
-                }
+                  return switch (rightIndex) {
+                      case 3 -> Long.compare(number.intValue(), number.longValue()) != 0;
+                      case 4 -> Float.compare(number.intValue(), number.floatValue()) != 0;
+                      default -> Double.compare(number.intValue(), number.doubleValue()) != 0;
+                  };
               case 3: // long
-                switch (rightIndex) {
-                  case 4:
-                    return Float .compare(number.longValue(), number. floatValue()) != 0;
-                  default:
-                    return Double.compare(number.longValue(), number.doubleValue()) != 0;
-                }
+                  return switch (rightIndex) {
+                      case 4 -> Float.compare(number.longValue(), number.floatValue()) != 0;
+                      default -> Double.compare(number.longValue(), number.doubleValue()) != 0;
+                  };
               case 4: // float
                 return Double.compare(number.floatValue(), number.doubleValue()) != 0;
               default: // double

@@ -133,14 +133,11 @@ public class MethodClosure extends Closure {
 
     @Override
     public Object getProperty(final String property) {
-        switch (property) {
-          case "method":
-            return getMethod();
-          case ANY_INSTANCE_METHOD_EXISTS:
-            return anyInstanceMethodExists;
-          default:
-            return super.getProperty(property);
-        }
+        return switch (property) {
+            case "method" -> getMethod();
+            case ANY_INSTANCE_METHOD_EXISTS -> anyInstanceMethodExists;
+            default -> super.getProperty(property);
+        };
     }
 
     // TODO: This method seems to be never called..., because MetaClassImpl.invokeMethod will intercept calls and return the result.
