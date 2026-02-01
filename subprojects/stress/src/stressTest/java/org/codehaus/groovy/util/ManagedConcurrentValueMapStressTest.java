@@ -63,9 +63,9 @@ public class ManagedConcurrentValueMapStressTest {
         map.put("keyLast", new Object());
 
         // No size() method, so let's just check a few keys we that should have been collected
-        assertEquals(null, map.get("key77"));
-        assertEquals(null, map.get("key1337"));
-        assertEquals(null, map.get("key3559"));
+        assertNull(map.get("key77"));
+        assertNull(map.get("key1337"));
+        assertNull(map.get("key3559"));
 
         assertEquals(1, size(map));
     }
