@@ -1,0 +1,431 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+package org.apache.groovy.json.internal;
+
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Date;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for CharSequenceValue class.
+ */
+class CharSequenceValueJUnit5Test {
+
+    // Constructor tests
+    @Test
+    void testConstructorWithChop() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(true, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals("hello", value.toString());
+    }
+
+    @Test
+    void testConstructorWithoutChop() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals("hello", value.toString());
+    }
+
+    @Test
+    void testConstructorPartialRange() {
+        char[] buffer = "xxxhelloyyy".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 3, 8, buffer, false, false);
+        assertEquals("hello", value.toString());
+    }
+
+    @Test
+    void testConstructorPartialRangeWithChop() {
+        char[] buffer = "xxxhelloyyy".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(true, Type.STRING, 3, 8, buffer, false, false);
+        assertEquals("hello", value.toString());
+    }
+
+    // CharSequence interface tests
+    @Test
+    void testLength() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(true, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals(5, value.length());
+    }
+
+    @Test
+    void testCharAt() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(true, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals('h', value.charAt(0));
+        assertEquals('e', value.charAt(1));
+        assertEquals('o', value.charAt(4));
+    }
+
+    @Test
+    void testSubSequence() {
+        char[] buffer = "hello world".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        CharSequence sub = value.subSequence(0, 5);
+        assertEquals("hello", sub.toString());
+    }
+
+    // stringValue tests
+    @Test
+    void testStringValueSimple() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals("hello", value.stringValue());
+    }
+
+    @Test
+    void testStringValueWithDecodeStrings() {
+        char[] buffer = "hello\\nworld".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, true, false);
+        // When decodeStrings is true, it should decode escape sequences
+        assertNotNull(value.stringValue());
+    }
+
+    @Test
+    void testStringValueEncoded() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals("hello", value.stringValueEncoded());
+    }
+
+    // intValue tests
+    @Test
+    void testIntValuePositive() {
+        char[] buffer = "42".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(42, value.intValue());
+    }
+
+    @Test
+    void testIntValueNegative() {
+        char[] buffer = "-42".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(-42, value.intValue());
+    }
+
+    @Test
+    void testIntValueZero() {
+        char[] buffer = "0".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(0, value.intValue());
+    }
+
+    // longValue tests
+    @Test
+    void testLongValueLargeNumber() {
+        char[] buffer = "9876543210".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(9876543210L, value.longValue());
+    }
+
+    @Test
+    void testLongValueSmallNumber() {
+        char[] buffer = "100".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(100L, value.longValue());
+    }
+
+    // doubleValue tests
+    @Test
+    void testDoubleValue() {
+        char[] buffer = "3.14159".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.DOUBLE, 0, buffer.length, buffer, false, false);
+        assertEquals(3.14159, value.doubleValue(), 0.00001);
+    }
+
+    @Test
+    void testDoubleValueNegative() {
+        char[] buffer = "-2.5".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.DOUBLE, 0, buffer.length, buffer, false, false);
+        assertEquals(-2.5, value.doubleValue(), 0.0001);
+    }
+
+    // floatValue tests
+    @Test
+    void testFloatValue() {
+        char[] buffer = "3.14".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.DOUBLE, 0, buffer.length, buffer, false, false);
+        assertEquals(3.14f, value.floatValue(), 0.01f);
+    }
+
+    // byteValue tests
+    @Test
+    void testByteValue() {
+        char[] buffer = "100".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals((byte) 100, value.byteValue());
+    }
+
+    // shortValue tests
+    @Test
+    void testShortValue() {
+        char[] buffer = "1000".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals((short) 1000, value.shortValue());
+    }
+
+    // charValue tests
+    @Test
+    void testCharValue() {
+        char[] buffer = "ABC".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals('A', value.charValue());
+    }
+
+    // booleanValue tests
+    @Test
+    void testBooleanValueTrue() {
+        char[] buffer = "true".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertTrue(value.booleanValue());
+    }
+
+    @Test
+    void testBooleanValueFalse() {
+        char[] buffer = "false".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertFalse(value.booleanValue());
+    }
+
+    @Test
+    void testBooleanValueOther() {
+        char[] buffer = "something".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertFalse(value.booleanValue()); // parseBoolean returns false for non-"true" strings
+    }
+
+    // bigDecimalValue tests
+    @Test
+    void testBigDecimalValue() {
+        char[] buffer = "123.456".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.DOUBLE, 0, buffer.length, buffer, false, false);
+        assertEquals(new BigDecimal("123.456"), value.bigDecimalValue());
+    }
+
+    // bigIntegerValue tests
+    @Test
+    void testBigIntegerValue() {
+        char[] buffer = "123456789012345678901234567890".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(new BigInteger("123456789012345678901234567890"), value.bigIntegerValue());
+    }
+
+    // toValue tests
+    @Test
+    void testToValueInteger() {
+        char[] buffer = "42".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(42, value.toValue());
+    }
+
+    @Test
+    void testToValueLong() {
+        char[] buffer = "9876543210".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertEquals(9876543210L, value.toValue());
+    }
+
+    @Test
+    void testToValueDouble() {
+        char[] buffer = "3.14".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.DOUBLE, 0, buffer.length, buffer, false, false);
+        assertEquals(3.14, value.toValue());
+    }
+
+    @Test
+    void testToValueString() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals("hello", value.toValue());
+    }
+
+    @Test
+    void testToValueCached() {
+        char[] buffer = "42".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        Object first = value.toValue();
+        Object second = value.toValue();
+        assertSame(first, second);
+    }
+
+    // isContainer test
+    @Test
+    void testIsContainer() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertFalse(value.isContainer());
+    }
+
+    // toEnum tests
+    @Test
+    void testToEnumFromString() {
+        char[] buffer = "VALUE2".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        TestEnum result = value.toEnum(TestEnum.class);
+        assertEquals(TestEnum.VALUE2, result);
+    }
+
+    @Test
+    void testToEnumFromInteger() {
+        char[] buffer = "1".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        TestEnum result = value.toEnum(TestEnum.class);
+        assertEquals(TestEnum.VALUE2, result);
+    }
+
+    @Test
+    void testToEnumStaticFromString() {
+        assertEquals(TestEnum.VALUE1, CharSequenceValue.toEnum(TestEnum.class, "VALUE1"));
+        assertEquals(TestEnum.VALUE2, CharSequenceValue.toEnum(TestEnum.class, "VALUE2"));
+    }
+
+    @Test
+    void testToEnumStaticFromStringWithHyphens() {
+        // Test conversion of hyphenated names
+        assertEquals(TestEnumWithHyphens.SOME_VALUE, CharSequenceValue.toEnum(TestEnumWithHyphens.class, "some-value"));
+    }
+
+    @Test
+    void testToEnumStaticFromOrdinal() {
+        assertEquals(TestEnum.VALUE1, CharSequenceValue.toEnum(TestEnum.class, 0));
+        assertEquals(TestEnum.VALUE2, CharSequenceValue.toEnum(TestEnum.class, 1));
+    }
+
+    // chop tests
+    @Test
+    void testChop() {
+        char[] buffer = "xxxhelloyyy".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 3, 8, buffer, false, false);
+        value.chop();
+        assertEquals("hello", value.toString());
+    }
+
+    @Test
+    void testChopMultipleTimes() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        value.chop();
+        value.chop(); // Should be idempotent
+        assertEquals("hello", value.toString());
+    }
+
+    @Test
+    void testChopAlreadyChopped() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(true, Type.STRING, 0, buffer.length, buffer, false, false);
+        value.chop(); // Already chopped by constructor
+        assertEquals("hello", value.toString());
+    }
+
+    // equals tests
+    @Test
+    void testEqualsSameInstance() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals(value, value);
+    }
+
+    @Test
+    void testEqualsSameValues() {
+        char[] buffer1 = "hello".toCharArray();
+        char[] buffer2 = "hello".toCharArray();
+        CharSequenceValue value1 = new CharSequenceValue(false, Type.STRING, 0, buffer1.length, buffer1, false, false);
+        CharSequenceValue value2 = new CharSequenceValue(false, Type.STRING, 0, buffer2.length, buffer2, false, false);
+        assertEquals(value1, value2);
+    }
+
+    @Test
+    void testEqualsDifferentValues() {
+        char[] buffer1 = "hello".toCharArray();
+        char[] buffer2 = "world".toCharArray();
+        CharSequenceValue value1 = new CharSequenceValue(false, Type.STRING, 0, buffer1.length, buffer1, false, false);
+        CharSequenceValue value2 = new CharSequenceValue(false, Type.STRING, 0, buffer2.length, buffer2, false, false);
+        assertNotEquals(value1, value2);
+    }
+
+    @Test
+    void testEqualsDifferentTypes() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value1 = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        CharSequenceValue value2 = new CharSequenceValue(false, Type.INTEGER, 0, buffer.length, buffer, false, false);
+        assertNotEquals(value1, value2);
+    }
+
+    @Test
+    void testEqualsDifferentEndIndex() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value1 = new CharSequenceValue(false, Type.STRING, 0, 3, buffer, false, false);
+        CharSequenceValue value2 = new CharSequenceValue(false, Type.STRING, 0, 5, buffer, false, false);
+        assertNotEquals(value1, value2);
+    }
+
+    @Test
+    void testEqualsNotValue() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertNotEquals(value, "hello");
+    }
+
+    // hashCode tests
+    @Test
+    void testHashCodeConsistent() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 0, buffer.length, buffer, false, false);
+        int hash1 = value.hashCode();
+        int hash2 = value.hashCode();
+        assertEquals(hash1, hash2);
+    }
+
+    @Test
+    void testHashCodeEqualObjects() {
+        char[] buffer1 = "hello".toCharArray();
+        char[] buffer2 = "hello".toCharArray();
+        CharSequenceValue value1 = new CharSequenceValue(false, Type.STRING, 0, buffer1.length, buffer1, false, false);
+        CharSequenceValue value2 = new CharSequenceValue(false, Type.STRING, 0, buffer2.length, buffer2, false, false);
+        assertEquals(value1.hashCode(), value2.hashCode());
+    }
+
+    // toString tests
+    @Test
+    void testToStringFullBuffer() {
+        char[] buffer = "hello".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(true, Type.STRING, 0, buffer.length, buffer, false, false);
+        assertEquals("hello", value.toString());
+    }
+
+    @Test
+    void testToStringPartialBuffer() {
+        char[] buffer = "xxxhelloyyy".toCharArray();
+        CharSequenceValue value = new CharSequenceValue(false, Type.STRING, 3, 8, buffer, false, false);
+        assertEquals("hello", value.toString());
+    }
+
+    // Test enums
+    enum TestEnum {
+        VALUE1, VALUE2, VALUE3
+    }
+
+    enum TestEnumWithHyphens {
+        SOME_VALUE, ANOTHER_VALUE
+    }
+}
