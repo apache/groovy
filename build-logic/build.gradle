@@ -34,7 +34,7 @@ dependencies {
     implementation 'com.github.spotbugs.snom:spotbugs-gradle-plugin:6.2.4'
     implementation 'me.champeau.jmh:jmh-gradle-plugin:0.7.2'
     implementation 'org.cyclonedx:cyclonedx-gradle-plugin:1.10.0'
-    implementation 'org.apache.maven:maven-core:3.9.11'
+    implementation 'org.apache.maven:maven-core:3.9.12'
 }
 
 tasks.withType(Jar).configureEach {
