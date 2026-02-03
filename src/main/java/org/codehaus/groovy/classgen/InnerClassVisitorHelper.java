@@ -97,7 +97,7 @@ public abstract class InnerClassVisitorHelper extends ClassCodeVisitorSupport {
 
     protected static boolean shouldHandleImplicitThisForInnerClass(final ClassNode cn) {
         final int explicitOrImplicitStatic = Opcodes.ACC_ENUM | Opcodes.ACC_INTERFACE | Opcodes.ACC_RECORD | Opcodes.ACC_STATIC;
-        return (cn.getModifiers() & explicitOrImplicitStatic) == 0 && (cn instanceof InnerClassNode && !((InnerClassNode) cn).isAnonymous())
+        return (cn.getModifiers() & explicitOrImplicitStatic) == 0 && (cn instanceof InnerClassNode inner && !inner.isAnonymous())
                 && cn.getAnnotations().stream().noneMatch(aNode -> "groovy.transform.RecordType".equals(aNode.getClassNode().getName())); // GROOVY-11600
     }
 }

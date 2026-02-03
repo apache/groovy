@@ -659,13 +659,9 @@ class NioExtensionsTest extends Specification {
         def writable = path.filterLine { it.startsWith('a') || it.startsWith('g') || it.startsWith('d') }
         def sw = new StringWriter()
         writable.writeTo(sw)
-        def result = sw.toString()
 
         then:
-        result.contains('alpha')
-        result.contains('gamma')
-        result.contains('delta')
-        !result.contains('beta')
+        sw.toString() == ['alpha','gamma','delta',''].join(System.lineSeparator())
     }
 
     def testFilterLineWithCharset() {
@@ -679,7 +675,7 @@ class NioExtensionsTest extends Specification {
         writable.writeTo(sw)
 
         then:
-        sw.toString().trim() == 'alpha\ngamma'
+        sw.toString() == ['alpha','gamma',''].join(System.lineSeparator())
     }
 
     def testFilterLineToWriter() {
@@ -692,7 +688,7 @@ class NioExtensionsTest extends Specification {
         path.filterLine(sw) { it.contains('2') || it.contains('4') }
 
         then:
-        sw.toString().trim() == 'line2\nline4'
+        sw.toString() == ['line2','line4',''].join(System.lineSeparator())
     }
 
     def testCreateParentDirectories() {

@@ -488,47 +488,46 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
      * @see <a href="https://docs.groovy-lang.org/latest/html/documentation/#_a_dsl_for_type_checking">Groovy Language Documentation</a>
      */
     public abstract static class TypeCheckingDSL extends Script {
+
         private GroovyTypeCheckingExtensionSupport extension;
 
         @Override
-        public Object getProperty(final String property) {
+        public Object getProperty(final String name) {
             try {
-                return InvokerHelper.getProperty(extension, property);
+                return InvokerHelper.getProperty(extension, name);
             } catch (Exception e) {
-                return super.getProperty(property);
+                return super.getProperty(name);
             }
         }
 
         @Override
-        public void setProperty(final String property, final Object newValue) {
+        public void setProperty(final String name, final Object value) {
             try {
-                InvokerHelper.setProperty(extension, property, newValue);
+                InvokerHelper.setProperty(extension, name, value);
             } catch (Exception e) {
-                super.setProperty(property, newValue);
+                super.setProperty(name, value);
             }
         }
 
-        @Override
-        public Object invokeMethod(final String name, final Object args) {
-            if (name.startsWith("is") && name.endsWith("Expression") && args instanceof Object[] && ((Object[]) args).length == 1) {
-                String type = name.substring(2);
-                Object target = ((Object[]) args)[0];
+        public Object methodMissing(final String name, final Object args) {
+            if (name.startsWith("is") && name.endsWith("Expression") && args instanceof Object[] array && array.length == 1) {
+                Object target = array[0];
                 if (target == null) return Boolean.FALSE;
                 try {
-                    Class<?> typeClass = Class.forName("org.codehaus.groovy.ast.expr." + type);
-                    return typeClass.isAssignableFrom(target.getClass());
+                    Class<?> type = Class.forName("org.codehaus.groovy.ast.expr." + name.substring(2));
+                    return type.isAssignableFrom(target.getClass());
                 } catch (ClassNotFoundException e) {
                     return Boolean.FALSE;
                 }
             }
 
-            if (args instanceof Object[] argsArray && ((Object[]) args).length == 1 && ((Object[]) args)[0] instanceof Closure) {
+            if (args instanceof Object[] array && array.length == 1 && array[0] instanceof Closure closure) {
                 String methodName = METHOD_ALIASES.get(name);
                 if (methodName == null) {
                     return InvokerHelper.invokeMethod(extension, name, args);
                 }
-                List<Closure> closures = extension.eventHandlers.computeIfAbsent(methodName, k -> new LinkedList<Closure>());
-                closures.add((Closure) argsArray[0]);
+                var closures = extension.eventHandlers.computeIfAbsent(methodName, k -> new LinkedList<>());
+                closures.add(closure);
                 return null;
             } else {
                 return InvokerHelper.invokeMethod(extension, name, args);

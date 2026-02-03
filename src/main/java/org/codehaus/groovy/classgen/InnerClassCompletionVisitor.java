@@ -18,56 +18,31 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.transform.CompileStatic;
-import groovy.transform.stc.POJO;
-import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.TryCatchStatement;
-import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.MethodVisitor;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
-import java.util.function.BiConsumer;
 
-import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
-import static org.apache.groovy.ast.tools.ClassNodeUtils.getMethod;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getCodeAsBlock;
-import static org.codehaus.groovy.ast.ClassHelper.CLOSURE_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.catchS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -75,12 +50,6 @@ import static org.objectweb.asm.Opcodes.ACC_MANDATED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
-import static org.objectweb.asm.Opcodes.ACONST_NULL;
-import static org.objectweb.asm.Opcodes.ALOAD;
-import static org.objectweb.asm.Opcodes.ARETURN;
-import static org.objectweb.asm.Opcodes.CHECKCAST;
-import static org.objectweb.asm.Opcodes.GETFIELD;
-import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 
 public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
@@ -104,25 +73,13 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
 
         if (node.isEnum() || node.isInterface() || isTrait(node.getOuterClass())) return;
 
-        // if the class has an inner class, add methods to support private member access
-        if (node.getInnerClasses().hasNext()) {
-            addDispatcherMethods(node);
-        }
-
         if (node instanceof InnerClassNode innerClass) {
-            thisField = node.getField("this$0");
+            thisField = node.getDeclaredField("this$0");
             if (innerClass.getVariableScope() == null && node.getDeclaredConstructors().isEmpty()) {
                 // add empty default constructor
                 addGeneratedConstructor(innerClass, ACC_PUBLIC, Parameter.EMPTY_ARRAY, null, null);
             }
-
             super.visitClass(node);
-
-            boolean innerPojo = hasAnnotation(node, new ClassNode(POJO.class))
-                    && hasAnnotation(node, new ClassNode(CompileStatic.class));
-            if (!innerPojo) {
-                addMopMethods(innerClass);
-            }
         }
     }
 
@@ -156,227 +113,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         }
     }
 
-    private static String getTypeDescriptor(ClassNode node, boolean isStatic) {
-        return BytecodeHelper.getTypeDescription(getClassNode(node, isStatic));
-    }
-
-    private static String getInternalName(ClassNode node, boolean isStatic) {
-        return BytecodeHelper.getClassInternalName(getClassNode(node, isStatic));
-    }
-
-    private static void addDispatcherMethods(ClassNode classNode) {
-        final int objectDistance = getObjectDistance(classNode);
-
-        // since we added an anonymous inner class we should also
-        // add the dispatcher methods
-
-        // add method dispatcher
-        BlockStatement block = new BlockStatement();
-        MethodNode method = classNode.addSyntheticMethod(
-                "this$dist$invoke$" + objectDistance,
-                ACC_PUBLIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
-                ClassNode.EMPTY_ARRAY,
-                block
-        );
-        setMethodDispatcherCode(block, VariableExpression.THIS_EXPRESSION, method.getParameters());
-
-        // add property setter
-        block = new BlockStatement();
-        method = classNode.addSyntheticMethod(
-                "this$dist$set$" + objectDistance,
-                ACC_PUBLIC,
-                VOID_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
-                ClassNode.EMPTY_ARRAY,
-                block
-        );
-        setPropertySetterDispatcher(block, VariableExpression.THIS_EXPRESSION, method.getParameters());
-
-        // add property getter
-        block = new BlockStatement();
-        method = classNode.addSyntheticMethod(
-                "this$dist$get$" + objectDistance,
-                ACC_PUBLIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name")),
-                ClassNode.EMPTY_ARRAY,
-                block
-        );
-        setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, method.getParameters());
-    }
-
-    private void getThis(final MethodVisitor mv, final String classInternalName, final String outerClassDescriptor, final String innerClassInternalName) {
-        mv.visitVarInsn(ALOAD, 0);
-        if (thisField != null && CLOSURE_TYPE.equals(thisField.getType())) {
-            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", BytecodeHelper.getTypeDescription(CLOSURE_TYPE));
-            mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(CLOSURE_TYPE), "getThisObject", "()Ljava/lang/Object;", false);
-            mv.visitTypeInsn(CHECKCAST, innerClassInternalName);
-        } else {
-            mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
-        }
-    }
-
-    private void addMopMethods(final InnerClassNode node) {
-        final boolean isStatic = isStatic(node);
-        final ClassNode outerClass = node.getOuterClass();
-        final int outerClassDistance = getObjectDistance(outerClass);
-        final String classInternalName = BytecodeHelper.getClassInternalName(node);
-        final String outerClassInternalName = getInternalName(outerClass, isStatic);
-        final String outerClassDescriptor = getTypeDescriptor(outerClass, isStatic);
-
-        addMissingHandler(node,
-                "methodMissing",
-                ACC_PUBLIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
-                (methodBody, parameters) -> {
-                    if (isStatic) {
-                        setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
-                    } else {
-                        methodBody.addStatement(
-                                new BytecodeSequence(new BytecodeInstruction() {
-                                    @Override
-                                    public void visit(final MethodVisitor mv) {
-                                        getThis(mv, classInternalName, outerClassDescriptor, outerClassInternalName);
-                                        mv.visitVarInsn(ALOAD, 1);
-                                        mv.visitVarInsn(ALOAD, 2);
-                                        mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$invoke$" + outerClassDistance, "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;", false);
-                                        mv.visitInsn(ARETURN);
-                                    }
-                                })
-                        );
-                    }
-                }
-        );
-
-        addMissingHandler(node,
-                "$static_methodMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
-                (methodBody, parameters) -> {
-                    setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        ClassNode[] nameValueTypes = {STRING_TYPE, OBJECT_TYPE};
-        MethodNode propertyMissing = getMethod(node, "propertyMissing", (m) -> !m.isStatic() && !m.isPrivate()
-                && Arrays.equals(Arrays.stream(m.getParameters()).map(Parameter::getType).toArray(),nameValueTypes));
-        ClassNode returnType = propertyMissing != null ? propertyMissing.getReturnType() : VOID_TYPE; // GROOVY-11822
-
-        addMissingHandler(node,
-                "propertyMissing",
-                ACC_PUBLIC,
-                returnType,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
-                (methodBody, parameters) -> {
-                    if (isStatic) {
-                        setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
-                    } else {
-                        methodBody.addStatement(
-                                new BytecodeSequence(new BytecodeInstruction() {
-                                    @Override
-                                    public void visit(final MethodVisitor mv) {
-                                        getThis(mv, classInternalName, outerClassDescriptor, outerClassInternalName);
-                                        mv.visitVarInsn(ALOAD, 1);
-                                        mv.visitVarInsn(ALOAD, 2);
-                                        mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$set$" + outerClassDistance, "(Ljava/lang/String;Ljava/lang/Object;)V", false);
-                                        if (!ClassHelper.isPrimitiveVoid(returnType)) mv.visitInsn(ACONST_NULL);
-                                        BytecodeHelper.doReturn(mv, returnType);
-                                    }
-                                })
-                        );
-                    }
-                }
-        );
-
-        addMissingHandler(node,
-                "$static_propertyMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                VOID_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
-                (methodBody, parameters) -> {
-                    setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        addMissingHandler(node,
-                "propertyMissing",
-                ACC_PUBLIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name")),
-                (methodBody, parameters) -> {
-                    if (isStatic) {
-                        setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
-                    } else {
-                        methodBody.addStatement(
-                                new BytecodeSequence(new BytecodeInstruction() {
-                                    @Override
-                                    public void visit(final MethodVisitor mv) {
-                                        getThis(mv, classInternalName, outerClassDescriptor, outerClassInternalName);
-                                        mv.visitVarInsn(ALOAD, 1);
-                                        mv.visitMethodInsn(INVOKEVIRTUAL, outerClassInternalName, "this$dist$get$" + outerClassDistance, "(Ljava/lang/String;)Ljava/lang/Object;", false);
-                                        mv.visitInsn(ARETURN);
-                                    }
-                                })
-                        );
-                    }
-                }
-        );
-
-        addMissingHandler(node,
-                "$static_propertyMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name")),
-                (methodBody, parameters) -> {
-                    setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
-                }
-        );
-    }
-
-    /*   */ void addMissingHandler(final InnerClassNode innerClass, final String methodName, final int modifiers,
-            final ClassNode returnType, final Parameter[] parameters, final BiConsumer<BlockStatement, Parameter[]> consumer) {
-        MethodNode method = innerClass.getDeclaredMethod(methodName, parameters);
-        if (method == null) {
-            // try {
-            //   <consumer dispatch>
-            // } catch (MissingMethodException notFound) {
-            //   throw new MissingMethodException(notFound.method, this, notFound.arguments)
-            // }
-            Parameter catchParam = param(OBJECT_TYPE, "notFound"); // dummy type
-            ClassNode exceptionT;
-            Expression newException;
-            Expression selfType = varX("this");
-            if ((modifiers & ACC_STATIC) == 0) selfType = callX(selfType, "getClass");
-            if (methodName.endsWith("methodMissing")) {
-                exceptionT = ClassHelper.make(groovy.lang.MissingMethodException.class);
-                newException = ctorX(exceptionT, args(propX(varX(catchParam),"method"), selfType, propX(varX(catchParam),"arguments")));
-            } else {
-                exceptionT = ClassHelper.make(groovy.lang.MissingPropertyException.class);
-                newException = ctorX(exceptionT, args(propX(varX(catchParam), "property"), selfType, propX(varX(catchParam), "cause")));
-            }
-            catchParam.setType(exceptionT);
-            catchParam.setOriginType(exceptionT);
-            BlockStatement handleMissing = block();
-            consumer.accept(handleMissing, parameters);
-            TryCatchStatement tryCatch = tryCatchS(handleMissing);
-            tryCatch.addCatch(catchS(catchParam, throwS(newException)));
-
-            innerClass.addSyntheticMethod(methodName, modifiers, returnType, parameters, ClassNode.EMPTY_ARRAY, tryCatch);
-
-            // if there is a user-defined method, add compiler error and continue
-        } else if (isStatic(innerClass) && (method.getModifiers() & ACC_SYNTHETIC) == 0) {
-            addError("\"" + methodName + "\" implementations are not supported on static inner classes as " +
-                "a synthetic version of \"" + methodName + "\" is added during compilation for the purpose " +
-                "of outer class delegation.",
-                method);
-        }
-    }
-
-    private void addThisReference(ConstructorNode node) {
+    private void addThisReference(final ConstructorNode node) {
         if (!shouldHandleImplicitThisForInnerClass(classNode)) return;
 
         // add "this$0" field init
@@ -428,7 +165,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         node.setCode(block);
     }
 
-    private boolean shouldImplicitlyPassThisZero(ConstructorCallExpression cce) {
+    private boolean shouldImplicitlyPassThisZero(final ConstructorCallExpression cce) {
         boolean pass = false;
         if (cce.isThisCall()) {
             pass = true;
@@ -447,7 +184,7 @@ public class InnerClassCompletionVisitor extends InnerClassVisitorHelper {
         return pass;
     }
 
-    private String getUniqueName(Parameter[] params, ConstructorNode node) {
+    private String getUniqueName(final Parameter[] params, final ConstructorNode node) {
         String namePrefix = "$p";
         outer:
         for (int i = 0; i < 100; i++) {

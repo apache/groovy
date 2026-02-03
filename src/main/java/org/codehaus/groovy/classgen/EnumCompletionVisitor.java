@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
@@ -44,16 +43,7 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedConstructor;
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE;
-import static org.codehaus.groovy.ast.ClassHelper.VOID_TYPE;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.param;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.params;
-import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.isStaticallyCompiled;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 
 /**
@@ -93,11 +83,6 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
         for (ConstructorNode ctor : nonSyntheticConstructors(enumClass)) {
             transformConstructor(ctor);
-        }
-
-        var outerClass = enumClass.getOuterClass(); // GROOVY-7024
-        if (outerClass != null && !isStaticallyCompiled(enumClass)) {
-            addOuterClassDispatch((InnerClassNode) enumClass, outerClass);
         }
     }
 
@@ -206,79 +191,5 @@ public class EnumCompletionVisitor extends ClassCodeVisitorSupport {
 
     private static List<ConstructorNode> nonSyntheticConstructors(final ClassNode cn) {
         return cn.getDeclaredConstructors().stream().filter(c -> !c.isSynthetic()).collect(toList());
-    }
-
-    private void addOuterClassDispatch(final InnerClassNode innerClass, final ClassNode outerClass) {
-        var visitor = new InnerClassCompletionVisitor(null, sourceUnit);
-
-        visitor.addMissingHandler(
-                innerClass,
-                "methodMissing",
-                ACC_PUBLIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
-                (methodBody, parameters) -> {
-                    InnerClassVisitorHelper.setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        visitor.addMissingHandler(
-                innerClass,
-                "$static_methodMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "args")),
-                (methodBody, parameters) -> {
-                    InnerClassVisitorHelper.setMethodDispatcherCode(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        //
-
-        visitor.addMissingHandler(
-                innerClass,
-                "propertyMissing",
-                ACC_PUBLIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name")),
-                (methodBody, parameters) -> {
-                    InnerClassVisitorHelper.setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        visitor.addMissingHandler(
-                innerClass,
-                "$static_propertyMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                OBJECT_TYPE,
-                params(param(STRING_TYPE, "name")),
-                (methodBody, parameters) -> {
-                    InnerClassVisitorHelper.setPropertyGetterDispatcher(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        //
-
-        visitor.addMissingHandler(
-                innerClass,
-                "propertyMissing",
-                ACC_PUBLIC,
-                VOID_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
-                (methodBody, parameters) -> {
-                    InnerClassVisitorHelper.setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
-                }
-        );
-
-        visitor.addMissingHandler(
-                innerClass,
-                "$static_propertyMissing",
-                ACC_PUBLIC | ACC_STATIC,
-                VOID_TYPE,
-                params(param(STRING_TYPE, "name"), param(OBJECT_TYPE, "value")),
-                (methodBody, parameters) -> {
-                    InnerClassVisitorHelper.setPropertySetterDispatcher(methodBody, classX(outerClass), parameters);
-                }
-        );
     }
 }

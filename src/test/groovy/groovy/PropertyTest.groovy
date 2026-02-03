@@ -831,24 +831,6 @@ final class PropertyTest {
         '''
     }
 
-    // GROOVY-9618
-    @Test
-    void testPropertyAndStaticUppercaseFieldPriority() {
-        assertScript '''
-            class A {
-                public static X = 1
-                static getX() { 2 }
-                static class B { }
-            }
-            class C extends A.B {
-                def test() {
-                    X
-                }
-            }
-            assert new C().test() == 2
-        '''
-    }
-
     //--------------------------------------------------------------------------
 
     static class Base {

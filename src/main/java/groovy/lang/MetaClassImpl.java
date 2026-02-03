@@ -380,7 +380,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         inheritInterfaceNewMetaMethods(interfaces);
 
-        if (isGroovyObject) {
+        if (isGroovyObject()) {
             metaMethodIndex.copyMethodsToSuper(); // methods --> methodsForSuper
             connectMultimethods(superClasses, firstGroovySuper);
             removeMultimethodsOverloadedWithPrivateMethods();
@@ -662,7 +662,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (firstGroovy == null) {
-            return isGroovyObject ? theCachedClass.getCachedSuperClass() : theCachedClass;
+            return isGroovyObject() ? theCachedClass.getCachedSuperClass() : theCachedClass;
         }
         // Closure for closures and GroovyObjectSupport for extenders (including Closure)
         if (firstGroovy.getTheClass() == GroovyObjectSupport.class) {
@@ -1217,7 +1217,59 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return transformedMetaMethod.doMethodInvoke(object, arguments);
         }
 
-        return invokePropertyOrMissing(sender, object, methodName, originalArguments, fromInsideClass, isCallToSuper);
+        try {
+            return invokePropertyOrMissing(sender, object, methodName, originalArguments, fromInsideClass, isCallToSuper);
+        } catch (MissingMethodException mme) {
+            if (!isCallToSuper) {
+                return invokeOuterMethod(sender, object, methodName, originalArguments, mme); // GROOVY-11823
+            }
+            throw mme;
+        }
+    }
+
+    private Object invokeOuterMethod(final Class<?> sender, final Object object, final String methodName, final Object[] arguments, final MissingMethodException mme) {
+        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+            var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
+            if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
+                MetaClass omc = registry.getMetaClass(outerClass);
+                Object target = getOuterReference(sender, object);
+                try {
+                    return omc.invokeMethod(outerClass, target, methodName, arguments, false, false);
+                } catch (MissingMethodException e) {
+                    mme.addSuppressed(e);
+                }
+            }
+        }
+        throw mme;
+    }
+
+    private Object getOuterReference(final Class<?> innerClass, final Object object) {
+        Object outer = null;
+        // non-static inner class may have outer class reference available in this$0 field
+        if (!(object instanceof Class) && (innerClass.getModifiers() & Opcodes.ACC_STATIC) == 0) {
+            try {
+                innerClass.getDeclaredField("this$0");
+                outer = getAttribute(object,"this$0");
+                if (outer instanceof GeneratedClosure) {
+                    outer = ((Closure<?>) outer).getThisObject(); // skip closure(s)
+                }
+            } catch (NoSuchFieldException ignored) {
+                // an AIC is non-static but may not have this$0
+            } catch (Throwable t) {
+                throw new GroovyRuntimeException(t);
+            }
+        }
+        if (outer == null) {
+            outer = getNonClosureOuter(innerClass);
+        }
+        return outer;
+    }
+
+    private static Class<?> getNonClosureOuter(Class<?> c) {
+        do { c = c.getEnclosingClass();
+        } while (c != null && GeneratedClosure.class.isAssignableFrom(c));
+
+        return c;
     }
 
     private MetaMethod getMetaMethod(final Class<?> sender, final Object object, final String methodName, final boolean isCallToSuper, final Object[] arguments) {
@@ -1487,7 +1539,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
 
-        return invokeStaticMissingMethod(theClass, methodName, nonNullArguments);
+        try {
+            return invokeStaticMissingMethod(theClass, methodName, nonNullArguments);
+        } catch (MissingMethodException missing) {
+            if (isGroovyObject()) { // GROOVY-11823, et al.
+                var outerClass = getNonClosureOuter(theClass);
+                if (outerClass != null && object instanceof Class) {
+                    MetaClass omc = registry.getMetaClass(outerClass);
+                    try {
+                        return omc.invokeStaticMethod(outerClass, methodName, arguments);
+                    } catch (MissingMethodException mme) {
+                        missing.addSuppressed(mme);
+                    }
+                }
+            }
+            throw missing;
+        }
     }
 
     private Object invokeStaticMissingMethod(final Class<?> sender, final String methodName, final Object[] arguments) {
@@ -1495,7 +1562,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (metaMethod != null) {
             return metaMethod.invoke(sender, new Object[]{methodName, arguments});
         }
-        throw new MissingMethodException(methodName, sender, arguments, true);
+        throw new MissingMethodExceptionNoStack(methodName, sender, arguments, true);
     }
 
     private MetaMethod pickStaticMethod(final String methodName, final Class<?>[] argumentTypes) throws MethodSelectionException {
@@ -1876,17 +1943,53 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // missing property protocol
         //----------------------------------------------------------------------
-        return invokeMissingProperty(object, name, null, true);
+        try {
+            return invokeMissingProperty(object, name, null, true);
+        } catch (MissingPropertyException mpe) {
+            return getOuterProperty(sender, object, name, mpe);
+        }
     }
 
     private Object getClassProperty(final Class<?> sender, final Class<?> receiver, final String name) throws MissingPropertyException {
         try {
             MetaClass cmc = registry.getMetaClass(Class.class);
             return cmc.getProperty(Class.class, receiver, name, false, false);
-        } catch (MissingPropertyException ignore) {
+        } catch (MissingPropertyException ignored) {
+        }
+
+        try {
             // try $static_propertyMissing / throw MissingPropertyException
             return invokeStaticMissingProperty(receiver, name, null, true);
+        } catch (MissingPropertyException missing) {
+            if (isGroovyObject()) { // GROOVY-11823, et al.
+                var outerClass = getNonClosureOuter(theClass);
+                if (outerClass != null && sender.isNestmateOf(outerClass)) {
+                    try {
+                        MetaClass omc = registry.getMetaClass(outerClass);
+                        return omc.getProperty(sender, outerClass, name, false, false);
+                    } catch (MissingPropertyException mpe) {
+                        missing.addSuppressed(mpe);
+                    }
+                }
+            }
+            throw missing;
         }
+    }
+
+    private Object getOuterProperty(final Class<?> sender, final Object object, final String name, final MissingPropertyException mpe) {
+        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+            var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
+            if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
+                MetaClass omc = registry.getMetaClass(outerClass);
+                Object target = getOuterReference(sender, object);
+                try {
+                    return omc.getProperty(outerClass, target, name, false, false);
+                } catch (MissingPropertyException e) {
+                    mpe.addSuppressed(e);
+                }
+            }
+        }
+        throw mpe;
     }
 
     public MetaProperty getEffectiveGetMetaProperty(final Class sender, final Object object, final String name, final boolean useSuper) {
@@ -2014,7 +2117,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return new ReadOnlyMetaProperty(name) {
             @Override
             public Object getProperty(final Object receiver) {
-                return invokeMissingProperty(receiver, getName(), null, true);
+                try {
+                    return invokeMissingProperty(receiver, getName(), null, true);
+                } catch (MissingPropertyException mpe) {
+                    return getOuterProperty(sender, receiver, getName(), mpe);
+                }
             }
         };
     }
@@ -2754,11 +2861,33 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (mp != null) {
             throw new ReadOnlyPropertyException(name, theClass);
         }
-        if (!isStatic) {
-            invokeMissingProperty(object, name, newValue, false);
-        } else {
-            invokeStaticMissingProperty(object, name, newValue, false);
+        try {
+            if (!isStatic) {
+                invokeMissingProperty(object, name, newValue, false);
+            } else {
+                invokeStaticMissingProperty(object, name, newValue, false);
+            }
+        } catch (MissingPropertyException e) {
+            if (!useSuper) setOuterProperty(sender, object, name, newValue, e); else throw e; // GROOVY-11823
         }
+    }
+
+    private void setOuterProperty(Class<?> sender, final Object object, final String name, final Object newValue, final MissingPropertyException mpe) {
+        if (sender == null) sender = theClass; // GROOVY-11745
+        if (sender == theClass ? isGroovyObject() : GroovyObject.class.isAssignableFrom(sender)) {
+            var outerClass = getNonClosureOuter(sender); // check outer class nesting of call site
+            if (outerClass != null && (sender == theClass || sender.isAssignableFrom(theClass))) {
+                MetaClass omc = registry.getMetaClass(outerClass);
+                Object target = getOuterReference(sender, object);
+                try {
+                    omc.setProperty(outerClass, target, name, newValue, false, false);
+                    return;
+                } catch (MissingPropertyException e) {
+                    mpe.addSuppressed(e);
+                }
+            }
+        }
+        throw mpe;
     }
 
     private MetaProperty getMetaProperty(final Class<?> clazz, final String name, final boolean useSuper, final boolean useStatic) {

@@ -413,7 +413,8 @@ final class InnerClassTest {
     void testStaticInnerClass2() {
         assertScript '''
             class A {
-                static class B {}
+                static class B {
+                }
             }
 
             assert A.declaredClasses.length == 1
@@ -427,11 +428,12 @@ final class InnerClassTest {
             class A {
                 static class B {
                     String p
+                    String getQ() { WHY }
                 }
                 B m() {
                     return [p:'x'] // calls ScriptBytecodeAdapter.castToType([p:'x'], A$B.class)
                 }
-                static final String q = 'y'
+                private static final String WHY = 'y'
             }
 
             o = new A().m()
@@ -601,14 +603,14 @@ final class InnerClassTest {
     @Test
     void testUsageOfOuterField() {
         assertScript '''
-            interface Run {
+            interface A {
                 def run()
             }
-            class Foo {
+            class C {
                 private x = 1
 
                 def foo() {
-                    def runner = new Run() {
+                    def runner = new A() {
                         def run() { return x }
                     }
                     runner.run()
@@ -616,24 +618,25 @@ final class InnerClassTest {
 
                 void x(y) { x = y }
             }
-            def foo = new Foo()
-            assert foo.foo() == 1
-            foo.x(2)
-            assert foo.foo() == 2
+
+            def c = new C()
+            assert c.foo() == 1
+            c.x(2)
+            assert c.foo() == 2
         '''
     }
 
     @Test
     void testUsageOfOuterField2() {
         assertScript '''
-            interface Run {
+            interface A {
                 def run()
             }
-            class Foo {
+            class C {
                 private static x = 1
 
                 static foo() {
-                    def runner = new Run() {
+                    def runner = new A() {
                         def run() { return x }
                     }
                     runner.run()
@@ -641,39 +644,16 @@ final class InnerClassTest {
 
                 static x(y) { x = y }
             }
-            assert Foo.foo() == 1
-            Foo.x(2)
-            assert Foo.foo() == 2
-        '''
-    }
 
-    @Test
-    void testUsageOfOuterField3() {
-        assertScript '''
-            interface X {
-                def m()
-            }
-
-            class A {
-                def pm = "pm"
-
-                def bar(x) {x().m()}
-                def foo() {
-                    bar { ->
-                        return new X() {
-                            def m() { pm }
-                        }
-                    }
-                }
-            }
-            def a = new A()
-            assert "pm" == a.foo()
+            assert C.foo() == 1
+            C.x(2)
+            assert C.foo() == 2
         '''
     }
 
     // GROOVY-6141
     @Test
-    void testUsageOfOuterField4() {
+    void testUsageOfOuterField3() {
         assertScript '''
             class A {
                 def x = 1
@@ -704,7 +684,7 @@ final class InnerClassTest {
 
     // GROOVY-9189
     @Test
-    void testUsageOfOuterField5() {
+    void testUsageOfOuterField4() {
         assertScript '''
             interface Run {
                 def run()
@@ -720,6 +700,7 @@ final class InnerClassTest {
 
                 static x(y) { x = y }
             }
+
             assert Foo.foo() == 1
             Foo.x(2)
             assert Foo.foo() == 2
@@ -728,7 +709,7 @@ final class InnerClassTest {
 
     // GROOVY-9168
     @Test
-    void testUsageOfOuterField6() {
+    void testUsageOfOuterField5() {
         assertScript '''
             class A {
                 //                  AIC in this position can use static properties:
@@ -747,7 +728,7 @@ final class InnerClassTest {
 
     // GROOVY-9501
     @Test
-    void testUsageOfOuterField7() {
+    void testUsageOfOuterField6() {
         assertScript '''
             class Main extends Outer {
                 static main(args) {
@@ -783,7 +764,7 @@ final class InnerClassTest {
     }
 
     @Test // inner class is static instead of final
-    void testUsageOfOuterField8() {
+    void testUsageOfOuterField7() {
         assertScript '''
             class Main extends Outer {
                 static main(args) {
@@ -820,7 +801,7 @@ final class InnerClassTest {
 
     // GROOVY-9569
     @Test
-    void testUsageOfOuterField9() {
+    void testUsageOfOuterField8() {
         assertScript '''
             class Main extends Outer {
                 static main(args) {
@@ -857,7 +838,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testUsageOfOuterField10() {
+    void testUsageOfOuterField9() {
         assertScript '''
             class Outer {
                 static final String OUTER_CONSTANT = 'Constant Value'
@@ -881,7 +862,7 @@ final class InnerClassTest {
 
     // GROOVY-5259
     @Test
-    void testUsageOfOuterField11() {
+    void testUsageOfOuterField10() {
         assertScript '''
             class Base {
                 Base(String string) {
@@ -913,7 +894,7 @@ final class InnerClassTest {
     }
 
     @Test
-    void testUsageOfOuterField12() {
+    void testUsageOfOuterField11() {
         def err = shouldFail '''
             class C {
                 int count
@@ -934,15 +915,32 @@ final class InnerClassTest {
 
     // GROOVY-8050
     @Test
-    void testUsageOfOuterField13() {
-        assertScript '''
+    void testUsageOfOuterField12() {
+        def err = shouldFail '''
             class Outer {
                 class Inner {
                 }
                 def p = 1
             }
-            def i = new Outer.Inner(new Outer())
-            assert i.p == 1
+
+            new Outer.Inner(new Outer()).p
+        '''
+        assert err =~ /MissingPropertyException: No such property: p for class: Outer.Inner/
+    }
+
+    @NotYetImplemented @Test
+    void testUsageOfOuterField13() {
+        assertScript '''
+            class Outer {
+                interface Inner {
+                    default i() {
+                        'i' + o
+                    }
+                }
+                private static o = 'o'
+            }
+
+            assert (new Outer.Inner() {}).i() == 'io'
         '''
     }
 
@@ -1054,28 +1052,27 @@ final class InnerClassTest {
     @Test
     void testUsageOfOuterFieldOverridden() {
         assertScript '''
-            interface Run {
+            interface A {
                 def run()
             }
-            class Foo {
-                private x = 1
-
-                def foo() {
-                    def runner = new Run() {
+            class B {
+                def test() {
+                    def runner = new A() {
                         def run() { return x } // <-- dynamic variable
                     }
                     runner.run()
                 }
-
+                private x = 1
                 void setX(val) { x = val }
             }
-            class Bar extends Foo {
-                def x = 'string' // hides 'foo.@x' and overrides 'foo.setX(val)'
+            class C extends B {
+                def x = 'string' // hides 'B.@x' and overrides 'B.setX(val)'
             }
-            def bar = new Bar()
-            assert bar.foo() == 'string'
-            bar.x = 'new string'
-            assert bar.foo() == 'new string'
+
+            def c = new C()
+            assert c.test() == 1
+            c.x = 'new string'
+            assert c.test() == 1
         '''
     }
 
@@ -1095,6 +1092,7 @@ final class InnerClassTest {
                     runner.run()
                 }
             }
+
             def foo = new Foo()
             assert foo.foo() == 1
         '''
@@ -1116,6 +1114,7 @@ final class InnerClassTest {
                     runner.run()
                 }
             }
+
             def foo = new Foo()
             assert foo.foo() == 1
         '''
@@ -1136,6 +1135,7 @@ final class InnerClassTest {
                     runner.run()
                 }
             }
+
             def foo = new Foo()
             assert foo.foo() == 1
         '''
@@ -1157,6 +1157,7 @@ final class InnerClassTest {
                     runner.run()
                 }
             }
+
             def foo = new Foo()
             assert foo.foo() == 1
         '''
@@ -1251,6 +1252,75 @@ final class InnerClassTest {
             }
 
             new Outer().foo()
+        '''
+    }
+
+    // GROOVY-7938
+    @Test
+    void testUsageOfOuterMethod9() {
+        assertScript '''
+            class Outer {
+                Integer barCount = 0
+                static Integer fooCount = 0
+                void incBar() { barCount++ }
+                static void incFoo() { fooCount++ }
+                Inner innerFactory() { new Inner() }
+
+                static class Nested {
+                    static void nestedIncFoo() { incFoo() }
+                    static class NestedNested {
+                        static void nestedNestedIncFoo() { incFoo() }
+                    }
+                }
+                class Inner {
+                    void innerIncFoo() { incFoo() }
+                    static void staticInnerIncFoo() { incFoo() }
+                    InnerInner innerInnerFactory() { new InnerInner() }
+
+                    class InnerInner {
+                        void innerInnerIncFoo() { incFoo() }
+                        static void staticInnerInnerIncFoo() { incFoo() }
+                    }
+                }
+            }
+
+            Outer.incFoo()
+            Outer.Nested.nestedIncFoo()
+            Outer.Nested.NestedNested.nestedNestedIncFoo()
+            assert Outer.fooCount == 3
+
+            new Outer().with {
+                incBar()
+                incFoo()
+                innerFactory().with {
+                    incBar()
+                    innerIncFoo()
+                    staticInnerIncFoo()
+                    innerInnerFactory().with {
+                        incBar()
+                        innerInnerIncFoo()
+                        staticInnerInnerIncFoo()
+                    }
+                }
+                assert barCount == 3
+                assert fooCount == 8
+            }
+        '''
+    }
+
+    @NotYetImplemented @Test
+    void testUsageOfOuterMethod10() {
+        assertScript '''
+            class Outer {
+                interface Inner {
+                    default i() {
+                        'i' + o()
+                    }
+                }
+                private static o() { 'o' }
+            }
+
+            assert (new Outer.Inner() {}).i() == 'io'
         '''
     }
 
@@ -1965,9 +2035,11 @@ final class InnerClassTest {
     @Test
     void testEnclosingMethodIsSet2() {
         assertScript '''
-            import groovy.transform.ASTTest
+            import groovy.transform.*
             import org.codehaus.groovy.ast.expr.*
             import static org.codehaus.groovy.classgen.Verifier.*
+
+            @Field Object result
 
             @ASTTest(phase=CLASS_GENERATION, value={
                 def init = node.parameters[0].getNodeMetaData(INITIAL_EXPRESSION)
@@ -2144,6 +2216,7 @@ final class InnerClassTest {
                     inner.inner()
                 }
             }
+
             assert new Outer().test() == 1
         '''
     }
@@ -2165,17 +2238,18 @@ final class InnerClassTest {
                     }
                 }
             }
+
             new Outer().obj.toString()
         '''
     }
 
     // GROOVY-8274
     @Test
-    void testMissingMethodHandling() {
+    void testMethodMissing1() {
         assertScript '''
             class Outer {
                 class Inner {
-                    def methodMissing(String name, args) {
+                    def methodMissing(String name, Object args) {
                         return name
                     }
                 }
@@ -2191,6 +2265,68 @@ final class InnerClassTest {
                 hello() // missing
             }
             assert x == 'hello'
+        '''
+    }
+
+    @Test
+    void testMethodMissing2() {
+        assertScript '''
+            class Outer {
+                class Inner {
+                    def methodMissing(String name, Object args) {
+                        return 42
+                    }
+                    def propertyMissing(String name) {
+                        return 42
+                    }
+                }
+            }
+
+            def i = new Outer.Inner(new Outer())
+            assert i.foo()  == 42
+            assert i.foobar == 42
+        '''
+    }
+
+    @Test
+    void testMethodMissing3() {
+        assertScript '''
+            class Outer {
+                static class Inner {
+                    def methodMissing(String name, Object args) {
+                        return 42
+                    }
+                    def propertyMissing(String name) {
+                        return 42
+                    }
+                }
+            }
+
+            def i = new Outer.Inner()
+            assert i.foo()  == 42
+            assert i.foobar == 42
+        '''
+    }
+
+    @Test
+    void testMethodMissing4() {
+        assertScript '''
+            class Outer {
+                static class Inner {
+                    def methodMissing(String name, Object args) {
+                        return 42
+                    }
+                    def propertyMissing(String name) {
+                        return 42
+                    }
+                }
+                static class Other extends Inner {
+                }
+            }
+
+            def o = new Outer.Other()
+            assert o.foo()  == 42
+            assert o.foobar == 42
         '''
     }
 
@@ -2255,6 +2391,7 @@ final class InnerClassTest {
         def err = shouldFail """
             class Upper {
                 $returnType propertyMissing(String name, Object value) {
+                    throw new MissingPropertyException(name, getClass())
                 }
             }
             class Outer {
@@ -2264,6 +2401,60 @@ final class InnerClassTest {
             new Outer.Inner().missing = 42
         """
         assert err =~ /No such property: missing for class: Outer.Inner/
+    }
+
+    // GROOVY-11823
+    @Test
+    void testNestedPropertyHandling5() {
+        assertScript '''
+            class Upper {
+                Object propertyMissing(String name) {
+                    if (name == 'fizz') return 'buzz'
+                    throw new MissingPropertyException(name, getClass())
+                }
+            }
+            class Outer {
+                static class Inner extends Upper {
+                }
+            }
+            def inner = new Outer.Inner()
+            assert inner.fizz == 'buzz'
+        '''
+    }
+
+    // GROOVY-9618
+    @Test
+    void testNestedPropertyHandling6() {
+        assertScript '''
+            class Super {
+                public static X = 1
+                static getX() { 2 }
+            }
+            class Outer extends Super {
+                static class Inner {
+                    def m() { X }
+                }
+            }
+
+            assert new Outer.Inner().m() == 2
+        '''
+
+        def err = shouldFail '''
+            class Outer {
+                public static X = 1
+                static getX() { 2 }
+                static class Inner {
+                }
+            }
+            class Other extends Outer.Inner {
+                def m() {
+                    X // can't read super outer this way
+                }
+            }
+
+            new Other().m()
+        '''
+        assert err =~ /MissingPropertyException: No such property: X for class: Other/
     }
 
     // GROOVY-7312

@@ -338,6 +338,23 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    void testInnerEnumInitWithUnqualifiedOuterClassValue() {
+        assertScript '''
+            class C {
+                private static int ONE() { 1 }
+                enum E {
+                    FOO(1 + ONE())
+                    final value
+                    E(value) {
+                        this.value = value
+                    }
+                }
+            }
+
+            assert C.E.FOO.value == 2
+        '''
+    }
+
     // GROOVY-3693
     void testStaticFieldInitValuesInAStaticBlock() {
         // trigger enum class load to test it - asserts are present in the enum

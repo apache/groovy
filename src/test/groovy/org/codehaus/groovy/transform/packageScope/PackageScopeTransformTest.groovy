@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform.packageScope
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -191,7 +191,7 @@ final class PackageScopeTransformTest {
             import groovy.transform.PackageScope
 
             @CompileStatic
-            class Test {
+            class Outer {
                 @PackageScope static final String S = 'S'
                 protected static final String T = 'T'
                 private static final String U = 'U'
@@ -202,7 +202,7 @@ final class PackageScopeTransformTest {
                 }
             }
 
-            assert new Test.Inner().method() == 'STU'
+            assert new Outer.Inner().method() == 'STU'
         '''
     }
 }
