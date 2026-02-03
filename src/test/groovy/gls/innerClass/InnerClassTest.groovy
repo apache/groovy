@@ -173,7 +173,7 @@ final class InnerClassTest {
             }
             assert a.call() == 1
             x = 2
-            assert a.call() == 2
+            assert a.call() == 1
         '''
     }
 
@@ -219,6 +219,39 @@ final class InnerClassTest {
                 }
             }
             o.m()
+        '''
+    }
+
+    // GROOVY-9120
+    @Test
+    void testAccessLocalVariableFromClosureInAIC2() {
+        assertScript '''
+            import java.util.concurrent.Callable
+
+            interface Face9120 {
+                Runnable runnable()
+                Callable<Long> callable()
+            }
+
+            static Face9120 make() {
+                final long number = 42
+                return new Face9120() {
+                    @Override
+                    Runnable runnable() {
+                        return { ->
+                            assert "number is ${number}" == 'number is 42'
+                        }
+                    }
+                    @Override
+                    Callable<Long> callable() {
+                        return { -> number }
+                    }
+                }
+            }
+
+            def face = make()
+            face.runnable().run()
+            assert "number is ${face.callable().call()}" == 'number is 42'
         '''
     }
 
@@ -1665,7 +1698,7 @@ final class InnerClassTest {
                 def v = false
                 def a = new A() {
                     @Override void m() {
-                        assert v == true
+                        assert !v
                     }
                 }
                 v = true

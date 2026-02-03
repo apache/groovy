@@ -1237,7 +1237,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         // GROOVY-8448: "this.name" from anon. inner class
                         if (fieldNode != null && !expression.isImplicitThis()
                                 && (fieldNode.getModifiers() & ACC_SYNTHETIC) != 0
-                                && fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE)) {
+                                /*&& fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE)*/) {
                             fieldNode = null;
                         }
                         // GROOVY-10695: "this.name" or "Type.name" where "name" is non-static
