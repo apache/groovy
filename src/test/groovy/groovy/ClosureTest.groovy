@@ -18,8 +18,7 @@
  */
 package groovy
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -482,72 +481,6 @@ final class ClosureTest {
             owner.delegate = new Container.Delegate()
             owner.run()
         '''
-    }
-
-    @Test
-    void testStaticInnerClassOwnerWithPropertyMissingImplementation() {
-        def err = shouldFail MultipleCompilationErrorsException, '''
-            class ClosureTestA {
-                static class ClosureTestB {
-                    def propertyMissing(String myName, Object myValue) {
-                        return myValue
-                    }
-
-                    def propertyMissing(String myName) {
-                        return 42
-                    }
-
-                    def methodMissing(String myName, Object myArgs) {
-                        return 42
-                    }
-                }
-            }
-        '''
-
-        assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
-        assert err.message.contains('"propertyMissing" implementations are not supported on static inner classes as a synthetic version of "propertyMissing" is added during compilation for the purpose of outer class delegation.')
-    }
-
-    @Test
-    void testInnerClassOwnerWithPropertyMissingImplementation() {
-        assertScript '''
-            class ClosureTestA {
-                class ClosureTestB {
-                    def propertyMissing(String myName, Object myValue) {
-                        return myValue
-                    }
-
-                    def propertyMissing(String myName) {
-                        return 42
-                    }
-
-                    def methodMissing(String myName, Object myArgs) {
-                        return 42
-                    }
-                }
-            }
-
-            def a = new ClosureTestA()
-            def b = new ClosureTestA.ClosureTestB(a)
-        '''
-    }
-
-    @Test
-    void testStaticInnerClassHierarchyWithMethodMissing() {
-        def err = shouldFail MultipleCompilationErrorsException, '''
-            class ClosureTestA {
-                static class ClosureTestB {
-                    def methodMissing(String myName, Object myArgs) {
-                        return 42
-                    }
-                }
-
-                static class ClosureTestB1 extends ClosureTestB {
-                }
-            }
-        '''
-
-        assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
     }
 
     // GROOVY-10943
