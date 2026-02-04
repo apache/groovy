@@ -132,23 +132,18 @@ public class InvokeDynamicWriter extends InvocationWriter {
         // Collect chain of simple method calls that can use indy optimization
         Deque<MethodCallExpression> chain = new ArrayDeque<>();
         Expression current = receiver;
-        while (current instanceof MethodCallExpression mce
+        for (; current instanceof MethodCallExpression mce
                 && !mce.isSpreadSafe() && !mce.isImplicitThis()
                 && !isSuperExpression(mce.getObjectExpression())
-                && !isThisExpression(mce.getObjectExpression())) {
+                && !isThisExpression(mce.getObjectExpression()); current = mce.getObjectExpression()) {
             String name = getMethodName(mce.getMethod());
             if (name == null || "call".equals(name)) break; // dynamic name or functional interface call
             chain.push(mce);
-            current = mce.getObjectExpression();
         }
 
-        if (chain.isEmpty()) {
-            receiver.visit(controller.getAcg());
-            return;
-        }
-
-        current.visit(controller.getAcg());
         AsmClassGenerator acg = controller.getAcg();
+        current.visit(acg);
+
         while (!chain.isEmpty()) {
             MethodCallExpression call = chain.pop();
             acg.onLineNumber(call, "visitMethodCallExpression: \"" + call.getMethod() + "\":");
