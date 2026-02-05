@@ -89,6 +89,18 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-11854
+    @Test
+    void testScriptAIC() {
+        assertScript '''
+            def obj = new Object(){}
+            def aic = obj.getClass()
+            assert aic.getName().endsWith('$1')
+            assert aic.getEnclosingClass().getName().startsWith('TestScript')
+            assert aic.getEnclosingMethod()?.getName() == 'run'
+        '''
+    }
+
     // GROOVY-7370, GROOVY-10722
     @Test
     void testVargsAIC() {
@@ -506,11 +518,15 @@ final class InnerClassTest {
             class A {
                 class B {
                     String p
+                    String getQ() { WHY }
                 }
                 B m() {
                     return [p:'x'] // calls ScriptBytecodeAdapter.castToType([p:'x'], A$B.class)
+                    // Cannot cast object '{p=x}' with class 'java.util.LinkedHashMap' to class 'A$B' due to:
+                    // GroovyRuntimeException: Could not find named-arg compatible constructor. Expecting one of: A$B(Map), A$B()
                 }
                 final String q = 'y'
+                private static final String WHY = 'y'
             }
 
             o = new A().m()
@@ -1562,6 +1578,7 @@ final class InnerClassTest {
             }
             class C extends B {
             }
+
             def c = new C()
             assert c.foo() instanceof C
         '''
