@@ -123,6 +123,18 @@ public class CacheableCallSite extends MutableCallSite {
         fallbackRound.incrementAndGet();
     }
 
+    /**
+     * Clear the LRU cache and reset fallback count.
+     * Called when metaclass changes to ensure stale method handles are discarded.
+     */
+    public void clearCache() {
+        synchronized (lruCache) {
+            lruCache.clear();
+        }
+        latestHitMethodHandleWrapperSoftReference = null;
+        resetFallbackCount();
+    }
+
     public AtomicLong getFallbackRound() {
         return fallbackRound;
     }
