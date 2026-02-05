@@ -23,7 +23,6 @@ import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GeneratedClosure;
-import org.codehaus.groovy.runtime.NullObject;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -33,7 +32,6 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -227,7 +225,8 @@ public class IndyInterface {
                 sender = sender.getEnclosingClass(); // GROOVY-2433
             }
         }
-        MethodHandle mh = makeAdapter(mc, sender, name, callID, type, safe, thisCall, spreadCall);
+        // make an adapter for method selection, i.e. get cached method handle (fast path) or fall back
+        MethodHandle mh = makeBootHandle(mc, sender, name, callID, type, safe, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
         mc.setTarget(mh);
         mc.setDefaultTarget(mh);
         mc.setFallbackTarget(makeFallBack(mc, sender, name, callID, type, safe, thisCall, spreadCall));
@@ -240,13 +239,6 @@ public class IndyInterface {
      */
     protected static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
         return makeBootHandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, SELECT_METHOD_HANDLE_METHOD);
-    }
-
-    /**
-     * Makes an adapter method for method selection, i.e. get the cached method handle (fast path) or fallback.
-     */
-    private static MethodHandle makeAdapter(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
-        return makeBootHandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
     }
 
     private static MethodHandle makeBootHandle(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall, MethodHandle fromCacheOrSelectMethod) {
@@ -328,22 +320,21 @@ public class IndyInterface {
     private static MethodHandle fromCacheHandle(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
-        MethodHandleWrapper mhw =
-                bypassCache(spreadCall, arguments)
-                    ? NULL_METHOD_HANDLE_WRAPPER
-                    : doWithCallSite(
-                            callSite, arguments,
-                            (cs, receiver) ->
-                                    cs.getAndPut(
-                                            receiver.getClass().getName(),
-                                            c -> {
-                                                MethodHandleWrapper fbMhw = fallbackSupplier.get();
-                                                return fbMhw.isCanSetTarget() ? fbMhw : NULL_METHOD_HANDLE_WRAPPER;
-                                            }
-                                    )
-                    );
+        MethodHandleWrapper mhw;
+        if (bypassCache(spreadCall, arguments)) {
+            mhw = NULL_METHOD_HANDLE_WRAPPER;
+        } else {
+            Object receiver = arguments[0];
+            String receiverClassName = receiver != null ? receiver.getClass().getName() : "org.codehaus.groovy.runtime.NullObject";
 
-        if (NULL_METHOD_HANDLE_WRAPPER == mhw) {
+            mhw = callSite.getAndPut(receiverClassName, (theName) -> {
+                MethodHandleWrapper fallback = fallbackSupplier.get();
+                if (fallback.isCanSetTarget()) return fallback;
+                return NULL_METHOD_HANDLE_WRAPPER;
+            });
+        }
+
+        if (mhw == NULL_METHOD_HANDLE_WRAPPER) {
             mhw = fallbackSupplier.get();
         }
 
@@ -366,8 +357,8 @@ public class IndyInterface {
 
     private static boolean bypassCache(Boolean spreadCall, Object[] arguments) {
         if (spreadCall) return true;
-        final Object receiver = arguments[0];
-        return null != receiver && ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
+        Object receiver = arguments[0];
+        return receiver != null && ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
     }
 
     /**
@@ -397,7 +388,9 @@ public class IndyInterface {
         if (callSite.getTarget() == defaultTarget) {
             // correct the stale methodHandle in the inline cache of callsite
             // it is important but impacts the performance somehow when cache misses frequently
-            doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), mhw));
+            Object receiver = arguments[0];
+            String key = receiver != null ? receiver.getClass().getName() : "org.codehaus.groovy.runtime.NullObject";
+            callSite.put(key, mhw);
         }
 
         return mhw.getCachedMethodHandle();
@@ -412,18 +405,6 @@ public class IndyInterface {
                 selector.handle,
                 selector.cache
         );
-    }
-
-    private static <T> T doWithCallSite(MutableCallSite callSite, Object[] arguments, BiFunction<? super CacheableCallSite, ? super Object, ? extends T> f) {
-        if (callSite instanceof CacheableCallSite cacheableCallSite) {
-            Object receiver = arguments[0];
-
-            if (null == receiver) receiver = NullObject.getNullObject();
-
-            return f.apply(cacheableCallSite, receiver);
-        }
-
-        throw new GroovyBugError("CacheableCallSite is expected, but the actual callsite is: " + callSite);
     }
 
     /**
