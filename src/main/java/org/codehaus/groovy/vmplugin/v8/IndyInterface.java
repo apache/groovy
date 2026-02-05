@@ -23,7 +23,6 @@ import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.GeneratedClosure;
-import org.codehaus.groovy.runtime.NullObject;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
@@ -33,7 +32,6 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,55 +51,50 @@ public class IndyInterface {
     private static final long INDY_FALLBACK_CUTOFF = SystemUtil.getLongSafe("groovy.indy.fallback.cutoff", 100L);
 
     /**
-     * flags for method and property calls
+     * Flags for method and property calls.
      */
-    public static final int
-            SAFE_NAVIGATION = 1, THIS_CALL = 2,
-            GROOVY_OBJECT = 4, IMPLICIT_THIS = 8,
-            SPREAD_CALL = 16, UNCACHED_CALL = 32;
+    public static final int SAFE_NAVIGATION=1, THIS_CALL=2, GROOVY_OBJECT=4, IMPLICIT_THIS=8, SPREAD_CALL=16, UNCACHED_CALL=32;
+
     private static final MethodHandleWrapper NULL_METHOD_HANDLE_WRAPPER = MethodHandleWrapper.getNullMethodHandleWrapper();
 
     /**
-     * Enum for easy differentiation between call types
+     * Enum for easy differentiation between call types.
      */
     public enum CallType {
         /**
-         * Method invocation type
+         * Method invocation type.
          */
-        METHOD("invoke", 0),
+        METHOD("invoke"),
         /**
-         * Constructor invocation type
+         * Constructor invocation type.
          */
-        INIT("init", 1),
+        INIT("init"),
         /**
-         * Get property invocation type
+         * Get property invocation type.
          */
-        GET("getProperty", 2),
+        GET("getProperty"),
         /**
-         * Set property invocation type
+         * Set property invocation type.
          */
-        SET("setProperty", 3),
+        SET("setProperty"),
         /**
-         * Cast invocation type
+         * Cast invocation type.
          */
-        CAST("cast", 4),
+        CAST("cast"),
+        /**
+         * Interface method invocation type.
+         */
+        INTERFACE("interface");
+
+        private static final Map<String, CallType> NAME_CALLTYPE_MAP = Stream.of(CallType.values())
+            .collect(Collectors.toUnmodifiableMap(CallType::getCallSiteName, Function.identity()));
 
         /**
-         * call to interface method
-         */
-        INTERFACE("interface", 5);
-
-        private static final Map<String, CallType> NAME_CALLTYPE_MAP =
-                Stream.of(CallType.values()).collect(Collectors.toMap(CallType::getCallSiteName, Function.identity()));
-
-        /**
-         * The name of the call site type
+         * The call site type name.
          */
         private final String name;
-        private final int orderNumber;
 
-        CallType(String callSiteName, int orderNumber) {
-            this.orderNumber = orderNumber;
+        CallType(String callSiteName) {
             this.name = callSiteName;
         }
 
@@ -117,16 +110,16 @@ public class IndyInterface {
         }
 
         public int getOrderNumber() {
-            return this.orderNumber;
+            return ordinal();
         }
     }
 
     /**
-     * Logger
+     * Logger.
      */
     protected static final Logger LOG;
     /**
-     * boolean to indicate if logging for indy is enabled
+     * Indicates if indy logging is enabled.
      */
     protected static final boolean LOG_ENABLED;
 
@@ -153,6 +146,11 @@ public class IndyInterface {
     public static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     /**
+     * shared invoker for cached method handles
+     */
+    private static final MethodHandle CACHED_INVOKER = MethodHandles.exactInvoker(MethodType.methodType(Object.class, Object[].class));
+
+    /**
      * handle for the fromCacheHandle method
      */
     private static final MethodHandle FROM_CACHE_HANDLE_METHOD;
@@ -162,22 +160,15 @@ public class IndyInterface {
      */
     private static final MethodHandle SELECT_METHOD_HANDLE_METHOD;
 
-    /**
-     * shared invoker for cached method handles
-     */
-    private static final MethodHandle CACHED_INVOKER;
-
     static {
-
         try {
-            MethodType handleMt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
-            FROM_CACHE_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "fromCacheHandle", handleMt);
-            SELECT_METHOD_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethodHandle", handleMt);
+            MethodType mt = MethodType.methodType(MethodHandle.class, CacheableCallSite.class, Class.class, String.class, int.class, Boolean.class, Boolean.class, Boolean.class, Object.class, Object[].class);
+
+            FROM_CACHE_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "fromCacheHandle", mt);
+            SELECT_METHOD_HANDLE_METHOD = LOOKUP.findStatic(IndyInterface.class, "selectMethodHandle", mt);
         } catch (Exception e) {
             throw new GroovyBugError(e);
         }
-
-        CACHED_INVOKER = MethodHandles.exactInvoker(MethodType.methodType(Object.class, Object[].class));
     }
 
     protected static SwitchPoint switchPoint = new SwitchPoint();
@@ -202,48 +193,40 @@ public class IndyInterface {
     }
 
     /**
-     * bootstrap method for method calls from Groovy compiled code with indy
-     * enabled. This method gets a flags parameter which uses the following
-     * encoding:<ul>
-     * <li>{@value #SAFE_NAVIGATION} is the flag value for safe navigation see {@link #SAFE_NAVIGATION}</li>
-     * <li>{@value #THIS_CALL} is the flag value for a call on this see {@link #THIS_CALL}</li>
-     * </ul>
+     * Bootstrap method for method calls from Groovy-compiled code with indy.
      *
      * @param caller   - the caller
-     * @param callType - the type of the call
-     * @param type     - the call site type
+     * @param callType - the type of call
+     * @param type     - the parameter(s) and return type specification
      * @param name     - the real method name
-     * @param flags    - call flags
-     * @return the produced CallSite
-     * @since Groovy 2.1.0
+     * @param flags    - call flags <ul>
+     *                   <li>{@value #SAFE_NAVIGATION} is the flag value for safe navigation; see {@link #SAFE_NAVIGATION}</li>
+     *                   <li>{@value #THIS_CALL} is the flag value for a call on this; see {@link #THIS_CALL}</li>
+     *                   <li>{@value #SPREAD_CALL} is the flag value for a spread call; see {@link #SPREAD_CALL}</li>
+     *                   </ul>
+     * @since 2.1.0
      */
-    public static CallSite bootstrap(MethodHandles.Lookup caller, String callType, MethodType type, String name, int flags) {
+    public static CallSite bootstrap(final MethodHandles.Lookup caller, final String callType, final MethodType type, final String name, final int flags) {
         CallType ct = CallType.fromCallSiteName(callType);
         if (null == ct) throw new GroovyBugError("Unknown call type: " + callType);
 
         int callID = ct.getOrderNumber();
-        boolean safe = (flags & SAFE_NAVIGATION) != 0;
-        boolean thisCall = (flags & THIS_CALL) != 0;
-        boolean spreadCall = (flags & SPREAD_CALL) != 0;
+        boolean safe       = (flags & SAFE_NAVIGATION) != 0;
+        boolean thisCall   = (flags & THIS_CALL      ) != 0;
+        boolean spreadCall = (flags & SPREAD_CALL    ) != 0;
 
-        return realBootstrap(caller, name, callID, type, safe, thisCall, spreadCall);
-    }
-
-    /**
-     * backing bootstrap method with all parameters
-     */
-    private static CallSite realBootstrap(MethodHandles.Lookup caller, String name, int callID, MethodType type, boolean safe, boolean thisCall, boolean spreadCall) {
         // first produce a dummy call site, since indy doesn't give the runtime types;
         // the site then changes to the target when INDY_OPTIMIZE_THRESHOLD is reached
         // that does the method selection including the direct call to the real method
-        CacheableCallSite mc = new CacheableCallSite(type, caller);
+        var mc = new CacheableCallSite(type, caller);
         Class<?> sender = caller.lookupClass();
         if (thisCall) {
             while (GeneratedClosure.class.isAssignableFrom(sender)) {
                 sender = sender.getEnclosingClass(); // GROOVY-2433
             }
         }
-        MethodHandle mh = makeAdapter(mc, sender, name, callID, type, safe, thisCall, spreadCall);
+        // make an adapter for method selection, i.e. get cached method handle (fast path) or fall back
+        MethodHandle mh = makeBootHandle(mc, sender, name, callID, type, safe, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
         mc.setTarget(mh);
         mc.setDefaultTarget(mh);
         mc.setFallbackTarget(makeFallBack(mc, sender, name, callID, type, safe, thisCall, spreadCall));
@@ -252,42 +235,40 @@ public class IndyInterface {
     }
 
     /**
-     * Makes a fallback method for an invalidated method selection
+     * Makes a fallback method for an invalidated method selection.
      */
     protected static MethodHandle makeFallBack(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
-        return makeBoothandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, SELECT_METHOD_HANDLE_METHOD);
+        return makeBootHandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, SELECT_METHOD_HANDLE_METHOD);
     }
 
-    /**
-     * Makes an adapter method for method selection, i.e. get the cached methodhandle(fast path) or fallback
-     */
-    private static MethodHandle makeAdapter(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall) {
-        return makeBoothandle(mc, sender, name, callID, type, safeNavigation, thisCall, spreadCall, FROM_CACHE_HANDLE_METHOD);
-    }
-
-    private static MethodHandle makeBoothandle(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall, MethodHandle handleReturningMh) {
-        // Step 1: bind site-constant arguments (incl dummy receiver marker)
-        MethodHandle fromCacheBound = MethodHandles.insertArguments(
-            handleReturningMh,
-            0, mc, sender, name, callID,
-            safeNavigation, thisCall, spreadCall,
-            /*dummy receiver*/ 1
+    private static MethodHandle makeBootHandle(MutableCallSite mc, Class<?> sender, String name, int callID, MethodType type, boolean safeNavigation, boolean thisCall, boolean spreadCall, MethodHandle fromCacheOrSelectMethod) {
+        final Object dummyReceiver = 1;
+        // Step 1: bind site-constant arguments
+        MethodHandle boundHandle = MethodHandles.insertArguments(
+            fromCacheOrSelectMethod,
+            0, // insert start index
+            mc,
+            sender,
+            name,
+            callID,
+            safeNavigation,
+            thisCall,
+            spreadCall,
+            dummyReceiver
         );
-        // fromCacheBound: (Object receiver, Object[] args) → MethodHandle
+        // boundHandle: (Object receiver, Object[] arguments) ? MethodHandle
 
-        // Step 2: fold into the shared invoker (MethodHandle, Object[]) → Object
-        MethodHandle boothandle = MethodHandles.foldArguments(
-            CACHED_INVOKER, // (MethodHandle, Object[]) → Object
-            fromCacheBound  // (Object, Object[]) → MethodHandle
+        // Step 2: fold into the shared invoker (MethodHandle, Object[]) ? Object
+        MethodHandle bootHandle = MethodHandles.foldArguments(
+            CACHED_INVOKER, // (MethodHandle, Object[]) ? Object
+            boundHandle  // (Object, Object[]) ? MethodHandle
         );
-        // boothandle: (Object receiver, Object[] args) → Object
+        // bootHandle: (Object receiver, Object[] arguments) ? Object
 
-        // Step 3: adapt to callsite type: collect all arguments into Object[] and then asType
-        boothandle = boothandle
-            .asCollector(Object[].class, type.parameterCount())
-            .asType(type);
+        // Step 3: adapt to call site type: collect all arguments into Object[] and then asType
+        bootHandle = bootHandle.asCollector(Object[].class, type.parameterCount()).asType(type);
 
-        return boothandle;
+        return bootHandle;
     }
 
     private static class FallbackSupplier {
@@ -324,8 +305,8 @@ public class IndyInterface {
     }
 
     /**
-     * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
-     * @deprecated Use the new boothandle-based approach instead.
+     * Get the cached methodHandle. if the related methodHandle is not found in the inline cache, cache and return it.
+     * @deprecated Use the new bootHandle-based approach instead.
      */
     @Deprecated
     public static Object fromCache(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
@@ -334,27 +315,26 @@ public class IndyInterface {
     }
 
     /**
-     * Get the cached methodhandle. if the related methodhandle is not found in the inline cache, cache and return it.
+     * Get the cached methodHandle. if the related methodHandle is not found in the inline cache, cache and return it.
      */
     private static MethodHandle fromCacheHandle(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
         FallbackSupplier fallbackSupplier = new FallbackSupplier(callSite, sender, methodName, callID, safeNavigation, thisCall, spreadCall, dummyReceiver, arguments);
 
-        MethodHandleWrapper mhw =
-                bypassCache(spreadCall, arguments)
-                    ? NULL_METHOD_HANDLE_WRAPPER
-                    : doWithCallSite(
-                            callSite, arguments,
-                            (cs, receiver) ->
-                                    cs.getAndPut(
-                                            receiver.getClass().getName(),
-                                            c -> {
-                                                MethodHandleWrapper fbMhw = fallbackSupplier.get();
-                                                return fbMhw.isCanSetTarget() ? fbMhw : NULL_METHOD_HANDLE_WRAPPER;
-                                            }
-                                    )
-                    );
+        MethodHandleWrapper mhw;
+        if (bypassCache(spreadCall, arguments)) {
+            mhw = NULL_METHOD_HANDLE_WRAPPER;
+        } else {
+            Object receiver = arguments[0];
+            String receiverClassName = receiver != null ? receiver.getClass().getName() : "org.codehaus.groovy.runtime.NullObject";
 
-        if (NULL_METHOD_HANDLE_WRAPPER == mhw) {
+            mhw = callSite.getAndPut(receiverClassName, (theName) -> {
+                MethodHandleWrapper fallback = fallbackSupplier.get();
+                if (fallback.isCanSetTarget()) return fallback;
+                return NULL_METHOD_HANDLE_WRAPPER;
+            });
+        }
+
+        if (mhw == NULL_METHOD_HANDLE_WRAPPER) {
             mhw = fallbackSupplier.get();
         }
 
@@ -377,13 +357,13 @@ public class IndyInterface {
 
     private static boolean bypassCache(Boolean spreadCall, Object[] arguments) {
         if (spreadCall) return true;
-        final Object receiver = arguments[0];
-        return null != receiver && ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
+        Object receiver = arguments[0];
+        return receiver != null && ClassInfo.getClassInfo(receiver.getClass()).hasPerInstanceMetaClasses();
     }
 
     /**
      * Core method for indy method selection using runtime types.
-     * @deprecated Use the new boothandle-based approach instead.
+     * @deprecated Use the new bootHandle-based approach instead.
      */
     @Deprecated
     public static Object selectMethod(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, Boolean safeNavigation, Boolean thisCall, Boolean spreadCall, Object dummyReceiver, Object[] arguments) throws Throwable {
@@ -406,9 +386,11 @@ public class IndyInterface {
         }
 
         if (callSite.getTarget() == defaultTarget) {
-            // correct the stale methodhandle in the inline cache of callsite
+            // correct the stale methodHandle in the inline cache of callsite
             // it is important but impacts the performance somehow when cache misses frequently
-            doWithCallSite(callSite, arguments, (cs, receiver) -> cs.put(receiver.getClass().getName(), mhw));
+            Object receiver = arguments[0];
+            String key = receiver != null ? receiver.getClass().getName() : "org.codehaus.groovy.runtime.NullObject";
+            callSite.put(key, mhw);
         }
 
         return mhw.getCachedMethodHandle();
@@ -423,19 +405,6 @@ public class IndyInterface {
                 selector.handle,
                 selector.cache
         );
-    }
-
-    private static <T> T doWithCallSite(MutableCallSite callSite, Object[] arguments, BiFunction<? super CacheableCallSite, ? super Object, ? extends T> f) {
-        if (callSite instanceof CacheableCallSite) {
-            CacheableCallSite cacheableCallSite = (CacheableCallSite) callSite;
-            Object receiver = arguments[0];
-
-            if (null == receiver) receiver = NullObject.getNullObject();
-
-            return f.apply(cacheableCallSite, receiver);
-        }
-
-        throw new GroovyBugError("CacheableCallSite is expected, but the actual callsite is: " + callSite);
     }
 
     /**
