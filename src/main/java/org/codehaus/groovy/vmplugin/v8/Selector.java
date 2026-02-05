@@ -124,22 +124,18 @@ public abstract class Selector {
     private static final CallType[] CALL_TYPE_VALUES = CallType.values();
 
     /**
-     * Returns the Selector
+     * Returns a Selector or throws a GroovyBugError.
      */
     public static Selector getSelector(CacheableCallSite callSite, Class<?> sender, String methodName, int callID, boolean safeNavigation, boolean thisCall, boolean spreadCall, Object[] arguments) {
         CallType callType = CALL_TYPE_VALUES[callID];
         return switch (callType) {
-            case INIT ->
-                new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case METHOD ->
-                new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case GET ->
-                new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            case SET -> throw new GroovyBugError("your call tried to do a property set, which is not supported.");
-            case CAST -> new CastSelector(callSite, arguments);
-            case INTERFACE ->
-                new InterfaceSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
-            default -> throw new GroovyBugError("unexpected call type");
+            case INIT      -> new InitSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case METHOD    -> new MethodSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case GET       -> new PropertySelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            case SET       -> throw new GroovyBugError("your call tried to do a property set, which is not supported.");
+            case CAST      -> new CastSelector(callSite, sender, methodName, arguments);
+            case INTERFACE -> new InterfaceSelector(callSite, sender, methodName, callType, safeNavigation, thisCall, spreadCall, arguments);
+            default        -> throw new GroovyBugError("unexpected call type");
         };
     }
 
@@ -164,35 +160,37 @@ public abstract class Selector {
     private static class CastSelector extends MethodSelector {
         private final Class<?> staticSourceType, staticTargetType;
 
-        public CastSelector(CacheableCallSite callSite, Object[] arguments) {
-            super(callSite, Selector.class, "", CallType.CAST, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, arguments);
+        CastSelector(final CacheableCallSite callSite, final Class<?> sender, final String spec, final Object[] args) {
+            super(callSite, sender, spec, CallType.CAST, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, args);
             this.staticSourceType = callSite.type().parameterType(0);
             this.staticTargetType = callSite.type().returnType();
         }
 
         @Override
         public void setCallSiteTarget() {
-            // target types String, Enum and Class are handled by the compiler
+            // NOTE: target types String, Class, and Enum are handled by the compiler
 
-            handleBoolean();
-            handleNullWithoutBoolean();
+            if (handle == null) handleBoolean();
+            if (handle == null) handleNullWithoutBoolean();
 
-            // !! from here on args[0] is always not null !!
-            handleInstanceCase();
+            // NOTE: !! from here on if handle is null, args[0] is always not null !!
 
-            // targetType is abstract Collection fitting for HashSet or ArrayList
-            // and object is Collection or array
-            handleCollections();
-            handleSAM();
+            if (handle == null) handleIsAnInstance();
+            if (handle == null) handleCollections();
+            if (handle == null) handleSAM();
 
             // will handle :
             //      * collection case where argument is an array
             //      * array transformation (staticTargetType.isArray())
             //      * constructor invocation
-            //      * final GroovyCastException
-            castToTypeFallBack();
+            //      * throw GroovyCastException
+            if (handle == null) {
+                handle = MethodHandles.insertArguments(DTT_CAST_TO_TYPE, 1, staticTargetType);
+            }
 
-            if (!handle.type().equals(callSite.type())) castAndSetGuards();
+            if (!handle.type().equals(callSite.type())) {
+                castAndSetGuards();
+            }
         }
 
         private void castAndSetGuards() {
@@ -202,62 +200,34 @@ public abstract class Selector {
         }
 
         private void handleNullWithoutBoolean() {
-            if (handle != null || args[0] != null) return;
-
-            if (staticTargetType.isPrimitive()) {
-                handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION, 1, staticTargetType);
-                // need to call here because we used the static target type
-                // it won't be done otherwise because handle.type() == callSite.type()
-                castAndSetGuards();
-            } else {
-                handle = MethodHandles.identity(staticSourceType);
+            if (args[0] == null) {
+                if (staticTargetType.isPrimitive()) {
+                    handle = MethodHandles.insertArguments(GROOVY_CAST_EXCEPTION, 1, staticTargetType);
+                    // need to call here because we used the static target type
+                    // it won't be done otherwise because handle.type() == callSite.type()
+                    castAndSetGuards();
+                } else {
+                    handle = MethodHandles.identity(staticSourceType);
+                }
             }
         }
 
-        private void handleInstanceCase() {
-            if (handle != null) return;
-
+        private void handleIsAnInstance() {
             if (staticTargetType.isAssignableFrom(args[0].getClass())) {
                 handle = MethodHandles.identity(staticSourceType);
             }
         }
 
-        private static boolean isAbstractClassOf(Class<?> toTest, Class<?> givenOnCallSite) {
-            if (!toTest.isAssignableFrom(givenOnCallSite)) return false;
-            if (givenOnCallSite.isInterface()) return true;
-            return Modifier.isAbstract(givenOnCallSite.getModifiers());
-        }
-
-        private void handleCollections() {
-            if (handle != null) return;
-
-            if (!(args[0] instanceof Collection)) return;
-            if (isAbstractClassOf(HashSet.class, staticTargetType)) {
-                handle = HASHSET_CONSTRUCTOR;
-            } else if (isAbstractClassOf(ArrayList.class, staticTargetType)) {
-                handle = ARRAYLIST_CONSTRUCTOR;
+        private void handleSAM() {
+            if (args[0] instanceof Closure) {
+                Method m = CachedSAMClass.getSAMMethod(staticTargetType);
+                if (m == null) return;
+                // TODO: optimize: add guard based on type Closure
+                handle = MethodHandles.insertArguments(SAM_CONVERSION, 1, m, staticTargetType);
             }
         }
 
-        private void handleSAM() {
-            if (handle != null) return;
-
-            if (!(args[0] instanceof Closure)) return;
-            Method m = CachedSAMClass.getSAMMethod(staticTargetType);
-            if (m == null) return;
-            //TODO: optimize: add guard based on type Closure
-            handle = MethodHandles.insertArguments(SAM_CONVERSION, 1, m, staticTargetType);
-        }
-
-        private void castToTypeFallBack() {
-            if (handle != null) return;
-
-            // generic fallback to castToType
-            handle = MethodHandles.insertArguments(DTT_CAST_TO_TYPE, 1, staticTargetType);
-        }
-
         private void handleBoolean() {
-            if (handle != null) return;
             boolean primitive = (staticTargetType == boolean.class);
             if (!primitive && staticTargetType != Boolean.class) return;
             // boolean->boolean, Boolean->boolean, boolean->Boolean are handled by the compiler
@@ -277,6 +247,24 @@ public abstract class Selector {
             MethodHandle elseCallAsBoolean = handle;
 
             handle = MethodHandles.guardWithTest(ifNull, thenZero, elseCallAsBoolean);
+        }
+
+        /**
+         * Sets handle if object is Collection and target type is an abstract
+         * type fitting for HashSet or ArrayList.
+         */
+        private void handleCollections() {
+            if (args[0] instanceof Collection) {
+                if (isAbstractClassOf(HashSet.class, staticTargetType)) {
+                    handle = HASHSET_CONSTRUCTOR;
+                } else if (isAbstractClassOf(ArrayList.class, staticTargetType)) {
+                    handle = ARRAYLIST_CONSTRUCTOR;
+                }
+            }
+        }
+
+        private static boolean isAbstractClassOf(final Class<?> type, final Class<?> callSiteType) {
+            return (callSiteType.isInterface() || Modifier.isAbstract(callSiteType.getModifiers())) && type.isAssignableFrom(callSiteType);
         }
     }
 
