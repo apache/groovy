@@ -215,7 +215,9 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitForLoop(ForStatement statement) {
         visitStatement(statement);
-        visitAnnotations(statement.getVariable());
+        if (statement.getValueVariable() != null) {
+            visitAnnotations(statement.getValueVariable());
+        }
         super.visitForLoop(statement);
     }
 

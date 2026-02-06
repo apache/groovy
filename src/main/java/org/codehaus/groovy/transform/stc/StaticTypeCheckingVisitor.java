@@ -2176,7 +2176,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             visitStatement(forLoop);
             collectionExpression.visit(this);
             ClassNode collectionType = getType(collectionExpression);
-            ClassNode forLoopVariableType = forLoop.getVariableType();
+            ClassNode forLoopVariableType = forLoop.getValueVariable().getType();
             ClassNode componentType;
             if (isStringType(collectionType)) {
                 if (isWrapperCharacter(getWrapper(forLoopVariableType))) {

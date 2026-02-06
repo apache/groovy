@@ -137,7 +137,9 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     @Override
     public void visitForLoop(final ForStatement stmt) {
-        visitAnnotations(stmt.getVariable()); // "for(T x : y)" or "for(x in y)"
+        if (stmt.getValueVariable() != null) {
+            visitAnnotations(stmt.getValueVariable()); // "for(T x : y)" or "for(x in y)"
+        }
         stmt.setCollectionExpression(transform(stmt.getCollectionExpression()));
         stmt.getLoopBlock().visit(this);
     }
