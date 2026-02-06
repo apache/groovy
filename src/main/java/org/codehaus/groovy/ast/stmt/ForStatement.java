@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 
 import static java.util.Objects.requireNonNull;
@@ -32,7 +33,9 @@ import static java.util.Objects.requireNonNull;
  */
 public class ForStatement extends Statement implements LoopingStatement {
 
-    public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter");
+    private static final Parameter DUMMY_VALUE_VARIABLE = new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter");
+    @Deprecated(since = "6.0.0")
+    public static final Parameter FOR_LOOP_DUMMY = DUMMY_VALUE_VARIABLE;
 
     private final Parameter indexVariable, valueVariable;
     private Expression collectionExpression;
@@ -50,6 +53,15 @@ public class ForStatement extends Statement implements LoopingStatement {
 
     public ForStatement(final Parameter variable, final Expression collectionExpression, final Statement loopBlock) {
         this(null, variable, collectionExpression, loopBlock);
+    }
+
+    /**
+     * A constructor for C-style for loops.
+     *
+     * @since 6.0.0
+     */
+    public ForStatement(final ClosureListExpression closureListExpression, final Statement loopBlock) {
+        this(DUMMY_VALUE_VARIABLE, closureListExpression, loopBlock);
     }
 
     public void setCollectionExpression(final Expression collectionExpression) {
@@ -74,7 +86,7 @@ public class ForStatement extends Statement implements LoopingStatement {
      * @since 5.0.0
      */
     public Parameter getValueVariable() {
-        return valueVariable != FOR_LOOP_DUMMY ? valueVariable : null;
+        return valueVariable != DUMMY_VALUE_VARIABLE ? valueVariable : null;
     }
 
     @Deprecated(since = "5.0.0")

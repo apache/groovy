@@ -1392,7 +1392,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     @Override
     public void visitForLoop(final ForStatement forLoop) {
-        resolveOrFail(forLoop.getVariableType(), forLoop);
+        if (forLoop.getValueVariable() != null) {
+            resolveOrFail(forLoop.getValueVariable().getType(), forLoop);
+        }
         super.visitForLoop(forLoop);
     }
 
