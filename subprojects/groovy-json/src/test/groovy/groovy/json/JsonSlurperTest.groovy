@@ -21,6 +21,8 @@ package groovy.json
 import groovy.test.GroovyTestCase
 import org.apache.groovy.json.internal.Value
 
+import java.nio.charset.StandardCharsets
+
 class JsonSlurperTest extends GroovyTestCase {
 
     def parser
@@ -369,19 +371,18 @@ class JsonSlurperTest extends GroovyTestCase {
             }
         '''
 
-        and:
         def result = new JsonSlurper().parse(file.toPath())
-        assert result == [
-                response: [
-                        status: "ok",
-                        code: 200,
-                        chuncked: false,
-                        "content-type-supported": ["text/html", "text/plain"],
-                        headers: [
-                                "If-Last-Modified": "2010"
-                        ]
-                ] ]
 
+        assert result == [
+            response: [
+                status: "ok",
+                code: 200,
+                chuncked: false,
+                "content-type-supported": ["text/html", "text/plain"],
+                headers: [
+                    "If-Last-Modified": "2010"
+                ]
+            ] ]
     }
 
     void testParseStringEndedWithRightCurlyBrace() {
@@ -401,6 +402,322 @@ class JsonSlurperTest extends GroovyTestCase {
                                 "c":2
                             }}"""
         assert jsonSlurper.parseText(valid) == [a: 1, b:[c:2]]
+    }
+
+    void testParseTextSimpleObject() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"name":"John","age":30}')
+
+        assertNotNull(result)
+        assertTrue(result instanceof Map)
+        def map = (Map) result
+        assertEquals("John", map.get("name"))
+        assertEquals(30, map.get("age"))
+    }
+
+    void testParseTextSimpleArray() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText("[1, 2, 3, 4, 5]")
+
+        assertNotNull(result)
+        assertTrue(result instanceof List)
+        def list = (List) result
+        assertEquals(5, list.size())
+        assertEquals(1, list.get(0))
+        assertEquals(5, list.get(4))
+    }
+
+    void testParseTextNestedObject() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"person":{"name":"Jane","address":{"city":"NYC"}}}')
+
+        assertNotNull(result)
+        def map = (Map) result
+        def person = (Map) map.get("person")
+        assertEquals("Jane", person.get("name"))
+        def address = (Map) person.get("address")
+        assertEquals("NYC", address.get("city"))
+    }
+
+    void testParseTextWithNull() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"value":null}')
+
+        def map = (Map) result
+        assertNull(map.get("value"))
+    }
+
+    void testParseTextWithBoolean() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"active":true,"deleted":false}')
+
+        def map = (Map) result
+        assertEquals(true, map.get("active"))
+        assertEquals(false, map.get("deleted"))
+    }
+
+    void testParseTextWithFloat() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"price":19.99}')
+
+        def map = (Map) result
+        def price = map.get("price")
+        assertTrue(price instanceof Number)
+        assertEquals(19.99, ((Number) price).doubleValue(), 0.001)
+    }
+
+    void testParseTextEmptyObject() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText("{}")
+
+        assertTrue(result instanceof Map)
+        def map = (Map) result
+        assertTrue(map.isEmpty())
+    }
+
+    void testParseTextEmptyArray() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText("[]")
+
+        assertTrue(result instanceof List)
+        def list = (List) result
+        assertTrue(list.isEmpty())
+    }
+
+    void testParseTextNullThrowsException() {
+        def slurper = new JsonSlurper()
+        shouldFail(IllegalArgumentException) { slurper.parseText(null) }
+    }
+
+    void testParseTextEmptyStringThrowsException() {
+        def slurper = new JsonSlurper()
+        shouldFail(IllegalArgumentException) { slurper.parseText("") }
+    }
+
+    void testParseReader() {
+        def slurper = new JsonSlurper()
+        def reader = new StringReader('{"test":123}')
+        def result = slurper.parse(reader)
+
+        assertNotNull(result)
+        def map = (Map) result
+        assertEquals(123, map.get("test"))
+    }
+
+    void testParseReaderNullThrowsException() {
+        def slurper = new JsonSlurper()
+        shouldFail(IllegalArgumentException) { slurper.parse((Reader) null) }
+    }
+
+    void testParseInputStream() {
+        def slurper = new JsonSlurper()
+        def is = new ByteArrayInputStream('{"key":"value"}'.getBytes(StandardCharsets.UTF_8))
+        def result = slurper.parse(is)
+
+        assertNotNull(result)
+        def map = (Map) result
+        assertEquals("value", map.get("key"))
+    }
+
+    void testParseInputStreamWithCharset() {
+        def slurper = new JsonSlurper()
+        def is = new ByteArrayInputStream('{"key":"value"}'.getBytes(StandardCharsets.UTF_8))
+        def result = slurper.parse(is, "UTF-8")
+
+        assertNotNull(result)
+        def map = (Map) result
+        assertEquals("value", map.get("key"))
+    }
+
+    void testParseFile() throws IOException {
+        def slurper = new JsonSlurper()
+        def jsonFile = File.createTempFile('test', '.json')
+        jsonFile.deleteOnExit()
+        jsonFile.text = '{"file":"test"}'
+
+        def result = slurper.parse(jsonFile)
+
+        assertNotNull(result)
+        def map = (Map) result
+        assertEquals("test", map.get("file"))
+    }
+
+    void testParseFileWithCharset() throws IOException {
+        def slurper = new JsonSlurper()
+        def jsonFile = File.createTempFile('test2', '.json')
+        jsonFile.deleteOnExit()
+        jsonFile.text = '{"file":"test2"}'
+
+        def result = slurper.parse(jsonFile, "UTF-8")
+
+        assertNotNull(result)
+        def map = (Map) result
+        assertEquals("test2", map.get("file"))
+    }
+
+    void testGetAndSetType() {
+        def slurper = new JsonSlurper()
+
+        assertEquals(JsonParserType.CHAR_BUFFER, slurper.getType())
+
+        slurper.setType(JsonParserType.INDEX_OVERLAY)
+        assertEquals(JsonParserType.INDEX_OVERLAY, slurper.getType())
+
+        slurper.setType(JsonParserType.LAX)
+        assertEquals(JsonParserType.LAX, slurper.getType())
+    }
+
+    void testGetAndSetChop() {
+        def slurper = new JsonSlurper()
+
+        assertFalse(slurper.isChop())
+
+        slurper.setChop(true)
+        assertTrue(slurper.isChop())
+
+        slurper.setChop(false)
+        assertFalse(slurper.isChop())
+    }
+
+    void testGetAndSetLazyChop() {
+        def slurper = new JsonSlurper()
+
+        assertTrue(slurper.isLazyChop())
+
+        slurper.setLazyChop(false)
+        assertFalse(slurper.isLazyChop())
+
+        slurper.setLazyChop(true)
+        assertTrue(slurper.isLazyChop())
+    }
+
+    void testGetAndSetCheckDates() {
+        def slurper = new JsonSlurper()
+
+        assertTrue(slurper.isCheckDates())
+
+        slurper.setCheckDates(false)
+        assertFalse(slurper.isCheckDates())
+
+        slurper.setCheckDates(true)
+        assertTrue(slurper.isCheckDates())
+    }
+
+    void testGetAndSetMaxSizeForInMemory() {
+        def slurper = new JsonSlurper()
+
+        assertEquals(2000000, slurper.getMaxSizeForInMemory())
+
+        slurper.setMaxSizeForInMemory(1000000)
+        assertEquals(1000000, slurper.getMaxSizeForInMemory())
+    }
+
+    void testFluentAPI() {
+        def slurper = new JsonSlurper()
+            .setType(JsonParserType.INDEX_OVERLAY)
+            .setChop(true)
+            .setLazyChop(false)
+            .setCheckDates(false)
+            .setMaxSizeForInMemory(500000)
+
+        assertEquals(JsonParserType.INDEX_OVERLAY, slurper.getType())
+        assertTrue(slurper.isChop())
+        assertFalse(slurper.isLazyChop())
+        assertFalse(slurper.isCheckDates())
+        assertEquals(500000, slurper.getMaxSizeForInMemory())
+    }
+
+    void testParseWithIndexOverlayType() {
+        def slurper = new JsonSlurper().setType(JsonParserType.INDEX_OVERLAY)
+        def result = slurper.parseText('{"type":"overlay"}')
+
+        def map = (Map) result
+        assertEquals("overlay", map.get("type"))
+    }
+
+    void testParseWithLaxType() {
+        def slurper = new JsonSlurper().setType(JsonParserType.LAX)
+        def result = slurper.parseText('{"type":"lax"}')
+
+        def map = (Map) result
+        assertEquals("lax", map.get("type"))
+    }
+
+    void testParseWithCharacterSourceType() {
+        def slurper = new JsonSlurper().setType(JsonParserType.CHARACTER_SOURCE)
+        def result = slurper.parseText('{"type":"source"}')
+
+        def map = (Map) result
+        assertEquals("source", map.get("type"))
+    }
+
+    void testParseStringWithEscapedCharacters() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"text":"line1\\nline2\\ttab"}')
+
+        def map = (Map) result
+        def text = (String) map.get("text")
+        assertTrue(text.contains("\n"))
+        assertTrue(text.contains("\t"))
+    }
+
+    void testParseStringWithUnicode() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"text":"Hello \\u0041"}')
+
+        def map = (Map) result
+        assertEquals("Hello A", map.get("text"))
+    }
+
+    void testParseLargeNumber() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"big":9999999999999999999}')
+
+        def map = (Map) result
+        assertNotNull(map.get("big"))
+    }
+
+    void testParseNegativeNumber() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"negative":-42}')
+
+        def map = (Map) result
+        assertEquals(-42, map.get("negative"))
+    }
+
+    void testParseScientificNotation() {
+        def slurper = new JsonSlurper()
+        def result = slurper.parseText('{"sci":1.5e10}')
+
+        def map = (Map) result
+        def sci = map.get("sci")
+        assertTrue(sci instanceof Number)
+        assertEquals(1.5e10, ((Number) sci).doubleValue(), 1e5)
+    }
+
+    void testParseComplexStructure() {
+        def slurper = new JsonSlurper()
+        def json = '{"users":[{"name":"Alice","roles":["admin","user"]},{"name":"Bob","roles":["user"]}]}'
+        def result = slurper.parseText(json)
+
+        def map = (Map) result
+        def users = (List) map.get("users")
+        assertEquals(2, users.size())
+
+        def alice = (Map) users.get(0)
+        assertEquals("Alice", alice.get("name"))
+        def aliceRoles = (List) alice.get("roles")
+        assertEquals(2, aliceRoles.size())
+    }
+
+    void testJsonParserTypeValues() {
+        def types = JsonParserType.values()
+        assertTrue(types.length >= 4)
+
+        assertEquals(JsonParserType.CHAR_BUFFER, JsonParserType.valueOf("CHAR_BUFFER"))
+        assertEquals(JsonParserType.INDEX_OVERLAY, JsonParserType.valueOf("INDEX_OVERLAY"))
+        assertEquals(JsonParserType.LAX, JsonParserType.valueOf("LAX"))
+        assertEquals(JsonParserType.CHARACTER_SOURCE, JsonParserType.valueOf("CHARACTER_SOURCE"))
     }
 
 }

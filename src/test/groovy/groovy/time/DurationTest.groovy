@@ -165,4 +165,183 @@ class DurationTest extends GroovyTestCase {
             assert 10.weeks < 10.years
         }
     }
+
+    void testConstructor() {
+        def duration = new Duration(1, 2, 3, 4, 5)
+        assertEquals(1, duration.getDays())
+        assertEquals(2, duration.getHours())
+        assertEquals(3, duration.getMinutes())
+        assertEquals(4, duration.getSeconds())
+        assertEquals(5, duration.getMillis())
+    }
+
+    void testToMilliseconds() {
+        def duration = new Duration(1, 0, 0, 0, 0)
+        assertEquals(24 * 60 * 60 * 1000L, duration.toMilliseconds())
+    }
+
+    void testToMillisecondsComplex() {
+        def duration = new Duration(1, 2, 3, 4, 5)
+        def expected = ((((1L * 24 + 2) * 60 + 3) * 60 + 4) * 1000) + 5
+        assertEquals(expected, duration.toMilliseconds())
+    }
+
+    void testPlusDuration() {
+        def d1 = new Duration(1, 2, 3, 4, 5)
+        def d2 = new Duration(1, 1, 1, 1, 1)
+        def result = d1.plus(d2)
+        assertEquals(2, result.getDays())
+        assertEquals(3, result.getHours())
+        assertEquals(4, result.getMinutes())
+        assertEquals(5, result.getSeconds())
+        assertEquals(6, result.getMillis())
+    }
+
+    void testPlusTimeDuration() {
+        def d = new Duration(1, 0, 0, 0, 0)
+        def td = new TimeDuration(0, 2, 30, 0, 0)
+        def result = d.plus(td)
+        assertNotNull(result)
+    }
+
+    void testPlusDatumDependentDuration() {
+        def d = new Duration(1, 0, 0, 0, 0)
+        def ddd = new DatumDependentDuration(1, 2, 3, 4, 5, 6, 7)
+        def result = d.plus(ddd)
+        assertNotNull(result)
+        assertEquals(1, result.getYears())
+        assertEquals(2, result.getMonths())
+    }
+
+    void testMinusDuration() {
+        def d1 = new Duration(5, 10, 30, 45, 500)
+        def d2 = new Duration(2, 5, 15, 20, 200)
+        def result = d1.minus(d2)
+        assertEquals(3, result.getDays())
+        assertEquals(5, result.getHours())
+        assertEquals(15, result.getMinutes())
+        assertEquals(25, result.getSeconds())
+        assertEquals(300, result.getMillis())
+    }
+
+    void testMinusTimeDuration() {
+        def d = new Duration(2, 5, 30, 0, 0)
+        def td = new TimeDuration(1, 2, 15, 0, 0)
+        def result = d.minus(td)
+        assertEquals(1, result.getDays())
+        assertEquals(3, result.getHours())
+        assertEquals(15, result.getMinutes())
+    }
+
+    void testMinusDatumDependentDuration() {
+        def d = new Duration(10, 5, 30, 20, 100)
+        def ddd = new DatumDependentDuration(1, 2, 3, 1, 10, 5, 50)
+        def result = d.minus(ddd)
+        assertEquals(-1, result.getYears())
+        assertEquals(-2, result.getMonths())
+        assertEquals(7, result.getDays())
+    }
+
+    void testMinusTimeDatumDependentDuration() {
+        def d = new Duration(10, 5, 30, 20, 100)
+        def tddd = new TimeDatumDependentDuration(1, 2, 3, 1, 10, 5, 50)
+        def result = d.minus(tddd)
+        assertEquals(-1, result.getYears())
+        assertEquals(-2, result.getMonths())
+    }
+
+    void testGetAgo() {
+        def duration = new Duration(1, 0, 0, 0, 0)
+        def ago = duration.getAgo()
+        assertNotNull(ago)
+
+        def expected = Calendar.getInstance()
+        expected.add(Calendar.DAY_OF_YEAR, -1)
+        expected.set(Calendar.HOUR_OF_DAY, 0)
+        expected.set(Calendar.MINUTE, 0)
+        expected.set(Calendar.SECOND, 0)
+        expected.set(Calendar.MILLISECOND, 0)
+
+        assertEquals(expected.getTimeInMillis(), ago.getTime())
+    }
+
+    void testGetFrom() {
+        def duration = new Duration(3, 0, 0, 0, 0)
+        def from = duration.getFrom()
+        assertNotNull(from)
+        def now = from.getNow()
+        assertNotNull(now)
+
+        def expected = Calendar.getInstance()
+        expected.add(Calendar.DAY_OF_YEAR, 3)
+        expected.set(Calendar.HOUR_OF_DAY, 0)
+        expected.set(Calendar.MINUTE, 0)
+        expected.set(Calendar.SECOND, 0)
+        expected.set(Calendar.MILLISECOND, 0)
+
+        assertEquals(expected.getTimeInMillis(), now.getTime())
+    }
+
+    void testZeroDuration() {
+        def zero = new Duration(0, 0, 0, 0, 0)
+        assertEquals(0, zero.toMilliseconds())
+    }
+
+    void testNegativeDuration() {
+        def negative = new Duration(-1, -2, -3, -4, -5)
+        assertTrue(negative.toMilliseconds() < 0)
+    }
+
+    void testMillisecondsOnly() {
+        def millis = new Duration(0, 0, 0, 0, 500)
+        assertEquals(500, millis.toMilliseconds())
+    }
+
+    void testSecondsOnly() {
+        def seconds = new Duration(0, 0, 0, 45, 0)
+        assertEquals(45 * 1000L, seconds.toMilliseconds())
+    }
+
+    void testMinutesOnly() {
+        def minutes = new Duration(0, 0, 30, 0, 0)
+        assertEquals(30 * 60 * 1000L, minutes.toMilliseconds())
+    }
+
+    void testHoursOnly() {
+        def hours = new Duration(0, 12, 0, 0, 0)
+        assertEquals(12 * 60 * 60 * 1000L, hours.toMilliseconds())
+    }
+
+    void testDaysOnly() {
+        def days = new Duration(7, 0, 0, 0, 0)
+        assertEquals(7 * 24 * 60 * 60 * 1000L, days.toMilliseconds())
+    }
+
+    void testPlusWithZero() {
+        def d = new Duration(1, 2, 3, 4, 5)
+        def zero = new Duration(0, 0, 0, 0, 0)
+        def result = d.plus(zero)
+        assertEquals(1, result.getDays())
+        assertEquals(2, result.getHours())
+        assertEquals(3, result.getMinutes())
+        assertEquals(4, result.getSeconds())
+        assertEquals(5, result.getMillis())
+    }
+
+    void testMinusWithZero() {
+        def d = new Duration(1, 2, 3, 4, 5)
+        def zero = new Duration(0, 0, 0, 0, 0)
+        def result = d.minus(zero)
+        assertEquals(1, result.getDays())
+        assertEquals(2, result.getHours())
+        assertEquals(3, result.getMinutes())
+        assertEquals(4, result.getSeconds())
+        assertEquals(5, result.getMillis())
+    }
+
+    void testLargeDuration() {
+        def large = new Duration(365, 23, 59, 59, 999)
+        def expected = ((((365L * 24 + 23) * 60 + 59) * 60 + 59) * 1000) + 999
+        assertEquals(expected, large.toMilliseconds())
+    }
 }
