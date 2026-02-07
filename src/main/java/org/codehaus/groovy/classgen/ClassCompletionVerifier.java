@@ -792,9 +792,15 @@ out:        for (ClassNode sc : superTypes) {
 
     @Override
     public void visitForLoop(final ForStatement fs) {
-        List<String> modifiers = new ArrayList<>();
-        int mods = fs.getVariable().getModifiers();
+        if (fs.getValueVariable() != null) {
+            checkModifiers(fs, fs.getValueVariable());
+        }
+        super.visitForLoop(fs);
+    }
 
+    private void checkModifiers(ForStatement fs, Parameter p) {
+        List<String> modifiers = new ArrayList<>();
+        int mods = p.getModifiers();
         if (isAbstract (mods)) modifiers.add("abstract" );
         if (isPrivate  (mods)) modifiers.add("private"  );
         if (isProtected(mods)) modifiers.add("protected");
@@ -803,10 +809,8 @@ out:        for (ClassNode sc : superTypes) {
         if (isStrict   (mods)) modifiers.add("strictfp" );
 
         for (String modifier : modifiers) {
-            addError("The variable '" + fs.getVariable().getName() + "' has invalid modifier " + modifier + ".", fs);
+            addError("The variable '" + p.getName() + "' has invalid modifier " + modifier + ".", fs);
         }
-
-        super.visitForLoop(fs);
     }
 
     @Override
