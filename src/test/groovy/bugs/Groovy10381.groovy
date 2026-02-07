@@ -20,7 +20,7 @@ package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -72,7 +72,7 @@ final class Groovy10381 {
               }
             }
         '''
-        assert err =~ /class C inherits unrelated defaults for void m\(java.lang.String\) from types A and B/
+        assert err.message =~ /class C inherits unrelated defaults for void m\(java.lang.String\) from types A and B/
     }
 
     @Test
@@ -94,7 +94,7 @@ final class Groovy10381 {
               }
             }
         '''
-        assert err =~ /class C inherits unrelated defaults for void m\(java.lang.String\) from types BaseA and BaseB/
+        assert err.message =~ /class C inherits unrelated defaults for void m\(java.lang.String\) from types BaseA and BaseB/
     }
 
     @Test
@@ -120,7 +120,7 @@ final class Groovy10381 {
               }
             }
         '''
-        assert err =~ /class C inherits unrelated defaults for void m\(java.lang.String\) from types A and B/
+        assert err.message =~ /class C inherits unrelated defaults for void m\(java.lang.String\) from types A and B/
     }
 
     @Test
@@ -138,7 +138,7 @@ final class Groovy10381 {
               }
             }
         '''
-        assert err =~ /interface C inherits unrelated defaults for void m\(java.lang.String\) from types A and B/
+        assert err.message =~ /interface C inherits unrelated defaults for void m\(java.lang.String\) from types A and B/
     }
 
     @Test

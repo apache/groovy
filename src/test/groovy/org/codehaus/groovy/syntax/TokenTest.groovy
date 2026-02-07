@@ -18,19 +18,29 @@
  */
 package org.codehaus.groovy.syntax
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertNotSame
+import static org.junit.jupiter.api.Assertions.assertNull
+import static org.junit.jupiter.api.Assertions.assertSame
+
 
 /**
  * Unit tests for {@link Token}.
  */
-class TokenTest extends GroovyTestCase {
+class TokenTest {
 
     private static final int LINE = 11
     private static final int COLUMN = 33
 
+    @Test
     void testNothing() {
     }
 
+    @Test
     void testConstruct() {
         def token = new Token(42, "forty-two", LINE, COLUMN)
 
@@ -40,11 +50,13 @@ class TokenTest extends GroovyTestCase {
         assertEquals(COLUMN, token.getStartColumn())
     }
 
+    @Test
     void testGetMeaning() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         assertEquals(Types.PLUS, token.getMeaning())
     }
 
+    @Test
     void testSetMeaning() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         token.setMeaning(Types.MINUS)
@@ -52,6 +64,7 @@ class TokenTest extends GroovyTestCase {
         assertEquals(Types.PLUS, token.getType()) // Type unchanged
     }
 
+    @Test
     void testEofTokenImmutable() {
         def eof = Token.EOF
         eof.setMeaning(Types.PLUS)
@@ -60,6 +73,7 @@ class TokenTest extends GroovyTestCase {
         assertEquals("", eof.getText()) // Should not change
     }
 
+    @Test
     void testNullTokenImmutable() {
         def nullToken = Token.NULL
         nullToken.setMeaning(Types.PLUS)
@@ -68,6 +82,7 @@ class TokenTest extends GroovyTestCase {
         assertEquals("", nullToken.getText()) // Should not change
     }
 
+    @Test
     void testDup() {
         def original = new Token(Types.IDENTIFIER, "myVar", LINE, COLUMN)
         original.setMeaning(Types.LEFT_SQUARE_BRACKET)
@@ -84,31 +99,37 @@ class TokenTest extends GroovyTestCase {
         assertNotSame(original, copy)
     }
 
+    @Test
     void testSize() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         assertEquals(1, token.size())
     }
 
+    @Test
     void testGetReturnsThis() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         assertSame(token, token.get(0))
     }
 
+    @Test
     void testGetWithInvalidIndexThrows() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         shouldFail(org.codehaus.groovy.GroovyBugError) { token.get(1) }
     }
 
+    @Test
     void testGetRoot() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         assertSame(token, token.getRoot())
     }
 
+    @Test
     void testGetRootText() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         assertEquals("+", token.getRootText())
     }
 
+    @Test
     void testAsReduction() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         def reduction = token.asReduction()
@@ -117,6 +138,7 @@ class TokenTest extends GroovyTestCase {
         assertSame(token, reduction.getRoot())
     }
 
+    @Test
     void testAsReductionWithSecond() {
         def token = new Token(Types.PLUS, "+", LINE, COLUMN)
         def second = new Token(Types.INTEGER_NUMBER, "5", LINE, COLUMN + 1)
@@ -126,6 +148,7 @@ class TokenTest extends GroovyTestCase {
         assertSame(second, reduction.get(1))
     }
 
+    @Test
     void testAsReductionWithThird() {
         def first = new Token(Types.PLUS, "+", LINE, COLUMN)
         def second = new Token(Types.INTEGER_NUMBER, "5", LINE, COLUMN + 1)
@@ -137,6 +160,7 @@ class TokenTest extends GroovyTestCase {
         assertSame(third, reduction.get(2))
     }
 
+    @Test
     void testAsReductionWithFourth() {
         def first = new Token(Types.PLUS, "+", LINE, COLUMN)
         def second = new Token(Types.INTEGER_NUMBER, "5", LINE, COLUMN + 1)
@@ -146,6 +170,7 @@ class TokenTest extends GroovyTestCase {
         assertEquals(4, reduction.size())
     }
 
+    @Test
     void testNewKeyword() {
         def ifToken = Token.newKeyword("if", LINE, COLUMN)
         assertNotNull(ifToken)
@@ -153,47 +178,55 @@ class TokenTest extends GroovyTestCase {
         assertEquals("if", ifToken.getText())
     }
 
+    @Test
     void testNewKeywordNotKeyword() {
         def notKeyword = Token.newKeyword("notAKeyword", LINE, COLUMN)
         assertNull(notKeyword)
     }
 
+    @Test
     void testNewString() {
         def stringToken = Token.newString("hello", LINE, COLUMN)
         assertEquals(Types.STRING, stringToken.getType())
         assertEquals("hello", stringToken.getText())
     }
 
+    @Test
     void testNewIdentifier() {
         def idToken = Token.newIdentifier("myVariable", LINE, COLUMN)
         assertEquals(Types.IDENTIFIER, idToken.getType())
         assertEquals("myVariable", idToken.getText())
     }
 
+    @Test
     void testNewInteger() {
         def intToken = Token.newInteger("42", LINE, COLUMN)
         assertEquals(Types.INTEGER_NUMBER, intToken.getType())
         assertEquals("42", intToken.getText())
     }
 
+    @Test
     void testNewDecimal() {
         def decimalToken = Token.newDecimal("3.14", LINE, COLUMN)
         assertEquals(Types.DECIMAL_NUMBER, decimalToken.getType())
         assertEquals("3.14", decimalToken.getText())
     }
 
+    @Test
     void testNewSymbolByType() {
         def plusToken = Token.newSymbol(Types.PLUS, LINE, COLUMN)
         assertEquals(Types.PLUS, plusToken.getType())
         assertEquals("+", plusToken.getText())
     }
 
+    @Test
     void testNewSymbolByText() {
         def plusToken = Token.newSymbol("+", LINE, COLUMN)
         assertEquals(Types.PLUS, plusToken.getType())
         assertEquals("+", plusToken.getText())
     }
 
+    @Test
     void testNewPlaceholder() {
         def placeholder = Token.newPlaceholder(Types.SYNTH_METHOD)
         assertEquals(Types.UNKNOWN, placeholder.getType())
@@ -203,12 +236,14 @@ class TokenTest extends GroovyTestCase {
         assertEquals(-1, placeholder.getStartColumn())
     }
 
+    @Test
     void testSetText() {
         def token = new Token(Types.STRING, "original", LINE, COLUMN)
         token.setText("changed")
         assertEquals("changed", token.getText())
     }
 
+    @Test
     void testKeywords() {
         // Test a selection of keywords
         assertKeyword("class", Types.KEYWORD_CLASS)
@@ -230,7 +265,7 @@ class TokenTest extends GroovyTestCase {
 
     private void assertKeyword(String text, int expectedType) {
         def token = Token.newKeyword(text, LINE, COLUMN)
-        assertNotNull("Expected keyword for: " + text, token)
+        assertNotNull(token, "Expected keyword for: " + text)
         assertEquals(expectedType, token.getType())
         assertEquals(text, token.getText())
     }

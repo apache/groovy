@@ -1630,6 +1630,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         assertScript '''
             @Grab('org.apache.commons:commons-lang3:3.11')
             import org.apache.commons.lang3.ArrayUtils
+import static groovy.test.GroovyAssert.shouldFail
 
             byte[] one = new byte[1]
             byte[] oneAlso = ArrayUtils.removeAll(one)

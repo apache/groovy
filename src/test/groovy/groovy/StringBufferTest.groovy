@@ -18,9 +18,11 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StringBufferTest extends GroovyTestCase {
+
+class StringBufferTest {
+    @Test
     void testSize() {
         def x = new StringBuffer()
         assert x.size() == x.length()
@@ -28,6 +30,7 @@ class StringBufferTest extends GroovyTestCase {
         assert x.size() == x.length()
     }
 
+    @Test
     void testPutAt(){
         def buf = new StringBuffer('0123')
         buf[1..2] = 'xx'

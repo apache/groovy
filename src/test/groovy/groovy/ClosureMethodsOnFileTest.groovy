@@ -18,16 +18,18 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * Tests various Closure methods in Groovy on file
  */
-class ClosureMethodsOnFileTest extends GroovyTestCase {
+class ClosureMethodsOnFileTest {
     private File file = new File("src/test/groovy/groovy/Bar.groovy")
     private File dir = new File("src/test/groovy/groovy")
 
-    protected void setUp() {
+    @BeforeEach
+    void setUp() {
         if (!file.exists()) {
             file = new File("Bar.groovy")
         }
@@ -36,10 +38,12 @@ class ClosureMethodsOnFileTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEachLine() {
         file.eachLine { line -> assert line != null }
     }
 
+    @Test
     void testEachLineWithCount() {
         int i = 0
         file.eachLine { line, count ->
@@ -47,12 +51,14 @@ class ClosureMethodsOnFileTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testReadLines() {
         def lines = file.readLines()
         assert lines != null
         assert lines.size() > 0, "File has: ${lines.size()} line(s)"
     }
 
+    @Test
     void testEachFile() {
         dir.eachFile { f -> assert f.getName() }
     }

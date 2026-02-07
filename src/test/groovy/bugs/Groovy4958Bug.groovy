@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 
-class Groovy4958Bug extends GroovyTestCase {
+
+class Groovy4958Bug {
+    @Test
     void testConfigSlurperParsingConfigFilesWithDollarSymbolInPropValues() {
         def config = new ConfigObject()
         config.instObject = '1. Dyn. Aktber. ($IO_AKTBER)   # Aktenbereich \' " (V-AKTBER)'

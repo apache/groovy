@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy5137Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class Groovy5137Bug {
+    @Test
     void testShouldNotThrowGroovyBugError() {
         assertScript '''
         import groovy.mock.interceptor.MockFor
@@ -30,6 +33,7 @@ class Groovy5137Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodInCallToSuper() {
         assertScript '''
             class Top { Top(int x) { } }

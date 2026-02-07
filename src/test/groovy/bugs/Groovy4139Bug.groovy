@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4139Bug extends GroovyTestCase {
+
+class Groovy4139Bug {
+    @Test
     void testEmptyStringAsMapEntryKey() {
         use (groovy.time.TimeCategory) {
             def topics = [:]

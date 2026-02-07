@@ -19,7 +19,7 @@
 package org.codehaus.groovy.runtime.methoddispatching.vm8
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 @CompileStatic
 final class StaticMethodOverloadCompileStaticTest {

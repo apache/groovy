@@ -18,9 +18,13 @@
  */
 package groovy.transform.stc
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7888Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy7888Bug {
+    @Test
     void testCompoundAssignmentUsesCorrectType() {
         assertScript '''
             class ContainsSet {

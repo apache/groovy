@@ -18,7 +18,7 @@
  */
 package groovy.tree
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 /**
  * Tests the concise GroovyMarkup syntax for the building of trees.

@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 // TODO: add JVM option `--illegal-access=deny` when all warnings fixed
 @CompileStatic

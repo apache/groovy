@@ -18,18 +18,27 @@
  */
 package org.apache.groovy.json.internal
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class LazyMapTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertNull
+import static org.junit.jupiter.api.Assertions.assertTrue
+
+
+class LazyMapTest {
 
     private LazyMap map
 
+    @BeforeEach
     void setUp() {
-        super.setUp()
         map = new LazyMap()
     }
 
     // GROOVY-7302
+    @Test
     void testSizeWhenNoBackingMapCreated() {
         def map = new LazyMap()
         map.someProperty = "1"
@@ -40,6 +49,7 @@ class LazyMapTest extends GroovyTestCase {
         assert map.size() == 2
     }
 
+    @Test
     void testSizeWhenLazyCreated() {
         def map = new LazyMap()
         map.someProperty1 = '1'
@@ -59,23 +69,27 @@ class LazyMapTest extends GroovyTestCase {
         assert map.@map?.size() == 7
     }
 
+    @Test
     void testDefaultConstructor() {
         def lazyMap = new LazyMap()
         assertTrue(lazyMap.isEmpty())
         assertEquals(0, lazyMap.size())
     }
 
+    @Test
     void testConstructorWithInitialSize() {
         def lazyMap = new LazyMap(10)
         assertTrue(lazyMap.isEmpty())
         assertEquals(0, lazyMap.size())
     }
 
+    @Test
     void testPut() {
         assertNull(map.put("key1", "value1"))
         assertEquals(1, map.size())
     }
 
+    @Test
     void testPutReturnsPreviousValue() {
         map.put("key", "value1")
         def previous = map.put("key", "value2")
@@ -83,6 +97,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals("value2", map.get("key"))
     }
 
+    @Test
     void testPutMultipleEntries() {
         map.put("key1", "value1")
         map.put("key2", "value2")
@@ -90,17 +105,20 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals(3, map.size())
     }
 
+    @Test
     void testPutWithNullKey() {
         map.put(null, "value")
         assertEquals("value", map.get(null))
     }
 
+    @Test
     void testPutWithNullValue() {
         map.put("key", null)
         assertNull(map.get("key"))
         assertTrue(map.containsKey("key"))
     }
 
+    @Test
     void testPutReplaceNullKey() {
         map.put(null, "value1")
         def previous = map.put(null, "value2")
@@ -108,15 +126,18 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals("value2", map.get(null))
     }
 
+    @Test
     void testGet() {
         map.put("key", "value")
         assertEquals("value", map.get("key"))
     }
 
+    @Test
     void testGetNonExistentKey() {
         assertNull(map.get("nonexistent"))
     }
 
+    @Test
     void testGetTriggersMapBuild() {
         map.put("key1", "value1")
         map.put("key2", "value2")
@@ -125,6 +146,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals("value2", map.get("key2"))
     }
 
+    @Test
     void testSize() {
         assertEquals(0, map.size())
         map.put("key1", "value1")
@@ -133,40 +155,47 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals(2, map.size())
     }
 
+    @Test
     void testIsEmpty() {
         assertTrue(map.isEmpty())
         map.put("key", "value")
         assertFalse(map.isEmpty())
     }
 
+    @Test
     void testIsEmptyAfterClear() {
         map.put("key", "value")
         map.clear()
         assertTrue(map.isEmpty())
     }
 
+    @Test
     void testContainsKey() {
         map.put("key", "value")
         assertTrue(map.containsKey("key"))
         assertFalse(map.containsKey("nonexistent"))
     }
 
+    @Test
     void testContainsKeyWithNullKey() {
         map.put(null, "value")
         assertTrue(map.containsKey(null))
     }
 
+    @Test
     void testContainsValue() {
         map.put("key", "value")
         assertTrue(map.containsValue("value"))
         assertFalse(map.containsValue("nonexistent"))
     }
 
+    @Test
     void testContainsValueWithNullValue() {
         map.put("key", null)
         assertTrue(map.containsValue(null))
     }
 
+    @Test
     void testRemove() {
         map.put("key", "value")
         def removed = map.remove("key")
@@ -174,10 +203,12 @@ class LazyMapTest extends GroovyTestCase {
         assertFalse(map.containsKey("key"))
     }
 
+    @Test
     void testRemoveNonExistent() {
         assertNull(map.remove("nonexistent"))
     }
 
+    @Test
     void testClearBeforeBuild() {
         map.put("key1", "value1")
         map.put("key2", "value2")
@@ -186,6 +217,7 @@ class LazyMapTest extends GroovyTestCase {
         assertTrue(map.isEmpty())
     }
 
+    @Test
     void testClearAfterBuild() {
         map.put("key", "value")
         map.get("key") // trigger build
@@ -193,6 +225,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals(0, map.size())
     }
 
+    @Test
     void testPutAll() {
         def other = [:]
         other.put("key1", "value1")
@@ -203,6 +236,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals("value2", map.get("key2"))
     }
 
+    @Test
     void testKeySet() {
         map.put("key1", "value1")
         map.put("key2", "value2")
@@ -212,6 +246,7 @@ class LazyMapTest extends GroovyTestCase {
         assertTrue(keys.contains("key2"))
     }
 
+    @Test
     void testValues() {
         map.put("key1", "value1")
         map.put("key2", "value2")
@@ -221,6 +256,7 @@ class LazyMapTest extends GroovyTestCase {
         assertTrue(values.contains("value2"))
     }
 
+    @Test
     void testEntrySet() {
         map.put("key1", "value1")
         map.put("key2", "value2")
@@ -228,6 +264,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals(2, entries.size())
     }
 
+    @Test
     void testEquals() {
         map.put("key", "value")
         def other = [:]
@@ -235,6 +272,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals(map, other)
     }
 
+    @Test
     void testHashCode() {
         map.put("key", "value")
         def other = [:]
@@ -242,6 +280,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals(map.hashCode(), other.hashCode())
     }
 
+    @Test
     void testToString() {
         map.put("key", "value")
         def str = map.toString()
@@ -249,12 +288,14 @@ class LazyMapTest extends GroovyTestCase {
         assertTrue(str.contains("value"))
     }
 
+    @Test
     void testCloneBeforeBuild() throws CloneNotSupportedException {
         // clone returns null if map hasn't been built yet
         def cloned = map.clone()
         assertNull(cloned)
     }
 
+    @Test
     void testCloneAfterBuild() throws CloneNotSupportedException {
         map.put("key", "value")
         map.get("key") // trigger build
@@ -263,6 +304,7 @@ class LazyMapTest extends GroovyTestCase {
         assertTrue(cloned instanceof Map)
     }
 
+    @Test
     void testClearAndCopy() {
         map.put("key1", "value1")
         map.put("key2", "value2")
@@ -278,6 +320,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals("value2", copy.get("key2"))
     }
 
+    @Test
     void testGrow() {
         String[] original = ["a", "b", "c"]
         def grown = LazyMap.grow(original)
@@ -287,6 +330,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals("c", grown[2])
     }
 
+    @Test
     void testArrayGrowthOnManyPuts() {
         // Add more than initial capacity (5) to trigger growth
         for (int i = 0; i < 10; i++) {
@@ -298,6 +342,7 @@ class LazyMapTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testLazyBuildBehavior() {
         // Before any get/contains calls, the internal map isn't built
         map.put("key1", "value1")
@@ -314,6 +359,7 @@ class LazyMapTest extends GroovyTestCase {
         assertEquals(3, map.size())
     }
 
+    @Test
     void testWithDifferentValueTypes() {
         map.put("string", "text")
         map.put("number", 42)
@@ -328,6 +374,7 @@ class LazyMapTest extends GroovyTestCase {
         assertTrue(map.get("nested") instanceof Map)
     }
 
+    @Test
     void testDuplicateKeyHandlingBeforeBuild() {
         map.put("key", "value1")
         map.put("key", "value2")

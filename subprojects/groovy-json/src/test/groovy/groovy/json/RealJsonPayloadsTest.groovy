@@ -18,12 +18,14 @@
  */
 package groovy.json
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class RealJsonPayloadsTest extends GroovyTestCase {
+
+class RealJsonPayloadsTest {
 
     def parser = new JsonSlurper()
 
+    @Test
     void testTheGuardianPayload() {
         def content = '''
             {
@@ -141,6 +143,7 @@ class RealJsonPayloadsTest extends GroovyTestCase {
         assert result.response.results[9].webTitle == "Fourth arrest in Michaela McAreavey murder investigation"
     }
 
+    @Test
     void testGoogleShortener() {
         def content = '''
             {
@@ -171,6 +174,7 @@ class RealJsonPayloadsTest extends GroovyTestCase {
         assert result.analytics.allTime.referrers[0].count == "2160"
     }
 
+    @Test
     void testGoogleMaps() {
         def content = '''
             {

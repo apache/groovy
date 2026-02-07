@@ -18,14 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Mixes variables, closures and method calls in markup
  *
  */
-class MarkupAndMethodBug extends GroovyTestCase {
+class MarkupAndMethodBug {
 
+    @Test
     void testBug() {
         def tree = createTree()
         def name = tree.person[0]['@name']

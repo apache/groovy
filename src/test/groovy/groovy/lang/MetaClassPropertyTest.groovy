@@ -18,14 +18,19 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class MetaClassPropertyTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
 
+
+class MetaClassPropertyTest {
+
+    @Test
     void testForJavaClass() {
         checkMetaClassBehavior(Short.valueOf("1"))
     }
 
+    @Test
     void testForGroovyClass() {
         checkMetaClassBehavior(new MCPTest1())
     }

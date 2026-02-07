@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class Groovy9589 {
     @Test

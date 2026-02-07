@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3770Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy3770Bug {
+    @Test
     void testSetDelegateAndResolveStrategyOnACurriedClosure() {
         assertScript """
             void hello(who) {
@@ -49,6 +53,7 @@ class Groovy3770Bug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testCurriedClosuresShouldNotAffectParent() {
         // GROOVY-3875
         def orig = { tmp -> assert tmp == 1 }

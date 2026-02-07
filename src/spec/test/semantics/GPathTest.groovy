@@ -18,15 +18,16 @@
  */
 package semantics
 
-import groovy.test.GroovyTestCase
 import groovy.xml.XmlSlurper
+import org.junit.jupiter.api.Test
 
-class GPathTest extends GroovyTestCase {
+class GPathTest {
 
     //tag::gpath_on_reflection_1[]
     void aMethodFoo() { println "This is aMethodFoo." } // <0>
     //end::gpath_on_reflection_1[]
 
+    @Test
     void testGPathOnReflection() {
         //tag::gpath_on_reflection_2[]
         assert ['aMethodFoo'] == this.class.methods.name.grep(~/.*Foo/)
@@ -39,18 +40,21 @@ class GPathTest extends GroovyTestCase {
     void aSecondMethodBar() { println "This is aSecondMethodBar." } // <3>
     //end::gpath_on_reflection_3[]
 
+    @Test
     void testGPathOnReflectionWithBarMethods() {
         //tag::gpath_on_reflection_4[]
         assert ['aMethodBar', 'aSecondMethodBar'] as Set == this.class.methods.name.grep(~/.*Bar/) as Set
         //end::gpath_on_reflection_4[]
     }
 
+    @Test
     void testGPathArrayAccess() {
         //tag::gpath_array_access_1[]
         assert 'aSecondMethodBar' == this.class.methods.name.grep(~/.*Bar/).sort()[1]
         //end::gpath_array_access_1[]
     }
 
+    @Test
     void testGPathOnXml() {
         //tag::gpath_on_xml_1[]
         def xmlText = """

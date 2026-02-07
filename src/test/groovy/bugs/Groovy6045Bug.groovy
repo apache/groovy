@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6045Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy6045Bug {
+    @Test
     void testCallingSafeSuperShouldNotThrowVerifyError() {
         assertScript '''
             class Foo {
@@ -33,6 +37,7 @@ class Groovy6045Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testCallingSafeSuperShouldNotThrowVerifyErrorUsingCompileStatic() {
         assertScript '''import groovy.transform.CompileStatic
             class Foo {

@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.reflection
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class CachedMethodTest {
 

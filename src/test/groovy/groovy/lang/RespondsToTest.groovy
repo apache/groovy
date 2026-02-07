@@ -18,15 +18,19 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+
 
 /**
  * Tests the respondsTo functionality of Groovy
  *
  * @since 1.6.0
  */
-class RespondsToTest extends GroovyTestCase {
+class RespondsToTest {
 
+    @Test
     void testRespondsToForMethodEvaluation() {
         RespondsToTestClass.metaClass.invokeMethod = { String name, args ->
             def methods = RespondsToTestClass.metaClass.respondsTo(delegate, name, args*.getClass() as Class[])
@@ -57,6 +61,7 @@ class RespondsToTest extends GroovyTestCase {
         assertEquals "foo", t.doStuff()
     }
 
+    @Test
     void testRespondsTo() {
         RTTest2.metaClass.newM = { -> "foo" }
         def t = new RTTest2()
@@ -89,6 +94,7 @@ class RespondsToTest extends GroovyTestCase {
         assert !t.respondsTo("one", String, Integer)
     }
 
+    @Test
     void testHasProperty() {
         RTTest2.metaClass.getNewProp = { -> "new" }
         def t = new RTTest2()

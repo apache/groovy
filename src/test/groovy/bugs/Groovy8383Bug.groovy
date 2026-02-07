@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy8383Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy8383Bug {
+    @Test
     void testCompileStaticWithOptimizedConstants() {
         assertScript '''
             @groovy.transform.CompileStatic

@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy2557Bug extends GroovyTestCase{
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+
+class Groovy2557Bug{
+    @Test
     void testArray2ListCoercion() {
         String[] args = ['a', 'b']
         List list = args as List

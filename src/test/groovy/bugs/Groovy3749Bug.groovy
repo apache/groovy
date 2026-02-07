@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3749Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.fail
+
+class Groovy3749Bug {
+    @Test
     void testScriptsProvidingStaticMainMethod() {
         def scriptStr
 
@@ -91,6 +94,7 @@ class Groovy3749Bug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testScriptsProvidingInstanceMainMethod() {
         def scriptStr
 

@@ -18,13 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class PropertyWithoutDotTest extends GroovyTestCase {
+
+class PropertyWithoutDotTest {
     def getFoo() {
         return "cheese"
     }
 
+    @Test
     void testProperty() {
         def value = foo
 

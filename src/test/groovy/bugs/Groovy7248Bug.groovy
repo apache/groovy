@@ -18,7 +18,10 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
 
 /**
  * StatementWriter.writeTryCatchFinally visits the finally block
@@ -32,8 +35,9 @@ import groovy.test.GroovyTestCase
  * generated will succeed because of the script context.  So to reproduce
  * the issue it must be contained in a class.
  */
-class Groovy7248Bug extends GroovyTestCase {
+class Groovy7248Bug {
 
+    @Test
     void testFinallyDeclaredVariableExpression() {
         assertScript '''
             class Test {
@@ -54,6 +58,7 @@ class Groovy7248Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testReturnStatementDeclaration() {
         assertScript '''
             class Foo {

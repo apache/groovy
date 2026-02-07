@@ -19,7 +19,7 @@
 package groovy.text
 
 import groovy.xml.XmlParser
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class GroovyXmlTemplateEngineTest {
     @Test

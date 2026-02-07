@@ -18,13 +18,16 @@
  */
 package org.codehaus.groovy.tools
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-class LoaderConfigurationTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+class LoaderConfigurationTest {
+
+    @Test
     void testComment() {
         def txt = "# I am a comment"
 
@@ -35,6 +38,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls.length == 0
     }
 
+    @Test
     void testNormalPath() {
         // generate a load instruction with a valid path
         def file = new File(".")
@@ -48,6 +52,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls[0].sameFile(file.toURI().toURL())
     }
 
+    @Test
     void testNonExistingPath() {
         // generate a load instruction with a non-existing path
         def file = getNonExistingFile(new File("."))
@@ -61,6 +66,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls.length == 0
     }
 
+    @Test
     void testExistingProperty() {
         def txt = 'load ${java.home}'
 
@@ -74,6 +80,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert url1.sameFile(url2)
     }
 
+    @Test
     void testPropertyDefinition() {
         System.setProperty('myprop', 'baz')
         def txt = 'property foo1=bar\nproperty foo2=${myprop}\nproperty foo3=!{myprop}'
@@ -86,6 +93,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert System.getProperty('foo3') == 'baz'
     }
 
+    @Test
     void testNonExistingProperty() {
         String name = getNonExistingPropertyName("foo")
 
@@ -106,6 +114,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls.length == 0
     }
 
+    @Test
     void testSlashCorrection() {
         def prop = getNonExistingPropertyName("nope")
         System.setProperty(prop,'/')
@@ -144,27 +153,32 @@ class LoaderConfigurationTest extends GroovyTestCase {
 
     // --- Merged from LoaderConfigurationJUnit5Test ---
 
+    @Test
     void testNewConfigurationHasNoClassPath() {
         def config = new LoaderConfiguration()
         assert config.getClassPathUrls().length == 0
     }
 
+    @Test
     void testNewConfigurationHasNoMainClass() {
         def config = new LoaderConfiguration()
         assert config.getMainClass() == null
     }
 
+    @Test
     void testNewConfigurationHasNoGrabUrls() {
         def config = new LoaderConfiguration()
         assert config.getGrabUrls().isEmpty()
     }
 
+    @Test
     void testSetMainClass() {
         def config = new LoaderConfiguration()
         config.setMainClass("com.example.Main")
         assert "com.example.Main" == config.getMainClass()
     }
 
+    @Test
     void testSetMainClassDisablesRequireMain() {
         def config = new LoaderConfiguration()
         config.setMainClass("com.example.Main")
@@ -173,6 +187,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert "com.example.Main" == config.getMainClass()
     }
 
+    @Test
     void testSetRequireMainFalse() {
         def config = new LoaderConfiguration()
         config.setRequireMain(false)
@@ -181,6 +196,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.getMainClass() == null
     }
 
+    @Test
     void testRequireMainTrueThrowsWithoutMain() {
         def config = new LoaderConfiguration()
         def configContent = "# just a comment\n"
@@ -189,6 +205,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testConfigureWithMainIs() {
         def config = new LoaderConfiguration()
         def configContent = "main is com.example.Main\n"
@@ -196,6 +213,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert "com.example.Main" == config.getMainClass()
     }
 
+    @Test
     void testConfigureDuplicateMainThrows() {
         def config = new LoaderConfiguration()
         def configContent = "main is com.example.Main\nmain is com.example.Other\n"
@@ -204,6 +222,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testConfigureIgnoresComments() {
         def config = new LoaderConfiguration()
         def configContent = "# this is a comment\nmain is com.example.Main\n# another comment\n"
@@ -211,6 +230,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert "com.example.Main" == config.getMainClass()
     }
 
+    @Test
     void testConfigureIgnoresEmptyLines() {
         def config = new LoaderConfiguration()
         def configContent = "\n\nmain is com.example.Main\n\n"
@@ -218,6 +238,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert "com.example.Main" == config.getMainClass()
     }
 
+    @Test
     void testConfigureWithLoadExistingFile() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -236,6 +257,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testConfigureWithLoadNonExistingFile() {
         def config = new LoaderConfiguration()
         def configContent = "main is com.example.Main\nload /non/existent/path.jar\n"
@@ -244,6 +266,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert 0 == config.getClassPathUrls().length
     }
 
+    @Test
     void testConfigureWithGrab() {
         def config = new LoaderConfiguration()
         def configContent = "main is com.example.Main\ngrab org.example:lib:1.0\n"
@@ -253,6 +276,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert "org.example:lib:1.0" == config.getGrabUrls().get(0)
     }
 
+    @Test
     void testConfigureWithInvalidLineThrows() {
         def config = new LoaderConfiguration()
         def configContent = "main is com.example.Main\ninvalid line here\n"
@@ -261,6 +285,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAddFileWithExistingFile() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -277,18 +302,21 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAddFileWithNonExistingFile() {
         def config = new LoaderConfiguration()
         config.addFile(new File("/non/existent/file.jar"))
         assert 0 == config.getClassPathUrls().length
     }
 
+    @Test
     void testAddFileWithNullFile() {
         def config = new LoaderConfiguration()
         config.addFile((File) null)
         assert 0 == config.getClassPathUrls().length
     }
 
+    @Test
     void testAddFileWithFilename() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -305,12 +333,14 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAddFileWithNullFilename() {
         def config = new LoaderConfiguration()
         config.addFile((String) null)
         assert 0 == config.getClassPathUrls().length
     }
 
+    @Test
     void testAddClassPath() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -330,6 +360,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAddClassPathWithWildcard() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -349,6 +380,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testConfigureWithPropertyExpansion() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -369,6 +401,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testConfigureWithMissingOptionalProperty() {
         def config = new LoaderConfiguration()
         def configContent = "main is com.example.Main\nload \${nonexistent.property}/test.jar\n"
@@ -377,6 +410,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert 0 == config.getClassPathUrls().length
     }
 
+    @Test
     void testConfigureWithMissingRequiredPropertyThrows() {
         def config = new LoaderConfiguration()
         def configContent = "main is com.example.Main\nload !{nonexistent.required.property}/test.jar\n"
@@ -385,6 +419,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testConfigureWithWildcardLoad() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -404,6 +439,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testConfigureWithRecursiveWildcard() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -424,6 +460,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAddMultipleFiles() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {
@@ -440,6 +477,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAddDirectory() {
         def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
         try {

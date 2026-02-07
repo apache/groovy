@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4861Bug extends GroovyTestCase {
+
+class Groovy4861Bug {
+    @Test
     void testCallSitesUsageInNestedInterface() {
         assert Foo4861.A.j == 3
         assert Foo4861.A.j2 == 7

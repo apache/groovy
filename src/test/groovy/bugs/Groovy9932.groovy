@@ -19,9 +19,9 @@
 package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assume.assumeFalse
+import static org.junit.jupiter.api.Assumptions.assumeFalse
 
 final class Groovy9932 {
 

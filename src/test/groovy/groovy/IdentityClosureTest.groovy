@@ -18,18 +18,20 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Check that Object.identity(Closure) method works as expected
  */
-class IdentityClosureTest extends GroovyTestCase {
+class IdentityClosureTest {
 
     def foo = [[1,2,3],[4,5,6],[7,8,9]]
     def bar = " bar "
     def mooky = 1
 
     /** most useful perceived usecase, almost like with(expr) */
+    @Test
     void testIdentity0() {
         assert " bar " == bar
 
@@ -41,6 +43,7 @@ class IdentityClosureTest extends GroovyTestCase {
     }
 
     /** check the basics */
+    @Test
     void testIdentity1() {
         mooky.identity{ spooky->
             assert spooky == mooky
@@ -48,6 +51,7 @@ class IdentityClosureTest extends GroovyTestCase {
     }
 
     /** test temp shortcut to an element of an array */
+    @Test
     void testIdentity2() {
         assert 6 == foo[1][2]
 
@@ -59,6 +63,7 @@ class IdentityClosureTest extends GroovyTestCase {
     }
 
     /** check nested identity usage */
+    @Test
     void testIdentity3() {
         mooky.toString().identity{ m->
             assert "1" == m
@@ -70,6 +75,7 @@ class IdentityClosureTest extends GroovyTestCase {
     }
 
     /** Test the closure delegate */
+    @Test
     void testClosureDelegate1() {
         bar.toUpperCase().trim().identity{
             assert "BAR" == it
@@ -79,6 +85,7 @@ class IdentityClosureTest extends GroovyTestCase {
     }
 
     /** Test the closure delegate with Expandos */
+    @Test
     void testClosureDelegate2() {
         def a = new Expando()
         a.foobar = "foobar"

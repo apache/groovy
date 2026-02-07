@@ -20,7 +20,7 @@ package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -132,7 +132,7 @@ final class Groovy8579 {
                 def err = shouldFail {
                     cu.compile()
                 }
-                assert err =~ /static method of interface Face can only be accessed /
+                assert err.message =~ /static method of interface Face can only be accessed /
             } finally {
                 sourceDir.deleteDir()
                 config.targetDirectory.deleteDir()

@@ -18,9 +18,11 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StripMarginTest extends GroovyTestCase {
+
+class StripMarginTest {
+    @Test
     void testStripMarginOnSingleLineString() {
         def expected = "the quick brown fox jumps over the lazy dog"
         def actual = "     |the quick brown fox jumps over the lazy dog".stripMargin()
@@ -33,6 +35,7 @@ class StripMarginTest extends GroovyTestCase {
         assert expected == actual
     }
 
+    @Test
     void testStripMarginOnMultiLineString() {
         def expected = "the quick brown fox\njumps over the lazy dog"
         def actual = """     |the quick brown fox
@@ -49,6 +52,7 @@ class StripMarginTest extends GroovyTestCase {
         assert expected == actual
     }
 
+    @Test
     void testStripIndent() {
         def actual   = """
                 return 'foo'
@@ -71,6 +75,7 @@ def method() {
         assert expected == actual
     }
 
+    @Test
     void testStripIndentWithFirstLineBackslash() {
         def actual   = """\
                 return 'foo'

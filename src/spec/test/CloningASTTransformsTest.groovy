@@ -1,4 +1,3 @@
-import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +17,13 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class CloningASTTransformsTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+class CloningASTTransformsTest {
+    @Test
     void testAutoCloneAnnotation() {
         assertScript '''
 // tag::example_autoclone[]
@@ -59,6 +64,7 @@ assert !(book.authors.is(clone.authors))
 '''
     }
 
+    @Test
     void testAutoCloneAnnotationWithExclude() {
         assertScript '''
 // tag::example_autoclone_excludes[]
@@ -82,6 +88,7 @@ assert clone.publicationDate==book.publicationDate
 '''
     }
 
+    @Test
     void testAutoCloneAnnotationWithIncludeFields() {
         assertScript '''
 // tag::example_autoclone_includeFields[]
@@ -105,6 +112,7 @@ assert clone.publicationDate==book.publicationDate
 '''
     }
 
+    @Test
     void testAutoExternalize() {
         assertScript '''
 // tag::example_autoext[]
@@ -168,6 +176,7 @@ assert book.price == 1.5
 '''
     }
 
+    @Test
     void testAutoExternalizeWithExcludes() {
         assertScript '''
 // tag::example_autoext_excludes[]
@@ -209,6 +218,7 @@ assert book.title == 'Auto externalization for dummies'
 assert book.price == 0 // because price is excluded
 '''
     }
+    @Test
     void testAutoExternalizeWithIncludeFields() {
         assertScript '''
 // tag::example_autoext_includeFields[]

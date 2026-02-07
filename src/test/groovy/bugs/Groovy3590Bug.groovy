@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3590Bug extends GroovyTestCase {
+
+class Groovy3590Bug {
+    @Test
     void testMapDefaultValueGetWithPrevKeyHavingNullValue() {
         def map = ['key':null]
         assert map.get('key', this) == null

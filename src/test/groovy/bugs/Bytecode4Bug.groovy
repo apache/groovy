@@ -18,25 +18,29 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class Bytecode4Bug extends GroovyTestCase {
+class Bytecode4Bug {
 
     def count = 0
 
+    @Test
     void testInject() {
         def x = [1, 2, 3].inject(0) { c, s -> c += s }
         assert x == 6
     }
 
+    @Test
     void testUsingProperty() {
         count = 0
         getCollection().each { count += it }
         assert count == 10
     }
 
+    @Test
     void testUsingIncrementingProperty() {
         count = 0
         getCollection().each { count++ }

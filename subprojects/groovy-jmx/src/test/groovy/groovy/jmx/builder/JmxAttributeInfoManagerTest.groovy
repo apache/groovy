@@ -18,13 +18,14 @@
  */
 package groovy.jmx.builder
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import javax.management.modelmbean.DescriptorSupport
 import javax.management.modelmbean.ModelMBeanAttributeInfo
 
-class JmxAttributeInfoManagerTest extends GroovyTestCase {
+class JmxAttributeInfoManagerTest {
 
+    @Test
     void testGetAttributeInfoFromAttributeMap() {
         def object = new MockManagedObject()
         def attribs = JmxMetaMapBuilder.buildAttributeMapFrom(object)
@@ -53,6 +54,7 @@ class JmxAttributeInfoManagerTest extends GroovyTestCase {
         assert info.getType() == "int"
     }
 
+    @Test
     void testGetAttributeInfosFromAttributeMap() {
         def object = new MockManagedGroovyObject()
         def attribs = JmxMetaMapBuilder.buildAttributeMapFrom(object)

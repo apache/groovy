@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3784Bug extends GroovyTestCase {
+
+class Groovy3784Bug {
+    @Test
     void testUseOfDelegateAndThenGenericsSharingTheSameClassHelper() {
         GroovyClassLoader gcl = new GroovyClassLoader()
 

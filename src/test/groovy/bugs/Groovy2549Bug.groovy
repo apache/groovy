@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy2549Bug extends GroovyTestCase {
+
+class Groovy2549Bug {
+    @Test
     void test2549() {
         def c = 2
         def x = 1 + (c as int)

@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7709Bug extends GroovyTestCase {
 
+class Groovy7709Bug {
+
+    @Test
     void testConvertedClosureAsGroovyObject() {
         def closure = { 43 }
         def proxy = closure as Groovy7709BugY
@@ -29,6 +31,7 @@ class Groovy7709Bug extends GroovyTestCase {
         assert proxy.foo() == 43
     }
 
+    @Test
     void testConvertedMapAsGroovyObject() {
         def map = [foo: { 43 }]
         def proxy = map as Groovy7709BugY

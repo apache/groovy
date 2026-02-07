@@ -17,9 +17,7 @@
  *  under the License.
  */
 
-
-import groovy.transform.TypeChecked
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -123,6 +121,7 @@ class RegexCheckerTest {
         def err = shouldFail($/
         import groovy.transform.TypeChecked
         import java.util.regex.Pattern
+import static groovy.test.GroovyAssert.*
 
         @TypeChecked(extensions='groovy.typecheckers.RegexChecker')
         static main(args) {

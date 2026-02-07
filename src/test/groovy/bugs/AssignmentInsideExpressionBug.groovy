@@ -18,12 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.fail
+
 
 /**
  */
-class AssignmentInsideExpressionBug extends GroovyTestCase {
+class AssignmentInsideExpressionBug {
 
+    @Test
     void testBug() {
         def x
         if ((x = someMethod()) != null) {

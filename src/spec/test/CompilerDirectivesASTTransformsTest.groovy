@@ -1,4 +1,3 @@
-import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +17,14 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class CompilerDirectivesASTTransformsTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+class CompilerDirectivesASTTransformsTest {
+    @Test
     void testFieldXForm() {
         shouldFail(MissingPropertyException) {
             assertScript '''
@@ -98,6 +104,7 @@ new MyScript().run()
 '''
     }
 
+    @Test
     void testAutoFinalClass() {
         assertScript '''
 // tag::autofinal_class[]
@@ -127,6 +134,7 @@ assert john.greeting('Hello') == 'Hello, John'
 '''
     }
 
+    @Test
     void testAutoFinalMethod() {
         assertScript '''
 import groovy.transform.AutoFinal
@@ -144,6 +152,7 @@ assert calc.mult(3, 6) == 18
 '''
     }
 
+    @Test
     void testFinalAnnotation() {
         assertScript '''
 import groovy.transform.*
@@ -161,6 +170,7 @@ assert Modifier.isFinal(GreetingService.modifiers)
 '''
     }
 
+    @Test
     void testPackageScope() {
         assertScript '''import java.lang.reflect.Modifier
 // tag::packagescope_property[]

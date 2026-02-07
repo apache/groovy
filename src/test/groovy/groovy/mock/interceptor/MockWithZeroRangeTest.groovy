@@ -18,11 +18,14 @@
  */
 package groovy.mock.interceptor
 
-import groovy.mock.interceptor.MockFor
-import groovy.test.GroovyTestCase
-import junit.framework.AssertionFailedError
 
-class MockForWithZeroRangeTest extends GroovyTestCase {
+import junit.framework.AssertionFailedError
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
+class MockForWithZeroRangeTest {
+    @Test
     void testMockWithZeroRangeDemandAndNoCall() {
         MockFor mockForFoo = new MockFor(Foo)
         mockForFoo.demand.createBar(0..0) {}
@@ -32,6 +35,7 @@ class MockForWithZeroRangeTest extends GroovyTestCase {
         // We should get here and the test should pass.
     }
 
+    @Test
     void testMockWithZeroRangeDemandAndOneCall() {
         MockFor mockForFoo = new MockFor(Foo)
         mockForFoo.demand.createBar(0..0) {}

@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ValidNameTest extends GroovyTestCase {
 
+class ValidNameTest {
+
+    @Test
     void testFieldNamesWithDollar() {
         def $foo$foo = '3foo'
         def foo$foo = '2foo'
@@ -34,6 +36,7 @@ class ValidNameTest extends GroovyTestCase {
         assert "$foo$foo${foo$foo}${$foo$foo}${$foo}$foo" == '0foo0foo2foo3foo1foo0foo'
     }
 
+    @Test
     void testClassAndMethodNamesWithDollar() {
         assert new $Temp().$method() == 'bar'
     }

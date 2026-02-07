@@ -18,21 +18,27 @@
  */
 package groovy.mock.interceptor
 
-import groovy.test.GroovyTestCase
 import junit.framework.AssertionFailedError
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Testing Groovy Mock support for multiple calls to the Collaborator with
  * demanding one or two methods multiple and various ranges.
  */
-class MockCallSequenceTest extends GroovyTestCase {
+class MockCallSequenceTest {
 
     MockFor mocker
 
+    @BeforeEach
     void setUp() {
         mocker = new MockFor(Collaborator.class)
     }
 
+    @Test
     void testUndemandedCallFailsEarly() {
         // no demand here
         mocker.use {
@@ -41,6 +47,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedTwoCalledFailsEarly() {
         mocker.demand.one { 1 }
         mocker.use {
@@ -50,6 +57,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedDefaultRange() {
         mocker.demand.one(1..1) { 1 }
         mocker.use {
@@ -58,6 +66,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedExactRange() {
         mocker.demand.one(2..2) { 1 }
         mocker.use {
@@ -68,6 +77,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedExactRangeShorthand() {
         mocker.demand.one(2) { 1 }
         mocker.use {
@@ -78,6 +88,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedRealRange() {
         mocker.demand.one(1..2) { 1 }
         mocker.use {
@@ -88,6 +99,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedOptionalRange() {
         mocker.demand.one(0..2) { 1 }
         mocker.use {
@@ -98,6 +110,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedNoRange() {
         mocker.demand.one() { 1 }
         mocker.demand.two() { 2 }
@@ -109,6 +122,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedFirstRangeExploited() {
         mocker.demand.one(1..2) { 1 }
         mocker.demand.two() { 2 }
@@ -121,6 +135,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedFirstRangeNotExploited() {
         mocker.demand.one(1..2) { 1 }
         mocker.demand.two() { 2 }
@@ -132,6 +147,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedFirstOptionalOmitted() {
         mocker.demand.one(0..2) { 1 }
         mocker.demand.two() { 2 }
@@ -142,6 +158,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMixedDemandedMinimum() {
         mocker.demand.one(0..1) { 1 }
         mocker.demand.two() { 2 }
@@ -158,6 +175,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMixedDemandedMaximum() {
         mocker.demand.one(0..1) { 1 }
         mocker.demand.two() { 2 }
@@ -180,6 +198,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMixedDemandedOutOfSequenceFailsEarly() {
         mocker.demand.one(0..1) { 1 }
         mocker.demand.two() { 2 }
@@ -196,6 +215,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testRangeDemandedButNotExploitedFailsOnVerify() {
         mocker.demand.one(2..4) { 1 }
         shouldFail(AssertionFailedError.class) { // fails on verify
@@ -206,6 +226,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIgnoreString() {
         mocker.demand.one() { 1 }
         mocker.ignore('two') { 2 }
@@ -217,6 +238,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIgnorePattern() {
         mocker.demand.one() { 1 }
         mocker.ignore('baz') { 99 }
@@ -229,6 +251,7 @@ class MockCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testReversedRangesNotAllowed() {
         shouldFail(IllegalArgumentException.class) { mocker.demand.one(1..0) { 1 } }
     }

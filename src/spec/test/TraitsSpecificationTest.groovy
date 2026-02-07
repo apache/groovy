@@ -17,14 +17,20 @@
  *  under the License.
  */
 
-import groovy.test.GroovyTestCase
+
 import org.codehaus.groovy.ast.ClassHelper
+import org.junit.jupiter.api.Test
 
 /**
  * Specification tests for the traits feature
  */
-class TraitsSpecificationTest extends GroovyTestCase {
 
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+class TraitsSpecificationTest {
+
+    @Test
     void testTraitDeclaration() {
         assertScript '''// tag::flying_simple[]
 trait FlyingAbility {                           // <1>
@@ -41,6 +47,7 @@ assert b.fly() == "I'm flying!"                 // <3>
 '''
     }
 
+    @Test
     void testAbstractMethodInTrait() {
         assertScript '''// tag::greetable[]
 trait Greetable {
@@ -60,6 +67,7 @@ assert p.greeting() == 'Hello, Bob!'                    // <3>
 '''
     }
 
+    @Test
     void testTraitImplementingInterface() {
         assertScript '''// tag::trait_implementing_interface[]
 interface Named {                                       // <1>
@@ -80,6 +88,7 @@ assert p instanceof Greetable                           // <7>
 '''
     }
 
+    @Test
     void testTraitWithProperty() {
         assertScript '''// tag::trait_with_property[]
 trait Named {
@@ -93,6 +102,7 @@ assert p.getName() == 'Bob'                 // <5>
 '''
     }
 
+    @Test
     void testCompositionOfTraits() {
         assertScript '''trait FlyingAbility {
     String fly() { "I'm flying!" }
@@ -114,6 +124,7 @@ assert d.speak() == "I'm speaking!"                     // <4>
 '''
     }
 
+    @Test
     void testOverridableMethod() {
         assertScript '''trait FlyingAbility {
     String fly() { "I'm flying!" }
@@ -137,6 +148,7 @@ assert d.speak() == "Quack!"                            // <5>
 '''
     }
 
+    @Test
     void testPrivateMethodInTrait() {
         assertScript '''// tag::private_method_in_trait[]
 trait Greeter {
@@ -161,6 +173,7 @@ try {
 '''
     }
 
+    @Test
     void testTraitWithPrivateField() {
         assertScript '''// tag::trait_with_private_field[]
 trait Counter {
@@ -175,6 +188,7 @@ assert f.count() == 2
 '''
     }
 
+    @Test
     void testTraitWithPublicField() {
         assertScript '''// tag::trait_with_public_field[]
 trait Named {
@@ -187,11 +201,13 @@ p.Named__name = 'Bob'                       // <4>
 '''
     }
 
+    @Test
     void testRemappedName() {
         def foo = ClassHelper.make("my.package.Foo")
         assert org.codehaus.groovy.transform.trait.Traits.remappedFieldName(foo, "bar") == 'my_package_Foo__bar'
     }
 
+    @Test
     void testDuckTyping() {
         assertScript '''// tag::ducktyping[]
 trait SpeakingDuck {
@@ -208,6 +224,7 @@ assert d.speak() == 'Quack!'                        // <3>
 '''
     }
 
+    @Test
     void testTraitInheritance() {
         assertScript '''// tag::trait_inherit[]
 trait Named {
@@ -223,6 +240,7 @@ assert p.introduce() == 'Hello, I am Alice'         // <5>
 '''
     }
 
+    @Test
     void testMultipleTraitInheritance() {
         assertScript '''// tag::trait_multiple_inherit[]
 trait WithId {                                      // <1>
@@ -238,6 +256,7 @@ def b = new Bean(id: 123, name: 'Foo')
 '''
     }
 
+    @Test
     void testMethodMissingInTrait() {
         assertScript '''// tag::dynamicobject[]
 trait DynamicObject {                               // <1>
@@ -268,6 +287,7 @@ assert d.someMethod() == 'SOMEMETHOD'               // <9>
 '''
     }
 
+    @Test
     void testDefaultMultipleInheritanceResolution() {
         assertScript '''// tag::multiple_inherit_default[]
 trait A {
@@ -286,6 +306,7 @@ assert c.exec() == 'B'
 '''
     }
 
+    @Test
     void testUserMultipleInheritanceResolution() {
         assertScript '''trait A {
     String exec() { 'A' }
@@ -303,6 +324,7 @@ assert c.exec() == 'A'                  // <2>
 '''
     }
 
+    @Test
     void testRuntimeCoercion() {
         assertScript '''
 // tag::runtime_header[]
@@ -329,6 +351,7 @@ s.doSomething()                                         // <3>
 '''
     }
 
+    @Test
     void testWithTraits() {
         assertScript '''// tag::withtraits_header[]
 trait A { void methodFromA() {} }
@@ -352,6 +375,7 @@ d.methodFromB()                     // <5>
 '''
     }
 
+    @Test
     void testSAMCoercion() {
         assertScript '''
 // tag::sam_trait[]
@@ -372,16 +396,16 @@ greet { 'Alice' }                           // <2>
 '''
     }
 
+    @Test
     void testTraitOverrideBehavior() {
         assertScript '''
 // tag::forceoverride_header[]
-import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 
-class SomeTest extends GroovyTestCase {
+class SomeTest {
     def config
     def shell
 
@@ -441,6 +465,7 @@ assert !t.config.compilationCustomizers.empty
 '''
     }
 
+    @Test
     void testRuntimeOverride() {
         assertScript '''// tag::runtime_forceoverride[]
 class Person {
@@ -458,6 +483,7 @@ assert p2.name == 'Bob'                                 // <5>
 '''
     }
 
+    @Test
     void testDifferenceWithMixin() {
         assertScript '''// tag::diff_mixin[]
 class A { String methodFromA() { 'A' } }        // <1>
@@ -472,6 +498,7 @@ assert !(o instanceof B)                        // <7>
 '''
     }
 
+    @Test
     void testMeaningOfThis() {
         assertScript '''// tag::meaningofthis_header[]
 trait Introspector {
@@ -489,6 +516,7 @@ assert foo.whoAmI().is(foo)
 '''
     }
 
+    @Test
     void testPublicStaticFieldInTrait() {
         assertScript '''// tag::staticfield_header[]
 trait TestHelper {
@@ -518,6 +546,7 @@ assert !Baz.TestHelper__CALLED                  // <5>
 '''
     }
 
+    @Test
     void testPrePostfixIsDisallowed() {
         def message = shouldFail '''
 // tag::prefix_postfix[]
@@ -535,10 +564,11 @@ def c = new Counter()
 c.inc()
 // end::prefix_postfix[]
         '''
-        assert message.contains('Postfix expressions on trait fields/properties are not supported')
-        assert message.contains('Prefix expressions on trait fields/properties are not supported')
+        assert message.message.contains('Postfix expressions on trait fields/properties are not supported')
+        assert message.message.contains('Prefix expressions on trait fields/properties are not supported')
     }
 
+    @Test
     void testStackableTraits() {
         assertScript '''import TraitsSpecificationTest.PrintCategory as PC
 
@@ -661,6 +691,7 @@ PC.reset()
 '''
     }
 
+    @Test
     void testDecorateFinalClass() {
         assertScript '''
 // tag::decoratefinalclass[]
@@ -678,6 +709,7 @@ assert sb.toString() == 'Grvy'                          // <7>
 '''
     }
 
+    @Test
     void testInheritanceOfState() {
         assertScript '''// tag::intcouple[]
 trait IntCouple {
@@ -729,6 +761,7 @@ assert elem.f() == 7
 '''
     }
 
+    @Test
     void testSelfType() {
         assertScript '''
 // tag::selftype_intro[]
@@ -824,9 +857,10 @@ class SecurityService {
 }
 
 '''
-        assert message.contains("class 'MyDevice' implements trait 'Communicating' but does not extend self type class 'Device'")
+        assert message.message.contains("class 'MyDevice' implements trait 'Communicating' but does not extend self type class 'Device'")
     }
 
+    @Test
     void testSelfTypeWithSealed() {
         assertScript '''
 import groovy.transform.*

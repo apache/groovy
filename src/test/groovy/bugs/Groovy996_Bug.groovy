@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy996_Bug extends GroovyTestCase {
+
+class Groovy996_Bug {
+    @Test
     void testAccessToSuperProtectedField() {
         def a = new Groovy996_SubClass()
         a.out()

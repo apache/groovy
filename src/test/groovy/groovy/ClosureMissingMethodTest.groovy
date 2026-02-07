@@ -18,10 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ClosureMissingMethodTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
 
+
+class ClosureMissingMethodTest {
+
+    @Test
     void testInScript() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
@@ -48,6 +52,7 @@ class ClosureMissingMethodTest extends GroovyTestCase {
       """);
     }
 
+    @Test
     void testInMethod() {
         int count = 0
 
@@ -68,6 +73,7 @@ class ClosureMissingMethodTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testWithMetaClassInScript() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
@@ -97,6 +103,7 @@ class ClosureMissingMethodTest extends GroovyTestCase {
       """);
     }
 
+    @Test
     void testWithMetaClassInMethod() {
         int count = 0
 

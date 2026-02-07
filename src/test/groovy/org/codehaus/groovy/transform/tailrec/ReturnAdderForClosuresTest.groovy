@@ -22,14 +22,14 @@ import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.builder.AstAssert
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilePhase
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class ReturnAdderForClosuresTest {
 
     ReturnAdderForClosures adder
 
-    @Before
+    @BeforeEach
     void init() {
         adder = new ReturnAdderForClosures()
     }

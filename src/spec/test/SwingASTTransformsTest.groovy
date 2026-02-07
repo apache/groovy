@@ -1,4 +1,3 @@
-import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +17,13 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class SwingASTTransformsTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+class SwingASTTransformsTest {
+    @Test
     void testBindable() {
         assertScript '''// tag::bindable_on_class[]
 import groovy.beans.Bindable
@@ -80,6 +85,7 @@ p.age = 145
 assert changed == ['name', 'age'] as Set'''
     }
 
+    @Test
     void testBindableSingleProperty() {
         assertScript '''
 // tag::bindable_single_property[]
@@ -101,6 +107,7 @@ assert changed == ['age'] as Set
 '''
     }
 
+    @Test
     void testListenerList() {
         assertScript '''import java.awt.event.ActionEvent
 
@@ -174,6 +181,7 @@ c.fireActionPerformed(new ActionEvent(this, 0, 'test'))
 
     }
 
+    @Test
     void testListenerListName() {
         assertScript '''import java.awt.event.ActionEvent
 
@@ -196,6 +204,7 @@ c.fireActionPerformed(new ActionEvent(this, 0, 'test'))
 
     }
 
+    @Test
     void testListenerListSynchronized() {
         assertScript '''import java.awt.event.ActionEvent
 
@@ -220,6 +229,7 @@ assert Modifier.isSynchronized(Component.getDeclaredMethod('addActionListener', 
 '''
     }
 
+    @Test
     void testVetoable() {
         assertScript '''// tag::vetoable_on_class[]
 import groovy.beans.Vetoable
@@ -291,6 +301,7 @@ p.age = 145
 assert changed == ['name', 'age'] as Set'''
     }
 
+    @Test
     void testVetoableSingleProperty() {
         assertScript '''
 // tag::vetoable_single_property[]

@@ -18,10 +18,12 @@
  */
 package groovy.mock.interceptor
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StubTest extends GroovyTestCase {
 
+class StubTest {
+
+   @Test
    void testBehaviorWithInstanceCreatedOutsideUseClosure() {
       def speakerStub = new StubFor(Speaker)
       speakerStub.demand.startLecture() { "Intercepted!" }
@@ -41,6 +43,7 @@ class StubTest extends GroovyTestCase {
       assert speaker1.startLecture() == "Starting..."
    }
 
+   @Test
    void testWIthOGBOutsideUse() {
       def ogb = new ObjectGraphBuilder( classNameResolver: 'groovy.mock.interceptor' )
       def stub = new StubFor( Company )
@@ -54,6 +57,7 @@ class StubTest extends GroovyTestCase {
       }
    }
 
+   @Test
    void testWIthOGBInsideUse() {
       def ogb = new ObjectGraphBuilder( classNameResolver: 'groovy.mock.interceptor' )
       def stub = new StubFor( ObjectGraphBuilder )

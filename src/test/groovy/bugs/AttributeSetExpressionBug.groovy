@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class AttributeSetExpressionBug extends GroovyTestCase {
+
+class AttributeSetExpressionBug {
+    @Test
     void testAttributeSetAccess() {
         def a = new HasStaticFieldSomeClass()
         a.name = a.name * 3

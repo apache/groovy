@@ -18,10 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class IfElseTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
 
+
+class IfElseTest {
+
+    @Test
     void testIf_NoElse() {
 
         def x = false
@@ -33,6 +37,7 @@ class IfElseTest extends GroovyTestCase {
         assert x == true
     }
 
+    @Test
     void testIf_WithElse_MatchIf() {
 
         def x = false
@@ -49,6 +54,7 @@ class IfElseTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testIf_WithElse_MatchElse() {
 
         def x = false
@@ -64,6 +70,7 @@ class IfElseTest extends GroovyTestCase {
         assertEquals( true, y )
     }
 
+    @Test
     void testIf_WithElseIf_MatchIf() {
 
         def x = false
@@ -79,6 +86,7 @@ class IfElseTest extends GroovyTestCase {
         assert y == false
     }
 
+    @Test
     void testIf_WithElseIf_MatchElseIf() {
 
         def x = false
@@ -94,6 +102,7 @@ class IfElseTest extends GroovyTestCase {
         assertEquals( true, y )
     }
 
+    @Test
     void testIf_WithElseIf_WithElse_MatchIf() {
 
         def x = false
@@ -113,6 +122,7 @@ class IfElseTest extends GroovyTestCase {
         assertEquals( false, z )
     }
 
+    @Test
     void testIf_WithElseIf_WithElse_MatchElseIf() {
 
         def x = false
@@ -132,6 +142,7 @@ class IfElseTest extends GroovyTestCase {
         assertEquals( false, z )
     }
 
+    @Test
     void testIf_WithElseIf_WithElse_MatchElse() {
 
         def x = false

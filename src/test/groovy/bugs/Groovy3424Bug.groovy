@@ -18,22 +18,27 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class Groovy3424Bug extends GroovyTestCase {
+class Groovy3424Bug {
 
     MetaClassRegistry registry
     MetaClass originalMetaClass
 
+    @BeforeEach
     void setUp() {
         registry = GroovySystem.metaClassRegistry
         originalMetaClass = registry.getMetaClass(Groovy3424Foo)
     }
 
+    @AfterEach
     void tearDown() {
         registry.setMetaClass(Groovy3424Foo, originalMetaClass)
     }
 
+    @Test
     void testCallSiteShouldBeUpdatedAfterProxyMetaClassIsSet() {
         def newFoo = { -> new Groovy3424Foo() }
 
@@ -47,6 +52,7 @@ class Groovy3424Bug extends GroovyTestCase {
         assert 'constructor' == newFoo()
     }
 
+    @Test
     void testExpandoCallSiteShouldBeUpdatedAfterProxyMetaClassIsSet() {
         Groovy3424Foo.metaClass.constructor << { String test -> 'foo' }
 
@@ -62,6 +68,7 @@ class Groovy3424Bug extends GroovyTestCase {
         assert 'constructor' == newFoo()
     }
 
+    @Test
     void testCallSiteShouldBeUpdatedAfterOriginalMetaClassIsRestored() {
         def newFoo = { -> new Groovy3424Foo() }
 

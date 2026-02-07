@@ -33,12 +33,12 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.syntax.Types
-import org.junit.AfterClass
-import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
-import static org.junit.Assume.assumeTrue
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 @CompileStatic
 class GinqTest {
@@ -7008,7 +7008,7 @@ class GinqTest {
         '''
     }
 
-    @AfterClass
+    @AfterAll
     static void "testGinq - shutdown - 0"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
@@ -7021,7 +7021,7 @@ class GinqTest {
         '''
     }
 
-    @AfterClass
+    @AfterAll
     static void "testGinq - shutdown - 1"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper
@@ -7034,7 +7034,7 @@ class GinqTest {
         '''
     }
 
-    @AfterClass
+    @AfterAll
     static void "testGinq - shutdown - 2"() {
         assertScript '''
             import org.apache.groovy.ginq.provider.collection.runtime.QueryableHelper

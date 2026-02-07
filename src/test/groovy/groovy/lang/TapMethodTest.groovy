@@ -18,22 +18,30 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.fail
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertSame
+
 
 /**
  * Tests the .tap method
  */
-class TapMethodTest extends GroovyTestCase {
+class TapMethodTest {
 
+    @Test
     void testTapReturnsSelf() {
         def m1 = [:]
         def m2 = m1.tap{
             put("a",1)
         }
-        assertSame("Outgoing object of tap is not the same as the ingoing", m1, m2)
-        assertEquals("Outgoing object of tap is changed", m2, [a: 1])
+        assertSame(m1, m2, "Outgoing object of tap is not the same as the ingoing")
+        assertEquals(m2, [a: 1], "Outgoing object of tap is changed")
     }
 
+    @Test
     void testDelegateGetsFirstOpportunity() {
         def sb = new StringBuffer()
 
@@ -43,9 +51,10 @@ class TapMethodTest extends GroovyTestCase {
             append 'some text'
         }
 
-        assertEquals 'delegate had wrong value', 'some text', sb.toString()
+        assertEquals 'some text', sb.toString(), 'delegate had wrong value'
     }
 
+    @Test
     void testOwnerGetsOpportunityIfDelegateCannotRespond() {
         def sb = new StringBuffer()
 
@@ -56,11 +65,12 @@ class TapMethodTest extends GroovyTestCase {
             returnValue = ownerMethod()
         }
 
-        assertEquals 'owner should have responded to method call',
-                     42,
-                     returnValue
+        assertEquals 42,
+                     returnValue,
+                     'owner should have responded to method call'
     }
 
+    @Test
     void testCallingNonExistentMethod() {
         def sb = new StringBuffer()
 
@@ -71,6 +81,7 @@ class TapMethodTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testClosureWithResolveStrategyExplicitlySet() {
         def closure = {
             append 'some text'
@@ -83,7 +94,7 @@ class TapMethodTest extends GroovyTestCase {
         // the closure has another strategy set
         sb.tap closure
 
-        assertEquals 'delegate had wrong value', 'some text', sb.toString()
+        assertEquals 'some text', sb.toString(), 'delegate had wrong value'
     }
 
     def ownerMethod() {

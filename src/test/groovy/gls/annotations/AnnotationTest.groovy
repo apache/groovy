@@ -154,7 +154,7 @@ final class AnnotationTest {
                 String[] values() default ['1',2] // list must contain elements of correct type
             }
         '''
-        assert err =~ /Attribute 'values' should have type 'java.lang.String'; but found type 'int' in @A/
+        assert err.message =~ /Attribute 'values' should have type 'java.lang.String'; but found type 'int' in @A/
     }
 
     // GROOVY-11492
@@ -1070,7 +1070,7 @@ final class AnnotationTest {
 
             Object o = new @Tag Object()
         '''
-        assert err =~ /Annotation @Tag is not allowed on element TYPE/
+        assert err.message =~ /Annotation @Tag is not allowed on element TYPE/
     }
 
     // GROOVY-9155
@@ -1083,7 +1083,7 @@ final class AnnotationTest {
             def m(List<@Tag(foo="") String> strings) {
             }
         '''
-        assert err =~ /'foo' is not part of the annotation Tag in @p.Tag/
+        assert err.message =~ /'foo' is not part of the annotation Tag in @p.Tag/
     }
 
     // GROOVY-8234
@@ -1191,7 +1191,7 @@ final class AnnotationTest {
             @As([@A("c")])
             class Foo {}
         '''
-        assert err =~ /Cannot specify duplicate annotation/
+        assert err.message =~ /Cannot specify duplicate annotation/
     }
 
     // GROOVY-7033

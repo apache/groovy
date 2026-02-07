@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 import static java.lang.reflect.Modifier.isFinal
@@ -105,7 +105,7 @@ final class Groovy4098 {
         def err = shouldFail {
             metaProperty.setProperty(this, 'five mop')
         }
-        assert err =~ /Cannot set read-only property: propertyFive/
+        assert err.message =~ /Cannot set read-only property: propertyFive/
     }
 
     @Test
@@ -117,7 +117,7 @@ final class Groovy4098 {
         def err = shouldFail {
             metaProperty.setProperty(this, 'six mop')
         }
-        assert err =~ /Cannot set the property 'propertySix' because the backing field is final./
+        assert err.message =~ /Cannot set the property 'propertySix' because the backing field is final./
     }
 
     //

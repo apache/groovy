@@ -18,23 +18,24 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assertions.fail
 
 class ResourceGroovyMethodsTest {
 
-	@Rule
-	public TemporaryFolder temporaryFolder = new TemporaryFolder()
+	@TempDir
+	File temporaryFolder
 
 
 	@Test
 	void test_Should_write_should_create_missing_directories_and_write() {
 		final String filename = "testing.txt"
-		File file = new File(temporaryFolder.getRoot().getAbsolutePath() + "\\foo\\bar\\" + filename)
+		File file = new File(temporaryFolder.getAbsolutePath() + "\\foo\\bar\\" + filename)
 		String text = "foobar"
 		String encoding = "UTF-8"
 
@@ -45,7 +46,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_write_String_to_File_using_default_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		String text = 'Hello World'
 
 		ResourceGroovyMethods.write(file, text)
@@ -55,7 +56,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_write_String_to_File_using_specified_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		String text = "؁"
 		String encoding = 'UTF-8'
 
@@ -66,7 +67,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_write_String_and_bom_to_File_using_specified_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		String text = "؁"
 		String encoding = 'UTF-16LE'
 
@@ -77,7 +78,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_ByteArray_to_File() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		file.write('Hello')
 		byte[] bytes = ' World'.bytes
 
@@ -88,7 +89,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_String_to_File_using_default_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		file.write('Hello')
 
 		ResourceGroovyMethods.append(file, ' World')
@@ -98,7 +99,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_text_supplied_by_Reader_to_File_using_default_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		file.write('Hello')
 		Reader reader = new StringReader(' World')
 
@@ -109,7 +110,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_text_supplied_by_Writer_to_File_using_default_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		file.write('Hello')
 
 		Writer writer = new StringWriter()
@@ -122,7 +123,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_String_to_File_using_specified_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
 
@@ -133,7 +134,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_text_supplied_by_Reader_to_File_using_specified_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
 		Reader reader = new CharArrayReader([' ','؁'] as char[])
@@ -145,7 +146,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_text_supplied_by_Writer_to_File_using_specified_encoding() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		String encoding = 'UTF-8'
 		file.write('؁', encoding)
 
@@ -160,7 +161,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_write_String_to_File_using_specified_encoding_with_bom() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		String text = "؁"
 		String encoding = 'UTF-16LE'
 
@@ -171,7 +172,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_String_to_File_using_specified_encoding_with_bom() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		file.delete()
 		String encoding = 'UTF-16LE'
 		file.append('؁', encoding, true)
@@ -183,7 +184,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_text_supplied_by_Reader_to_File_using_specified_encoding_with_bom() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		file.delete()
 		String encoding = 'UTF-16LE'
 		file.append('؁', encoding, true)
@@ -196,7 +197,7 @@ class ResourceGroovyMethodsTest {
 
 	@Test
 	void test_Should_append_text_supplied_by_Writer_to_File_using_specified_encoding_with_bom() {
-		File file = temporaryFolder.newFile()
+		File file = File.createTempFile('test', '.tmp', temporaryFolder)
 		file.delete()
 		String encoding = 'UTF-16LE'
 		file.append('؁', encoding, true)
@@ -269,10 +270,10 @@ class ResourceGroovyMethodsTest {
 
     @Test
     void test_asBoolean() {
-        File fileThatExists = temporaryFolder.newFile()
+        File fileThatExists = File.createTempFile('test', '.tmp', temporaryFolder)
         assertTrue(ResourceGroovyMethods.asBoolean(fileThatExists))
 
-        File fileThatDoesNotExist = temporaryFolder.newFile()
+        File fileThatDoesNotExist = File.createTempFile('test', '.tmp', temporaryFolder)
         fileThatDoesNotExist.delete()
         assertFalse(ResourceGroovyMethods.asBoolean(fileThatDoesNotExist))
     }

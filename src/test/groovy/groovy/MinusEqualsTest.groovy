@@ -18,10 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class MinusEqualsTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+
+class MinusEqualsTest {
+
+    @Test
     void testIntegerMinusEquals() {
         def x = 4
         def y = 2
@@ -34,6 +39,7 @@ class MinusEqualsTest extends GroovyTestCase {
         assert y == 1
     }
 
+    @Test
     void testCharacterMinusEquals() {
         Character x = 4
         Character y = 2
@@ -46,6 +52,7 @@ class MinusEqualsTest extends GroovyTestCase {
         assert y == 1
     }
 
+    @Test
     void testNumberMinusEquals() {
         def x = 4.2
         def y = 2
@@ -58,6 +65,7 @@ class MinusEqualsTest extends GroovyTestCase {
         assert y == 1.9
     }
 
+    @Test
     void testStringMinusEquals() {
         def foo = "nice cheese"
         foo -= "cheese"
@@ -66,6 +74,7 @@ class MinusEqualsTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testSortedSetMinusEquals() {
         def sortedSet = new TreeSet()
         sortedSet.add('one')
@@ -74,9 +83,9 @@ class MinusEqualsTest extends GroovyTestCase {
         sortedSet.add('four')
         sortedSet -= 'one'
         sortedSet -= ['two', 'three']
-        assertTrue 'sortedSet should have been a SortedSet',
-                   sortedSet instanceof SortedSet
-        assertEquals 'sortedSet had the wrong number of elements', 1, sortedSet.size()
-        assertTrue 'sortedSet should have contained the word four', sortedSet.contains('four')
+        assertTrue sortedSet instanceof SortedSet,
+                   'sortedSet should have been a SortedSet'
+        assertEquals 1, sortedSet.size(), 'sortedSet had the wrong number of elements'
+        assertTrue sortedSet.contains('four'), 'sortedSet should have contained the word four'
     }
 }

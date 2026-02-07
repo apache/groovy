@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.ast.expr
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
 import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE

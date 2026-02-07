@@ -1048,6 +1048,7 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
             import groovy.transform.*
             import static org.codehaus.groovy.control.CompilePhase.*
             import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.*
+import static groovy.test.GroovyAssert.shouldFail
 
             @CompileStatic
             class C {
@@ -1063,6 +1064,6 @@ final class StaticCompilationTest extends AbstractBytecodeTestCase {
                 }
             }
         '''
-        assert err =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
+        assert err.message =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
     }
 }

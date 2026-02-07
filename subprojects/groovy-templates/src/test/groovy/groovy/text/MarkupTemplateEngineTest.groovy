@@ -22,10 +22,10 @@ import groovy.text.markup.BaseTemplate
 import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TagLibAdapter
 import groovy.text.markup.TemplateConfiguration
-import org.junit.After
-import org.junit.Before
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -33,13 +33,13 @@ final class MarkupTemplateEngineTest {
 
     private Locale locale
 
-    @Before
+    @BeforeEach
     void setUp() {
         locale = Locale.default
         Locale.default = Locale.US
     }
 
-    @After
+    @AfterEach
     void tearDown() {
         Locale.default = locale
     }
@@ -397,7 +397,7 @@ final class MarkupTemplateEngineTest {
             assert rendered.toString() == '<html><body>TYPE CHECKED!</body></html>'
         }
 
-        assert err =~ /Cannot find matching method java.lang.Integer#toUpperCase\(\)/
+        assert err.message =~ /Cannot find matching method java.lang.Integer#toUpperCase\(\)/
     }
 
     @Test
@@ -413,7 +413,7 @@ final class MarkupTemplateEngineTest {
             StringWriter rendered = new StringWriter()
             template.make(model).writeTo(rendered)
         }
-        assert err =~ /No such property: name/
+        assert err.message =~ /No such property: name/
     }
 
     @Test
@@ -463,7 +463,7 @@ final class MarkupTemplateEngineTest {
             StringWriter rendered = new StringWriter()
             template.make(model).writeTo(rendered)
         }
-        assert err =~ /Cannot find matching method java.lang.Integer#toUpperCase\(\)/
+        assert err.message =~ /Cannot find matching method java.lang.Integer#toUpperCase\(\)/
     }
 
     @Test
@@ -750,7 +750,7 @@ html {
         assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
     }
 
-    @Test @Ignore("ClassCastException: java.util.LinkedHashMap cannot be cast to groovy.lang.GroovyObject")
+    @Test @Disabled("ClassCastException: java.util.LinkedHashMap cannot be cast to groovy.lang.GroovyObject")
     void testInlinedModelTypeDeclaration() {
         MarkupTemplateEngine engine = new MarkupTemplateEngine(new TemplateConfiguration())
         def template = engine.createTemplate '''
@@ -798,7 +798,7 @@ html {
             template.make(model).writeTo(rendered)
             assert rendered.toString() == '<html><body><ul><li>Cedric</li><li>Jochen</li></ul></body></html>'
         }
-        assert err =~ /No such property: name for class: java.lang.String/
+        assert err.message =~ /No such property: name for class: java.lang.String/
     }
 
     @Test

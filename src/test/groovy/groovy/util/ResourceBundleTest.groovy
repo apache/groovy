@@ -18,9 +18,7 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase;
-
-public class ResourceBundleTest extends GroovyTestCase {
+public class ResourceBundleTest {
     public void testNoClassLoaderNoLocale() {
         def results = []
         // run test twice, call site optimizations result in call stack differences

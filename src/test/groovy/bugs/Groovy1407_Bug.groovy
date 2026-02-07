@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy1407_Bug extends GroovyTestCase {
+
+class Groovy1407_Bug {
+   @Test
    void testGPathOnMultiKeyMap(){
       // each key is a two-element String list
       // each value is a two-element integer list
@@ -32,6 +34,7 @@ class Groovy1407_Bug extends GroovyTestCase {
       assert expected == actual
    }
 
+   @Test
    void testGPathOnMultiValueMap(){
       // each key is a two-element String list
       // each value is a two-element integer list

@@ -18,10 +18,12 @@
  */
 package groovy.script
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-final class ScriptTest extends GroovyTestCase {
 
+final class ScriptTest {
+
+    @Test
     void testScripts() {
         new File('src/test/groovy/groovy/script').eachFile {
             def name = it.name

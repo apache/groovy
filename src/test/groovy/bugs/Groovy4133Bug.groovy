@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4133Bug extends GroovyTestCase {
+
+class Groovy4133Bug {
+    @Test
     void testDelegateAnnotationWithNativeMethods() {
         new GroovyShell().evaluate """
             class String4133 {

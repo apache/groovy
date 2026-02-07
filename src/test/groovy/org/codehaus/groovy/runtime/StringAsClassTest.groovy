@@ -18,21 +18,28 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StringAsClassTest extends GroovyTestCase{
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+
+class StringAsClassTest{
+    @Test
     void testStringAsClass  () {
         assertEquals "java.util.ArrayList" as Class, ArrayList
     }
 
+    @Test
     void testStringBuffer () {
         assertEquals "${ArrayList.'package'.name}.ArrayList" as Class, ArrayList
     }
 
+    @Test
     void testFails () {
         def message = shouldFail {
             assertEquals "NOSUCHCLASS" as Class, ArrayList
         }
-        assert message.contains('java.lang.ClassNotFoundException: NOSUCHCLASS')
+        assert message.message.contains('java.lang.ClassNotFoundException: NOSUCHCLASS')
     }
 }

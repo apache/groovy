@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -94,7 +94,6 @@ final class NullCheckTransformTest {
     void testNullCheckWithEquals() {
         assertScript '''
             import groovy.transform.*
-            import static groovy.test.GroovyAssert.shouldFail
 
             @EqualsAndHashCode
             @NullCheck

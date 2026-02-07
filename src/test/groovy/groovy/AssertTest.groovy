@@ -18,10 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class AssertTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
 
+
+class AssertTest {
+
+    @Test
     void testAssert() {
         def x = null
 
@@ -45,6 +49,7 @@ class AssertTest extends GroovyTestCase {
         assert !(1 != 1)
     }
 
+    @Test
     void testAssertFail() {
         def x = 1234
 
@@ -63,6 +68,7 @@ class AssertTest extends GroovyTestCase {
         assert runCode, "has not ran the try / catch block code"
     }
 
+    @Test
     void testAssertMessageAndExpressionReversed() {
         try {
             // the order is wrong for this one ""=="" becomes
@@ -76,6 +82,7 @@ class AssertTest extends GroovyTestCase {
     }
 
     // GROOVY-1769
+    @Test
     void testAssertWithNewlineAfterColonOrComma() {
         assert true:
             "Assert on newline after colon"
