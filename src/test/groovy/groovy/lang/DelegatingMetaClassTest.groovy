@@ -18,13 +18,17 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+
 
 /**
  * Tests for the DelegatingMetaClass
  */
-class DelegatingMetaClassTest extends GroovyTestCase {
+class DelegatingMetaClassTest {
 
+    @Test
     void testIsGroovyObject() {
         def metaClass = new DelegatingMetaClass(getClass())
 

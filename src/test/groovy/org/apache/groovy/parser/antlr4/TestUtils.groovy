@@ -18,42 +18,42 @@
  */
 package org.apache.groovy.parser.antlr4
 
-import groovy.transform.AutoFinal
-import groovy.transform.CompileDynamic
-import groovy.transform.CompileStatic
-import groovy.util.logging.Log
-import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
-import org.apache.groovy.parser.antlr4.util.AstDumper
-import org.codehaus.groovy.ast.ConstructorNode
-import org.codehaus.groovy.ast.FieldNode
-import org.codehaus.groovy.ast.GenericsType
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.ModuleNode
-import org.codehaus.groovy.ast.PackageNode
-import org.codehaus.groovy.ast.Parameter
-import org.codehaus.groovy.ast.PropertyNode
-import org.codehaus.groovy.ast.stmt.AssertStatement
-import org.codehaus.groovy.ast.stmt.BreakStatement
-import org.codehaus.groovy.ast.stmt.ContinueStatement
-import org.codehaus.groovy.ast.stmt.ExpressionStatement
-import org.codehaus.groovy.ast.stmt.ForStatement
-import org.codehaus.groovy.ast.stmt.IfStatement
-import org.codehaus.groovy.ast.stmt.ReturnStatement
-import org.codehaus.groovy.ast.stmt.ThrowStatement
-import org.codehaus.groovy.ast.stmt.WhileStatement
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.ParserPlugin
-import org.codehaus.groovy.control.ParserPluginFactory
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.syntax.Token
+    import groovy.transform.AutoFinal
+    import groovy.transform.CompileDynamic
+    import groovy.transform.CompileStatic
+    import groovy.util.logging.Log
+    import org.apache.groovy.parser.antlr4.util.ASTComparatorCategory
+    import org.apache.groovy.parser.antlr4.util.AstDumper
+    import org.codehaus.groovy.ast.ConstructorNode
+    import org.codehaus.groovy.ast.FieldNode
+    import org.codehaus.groovy.ast.GenericsType
+    import org.codehaus.groovy.ast.MethodNode
+    import org.codehaus.groovy.ast.ModuleNode
+    import org.codehaus.groovy.ast.PackageNode
+    import org.codehaus.groovy.ast.Parameter
+    import org.codehaus.groovy.ast.PropertyNode
+    import org.codehaus.groovy.ast.stmt.AssertStatement
+    import org.codehaus.groovy.ast.stmt.BreakStatement
+    import org.codehaus.groovy.ast.stmt.ContinueStatement
+    import org.codehaus.groovy.ast.stmt.ExpressionStatement
+    import org.codehaus.groovy.ast.stmt.ForStatement
+    import org.codehaus.groovy.ast.stmt.IfStatement
+    import org.codehaus.groovy.ast.stmt.ReturnStatement
+    import org.codehaus.groovy.ast.stmt.ThrowStatement
+    import org.codehaus.groovy.ast.stmt.WhileStatement
+    import org.codehaus.groovy.control.CompilerConfiguration
+    import org.codehaus.groovy.control.ParserPlugin
+    import org.codehaus.groovy.control.ParserPluginFactory
+    import org.codehaus.groovy.control.SourceUnit
+    import org.codehaus.groovy.syntax.Token
 
-import java.security.AccessController
-import java.security.PrivilegedAction
-import java.util.logging.Level
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
+    import java.security.AccessController
+    import java.security.PrivilegedAction
+    import java.util.logging.Level
+    import java.util.zip.ZipEntry
+    import java.util.zip.ZipFile
 
-@CompileStatic @AutoFinal @Log
+    @CompileStatic @AutoFinal @Log
 final class TestUtils {
 
     public static final List<Class> COMMON_IGNORE_CLASS_LIST = [AssertStatement, BreakStatement, ConstructorNode, ContinueStatement, ExpressionStatement, FieldNode, ForStatement, GenericsType, IfStatement, MethodNode, PackageNode, Parameter, PropertyNode, ReturnStatement, ThrowStatement, Token, WhileStatement].asUnmodifiable()

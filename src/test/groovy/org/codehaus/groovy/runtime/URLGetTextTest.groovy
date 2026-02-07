@@ -18,12 +18,16 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
 
 /**
  * Tests for {@link DefaultGroovyMethods} URL.getText() methods.
  */
-class URLGetTextTest extends GroovyTestCase {
+class URLGetTextTest {
+    @Test
     void testGetTextFromURLWithParameters() {
         def url = new URL('http','groovy.codehaus.org',80, '/', new URLStreamHandler() {
             @Override

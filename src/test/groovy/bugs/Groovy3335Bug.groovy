@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3335Bug extends GroovyTestCase {
+
+class Groovy3335Bug {
+    @Test
     void testClassToString() {
         // the following call was resulting in a MethodSelectionException
         // because Integer class defines static toString(int) and toString(int, int) methods

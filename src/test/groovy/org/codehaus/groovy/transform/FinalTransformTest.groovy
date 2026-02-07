@@ -18,8 +18,8 @@
  */
 package org.codehaus.groovy.transform
 
-import org.junit.Test
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -82,8 +82,8 @@ class FinalTransformTest {
     void testUsageInAnnoationCollectorForMethod() {
         assertScript """
             import groovy.transform.*
-            import static groovy.test.GroovyAssert.shouldFail
             import static java.lang.reflect.Modifier.isFinal
+            import static groovy.test.GroovyAssert.shouldFail
 
             @AnnotationCollector
             @NullCheck

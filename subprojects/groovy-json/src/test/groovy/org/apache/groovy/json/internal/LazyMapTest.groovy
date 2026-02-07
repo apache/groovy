@@ -18,11 +18,27 @@
  */
 package org.apache.groovy.json.internal
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class LazyMapTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertNull
+import static org.junit.jupiter.api.Assertions.assertTrue
+
+
+class LazyMapTest {
+
+    private LazyMap map
+
+    @BeforeEach
+    void setUp() {
+        map = new LazyMap()
+    }
 
     // GROOVY-7302
+    @Test
     void testSizeWhenNoBackingMapCreated() {
         def map = new LazyMap()
         map.someProperty = "1"
@@ -33,6 +49,7 @@ class LazyMapTest extends GroovyTestCase {
         assert map.size() == 2
     }
 
+    @Test
     void testSizeWhenLazyCreated() {
         def map = new LazyMap()
         map.someProperty1 = '1'
@@ -50,5 +67,320 @@ class LazyMapTest extends GroovyTestCase {
         map.someProperty7 = '7'
         assert map.someProperty6 == '6'
         assert map.@map?.size() == 7
+    }
+
+    @Test
+    void testDefaultConstructor() {
+        def lazyMap = new LazyMap()
+        assertTrue(lazyMap.isEmpty())
+        assertEquals(0, lazyMap.size())
+    }
+
+    @Test
+    void testConstructorWithInitialSize() {
+        def lazyMap = new LazyMap(10)
+        assertTrue(lazyMap.isEmpty())
+        assertEquals(0, lazyMap.size())
+    }
+
+    @Test
+    void testPut() {
+        assertNull(map.put("key1", "value1"))
+        assertEquals(1, map.size())
+    }
+
+    @Test
+    void testPutReturnsPreviousValue() {
+        map.put("key", "value1")
+        def previous = map.put("key", "value2")
+        assertEquals("value1", previous)
+        assertEquals("value2", map.get("key"))
+    }
+
+    @Test
+    void testPutMultipleEntries() {
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+        map.put("key3", "value3")
+        assertEquals(3, map.size())
+    }
+
+    @Test
+    void testPutWithNullKey() {
+        map.put(null, "value")
+        assertEquals("value", map.get(null))
+    }
+
+    @Test
+    void testPutWithNullValue() {
+        map.put("key", null)
+        assertNull(map.get("key"))
+        assertTrue(map.containsKey("key"))
+    }
+
+    @Test
+    void testPutReplaceNullKey() {
+        map.put(null, "value1")
+        def previous = map.put(null, "value2")
+        assertEquals("value1", previous)
+        assertEquals("value2", map.get(null))
+    }
+
+    @Test
+    void testGet() {
+        map.put("key", "value")
+        assertEquals("value", map.get("key"))
+    }
+
+    @Test
+    void testGetNonExistentKey() {
+        assertNull(map.get("nonexistent"))
+    }
+
+    @Test
+    void testGetTriggersMapBuild() {
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+        // get should trigger the internal map to be built
+        assertEquals("value1", map.get("key1"))
+        assertEquals("value2", map.get("key2"))
+    }
+
+    @Test
+    void testSize() {
+        assertEquals(0, map.size())
+        map.put("key1", "value1")
+        assertEquals(1, map.size())
+        map.put("key2", "value2")
+        assertEquals(2, map.size())
+    }
+
+    @Test
+    void testIsEmpty() {
+        assertTrue(map.isEmpty())
+        map.put("key", "value")
+        assertFalse(map.isEmpty())
+    }
+
+    @Test
+    void testIsEmptyAfterClear() {
+        map.put("key", "value")
+        map.clear()
+        assertTrue(map.isEmpty())
+    }
+
+    @Test
+    void testContainsKey() {
+        map.put("key", "value")
+        assertTrue(map.containsKey("key"))
+        assertFalse(map.containsKey("nonexistent"))
+    }
+
+    @Test
+    void testContainsKeyWithNullKey() {
+        map.put(null, "value")
+        assertTrue(map.containsKey(null))
+    }
+
+    @Test
+    void testContainsValue() {
+        map.put("key", "value")
+        assertTrue(map.containsValue("value"))
+        assertFalse(map.containsValue("nonexistent"))
+    }
+
+    @Test
+    void testContainsValueWithNullValue() {
+        map.put("key", null)
+        assertTrue(map.containsValue(null))
+    }
+
+    @Test
+    void testRemove() {
+        map.put("key", "value")
+        def removed = map.remove("key")
+        assertEquals("value", removed)
+        assertFalse(map.containsKey("key"))
+    }
+
+    @Test
+    void testRemoveNonExistent() {
+        assertNull(map.remove("nonexistent"))
+    }
+
+    @Test
+    void testClearBeforeBuild() {
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+        map.clear()
+        assertEquals(0, map.size())
+        assertTrue(map.isEmpty())
+    }
+
+    @Test
+    void testClearAfterBuild() {
+        map.put("key", "value")
+        map.get("key") // trigger build
+        map.clear()
+        assertEquals(0, map.size())
+    }
+
+    @Test
+    void testPutAll() {
+        def other = [:]
+        other.put("key1", "value1")
+        other.put("key2", "value2")
+        map.putAll(other)
+        assertEquals(2, map.size())
+        assertEquals("value1", map.get("key1"))
+        assertEquals("value2", map.get("key2"))
+    }
+
+    @Test
+    void testKeySet() {
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+        def keys = map.keySet()
+        assertEquals(2, keys.size())
+        assertTrue(keys.contains("key1"))
+        assertTrue(keys.contains("key2"))
+    }
+
+    @Test
+    void testValues() {
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+        def values = map.values()
+        assertEquals(2, values.size())
+        assertTrue(values.contains("value1"))
+        assertTrue(values.contains("value2"))
+    }
+
+    @Test
+    void testEntrySet() {
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+        def entries = map.entrySet()
+        assertEquals(2, entries.size())
+    }
+
+    @Test
+    void testEquals() {
+        map.put("key", "value")
+        def other = [:]
+        other.put("key", "value")
+        assertEquals(map, other)
+    }
+
+    @Test
+    void testHashCode() {
+        map.put("key", "value")
+        def other = [:]
+        other.put("key", "value")
+        assertEquals(map.hashCode(), other.hashCode())
+    }
+
+    @Test
+    void testToString() {
+        map.put("key", "value")
+        def str = map.toString()
+        assertTrue(str.contains("key"))
+        assertTrue(str.contains("value"))
+    }
+
+    @Test
+    void testCloneBeforeBuild() throws CloneNotSupportedException {
+        // clone returns null if map hasn't been built yet
+        def cloned = map.clone()
+        assertNull(cloned)
+    }
+
+    @Test
+    void testCloneAfterBuild() throws CloneNotSupportedException {
+        map.put("key", "value")
+        map.get("key") // trigger build
+        def cloned = map.clone()
+        assertNotNull(cloned)
+        assertTrue(cloned instanceof Map)
+    }
+
+    @Test
+    void testClearAndCopy() {
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+
+        def copy = map.clearAndCopy()
+
+        // Original should be cleared
+        assertEquals(0, map.size())
+
+        // Copy should have the original values
+        assertEquals(2, copy.size())
+        assertEquals("value1", copy.get("key1"))
+        assertEquals("value2", copy.get("key2"))
+    }
+
+    @Test
+    void testGrow() {
+        String[] original = ["a", "b", "c"]
+        def grown = LazyMap.grow(original)
+        assertEquals(6, grown.length)
+        assertEquals("a", grown[0])
+        assertEquals("b", grown[1])
+        assertEquals("c", grown[2])
+    }
+
+    @Test
+    void testArrayGrowthOnManyPuts() {
+        // Add more than initial capacity (5) to trigger growth
+        for (int i = 0; i < 10; i++) {
+            map.put("key" + i, "value" + i)
+        }
+        assertEquals(10, map.size())
+        for (int i = 0; i < 10; i++) {
+            assertEquals("value" + i, map.get("key" + i))
+        }
+    }
+
+    @Test
+    void testLazyBuildBehavior() {
+        // Before any get/contains calls, the internal map isn't built
+        map.put("key1", "value1")
+        map.put("key2", "value2")
+        assertEquals(2, map.size()) // size works without building
+
+        // Trigger build
+        map.get("key1")
+
+        // Operations should still work after build
+        assertEquals("value1", map.get("key1"))
+        assertEquals("value2", map.get("key2"))
+        map.put("key3", "value3")
+        assertEquals(3, map.size())
+    }
+
+    @Test
+    void testWithDifferentValueTypes() {
+        map.put("string", "text")
+        map.put("number", 42)
+        map.put("bool", true)
+        map.put("null", null)
+        map.put("nested", [:])
+
+        assertEquals("text", map.get("string"))
+        assertEquals(42, map.get("number"))
+        assertEquals(true, map.get("bool"))
+        assertNull(map.get("null"))
+        assertTrue(map.get("nested") instanceof Map)
+    }
+
+    @Test
+    void testDuplicateKeyHandlingBeforeBuild() {
+        map.put("key", "value1")
+        map.put("key", "value2")
+        map.put("key", "value3")
+
+        assertEquals(1, map.size())
+        assertEquals("value3", map.get("key"))
     }
 }

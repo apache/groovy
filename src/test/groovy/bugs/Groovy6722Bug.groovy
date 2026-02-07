@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 
-class Groovy6722Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy6722Bug {
     void testThatCompilerRecognizesCovariantArray() {
         assertScript '''
 abstract class Top<Elem,Result> {

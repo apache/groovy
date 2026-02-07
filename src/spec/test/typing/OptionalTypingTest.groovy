@@ -18,10 +18,14 @@
  */
 package typing
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class OptionalTypingTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+
+class OptionalTypingTest {
+
+    @Test
     void testOptionalTypingInVariableDeclaration() {
         assertScript '''
             // tag::optionaltyping_var[]
@@ -36,6 +40,7 @@ class OptionalTypingTest extends GroovyTestCase {
             // end::optionaltyping_var_def[]
         '''
     }
+    @Test
     void testOptionalTypingInMethodParameter() {
         assertScript '''
             // tag::optionaltyping_orig[]

@@ -18,19 +18,22 @@
  */
 package groovy.mock.interceptor
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * Testing Groovy Stub support for single calls to the Collaborator
  */
-class StubSingleCallTest extends GroovyTestCase {
+class StubSingleCallTest {
 
     StubFor stub
 
+    @BeforeEach
     void setUp() {
         stub = new StubFor(Collaborator.class)
     }
 
+    @Test
     void testFirstOptionalOmitted() {
         stub.demand.one(0..1) { 1 }
         stub.use {

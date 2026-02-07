@@ -18,12 +18,16 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+
 
 /**
  * Test for non-initialized fields or variables of the primitive types.
  */
-class PrimitiveDefaultValueTest extends GroovyTestCase {
+class PrimitiveDefaultValueTest {
 
     private int x
     private long y
@@ -36,6 +40,7 @@ class PrimitiveDefaultValueTest extends GroovyTestCase {
 
     private static final Character ZERO = '\0'
 
+    @Test
     void testThisPrimitiveDefaultValues() {
         assertEquals(this.x, 0)
         assertEquals(this.y, 0L)
@@ -47,6 +52,7 @@ class PrimitiveDefaultValueTest extends GroovyTestCase {
         assertEquals(this.c, ZERO)
     }
 
+    @Test
     void testPrimitiveDefaultValues() {
         def a = new ClassForPrimitiveDefaultValue()
         assertEquals(a.x, 0)
@@ -59,6 +65,7 @@ class PrimitiveDefaultValueTest extends GroovyTestCase {
         assertEquals(a.c, ZERO)
     }
 
+    @Test
     void testDefaultPrimitiveValuesForAttributes() {
         def a = new ClassForPrimitiveDefaultValue()
         assertEquals(a.@x, 0)
@@ -71,6 +78,7 @@ class PrimitiveDefaultValueTest extends GroovyTestCase {
         assertEquals(a.@c, ZERO)
     }
 
+    @Test
     void testDefaultPrimitiveValuesForProperties() {
         def a = new ClassForPrimitiveDefaultValue()
         assertEquals(a.x1, 0)

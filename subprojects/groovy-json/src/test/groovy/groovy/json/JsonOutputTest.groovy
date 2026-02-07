@@ -21,13 +21,13 @@ package groovy.json
 import groovy.transform.Canonical
 import groovy.transform.RecordOptions
 import groovy.transform.TupleConstructor
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.json.JsonOutput.toJson
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
-import static groovy.transform.RecordTypeMode.*
+import static groovy.transform.RecordTypeMode.EMULATE
 
 final class JsonOutputTest {
 

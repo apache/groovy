@@ -18,9 +18,10 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class MethodDispatchBug extends GroovyTestCase {
+
+class MethodDispatchBug {
     def doit(Object parameter1, Object parameter2) {
         "OO"
     }
@@ -37,6 +38,7 @@ class MethodDispatchBug extends GroovyTestCase {
         "BB"
     }
 
+    @Test
     def testBug() {
         def o = this;
 
@@ -50,6 +52,7 @@ class MethodDispatchBug extends GroovyTestCase {
       a+b+c
     }
 
+    @Test
     void testListExpansion() {
        // there was a bug discovered while looking at GROOVY-1803
        // a list expansion was cached like

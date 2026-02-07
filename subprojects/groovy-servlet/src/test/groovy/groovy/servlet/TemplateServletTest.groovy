@@ -18,31 +18,29 @@
  */
 package groovy.servlet
 
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
-
 import jakarta.servlet.ServletConfig
 import jakarta.servlet.ServletContext
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class TemplateServletTest {
 
     TemplateServlet servlet
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder()
+    @TempDir
+    public File temporaryFolder
 
-    @Before
+    @BeforeEach
     void setUp() {
         servlet = new TemplateServlet()
     }
 
     @Test
     void test_service_for_existing_resource() {
-        def templateFile = temporaryFolder.newFile('template.gsp')
+        def templateFile = new File(temporaryFolder, 'template.gsp').tap { createNewFile() }
         def url = templateFile.toURI().toURL()
         def servletConfig = mockServletConfigForUrlResource(url)
         HttpServletRequest request = mockRequest()

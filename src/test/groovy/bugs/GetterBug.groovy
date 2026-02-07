@@ -18,11 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class GetterBug extends GroovyTestCase {
+class GetterBug {
 
     String foo
     def bar
@@ -38,6 +39,7 @@ class GetterBug extends GroovyTestCase {
         this.foo = foo
        }
 
+    @Test
     void testTypedGetterAndSetter() {
         def value = getFoo()
 
@@ -62,6 +64,7 @@ class GetterBug extends GroovyTestCase {
     }
 
 
+    @Test
     void testUntypedGetterAndSetter() {
         def value = getBar()
 

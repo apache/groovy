@@ -18,9 +18,11 @@
  */
 package gls.invocation
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-final class ClassDuplicationTest extends GroovyTestCase {
+
+final class ClassDuplicationTest {
+    @Test
     void testDuplicationOnMethodSignatureTest() {
         def shell1 = new GroovyShell(this.class.classLoader)
         def obj1 = shell1.evaluate("""

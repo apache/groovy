@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy8229Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+
+class Groovy8229Bug {
+    @Test
     void testFinallyBlockInClosureCalledOnce() {
         assert shouldFail(
                 '''
@@ -43,6 +47,6 @@ class Groovy8229Bug extends GroovyTestCase {
                     }
                 }
             '''
-        ) == 'check call count: 1'
+        ).message == 'check call count: 1'
     }
 }

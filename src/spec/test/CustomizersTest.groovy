@@ -17,38 +17,52 @@
  *  under the License.
  */
 
-import groovy.test.GroovyTestCase
-import groovy.transform.ConditionalInterrupt
 import groovy.util.logging.Log
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.expr.AttributeExpression
-import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.customizers.SecureASTCustomizer
 import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
-import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
+import static org.codehaus.groovy.syntax.Types.COMPARE_EQUAL
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN
+import static org.codehaus.groovy.syntax.Types.COMPARE_GREATER_THAN_EQUAL
+import static org.codehaus.groovy.syntax.Types.COMPARE_LESS_THAN
+import static org.codehaus.groovy.syntax.Types.COMPARE_LESS_THAN_EQUAL
+import static org.codehaus.groovy.syntax.Types.COMPARE_NOT_EQUAL
+import static org.codehaus.groovy.syntax.Types.DIVIDE
+import static org.codehaus.groovy.syntax.Types.MINUS
+import static org.codehaus.groovy.syntax.Types.MINUS_MINUS
+import static org.codehaus.groovy.syntax.Types.MULTIPLY
+import static org.codehaus.groovy.syntax.Types.PLUS
+import static org.codehaus.groovy.syntax.Types.PLUS_PLUS
+import static org.codehaus.groovy.syntax.Types.POWER
+import static org.codehaus.groovy.syntax.Types.REMAINDER
 
-import static org.codehaus.groovy.syntax.Types.*
-
-class CustomizersTest extends GroovyTestCase {
+class CustomizersTest {
 
     private CompilerConfiguration config;
     private GroovyShell shell;
 
+    @BeforeEach
     void setUp() {
         config = new CompilerConfiguration()
         shell = new GroovyShell(config)
     }
 
-    @Override
     protected void assertScript(final String script) throws Exception {
-        shell.evaluate(script, getTestClassName())
+        shell.evaluate(script, 'TestScript.groovy')
     }
 
+    @Test
     void testImportCustomizer() {
 
         // tag::import_cz[]
@@ -79,6 +93,7 @@ class CustomizersTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testLogCustomizer() {
         // tag::ast_cz_simple[]
         def acz = new ASTTransformationCustomizer(Log)
@@ -90,6 +105,7 @@ class CustomizersTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testLogCustomizerWithCustomName() {
         // tag::ast_cz_customname[]
         def acz = new ASTTransformationCustomizer(Log, value: 'LOGGER')
@@ -102,6 +118,7 @@ class CustomizersTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testSecureASTCustomizer() {
         // tag::secure_cz[]
         def scz = new SecureASTCustomizer()
@@ -164,6 +181,7 @@ class CustomizersTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testSecureASTCustomizerWithCustomChecker() {
         // tag::secure_cz_custom[]
         def scz = new SecureASTCustomizer()
@@ -186,6 +204,7 @@ a.@val // <1>
         }
     }
 
+    @Test
     void testSourceAwareCustomizer() {
         // tag::source_cz[]
         def delegate = new ImportCustomizer()
@@ -214,6 +233,7 @@ a.@val // <1>
         config.addCompilationCustomizers(sac)
     }
 
+    @Test
     void testCustomizerBuilder() {
         // tag::customizer_withconfig[]
         def conf = new CompilerConfiguration()

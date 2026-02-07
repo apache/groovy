@@ -18,17 +18,26 @@
  */
 package testingguide
 
-import groovy.test.GroovyTestCase
 import groovy.test.NotYetImplemented
+import org.junit.jupiter.api.Test
 
-class GroovyTestCaseExampleTests extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertNull
+import static org.junit.jupiter.api.Assertions.assertSame
+import static org.junit.jupiter.api.Assertions.assertTrue
+
+class GroovyTestCaseExampleTests {
 
 /*  // tag::assertions[]
-class MyTestCase extends GroovyTestCase {
+class MyTestCase {
     // end::assertions[]
 */
     // tag::assertions[]
 
+    @Test
     void testAssertions() {
         assertTrue(1 == 1)
         assertEquals("test", "test")
@@ -48,6 +57,7 @@ class MyTestCase extends GroovyTestCase {
 */
 
     // tag::assertScript[]
+    @Test
     void testScriptAssertions() {
         assertScript '''
             def x = 1
@@ -59,6 +69,7 @@ class MyTestCase extends GroovyTestCase {
     // end::assertScript[]
 
     // tag::should_fail_without_class[]
+    @Test
     void testInvalidIndexAccess1() {
         def numbers = [1,2,3,4]
         shouldFail {
@@ -68,6 +79,7 @@ class MyTestCase extends GroovyTestCase {
     // end::should_fail_without_class[]
 
     // tag::should_fail_with_class[]
+    @Test
     void testInvalidIndexAccess2() {
         def numbers = [1,2,3,4]
         shouldFail IndexOutOfBoundsException, {
@@ -77,27 +89,29 @@ class MyTestCase extends GroovyTestCase {
     // end::should_fail_with_class[]
 
     // tag::should_fail_with_msg[]
+    @Test
     void testInvalidIndexAccess3() {
         def numbers = [1,2,3,4]
         def msg = shouldFail IndexOutOfBoundsException, {
             numbers.get(4)
         }
-        assert msg.contains('Index: 4, Size: 4') ||
-            msg.contains('Index 4 out-of-bounds for length 4') ||
-            msg.contains('Index 4 out of bounds for length 4')
+        assert msg.message.contains('Index: 4, Size: 4') ||
+            msg.message.contains('Index 4 out-of-bounds for length 4') ||
+            msg.message.contains('Index 4 out of bounds for length 4')
     }
     // end::should_fail_with_msg[]
 
     // tag::not_yet_implemented[]
+    @NotYetImplemented                    // <1>
+    @Test
     void testNotYetImplemented1() {
-        if (notYetImplemented()) return   // <1>
-
         assert 1 == 2                     // <2>
     }
     // end::not_yet_implemented[]
 
     // tag::not_yet_implemented_ast[]
     @NotYetImplemented
+    @Test
     void testNotYetImplemented2() {
         assert 1 == 2
     }

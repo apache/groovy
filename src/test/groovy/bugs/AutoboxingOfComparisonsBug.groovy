@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class AutoboxingOfComparisonsBug extends GroovyTestCase {
+
+class AutoboxingOfComparisonsBug {
+    @Test
     void testBug() {
         def y = true
         def x = y == true

@@ -18,18 +18,20 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
- * Test whether the Invoker includes categories when 
+ * Test whether the Invoker includes categories when
  * trying to find an iterator (via the method iterator())
  */
-class CategoryForIteratorTest extends GroovyTestCase {
+class CategoryForIteratorTest {
 
     def identity = { val -> val }
     def c
     def countCalls = { c = c + 1 }
 
+    @BeforeEach
     void setUp() {
         c = 0
     }
@@ -40,6 +42,7 @@ class CategoryForIteratorTest extends GroovyTestCase {
     * results in one call to the countCalls closure
     */
 
+    @Test
     void testWithoutIteratorCategory() {
         identity.each countCalls
         assert c == 1
@@ -50,6 +53,7 @@ class CategoryForIteratorTest extends GroovyTestCase {
      * has to be 0
      */
 
+    @Test
     void testWithIteratorCategory() {
         use(IteratorCategory) {
             c = 0

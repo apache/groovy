@@ -18,9 +18,10 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StringConcatTest extends GroovyTestCase{
+class StringConcatTest{
+  @Test
   void testMe () {
 //      def x = new Object()
 //      assertEquals ("${x}239".toString(),  x + "239")

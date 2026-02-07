@@ -18,13 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.TimeUnit
 
-class ThreadMethodsTest extends GroovyTestCase {
+class ThreadMethodsTest {
     final CyclicBarrier barrier = new CyclicBarrier(2)
+    @Test
     void testThreadNaming() {
         def t = Thread.start("MyNamedThread") {
             barrier.await(4L, TimeUnit.SECONDS) // Signal Thread Start

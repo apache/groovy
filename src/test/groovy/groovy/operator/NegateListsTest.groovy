@@ -18,14 +18,18 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertTrue
+
 
 /**
  * Test to negate lists in Classic Groovy.
  * Test to check whether a given function is even/odd on a given domain.
  */
-class NegateListsTest extends GroovyTestCase {
+class NegateListsTest {
 
+    @Test
     void testNegateList() {
         assert -[1, 2, 3] == [-1, -2, -3]
 
@@ -39,6 +43,7 @@ class NegateListsTest extends GroovyTestCase {
         assert x == -y
     }
 
+    @Test
     void testBitwiseNegateList() {
         assert ~[1, 2, 3] == [-2, -3, -4]
 
@@ -53,6 +58,7 @@ class NegateListsTest extends GroovyTestCase {
         assert x == ~y
     }
 
+    @Test
     void testEvenFunction() {
         def PI = Math.PI
 

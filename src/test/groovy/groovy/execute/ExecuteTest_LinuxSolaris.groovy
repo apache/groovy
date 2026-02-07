@@ -21,13 +21,10 @@
 
 package groovy.execute
 
-import groovy.test.GroovyTestCase
-import org.junit.Before
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assume.assumeTrue
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 /**
  * Test to ensure that the execute mechanism works fine on *nix-like systems.  For these OSs we
@@ -36,15 +33,14 @@ import static org.junit.Assume.assumeTrue
  * <p>
  * These test are a bit trivial but at least they are here :-)
  */
-@RunWith(JUnit4)
-class ExecuteTest_LinuxSolaris extends GroovyTestCase {
+class ExecuteTest_LinuxSolaris {
 
   private static final boolean linuxOrSolaris = System.getProperty('os.name').contains('Linux') ||
           System.getProperty('os.name').contains('sunos')
 
-  @Before
+  @BeforeEach
   void assumeUnixOrSolaris() {
-    assumeTrue('Test requires Linux or Solaris.', linuxOrSolaris)
+    assumeTrue(linuxOrSolaris, 'Test requires Linux or Solaris.')
   }
 
   @Test

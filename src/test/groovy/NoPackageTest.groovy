@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class NoPackageTest {
     @Test

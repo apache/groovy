@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -44,7 +44,7 @@ final class Groovy11046 {
             log = org.apache.logging.log4j.LogManager.getLogger(getClass()) //XXX
         '''
         assert err instanceof NoClassDefFoundError // CompilationFailedException (previously)
-        assert err =~ /com.lmax.disruptor.EventTranslatorVararg/
+        assert err.message =~ /com.lmax.disruptor.EventTranslatorVararg/
         assert err.asString() =~ /at org.apache.logging.log4j.LogManager.getLogger\(/ : 'script should have failed at runtime'
     }
 }

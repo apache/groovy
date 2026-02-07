@@ -18,11 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.ReflectionMethodInvoker
+import org.junit.jupiter.api.Test
 
-final class GroovyInterceptableTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class GroovyInterceptableTest {
+
+    @Test
     void testMethodIntercept1() {
         def g = new GI()
         assert g.someInt() == 2806
@@ -30,6 +34,7 @@ final class GroovyInterceptableTest extends GroovyTestCase {
         assert g.toString() == "invokeMethodToString"
     }
 
+    @Test
     void testMethodIntercept2() {
         def g = new GI()
         assert g.foo == 89
@@ -40,6 +45,7 @@ final class GroovyInterceptableTest extends GroovyTestCase {
     }
 
     // GROOVY-3015
+    @Test
     void testMethodIntercept3() {
         String shared = '''\
             import org.codehaus.groovy.runtime.InvokerHelper
@@ -95,12 +101,14 @@ final class GroovyInterceptableTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMissingMethod1() {
         def obj = new GI2()
         shouldFail { obj.notAMethod() }
         assert 'missing' == obj.result
     }
 
+    @Test
     void testMissingMethod2() {
         def obj = new GI2()
         shouldFail { obj.method() }

@@ -18,18 +18,20 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Checks that if else can be used on a single line.
  * A regression got introduced wiht extended command expression that disallowed if else on the same line
  */
-class Groovy4480Bug extends GroovyTestCase {
+class Groovy4480Bug {
 
     private ifelse(b) {
         if (b) 3 else 4
     }
 
+    @Test
     void testIfElseOnSameLine() {
         assert ifelse(true) == 3
         assert ifelse(false) == 4

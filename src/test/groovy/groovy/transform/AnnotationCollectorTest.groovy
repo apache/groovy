@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.AnnotatedNode
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.AnnotationCollectorTransform
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy

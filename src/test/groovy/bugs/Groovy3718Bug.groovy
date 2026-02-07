@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3718Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertFalse
+
+
+class Groovy3718Bug {
+    @Test
     void testPatternMatchOfNull() {
         assertFalse null ==~ /[^0-9]+/
 

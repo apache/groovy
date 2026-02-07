@@ -18,10 +18,10 @@
  */
 package groovy.xml.benchmark
 
-import groovy.test.GroovyTestCase
 import groovy.xml.MarkupBuilder
+import org.junit.jupiter.api.Test
 
-class BuilderPerfTest extends GroovyTestCase {
+class BuilderPerfTest {
     void formatAsXml(Writer writer) {
         def builder = new MarkupBuilder(writer)
 
@@ -38,6 +38,7 @@ class BuilderPerfTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMe () {
         long start = System.currentTimeMillis()
         def writer

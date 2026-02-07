@@ -18,10 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class IfTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
 
+
+class IfTest {
+
+    @Test
     void testUsingNumber() {
         def x = 1
 
@@ -43,6 +47,7 @@ class IfTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testUsingString() {
         def x = "abc"
 

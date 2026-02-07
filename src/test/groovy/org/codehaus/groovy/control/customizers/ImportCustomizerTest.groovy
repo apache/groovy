@@ -19,8 +19,8 @@
 package org.codehaus.groovy.control.customizers
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for {@link ImportCustomizer}.
@@ -30,7 +30,7 @@ final class ImportCustomizerTest {
     private final CompilerConfiguration configuration = new CompilerConfiguration()
     private final ImportCustomizer importCustomizer = new ImportCustomizer()
 
-    @Before
+    @BeforeEach
     void setUp() {
         configuration.addCompilationCustomizers(importCustomizer)
     }

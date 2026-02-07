@@ -18,10 +18,14 @@
  */
 package groovy.sql
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ExtractIndexAndSqlTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+
+class ExtractIndexAndSqlTest {
+
+    @Test
     void testDetectsNamedParameters() {
         assert !ExtractIndexAndSql.hasNamedParameters('select * from PERSON')
         assert ExtractIndexAndSql.hasNamedParameters('select * from PERSON where id=:id')
@@ -30,6 +34,7 @@ class ExtractIndexAndSqlTest extends GroovyTestCase {
         assert ExtractIndexAndSql.hasNamedParameters('select * from PERSON where id=?')
     }
 
+    @Test
     void testWithEmptyStringQuote() {
         String query = """select * from FOOD where type=:foo and category='' and calories < ?2.kcal"""
         String expected = """select * from FOOD where type=? and category='' and calories < ?"""
@@ -37,6 +42,7 @@ class ExtractIndexAndSqlTest extends GroovyTestCase {
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testWithQuoteEmbeddedInInlineComments() {
         String query = """select *
 from FOOD
@@ -51,6 +57,7 @@ where type=?
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testWithNamedParamEmbeddedInInlineComments() {
         String query = """select *
 from FOOD
@@ -66,6 +73,7 @@ where type=?
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testWithQuoteEmbeddedInMultilineComments() {
         String query = """select *
 from FOOD
@@ -81,6 +89,7 @@ in a 'multiline' comment */where type=?
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testWithNamedParamEmbeddedInMultilineComments() {
         String query = """select *
 from FOOD
@@ -97,6 +106,7 @@ in a 'multiline' comment */where type=?
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testWithMultipleEmbeddedQuotesInString() {
         String query = """select location_id, 'James O''Brian' as other_name
 from PERSON
@@ -109,6 +119,7 @@ where lastname=?
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testWithUnterminatedString() {
         String query = """select location_id, 'James O'''Brian' as other_name
 from PERSON
@@ -120,6 +131,7 @@ where lastname=:foo
         }
     }
 
+    @Test
     void testUnterminatedQuoteAtEndOfString() {
         String query = "select * from FOOD where country type = :foo and country = '"
 
@@ -128,6 +140,7 @@ where lastname=:foo
         }
     }
 
+    @Test
     void testWithStringSpanningMoreThanOneLine() {
         String query = """select 'this is a ''multiline'' with a '':named :param'' string
  and spans two lines'
@@ -143,6 +156,7 @@ where lastname=?
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testSingleDash() {
         String query = """select location_id
 from PERSON
@@ -153,6 +167,7 @@ and 3 = (4 - 1)
         assert query == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testForwardSlash() {
         String query = """select location_id
 from PERSON
@@ -163,6 +178,7 @@ and 3 = (12 / 4)
         assert query == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testWithPostgreSqlCast() {
         String query = """select 'name' from PERSON where id=:id and birth_date=:birthDate::timestamp"""
         String expected = """select 'name' from PERSON where id=? and birth_date=?::timestamp"""
@@ -170,6 +186,7 @@ and 3 = (12 / 4)
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testNamedParameters() {
         String query = "select * from PERSON where name=:name and location=:location and building=:building"
         String expected = "select * from PERSON where name=? and location=? and building=?"
@@ -190,6 +207,7 @@ and 3 = (12 / 4)
         assert 'building' == extracter.indexPropList.get(2)[1]
     }
 
+    @Test
     void testNamedOrdinalParameters() {
         String query = "select * from PERSON where name=?1.name and location=?2.location and building=?3.building"
         String expected = "select * from PERSON where name=? and location=? and building=?"
@@ -210,10 +228,12 @@ and 3 = (12 / 4)
         assert 'building' == extracter.indexPropList.get(2)[1]
     }
 
+    @Test
     void testCastingNotConfusedWithNamedParameters_5111() {
         assert !ExtractIndexAndSql.hasNamedParameters("select * from TABLE where TEXTFIELD::integer = 3")
     }
 
+    @Test
     void testGROOVY6625() {
         String query = """SELECT
     'select count(*) as cnt, '''|| table_name || ''' as tab from ' || :schema || '.' || table_name ||
@@ -244,6 +264,7 @@ ORDER BY
         assert expected == ExtractIndexAndSql.from(query).newSql
     }
 
+    @Test
     void testConsecutiveQuotes() {
         String query = "select '''' from dual"
 

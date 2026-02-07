@@ -18,18 +18,22 @@
  */
 package groovy.jmx.builder
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import javax.management.remote.rmi.RMIConnector
 import javax.management.remote.rmi.RMIConnectorServer
 
-class JmxClientConnectorFactoryTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+class JmxClientConnectorFactoryTest {
     def builder
     int defaultPort = 10990
     def rmi
 
+    @BeforeEach
     void setUp() {
-        super.setUp()
         def hostAddress = getHostAddress()
         println "hostAddress: ${hostAddress}"
         System.setProperty("java.rmi.server.hostname", hostAddress)
@@ -37,11 +41,12 @@ class JmxClientConnectorFactoryTest extends GroovyTestCase {
         rmi = JmxConnectorHelper.createRmiRegistry(defaultPort)
     }
 
+    @AfterEach
     void tearDown() {
-        super.tearDown()
         JmxConnectorHelper.destroyRmiRegistry(rmi.registry)
     }
 
+    @Test
     void testJmxClientConnectorNode() {
         RMIConnectorServer server = builder.serverConnector(port: rmi.port)
         server.start()
@@ -55,6 +60,7 @@ class JmxClientConnectorFactoryTest extends GroovyTestCase {
         server.stop()
     }
 
+    @Test
     void testJmxClientConnectorUrl() {
         RMIConnectorServer server = builder.serverConnector(port: rmi.port)
         server.start()
@@ -65,6 +71,7 @@ class JmxClientConnectorFactoryTest extends GroovyTestCase {
         server.stop()
     }
 
+    @Test
     void testJmxClientConnectorFailure() {
         shouldFail {
             RMIConnector client = builder.clientConnector(

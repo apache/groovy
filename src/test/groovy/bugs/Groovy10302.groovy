@@ -18,11 +18,11 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
-import static org.junit.Assert.fail
+import static org.junit.jupiter.api.Assertions.fail
 
 final class Groovy10302 {
 

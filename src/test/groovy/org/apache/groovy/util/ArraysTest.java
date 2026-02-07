@@ -18,23 +18,25 @@
  */
 package org.apache.groovy.util;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public final class ArraysTest {
 
     @Test
     public void testConcat0() {
-        Assert.assertNull(Arrays.concat());
-        Assert.assertNull(Arrays.concat((Object[][]) null));
+        assertNull(Arrays.concat());
+        assertNull(Arrays.concat((Object[][]) null));
     }
 
     @Test
     public void testConcat1() {
         Integer[] a = new Integer[] {1, 2};
         Integer[] result = Arrays.concat(a);
-        Assert.assertNotSame(a, result);
-        Assert.assertArrayEquals(new Integer[] {1, 2}, result);
+        assertNotSame(a, result);
+        assertArrayEquals(new Integer[] {1, 2}, result);
     }
 
     @Test
@@ -42,8 +44,8 @@ public final class ArraysTest {
         Integer[] a = new Integer[] {1, 2};
         Integer[] b = null;
         Integer[] result = Arrays.concat(a, b);
-        Assert.assertNotSame(a, result);
-        Assert.assertArrayEquals(new Integer[] {1, 2}, result);
+        assertNotSame(a, result);
+        assertArrayEquals(new Integer[] {1, 2}, result);
     }
 
     @Test
@@ -51,8 +53,8 @@ public final class ArraysTest {
         Integer[] a = new Integer[] {1, 2};
         Integer[] b = new Integer[0];
         Integer[] result = Arrays.concat(a, b);
-        Assert.assertNotSame(a, result);
-        Assert.assertArrayEquals(new Integer[] {1, 2}, result);
+        assertNotSame(a, result);
+        assertArrayEquals(new Integer[] {1, 2}, result);
     }
 
     @Test
@@ -60,7 +62,7 @@ public final class ArraysTest {
         Integer[] a = new Integer[] {1, 2};
         Integer[] b = new Integer[] {3, 4};
         Integer[] result = Arrays.concat(a, b);
-        Assert.assertArrayEquals(new Integer[] {1, 2, 3, 4}, result);
+        assertArrayEquals(new Integer[] {1, 2, 3, 4}, result);
     }
 
     @Test
@@ -69,6 +71,6 @@ public final class ArraysTest {
         Integer[] b = new Integer[] {3, 4};
         Integer[] c = new Integer[] {5, 6, 7, 8, 9};
         Integer[] result = Arrays.concat(a, b, c);
-        Assert.assertArrayEquals(new Integer[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, result);
+        assertArrayEquals(new Integer[] {1, 2, 3, 4, 5, 6, 7, 8, 9}, result);
     }
 }

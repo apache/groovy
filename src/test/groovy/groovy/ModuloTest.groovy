@@ -18,11 +18,13 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ModuloTest extends GroovyTestCase {
+
+class ModuloTest {
     int modulo = 100
 
+    @Test
     void testModuloLesser() {
         for (i in 0..modulo - 1) {
             assert i % modulo == i
@@ -30,6 +32,7 @@ class ModuloTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testModuloEqual() {
         for (i in 0..modulo) {
             assert (i * modulo) % modulo == 0
@@ -37,6 +40,7 @@ class ModuloTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testModuloBigger() {
         for (i in 0..modulo - 1) {
             assert (i * modulo + i) % modulo == i

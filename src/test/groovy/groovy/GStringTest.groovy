@@ -21,7 +21,7 @@ package groovy
 import groovy.test.GroovyTestCase
 import groovy.transform.Pure
 
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class GStringTest extends GroovyTestCase {
 

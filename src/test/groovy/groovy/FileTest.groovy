@@ -18,18 +18,24 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-import static groovy.io.FileType.*
-import static groovy.io.FileVisitResult.*
+import static groovy.io.FileType.ANY
+import static groovy.io.FileType.DIRECTORIES
+import static groovy.io.FileType.FILES
+import static groovy.io.FileVisitResult.SKIP_SIBLINGS
+import static groovy.io.FileVisitResult.SKIP_SUBTREE
+import static groovy.io.FileVisitResult.TERMINATE
 
 /**
  * Unit test for File GDK methods
  */
-class FileTest extends GroovyTestCase {
+class FileTest {
 
     def baseDir = new File("build/test-resources/filetest")
 
+    @BeforeEach
     void setUp() {
         createFolder "emptyFolder"
         createFile "folder1/Readme"
@@ -44,6 +50,7 @@ class FileTest extends GroovyTestCase {
         createFile "foo.txt"
     }
 
+    @Test
     void testEachFile() {
         def names = []
         baseDir.eachFile {it -> names << it.name }
@@ -52,6 +59,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachFileOnlyFiles() {
         def names = []
         baseDir.eachFile FILES, {it -> names << it.name }
@@ -66,6 +74,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachDir() {
         def names = []
         baseDir.eachDir {it -> names << it.name }
@@ -74,6 +83,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachFileMatch() {
         def names = []
         baseDir.eachFileMatch ~/fo.*/, {it -> names << it.name }
@@ -82,6 +92,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachFileMatchOnlyFiles() {
         def names = []
         baseDir.eachFileMatch FILES, ~/fo.*/, {it -> names << it.name }
@@ -90,6 +101,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachDirMatch() {
         def names = []
         baseDir.eachDirMatch ~/fo.*/, {it -> names << it.name }
@@ -98,6 +110,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachFileRecurse() {
         def names = []
         baseDir.eachFileRecurse {it -> names << it.name }
@@ -108,6 +121,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachFileRecurseFilesOnly() {
         def names = []
         baseDir.eachFileRecurse(FILES) {it -> names << it.name }
@@ -119,6 +133,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testEachDirRecurse() {
         def names = []
         baseDir.eachDirRecurse {it -> names << it.name }
@@ -127,6 +142,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testTraverseDirRecurse() {
         def names = []
         baseDir.traverse(type:DIRECTORIES) {it -> names << it.name }
@@ -153,6 +169,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testTraverseFilesAndDirectoriesRecurse() {
         def names = []
         baseDir.traverse(type:ANY) {it -> names << it.name }
@@ -169,6 +186,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testTraverseFileRecurse() {
         def names = []
         baseDir.traverse(type:FILES) {it -> names << it.name }
@@ -204,6 +222,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testTraverseFileRecurseWithFilter() {
         def byName = { it.name }
 
@@ -229,6 +248,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testTraverseFileRecurseWithPrePost() {
         def names = []
         def pre = { names << "pre($it.name)" }
@@ -270,6 +290,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
     }
 
+    @Test
     void testTraverseFileRecurseWithPrePostEarlyTermination() {
         def names = []
         def byName = { it.name }

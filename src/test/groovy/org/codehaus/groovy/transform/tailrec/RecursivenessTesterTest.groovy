@@ -25,8 +25,8 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import static org.objectweb.asm.Opcodes.ACC_STATIC
@@ -35,7 +35,7 @@ class RecursivenessTesterTest {
 
 	RecursivenessTester tester
 
-	@Before
+	@BeforeEach
 	void init() {
 		tester = new RecursivenessTester()
 	}

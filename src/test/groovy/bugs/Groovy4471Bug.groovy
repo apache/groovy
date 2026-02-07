@@ -18,10 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 
-class Groovy4471Bug extends GroovyTestCase {
+class Groovy4471Bug {
+    @Test
     void testShouldNotThrowNPE() {
         assertScript """
             class X {
@@ -44,6 +47,7 @@ class Groovy4471Bug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testShouldAllowArrayListInitialization() {
         assertScript """
             def list = new ArrayList() {{

@@ -20,7 +20,7 @@ package org.codehaus.groovy.ast
 
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilePhase
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class MethodNodeTest {
 

@@ -18,9 +18,12 @@
  */
 package org.apache.groovy.json.internal
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class FastStringUtilsTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertArrayEquals
+
+
+class FastStringUtilsTest {
 
     static class NoServiceLoaderGroovyClassLoader extends GroovyClassLoader {
 
@@ -33,11 +36,13 @@ class FastStringUtilsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testToCharArray() {
         char[] expected = ["t", "e", "s", "t"]
-        assertEquals(expected, FastStringUtils.toCharArray("test"))
+        assertArrayEquals(expected, FastStringUtils.toCharArray("test"))
     }
 
+    @Test
     void testToCharArrayWithNoServiceLoaderUsedTheDefaultStringService() {
         ClassLoader previous = Thread.currentThread().getContextClassLoader()
         try {

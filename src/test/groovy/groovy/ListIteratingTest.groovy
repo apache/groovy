@@ -18,22 +18,26 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Tests iterating using Groovy
  */
-class ListIteratingTest extends GroovyTestCase {
+class ListIteratingTest {
 
+    @Test
     void testIteratingWithSequences() {
         def s = [1, 2, 3, 4 ]
         assertSequence(s)
     }
 
+    @Test
     void testIteratingWithSequencesAsParameter() {
         assertSequence([1, 2, 3, 4 ])
     }
 
+    @Test
     void testIteratingWithList() {
         def s = new ArrayList()
         s.add(1)

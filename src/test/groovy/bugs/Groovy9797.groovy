@@ -18,7 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertNotSame
+
 
 /*
  * About bug fix:
@@ -31,16 +35,18 @@ import groovy.test.GroovyTestCase
  * and negative zero.
  */
 
-class Groovy9797 extends GroovyTestCase {
+class Groovy9797 {
     // Test with string conversion
+    @Test
     void testFloatToString() {
         float negativeZero = -0.0f
         float positiveZero = 0.0f
-        assertToString(negativeZero, '-0.0')
-        assertToString(positiveZero, '0.0')
+        assertEquals('-0.0', (negativeZero).toString())
+        assertEquals('0.0', (positiveZero).toString())
     }
 
     // Test with int bits
+    @Test
     void testNegativePositiveZeroFloatIntBitsNotSame() {
         int negativeZeroBits = Float.floatToIntBits(-0.0f)
         int positiveZeroBits = Float.floatToIntBits(0.0f)
@@ -48,14 +54,16 @@ class Groovy9797 extends GroovyTestCase {
     }
 
     // Test with string conversion
+    @Test
     void testDoubleToString() {
         double negativeZero = -0.0d
         double positiveZero = 0.0d
-        assertToString(negativeZero, '-0.0')
-        assertToString(positiveZero, '0.0')
+        assertEquals('-0.0', (negativeZero).toString())
+        assertEquals('0.0', (positiveZero).toString())
     }
 
     // Test with long bits
+    @Test
     void testNegativePositiveZeroDoubleLongBitsNotSame() {
         long negativeZeroBits = Double.doubleToLongBits(-0.0d)
         long positiveZeroBits = Double.doubleToLongBits(0.0d)

@@ -25,7 +25,6 @@ import groovy.console.ui.view.MacOSXMenuBar
 import groovy.swing.GroovySwingTestCase
 import groovy.swing.SwingBuilder
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.rules.TemporaryFolder
 
 import javax.swing.JTextPane
 import javax.swing.SwingUtilities
@@ -35,14 +34,13 @@ import java.util.prefs.Preferences
 
 class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
-    TemporaryFolder temporaryFolder
+    File temporaryFolder
     Preferences testPreferences
 
     @Override
     protected void setUp() throws Exception {
         super.setUp()
-        temporaryFolder = new TemporaryFolder()
-        temporaryFolder.create()
+        temporaryFolder = File.createTempDir('groovy-console-test', '')
 
         // create a temporary preferences object instead of using the local Console preferences
         testPreferences = Preferences.userRoot().node('/swingBuilder/console/tests')
@@ -53,7 +51,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     @Override
     protected void tearDown() throws Exception {
-        temporaryFolder.delete()
+        temporaryFolder.deleteDir()
 
         super.tearDown()
     }
@@ -384,7 +382,8 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             def swing = new SwingBuilder()
 
             final console = new Console()
-            final scriptFile = temporaryFolder.newFile('test.groovy')
+            final scriptFile = new File(temporaryFolder, 'test.groovy')
+            scriptFile.createNewFile()
             console.scriptFile = scriptFile
 
             swing.controller = console

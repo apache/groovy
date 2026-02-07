@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3235Bug extends GroovyTestCase {
 
+class Groovy3235Bug {
+
+@Test
 void testBug3235 () {
       def d = """This is one line.
 

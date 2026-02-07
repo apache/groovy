@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -31,6 +31,6 @@ final class Groovy4365 {
                 }
             }
         '''
-        assert err =~ /unable to resolve class HashMap.Entry/
+        assert err.message =~ /unable to resolve class HashMap.Entry/
     }
 }

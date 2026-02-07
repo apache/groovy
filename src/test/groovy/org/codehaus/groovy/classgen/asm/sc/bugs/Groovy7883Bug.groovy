@@ -18,9 +18,14 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7883Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+
+class Groovy7883Bug {
+    @Test
     void testGroovy7883() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -37,6 +42,7 @@ class Groovy7883Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void test2() {
         def errMsg = shouldFail '''
         @groovy.transform.CompileStatic
@@ -52,9 +58,10 @@ class Groovy7883Bug extends GroovyTestCase {
         new B().m()
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method A#doIt()')
+        assert errMsg.message.contains('[Static type checking] - Cannot find matching method A#doIt()')
     }
 
+    @Test
     void test4() {
         def errMsg = shouldFail '''
         @groovy.transform.CompileStatic
@@ -70,12 +77,13 @@ class Groovy7883Bug extends GroovyTestCase {
         new B().m()
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method B#doIt()')
+        assert errMsg.message.contains('[Static type checking] - Cannot find matching method B#doIt()')
     }
 
     /**
      * ensure the filtering logic does not break any code
      */
+    @Test
     void test5() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -95,6 +103,7 @@ class Groovy7883Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void test6() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -112,6 +121,7 @@ class Groovy7883Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void test7() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -136,6 +146,7 @@ class Groovy7883Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void test8() {
         def errMsg = shouldFail  '''
         @groovy.transform.CompileStatic
@@ -154,6 +165,6 @@ class Groovy7883Bug extends GroovyTestCase {
 
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method B$C#doIt2(java.util.ArrayList)')
+        assert errMsg.message.contains('[Static type checking] - Cannot find matching method B$C#doIt2(java.util.ArrayList)')
     }
 }

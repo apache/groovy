@@ -315,8 +315,8 @@ final class PropertyTest {
     // GROOVY-10456
     @Test
     void testEmptyPropertyAccessForObject() {
-        assertScript '''
-            import static groovy.test.GroovyAssert.shouldFail
+        assertScript '''            import static groovy.test.GroovyAssert.shouldFail
+
 
             shouldFail(MissingPropertyException) {
                 o = new Object()

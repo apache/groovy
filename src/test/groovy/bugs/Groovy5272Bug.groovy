@@ -18,12 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy5272Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy5272Bug {
     /**
      * In Groovy-5272, there are chances that the following test fails.
      */
+    @Test
     void testShouldNeverFail() {
         10.times {
             assertScript '''
@@ -40,6 +44,7 @@ class Groovy5272Bug extends GroovyTestCase {
         }
     }
 
+    @Test
     void testShouldNeverFail2() {
         10.times {
             assertScript '''
@@ -56,6 +61,7 @@ class Groovy5272Bug extends GroovyTestCase {
         }
     }
 
+    @Test
     void testResolvingAmbiguousStaticFieldShouldAlwaysReturnTheSameValue() {
         10.times {
         assertScript '''
@@ -77,6 +83,7 @@ class Groovy5272Bug extends GroovyTestCase {
         }
     }
 
+    @Test
     void testResolveConstantInSuperInterfaceWithExpando() {
         assertScript '''
             ExpandoMetaClass.enableGlobally()
@@ -89,6 +96,7 @@ class Groovy5272Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testResolveConstantInSuperInterfaceWithoutExpando() {
         assertScript '''
             interface Foo {
@@ -99,6 +107,7 @@ class Groovy5272Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testResolveConstantInClassWithSuperInterfaceWithoutExpando() {
         assertScript '''
             interface Foo {
@@ -110,6 +119,7 @@ class Groovy5272Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testResolveConstantInClassWithSuperInterfaceWithExpando() {
         assertScript '''
             ExpandoMetaClass.enableGlobally()

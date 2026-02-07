@@ -18,9 +18,11 @@
  */
 package gdk
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ConfigSlurperTest extends GroovyTestCase {
+
+class ConfigSlurperTest {
+    @Test
     void testWithArbitraryTypes() {
         // tag::arbitrary_types[]
         def config = new ConfigSlurper().parse('''
@@ -37,6 +39,7 @@ class ConfigSlurperTest extends GroovyTestCase {
         // end::arbitrary_types[]
     }
 
+    @Test
     void testConfigSlurperMustNotReturnNull() {
         // tag::never_null[]
         def config = new ConfigSlurper().parse('''
@@ -49,6 +52,7 @@ class ConfigSlurperTest extends GroovyTestCase {
         // end::never_null[]
     }
 
+    @Test
     void testEscapeDot() {
         // tag::escape_dot[]
         def config = new ConfigSlurper().parse('''
@@ -59,6 +63,7 @@ class ConfigSlurperTest extends GroovyTestCase {
         // end::escape_dot[]
     }
 
+    @Test
     void testEnvironments() {
         // tag::environments[]
         def config = new ConfigSlurper('development').parse('''
@@ -81,6 +86,7 @@ class ConfigSlurperTest extends GroovyTestCase {
         // end::environments[]
     }
 
+    @Test
     void testCustomEnvironment() {
         // tag::custom_environments[]
         def slurper = new ConfigSlurper()
@@ -100,6 +106,7 @@ class ConfigSlurperTest extends GroovyTestCase {
         // end::custom_environments[]
     }
 
+    @Test
     void testProperties() {
         // tag::properties[]
         def config = new ConfigSlurper().parse('''

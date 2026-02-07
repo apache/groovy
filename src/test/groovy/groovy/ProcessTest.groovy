@@ -18,18 +18,22 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * check that groovy Process methods do their job.
  */
-class ProcessTest extends GroovyTestCase {
+class ProcessTest {
     def myProcess
 
+    @BeforeEach
     void setUp() {
         myProcess = new MockProcess()
     }
 
+    @Test
     void testProcessAppendBytes() {
         def myBytes = "mooky".getBytes()
 
@@ -40,6 +44,7 @@ class ProcessTest extends GroovyTestCase {
         assert Arrays.equals(myBytes, result)
     }
 
+    @Test
     void testProcessAppendTwoByteArrays() {
         def myBytes1 = "foo".getBytes()
         def myBytes2 = "bar".getBytes()
@@ -51,25 +56,30 @@ class ProcessTest extends GroovyTestCase {
         assert result.size() == myBytes1.size() + myBytes2.size()
     }
 
+    @Test
     void testProcessAppend() {
         myProcess << "mooky"
         assert "mooky" == myProcess.outputStream.toString()
     }
 
+    @Test
     void testProcessInputStream() {
         assert myProcess.in instanceof InputStream
         assert myProcess.in != null
     }
 
+    @Test
     void testProcessText() {
         assert "" == myProcess.text
     }
 
+    @Test
     void testProcessErrorStream() {
         assert myProcess.err instanceof InputStream
         assert myProcess.err != null
     }
 
+    @Test
     void testProcessOutputStream() {
         assert myProcess.out instanceof OutputStream
         assert myProcess.out != null
@@ -77,6 +87,7 @@ class ProcessTest extends GroovyTestCase {
 
     // @todo - ps.waitForOrKill(secs) creates its own thread, leave this out of test suite for now...
 
+    @AfterEach
     void tearDown() {
         myProcess.destroy()
     }

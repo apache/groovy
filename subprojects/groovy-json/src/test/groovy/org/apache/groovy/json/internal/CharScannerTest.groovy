@@ -18,10 +18,14 @@
  */
 package org.apache.groovy.json.internal
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class CharScannerTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertArrayEquals
 
+
+class CharScannerTest {
+
+    @Test
     void testParseInt() {
         int i = CharScanner.parseInt("-22".toCharArray())
         assert i == -22
@@ -30,6 +34,7 @@ class CharScannerTest extends GroovyTestCase {
         assert i == 22
     }
 
+    @Test
     void testParseLongTest() {
         long value = CharScanner.parseLong("-22".toCharArray())
         assert value == -22L
@@ -38,54 +43,63 @@ class CharScannerTest extends GroovyTestCase {
         assert value == 22
     }
 
+    @Test
     void testParseLongTest2() {
         String test = "" + ((long) (Long.MAX_VALUE / 2L))
         long value = CharScanner.parseLong(test.toCharArray())
         assert value == Long.parseLong(test)
     }
 
+    @Test
     void testParseLongTest3() {
         String test = "" + (Long.MIN_VALUE / 2L)
         long value = CharScanner.parseLong(test.toCharArray())
         assert value == Long.parseLong(test)
     }
 
+    @Test
     void testParseLongTest4() {
         String test = "" + (Long.MAX_VALUE)
         long value = CharScanner.parseLong(test.toCharArray())
         assert value == Long.parseLong(test)
     }
 
+    @Test
     void testParseLongTest5() {
         String test = "" + (Long.MIN_VALUE)
         long value = CharScanner.parseLong(test.toCharArray())
         assert value == Long.parseLong(test)
     }
 
+    @Test
     void testParseIntMax() {
         int i = 0
         i = CharScanner.parseInt(("" + Integer.MAX_VALUE).toCharArray())
         assert i == Integer.MAX_VALUE
     }
 
+    @Test
     void testParseIntMin() {
         int i = 0
         i = CharScanner.parseInt(("" + Integer.MIN_VALUE).toCharArray())
         assert i == Integer.MIN_VALUE
     }
 
+    @Test
     void testParseLongMax() {
         long l = 0
         l = CharScanner.parseLong(("" + Long.MAX_VALUE).toCharArray())
         assert l == Long.MAX_VALUE
     }
 
+    @Test
     void testParseLongMin() {
         long l = 0
         l = CharScanner.parseLong(("" + Long.MIN_VALUE).toCharArray())
         assert l == Long.MIN_VALUE || die("l", l, "MIN", Long.MIN_VALUE)
     }
 
+    @Test
     void testParseDouble() {
         String str = "123456789"
         double num =
@@ -93,6 +107,7 @@ class CharScannerTest extends GroovyTestCase {
         assert num == 123456789d
     }
 
+    @Test
     void testParseDoubleNegative() {
         String str = "-1.23456789E8"
         double num =
@@ -100,26 +115,31 @@ class CharScannerTest extends GroovyTestCase {
         assert num == -1.23456789E8
     }
 
+    @Test
     void testParseDoubleNegativeNoE() {
         String str = "-123456789"
         testDouble(str)
     }
 
+    @Test
     void testParseDoubleNegativeNoE2() {
         String str = "-1234567890"
         testDouble(str)
     }
 
+    @Test
     void testParseDoubleMax() {
         String str = "" + Double.MAX_VALUE
         testDouble(str)
     }
 
+    @Test
     void testParseDoubleMin() {
         String str = "" + Double.MIN_VALUE
         testDouble(str)
     }
 
+    @Test
     void testManyDoubles() {
         List<String> doubles = ["" + 1.01d, "" + 123456789.234D, "" + 55D,
                 "" + Integer.MAX_VALUE + "." + Integer.MAX_VALUE,
@@ -141,91 +161,113 @@ class CharScannerTest extends GroovyTestCase {
         assert num == numTest
     }
 
+    @Test
     void testParseIntIgnore0() {
         int i = CharScanner.parseIntFromToIgnoreDot("1.1".toCharArray(), 0, "1.1".length())
         assert i == 11
     }
 
+    @Test
     void testSimpleDoubleInString() {
         testDoubleInStringThreeOver("1.1")
     }
 
+    @Test
     void testLongMaxWithOffset() {
         testDoubleInStringThreeOver("" + Long.MAX_VALUE)
     }
 
+    @Test
     void testLargeDecimal() {
         testDoubleInStringThreeOver("" + Integer.MAX_VALUE + "." + Integer.MAX_VALUE)
     }
 
+    @Test
     void testLargeDecimal2() {
         testDoubleInStringThreeOver("1000" + "." + "10001")
     }
 
+    @Test
     void testLargeDecimal3() {
         testDoubleInStringThreeOver("10000" + "." + "100001")
     }
 
+    @Test
     void testLargeDecimal4() {
         testDoubleInStringThreeOver("" + 10_000_000 + "." + 10_000_001)
     }
 
+    @Test
     void testLargeDecimal5() {
         testDoubleInStringThreeOver("" + 100_000_000 + "." + 100_000_001)
     }
 
+    @Test
     void testLargeDecimal6() {
         testDoubleInStringThreeOver("" + 100_000_000 + "." + 1_000_000_001)
     }
 
+    @Test
     void testLargeDecimal7() {
         testDoubleInStringThreeOver("" + 100_000_000 + "." + 1_000_000_001L)
     }
 
+    @Test
     void testLargeDecimal8() {
         testDoubleInStringThreeOver("" + 1_000_000_000_000L + "." + 1_000_000_001L)
     }
 
+    @Test
     void testLargeDecimal9() {
         testDoubleInStringThreeOver("" + 10_000_000_000_000L + "." + 1_000_000_001L)
     }
 
+    @Test
     void testLargeDecimal10() {
         testDoubleInStringThreeOver("" + 100_000_000_000_000_000L + "." + 1_000_000_001L)
     }
 
+    @Test
     void testLargeDecimal11() {
         testDoubleInStringThreeOver("" + 1_000_000_000_000_000_000L + "." + 1_000_000_001L)
     }
 
+    @Test
     void testLongMinWithOffset() {
         testDoubleInStringThreeOver("" + Long.MIN_VALUE)
     }
 
+    @Test
     void testDoubleMaxWithOffset() {
         testDoubleInStringThreeOver("" + Double.MAX_VALUE)
     }
 
+    @Test
     void testDoubleMinWithOffset() {
         testDoubleInStringThreeOver("" + Double.MIN_VALUE)
     }
 
+    @Test
     void testDoubleMaxWithOffset2() {
         testDoubleInStringThreeOver("" + Double.MAX_VALUE / 2)
     }
 
+    @Test
     void testDoubleMinWithOffset2() {
         testDoubleInStringThreeOver("" + Double.MIN_VALUE / 2)
     }
 
+    @Test
     void testDoubleMaxWithOffset3() {
         testDoubleInStringThreeOver("" + (Double.MAX_VALUE / 9) * 8)
     }
 
+    @Test
     void testDoubleMinWithOffset3() {
         testDoubleInStringThreeOver("" + (Double.MIN_VALUE / 9) * 8)
     }
 
+    @Test
     void testParseLong() {
         String str = "12345678910"
         long l1 = CharScanner.parseLongFromTo(str.toCharArray(), 0, str.length())
@@ -244,6 +286,7 @@ class CharScannerTest extends GroovyTestCase {
         assert l1 == 12345678910L
     }
 
+    @Test
     void testParseIntFromTo() {
         String str = "123456789"
         int i = CharScanner.parseIntFromTo(str.toCharArray(), 0, str.length())
@@ -262,6 +305,7 @@ class CharScannerTest extends GroovyTestCase {
         assert i == -6789
     }
 
+    @Test
     void testParseJsonNumberToDecimal() {
         def num = CharScanner.parseJsonNumber('123.40'.toCharArray())
         assert num instanceof BigDecimal

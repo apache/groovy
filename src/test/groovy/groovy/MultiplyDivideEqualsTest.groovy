@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class MultiplyDivideEqualsTest extends GroovyTestCase {
 
+class MultiplyDivideEqualsTest {
+
+    @Test
     void testIntegerMultiplyEquals() {
         def x = 2
         def y = 3
@@ -34,6 +36,7 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         assert y == 12
     }
 
+    @Test
     void testCharacterMultiplyEquals() {
         Character x = 2
         Character y = 3
@@ -46,6 +49,7 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         assert y == 12
     }
 
+    @Test
     void testNumberMultiplyEquals() {
         def x = 1.2
         def y = 2
@@ -54,6 +58,7 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         assert x == 2.4
     }
 
+    @Test
     void testStringMultiplyEquals() {
         def x = "bbc"
         def y = 2
@@ -68,6 +73,7 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testIntegerDivideEquals() {
         def x = 18
         def y = 6
@@ -80,6 +86,7 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         assert y == 2.0
     }
 
+    @Test
     void testCharacterDivideEquals() {
         Character x = 18
         Character y = 6
@@ -92,6 +99,7 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         assert y == 2
     }
 
+    @Test
     void testNumberDivideEquals() {
         def x = 10.4
         def y = 2

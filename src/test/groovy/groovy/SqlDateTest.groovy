@@ -18,38 +18,44 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase;
 import groovy.time.TimeCategory
+import org.junit.jupiter.api.Test
 
-class SqlDateTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+class SqlDateTest {
+
+    @Test
     void testIncrement() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
         def nowOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
         sqlDate++
         def incOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
-        assertTrue "incrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
+        assertTrue sqlDate instanceof java.sql.Date, "incrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}"
 
         // difference adjusted for daylight savings
         def diff = (sqlDate.getTime() + incOffset) - (nowMillis + nowOffset)
-        assertEquals "incrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
+        assertEquals 1000 * 60 * 60 * 24, diff, "incrementing a java.sql.Date did not work properly"
     }
 
+      @Test
       void testDecrement() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
         def nowOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
         sqlDate--
         def decOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
-        assertTrue "decrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
+        assertTrue sqlDate instanceof java.sql.Date, "decrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}"
 
         // difference adjusted for daylight savings
         def diff = (nowMillis + nowOffset) - (sqlDate.getTime() + decOffset)
 
-        assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
+        assertEquals 1000 * 60 * 60 * 24, diff, "decrementing a java.sql.Date did not work properly"
     }
 
+    @Test
     void testPlusOperator() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
@@ -57,13 +63,14 @@ class SqlDateTest extends GroovyTestCase {
         sqlDate += 1
         def incOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
 
-        assertTrue  "the plus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
+        assertTrue  sqlDate instanceof java.sql.Date, "the plus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}"
 
         // difference adjusted for daylight savings
         def diff = (sqlDate.getTime() + incOffset) - (nowMillis + nowOffset)
-        assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
+        assertEquals 1000 * 60 * 60 * 24, diff, "decrementing a java.sql.Date did not work properly"
     }
 
+    @Test
     void testMinusOperator() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
@@ -71,10 +78,10 @@ class SqlDateTest extends GroovyTestCase {
         sqlDate -= 1
         def decOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
 
-        assertTrue  "the minus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
+        assertTrue  sqlDate instanceof java.sql.Date, "the minus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}"
 
         // difference adjusted for daylight savings
         def diff = (nowMillis + nowOffset) - (sqlDate.getTime() + decOffset)
-        assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
+        assertEquals 1000 * 60 * 60 * 24, diff, "decrementing a java.sql.Date did not work properly"
     }
 }

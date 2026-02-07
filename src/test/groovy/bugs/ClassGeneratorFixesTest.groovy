@@ -18,10 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 
-class ClassGeneratorFixesTest extends GroovyTestCase {
+
+class ClassGeneratorFixesTest {
     def count = 0;
 
     def pf(int p) {
@@ -29,10 +30,12 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
         boolean b = true
     }
 
+    @Test
     void testPrimitvesInFunc() { // groovy-373, 453, 385, 451, 199
         pf(10)
     }
 
+    @Test
     void testPlusEqual() { // 372
         count += 1
         assert count == 1
@@ -50,6 +53,7 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
         println x(2.3)
     }
 
+    @Test
     void testIfAndSwitchInClosure (){ // 321, 324, 412
 
         def a = 1
@@ -84,10 +88,12 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
         return
     }
 
+    @Test
     void testReturnVoid() { // groovy-405, 387
         returnVoid()
     }
 
+    @Test
     void testBooleanValue() { // groovy-385
             /** @todo
             boolean value

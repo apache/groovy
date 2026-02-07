@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4202Bug extends GroovyTestCase {
+
+class Groovy4202Bug {
+    @Test
     void testSuccessiveMCModificationFirstClassThenInstance() {
         def inst0 = new Foo4202()
         def inst1 = new Foo4202()

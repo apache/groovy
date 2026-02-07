@@ -18,12 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class SuperMethod2Bug extends GroovyTestCase {
+class SuperMethod2Bug {
 
+    @Test
     void testBug() {
         def base = new SuperBase()
         def value = base.doSomething()
@@ -35,6 +37,7 @@ class SuperMethod2Bug extends GroovyTestCase {
         assert value == "TestDerivedTestBase"
     }
 
+    @Test
     void testBug2() {
         def base = new SuperBase()
         def value = base.foo(2)
@@ -46,6 +49,7 @@ class SuperMethod2Bug extends GroovyTestCase {
         assert value == "TestDerived3TestBase3"
     }
 
+    @Test
     void testBug3() {
         def base = new SuperBase()
         def value = base.foo(2,3)
@@ -57,6 +61,7 @@ class SuperMethod2Bug extends GroovyTestCase {
         assert value == "foo(x,y)Derived3,4foo(x,y)Base3,4"
     }
 
+    @Test
     void testBug4() {
         def base = new SuperBase("Cheese")
         def value = base.name
@@ -68,6 +73,7 @@ class SuperMethod2Bug extends GroovyTestCase {
         assert value == "CheeseDerived"
     }
 
+    @Test
     void testCallsToSuperMethodsReturningPrimitives(){
        def base = new SuperBase("super cheese")
        assert base.longMethod() == 1

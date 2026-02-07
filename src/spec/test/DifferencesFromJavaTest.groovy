@@ -1,4 +1,3 @@
-import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -18,9 +17,16 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class DifferencesFromJavaTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+class DifferencesFromJavaTest {
+    @Test
     void testMultiMethods() {
-        assertScript '''import static org.junit.Assert.*
+        assertScript '''import static org.junit.jupiter.api.Assertions.*
 // tag::multimethods[]
 int method(String arg) {
     return 1;
@@ -44,6 +50,7 @@ assertEquals(1, result);
 '''
     }
 
+    @Test
     void testArrayCreation() {
         shouldFail {
             assertScript '''
@@ -65,6 +72,7 @@ assertEquals(1, result);
         '''
     }
 
+    @Test
     void testPackagePrivate() {
         assertScript '''
             import groovy.transform.ASTTest
@@ -99,6 +107,7 @@ assertEquals(1, result);
         '''
     }
 
+    @Test
     void testAnonymousAndNestedClasses() {
         assertScript '''
 // tag::innerclass_1[]
@@ -157,6 +166,7 @@ assert (x.'this$0').is(y)
 '''
     }
 
+    @Test
     void testStringsAndCharsGotchas() {
         assertScript '''
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;

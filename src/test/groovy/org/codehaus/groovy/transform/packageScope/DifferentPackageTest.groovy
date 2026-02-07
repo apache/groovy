@@ -18,10 +18,14 @@
  */
 package org.codehaus.groovy.transform.packageScope
 
-import org.codehaus.groovy.control.*
+
+import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.tools.GroovyClass
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -229,7 +233,7 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err =~ /Cannot find matching method q.Two#getThing()/
+        assert err.message =~ /Cannot find matching method q.Two#getThing()/
 
         def loader = addSources(
             One: P_DOT_ONE,
@@ -342,7 +346,7 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err =~ /No such property: value for class: q.Two/
+        assert err.message =~ /No such property: value for class: q.Two/
     }
 
     @Test
@@ -363,7 +367,7 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err =~ /Access to p.One#value is forbidden/
+        assert err.message =~ /Access to p.One#value is forbidden/
     }
 
     // GROOVY-9093
@@ -384,7 +388,7 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err =~ /No such property: CONST for class: q.Two/
+        assert err.message =~ /No such property: CONST for class: q.Two/
     }
 
     // GROOVY-11356
@@ -405,7 +409,7 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err =~ /No such property: answer for class: q.Two/
+        assert err.message =~ /No such property: answer for class: q.Two/
     }
 
     @Test
@@ -427,7 +431,7 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err =~ /Access to p.One#CONST is forbidden/
+        assert err.message =~ /Access to p.One#CONST is forbidden/
     }
 
     @Test
@@ -447,6 +451,6 @@ final class DifferentPackageTest {
                 '''
             )
         }
-        assert err =~ /No such property: answer for Class or static property for class: p.One/ // TODO: Cannot access p.One#getAnswer?
+        assert err.message =~ /No such property: answer for Class or static property for class: p.One/ // TODO: Cannot access p.One#getAnswer?
     }
 }

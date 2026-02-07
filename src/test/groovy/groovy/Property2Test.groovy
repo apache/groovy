@@ -18,13 +18,17 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertNotNull
+
 
 /**
  * Tests the use of getMetaPropertyValues() and getProperties() for Beans and Expandos.
  */
-final class Property2Test extends GroovyTestCase {
+final class Property2Test {
 
+    @Test
     void testGetPropertiesBeanCheckingValues() {
         def foo = new Foo()
 
@@ -43,6 +47,7 @@ final class Property2Test extends GroovyTestCase {
         assert props.isEmpty()
     }
 
+    @Test
     void testMetaPropertyValuesFromObject() {
         def foo = new Foo()
         def metaProps = foo.metaPropertyValues
@@ -52,6 +57,7 @@ final class Property2Test extends GroovyTestCase {
         assertNotNull metaProps[0].type
     }
 
+    @Test
     void testGetPropertiesExpando() {
         def foo = new Expando()
 

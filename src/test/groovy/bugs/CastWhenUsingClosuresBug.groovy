@@ -18,12 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class CastWhenUsingClosuresBug extends GroovyTestCase {
+class CastWhenUsingClosuresBug {
 
+    @Test
     void testBug() {
         def a = 1
 

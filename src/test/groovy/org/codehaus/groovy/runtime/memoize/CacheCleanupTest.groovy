@@ -18,13 +18,11 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
-import groovy.test.GroovyTestCase
-
 import java.lang.ref.SoftReference
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.TimeUnit
 
-public class CacheCleanupTest extends GroovyTestCase {
+public class CacheCleanupTest {
     private static final Object ANCHOR = "I'm never gonna go"
 
     public void testUnlimitedCache() {

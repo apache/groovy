@@ -18,13 +18,16 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class CompareEqualsTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+class CompareEqualsTest {
+    @Test
     void testEqualsOperatorIsMultimethodAware() {
         assert new Xyz() == new Xyz()
 
-        assertEquals new Xyz(), new Xyz()
+        assert new Xyz() == new Xyz()
 
         shouldFail {
           assert new Xyz() == 239

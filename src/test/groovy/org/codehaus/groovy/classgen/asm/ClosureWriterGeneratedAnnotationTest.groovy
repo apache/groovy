@@ -21,7 +21,7 @@ package org.codehaus.groovy.classgen.asm
 import groovy.transform.Generated
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Method
 

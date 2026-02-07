@@ -18,12 +18,16 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class BigDecimalOperatorsTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class BigDecimalOperatorsTest {
 
     def x, y
 
+    @Test
     void testPlus() {
         x = 0.1 + 1.1
         assert x instanceof BigDecimal
@@ -46,6 +50,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         assert z == 16.4
     }
 
+    @Test
     void testMinus() {
         x = 1.1 - 0.01
         assert x == 1.09
@@ -60,6 +65,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         assert y == 2.8
     }
 
+    @Test
     void testMultiply() {
         x = 3 * 2.0
         assert x == 6.0
@@ -80,6 +86,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         assert y == 36.663 , "y = " + y
     }
 
+    @Test
     void testDivide() {
         x = 80.0 / 4
         assert x == 20.0 , "x = " + x
@@ -98,6 +105,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         assert y == 11.33333333333 , "y = " + y
     }
 
+    @Test
     void testMod() {
         x = 100.0.mod(3)
 
@@ -111,6 +119,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         assert y == 0.5
     }
 
+    @Test
     void testRemainder() {
         x = 100.0 % 3
 
@@ -127,10 +136,12 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     BigDecimal echoX ( BigDecimal x, BigDecimal y) {x}
 
     // test for Groovy-1250
+    @Test
     void testBigDecimalCoerce() {
         assert echoX(9.95, 1.0) == echoX(9.95, 1)
     }
 
+    @Test
     void testAssign() {
         BigDecimal foo
         foo = (byte) 20
@@ -172,6 +183,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     // -------------------------------------------------------
     // GROOVY-5102
     // we need both variants, since one seems to disable prim opts
+    @Test
     void testMath1() {
         assert BigDecimal == (3/2).getClass()
         assert BigDecimal == (7.0/8.0).getClass()
@@ -179,6 +191,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
         true
     }
 
+    @Test
     void testMath2() {
         assert BigDecimal == (3/2).getClass()
         assert BigDecimal == (7.0/8.0).getClass()
@@ -187,6 +200,7 @@ class BigDecimalOperatorsTest extends GroovyTestCase {
     // -------------------------------------------------------
 
     // GROOVY-5173
+    @Test
     void testBDPrimOptFields() {
         assertScript """
             class BigDecimalBug {

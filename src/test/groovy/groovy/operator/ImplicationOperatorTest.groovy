@@ -18,14 +18,15 @@
  */
 package operator
 
-import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
+import org.junit.jupiter.api.Test
 
 /**
  * Test Logical Implication Operation
  */
-class ImplicationOperatorTest extends GroovyTestCase {
+class ImplicationOperatorTest {
 
+    @Test
     void testImplicationOperation() {
         assert false ==> false
         assert false ==> true
@@ -33,6 +34,7 @@ class ImplicationOperatorTest extends GroovyTestCase {
         assert true ==> true
     }
 
+    @Test
     void testImplicationIsRightAssociative() {
         assert false ==> false ==> false
         assert false ==> (false ==> false)
@@ -40,46 +42,55 @@ class ImplicationOperatorTest extends GroovyTestCase {
     }
 
     @CompileStatic
+    @Test
     void testImplicationOperationCS() {
         boolean result = (false ==> false) && (false ==> true) && !(true ==> false) && (true ==> true)
         assert result
     }
 
+    @Test
     void testPrecedence1() {
         def result = false ==> false ? true ==> false : true ==> true
         assert !result
     }
 
+    @Test
     void testPrecedence2() {
         def result = true ==> true || false ==> false
         assert !result
     }
 
+    @Test
     void testPrecedence3() {
         def result = true ==> true | false ==> false
         assert !result
     }
 
+    @Test
     void testPrecedence4() {
         def result = true ==> false && true ==> false
         assert result
     }
 
+    @Test
     void testPrecedence5() {
         def result = true ==> false & true ==> false
         assert result
     }
 
+    @Test
     void testPrecedence6() {
         def result = 'abc' ==~ /[a-z]+/ ==> 'abc' ==~ /[a]+/
         assert !result
     }
 
+    @Test
     void testPrecedence7() {
         def result = 'abc' ==~ /[a]+/ ==> 'abc' ==~ /[a]+/ ==> 'abc' ==~ /[a]+/
         assert result
     }
 
+    @Test
     void testShortCircuiting() {
         String str = null
         assert str != null ==> 0 <= str.length()

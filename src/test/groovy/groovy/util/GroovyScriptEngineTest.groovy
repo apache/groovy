@@ -24,26 +24,25 @@ import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
-import org.junit.Ignore
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 final class GroovyScriptEngineTest {
 
-    @Rule
-    public TemporaryFolder temporaryFolder = new TemporaryFolder()
+    @TempDir
+    File temporaryFolder
 
-    @Test @Ignore('current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions')
+    @Test @Disabled('current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions')
     void createASTDumpWhenScriptIsLoadedByName() {
-        def scriptFile = temporaryFolder.newFile('Script1.groovy')
+        def scriptFile = new File(temporaryFolder, 'Script1.groovy').tap { createNewFile() }
         scriptFile << "assert 1 + 1 == 2" // the script just has to have _some_ content
         try {
             System.setProperty('groovy.ast', 'xml')
 
-            def clazz = new GroovyScriptEngine([temporaryFolder.root.toURI().toURL()] as URL[]).loadScriptByName('Script1.groovy')
+            def clazz = new GroovyScriptEngine([temporaryFolder.toURI().toURL()] as URL[]).loadScriptByName('Script1.groovy')
 
-            assert new File(temporaryFolder.root, scriptFile.name + '.xml').exists()
+            assert new File(temporaryFolder, scriptFile.name + '.xml').exists()
             assert clazz != null
         } finally {
             System.clearProperty('groovy.ast')
@@ -53,21 +52,21 @@ final class GroovyScriptEngineTest {
     @Test
     void whenSystemPropertyIsMissingDontCreateASTDump() {
 
-        def scriptFile = temporaryFolder.newFile('Script1.groovy')
+        def scriptFile = new File(temporaryFolder, 'Script1.groovy').tap { createNewFile() }
 
         scriptFile << "assert 1 + 1 == 2" // the script just has to have _some_ content
 
         System.clearProperty('groovy.ast')
 
-        def clazz = new GroovyScriptEngine([temporaryFolder.root.toURI().toURL()] as URL[]).loadScriptByName('Script1.groovy')
+        def clazz = new GroovyScriptEngine([temporaryFolder.toURI().toURL()] as URL[]).loadScriptByName('Script1.groovy')
         assert clazz != null
 
-        assert !new File(temporaryFolder.root, scriptFile.name + '.xml').exists()
+        assert !new File(temporaryFolder, scriptFile.name + '.xml').exists()
     }
 
     @Test
     void customizersAppliedOncePerClassNode_GROOVY_8402() {
-        def scriptFile = temporaryFolder.newFile('Script1.groovy')
+        def scriptFile = new File(temporaryFolder, 'Script1.groovy').tap { createNewFile() }
         scriptFile << '''
             class Foo {}
             assert 1 + 1 == 2
@@ -81,7 +80,7 @@ final class GroovyScriptEngineTest {
             }
         })
 
-        GroovyScriptEngine scriptEngine = new GroovyScriptEngine([temporaryFolder.root.toURI().toURL()] as URL[])
+        GroovyScriptEngine scriptEngine = new GroovyScriptEngine([temporaryFolder.toURI().toURL()] as URL[])
         scriptEngine.setConfig(config)
         scriptEngine.loadScriptByName('Script1.groovy')
         assert counts['Script1'] == 1

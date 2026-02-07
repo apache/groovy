@@ -18,14 +18,16 @@
  */
 package groovy.xml.bugs
 
-import groovy.test.GroovyTestCase
 import groovy.xml.MarkupBuilder
 import groovy.xml.XmlParser
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Tests that special XML chars are made into entities by MarkupBuilder.
  */
-class Groovy593_Bug extends GroovyTestCase {
+class Groovy593_Bug {
 
     StringWriter writer = new StringWriter()
     MarkupBuilder chars = new MarkupBuilder(writer)
@@ -41,6 +43,7 @@ class Groovy593_Bug extends GroovyTestCase {
   <greaterthan>&gt;</greaterthan>
 </chars>"""
 
+    @Test
     void testBug() {
         // XML characters to test with
         chars.chars {

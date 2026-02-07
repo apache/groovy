@@ -18,14 +18,18 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class IntegerOperatorsTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.fail
+
+class IntegerOperatorsTest {
 
     def x
     def y
     def z
 
+    @Test
     void testPlus() {
         x = 2 + 2
         assert x == 4
@@ -37,6 +41,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert z == 12
     }
 
+    @Test
     void testUnaryPlus() {
         x = 3
         y = +x
@@ -45,6 +50,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == 3
     }
 
+    @Test
     void testCharacterPlus() {
         Character c1 = 1
         Character c2 = 2
@@ -74,6 +80,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert z == 12
     }
 
+    @Test
     void testMinus() {
         x = 6 - 2
         assert x == 4
@@ -82,6 +89,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == 3
     }
 
+    @Test
     void testUnaryMinus() {
         x = 3
         y = -x
@@ -90,6 +98,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == -3
     }
 
+    @Test
     void testBitwiseNegate() {
         x = 3
         y = ~x
@@ -98,6 +107,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == -4
     }
 
+    @Test
     void testCharacterMinus() {
         Character c1 = 1
         Character c2 = 2
@@ -116,6 +126,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == 3
     }
 
+    @Test
     void testMultiply() {
         x = 3 * 2
         assert x == 6
@@ -124,6 +135,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == 12
     }
 
+    @Test
     void testDivide() {
         x = 80 / 4
         assert x == 20.0 , "x = " + x
@@ -132,6 +144,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == 10.0 , "y = " + y
     }
 
+    @Test
     void testIntegerDivide() {
         x = 52.intdiv(3)
         assert x == 17 , "x = " + x
@@ -144,6 +157,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == 3
     }
 
+    @Test
     void testMod() {
         x = 100.mod(3)
 
@@ -157,6 +171,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == 1
     }
 
+    @Test
     void testRemainder() {
         x = 100 % 3
 
@@ -170,6 +185,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert y == -2
     }
 
+    @Test
     void testAnd() {
         x = 1 & 3
 
@@ -180,6 +196,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         assert x == 1
     }
 
+     @Test
      void testOr() {
          x = 1 | 3
 
@@ -198,6 +215,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
          assert x ==5
     }
 
+    @Test
     void testShiftOperators() {
 
         x = 8 >> 1
@@ -243,6 +261,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCompareBoxing() {
         assertScript """
             def proceed(){}
@@ -255,6 +274,7 @@ class IntegerOperatorsTest extends GroovyTestCase {
         """
     }
 
+    @Test
     void testCompareBoxingWithEMC() {
         try {
             assertScript """

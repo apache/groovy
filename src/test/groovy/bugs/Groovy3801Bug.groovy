@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3801Bug extends GroovyTestCase {
+
+class Groovy3801Bug {
+    @Test
     void testMainMethodSignature() {
         def gcl = new GroovyClassLoader()
         def clazz

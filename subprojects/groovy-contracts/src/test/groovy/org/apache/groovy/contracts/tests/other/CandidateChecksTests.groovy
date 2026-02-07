@@ -18,13 +18,13 @@
  */
 package org.apache.groovy.contracts.tests.other
 
-import org.codehaus.groovy.ast.ClassHelper
 import org.apache.groovy.contracts.generation.CandidateChecks
-import org.junit.Test
+import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.Parameter
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertTrue
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 class A {
 
@@ -62,12 +62,12 @@ class CandidateChecksTests {
     @Test
     void testPrivateConstructors() {
         def classNode = ClassHelper.make(D.class)
-        assertTrue "private constructors should support preconditions",
-                CandidateChecks.isPreconditionCandidate(classNode, classNode.getDeclaredConstructors().first())
-        assertTrue "private methods should support preconditions",
-                CandidateChecks.isPreconditionCandidate(classNode, classNode.getMethod("method", [] as Parameter[]))
+        assertTrue(CandidateChecks.isPreconditionCandidate(classNode, classNode.getDeclaredConstructors().first()),
+                "private constructors should support preconditions")
+        assertTrue(CandidateChecks.isPreconditionCandidate(classNode, classNode.getMethod("method", [] as Parameter[])),
+                "private methods should support preconditions")
 
-        assertFalse "private constructors should by now NOT support class invariants",
-                CandidateChecks.isClassInvariantCandidate(classNode, classNode.getDeclaredConstructors().first())
+        assertFalse(CandidateChecks.isClassInvariantCandidate(classNode, classNode.getDeclaredConstructors().first()),
+                "private constructors should by now NOT support class invariants")
     }
 }

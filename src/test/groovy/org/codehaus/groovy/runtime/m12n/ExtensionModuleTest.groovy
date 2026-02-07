@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.runtime.m12n
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doInFork
 

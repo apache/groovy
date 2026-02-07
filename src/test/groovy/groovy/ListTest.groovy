@@ -18,11 +18,18 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
 import groovy.transform.TypeChecked
+import org.junit.jupiter.api.Test
 
-class ListTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.fail
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+class ListTest {
+
+    @Test
     void testList() {
         def x = [10, 11]
         assert x.size() == 2
@@ -46,6 +53,7 @@ class ListTest extends GroovyTestCase {
         assert x.contains(10)
     }
 
+    @Test
     void testEmptyList() {
         def x = []
         assert x.size() == 0
@@ -55,6 +63,7 @@ class ListTest extends GroovyTestCase {
         assert x[0] == "cheese"
     }
 
+    @Test
     void testSubscript() {
         def x = []
         x[1] = 'cheese'
@@ -72,6 +81,7 @@ class ListTest extends GroovyTestCase {
         assert x[2] == 'cheese'
     }
 
+    @Test
     void testClosure() {
         def l = [1, 2, 3, "abc"]
         def result = ''
@@ -82,6 +92,7 @@ class ListTest extends GroovyTestCase {
         assert result == '123abc123abc'
     }
 
+    @Test
     void testMax() {
         def l = [1, 2, 5, 3, 7, 1]
         assert l.max() == 7
@@ -97,6 +108,7 @@ class ListTest extends GroovyTestCase {
         assert l.max() == (short) 7
     }
 
+    @Test
     void testMin() {
         def l = [6, 4, 5, 1, 7, 2]
         assert l.min() == 1
@@ -112,6 +124,7 @@ class ListTest extends GroovyTestCase {
         assert l.min() == (long) 1
     }
 
+    @Test
     void testPlus() {
         def l1 = [6, 4, 5, 1, 7, 2]
         def l2 = [6, 4, 5, 1, 7, [4, 5]]
@@ -124,12 +137,14 @@ class ListTest extends GroovyTestCase {
         assert l1 + l2 == l3
     }
 
+    @Test
     void testPlusOneElement() {
         def l1 = [6, 4, 5, 1, 7, 2]
         def l2 = "erererer"
         assert l1 + l2 == [6, 4, 5, 1, 7, 2, "erererer"]
     }
 
+    @Test
     void testListAppend() {
         def list = [1, 2]
         list << 3 << 4 << 5
@@ -138,12 +153,14 @@ class ListTest extends GroovyTestCase {
         assert x == ['a', 'hello', [2, 3], 5]
     }
 
+    @Test
     void testTimes() {
         def l = [4, 7, 8]
         assert l * 3 == [4, 7, 8, 4, 7, 8, 4, 7, 8]
     }
 
     // GROOVY-1006
+    @Test
     void testMinus() {
         def l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
         def l2 = [1, 2.0, 4L]
@@ -151,12 +168,14 @@ class ListTest extends GroovyTestCase {
     }
 
     // GROOVY-1006
+    @Test
     void testMinusDifferentTypes() {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
         def l2 = [1, 2, "w"]
         assert l1 - l2 == ["wrer", 3, 3, "wrewer", 4, 5]
     }
 
+    @Test
     void testMinusEmptyCollection() {
         // GROOVY-790
         def list = [1, 1]
@@ -167,6 +186,7 @@ class ListTest extends GroovyTestCase {
         assert list - [] == list
     }
 
+    @Test
     void testIntersect() {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
         def l2 = [1, 2, "f", "w"]
@@ -181,16 +201,19 @@ class ListTest extends GroovyTestCase {
     }
 
     // GROOVY-1006
+    @Test
     void testListEqual() {
         assert [1, 2.0, 3L, (short) 4] == [1, 2, 3, 4]
     }
 
     // GROOVY-1006
+    @Test
     void testSortNumbersMixedType() {
         assert [1, (short) 3, 4L, 2.9, (float) 5.2].sort() == [1, 2.9, (short) 3, 4L, (float) 5.2]
     }
 
     // GROOVY-1006
+    @Test
     void testUnique() {
         def a = [1, 4L, 1.0]
         def b = a.unique()
@@ -201,18 +224,21 @@ class ListTest extends GroovyTestCase {
     }
 
     // incorporates GROOVY-2904 and GROOVY-3102
+    @Test
     void testListFlatten() {
         def orig = [[[4, 5, 6, [46, 7, "erer"]], null, 4, [3, 6, 78]], 4]
         def flat = orig.flatten()
         assert flat == [4, 5, 6, 46, 7, "erer", null, 4, 3, 6, 78, 4]
     }
 
+    @Test
     void testFlattenListOfMaps() {
         def orig = [[a: 1, b: 2], [c: 3, d: 4]]
         def flat = orig.flatten()
         assert flat == orig
     }
 
+    @Test
     void testFlattenListOfArrays() {
         def orig = ["one".toList().toArray(), "two".toList().toArray()]
         def flat = orig.flatten()
@@ -220,6 +246,7 @@ class ListTest extends GroovyTestCase {
     }
 
     // incorporates GROOVY-2904 and GROOVY-3102
+    @Test
     void testFlattenListWithSuppliedClosure() {
         def orig = [[[4, 5, 6, [46, 7, "erer"]], null, 4, [3, 6, 78]], 4]
         def notSelfAsList = { def ans = it.iterator().toList(); ans != [it] ? ans : it }
@@ -227,6 +254,7 @@ class ListTest extends GroovyTestCase {
         assert flat == [4, 5, 6, 46, 7, "e", "r", "e", "r", 4, 3, 6, 78, 4]
     }
 
+    @Test
     void testFlattenListOfMapsWithClosure() {
         def orig = [[a: 1, b: 2], [c: 3, d: 4]]
         def flat = orig.flatten { it instanceof Map ? it.values() : it }
@@ -235,16 +263,19 @@ class ListTest extends GroovyTestCase {
         assert flat == ["a", "b", "c", "d"]
     }
 
+    @Test
     void testFlattenWithRanges() {
         def flat = [1, 3, 20..24, 33].flatten()
         assert flat == [1, 3, 20, 21, 22, 23, 24, 33]
     }
 
+    @Test
     void testFlattenWithPrimitiveArray() {
         char[] fooChars = 'foo'.chars
         assert [fooChars].flatten() == ['f', 'o', 'o']
     }
 
+    @Test
     void testFlattenWithMultiDimensionalPrimitiveArray() {
         int[][] identityMatrix = [[1, 0], [0, 1]]
         assert identityMatrix.flatten() == [1, 0, 0, 1]
@@ -252,6 +283,7 @@ class ListTest extends GroovyTestCase {
         assert [[identityMatrix]].flatten() == [1, 0, 0, 1]
     }
 
+    @Test
     void testListsAndRangesCompare() {
         def l = [1, 2, 3]
         def r = 1..3
@@ -259,6 +291,7 @@ class ListTest extends GroovyTestCase {
         assert l == r
     }
 
+    @Test
     void testRemove() {
         def l = ['a', 'b', 'c']
         l.remove(1)
@@ -268,6 +301,7 @@ class ListTest extends GroovyTestCase {
         assert l.size() == 1
     }
 
+    @Test
     void testPop() {
         def l = []
         l << 'a' << 'b'
@@ -294,6 +328,7 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testBoolCoerce() {
         // Explicit coercion
         assertFalse((Boolean) [])
@@ -314,12 +349,14 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIndices() {
         assert 0..2 == [5, 6, 7].indices
         assert 0..<0 == [].indices
     }
 
     // see also SubscriptTest
+    @Test
     void testGetAtRange() {
         def list = [0, 1, 2, 3]
         assert list[0..3] == list         , 'full list'
@@ -346,6 +383,7 @@ class ListTest extends GroovyTestCase {
         shouldFail(IndexOutOfBoundsException) { list[5..6] }
     }
 
+    @Test
     void testPutAtSplice() {
         // usual assignments
         def list = [0, 1, 2, 3]
@@ -368,6 +406,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0, 1, 2, 3, 4]
     }
 
+    @Test
     void testPutAtRange() {
         // usual assignments
         def list = [0, 1, 2, 3]
@@ -402,6 +441,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0, 'x', 'x', 'x', 3], 'extending'
     }
 
+    @Test
     void testCrazyPutAtRange() {
         def list = []
         list[0..<0] = [0, 1, 2, 3]
@@ -418,12 +458,14 @@ class ListTest extends GroovyTestCase {
     }
 
     // GROOVY-1128
+    @Test
     void testAsSynchronized() {
         def synclist = [].asSynchronized() << 1
         assert synclist == [1]
     }
 
     // GROOVY-1128
+    @Test
     void testAsImmutable() {
         def immlist = [1, 2, 3].asImmutable()
         assert immlist == [1, 2, 3]
@@ -442,6 +484,7 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testWithIndex_indexed_groovy7175() {
         assert [] == [].withIndex()
         assert [] == [].withIndex(10)
@@ -458,11 +501,13 @@ class ListTest extends GroovyTestCase {
     }
 
     @TypeChecked
+    @Test
     void testWithIndex_indexed_typeChecked_groovy7175() {
         assert ["A", "BB"] == ["a", "b"].indexed(1).collect { idx, str -> str.toUpperCase() * idx }
     }
 
     // GROOVY-4946
+    @Test
     void testLazyDefault() {
         def l1 = [].withLazyDefault { 42 }
         assert l1[0] == 42
@@ -493,6 +538,7 @@ class ListTest extends GroovyTestCase {
         assert l6[0..5] == [null, 1, null, 3, null, 5]
     }
 
+    @Test
     void testEagerDefault() {
         def l1 = [].withEagerDefault { 42 }
         assert l1[0] == 42
@@ -529,6 +575,7 @@ class ListTest extends GroovyTestCase {
         assert l6[0..5] == [0, 1, 2, 3, 4, 5]
     }
 
+    @Test
     void testDefaultReturnWithDefaultSubList() {
         def l1 = [].withLazyDefault { 42 }
         assert l1[2] == 42
@@ -540,12 +587,14 @@ class ListTest extends GroovyTestCase {
         assert l2 == [null, null, 42]
     }
 
+    @Test
     void testDefaultRedirectsToWithLazyDefault() {
         def l1 = [].withDefault { 42 }
         assert l1[2] == 42
         assert l1 == [null, null, 42]
     }
 
+    @Test
     void testDefaultNullAsDefaultValue() {
         def l1 = [].withEagerDefault { null }
         assert l1[0] == null
@@ -553,28 +602,33 @@ class ListTest extends GroovyTestCase {
         assert l1 == [null, null, null]
     }
 
+    @Test
     void testLazyListAndRangeAccess() {
         def l1 = [].withDefault { 42 }
         assert [null, 42] == l1[1..2]
     }
 
+    @Test
     void testEagerListAndRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
         assert [42, 42] == l1[1..2]
     }
 
+    @Test
     void testLazyListAndNegativeIndexAccess() {
         def l1 = [].withDefault { 42 }
         assert 42 == l1[1]
         assert 42 == l1[-1]
     }
 
+    @Test
     void testeEagerListAndNegativeIndexAccess() {
         def l1 = [].withEagerDefault { 42 }
         assert 42 == l1[1]
         assert 42 == l1[-1]
     }
 
+    @Test
     void testLazyListAndNegativeRangeAccess() {
         def l1 = [].withDefault { 42 }
         assert 42 == l1[0]
@@ -584,6 +638,7 @@ class ListTest extends GroovyTestCase {
         assert [42, 42] == subList
     }
 
+    @Test
     void testEagerListAndNegativeRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
         assert 42 == l1[0]
@@ -593,6 +648,7 @@ class ListTest extends GroovyTestCase {
         assert [42, 42] == subList
     }
 
+    @Test
     void testLazyListAndFailingNegativeRangeAccess() {
         def l1 = [].withDefault { 42 }
 
@@ -601,6 +657,7 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEagerListAndFailingNegativeRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
 
@@ -609,18 +666,21 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testLazyListAndEmptyRangeAccess() {
         def l1 = [].withDefault { 42 }
         assert l1[0..<0] instanceof ListWithDefault
         assert l1[0..<0] == []
     }
 
+    @Test
     void testEagerListAndEmptyRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
         assert l1[0..<0] instanceof ListWithDefault
         assert l1[0..<0] == []
     }
 
+    @Test
     void testLazyListAndReversedRangeAccess() {
         def l1 = [].withDefault { 42 }
 
@@ -632,6 +692,7 @@ class ListTest extends GroovyTestCase {
         assert subList instanceof ListWithDefault
     }
 
+    @Test
     void testEagerListAndReversedRangeAccess() {
         def l1 = [].withEagerDefault { 42 }
 
@@ -643,67 +704,79 @@ class ListTest extends GroovyTestCase {
         assert subList instanceof ListWithDefault
     }
 
+    @Test
     void testLazyListAndCollectionOfIndices() {
         def l1 = [].withDefault { 42 }
         assert [42, 42, 42] == l1[0,1,2]
         assert l1.size() == 3
     }
 
+    @Test
     void testEagerListAndCollectionOfIndices() {
         def l1 = [].withEagerDefault { 42 }
         assert [42, 42, 42] == l1[0,1,2]
         assert l1.size() == 3
     }
 
+    @Test
     void testLazyListAndCollectionOfCollectionIndices() {
         def l1 = [].withDefault { 42 }
         assert [42, 42, 42] == l1[0,[1,2]]
         assert l1.size() == 3
     }
 
+    @Test
     void testLazyListAndCollectionOfRangeIndices() {
         def l1 = [].withDefault { 42 }
         assert [42, null, 42] == l1[0,[1..2]]
         assert l1.size() == 3
     }
 
+    @Test
     void testEagerListAndCollectionOfRangeIndices() {
         def l1 = [].withEagerDefault { 42 }
         assert [42, 42, 42] == l1[0,[1..2]]
         assert l1.size() == 3
     }
 
+    @Test
     void testDefaultAndCollectionOfIndicesReturnsCorrectType() {
         def l1 = [].withDefault { 42 }
         assert  l1[0,[1..2]] instanceof ListWithDefault
     }
 
+    @Test
     void testLazyListAndUnorderedCollectionIndices() {
         def l1 = [].withLazyDefault { 42 }
 
         assert [42, 42, 42] == l1[2, 0, 3]
     }
 
+    @Test
     void testLazyListAndNegativeReversedRangeAccess() {
         def a = [1].withDefault {42}
         assert a[2..-1] == [42, null, 1]
     }
 
+    @Test
     void testEagerListAndNegativeReversedRangeAccess() {
         def a = [1].withEagerDefault {42}
         assert a[2..-1] == [42, 42, 1]
     }
 
+    @Test
     void testEagerListAndNegativeCollectionIndicesAccess() {
         def a = [1].withEagerDefault {42}
         assert a[0,-1] == [1, 1]
     }
 
+    @Test
     void testEagerLazyListInvocation() {
         def a = [1].withEagerDefault {42}.withEagerDefault {43}
         assert a[0,2,-1] == [1, 43, 43]
     }
 
+    @Test
     void testEagerListWithNegativeIndex() {
         def a = [].withEagerDefault { 42 }
         shouldFail(IndexOutOfBoundsException) {
@@ -711,6 +784,7 @@ class ListTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testLazyListCollectionIndicesSubList() {
         def list = [1].withDefault{42}
         assert list[4] == 42
@@ -721,6 +795,7 @@ class ListTest extends GroovyTestCase {
         assert sub[3] == 42
     }
 
+    @Test
     void testLazyListRangeIndexSubList() {
         def list = [1].withDefault{42}
         assert list[4] == 42
@@ -730,6 +805,7 @@ class ListTest extends GroovyTestCase {
         assert sub[5] == 42
     }
 
+    @Test
     void testCollectionAccessCreatesListCopy() {
         def list = [0,1,2,3]
         def sublist = list[0,1]
@@ -742,6 +818,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0,1,2,3]
     }
 
+    @Test
     void testLazyListCollectionAccessCreatesListCopy() {
         def list = [0,1,2,3].withDefault { 42 }
         def sublist = list[0,1]
@@ -754,6 +831,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0,1,2,3]
     }
 
+    @Test
     void testRangeAccessCreatesListCopy() {
         def list = [0,1,2,3]
         def sublist = list[0..<2]
@@ -766,6 +844,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0,1,2,3]
     }
 
+    @Test
     void testLazyListRangeAccessCreatesListCopy() {
         def list = [0,1,2,3].withDefault { 42 }
         def sublist = list[0..<2]
@@ -778,6 +857,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0,1,2,3]
     }
 
+    @Test
     void testLazyListSubListCreatesListDelegateCopy() {
         def list = [0,1,2,3].withDefault { 42 }
         def sublist = list[0..1]
@@ -790,6 +870,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0,1,2,3]
     }
 
+    @Test
     void testReversedRangeAccessCreatesListCopy() {
         def list = [0,1,2,3]
         def sublist = list[1..0]
@@ -802,6 +883,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0,1,2,3]
     }
 
+    @Test
     void testReversedLazyListRangeAccessCreatesListCopy() {
         def list = [0,1,2,3].withDefault { 42 }
         def sublist = list[1..0]
@@ -814,6 +896,7 @@ class ListTest extends GroovyTestCase {
         assert list == [0,1,2,3]
     }
 
+    @Test
     void testRangeAccessOnLinkedListCreatesLinkedListCopy() {
         def list = new LinkedList([0,1,2,3])
         def sublist = list[0..<2]
@@ -822,6 +905,7 @@ class ListTest extends GroovyTestCase {
         assert sublist instanceof LinkedList
     }
 
+    @Test
     void testReversedRangeAccessOnLinkedListCreatesLinkedListCopy() {
         def list = new LinkedList([0,1,2,3])
         def sublist = list[1..0]
@@ -830,11 +914,13 @@ class ListTest extends GroovyTestCase {
         assert sublist instanceof LinkedList
     }
 
+    @Test
     void testEmptyRangeAccessReturnsLinkedListCopy() {
         def list = new LinkedList([0,1,2,3])
         assert list[0..<0] instanceof LinkedList
     }
 
+    @Test
     void testRemoveAt() {
         shouldFail(IndexOutOfBoundsException) {
             [].removeAt(0)
@@ -844,6 +930,7 @@ class ListTest extends GroovyTestCase {
         assert [1, 3] == list
     }
 
+    @Test
     void testRemoveElement() {
         def list = [1, 2, 3, 2]
         assert list.removeElement(2)
@@ -853,6 +940,7 @@ class ListTest extends GroovyTestCase {
     }
 
     // GROOVY-7299
+    @Test
     void testMultipleVeryLongLlists() {
         def script = "def a = ["+'1000,'*2000+"];def b = ["+'1000,'*2000+"]; def c=(a+b).sum(); assert c==4_000_000";
         assertScript script

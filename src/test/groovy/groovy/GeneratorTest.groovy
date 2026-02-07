@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class GeneratorTest extends GroovyTestCase {
 
+class GeneratorTest {
+
+    @Test
     void testGenerator() {
         def x = this.&sampleGenerator
         //System.out.println("x: " + x)
@@ -34,6 +36,7 @@ class GeneratorTest extends GroovyTestCase {
         assert result == "ABC"
     }
 
+    @Test
     void testFindAll() {
         def x = this.&sampleGenerator
 
@@ -44,12 +47,14 @@ class GeneratorTest extends GroovyTestCase {
         assert value == ["A", "C"]
     }
 
+    @Test
     void testEach() {
         def x = this.&sampleGenerator
         def expected = ['A', 'B', 'C']
         def value = x.each { assert it == expected.remove(0) }
     }
 
+    @Test
     void testMissingThisBug() {
         def result = ''
         for (i in this.&sampleGenerator) {

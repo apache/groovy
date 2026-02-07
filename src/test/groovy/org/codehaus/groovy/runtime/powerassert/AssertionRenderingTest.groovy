@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static java.lang.Math.min
 import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.isRendered

@@ -280,7 +280,7 @@ final class StaticCompileMathTest extends AbstractBytecodeTestCase {
                 i /= 2
             }
         '''
-        assert err =~ /Cannot assign value of type java.math.BigDecimal to variable of type int/
+        assert err.message =~ /Cannot assign value of type java.math.BigDecimal to variable of type int/
     }
 
     @Test

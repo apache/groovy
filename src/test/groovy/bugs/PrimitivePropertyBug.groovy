@@ -18,12 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Fix Bug GROOVY-683
  */
-class PrimitivePropertyBug extends GroovyTestCase {
+class PrimitivePropertyBug {
 
     double x1
     float x2
@@ -33,6 +34,7 @@ class PrimitivePropertyBug extends GroovyTestCase {
     byte x6
     char x7
 
+    @Test
     void testBug() {
         def y = new PrimitivePropertyBug()
         y.x1 = 10.0

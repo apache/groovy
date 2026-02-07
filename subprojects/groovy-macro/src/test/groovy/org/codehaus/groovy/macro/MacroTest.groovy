@@ -18,13 +18,17 @@
  */
 package org.codehaus.groovy.macro
 
-import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.runtime.metaclass.MethodSelectionException
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
-class MacroTest extends GroovyTestCase {
+class MacroTest {
 
+    @Test
     void testSimpleCase() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.*;
@@ -46,6 +50,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testAsIs() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.*;
@@ -65,6 +70,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testInception() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.*;
@@ -84,6 +90,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testMethodNameFromCode() {
         assertScript '''
         // Very useful when you don't want to hardcode method or variable names
@@ -92,6 +99,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testBlock() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.*;
@@ -115,6 +123,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testCompilePhase() {
         assertScript '''
         import org.codehaus.groovy.ast.builder.AstAssert
@@ -137,6 +146,7 @@ class MacroTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAsIsWithCompilePhase() {
         assertScript '''
         import org.codehaus.groovy.ast.builder.AstAssert
@@ -156,6 +166,7 @@ class MacroTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testCompileStatic() {
         assertScript '''
         import groovy.transform.CompileStatic
@@ -178,6 +189,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testMultipleSubstitutions() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.*;
@@ -201,6 +213,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testMacroClass() {
         assertScript '''
         import org.codehaus.groovy.ast.ClassNode
@@ -216,6 +229,7 @@ class MacroTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testNotAMacroCall() {
         // FIXME should fail with "MissingMethodException" because none of MacroGroovy extension methods
         // are defined with a "no-arg" variant

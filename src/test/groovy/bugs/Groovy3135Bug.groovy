@@ -18,9 +18,10 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3135Bug extends GroovyTestCase {
+
+class Groovy3135Bug {
     static Byte b = Byte.parseByte("1")
     static Short s = Short.parseShort("2")
     static Integer i = Integer.parseInt("3")
@@ -32,6 +33,7 @@ class Groovy3135Bug extends GroovyTestCase {
 
     def values
 
+    @Test
     void testConversionForPrimitiveTypeVarArgs() {
 
         setVarArgsShort("", b, s)

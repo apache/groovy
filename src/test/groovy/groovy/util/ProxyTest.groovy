@@ -18,10 +18,15 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ProxyTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertSame
 
+class ProxyTest {
+
+    @Test
     void testStringDecoration(){
         def original = 'decorated String'
         def proxy = new StringDecorator().wrap(original)
@@ -46,24 +51,28 @@ class ProxyTest extends GroovyTestCase {
    *  the tests.
    */
 
+  @Test
   void testProxyCollect ( ) {
     def collection = [ 1 , 2 , 3 ]
     def proxy = ( new Proxy ( ) ).wrap ( collection )
     assertEquals ( [ 2 , 3 , 4 ] , proxy.collect { it + 1 } )
   }
 
+  @Test
   void testProxyAny ( ) {
     def collection = [ 1 , 2 , 3 ]
     def proxy = ( new Proxy ( ) ).wrap ( collection )
     assertEquals ( true , proxy.any { it == 2 } )
   }
 
+  @Test
   void testProxyFind ( ) {
     def collection = [ 1 , 2 , 3 ]
     def proxy = ( new Proxy ( ) ).wrap ( collection )
     assertEquals ( 2 , proxy.find { it == 2 } )
   }
 
+  @Test
   void testProxyEach ( ) {
     def collection = [ 1 , 2 , 3 ]
     def proxy = ( new Proxy ( ) ).wrap ( collection )
@@ -72,6 +81,7 @@ class ProxyTest extends GroovyTestCase {
     assertEquals ( '123' , testString )
   }
 
+  @Test
   void testMultipleWrapping() {
     assertScript """
         import groovy.util.Proxy

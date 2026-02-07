@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4973Bug extends GroovyTestCase {
+
+class Groovy4973Bug {
+    @Test
     void testRangeWithDifferentFromToNumericTypes() {
         assert (1L..10).every { it.class == Long }
         assert (1..10L).every { it.class == Long }

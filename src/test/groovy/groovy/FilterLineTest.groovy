@@ -18,7 +18,8 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * check that the new filterLine() method on InputStream is ok
@@ -26,34 +27,39 @@ import groovy.test.GroovyTestCase
  * as specified in GROOVY-624 and GROOVY-625
  */
 
-class FilterLineTest extends GroovyTestCase {
+class FilterLineTest {
     def myFile
     def myInput
     def myOutput
 
+    @BeforeEach
     void setUp() {
         myFile = new File("src/test/groovy/groovy/FilterLineTest.groovy")
         myInput = new FileInputStream(myFile)
         myOutput = new CharArrayWriter()
     }
 
+    @Test
     void testFilterLineOnFileReturningAWritable() {
         def writable = myFile.filterLine() {it.contains("testFilterLineOnFileReturningAWritable")}
         writable.writeTo(myOutput)
         assert 3 == myOutput.toString().count("testFilterLineOnFileReturningAWritable")
     }
 
+    @Test
     void testFilterLineOnFileUsingAnOutputStream() {
         myFile.filterLine(myOutput) {it.contains("testFilterLineOnFileUsingAnOutputStream")}
         assert 3 == myOutput.toString().count("testFilterLineOnFileUsingAnOutputStream")
     }
 
+    @Test
     void testFilterLineOnInputStreamReturningAWritable() {
         def writable = myInput.filterLine() {it.contains("testFilterLineOnInputStreamReturningAWritable")}
         writable.writeTo(myOutput)
         assert 3 == myOutput.toString().count("testFilterLineOnInputStreamReturningAWritable")
     }
 
+    @Test
     void testFilterLineOnInputStreamUsingAnOutputStream() {
         myInput.filterLine(myOutput) {it.contains("testFilterLineOnInputStreamUsingAnOutputStream")}
         assert 3 == myOutput.toString().count("testFilterLineOnInputStreamUsingAnOutputStream")

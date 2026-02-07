@@ -23,10 +23,11 @@ import com.thoughtworks.qdox.model.JavaClass
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 
-import groovy.test.GroovyTestCase
-
-import static groovy.io.FileType.*
+import static groovy.io.FileType.FILES
+import static org.junit.jupiter.api.Assertions.fail
 
 /**
  * Base class for all the stub generator test samples.
@@ -53,7 +54,7 @@ import static groovy.io.FileType.*
  * <p>
  * Please have a look at the existing samples to see what kind of asserts can be done.
  */
-abstract class StubTestCase extends GroovyTestCase {
+abstract class StubTestCase {
 
     protected final File targetDir = createTempDirectory()
     protected final File stubDir   = createTempDirectory()
@@ -71,9 +72,8 @@ abstract class StubTestCase extends GroovyTestCase {
     /**
      * Prepares the target and stub directories.
      */
-    @Override
-    protected void setUp() {
-        super.setUp()
+    @BeforeEach
+    void setUp() {
         if (debug) {
             println """\
                 Stub generator test [${this.class.name}]
@@ -88,8 +88,8 @@ abstract class StubTestCase extends GroovyTestCase {
     /**
      * Deletes the temporary directories.
      */
-    @Override
-    protected void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (delete) {
             if (debug) println "Deleting temporary folders"
             targetDir.deleteDir()

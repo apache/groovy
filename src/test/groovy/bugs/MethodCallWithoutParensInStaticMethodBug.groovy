@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class MethodCallWithoutParensInStaticMethodBug extends GroovyTestCase {
 
+class MethodCallWithoutParensInStaticMethodBug {
+
+    @Test
     void testBug() {
         staticMethod()
     }
