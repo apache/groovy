@@ -5271,11 +5271,15 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         if (node instanceof ListExpression) {
-            return inferListExpressionType((ListExpression) node);
+            type = inferListExpressionType((ListExpression) node);
+            node.putNodeMetaData(INFERRED_TYPE, type);
+            return type;
         }
 
         if (node instanceof MapExpression) {
-            return inferMapExpressionType((MapExpression) node);
+            type = inferMapExpressionType((MapExpression) node);
+            node.putNodeMetaData(INFERRED_TYPE, type);
+            return type;
         }
 
         if (node instanceof RangeExpression) {

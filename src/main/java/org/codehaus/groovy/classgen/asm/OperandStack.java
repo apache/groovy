@@ -22,8 +22,6 @@ import org.apache.groovy.ast.tools.ClassNodeUtils;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -313,36 +311,40 @@ public class OperandStack {
         doConvertAndCast(targetType,true);
     }
 
-    private void throwExceptionForNoStackElement(final int size, final ClassNode targetType, final boolean coerce) {
-        if (size > 0) return;
-        StringBuilder sb = new StringBuilder();
-        sb.append("Internal compiler error while compiling ").append(controller.getSourceUnit().getName()).append("\n");
-        MethodNode methodNode = controller.getMethodNode();
-        if (methodNode!=null) {
-            sb.append("Method: ");
-            sb.append(methodNode);
-            sb.append("\n");
-        }
-        ConstructorNode constructorNode = controller.getConstructorNode();
-        if (constructorNode!=null) {
+    private String missingOperand(final ClassNode targetType, final boolean coerce) {
+        var sb = new StringBuilder("Internal compiler error while compiling ");
+        sb.append(controller.getSourceUnit().getName());
+        sb.append("\n");
+        var constructorNode = controller.getConstructorNode();
+        if (constructorNode != null) {
             sb.append("Constructor: ");
-            sb.append(methodNode);
+            sb.append(constructorNode);
             sb.append("\n");
+        } else {
+            var methodNode = controller.getMethodNode();
+            if (methodNode != null) {
+                sb.append("Method: ");
+                sb.append(methodNode);
+                sb.append("\n");
+            }
         }
-        sb.append("Line ").append(controller.getLineNumber()).append(",");
-        sb.append(" expecting ").append(coerce ? "coercion" : "casting").append(" to ").append(targetType.toString(false));
+        sb.append("Line ").append(controller.getLineNumber()).append(", expecting ").append(coerce ? "coercion" : "casting");
+        sb.append(" to ").append(ClassNodeUtils.formatTypeName(targetType));
         sb.append(" but operand stack is empty");
-        throw new ArrayIndexOutOfBoundsException(sb.toString());
+        return sb.toString();
     }
 
     private void doConvertAndCast(ClassNode targetType, final boolean coerce) {
         int size = stack.size();
-        throwExceptionForNoStackElement(size, targetType, coerce);
+        if (size == 0) {
+            throw new ArrayIndexOutOfBoundsException(missingOperand(targetType, coerce));
+        }
 
         ClassNode top = stack.get(size - 1);
-        targetType = targetType.redirect();
-        if (top == targetType /* for better performance */
-                || ClassNodeUtils.isCompatibleWith(top, targetType)) return;
+        if (top == (targetType = targetType.redirect()) // quick check
+                || ClassNodeUtils.isCompatibleWith(top, targetType)) {
+            return;
+        }
 
         if (coerce) {
             controller.getInvocationWriter().coerce(top, targetType);
