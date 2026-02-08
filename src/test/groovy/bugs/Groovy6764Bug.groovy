@@ -18,12 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-class Groovy6764Bug {
-    @Test
+class Groovy6764Bug extends GroovyTestCase {
     void testStaticImportViaInheritedInterface() {
         assertScript '''
             import static Constants.ANSWER as CA

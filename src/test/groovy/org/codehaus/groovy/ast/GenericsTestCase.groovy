@@ -18,8 +18,7 @@
  */
 package org.codehaus.groovy.ast
 
-import groovy.transform.TupleConstructor
-import org.codehaus.groovy.ast.expr.VariableExpression
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.classgen.GeneratorContext
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilePhase
@@ -30,7 +29,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression
 /**
  * Adds several utility methods which are used in tests on generics.
  */
-abstract class GenericsTestCase {
+abstract class GenericsTestCase extends GroovyTestCase {
 
     def extractTypesFromCode(String string) {
         def result = [generics:[], type:null]

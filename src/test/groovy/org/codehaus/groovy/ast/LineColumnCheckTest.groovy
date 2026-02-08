@@ -53,14 +53,12 @@ import org.codehaus.groovy.ast.expr.UnaryMinusExpression
 import org.codehaus.groovy.ast.expr.UnaryPlusExpression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.Statement
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
-
-import static org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Tests the LineColumn information in file with path specified by the prefix TEST_FILE_PREFIX.
@@ -87,19 +85,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue
  *
  * [<NodeType>,(<line>:<column>),(<lastLine>:<lastColumn>)]
  */
-final class LineColumnCheckTest {
+@RunWith(Parameterized)
+final class LineColumnCheckTest extends ASTTest {
 
     static final String TEST_FILE_PREFIX = './src/test/groovy/org/codehaus/groovy/ast/LineColumnCheck'
 
-    private static ModuleNode getAST(String source) {
-        SourceUnit unit = SourceUnit.create("Test", source)
-        CompilationUnit compUnit = new CompilationUnit()
-        compUnit.addSource(unit)
-        compUnit.compile(Phases.SEMANTIC_ANALYSIS)
-        return unit.getAST()
-    }
+    private LineCheckVisitor visitor
+    private String name
+    private String source
+    private String[] expected
 
-    static Iterable<Arguments> data() {
+    @Parameterized.Parameters(name = 'Test {0}: Source: {1} Expected: {2}')
+    static Iterable<Object[]> data() {
         List testdata = extractData("${TEST_FILE_PREFIX}.txt")
         //flip if condition as per below and swap antlr2/4 ordering once antlr4 is the default
         //if (System.getProperty('groovy.antlr4') != 'false') {
@@ -113,22 +110,29 @@ final class LineColumnCheckTest {
         tests = tests.drop(1) // remove apache header
         List testdata = []
         for (String test : tests) {
-            def parts = test.split(':::').collect { it.trim() }
-            testdata << Arguments.of(parts[0], parts[1], parts[2])
+            testdata << (test.split(':::').collect { it.trim() } as Object[])
         }
         testdata
     }
 
-    @ParameterizedTest(name = 'Test {0}: Source: {1} Expected: {2}')
-    @MethodSource('data')
-    void testLineColumnInfo(String name, String source, String expected) {
-        def visitor = new LineCheckVisitor()
-        String[] expectedParts = expected.split(';')
+    LineColumnCheckTest(String name, String source, String expected) {
+        this.name = name
+        this.source = source
+        this.expected = expected.split(';')
+    }
+
+    @Before
+    void setUp() {
+        visitor = new LineCheckVisitor()
+    }
+
+    @Test
+    void testLineColumnInfo() {
         visitor.visitModuleNode(getAST(source))
         String was = visitor.getASTString()
         //comment out next line to view the output of the visitor
         //println(name + ': ' + was)
-        for (String anExpected : expectedParts) {
+        for (String anExpected : expected) {
             // FIXME
             // def ii = 17      // <1>
             // Object ii = 17   // <2>
@@ -142,7 +146,7 @@ final class LineColumnCheckTest {
                 continue
             }
 
-            assertTrue(was.indexOf(anExpected.trim()) != -1, "'" + anExpected + "' not found in '" + was + "'")
+            assertTrue("'" + anExpected + "' not found in '" + was + "'", was.indexOf(anExpected.trim()) != -1)
         }
     }
 }

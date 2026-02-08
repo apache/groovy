@@ -18,44 +18,39 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.util.concurrent.Callable
 
 /**
  * Tests calling methods with Closures as parameters.
  */
-class ClosureAsParamTest {
+class ClosureAsParamTest extends GroovyTestCase {
 
     int x
 
-    @Test
     void testSimpleBlockCall() {
         assert 'hello!' == assertClosure({ owner -> owner })
     }
 
-    @Test
     void testRunnable() {
         x = 0
         assertRunnable({ x = 1 })
         assert x == 1
     }
 
-    @Test
     void testCallable() {
         x = 0
         assert 'Callable' == assertCallable({ x = 2; 'Callable' })
         assert x == 2
     }
 
-    @Test
     void testRunnablePreferred() {
         x = 0
         assertRunnableAndCallable({ x = 3; 'result' })
         assert x == 6
     }
 
-    @Test
     void testCallableCoercion() {
         x = 0
         assert 'result' == assertRunnableAndCallable({ x = 3; 'result' } as Callable)

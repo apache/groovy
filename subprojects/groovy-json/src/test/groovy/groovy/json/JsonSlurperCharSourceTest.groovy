@@ -18,11 +18,8 @@
  */
 package groovy.json
 
-import org.junit.jupiter.api.BeforeEach
-
 class JsonSlurperCharSourceTest extends JsonSlurperTest {
 
-    @BeforeEach
     void setUp() {
         parser = new JsonSlurper().setType(JsonParserType.CHARACTER_SOURCE)
     }

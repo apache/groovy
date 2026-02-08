@@ -18,12 +18,9 @@
  */
 package org.apache.groovy.contracts.util
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-
-class FieldValuesTests {
+class FieldValuesTests extends GroovyTestCase {
 
     static class A {
         private int i = 12
@@ -33,7 +30,6 @@ class FieldValuesTests {
 
     static class B extends A {}
 
-    @Test
     void testPrivateFieldValueAccessFromBaseClass() {
         def b = new B()
 

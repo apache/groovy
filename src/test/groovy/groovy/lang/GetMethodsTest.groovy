@@ -18,17 +18,15 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests the behaviour of the runtime evaluating methods of Groovy's MetaClass system
  *
  * @since 1.5
  */
-class GetMethodsTest {
+class GetMethodsTest extends GroovyTestCase {
 
-    @Test
     void testGetMethods() {
         GMTest2.metaClass.doStuff = { -> "foo" }
         GMTest2.metaClass.getFoo = { -> "foo" }
@@ -52,7 +50,6 @@ class GetMethodsTest {
         assert t.metaClass.methods.find { it.name == 'doMoreStuff' }
     }
 
-    @Test
     void testGetProperties() {
         GMTest2.metaClass.getFoo = { -> "foo" }
         GMTest2.metaClass.bar = "bar"

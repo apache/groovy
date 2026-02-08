@@ -18,9 +18,9 @@
  */
 package org.apache.groovy.contracts.tests.inv
 
-import org.apache.groovy.contracts.ClassInvariantViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.jupiter.api.Test
+import org.junit.Test
+import org.apache.groovy.contracts.ClassInvariantViolation
 
 class SimpleClassInvariantTests extends BaseTestClass {
 

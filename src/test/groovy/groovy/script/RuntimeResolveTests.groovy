@@ -18,11 +18,11 @@
  */
 package groovy.script
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static org.apache.groovy.util.ScriptRunner.runScript
-import static org.junit.jupiter.api.Assumptions.assumeTrue
+import static org.junit.Assume.assumeTrue
 
 final class RuntimeResolveTests {
 

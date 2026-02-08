@@ -18,15 +18,13 @@
  */
 package org.codehaus.groovy.reflection
 
-import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+import org.codehaus.groovy.reflection.GroovyClassValue.ComputeValue
 
-class GroovyClassValueFactoryTest {
- @Test
+class GroovyClassValueFactoryTest extends GroovyTestCase {
 	void testCreateGroovyClassValue(){
 		final AtomicInteger counter = new AtomicInteger()
 		GroovyClassValue<String> classValue = GroovyClassValueFactory.createGroovyClassValue(new ComputeValue<String>(){
@@ -35,14 +33,14 @@ class GroovyClassValueFactoryTest {
 				return type.name
 			}
 		})
-		assertEquals(String.name, classValue.get(String), "retrieved String class value")
-		assertEquals(1, counter.get(), "computeValue correctly invoked 1 time")
-		assertEquals(String.name, classValue.get(String), "retrieved String class value")
-		assertEquals(1, counter.get(), "computeValue correctly invoked 1 time")
-		assertEquals(Integer.name, classValue.get(Integer), "retrieved Integer class value")
-		assertEquals(2, counter.get(), "computeValue correctly invoked 2 times")
+		assertEquals("retrieved String class value", String.name, classValue.get(String))
+		assertEquals("computeValue correctly invoked 1 time", 1, counter.get())
+		assertEquals("retrieved String class value", String.name, classValue.get(String))
+		assertEquals("computeValue correctly invoked 1 time", 1, counter.get())
+		assertEquals("retrieved Integer class value", Integer.name, classValue.get(Integer))
+		assertEquals("computeValue correctly invoked 2 times", 2, counter.get())
 		classValue.remove(String)
-		assertEquals(String.name, classValue.get(String), "retrieved String class value")
-		assertEquals(3, counter.get(), "computeValue correctly invoked 3 times")
+		assertEquals("retrieved String class value", String.name, classValue.get(String))
+		assertEquals("computeValue correctly invoked 3 times", 3, counter.get())
 	}
 }

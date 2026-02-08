@@ -18,14 +18,12 @@
  */
 package groovy.util
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class ObjectGraphBuilderTest {
+class ObjectGraphBuilderTest extends GroovyTestCase {
    ObjectGraphBuilder builder
    ObjectGraphBuilder reflectionBuilder
 
-   @Test
    void testCompany() {
       def expected = new Company( name: 'ACME', employees: [] )
       def actual = builder.company( name: 'ACME', employees: [] )
@@ -36,7 +34,6 @@ class ObjectGraphBuilderTest {
       assert actual.employees == expected.employees
    }
 
-   @Test
    void testCompanyAndAddress() {
       def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
       def expectedCompany = new Company( name: 'ACME', employees: [], address: expectedAddress )
@@ -56,7 +53,6 @@ class ObjectGraphBuilderTest {
       assert actualAddress.state == expectedAddress.state
    }
 
-   @Test
    void testCompanyAndEmployeeAndAddress() {
       def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
       def expectedEmployee = new Employee( name: 'Duke', employeeId: 1, address: expectedAddress )
@@ -83,7 +79,6 @@ class ObjectGraphBuilderTest {
       assert actualAddress.state == expectedAddress.state
    }
 
-   @Test
    void testCompanyAndEmployeeSameAddress() {
       def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
       def expectedEmployee = new Employee( name: 'Duke', employeeId: 1, address: expectedAddress )
@@ -103,7 +98,6 @@ class ObjectGraphBuilderTest {
       assert actualCompany.address == actualEmployee.address
    }
 
-   @Test
    void testCompanyAndEmployeeSameAddressWithRef() {
       def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
       def expectedEmployee = new Employee( name: 'Duke', employeeId: 1, address: expectedAddress )
@@ -126,7 +120,6 @@ class ObjectGraphBuilderTest {
       assert actualEmployee.company == actualCompany
    }
 
-   @Test
    void testCompanyAndManyEmployees() {
       def actualCompany = builder.company( name: 'ACME', employees: [] ) {
          3.times {
@@ -141,7 +134,6 @@ class ObjectGraphBuilderTest {
       //assert actualCompany.employees*.getClass() == [Employee,Employee,Employee]
    }
 
-   @Test
    void testStringfiedIdentifierResolver() {
       builder.identifierResolver = "uid"
       def company = builder.company( name: 'ACME', employees: [], uid: 'acme' )
@@ -150,7 +142,6 @@ class ObjectGraphBuilderTest {
       assert builder.acme == company
    }
 
-   @Test
    void testStringfiedReferenceResolver() {
       builder.referenceResolver = "ref_id"
       def company = builder.company( name: 'ACME', employees: [] ) {
@@ -166,7 +157,6 @@ class ObjectGraphBuilderTest {
       assert builder.a1 == builder.e1.address
    }
 
-   @Test
    void testReferenceResolver() {
       def company = builder.company( name: 'ACME', employees: [] ) {
          address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
@@ -181,7 +171,6 @@ class ObjectGraphBuilderTest {
       assert builder.a1 == builder.e1.address
    }
 
-   @Test
    void testReferenceResolver_referenceIsLiveObject() {
       def company = builder.company( name: 'ACME', employees: [] ) {
          address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
@@ -196,7 +185,6 @@ class ObjectGraphBuilderTest {
       assert builder.a1 == builder.e1.address
    }
 
-   @Test
    void testDirectReference() {
       def company = builder.company( name: 'ACME', employees: [] ) {
          address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
@@ -211,7 +199,6 @@ class ObjectGraphBuilderTest {
       assert builder.a1 == builder.e1.address
    }
 
-   @Test
    void testLazyReferences() {
       def company = builder.company( name: 'ACME', employees: [] ) {
          employee(  name: 'Duke', employeeId: 1, id: 'e1' ) {
@@ -226,7 +213,6 @@ class ObjectGraphBuilderTest {
       assert builder.a1 == builder.e1.address
    }
 
-   @Test
    void testReflectionCompany() {
       def expected = new ReflectionCompany( name: 'ACME' )
       def actual = reflectionBuilder.reflectionCompany( name: 'ACME' )
@@ -234,7 +220,6 @@ class ObjectGraphBuilderTest {
       assert actual.name == expected.name
    }
 
-   @Test
    void testReflectionCompanyAndAddress() {
       def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
       def expectedCompany = new ReflectionCompany( name: 'ACME', addr: expectedAddress )
@@ -251,7 +236,6 @@ class ObjectGraphBuilderTest {
       assert actualAddress.state == expectedAddress.state
    }
 
-    @Test
     void testReflectionCompanyAddressAndEmployees() {
       def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
       def expectedCompany = new ReflectionCompany( name: 'ACME', addr: expectedAddress )
@@ -307,7 +291,6 @@ class ObjectGraphBuilderTest {
       assert actualCompany.drones[1].address.line1 == expectedAddress.line1
    }
 
-   @Test
    void testPlural() {
        def dracula = builder.person(name: 'Dracula') {
            allergy(name: 'garlic', reaction: 'moderate burns')
@@ -322,7 +305,6 @@ class ObjectGraphBuilderTest {
        assert dracula.petMonkeys.size() == 2
    }
 
-   @Test
    void testCompanyAndEmployeeAndAddressUsingBeanFactory() {
       def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
       def expectedEmployee = new Employee( name: 'Duke', employeeId: 1, address: expectedAddress )
@@ -349,7 +331,6 @@ class ObjectGraphBuilderTest {
       assert actualAddress.state == expectedAddress.state
    }
 
-   @BeforeEach
    void setUp() {
       builder = new ObjectGraphBuilder()
       builder.classNameResolver = "groovy.util"

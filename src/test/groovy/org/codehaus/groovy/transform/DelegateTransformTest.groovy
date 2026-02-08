@@ -28,9 +28,9 @@ import java.util.concurrent.locks.Lock
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertFalse
-import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertTrue
 
 /**
  * Tests for the {@code @Delegate} AST transform.
@@ -75,14 +75,14 @@ final class DelegateTransformTest {
             }
             new C(numbers:[1,2,3])
         '''
-        assert err.message =~ /The return type of java.lang.Number get\(int\) in C is incompatible with java.lang.String in java.util.ArrayList/
+        assert err =~ /The return type of java.lang.Number get\(int\) in C is incompatible with java.lang.String in java.util.ArrayList/
 
         err = shouldFail '''
             class C extends ArrayList<String> {
                 @Delegate HashSet<Number> numbers // Set<Number> added; Verifier checks
             }
         '''
-        assert err.message =~ /The interface Collection cannot be implemented more than once with different arguments: java.util.Collection<java.lang.Number> \(via Set\) and java.util.Collection<java.lang.String> \(via ArrayList\)/
+        assert err =~ /The interface Collection cannot be implemented more than once with different arguments: java.util.Collection<java.lang.Number> \(via Set\) and java.util.Collection<java.lang.String> \(via ArrayList\)/
     }
 
     // GROOVY-5974

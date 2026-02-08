@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -86,16 +87,13 @@ import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertTrue
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 import static org.objectweb.asm.Opcodes.ACC_STATIC
 
 /**
  * Unit test for the AST from Pseudo-specification feature.
  */
-class AstBuilderFromSpecificationTest {
+class AstBuilderFromSpecificationTest extends GroovyTestCase {
 
     void testSimpleMethodCall() {
 
@@ -131,9 +129,9 @@ class AstBuilderFromSpecificationTest {
                 }
             }
         }
-        assertTrue(message.message.contains('methodCall could not be invoked'), "Unhelpful error message: $message")
-        assertTrue(message.message.contains('Expected to receive'), "Unhelpful error message: $message")
-        assertTrue(message.message.contains('but found'), "Unhelpful error message: $message")
+        assertTrue("Unhelpful error message: $message", message.contains('methodCall could not be invoked'))
+        assertTrue("Unhelpful error message: $message", message.contains('Expected to receive'))
+        assertTrue("Unhelpful error message: $message", message.contains('but found'))
     }
 
     void testErrorHandling_WrongArgumentTypes() {
@@ -149,9 +147,9 @@ class AstBuilderFromSpecificationTest {
                 }
             }
         }
-        assertTrue(message.message.contains('methodCall could not be invoked'), "Unhelpful error message: $message")
-        assertTrue(message.message.contains('Expected to receive'), "Unhelpful error message: $message")
-        assertTrue(message.message.contains('but found'), "Unhelpful error message: $message")
+        assertTrue("Unhelpful error message: $message", message.contains('methodCall could not be invoked'))
+        assertTrue("Unhelpful error message: $message", message.contains('Expected to receive'))
+        assertTrue("Unhelpful error message: $message", message.contains('but found'))
     }
 
     void testAnnotationConstantExpression() {

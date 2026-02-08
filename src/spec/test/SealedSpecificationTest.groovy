@@ -17,11 +17,12 @@
  *  under the License.
  */
 
+import groovy.test.GroovyTestCase
 
 /**
  * Specification tests for the traits feature
  */
-class SealedSpecificationTest {
+class SealedSpecificationTest extends GroovyTestCase {
 
     void testSealedADT() {
         assertScript '''
@@ -137,8 +138,6 @@ assert forecast.toString() == '[Rainy, Sunny, Cloudy]'
     void testSealedWeather() {
         assertScript '''
 import groovy.transform.*
-import org.junit.jupiter.api.Test
-import static groovy.test.GroovyAssert.*
 
 // tag::weather_sealed[]
 sealed abstract class Weather { }

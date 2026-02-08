@@ -18,7 +18,7 @@
  */
 package groovy.transform
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -162,7 +162,7 @@ final class ReadWriteLockTest {
                 public static void readerMethod1() { }
             }
         '''
-        assert err.message =~ /lock field with name 'unknown' not found/
+        assert err =~ /lock field with name 'unknown' not found/
 
         err = shouldFail shell, '''
             class MyClass {
@@ -172,7 +172,7 @@ final class ReadWriteLockTest {
                 public static void readerMethod1() { }
             }
         '''
-        assert err.message =~ /lock field with name 'myLock' should be static/
+        assert err =~ /lock field with name 'myLock' should be static/
 
         err = shouldFail shell, '''
             class MyClass {
@@ -182,7 +182,7 @@ final class ReadWriteLockTest {
                 public void readerMethod1() { }
             }
         '''
-        assert err.message =~ /lock field with name 'myLock' should not be static/
+        assert err =~ /lock field with name 'myLock' should not be static/
     }
 
     @Test // GROOVY-8758

@@ -18,8 +18,9 @@
  */
 package org.codehaus.groovy.control.io;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.Test;
+import org.junit.Assert;
+import org.junit.Before;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Janitor;
 
@@ -27,8 +28,6 @@ import java.io.Reader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Unit test for AbstractReaderSource.
@@ -41,7 +40,7 @@ public class AbstractReaderSourceTest {
     private AbstractReaderSourceSubclass readerSource;
     private Janitor janitor;
 
-    @BeforeEach
+    @Before
     public void setUp() throws Exception {
         readerSource = new AbstractReaderSourceSubclass();
         janitor = new Janitor();
@@ -57,11 +56,11 @@ public class AbstractReaderSourceTest {
         final String line3 = readerSource.getLine(3, janitor);
         final String line4 = readerSource.getLine(4, janitor);
 
-        assertNull(line0, "out of bounds request should return null");
-        assertEquals(SAMPLE_SOURCE_LINE1, line1, "Wrong source line");
-        assertEquals(SAMPLE_SOURCE_LINE2, line2, "Wrong source line");
-        assertEquals(SAMPLE_SOURCE_LINE3, line3, "Wrong source line");
-        assertNull(line4, "out of bounds request should return null");
+        Assert.assertNull("out of bounds request should return null", line0);
+        Assert.assertEquals("Wrong source line", SAMPLE_SOURCE_LINE1, line1);
+        Assert.assertEquals("Wrong source line", SAMPLE_SOURCE_LINE2, line2);
+        Assert.assertEquals("Wrong source line", SAMPLE_SOURCE_LINE3, line3);
+        Assert.assertNull("out of bounds request should return null", line4);
     }
 
     @Test
@@ -69,7 +68,7 @@ public class AbstractReaderSourceTest {
 
         final String line = readerSource.getLine(1, null);
 
-        assertEquals(SAMPLE_SOURCE_LINE1, line, "Wrong source line");
+        Assert.assertEquals("Wrong source line", SAMPLE_SOURCE_LINE1, line);
     }
 
     /**

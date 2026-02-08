@@ -18,7 +18,7 @@
  */
 package groovy.swing.beans
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.swing.GroovySwingTestCase.testInEDT
 

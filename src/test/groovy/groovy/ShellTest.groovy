@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ShellTest extends GroovyTestCase {
 
-class ShellTest {
-
-    @Test
     void testReadAndWriteVariable() {
         def shell = new GroovyShell()
 
@@ -40,7 +38,6 @@ return foo
         assert shell.foo == 2 , "Value is now ${shell.foo}"
     }
 
-    @Test
     void testDefineNewVariable() {
         def shell = new GroovyShell()
 
@@ -54,7 +51,6 @@ return bar
         assert shell.bar == 3 , "Value is now ${shell.bar}"
     }
 
-    @Test
     void testArgs() {
         def seventyfive = new GroovyShell().run("args[0] + args[1]", "StringSummerScript", ['7', '5'])
         assert seventyfive == '75'

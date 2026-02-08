@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime.memoize
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
 class MemoizeAtMostTest extends AbstractMemoizeTestCase {
 
     Closure buildMemoizeClosure(Closure cl) {

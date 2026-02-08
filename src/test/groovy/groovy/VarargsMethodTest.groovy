@@ -18,7 +18,7 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 /**
  * Tests the feature that the length of arguments can be variable when invoking

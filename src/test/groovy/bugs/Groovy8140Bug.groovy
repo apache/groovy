@@ -18,13 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class Groovy8140Bug extends GroovyTestCase {
 
-class Groovy8140Bug {
-
-    @Test
     void testGetMethodCallToSuperReturnsMOPSuperMethod() {
         assertScript '''
             import org.codehaus.groovy.runtime.InvokerHelper

@@ -18,18 +18,16 @@
  */
 package groovy.tree
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * This test uses the verbose syntax to test the building of trees
  * using GroovyMarkup
  */
-class VerboseTreeTest {
+class VerboseTreeTest extends GroovyTestCase {
 
     def b
 
-    @Test
     void testSmallTree() {
         b = NodeBuilder.newInstance()
 
@@ -44,7 +42,6 @@ class VerboseTreeTest {
         print(root)
     }
 
-    @Test
     void testTree() {
         b = NodeBuilder.newInstance()
 

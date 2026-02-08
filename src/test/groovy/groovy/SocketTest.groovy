@@ -18,22 +18,18 @@
  */
 package groovy
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 /**
  * check that groovy Socket methods do their job.
  */
-class SocketTest {
+class SocketTest extends GroovyTestCase {
     def mySocket
 
-    @BeforeEach
     void setUp() {
         mySocket = new MockSocket()
     }
 
-    @Test
     void testSocketAppendBytes() {
         def myBytes = "mooky".getBytes()
         mySocket << myBytes
@@ -42,7 +38,6 @@ class SocketTest {
         assert Arrays.equals(myBytes, result)
     }
 
-    @Test
     void testSocketAppendTwoByteArrays() {
         def myBytes1 = "foo".getBytes()
         def myBytes2 = "bar".getBytes()
@@ -52,13 +47,11 @@ class SocketTest {
         assert result.size() == myBytes1.size() + myBytes2.size()
     }
 
-    @Test
     void testSocketAppend() {
         mySocket << "mooky"
         assert "mooky" == mySocket.outputStream.toString()
     }
 
-    @Test
     void testSocketWithStreamsClosure() {
         mySocket.withStreams { i, o ->
             assert i instanceof InputStream
@@ -68,7 +61,6 @@ class SocketTest {
         }
     }
 
-    @AfterEach
     void tearDown() {
         mySocket.close()
     }

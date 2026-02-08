@@ -28,8 +28,8 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import org.junit.Test;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -39,8 +39,6 @@ import java.lang.reflect.Field;
 import java.security.CodeSource;
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test for GROOVY-3946 and GROOVY-5255.
@@ -54,24 +52,24 @@ public class JSR223SecurityTest {
 
     TestFixture testFixture;
 
-    @BeforeEach
+    @Before
     public void resetTestFixture() {
         testFixture = new TestFixture();
     }
 
-    @Test
-    public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_reflection() {
-        assertThrows(ScriptException.class, () -> secureEval(ClassLoaderDefinitionType.REFLECTION));
+    @Test(expected = ScriptException.class)
+    public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_reflection() throws Exception {
+        secureEval(ClassLoaderDefinitionType.REFLECTION);
     }
 
-    @Test
-    public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_injection() {
-        assertThrows(ScriptException.class, () -> secureEval(ClassLoaderDefinitionType.INJECTION));
+    @Test(expected = ScriptException.class)
+    public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_injection() throws Exception {
+        secureEval(ClassLoaderDefinitionType.INJECTION);
     }
 
-    @Test
-    public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_constructor() {
-        assertThrows(ScriptException.class, () -> secureEval(ClassLoaderDefinitionType.CONSTRUCTOR));
+    @Test(expected = ScriptException.class)
+    public void should_forbid_an_instruction_when_overriding_GroovyClassLoader_using_constructor() throws Exception {
+        secureEval(ClassLoaderDefinitionType.CONSTRUCTOR);
     }
 
     private void secureEval(ClassLoaderDefinitionType classLoaderDefType) throws Exception {

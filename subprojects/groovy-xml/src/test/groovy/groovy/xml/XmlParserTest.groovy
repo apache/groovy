@@ -19,9 +19,9 @@
 package groovy.xml
 
 import groovy.namespace.QName
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class XmlParserTest {
+class XmlParserTest extends GroovyTestCase {
 
     def getRoot = { xml -> new XmlParser().parseText(xml) }
 
@@ -54,7 +54,6 @@ class XmlParserTest {
 </html>
 """
 
-    @Test
     void testNodePrinter() {
         def text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
@@ -62,7 +61,7 @@ class XmlParserTest {
         def node = new XmlParser(trimWhitespace: true).parseText(text)
         StringWriter sw = new StringWriter()
         new NodePrinter(new PrintWriter(sw)).print(node)
-        def result = sw.toString().normalize()
+        def result = fixEOLs(sw.toString())
         def expected = '''\
 p() {
   Please read the
@@ -75,7 +74,6 @@ p() {
         assert result == expected
     }
 
-    @Test
     void testXmlNodePrinter() {
         def text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
@@ -83,7 +81,7 @@ p() {
         def node = new XmlParser(trimWhitespace: true).parseText(text)
         StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(node)
-        def result = sw.toString().normalize()
+        def result = fixEOLs(sw.toString())
         def expected = '''\
 <p>
   Please read the
@@ -96,12 +94,11 @@ p() {
         assert result == expected
     }
 
-    @Test
     void testXmlNodePrinterNamespaces() {
         def html = new XmlParser(trimWhitespace: true).parseText(bookXml)
         StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(html)
-        def result = sw.toString().normalize()
+        def result = fixEOLs(sw.toString())
         def expected = '''\
 <html xmlns="http://www.w3.org/HTML/1998/html4">
   <head>
@@ -177,7 +174,6 @@ p() {
         assert result == expected
     }
 
-    @Test
     void testNamespaceGPath() {
         def anyName = new QName("*", "*")
         def anyHtml = new QName("http://www.w3.org/HTML/1998/html4", "*")
@@ -204,7 +200,6 @@ p() {
         assert html.'**'['dc:*']*.name()*.localPart == ["title", "author", "date"]
     }
 
-    @Test
     void testElement() {
         GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
         GpathSyntaxTestSupport.checkElement(getRoot)
@@ -215,46 +210,39 @@ p() {
         GpathSyntaxTestSupport.checkCDataText(getRoot)
     }
 
-    @Test
     void testAttribute() {
         GpathSyntaxTestSupport.checkAttribute(getRoot)
         GpathSyntaxTestSupport.checkAttributes(getRoot)
         GpathSyntaxTestSupport.checkAttributeTruth(getRoot)
     }
 
-    @Test
     void testNavigation() {
         GpathSyntaxTestSupport.checkChildren(getRoot)
         GpathSyntaxTestSupport.checkParent(getRoot)
         GpathSyntaxTestSupport.checkNestedSizeExpressions(getRoot)
     }
 
-    @Test
     void testTraversal() {
         TraversalTestSupport.checkDepthFirst(getRoot)
         TraversalTestSupport.checkBreadthFirst(getRoot)
     }
 
-    @Test
     void testIndices() {
         GpathSyntaxTestSupport.checkNegativeIndices(getRoot)
         GpathSyntaxTestSupport.checkRangeIndex(getRoot)
     }
 
-    @Test
     void testReplacementsAndAdditions() {
         GpathSyntaxTestSupport.checkReplaceNode(getRoot)
         GpathSyntaxTestSupport.checkReplaceMultipleNodes(getRoot)
         GpathSyntaxTestSupport.checkPlus(getRoot)
     }
 
-    @Test
     void testMixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
         MixedMarkupTestSupport.checkMixedMarkupText(getRoot)
     }
 
-    @Test
     void testWhitespaceTrimming() {
         def text = '<outer><inner>   Here is some text    </inner></outer>'
         def parser = new XmlParser(trimWhitespace: true)
@@ -265,7 +253,6 @@ p() {
         assert outer.inner.text() == '   Here is some text    '
     }
 
-    @Test
     void testUpdate() {
         def xml = '<root></root>'
         def parser = new XmlParser()
@@ -295,7 +282,6 @@ p() {
 '''
     }
 
-    @Test
     void testReplaceNode() {
         def xml = '<root><old/></root>'
         def parser = new XmlParser()
@@ -318,14 +304,12 @@ p() {
 '''
     }
 
-    @Test
     void testXmlParserExtensionPoints() {
         def html = new CustomXmlParser().parseText(bookXml)
         assert html.getClass() == CustomNode
         assert html.name() == new Integer(42)
     }
 
-    @Test
     void testCloning() {
         def xml = '<root><foo bar="baz"><inner/></foo></root>'
         def parser = new XmlParser()

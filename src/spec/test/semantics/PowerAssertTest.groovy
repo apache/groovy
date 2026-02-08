@@ -18,7 +18,7 @@
  */
 package semantics
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static asciidoctor.Utils.stripAsciidocMarkup
 import static groovy.test.GroovyAssert.shouldFail

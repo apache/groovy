@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.classgen.asm.sc
+package org.codehaus.groovy.classgen.asm.sc;
 
 import groovy.transform.stc.MethodCallsSTCTest
 import org.codehaus.groovy.control.MultipleCompilationErrorsException

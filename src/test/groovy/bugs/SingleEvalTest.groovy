@@ -18,10 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class SingleEvalTest {
+class SingleEvalTest extends GroovyTestCase {
     int getArrayCount
     int getIndexCount
     int getValueCount
@@ -29,7 +28,6 @@ class SingleEvalTest {
     def array
     def list
 
-    @BeforeEach
     void setUp() {
         getArrayCount = 0
         getIndexCount = 0
@@ -62,7 +60,6 @@ class SingleEvalTest {
         return getArray () [ getIndex() ] = getValue()
     }
 
-    @Test
     void testSingleEvalForArrayAssignment() {
         int foo = doArrayAssignment()
         assert 1 == getArrayCount  // Fails 1.0, 1.5.0, 1.5.1
@@ -78,7 +75,6 @@ class SingleEvalTest {
         assert [100, 101, 102, 42, 104] == getArray()
     }
 
-    @Test
     void testSingleEvalForArrayAssignment2() {
         int foo = (getArray () [ getIndex() ] = 42)
         assert 1 == getArrayCount
@@ -93,7 +89,6 @@ class SingleEvalTest {
         assert 42 == (getArray () [ getIndex() ] = 42)
     }
 
-    @Test
     void testSingleEvalForListAssignment() {
         assert 42 == (getList () [ getIndex() ] = getValue() )  // Fails 1.0, 1.5.0, 1.5.1, 1.5.2
         assert 1 == getArrayCount  // Fails 1.0, 1.5.0, 1.5.1
@@ -108,7 +103,6 @@ class SingleEvalTest {
         assert [100, 101, 102, 42, 104] == getList()
     }
 
-    @Test
     void testSingleEvalForListAssignmentInClosure() {
         assert 42 == { getList () [ getIndex() ] = getValue() } .call()   // Fails 1.5.2
         assert 1 == getArrayCount  // Fails 1.0, 1.5.0, 1.5.1

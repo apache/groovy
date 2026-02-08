@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class LogicTest extends GroovyTestCase {
 
-class LogicTest {
-
-    @Test
     void testAndWithTrue() {
 
         def x = false
@@ -36,7 +34,6 @@ class LogicTest {
         assert x == true
     }
 
-    @Test
     void testAndWithFalse() {
 
         def x = false
@@ -57,7 +54,6 @@ class LogicTest {
         assert x == false
     }
 
-    @Test
     void testOrWithTrue() {
 
         def x = false
@@ -79,7 +75,6 @@ class LogicTest {
         assert x == true
     }
 
-    @Test
     void testOrWithFalse() {
 
         def x = false

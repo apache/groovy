@@ -19,16 +19,16 @@
 package metaprogramming
 
 import asciidoctor.Utils
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
+import java.lang.annotation.ElementType
+import java.lang.annotation.Target
 
-class ASTXFormSpecTest {
-    @Test
+class ASTXFormSpecTest extends GroovyTestCase {
     void testLocalTransform() {
         def gcl = new GroovyClassLoader()
         def gse = new GroovyShell(gcl)
@@ -111,7 +111,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
         '''
     }
 
-    @Test
     void testClassCodeTransformer() {
         def gcl = new GroovyClassLoader()
         def gse = new GroovyShell(gcl)
@@ -201,7 +200,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
         void methodToBeTested() {}
     }
 
-    @Test
     void testMyTransform() {
         def c = new Subject()
         c.methodToBeTested()
@@ -209,7 +207,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
     // end::breakpoint_missed[]
 
     // tag::breakpoint_hit[]
-    @Test
     void testMyTransformWithBreakpoint() {
         assertScript '''
             import metaprogramming.MyTransformToDebug
@@ -234,7 +231,6 @@ import org.codehaus.groovy.transform.GroovyASTTransformation
         }
     }
 
-    @Test
     void testGlobalTransform() {
         doInTmpDir { builder ->
             File dir = builder.baseDir

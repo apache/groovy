@@ -19,7 +19,7 @@
 package bugs.groovy8531
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail

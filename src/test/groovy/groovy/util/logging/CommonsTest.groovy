@@ -18,9 +18,7 @@
  */
 package groovy.util.logging
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -30,27 +28,23 @@ import static groovy.test.GroovyAssert.isAtLeastJdk
 /**
  * Unit test for the commons logging @Log based annotation.
  */
-
-import static groovy.test.GroovyAssert.shouldFail
-
-class CommonsTest {
+class CommonsTest extends GroovyTestCase {
 
     PrintStream savedSystemOut
     ByteArrayOutputStream redirectedSystemOut
 
-    @BeforeEach
     void setUp() {
+        super.setUp()
         savedSystemOut = System.out
         redirectedSystemOut = new ByteArrayOutputStream()
         System.out = new PrintStream(redirectedSystemOut)
     }
 
-    @AfterEach
     void tearDown() {
+        super.tearDown()
         System.out = savedSystemOut
     }
 
-    @Test
     void testPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
               @groovy.util.logging.Commons
@@ -66,7 +60,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testExplicitPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -85,7 +78,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testPackagePrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -106,7 +98,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testProtectedFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -125,7 +116,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testPublicFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -144,7 +134,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testPrivateFinalStaticNamedLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
               @groovy.util.logging.Commons('logger')
@@ -160,7 +149,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testClassAlreadyHasLogField() {
         shouldFail {
             Class clazz = new GroovyClassLoader().parseClass('''
@@ -173,7 +161,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testClassAlreadyHasNamedLogField() {
         shouldFail {
             Class clazz = new GroovyClassLoader().parseClass('''
@@ -186,7 +173,6 @@ class CommonsTest {
         }
     }
 
-    @Test
     void testLogLevelDebug() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Commons
@@ -210,7 +196,6 @@ class CommonsTest {
         assert log.contains("debug called")
     }
 
-    @Test
     void testLogFromStaticMethods() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Commons
@@ -227,7 +212,6 @@ class CommonsTest {
         assert log.contains("(static) info called")
     }
 
-    @Test
     void testNamedLogger() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Commons('logger')
@@ -251,7 +235,6 @@ class CommonsTest {
         assert log.contains("debug called")
     }
 
-    @Test
     void testLogGuards() {
         // JDK12+ doesn't allow adjusting static final fields even via reflection
         // so skip this test on such JDK versions - it is only this test which is affected
@@ -290,7 +273,6 @@ class CommonsTest {
         assert !result
     }
 
-    @Test
     void testDefaultCategory() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Commons
@@ -305,7 +287,6 @@ class CommonsTest {
         assert redirectedSystemOut.toString().contains('MyClass')
     }
 
-    @Test
     void testCustomCategory() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Commons(category='customCategory')

@@ -34,8 +34,8 @@ import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.ast.stmt.Statement
 import org.codehaus.groovy.ast.stmt.WhileStatement
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.Before
+import org.junit.Test
 
 class StatementReplacerTest {
 
@@ -44,7 +44,7 @@ class StatementReplacerTest {
     Closure<Boolean> when = { Statement node -> replacements.containsKey node }
     Closure<ASTNode> replaceWith = { Statement node -> replacements[node] }
 
-    @BeforeEach
+    @Before
     void init() {
         replacer = new StatementReplacer(when, replaceWith)
     }

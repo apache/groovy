@@ -18,13 +18,10 @@
  */
 package gls.annotations.closures
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class AnnotationClosureWithNonLocalVariable extends GroovyTestCase {
 
-class AnnotationClosureWithNonLocalVariable {
-
-    @Test
     void testVanillaVariable() {
         assertScript """
             import java.lang.annotation.*
@@ -41,7 +38,7 @@ class AnnotationClosureWithNonLocalVariable {
             def clazz =  X.class.getDeclaredMethod("doit",[Object] as Class[]).getAnnotation(Foo.class).value()
             def closure = clazz.newInstance(this,this)
             closure.delegate = [value:1]
-            assert closure() == 1
+            assert closure() == 1        
         """
     }
 

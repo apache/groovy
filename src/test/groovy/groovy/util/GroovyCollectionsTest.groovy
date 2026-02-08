@@ -18,7 +18,7 @@
  */
 package groovy.util
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.util.GroovyCollections.combinations
 import static groovy.util.GroovyCollections.max

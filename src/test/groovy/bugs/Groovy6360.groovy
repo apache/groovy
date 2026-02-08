@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class Groovy6360 {
     @Test

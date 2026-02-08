@@ -22,21 +22,23 @@ import groovy.util.CharsetToolkit;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.BuildFileRule;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class GroovyDocTest {
 
-    private final BuildFileRule rule = new BuildFileRule();
+    @Rule
+    public BuildFileRule rule = new BuildFileRule();
 
     private File tmpDir;
     private static final String SRC_TESTFILES;
@@ -53,7 +55,7 @@ public class GroovyDocTest {
         }
     }
 
-    @BeforeEach
+    @Before
     public void setUp() {
         if (SRC_TESTFILES == null) {
             throw new RuntimeException("Could not identify path to resources dir.");
@@ -62,7 +64,7 @@ public class GroovyDocTest {
         tmpDir = new File(rule.getProject().getProperty("tmpdir"));
     }
 
-    @AfterEach
+    @After
     public void tearDown() {
         ResourceGroovyMethods.deleteDir(tmpDir);
     }
@@ -74,13 +76,13 @@ public class GroovyDocTest {
         File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles");
         String[] list = testfilesPackageDir.list((file, name) -> name.equals("DocumentedClass.html"));
 
-        assertNotNull(list, "Dir not found: " + testfilesPackageDir.getAbsolutePath());
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals(1, list.length);
         File documentedClassHtmlDoc = new File(testfilesPackageDir, list[0]);
 
         List<String> lines = ResourceGroovyMethods.readLines(documentedClassHtmlDoc);
-        assertTrue(lines.contains("<title>DocumentedClass</title>"), "\"<title>DocumentedClass</title>\" not in: " + lines);
-        assertTrue(lines.contains("This is a custom class template."), "\"This is a custom class template.\" not in: " + lines);
+        assertTrue("\"<title>DocumentedClass</title>\" not in: " + lines, lines.contains("<title>DocumentedClass</title>"));
+        assertTrue("\"This is a custom class template.\" not in: " + lines, lines.contains("This is a custom class template."));
     }
 
     @Test
@@ -90,13 +92,13 @@ public class GroovyDocTest {
         File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
         String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
 
-        assertNotNull(list, "Dir not found: " + testfilesPackageDir.getAbsolutePath());
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals(1, list.length);
         File documentedClass = new File(testfilesPackageDir, list[0]);
-        assertTrue(documentedClass.exists(), "Java.html not found: " + documentedClass.getAbsolutePath());
+        assertTrue("Java.html not found: " + documentedClass.getAbsolutePath(), documentedClass.exists());
 
         List<String> lines = ResourceGroovyMethods.readLines(documentedClass);
-        assertTrue(lines.contains("<title>Java</title>"), "\"<title>Java</title>\" not in: " + lines);
+        assertTrue("\"<title>Java</title>\" not in: " + lines, lines.contains("<title>Java</title>"));
     }
 
     @Test
@@ -106,8 +108,8 @@ public class GroovyDocTest {
         File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/generics");
         String[] list = testfilesPackageDir.list((file, name) -> name.equals("Java.html"));
 
-        assertNotNull(list, "Dir not found: " + testfilesPackageDir.getAbsolutePath());
-        assertEquals(0, list.length, "Files unexpectedly found when not expecting to parse");
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
+        assertEquals("Files unexpectedly found when not expecting to parse",0, list.length);
     }
 
     @Test
@@ -130,7 +132,7 @@ public class GroovyDocTest {
         File documentedClassHtmlDoc = new File(testfilesPackageDir, list[0]);
         CharsetToolkit charsetToolkit = new CharsetToolkit(documentedClassHtmlDoc);
 
-        assertEquals(StandardCharsets.UTF_16LE, charsetToolkit.getCharset(), "The generated groovydoc must be in 'UTF-16LE' file encoding.'");
+        assertEquals("The generated groovydoc must be in 'UTF-16LE' file encoding.'", StandardCharsets.UTF_16LE, charsetToolkit.getCharset());
     }
 
     @Test
@@ -140,11 +142,11 @@ public class GroovyDocTest {
         File testfilesPackageDir = new File(tmpDir, "org/codehaus/groovy/tools/groovydoc/testfiles/records");
         String[] list = testfilesPackageDir.list((file, name) -> name.equals("Record.html"));
 
-        assertNotNull(list, "Dir not found: " + testfilesPackageDir.getAbsolutePath());
+        assertNotNull("Dir not found: " + testfilesPackageDir.getAbsolutePath(), list);
         assertEquals(1, list.length);
         File documentedClassHtmlDoc = new File(testfilesPackageDir, list[0]);
 
         List<String> lines = ResourceGroovyMethods.readLines(documentedClassHtmlDoc);
-        assertTrue(lines.contains("<title>Record</title>"), "\"<title>Record</title>\" not in: " + lines);
+        assertTrue("\"<title>Record</title>\" not in: " + lines, lines.contains("<title>Record</title>"));
     }
 }

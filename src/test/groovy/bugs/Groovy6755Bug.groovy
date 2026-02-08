@@ -18,10 +18,11 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.FileSystemCompiler
 
-class Groovy6755Bug {
+class Groovy6755Bug extends GroovyTestCase {
 
     public void testDeeepGenericJointCompilationImportResolution() {
         File workDir = new File("build/tmp/Groovy6755Bug")
@@ -74,7 +75,6 @@ class ItemListList {
             // I'm sure there's a nicer way of triggering this via the classloader, but this will do
             new GroovyShell(cc).evaluate("""
 import b.ItemListList
-import org.junit.jupiter.api.Test
 
 def x = ItemListList.ITEMS
 

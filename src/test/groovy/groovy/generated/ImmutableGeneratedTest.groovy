@@ -19,7 +19,7 @@
 package groovy.generated
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 @CompileStatic
 class ImmutableGeneratedTest extends AbstractGeneratedAstTestCase {

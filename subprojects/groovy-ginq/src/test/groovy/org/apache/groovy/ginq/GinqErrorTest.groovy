@@ -19,7 +19,7 @@
 package org.apache.groovy.ginq
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -34,7 +34,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('`select` clause is missing @ line 2, column 17.')
+        assert err.toString().contains('`select` clause is missing @ line 2, column 17.')
     }
 
     @Test
@@ -45,7 +45,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('One `from` is expected and must be the first clause @ line 2, column 17.')
+        assert err.toString().contains('One `from` is expected and must be the first clause @ line 2, column 17.')
     }
 
     @Test
@@ -56,7 +56,7 @@ final class GinqErrorTest {
                 select n, distinct(n + 1)
             }
         '''
-        assert err.message.toString().contains('Invalid usage of `distinct` @ line 3, column 27.')
+        assert err.toString().contains('Invalid usage of `distinct` @ line 3, column 27.')
     }
 
     @Test
@@ -67,7 +67,7 @@ final class GinqErrorTest {
             }
         ''' //  ^
 
-        assert err.message.toString().contains("One `from` is expected and must be the first clause @ line 2, column 17.")
+        assert err.toString().contains("One `from` is expected and must be the first clause @ line 2, column 17.")
     }
 
     @Test
@@ -80,7 +80,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('`in` is expected for `from`, e.g. `from n in nums` @ line 3, column 17.')
+        assert err.toString().contains('`in` is expected for `from`, e.g. `from n in nums` @ line 3, column 17.')
     }
 
     @Test
@@ -93,7 +93,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('`in` is expected for `from`, e.g. `from n in nums` @ line 3, column 17.')
+        assert err.toString().contains('`in` is expected for `from`, e.g. `from n in nums` @ line 3, column 17.')
     }
 
     @Test
@@ -106,7 +106,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Only 1 argument expected for `from`, e.g. `from n in nums` @ line 3, column 17.')
+        assert err.toString().contains('Only 1 argument expected for `from`, e.g. `from n in nums` @ line 3, column 17.')
     }
 
     @Test
@@ -121,7 +121,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('`on` clause is expected for `innerjoin` @ line 5, column 17.')
+        assert err.toString().contains('`on` clause is expected for `innerjoin` @ line 5, column 17.')
     }
 
     @Test
@@ -134,7 +134,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('The preceding clause of `on` should be join clause @ line 3, column 17.')
+        assert err.toString().contains('The preceding clause of `on` should be join clause @ line 3, column 17.')
     }
 
     @Test
@@ -148,7 +148,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('The preceding clause of `where` should be `from`/join clause @ line 4, column 17.')
+        assert err.toString().contains('The preceding clause of `where` should be `from`/join clause @ line 4, column 17.')
     }
 
     @Test
@@ -162,7 +162,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('The preceding clause of `where` should be `from`/join clause @ line 4, column 17.')
+        assert err.toString().contains('The preceding clause of `where` should be `from`/join clause @ line 4, column 17.')
     }
 
     @Test
@@ -176,7 +176,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('The preceding clause of `where` should be `from`/join clause @ line 4, column 17.')
+        assert err.toString().contains('The preceding clause of `where` should be `from`/join clause @ line 4, column 17.')
     }
 
     @Test
@@ -190,7 +190,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('The clause `orderby` should be in front of `limit` @ line 4, column 17.')
+        assert err.toString().contains('The clause `orderby` should be in front of `limit` @ line 4, column 17.')
     }
 
     @Test
@@ -204,7 +204,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('The clause `groupby` should be in front of `limit` @ line 4, column 17.')
+        assert err.toString().contains('The clause `groupby` should be in front of `limit` @ line 4, column 17.')
     }
 
     @Test
@@ -231,7 +231,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('No such property: x')
+        assert err.toString().contains('No such property: x')
     }
 
     @Test
@@ -244,7 +244,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Failed to find data source by the alias: x')
+        assert err.toString().contains('Failed to find data source by the alias: x')
     }
 
     @Test
@@ -257,7 +257,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Invalid order: xxx, `asc`/`desc` is expected @ line 3, column 30.')
+        assert err.toString().contains('Invalid order: xxx, `asc`/`desc` is expected @ line 3, column 30.')
     }
 
     @Test
@@ -271,7 +271,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains("The clause `groupby` should be in front of `orderby` @ line 4, column 17.")
+        assert err.toString().contains("The clause `groupby` should be in front of `orderby` @ line 4, column 17.")
     }
 
     @Test
@@ -288,7 +288,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains("Invalid syntax found in `where` clause @ line 3, column 17.")
+        assert err.toString().contains("Invalid syntax found in `where` clause @ line 3, column 17.")
     }
 
     @Test
@@ -301,7 +301,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('`where` clause cannot contain assignment expression @ line 3, column 17.')
+        assert err.toString().contains('`where` clause cannot contain assignment expression @ line 3, column 17.')
     }
 
     @Test
@@ -317,7 +317,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('subquery returns more than one value: [3, 4]')
+        assert err.toString().contains('subquery returns more than one value: [3, 4]')
     }
 
     @Test
@@ -331,7 +331,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('`m` is not in the `groupby` clause @ line 5, column 27.')
+        assert err.toString().contains('`m` is not in the `groupby` clause @ line 5, column 27.')
     }
 
     @Test
@@ -345,7 +345,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('`m` is not in the `groupby` clause @ line 5, column 31.')
+        assert err.toString().contains('`m` is not in the `groupby` clause @ line 5, column 31.')
     }
 
     @Test
@@ -358,7 +358,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('`this.hello(n)` is not an aggregate function @ line 4, column 27.')
+        assert err.toString().contains('`this.hello(n)` is not an aggregate function @ line 4, column 27.')
     }
 
     @Test
@@ -375,7 +375,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('sub-query could not be used in the `select` clause with `groupby` @ line 4, column 24.')
+        assert err.toString().contains('sub-query could not be used in the `select` clause with `groupby` @ line 4, column 24.')
     }
 
     @Test
@@ -388,7 +388,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Unknown clause: hello @ line 3, column 17.')
+        assert err.toString().contains('Unknown clause: hello @ line 3, column 17.')
     }
 
     @Test
@@ -401,7 +401,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('`||` is not allowed in `on` clause of hash join @ line 3, column 49.')
+        assert err.toString().contains('`||` is not allowed in `on` clause of hash join @ line 3, column 49.')
     }
 
     @Test
@@ -414,7 +414,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Only one alias expected at each side of `==`, but found: [m, n] @ line 3, column 49.')
+        assert err.toString().contains('Only one alias expected at each side of `==`, but found: [m, n] @ line 3, column 49.')
     }
 
     @Test
@@ -427,7 +427,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Unknown alias: v @ line 3, column 54.')
+        assert err.toString().contains('Unknown alias: v @ line 3, column 54.')
     }
 
     @Test
@@ -440,7 +440,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Only binary expressions(`==`, `&&`) are allowed in `on` clause of hash join @ line 3, column 49.')
+        assert err.toString().contains('Only binary expressions(`==`, `&&`) are allowed in `on` clause of hash join @ line 3, column 49.')
     }
 
     @Test
@@ -452,7 +452,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Unsupported window function: `xxx` @ line 3, column 28.')
+        assert err.toString().contains('Unsupported window function: `xxx` @ line 3, column 28.')
     }
 
     @Test
@@ -464,7 +464,7 @@ final class GinqErrorTest {
             }.toList()
         ''' //                              ^
 
-        assert err.message.toString().contains('Unknown window clause: `order` @ line 3, column 45.')
+        assert err.toString().contains('Unknown window clause: `order` @ line 3, column 45.')
     }
 
     @Test
@@ -476,7 +476,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('`orderby` is expected when using `range` @ line 3, column 46.')
+        assert err.toString().contains('`orderby` is expected when using `range` @ line 3, column 46.')
     }
 
     @Test
@@ -488,7 +488,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Only one field is expected in the `orderby` clause when using `range` @ line 3, column 48.')
+        assert err.toString().contains('Only one field is expected in the `orderby` clause when using `range` @ line 3, column 48.')
     }
 
     @Test
@@ -500,7 +500,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('`rows` and `range` cannot be used in the same time @ line 3, column 67.')
+        assert err.toString().contains('`rows` and `range` cannot be used in the same time @ line 3, column 67.')
     }
 
     @Test
@@ -512,7 +512,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Both lower bound and upper bound are expected for `rows` @ line 3, column 55.')
+        assert err.toString().contains('Both lower bound and upper bound are expected for `rows` @ line 3, column 55.')
     }
 
     @Test
@@ -524,7 +524,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Both lower bound and upper bound are expected for `range` @ line 3, column 56.')
+        assert err.toString().contains('Both lower bound and upper bound are expected for `range` @ line 3, column 56.')
     }
 
     @Test
@@ -537,7 +537,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Invalid nulls order: nl, `nullslast`/`nullsfirst` is expected @ line 3, column 34.')
+        assert err.toString().contains('Invalid nulls order: nl, `nullslast`/`nullsfirst` is expected @ line 3, column 34.')
     }
 
     @Test
@@ -550,7 +550,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Only `nullslast`/`nullsfirst` is expected @ line 3, column 33.')
+        assert err.toString().contains('Only `nullslast`/`nullsfirst` is expected @ line 3, column 33.')
     }
 
     @Test
@@ -563,7 +563,7 @@ final class GinqErrorTest {
             }.toList()
         '''
 
-        assert err.message.toString().contains('Only `nullslast`/`nullsfirst` is expected @ line 3, column 33.')
+        assert err.toString().contains('Only `nullslast`/`nullsfirst` is expected @ line 3, column 33.')
     }
 
     @Test
@@ -575,7 +575,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Invalid option: xxx. (supported options: [parallel, astWalker, optimize]) @ line 1, column 16.')
+        assert err.toString().contains('Invalid option: xxx. (supported options: [parallel, astWalker, optimize]) @ line 1, column 16.')
     }
 
     @Test
@@ -586,7 +586,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Invalid option: zzz. (supported options: [immediate, abort]) @ line 2, column 26.')
+        assert err.toString().contains('Invalid option: zzz. (supported options: [immediate, abort]) @ line 2, column 26.')
     }
 
     @Test
@@ -597,7 +597,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('`select` clause is missing @ line 2, column 17.')
+        assert err.toString().contains('`select` clause is missing @ line 2, column 17.')
     }
 
     @Test
@@ -608,7 +608,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('`select` clause is missing @ line 2, column 17.')
+        assert err.toString().contains('`select` clause is missing @ line 2, column 17.')
     }
 
     @Test
@@ -620,7 +620,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Invalid syntax found in `select` clause, maybe `as` is missing when renaming field. @ line 3, column 17.')
+        assert err.toString().contains('Invalid syntax found in `select` clause, maybe `as` is missing when renaming field. @ line 3, column 17.')
     }
 
     @Test
@@ -632,7 +632,7 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Invalid syntax found in `select` clause, maybe `as` is missing when renaming field. @ line 3, column 17.')
+        assert err.toString().contains('Invalid syntax found in `select` clause, maybe `as` is missing when renaming field. @ line 3, column 17.')
     }
 
     @Test
@@ -644,6 +644,6 @@ final class GinqErrorTest {
             }
         '''
 
-        assert err.message.toString().contains('Invalid syntax found in `select` clause @ line 3, column 17.')
+        assert err.toString().contains('Invalid syntax found in `select` clause @ line 3, column 17.')
     }
 }

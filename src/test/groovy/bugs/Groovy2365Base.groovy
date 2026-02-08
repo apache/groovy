@@ -18,8 +18,9 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 
-abstract class Groovy2365Base {
+abstract class Groovy2365Base extends GroovyTestCase {
 
     protected String createData () {
 
@@ -43,7 +44,6 @@ abstract class Groovy2365Base {
 
     "Script2.groovy" : """
                 import Util
-import org.junit.jupiter.api.Test
 
                 println "Script2 \${Util.NAME}"
            """

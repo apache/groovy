@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy8868Bug {
-    @Test
+class Groovy8868Bug extends GroovyTestCase {
     void testNoargConstructorIncludedForImmutableWithNoProperties() {
         assertScript '''
             @groovy.transform.CompileStatic

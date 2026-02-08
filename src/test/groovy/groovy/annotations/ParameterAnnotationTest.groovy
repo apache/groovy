@@ -18,15 +18,10 @@
  */
 package groovy.annotations
 
+import groovy.test.GroovyTestCase
+import org.codehaus.groovy.control.*
 
-import org.codehaus.groovy.control.CompilationUnit
-import org.codehaus.groovy.control.CompilePhase
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
-
-class ParameterAnnotationTest {
-    @Test
+class ParameterAnnotationTest extends GroovyTestCase {
     void testParameterAnnotation() {
 
         def gcl = new GroovyClassLoader()
@@ -70,8 +65,9 @@ class ParameterAnnotationTest {
         assert methodNode.getParameters()[0].getAnnotations().any { an -> an.classNode.nameWithoutPackage == 'ParameterAnnotation' }
     }
 
-    @AfterEach
-    void tearDown() {
+    @Override
+    protected void tearDown() {
+        super.tearDown()
         new File("MyInterfaceImpl.class").deleteOnExit()
     }
 

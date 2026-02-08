@@ -18,14 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+class Groovy3208Bug extends GroovyTestCase {
 
-
-class Groovy3208Bug {
-
-    @Test
     void testBug() {
         new Sub().each { assertEquals("ABC", it.doIt()) }
 

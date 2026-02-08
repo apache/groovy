@@ -19,13 +19,10 @@
 package org.codehaus.groovy.runtime
 
 import groovy.test.GroovyAssert
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
+class IOGroovyMethodsTest extends GroovyTestCase {
 
-class IOGroovyMethodsTest {
-
-    @Test
     void testWithAutoCloseable() {
         def closeable = new DummyAutoCloseable()
         def closeableParam = null
@@ -38,7 +35,6 @@ class IOGroovyMethodsTest {
         assert closeable.closed
     }
 
-    @Test
     void testWithAutoCloseableDoesNotSuppressException() {
         def closeable = new DummyAutoCloseable(new Exception('close exception'))
         def throwable = GroovyAssert.shouldFail(UnsupportedOperationException) {
@@ -51,7 +47,6 @@ class IOGroovyMethodsTest {
         assert throwable.suppressed.find { it.message == 'close exception' }
     }
 
-    @Test
     void testWithAutoCloseableAndException() {
         def closeable = new DummyAutoCloseable(new Exception('close exception'))
         def result = null
@@ -61,10 +56,9 @@ class IOGroovyMethodsTest {
             }
         }
         assert result == 123
-        assert message.message == 'close exception'
+        assert message == 'close exception'
     }
 
-    @Test
     void testWithCloseable() {
         def closeable = new DummyCloseable()
         def closeableParam = null
@@ -77,7 +71,6 @@ class IOGroovyMethodsTest {
         assert closeable.closed
     }
 
-    @Test
     void testWithCloseableDoesNotSuppressException() {
         def closeable = new DummyCloseable(new IOException('close ioexception'))
         def throwable = GroovyAssert.shouldFail(Exception) {
@@ -90,7 +83,6 @@ class IOGroovyMethodsTest {
         assert throwable.suppressed.find { it.message == 'close ioexception' }
     }
 
-    @Test
     void testWithCloseableAndException() {
         def closeable = new DummyCloseable(new IOException('close ioexception'))
         def result = null
@@ -100,7 +92,7 @@ class IOGroovyMethodsTest {
             }
         }
         assert result == 123
-        assert message.message == 'close ioexception'
+        assert message == 'close ioexception'
     }
 
     // --------------------------------------------------------------------

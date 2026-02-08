@@ -18,18 +18,13 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.fail
-
-
-class GroovyCodeSourceTest {
-    @Test
+class GroovyCodeSourceTest extends GroovyTestCase {
     void testValidEncoding() {
         new GroovyCodeSource(createTemporaryGroovyClassFile(), "UTF-8")
     }
 
-    @Test
     void testInvalidEncoding() {
         try {
             new GroovyCodeSource(createTemporaryGroovyClassFile(), "non-existant encoding")
@@ -39,7 +34,6 @@ class GroovyCodeSourceTest {
         }
     }
 
-    @Test
     void testInvalidFile() {
         try {
             new GroovyCodeSource(new File("SomeFileThatDoesNotExist" + System.currentTimeMillis()), "UTF-8")
@@ -49,7 +43,6 @@ class GroovyCodeSourceTest {
         }
     }
 
-    @Test
     void testRuntimeException() {
         try {
             new GroovyCodeSource(null, "UTF-8")

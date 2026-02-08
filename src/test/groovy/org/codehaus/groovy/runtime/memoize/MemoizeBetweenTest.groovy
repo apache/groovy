@@ -20,8 +20,6 @@ package org.codehaus.groovy.runtime.memoize
 
 import java.util.concurrent.atomic.AtomicInteger
 
-import static groovy.test.GroovyAssert.shouldFail
-
 class MemoizeBetweenTest extends AbstractMemoizeTestCase {
 
     Closure buildMemoizeClosure(Closure cl) {

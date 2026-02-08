@@ -18,14 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
+class CompilerErrorTest extends GroovyTestCase {
 
-
-class CompilerErrorTest {
-
-    @Test
     void testBadMethodName() {
 
         shouldFail {
@@ -35,7 +31,6 @@ class CompilerErrorTest {
         }
     }
 
-    @Test
     void testBadPropertyName() {
 
         shouldFail {
@@ -47,7 +42,6 @@ class CompilerErrorTest {
         }
     }
 
-    @Test
     void testBadVariableName() {
 
         shouldFail {

@@ -17,8 +17,9 @@
  *  under the License.
  */
 
+import groovy.test.GroovyTestCase
 
-final class ClassTest {
+final class ClassTest extends GroovyTestCase {
 
     void testClassDefinition() {
         assertScript '''
@@ -229,7 +230,7 @@ final class ClassTest {
             }
             // end::protected_forbidden[]
         '''
-        assert err.message.contains("The method 'greet' must be public as it is declared abstract in interface 'Greeter'")
+        assert err.contains("The method 'greet' must be public as it is declared abstract in interface 'Greeter'")
     }
 
     void testFields() {
@@ -729,7 +730,7 @@ import java.lang.annotation.Retention
             class Evil {}
             Evil
         '''
-        assert err.message =~ /Attribute 'value' should have type 'java.lang.String'; but found type 'int' in @Foo/
+        assert err =~ /Attribute 'value' should have type 'java.lang.String'; but found type 'int' in @Foo/
     }
 
     void testCustomProcessor() {
@@ -759,9 +760,6 @@ import java.lang.annotation.Retention
             import org.codehaus.groovy.ast.expr.PropertyExpression
             import org.codehaus.groovy.control.SourceUnit
             import org.codehaus.groovy.transform.AnnotationCollectorTransform
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
-import static groovy.test.GroovyAssert.*
 
             // tag::compiledynamic_def_fixed[]
             @AnnotationCollector(processor = "org.codehaus.groovy.transform.CompileDynamicProcessor")

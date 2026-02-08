@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -115,6 +115,6 @@ final class Groovy5364 {
                 nonStaticProperty
             }
         '''
-        assert err.message =~ /Apparent variable 'nonStaticProperty' was found in a static scope but doesn't refer to a local variable, static field or class/
+        assert err =~ /Apparent variable 'nonStaticProperty' was found in a static scope but doesn't refer to a local variable, static field or class/
     }
 }

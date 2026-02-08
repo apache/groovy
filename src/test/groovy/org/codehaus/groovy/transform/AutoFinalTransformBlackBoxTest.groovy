@@ -19,13 +19,16 @@
 package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
-import org.junit.jupiter.api.Test
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 import java.util.Map.Entry
 
 /**
  * Tests for the {@code @AutoFinal} AST transform.
  */
+@RunWith(JUnit4)
 class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
     @Test

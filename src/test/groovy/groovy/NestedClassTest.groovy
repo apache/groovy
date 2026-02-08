@@ -18,16 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertTrue
+class NestedClassTest extends GroovyTestCase {
 
-
-class NestedClassTest {
-
-    @Test
     void testStaticInnerStaticMethod () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -37,7 +31,6 @@ class NestedClassTest {
         assertEquals 30, script.run()
     }
 
-    @Test
     void testStaticInnerInstanceMethod () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -47,7 +40,6 @@ class NestedClassTest {
         assertEquals 239, script.run()
     }
 
-    @Test
     void testParam () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -60,7 +52,6 @@ class NestedClassTest {
         assertEquals 239, script.run()
     }
 
-    @Test
     void testTypeDecl () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -75,7 +66,6 @@ class NestedClassTest {
         }
     }
 
-    @Test
     void testFieldDecl () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -90,7 +80,6 @@ class NestedClassTest {
         }
     }
 
-    @Test
     void testInstanceof () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -101,7 +90,6 @@ class NestedClassTest {
         assertTrue script.run ()
     }
 
-    @Test
     void testExtends () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy

@@ -18,12 +18,10 @@
  */
 package groovy.operator
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class BooleanOperationsTest extends GroovyTestCase {
 
-class BooleanOperationsTest {
-
-    @Test
     void testComparisons() {
         assert true
         assert true != false
@@ -45,7 +43,6 @@ class BooleanOperationsTest {
         assert x != y
     }
 
-    @Test
     void testIfBranch() {
         def x = false
         def r = false
@@ -76,7 +73,6 @@ class BooleanOperationsTest {
         assert r
     }
 
-    @Test
     void testBooleanExpression() {
         def x = 5
         def value = x > 2
@@ -87,7 +83,6 @@ class BooleanOperationsTest {
     }
 
 
-    @Test
     void testBooleanOps() {
         boolean x = true
         boolean y = false
@@ -110,7 +105,6 @@ class BooleanOperationsTest {
         assert (!y) == true
     }
 
-    @Test
     void testImplies() {
         assert false.implies(true)
         assert false.implies(false)
@@ -118,7 +112,6 @@ class BooleanOperationsTest {
         assert !true.implies(false)
     }
 
-    @Test
     void testBooleanAssignOps() {
         boolean z = true
         z &= true
@@ -150,7 +143,6 @@ class BooleanOperationsTest {
         assert z == false
     }
 
-    @Test
     void testBooleanAssignArrayOps() {
         boolean[] b = [true]
         b[0] &= false

@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.fail
-
-class Groovy4293Bug {
-    @Test
+class Groovy4293Bug extends GroovyTestCase {
     void testNoBUGMessageForNullScriptPassedToCompiler() {
         try {
             assertScript """

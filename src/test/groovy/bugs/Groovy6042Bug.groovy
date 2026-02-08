@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy6042Bug {
-    @Test
+class Groovy6042Bug extends GroovyTestCase {
     void testShouldAllowObjectAsConfigKey() {
         Map result = new ConfigSlurper().parse('''
             my.character.map = [(Locale.ENGLISH): 'abc']

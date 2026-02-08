@@ -18,13 +18,9 @@
  */
 package metaprogramming
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class GroovyObjectTest {
-    @Test
+class GroovyObjectTest extends GroovyTestCase {
     void testInvokeMethod() {
         assertScript '''
 // tag::groovy_invoke_method[]
@@ -47,7 +43,6 @@ assert someGroovyClass.someMethod() == 'called invokeMethod someMethod []'
 '''
     }
 
-    @Test
     void testGetProperty () {
         assertScript '''
 // tag::groovy_get_property[]
@@ -79,13 +74,12 @@ assert someGroovyClass.field4 == 'hu'
 '''
     }
 
-    @Test
     void testSetProperty () {
         assertScript '''
 // tag::groovy_set_property[]
 class POGO {
 
-    String property
+    String property 
 
     void setProperty(String name, Object value) {
         this.@"$name" = 'overridden'
@@ -100,7 +94,6 @@ assert pogo.property == 'overridden'
 '''
     }
 
-    @Test
     void testGetAttribute () {
         assertScript '''
 // tag::groovy_get_attribute[]
@@ -122,7 +115,6 @@ assert someGroovyClass.metaClass.getAttribute(someGroovyClass, 'field2') == 'ho'
 '''
     }
 
-    @Test
     void testSetAttribute () {
         assertScript '''
 // tag::groovy_set_attribute[]

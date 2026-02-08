@@ -18,38 +18,25 @@
  */
 package org.codehaus.groovy.transform.stc
 
+import groovy.test.GroovyTestCase
+
+import static org.codehaus.groovy.ast.ClassHelper.*
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.ast.tools.WideningCategories
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
-import static org.codehaus.groovy.ast.ClassHelper.GSTRING_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.LIST_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.MAP_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.Number_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.PATTERN_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.RANGE_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.SCRIPT_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.STRING_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.double_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.float_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.int_TYPE
-import static org.codehaus.groovy.ast.ClassHelper.make
 
 /**
  * Unit tests for signature codecs.
  */
-class SignatureCodecTest {
+class SignatureCodecTest extends GroovyTestCase {
     SignatureCodec codec
 
-    @BeforeEach
-    void setUp() {
+    @Override
+    protected void setUp() {
+        super.setUp()
         codec = StaticTypeCheckingVisitor.SignatureCodecFactory.getCodec(1,this.class.classLoader)
     }
 
-    @Test
     void testVariousSimpleClassNodes() {
         [OBJECT_TYPE, STRING_TYPE, int_TYPE, float_TYPE, double_TYPE, GSTRING_TYPE, Number_TYPE,
         MAP_TYPE, PATTERN_TYPE, SCRIPT_TYPE, LIST_TYPE, RANGE_TYPE].each {
@@ -58,7 +45,6 @@ class SignatureCodecTest {
         }
     }
 
-    @Test
     void testCodecWithGenericType() {
         ClassNode cn = LIST_TYPE.getPlainNodeReference()
         cn.genericsTypes = [ new GenericsType(STRING_TYPE) ] as GenericsType[]
@@ -68,7 +54,6 @@ class SignatureCodecTest {
         assert decoded.genericsTypes[0].type == STRING_TYPE
     }
 
-    @Test
     void testCodecWithUnionType() {
         ClassNode cn = new UnionTypeClassNode(STRING_TYPE, LIST_TYPE)
         String signature = codec.encode(cn)
@@ -76,7 +61,6 @@ class SignatureCodecTest {
         assert decoded == cn
     }
 
-    @Test
     void testCodecWithLUBoundType() {
         ClassNode cn = new WideningCategories.LowestUpperBoundClassNode("foo", LIST_TYPE, make(Comparable))
         String signature = codec.encode(cn)
@@ -84,7 +68,6 @@ class SignatureCodecTest {
         assert decoded == cn
     }
 
-    @Test
     void testCodecWithUnionTypeAndGenerics() {
         ClassNode list = LIST_TYPE.getPlainNodeReference()
         list.genericsTypes = [ new GenericsType(STRING_TYPE) ] as GenericsType[]

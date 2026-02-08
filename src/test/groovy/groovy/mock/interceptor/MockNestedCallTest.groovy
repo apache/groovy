@@ -18,12 +18,10 @@
  */
 package groovy.mock.interceptor
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class MockNestedCallTest extends GroovyTestCase {
 
-class MockNestedCallTest {
-
-    @Test
     void testRestore() {
         def mockTail = new MockFor(Coin)
         mockTail.demand.flip(0..9) {"tail"}

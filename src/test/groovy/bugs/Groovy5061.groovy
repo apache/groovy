@@ -18,12 +18,11 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.jupiter.api.Test
 
-class Groovy5061 {
-    @Test
+class Groovy5061 extends GroovyTestCase {
     void testShouldCompileProperly() {
         def config = new CompilerConfiguration()
         config.with {
@@ -60,7 +59,6 @@ class Groovy5061 {
 
     }
 
-    @Test
     void testShouldCompileProperly2() {
         def config = new CompilerConfiguration()
         config.with {

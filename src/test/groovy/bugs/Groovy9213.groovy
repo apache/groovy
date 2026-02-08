@@ -20,16 +20,14 @@ package bugs
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
+import org.junit.Ignore
+import org.junit.Test
 
 import static org.codehaus.groovy.control.ParserPluginFactory.antlr4
 
-@CompileStatic @Disabled
+@CompileStatic @Ignore
 final class Groovy9213 {
-    @Timeout(15000)
-    @Test
+    @Test(timeout=15000L)
     void testUnmatchedParenInLongScript4() {
         def config = new CompilerConfiguration(pluginFactory: antlr4())
         new GroovyShell(config).evaluate('''

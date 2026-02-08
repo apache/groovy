@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.fail
-
-
-class Groovy4131Bug {
-    @Test
+class Groovy4131Bug extends GroovyTestCase {
     void testTwoMainMethodsInAScript() {
         try {
             new GroovyShell().parse """

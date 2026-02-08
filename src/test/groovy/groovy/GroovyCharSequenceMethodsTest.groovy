@@ -18,15 +18,12 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests for DGM methods on CharSequence.
  */
-class GroovyCharSequenceMethodsTest {
+class GroovyCharSequenceMethodsTest extends GroovyTestCase {
 
     private static CharSequence makeCharSequence(String s) {
         [
@@ -48,7 +45,6 @@ class GroovyCharSequenceMethodsTest {
 
     def csEmpty = makeCharSequence('')
 
-    @Test
     void testIsCase() {
         // direct
         assert cs2.isCase('Foobar')
@@ -60,12 +56,10 @@ class GroovyCharSequenceMethodsTest {
         }
     }
 
-    @Test
     void testSize() {
         assert cs1.size() == 37
     }
 
-    @Test
     void testGetAtRange() {
         assert cs2.getAt(1..3) == 'oob'
         assert cs2[1..3] == 'oob'
@@ -74,52 +68,43 @@ class GroovyCharSequenceMethodsTest {
         assert cs2[-3..-1] == 'bar'
     }
 
-    @Test
     void testGetAtCollection() {
         assert cs2.getAt([0, 4, 5]) == 'Far'
         assert cs2[1, 3, 5] == 'obr'
         assert cs2[3, 5, 2] == 'bro'
     }
 
-    @Test
     void testGetAtEmptyRange() {
         assert cs2.getAt(new EmptyRange(null)) == ''
     }
 
-    @Test
     void testReverse() {
         assert cs2.reverse() == 'rabooF'
     }
 
-    @Test
     void testStripMargin() {
         assert cs3.stripMargin() == 'Foo\nbar\n'
     }
 
-    @Test
     void testStripIndent() {
         assert cs3.stripIndent() == '|Foo\n|bar\n|'
     }
 
-    @Test
     void testIsAllWhitespace() {
         assert !cs2.isAllWhitespace()
         assert makeCharSequence(' \t\n\r').isAllWhitespace()
     }
 
-    @Test
     void testReplace() {
         assert cs2.replaceFirst(~/[ab]/, csEmpty) == 'Fooar'
         assert cs2.replaceAll(~/[ab]/, csEmpty) == 'Foor'
     }
 
-    @Test
     void testMatches() {
         assert cs2.matches(~/.oo.*/)
         assert !cs2.matches(~/.*z.*/)
     }
 
-    @Test
     void testFind() {
         def csDigits = makeCharSequence(/\d{4}/)
         assert cs1.find(csDigits) == '2011'
@@ -128,7 +113,6 @@ class GroovyCharSequenceMethodsTest {
         assert cs1.find(~/\d\d:\d\d/, {"|$it|"}) == '|06:38|'
     }
 
-    @Test
     void testFindAll() {
         def csDigits = makeCharSequence(/\d\d/)
         assert cs1.findAll(csDigits) == ['28', '06', '38', '07', '20', '11']
@@ -137,7 +121,6 @@ class GroovyCharSequenceMethodsTest {
         assert cs1.findAll(~/\s\d\d/, {"<$it >"}) == ['< 28 >', '< 06 >', '< 20 >']
     }
 
-    @Test
     void testPad() {
         assert cs2.padLeft(10) == '    Foobar'
         assert cs2.padLeft(10, '+') == '++++Foobar'
@@ -147,12 +130,10 @@ class GroovyCharSequenceMethodsTest {
         assert cs2.center(10, '+') == '++Foobar++'
     }
 
-    @Test
     void testDrop() {
         assert cs2.drop(3) == 'bar'
     }
 
-    @Test
     void testDropTakeTC() {
         assertScript '''
             @groovy.transform.TypeChecked
@@ -165,19 +146,16 @@ class GroovyCharSequenceMethodsTest {
         '''
     }
 
-    @Test
     void testAsBoolean() {
         assert cs1 && cs2
         assert !csEmpty
     }
 
-    @Test
     void testLeftShift() {
         assert cs2.leftShift('___').toString() == 'Foobar___'
         assert (cs2 << 'baz').toString() == 'Foobarbaz'
     }
 
-    @Test
     void testSplit() {
         def parts = cs1.split()
         assert parts instanceof CharSequence[]
@@ -185,7 +163,6 @@ class GroovyCharSequenceMethodsTest {
         assert parts[2] == 'Thu'
     }
 
-    @Test
     void testTokenize() {
         def parts = cs1.tokenize()
         assert parts instanceof List
@@ -196,21 +173,18 @@ class GroovyCharSequenceMethodsTest {
         assert parts[1] == '38'
     }
 
-    @Test
     void testCapitalize() {
         def csfoo = makeCharSequence('foo')
         assert csfoo.capitalize() == 'Foo'
         assert cs2.capitalize() == 'Foobar'
     }
 
-    @Test
     void testUncapitalize() {
         def csfoo = makeCharSequence('Foo')
         assert csfoo.uncapitalize() == 'foo'
         assert cs2.uncapitalize() == 'foobar'
     }
 
-    @Test
     void testExpand() {
         def csfoobar = makeCharSequence('foo\tbar')
         assert csfoobar.expand() == 'foo     bar'
@@ -219,7 +193,6 @@ class GroovyCharSequenceMethodsTest {
         assert csfoobar.expand(4) == '    foo\n    bar'
     }
 
-    @Test
     void testUnexpand() {
         def csfoobar = makeCharSequence('foo     bar')
         assert csfoobar.unexpand() == 'foo\tbar'
@@ -228,13 +201,11 @@ class GroovyCharSequenceMethodsTest {
         assert csfoobar.unexpand(4) == '\t foo\n\tbar'
     }
 
-    @Test
     void testPlus() {
         assert cs2.plus(42) == 'Foobar42'
         assert cs2 + 42 == 'Foobar42'
     }
 
-    @Test
     void testMinus() {
         def csoo = makeCharSequence('oo')
         assert cs2.minus(42) == 'Foobar'
@@ -242,7 +213,6 @@ class GroovyCharSequenceMethodsTest {
         assert cs2 - csoo == 'Fbar'
     }
 
-    @Test
     void testContains() {
         def csoo = makeCharSequence('oo')
         def csbaz = makeCharSequence('baz')
@@ -250,7 +220,6 @@ class GroovyCharSequenceMethodsTest {
         assert !cs2.contains(csbaz)
     }
 
-    @Test
     void testCount() {
         def cszero = makeCharSequence('0')
         def csbar = makeCharSequence('|')
@@ -258,25 +227,21 @@ class GroovyCharSequenceMethodsTest {
         assert cs3.count(csbar) == 3
     }
 
-    @Test
     void testNext() {
         assert cs2.next() == 'Foobas'
         assert ++cs2 == 'Foobas'
     }
 
-    @Test
     void testPrevious() {
         assert cs2.previous() == 'Foobaq'
         assert --cs2 == 'Foobaq'
     }
 
-    @Test
     void testMultiply() {
         assert cs2.multiply(2) == 'FoobarFoobar'
         assert cs2 * 3 == 'FoobarFoobarFoobar'
     }
 
-    @Test
     void testToInteger() {
         def csFourteen = makeCharSequence('014')
         assert csFourteen.isInteger()
@@ -285,7 +250,6 @@ class GroovyCharSequenceMethodsTest {
         assert fourteen == 14
     }
 
-    @Test
     void testToLong() {
         def csFourteen = makeCharSequence('014')
         assert csFourteen.isLong()
@@ -294,7 +258,6 @@ class GroovyCharSequenceMethodsTest {
         assert fourteen == 14L
     }
 
-    @Test
     void testToShort() {
         def csFourteen = makeCharSequence('014')
         def fourteen = csFourteen.toShort()
@@ -302,7 +265,6 @@ class GroovyCharSequenceMethodsTest {
         assert fourteen == 14
     }
 
-    @Test
     void testToBigInteger() {
         def csFourteen = makeCharSequence('014')
         assert csFourteen.isBigInteger()
@@ -311,7 +273,6 @@ class GroovyCharSequenceMethodsTest {
         assert fourteen == 14G
     }
 
-    @Test
     void testToFloat() {
         def csThreePointFive = makeCharSequence('3.5')
         assert csThreePointFive.isFloat()
@@ -320,7 +281,6 @@ class GroovyCharSequenceMethodsTest {
         assert threePointFive == 3.5
     }
 
-    @Test
     void testToDouble() {
         def csThreePointFive = makeCharSequence('3.5')
         assert csThreePointFive.isDouble()
@@ -329,7 +289,6 @@ class GroovyCharSequenceMethodsTest {
         assert threePointFive == 3.5D
     }
 
-    @Test
     void testToBigDecimal() {
         def csThreePointFive = makeCharSequence('3.5')
         assert csThreePointFive.isBigDecimal()
@@ -339,7 +298,6 @@ class GroovyCharSequenceMethodsTest {
         assert threePointFive == 3.5G
     }
 
-    @Test
     void testEachLine() {
         def result = []
         cs3.eachLine{ line, num -> result << "$num:${line.size()}" }
@@ -349,7 +307,6 @@ class GroovyCharSequenceMethodsTest {
         assert result == ["10:20", "11:20", "12:17"]
     }
 
-    @Test
     void testSplitEachLine() {
         def regexOp = /\s*\*\s*/
         def csOp = makeCharSequence(regexOp)
@@ -362,14 +319,12 @@ class GroovyCharSequenceMethodsTest {
         assert result == [150, 99]
     }
 
-    @Test
     void testReadLines() {
         def lines = cs3.readLines()
         assert lines.size() == 3
         assert lines[1].trim() == '|bar'
     }
 
-    @Test
     void testToList() {
         def chars = cs2.toList()
         assert chars.size() == 6
@@ -378,7 +333,6 @@ class GroovyCharSequenceMethodsTest {
         assert chars[-1] == 'r'
     }
 
-    @Test
     void testToSet() {
         def chars = cs2.toSet()
         assert chars.size() == 5
@@ -386,7 +340,6 @@ class GroovyCharSequenceMethodsTest {
         assert 'b' in chars
     }
 
-    @Test
     void testGetChars() {
         def chars = cs2.chars
         assert chars instanceof char[]
@@ -396,7 +349,6 @@ class GroovyCharSequenceMethodsTest {
         assert chars[-1] == 'r'
     }
 
-    @Test
     void testGetCodePoints() {
         def ints = cs2.codePoints
         assert ints instanceof int[]
@@ -407,7 +359,6 @@ class GroovyCharSequenceMethodsTest {
     }
 
     private enum Coin { penny, nickel, dime, quarter }
-    @Test
     void testAsType() {
         def csDime = makeCharSequence('dime')
         def dime = csDime as Coin
@@ -415,7 +366,6 @@ class GroovyCharSequenceMethodsTest {
         assert dime == Coin.dime
     }
 
-    @Test
     void testEachMatch() {
         def result = []
         def regexDigits = /(\d)(.)(\d)/
@@ -427,12 +377,10 @@ class GroovyCharSequenceMethodsTest {
         assert result == ['8   0', '6 : 3', '8 : 0', '2 0 1']
     }
 
-    @Test
     void testTr() {
         assert cs1.tr(':uoa', '/___') == 'T_d_y is Th_ J_l 28 06/38/07 EST 2011'
     }
 
-    @Test
     void testReplaceAllFirst() {
         def csDigit = makeCharSequence(/\d/)
         def csUnder = makeCharSequence(/_/)
@@ -445,7 +393,6 @@ class GroovyCharSequenceMethodsTest {
         assert cs1.replaceFirst(csDigit, { '_' }) == 'Today is Thu Jul _8 06:38:07 EST 2011'
     }
 
-    @Test
     void testNormalizeDenormalize() {
         def text = 'the quick brown\nfox jumped\r\nover the lazy dog'
         def csText = makeCharSequence(text)

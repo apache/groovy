@@ -19,25 +19,18 @@
  */
 package groovy
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertNull
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test to ensure that readLine() method works on Reader/InputStream
  */
-class ReadLineTest {
+class ReadLineTest extends GroovyTestCase {
     def file
 
-    @BeforeEach
     void setUp() {
         file = new File("src/test/groovy/groovy/ReadLineTest.groovy")
     }
 
-    @Test
     void testReadOneLineFromReader() {
         def line
         file.withReader() { line = it.readLine() }
@@ -52,18 +45,16 @@ class ReadLineTest {
     void readFromReader(Reader reader) throws IOException {
         expectedLines.each { expected ->
             def line = reader.readLine()
-            assertEquals(expected, line, "Readline should return correct line")
+            assertEquals("Readline should return correct line", expected, line)
         }
-        assertNull(reader.readLine(), "Readline should return null")
+        assertNull("Readline should return null", reader.readLine())
     }
 
-    @Test
     void testBufferedReader() throws IOException {
         Reader reader = new BufferedReader(new StringReader(testString))
         readFromReader(reader)
     }
 
-    @Test
     void testReaderSupportingMark() throws IOException {
         Reader reader = new StringReader(testString)
         readFromReader(reader)
@@ -74,7 +65,6 @@ class ReadLineTest {
      * Thus empty lines can be returned if line separation is \r\n.
      */
 
-    @Test
     void testReaderSlow() throws IOException {
         Reader reader = new SlowStringReader(testString)
         expectedLinesSlow.each { expected ->
@@ -82,12 +72,12 @@ class ReadLineTest {
             while (line != null && line.length() == 0) {
                 line = reader.readLine()
             }
-            assertEquals(expected, line, "Readline should return correct line")
+            assertEquals("Readline should return correct line", expected, line)
         }
-        assertEquals("", reader.readLine(), "Readline should return empty string")
+        assertEquals("Readline should return empty string", "", reader.readLine())
 
         expectedChars.each { expected ->
-            assertEquals(expected, reader.read(), "Remaining characters incorrect")
+            assertEquals("Remaining characters incorrect", expected, reader.read())
         }
         assertNull(reader.readLine())
     }

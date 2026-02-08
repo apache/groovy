@@ -18,12 +18,10 @@
  */
 package groovy.txn
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class TransactionTest extends GroovyTestCase {
 
-class TransactionTest {
-
-    @Test
     void testTxn() {
         def builder = new TransactionBuilder()
         builder.transaction {

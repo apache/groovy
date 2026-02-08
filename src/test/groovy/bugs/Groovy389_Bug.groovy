@@ -18,16 +18,14 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  *  Verifies that closures work inside case blocks.
  *
  */
-class Groovy389_Bug {
+class Groovy389_Bug extends GroovyTestCase {
 
-    @Test
     void testBug() {
        def a = [10, 11, 12]
        def b = 0

@@ -19,14 +19,14 @@
 package groovy.grape
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.BeforeClass
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
 class GrabExcludeTest {
 
-    @BeforeAll
+    @BeforeClass
     static void populateCache() {
         // ensure files are installed locally
         Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()],
@@ -81,9 +81,9 @@ class GrabExcludeTest {
 
     private static shouldFailCompilationWithMessage(String code, String expectedString) {
         GroovyClassLoader loader = new GroovyClassLoader()
-        def exceptionMessage = shouldFail(MultipleCompilationErrorsException) {
+        String exceptionMessage = shouldFail(MultipleCompilationErrorsException) {
             loader.parseClass(code)
         }
-        assert exceptionMessage.message.contains(expectedString)
+        assert exceptionMessage.contains(expectedString)
     }
 }

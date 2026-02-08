@@ -18,52 +18,41 @@
  */
 package groovy
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  * To test access to method scoped variable within closure
  */
-class MethodParameterAccessWithinClosureTest {
+class MethodParameterAccessWithinClosureTest extends GroovyTestCase {
     def cheese
     def shop
 
-    @BeforeEach
     void setUp() {
         cheese = null
         shop = ["wensleydale"]
     }
 
-    @Test
     void testSimpleMethodParameterAccess() {
         assert "wensleydale" == vendor1("wensleydale")
     }
 
-    @Test
     void testMethodParameterWithDifferentNameToPropertyUsingClosure() {
         assert "wensleydale" == vendor2("wensleydale")
     }
 
-    @Test
     void testMethodParameterWithSameNameAsPropertyUsingClosure() {
         assert "wensleydale" == vendor3("wensleydale")
     }
 
-    @Test
     void testOptionalMethodParameterUsedInClosure() {
         assert "wensleydale" == vendor4("wensleydale")
         assert null == vendor4()
     }
 
-    @Test
     void testDoubleParameterAndsingleParameterUsedInClosure() {
         assert vendor5(5.0d, 2) == 7.0d
     }
 
-    @Test
     void testAccessToMethodParameterInOverwrittenMethodCalledBySuper() {
         //  GROOVY-2107
         assertScript """

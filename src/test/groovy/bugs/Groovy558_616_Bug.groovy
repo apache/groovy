@@ -18,16 +18,14 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
   * Fixes GROOVY-558 and GROOVY-616.
   * A fully qualified class name ending with .class or not were not recognized properly.
   */
-class Groovy558_616_Bug {
+class Groovy558_616_Bug extends GroovyTestCase {
 
-    @Test
     void testListClass() {
         assert java.util.ArrayList.class == ArrayList.class
         assert java.util.ArrayList.class == ArrayList
@@ -36,7 +34,6 @@ class Groovy558_616_Bug {
         assert list.class == ArrayList
     }
 
-    @Test
     void testStringClass() {
         assert java.lang.String.class == String.class
         assert java.lang.String.class == String
@@ -45,7 +42,6 @@ class Groovy558_616_Bug {
         assert st.class == String
     }
 
-    @Test
     void testExpandoClass() {
         assert groovy.util.Expando.class == Expando.class
         assert groovy.util.Expando.class == Expando
@@ -54,7 +50,6 @@ class Groovy558_616_Bug {
         assert dum.class == Expando
     }
 
-    @Test
     void testFooClass() {
         assert bugs.Groovy558_616_Bug.class == Groovy558_616_Bug
         assert Groovy558_616_Bug != Class

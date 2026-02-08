@@ -18,8 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test to fix the Jira issues GROOVY-1018 and GROOVY-732.
@@ -27,12 +26,11 @@ import org.junit.jupiter.api.Test
  *      ClassName.fieldName or ClassName.@fieldName.
  */
 
-class Groovy1018_Bug {
+class Groovy1018_Bug extends GroovyTestCase {
 
     public static Object Class = "bar"
 
     // GROOVY-1018
-    @Test
     void testGetPublicStaticField() {
         Groovy1018_Bug.Class = 'bar'
         def a = new Groovy1018_Bug()
@@ -41,7 +39,6 @@ class Groovy1018_Bug {
     }
 
     // GROOVY-732
-    @Test
     void testSetPublicStaticField() {
         Groovy1018_Bug.Class = 'bar-'
         assert Groovy1018_Bug.Class == "bar-" && Groovy1018_Bug.@Class == "bar-"

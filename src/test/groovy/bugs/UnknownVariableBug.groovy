@@ -18,15 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.shouldFail
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class UnknownVariableBug {
-    @Test
+class UnknownVariableBug extends GroovyTestCase {
     void testBug() {
         def shell = new GroovyShell()
         shouldFail {

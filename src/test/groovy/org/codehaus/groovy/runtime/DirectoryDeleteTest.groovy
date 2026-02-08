@@ -18,15 +18,13 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase;
 
 /**
  * Test File.deleteDir() method in Groovy
  */
-class DirectoryDeleteTest {
+class DirectoryDeleteTest extends GroovyTestCase {
 
-    @Test
     void testDeleteDir(){
         def file = File.createTempFile("deleteDirTest", "")
 

@@ -39,8 +39,8 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement
 import org.codehaus.groovy.ast.stmt.ThrowStatement
 import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.syntax.Token
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.Before
+import org.junit.Test
 
 class VariableExpressionReplacerTest {
 
@@ -51,7 +51,7 @@ class VariableExpressionReplacerTest {
     Closure<Boolean> when = { VariableExpression variableExpression -> replacements.containsKey variableExpression }
     Closure<VariableExpression> replaceWith = { VariableExpression variableExpression -> replacements[variableExpression] }
 
-    @BeforeEach
+    @Before
     void init() {
         replacer = new VariableExpressionReplacer(when, replaceWith)
     }

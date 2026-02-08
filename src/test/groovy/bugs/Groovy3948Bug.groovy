@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class Groovy3948Bug extends GroovyTestCase {
 
-class Groovy3948Bug {
-
-    @Test
     void testBug1() {
         Expando.metaClass.foo = { -> delegate.bar() }
 
@@ -36,7 +34,6 @@ class Groovy3948Bug {
         assert e.foo() == 2
     }
 
-    @Test
     void testBug2() {
         Foo f = new Foo()
         def results = []

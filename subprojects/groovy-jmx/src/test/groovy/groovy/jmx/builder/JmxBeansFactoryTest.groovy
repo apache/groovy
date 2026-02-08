@@ -18,19 +18,17 @@
  */
 package groovy.jmx.builder
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class JmxBeansFactoryTest {
+class JmxBeansFactoryTest extends GroovyTestCase {
     def builder
 
-    @BeforeEach
     void setUp() {
+        super.setUp()
         builder = new JmxBuilder()
         builder.registerFactory("beans", new JmxBeansFactory())
     }
 
-    @Test
     void testFactoryNodeInstance() {
         def obj1 = new MockManagedObject()
         def obj2 = new BaseEmbeddedClass()
@@ -69,7 +67,6 @@ class JmxBeansFactoryTest {
         assert map.attributes.Available.type == "boolean"
     }
 
-    @Test
     void testMBeanClass() {
         def object = new MockSimpleObject()
         def maps = builder.beans([object])

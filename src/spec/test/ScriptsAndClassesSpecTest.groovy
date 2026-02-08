@@ -1,3 +1,4 @@
+import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -17,13 +18,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
-class ScriptsAndClassesSpecTest {
-    @Test
+class ScriptsAndClassesSpecTest extends GroovyTestCase {
     void testMainMethod() {
         assertScript '''
             // tag::groovy_class_with_main_method[]
@@ -81,7 +76,6 @@ class ScriptsAndClassesSpecTest {
         '''
     }
 
-    @Test
     void testJep445Definition() {
         runScript '''
             // tag::jep445_barescript[]
@@ -105,7 +99,6 @@ class ScriptsAndClassesSpecTest {
         '''
     }
 
-    @Test
     void testMethodDefinition() {
         assertScript '''
             // tag::method_in_script[]
@@ -143,7 +136,6 @@ class ScriptsAndClassesSpecTest {
         '''
     }
 
-    @Test
     void testScriptVariables() {
         assertScript '''
             // tag::script_with_variables[]

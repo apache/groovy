@@ -18,10 +18,9 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class PrimitiveTypesTest {
+class PrimitiveTypesTest extends GroovyTestCase {
 
     int getInt() {
         return 1
@@ -63,7 +62,6 @@ class PrimitiveTypesTest {
         return i + 1
     }
 
-    @Test
     void testPrimitiveTypes() {
         assert 1 == getInt()
         assert 1 == getShort()
@@ -75,7 +73,6 @@ class PrimitiveTypesTest {
         assert 'a' == getChar()
     }
 
-    @Test
     void testPrimitiveParameters() {
         assert getNextInt(1) == 2
         assert 3 == getNextInt(2)
@@ -84,13 +81,11 @@ class PrimitiveTypesTest {
         assert 3 == getNextShort((Short) 2)
     }
 
-    @Test
     void testLong2BigDecimal() {
         long l = Long.MAX_VALUE
         assert l == testMethod(l).longValueExact()
     }
 
-    @Test
     void testBigInteger2BigDecimal() {
         BigInteger big = BigInteger.valueOf(Long.MAX_VALUE)
         assert big.longValue() == testMethod(big).longValueExact()

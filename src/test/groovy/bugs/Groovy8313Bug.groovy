@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy8313Bug {
-    @Test
+class Groovy8313Bug extends GroovyTestCase {
     void testCorrectBridgeMethodForGenericArrayReturnType() {
         assertScript '''
             interface HasItems<T> {

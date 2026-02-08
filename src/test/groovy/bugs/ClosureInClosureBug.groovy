@@ -18,8 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Bug illustrating the nested closures variable scope visibility issue.
@@ -32,9 +31,8 @@ import org.junit.jupiter.api.Test
  *
  * @authour Guillaume Laforge
  */
-class ClosureInClosureBug {
+class ClosureInClosureBug extends GroovyTestCase {
 
-    @Test
     void testInvisibleVariable() {
         def text = "test "
 

@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class AssertNumberTest extends GroovyTestCase {
 
-class AssertNumberTest {
-
-    @Test
     void testCompare() {
         def x = null
 
@@ -46,7 +44,6 @@ class AssertNumberTest {
         assert x == 42.2342
     }
 
-    @Test
     void testLessThan() {
         def x = 123
 
@@ -55,7 +52,6 @@ class AssertNumberTest {
         assert x <= 123
     }
 
-    @Test
     void testGreaterThan() {
         def x = 123
 

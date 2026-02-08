@@ -18,14 +18,12 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test case for File class extension methods.
  */
-class FileStaticGroovyMethodsTest {
-    @Test
+class FileStaticGroovyMethodsTest extends GroovyTestCase {
     void testCreateTempDirectory() {
         def file = File.createTempDir()
         assert file

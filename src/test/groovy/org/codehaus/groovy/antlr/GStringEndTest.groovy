@@ -18,13 +18,10 @@
  */
 package org.codehaus.groovy.antlr
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
-class GStringEndTest {
-    @Test
+class GStringEndTest extends GroovyTestCase {
     void testInvalidEndContainsLineNumber(){
         try {
             assertScript '''
@@ -36,13 +33,12 @@ class GStringEndTest {
         }
     }
 
-    @Test
     void testErrorReportOnStringEndWithOutParser() {
         // GROOVY-6608: the code did throw a NPE
         try {
             assertScript '''
             def scanFolders()
-            { doThis( ~"(?i)^sometext$",
+            { doThis( ~"(?i)^sometext$", 
             '''
         } catch (MultipleCompilationErrorsException mcee) {
             def text = mcee.toString();

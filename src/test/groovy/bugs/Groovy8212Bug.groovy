@@ -18,11 +18,9 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy8212Bug {
+class Groovy8212Bug extends GroovyTestCase {
     void test() {
         assertScript '''
         @groovy.transform.CompileStatic

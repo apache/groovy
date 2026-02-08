@@ -94,7 +94,6 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
     void testConstructFromVariable() {
         shouldFailWithMessages '''
             import java.awt.Dimension
-import static groovy.test.GroovyAssert.shouldFail
             List args = [100,200]
             Dimension d = args // not supported
         ''',

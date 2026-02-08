@@ -97,7 +97,7 @@ final class MethodReferenceTest {
                 [1, 2, 3].stream().map(String::toString).collect(Collectors.toList())
             }
         '''
-        assert err.message =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
+        assert err =~ /Invalid receiver type: java.lang.Integer is not compatible with java.lang.String/
     }
 
     // GROOVY-9814
@@ -961,7 +961,7 @@ final class MethodReferenceTest {
 
             test()
         '''
-        assert err.message =~ /Cannot cast java.lang.Integer to java.lang.String/
+        assert err =~ /ClassCastException: Cannot cast java.lang.Integer to java.lang.String/
     }
 
     @Test // class::new
@@ -1055,7 +1055,7 @@ final class MethodReferenceTest {
 
             test()
         '''
-        assert err.message =~ /Cannot find matching constructor Foo\(java.lang.String\)/
+        assert err =~ /Cannot find matching constructor Foo\(java.lang.String\)/
     }
 
     // GROOVY-10971
@@ -1114,7 +1114,7 @@ final class MethodReferenceTest {
 
             test()
         '''
-        assert err.message =~ /Cannot instantiate the type A/
+        assert err =~ /Cannot instantiate the type A/
 
         for (op in ['::','.&']) {
             err = shouldFail shell, """
@@ -1125,7 +1125,7 @@ final class MethodReferenceTest {
 
                 test()
             """
-            assert err.message =~ /Cannot instantiate the type java.lang.Number/
+            assert err =~ /Cannot instantiate the type java.lang.Number/
         }
     }
 
@@ -1141,7 +1141,7 @@ final class MethodReferenceTest {
 
             test()
         '''
-        assert err.message =~ /Cannot call java.lang.Integer\[\]#<init>\(int\) with arguments /
+        assert err =~ /Cannot call java.lang.Integer\[\]#<init>\(int\) with arguments /
     }
 
     @Test // arrayClass::new
@@ -1565,7 +1565,7 @@ final class MethodReferenceTest {
                 Function<Object,String> f = this::foo
             }
         '''
-        assert err.message =~ /Invalid return type: void is not convertible to java.lang.String/
+        assert err =~ /Invalid return type: void is not convertible to java.lang.String/
 
         err = shouldFail shell, '''
             @CompileStatic
@@ -1573,7 +1573,7 @@ final class MethodReferenceTest {
                 Function<Object,Number> f = Object::toString
             }
         '''
-        assert err.message =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
+        assert err =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
 
         err = shouldFail shell, '''
             def m(Function<Object,Number> f) {
@@ -1583,7 +1583,7 @@ final class MethodReferenceTest {
                 m(Object::toString)
             }
         '''
-        assert err.message =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
+        assert err =~ /Invalid return type: java.lang.String is not convertible to java.lang.Number/
     }
 
     // GROOVY-10269
@@ -1601,7 +1601,7 @@ final class MethodReferenceTest {
                 baz(this::foo) // not yet supported!
             }
         '''
-        assert err.message =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
+        assert err =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
     // GROOVY-10336
@@ -1619,7 +1619,7 @@ final class MethodReferenceTest {
                 }
             }
         '''
-        assert err.message =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
+        assert err =~ /Argument is a method reference, but parameter type 'java.lang.Object' is not a functional interface/
     }
 
     // GROOVY-10979
@@ -1640,7 +1640,7 @@ final class MethodReferenceTest {
                 x.reduce((s) -> 1, y, z)
             }
         '''
-        assert err.message =~ /Argument is a method reference, but parameter type 'U' is not a functional interface/
+        assert err =~ /Argument is a method reference, but parameter type 'U' is not a functional interface/
     }
 
     // GROOVY-11254

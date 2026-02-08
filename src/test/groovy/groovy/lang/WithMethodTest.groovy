@@ -18,32 +18,25 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.fail
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests the .with method
  */
-class WithMethodTest {
+class WithMethodTest extends GroovyTestCase {
 
-     @Test
      void testDelegateGetsFirstOpportunity() {
          def sb = new StringBuffer()
 
          sb.with {
-             // this should call append() on the
+             // this should call append() on the 
              // delegate not, the owner
              append 'some text'
          }
 
-         assertEquals 'some text', sb.toString(), 'delegate had wrong value'
+         assertEquals 'delegate had wrong value', 'some text', sb.toString()
      }
 
-     @Test
      void testOwnerGetsOpportunityIfDelegateCannotRespond() {
          def sb = new StringBuffer()
 
@@ -54,12 +47,11 @@ class WithMethodTest {
              returnValue = ownerMethod()
          }
 
-         assertEquals 42,
-                      returnValue,
-                      'owner should have responded to method call'
+         assertEquals 'owner should have responded to method call', 
+                      42, 
+                      returnValue
      }
 
-     @Test
      void testCallingNonExistentMethod() {
          def sb = new StringBuffer()
 
@@ -70,7 +62,6 @@ class WithMethodTest {
          }
      }
 
-     @Test
      void testClosureWithResolveStrategyExplicitlySet() {
          def closure = {
              append 'some text'
@@ -83,10 +74,9 @@ class WithMethodTest {
          // the closure has another strategy set
          sb.with closure
 
-         assertEquals 'some text', sb.toString(), 'delegate had wrong value'
+         assertEquals 'delegate had wrong value', 'some text', sb.toString()
      }
 
-     @Test
      void testBooleanVariant() {
          def p = new PersonWith(firstName: 'Johnny', lastName: 'Depp')
          def result1 = p.with(false) {

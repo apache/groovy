@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy6396Bug {
-    @Test
+class Groovy6396Bug extends GroovyTestCase {
     void testClassUsageInInterfaceDef() {
         assertScript """
             def stack3 = new LinkedList<String>(['1', '2', '3'])

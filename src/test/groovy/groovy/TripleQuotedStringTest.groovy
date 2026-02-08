@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class TripleQuotedStringTest extends GroovyTestCase {
 
-class TripleQuotedStringTest {
-
-    @Test
     void testTripleQuotedString() {
         def s = """
         Lots of 'text' with a variety of ""quoting "" and

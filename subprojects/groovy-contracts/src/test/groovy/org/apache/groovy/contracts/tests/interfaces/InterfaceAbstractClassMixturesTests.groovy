@@ -21,7 +21,7 @@ package org.apache.groovy.contracts.tests.interfaces
 import org.apache.groovy.contracts.PostconditionViolation
 import org.apache.groovy.contracts.PreconditionViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class InterfaceAbstractClassMixturesTests extends BaseTestClass {
 

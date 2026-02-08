@@ -18,11 +18,9 @@
  */
 package groovy.mock.interceptor
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class StubForJavaTest {
-    @Test
+class StubForJavaTest extends GroovyTestCase {
     void testIterator() {
 //        ProxyGenerator.INSTANCE.debug = true
         def iteratorContext = new StubFor(Iterator)
@@ -39,7 +37,6 @@ class StubForJavaTest {
         iteratorContext.verify(iterator)
     }
 
-    @Test
     void testString() {
         ProxyGenerator.INSTANCE.debug = false
         def stringContext = new StubFor(String)

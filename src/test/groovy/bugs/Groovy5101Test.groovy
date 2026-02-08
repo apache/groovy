@@ -18,10 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class Groovy5101Test {
+class Groovy5101Test extends GroovyTestCase {
 
     static class ClassA {
         Runnable r
@@ -48,7 +47,6 @@ class Groovy5101Test {
     Runnable r
     Factory factory
 
-    @BeforeEach
     void setUp() {
         this.r = new Runnable() {
             void run() { "A!" }
@@ -56,17 +54,14 @@ class Groovy5101Test {
         this.factory = new Factory()
     }
 
-    @Test
     void test_NotInnerAnonymousClass() {
         factory.getClassA1(r)
     }
 
-    @Test
     void test_InnerAnonymousClass_NotUsingArgument() {
         factory.getClassA2(r)
     }
 
-    @Test
     void test_InnerAnonymousClass_UsingArgument() {
         factory.getClassA3(r) // it should be OK but the result is NG
     }

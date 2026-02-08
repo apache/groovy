@@ -18,17 +18,15 @@
  */
 package groovy.time
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests the groovy.time.TimeCategory class. 
  * Most of these tests use January 1 as a start time to avoid 
  * leap years and daylight savings time issues. 
  */
-class TimeCategoryTest {
+class TimeCategoryTest extends GroovyTestCase {
 
-    @Test
     void testDurationArithmeticOnMilliseconds() {
         use(TimeCategory) {
             def midnight = new Date(100, 0, 1, 0, 0, 0)
@@ -42,7 +40,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDurationArithmeticOnSeconds() {
         use(TimeCategory) {
             def midnight = new Date(100, 0, 1, 0, 0, 0)
@@ -56,7 +53,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDurationArithmeticOnMinutes() {
         use(TimeCategory) {
             def midnight = new Date(100, 0, 1, 0, 0, 0)
@@ -72,7 +68,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDurationArithmeticOnHours() {
         use(TimeCategory) {
             def midnight = new Date(100, 0, 1, 0, 0, 0)
@@ -88,7 +83,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDurationArithmeticOnDays() {
         use(TimeCategory) {
             def januaryFirst = new Date(100, 0, 1, 0, 0, 0)
@@ -102,7 +96,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDurationArithmeticOnWeeks() {
         use(TimeCategory) {
             def firstWeek = new Date(100, 0, 1, 0, 0, 0)
@@ -116,7 +109,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDurationArithmeticOnMonths() {
         use(TimeCategory) {
             def january = new Date(100, 0, 1, 0, 0, 0)
@@ -130,7 +122,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDurationArithmeticOnYears() {
         use(TimeCategory) {
             def firstYear = new Date(100, 0, 1, 0, 0, 0)
@@ -145,7 +136,6 @@ class TimeCategoryTest {
     }
 
 
-    @Test
     void testDateSubtractionOnSeconds() {
         use(TimeCategory) {
             def current = new Date(100, 0, 1, 0, 0, 0)
@@ -159,7 +149,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDateSubtractionOnMinutes() {
         use(TimeCategory) {
             def current = new Date(100, 0, 1, 0, 0, 0)
@@ -173,7 +162,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDateSubtractionOnHours() {
         use(TimeCategory) {
             def current = new Date(100, 0, 1, 0, 0, 0)
@@ -187,7 +175,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDateSubtractionOnDays() {
         use(TimeCategory) {
             def current = new Date(100, 0, 1, 0, 0, 0)
@@ -201,7 +188,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDateSubtraction_NoYearsOrMonths() {
         use(TimeCategory) {
             def yearOne = new Date(100, 0, 1, 0, 0, 0)
@@ -217,7 +203,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testToStringForNegativeValues() {
         use(TimeCategory) {
             def t1 = Calendar.instance.time
@@ -236,7 +221,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testToStringForOverflow() {
         use(TimeCategory) {
             def t = 800.milliseconds + 300.milliseconds
@@ -244,7 +228,6 @@ class TimeCategoryTest {
         }
     }
 
-    @Test
     void testDateEquality() {
         use(TimeCategory) {
             Date dt1 = 0.days.from.now

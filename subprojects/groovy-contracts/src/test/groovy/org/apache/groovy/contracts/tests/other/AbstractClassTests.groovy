@@ -20,7 +20,7 @@ package org.apache.groovy.contracts.tests.other
 
 import org.apache.groovy.contracts.PreconditionViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class AbstractClassTests extends BaseTestClass {
 

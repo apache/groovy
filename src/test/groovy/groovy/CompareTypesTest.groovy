@@ -18,13 +18,11 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class CompareTypesTest {
-    @Test
+class CompareTypesTest extends GroovyTestCase {
     void testCompareByteToInt() {
         Byte a = 12
         Integer b = 10
@@ -35,7 +33,6 @@ class CompareTypesTest {
         assert a > b
     }
 
-    @Test
     void testCompareByteToDouble() {
         Byte a = 12
         Double b = 10
@@ -46,7 +43,6 @@ class CompareTypesTest {
         assert a > b
     }
 
-    @Test
     void testCompareLongToDouble() {
         Long a = 12
         Double b = 10
@@ -57,7 +53,6 @@ class CompareTypesTest {
         assert a > b
     }
 
-    @Test
     void testCompareLongToByte() {
         Long a = 12
         Byte b = 10
@@ -68,7 +63,6 @@ class CompareTypesTest {
         assert a > b
     }
 
-    @Test
     void testCompareIntegerToByte() {
         Integer a = 12
         Byte b = 10
@@ -79,7 +73,6 @@ class CompareTypesTest {
         assert a > b
     }
 
-    @Test
     void testCompareCharToLong() {
         def a = Integer.MAX_VALUE
         def b = ((long) a)+1
@@ -91,7 +84,6 @@ class CompareTypesTest {
         assert a < b
     }
 
-    @Test
     void testCompareCharToInteger() {
         Character a = Integer.MAX_VALUE
         Integer b = a-1

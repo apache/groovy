@@ -18,13 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-public class Groovy2706Bug {
+public class Groovy2706Bug extends GroovyTestCase {
     static counter = 0
 
-    @Test
     void testStaticAccessWithIncAndDec() {
         ++Groovy2706Bug.counter
         assert counter == 1

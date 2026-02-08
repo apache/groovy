@@ -30,10 +30,10 @@ import org.codehaus.groovy.transform.GlobalTestTransformClassLoader
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 import org.codehaus.groovy.vmplugin.VMPluginFactory
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
@@ -53,7 +53,7 @@ final class TransformsAndCustomClassLoadersTest {
     private final GroovyClassLoader dependencyLoader = new GroovyClassLoader(new URLClassLoader(urls, (ClassLoader) (VMPluginFactory.plugin.version >= 9 ? ClassLoader.platformClassLoader : null)))
     private final GroovyClassLoader transformLoader = new GroovyClassLoader(new URLClassLoader(urls, new GroovyOnlyClassLoader()))
 
-    @BeforeEach
+    @Before
     void setUp() throws Exception {
         assert dependencyLoader.loadClass(CompilationUnit.class.name) !== CompilationUnit
         assert dependencyLoader.loadClass(this.class.name) !== this.class
@@ -62,7 +62,7 @@ final class TransformsAndCustomClassLoadersTest {
         assert transformLoader.loadClass(this.class.name) !== this.class
     }
 
-    @AfterEach
+    @After
     void tearDown() throws Exception {
         dependencyLoader.close()
         transformLoader.close()
@@ -99,7 +99,7 @@ final class TransformsAndCustomClassLoadersTest {
     void testShouldKeepOriginalExceptionDuringGlobalTransformApplyingGroovy9469Bug() {
         try (def transformLoader = new GlobalTestTransformClassLoader(transformLoader, FailingWithMeaningfulMessageTransformation)) {
             compileAndLoadClass('class Foo {}', dependencyLoader, transformLoader)
-            Assertions.fail('Excepted MultipleCompilationErrorsException not thrown')
+            Assert.fail('Excepted MultipleCompilationErrorsException not thrown')
         } catch(MultipleCompilationErrorsException e) {
             assert e.message.contains('FailingWithMeaningfulMessageTransformation')
             assert e.message.contains('FileSystemNotFoundException')

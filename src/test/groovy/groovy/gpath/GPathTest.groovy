@@ -18,15 +18,13 @@
  */
 package groovy.gpath
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Some GPath tests using maps and lists
  */
-class GPathTest {
+class GPathTest extends GroovyTestCase {
 
-    @Test
     void testSimpleGPathExpressions() {
         def tree = createTree()
         assert tree.people.find { it.name == 'James' }.location == 'London'

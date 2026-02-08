@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class IfWithMethodCallTest extends GroovyTestCase {
 
-class IfWithMethodCallTest {
-
-    @Test
     void testIfWithMethodCall() {
         def x = ["foo", "cheese"]
 

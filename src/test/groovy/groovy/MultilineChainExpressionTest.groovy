@@ -18,11 +18,9 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class MultilineChainExpressionTest {
-    @Test
+class MultilineChainExpressionTest extends GroovyTestCase {
     void testMultiLineChain() {
         // the code below should be compilable
         assert (

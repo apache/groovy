@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.fail
-
-class Groovy4264Bug {
-    @Test
+class Groovy4264Bug extends GroovyTestCase {
     void testSubClassHavingMainEntryPoint() {
         try {
             assertScript """
@@ -43,7 +39,6 @@ class Groovy4264Bug {
     }
 
     // this scenario used to work correctly. Just added to ensure that there is no change in its behavior
-    @Test
     void testScriptExecutionTakingPreferenceOverClasses() {
         try {
             assertScript """
@@ -63,7 +58,6 @@ class Groovy4264Bug {
     }
 
     // this scenario used to work correctly. Just added to ensure that there is no change in its behavior
-    @Test
     void testExecutionOfJustAScript() {
         try {
             assertScript """

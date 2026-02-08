@@ -18,12 +18,10 @@
  */
 package bugs
 
-import groovy.mock.interceptor.MockFor
-import groovy.mock.interceptor.StubFor
+import groovy.mock.interceptor.*
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertNotNull
-
-class Groovy3720Bug {
+class Groovy3720Bug extends GroovyTestCase {
     void testCreateStubNode() {
         def stubNodeContext1 = new StubFor(AnotherNode3720)
         assertNotNull stubNodeContext1.proxyInstance()

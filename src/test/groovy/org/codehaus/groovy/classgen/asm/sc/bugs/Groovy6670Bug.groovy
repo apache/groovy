@@ -18,13 +18,9 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy6670Bug {
-    @Test
+class Groovy6670Bug extends GroovyTestCase {
     void testCircularClassNodeReference() {
         // NOTE: The bug only seems to show up if we copy the following code into a file
         // and compile it from within an IDE

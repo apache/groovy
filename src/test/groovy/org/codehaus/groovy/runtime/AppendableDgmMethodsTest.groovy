@@ -18,13 +18,12 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test Appendable withFormatter and leftShift DGM methods
  */
-class AppendableDgmMethodsTest {
+class AppendableDgmMethodsTest extends GroovyTestCase {
     List<String> store = []
     Appendable app = new Appendable() {
         Appendable append(char c) { store+="$c"; this }
@@ -32,7 +31,6 @@ class AppendableDgmMethodsTest {
         Appendable append(CharSequence cs, int i1, int i2) { store += cs.subSequence(i1,i2); this }
     }
 
-    @Test
     void testFoo() {
         app << "hello "
         app << [a:1, b:2]

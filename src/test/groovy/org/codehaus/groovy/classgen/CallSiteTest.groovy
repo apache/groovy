@@ -18,15 +18,10 @@
  */
 package org.codehaus.groovy.classgen
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static org.junit.jupiter.api.Assertions.assertEquals
+class CallSiteTest extends GroovyTestCase {
 
-
-class CallSiteTest {
-
-    @Test
     void testChangeMetaClass2() {
         assertScript '''
             def a = new Dummy()
@@ -41,7 +36,6 @@ class CallSiteTest {
         '''
     }
 
-    @Test
     void testChangeMetaClass () {
         def obj = new OBJ()
         assertEquals(6, obj.method(3,3))

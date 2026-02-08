@@ -19,9 +19,9 @@
 package org.apache.groovy.contracts.tests.post
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.Assert.assertEquals
 
 class ResultVariablePostconditionTests extends BaseTestClass {
 

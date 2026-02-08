@@ -19,11 +19,10 @@
 package groovy.mock.example
 
 import groovy.mock.interceptor.MockFor
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class SandwichMakerTest {
+class SandwichMakerTest extends GroovyTestCase {
 
-    @Test
     void testStuff(){
 
         def mocker = new MockFor(CheeseSlicer.class)

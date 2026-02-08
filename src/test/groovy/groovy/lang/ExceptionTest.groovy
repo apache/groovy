@@ -18,10 +18,9 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-public class ExceptionTest {
+public class ExceptionTest extends GroovyTestCase {
 
     private int finallyCounter;
 
@@ -37,7 +36,6 @@ public class ExceptionTest {
         }
     }
 
-    @Test
     void testFinallyExceptionOverridingTryException() {
         finallyCounter = 0
         try {
@@ -59,7 +57,6 @@ public class ExceptionTest {
         }
     }
 
-    @Test
     void testFinallyExceptionAlone() {
         finallyCounter = 0
         try {
@@ -82,7 +79,6 @@ public class ExceptionTest {
         }
     }
 
-    @Test
     void testExceptionAndCatchBlock() {
         finallyCounter = 0
         try {

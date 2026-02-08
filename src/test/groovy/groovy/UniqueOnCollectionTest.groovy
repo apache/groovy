@@ -18,18 +18,15 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class UniqueOnCollectionTest extends GroovyTestCase {
 
-class UniqueOnCollectionTest {
-
-    @Test
     void testUnique() {
         def list = [-1, 0, 1, 1, 0, -1]
         assert list.unique() == [-1, 0, 1]
     }
 
-    @Test
     void testUniqueOnListNoDupls() {
         assert [].unique() == []
         assert [1].unique() == [1]
@@ -38,7 +35,6 @@ class UniqueOnCollectionTest {
         assert a.is(a.unique())
     }
 
-    @Test
     void testUniqueOnListOneDupl() {
         assert [1, 1].unique() == [1]
         def a = [1, 1]
@@ -50,7 +46,6 @@ class UniqueOnCollectionTest {
         assert [1, 1, 2, 1, 1].unique() == [1, 2]
     }
 
-    @Test
     void testUniqueOnListTwoDupls() {
         assert [1, 1, 2, 2].unique() == [1, 2]
         def a = [1, 1, 2, 2]
@@ -62,7 +57,6 @@ class UniqueOnCollectionTest {
         assert [1, 1, 2, 2, 1, 1, 2, 2].unique() == [1, 2]
     }
 
-    @Test
     void testUniqueOnIterator() {
         def it = [1, 1, 2, 2].iterator().unique()
         assert it instanceof Iterator
@@ -70,7 +64,6 @@ class UniqueOnCollectionTest {
         assert result == [1, 2]
     }
 
-    @Test
     void testUniqueOnOtherCollections() {
         def a = new HashSet([1, 1])
         assert a.is(a.unique())
@@ -87,7 +80,6 @@ class UniqueOnCollectionTest {
     }
 
     /** GROOVY-1006 */
-    @Test
     void testUniqueOnDifferentTypes() {
         def a = [1, 2, (short) 1, 2L, 2.0]
         def b = a.unique()
@@ -98,7 +90,6 @@ class UniqueOnCollectionTest {
     }
 
     /** GROOVY-1956 */
-    @Test
     void testUniqueOnListWithNulls() {
         def x = [1, 2, 3, 1, 2, 3, null, 'a', null]
         x.unique()
@@ -106,7 +97,6 @@ class UniqueOnCollectionTest {
     }
 
     /** GROOVY-4742 */
-    @Test
     void testNonMutatingList() {
         def it = [-1, 0, 1, 1, 0, -1]
         def uniq = it.unique( false )
@@ -116,7 +106,6 @@ class UniqueOnCollectionTest {
     }
 
     /** GROOVY-4742 */
-    @Test
     void testImmutableUniqueListWithDefaultComparator() {
         def orig = [1, 3, 2, 3]
         def uniq = orig.unique(false)
@@ -125,7 +114,6 @@ class UniqueOnCollectionTest {
     }
 
     /** GROOVY-11308 */
-    @Test
     void testNonMutatingEmpty() {
         def it = []
         def uniq = it.unique( false )
@@ -135,7 +123,6 @@ class UniqueOnCollectionTest {
     }
 
     /** GROOVY-11308 */
-    @Test
     void testNonMutatingSingleElement() {
         def it = [1]
         def uniq = it.unique( false )

@@ -17,10 +17,13 @@
  *  under the License.
  */
 package gls.scope
+
+import groovy.test.GroovyTestCase
+
 /**
 *  test case based on GROOVY-3069
 */
-class VariablePrecedenceTest {
+class VariablePrecedenceTest extends GroovyTestCase {
     final String CLOSURE_STR = '[Closure]'
     final String CLASS_METHOD_STR = '[ClassMethod]'
 

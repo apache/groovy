@@ -18,8 +18,8 @@
  */
 package bugs
 
-
-import org.junit.jupiter.api.Test
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -31,6 +31,6 @@ final class Groovy5318 {
             def a = new java.util<Integer>.ArrayList<ArrayList<Integer>>()
         '''
 
-        assert err.message =~ 'Unexpected input: \'.\''
+        assert err =~ 'Unexpected input: \'.\''
     }
 }

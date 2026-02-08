@@ -18,12 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy7970Bug {
+class Groovy7970Bug extends GroovyTestCase {
 
     private static final String getScriptAIC(String visibility, boolean cs) {
         """
@@ -92,7 +89,6 @@ class Groovy7970Bug {
         """
     }
 
-    @Test
     void testMethodAccessFromClosureWithinInnerClass() {
         assertScript getScriptInner('public', false)
         assertScript getScriptInner('protected', false)
@@ -102,7 +98,6 @@ class Groovy7970Bug {
         assertScript getScriptNestedInner('private', false)
     }
 
-    @Test
     void testMethodAccessFromClosureWithinInnerClass_CS() {
         assertScript getScriptInner('public', true)
         assertScript getScriptInner('protected', true)
@@ -112,7 +107,6 @@ class Groovy7970Bug {
         assertScript getScriptNestedInner('private', true)
     }
 
-    @Test
     void testMethodAccessFromClosureWithinAIC() {
         assertScript getScriptAIC('public', false)
         assertScript getScriptAIC('protected', false)
@@ -122,7 +116,6 @@ class Groovy7970Bug {
         assertScript getScriptNestedAIC('private', false)
     }
 
-    @Test
     void testMethodAccessFromClosureWithinAIC_CS() {
         assertScript getScriptAIC('public', true)
         assertScript getScriptAIC('protected', true)

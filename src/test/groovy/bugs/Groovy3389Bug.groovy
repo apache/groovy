@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy3389Bug {
-    @Test
+class Groovy3389Bug extends GroovyTestCase {
     void testFieldHidingByLocalVariable() {
         assertScript """
             class Groovy3389 {

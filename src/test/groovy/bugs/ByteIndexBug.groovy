@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class ByteIndexBug {
+class ByteIndexBug extends GroovyTestCase {
     // TODO: this tests a string with 128 nulls - is that what is intended?
-    @Test
     void testBug() {
         def sb = new StringBuffer("\"\"\"\n")
         for (j in 0..127){ // 126 is okay.

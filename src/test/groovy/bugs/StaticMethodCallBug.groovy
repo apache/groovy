@@ -19,19 +19,17 @@
 package bugs
 
 import groovy.bugs.TestSupport
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 /**
  */
-class StaticMethodCallBug {
+class StaticMethodCallBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def value = TestSupport.mockStaticMethod()
         assert value == "cheese"
     }
 
-    @Test
     void testStaticProperty() {
         def value = TestSupport.mockStaticProperty
         assert value == "cheese"

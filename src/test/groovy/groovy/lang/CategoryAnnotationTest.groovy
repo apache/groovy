@@ -18,7 +18,7 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -247,7 +247,7 @@ final class CategoryAnnotationTest {
 
             assert new Bar().foo() == 5
         '''
-        assert err.message =~ /The @Category transformation does not support instance fields/
+        assert err =~ /The @Category transformation does not support instance fields/
     }
 
     @Test // GROOVY-6120
@@ -266,7 +266,7 @@ final class CategoryAnnotationTest {
 
             assert new Bar().foo() == 5
         '''
-        assert err.message =~ /The @Category transformation does not support instance properties/
+        assert err =~ /The @Category transformation does not support instance properties/
     }
 
     @Test // GROOVY-6120

@@ -18,14 +18,10 @@
  */
 package org.codehaus.groovy.classgen
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class MetaClassTest extends GroovyTestCase {
 
-
-class MetaClassTest {
-
-    @Test
     void testMetaClass() {
         test(this)
         test { print(it) }
@@ -46,7 +42,6 @@ class MetaClassTest {
         assert classNode.name == name
     }
 
-    @Test
     void testMetaClassDefinition() {
         assertScript """
             class Foo {

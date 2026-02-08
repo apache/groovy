@@ -32,9 +32,6 @@ import java.beans.PropertyChangeEvent
 import java.beans.PropertyVetoException
 import java.text.SimpleDateFormat
 
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.fail
-
 class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
     void testSliderValueBinding() {

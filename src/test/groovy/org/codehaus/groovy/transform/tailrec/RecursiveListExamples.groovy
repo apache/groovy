@@ -20,7 +20,7 @@ package org.codehaus.groovy.transform.tailrec
 
 import groovy.transform.CompileStatic
 import groovy.transform.TailRecursive
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class RecursiveListExamples {
 

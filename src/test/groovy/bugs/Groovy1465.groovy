@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -26,7 +26,7 @@ final class Groovy1465 {
 
     private static void compileAndVerifyCyclicInheritenceCompilationError(String sourceCode) {
         def err = shouldFail(sourceCode)
-        assert err.message =~ /Cycle detected/
+        assert err =~ /Cycle detected/
     }
 
     @Test

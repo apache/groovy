@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -44,21 +45,17 @@ import org.codehaus.groovy.ast.stmt.SwitchStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import org.objectweb.asm.Opcodes
-
-import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Unit test for the AstBuilder class. Shows the usage of how to create AST from string input.
  */
-class AstBuilderFromStringTest {
+class AstBuilderFromStringTest extends GroovyTestCase {
 
     private AstBuilder factory
 
-    @BeforeEach
-    void setUp() {
+    protected void setUp() {
+        super.setUp()
         factory = new AstBuilder()
     }
 
@@ -67,7 +64,6 @@ class AstBuilderFromStringTest {
      * This shows how to compile a simple script that returns a constant,
      * discarding the generated Script subclass.
      */
-    @Test
     void testSimpleConstant() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CONVERSION, " \"Some String\" ")
 
@@ -85,7 +81,6 @@ class AstBuilderFromStringTest {
      * This shows how to compile a script that includes declarations,
      * discarding the generated Script subclass.
      */
-    @Test
     void testAssignment() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CONVERSION, " def x = 2; def y = 4 ")
 
@@ -114,7 +109,6 @@ class AstBuilderFromStringTest {
      * This shows how to compile a script that includes method calls,
      * discarding the generated Script subclass.
      */
-    @Test
     void testMethodCall() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CONVERSION, """ println "Hello World" """)
 
@@ -137,7 +131,6 @@ class AstBuilderFromStringTest {
      * This shows how to get the Script subclass off of the compiled result, compiling
      * all the way to CLASS_GENERATION.
      */
-    @Test
     void testWithScriptClassAndClassGeneration() {
         List<ASTNode> result = factory.buildFromString(CompilePhase.CLASS_GENERATION, false, " \"Some String\" ")
 
@@ -156,7 +149,6 @@ class AstBuilderFromStringTest {
     /**
      * Proves default value is CLASS_GENERATION and statementsOnly = true.
      */
-    @Test
     void testDefaultValues() {
         List<ASTNode> result = factory.buildFromString(" \"Some String\" ")
 
@@ -174,7 +166,6 @@ class AstBuilderFromStringTest {
      * This tests the contract of the build method, trying to pass null
      * arguments when those arguments are required.
      */
-    @Test
     void testContract() {
 
         // source is required
@@ -189,7 +180,6 @@ class AstBuilderFromStringTest {
     }
 
 
-    @Test
     void testIfStatement() {
 
         def result = factory.buildFromString(
@@ -228,7 +218,6 @@ class AstBuilderFromStringTest {
     }
 
 
-    @Test
     void testSwitchAndCaseAndBreakStatements() {
 
         def result = new AstBuilder().buildFromString(CompilePhase.SEMANTIC_ANALYSIS, """
@@ -292,7 +281,6 @@ class AstBuilderFromStringTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testCreatingClassAndMethods() {
         def result = factory.buildFromString(CompilePhase.SEMANTIC_ANALYSIS, """
             class MyClass {

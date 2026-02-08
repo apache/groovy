@@ -18,23 +18,19 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class GlobalPrintlnTest extends GroovyTestCase {
 
-class GlobalPrintlnTest {
-
-    @Test
     void testGlobalPrintln() {
         println("Hello World!")
     }
 
-    @Test
     void testGlobalPrint() {
         print("Hello ")
         println("World!")
     }
 
-    @Test
     void testWriterTest() {
         def sw = new StringWriter()
         sw.print("foo")

@@ -19,7 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 

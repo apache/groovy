@@ -18,13 +18,12 @@
  */
 package org.codehaus.groovy.tools
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.codehaus.groovy.tools.StringHelper.tokenizeUnquoted
+import static org.codehaus.groovy.tools.StringHelper.*
 
-class StringHelperTest {
+class StringHelperTest extends GroovyTestCase {
 
-  @Test
   void testTokenize() {
     assert tokenizeUnquoted("a b") == ["a","b"]
     assert tokenizeUnquoted("a 'b a'") == ["a","'b a'"]

@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -88,7 +88,7 @@ final class ConstructorThisCallBug {
                 Base(String arg) {}
             }
         '''
-        assert err.message =~ / Cannot reference 'getData' before supertype constructor has been called. /
+        assert err =~ / Cannot reference 'getData' before supertype constructor has been called. /
     }
 
     @Test
@@ -102,7 +102,7 @@ final class ConstructorThisCallBug {
                 }
             }
         '''
-        assert err.message =~ / Cannot reference 'getData' before supertype constructor has been called. /
+        assert err =~ / Cannot reference 'getData' before supertype constructor has been called. /
     }
 
     @Test
@@ -126,7 +126,7 @@ final class ConstructorThisCallBug {
             Outer.a = 'ok'
             assert o.test() == 'ok'
         '''
-        assert err.message =~ / Cannot reference 'myA' before supertype constructor has been called. /
+        assert err =~ / Cannot reference 'myA' before supertype constructor has been called. /
     }
 
     //

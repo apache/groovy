@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -254,7 +254,7 @@ final class Groovy10133 {
                 }
             }
         '''
-        assert err.message =~ /The variable \[x\] is undeclared/
+        assert err =~ /The variable \[x\] is undeclared/
 
         err = shouldFail '''
             class C {
@@ -266,6 +266,6 @@ final class Groovy10133 {
                 }
             }
         '''
-        assert err.message =~ /No such property: x for class: C/
+        assert err =~ /No such property: x for class: C/
     }
 }

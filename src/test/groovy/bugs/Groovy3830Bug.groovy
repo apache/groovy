@@ -18,18 +18,15 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy3830Bug {
-    @Test
+class Groovy3830Bug extends GroovyTestCase {
     void testCallSitesUsageInAnInterface() {
         assert I3830.i == 2
         assert I3830.i2 == 5
         assert I3830.i3 == 6
     }
 
-    @Test
     void testCallSitesUsageInNestedInterface() {
         assert C3830.I3830.i == 2
         assert C3830.I3830.i2 == 5

@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.util
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class JavaShellTest {
     @Test

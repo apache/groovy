@@ -19,55 +19,46 @@
 package groovy.util
 
 import groovy.namespace.QName
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertNotNull
-import static org.junit.jupiter.api.Assertions.assertTrue
+import groovy.test.GroovyTestCase
 
 /**
  * Tests the use of the structured Attribute type
  */
-class NodeTest {
+class NodeTest extends GroovyTestCase {
 
-    @Test
     void testSimpleAttribute() {
         Node node = new Node(null, "transactional");
-        assertEquals("transactional", node.name(), "name");
-        assertEquals(0, node.attributes().size(), "attributes");
-        assertEquals(0, node.children().size(), "value");
-        assertEquals("", node.text(), "text");
+        assertEquals("name", "transactional", node.name());
+        assertEquals("attributes", 0, node.attributes().size());
+        assertEquals("value", 0, node.children().size());
+        assertEquals("text", "", node.text());
 
         dump(node);
     }
 
-    @Test
     void testAttributeWithAttributes() {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
 
         Node node = new Node(null, "foo", attributes);
-        assertEquals("foo", node.name(), "name");
-        assertEquals(1, node.attributes().size(), "attributes");
-        assertEquals(0, node.children().size(), "value");
-        assertEquals("", node.text(), "text");
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 1, node.attributes().size());
+        assertEquals("value", 0, node.children().size());
+        assertEquals("text", "", node.text());
 
         dump(node);
     }
 
-    @Test
     void testAttributeWithText() {
         Node node = new Node(null, "foo", "the text");
-        assertEquals("foo", node.name(), "name");
-        assertEquals(0, node.attributes().size(), "attributes");
-        assertEquals(1, node.children().size(), "value");
-        assertEquals("the text", node.text(), "text");
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 0, node.attributes().size());
+        assertEquals("value", 1, node.children().size());
+        assertEquals("text", "the text", node.text());
 
         dump(node);
     }
 
-    @Test
     void testAttributeWithAttributesAndChildren() {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
@@ -78,15 +69,14 @@ class NodeTest {
         children.add("someText");
 
         Node node = new Node(null, "foo", attributes, children);
-        assertEquals("foo", node.name(), "name");
-        assertEquals(1, node.attributes().size(), "attributes");
-        assertEquals(3, node.children().size(), "value");
-        assertEquals("JamesBobsomeText", node.text(), "text");
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 1, node.attributes().size());
+        assertEquals("value", 3, node.children().size());
+        assertEquals("text", "JamesBobsomeText", node.text());
 
         dump(node);
     }
 
-    @Test
     void testAttributeWithAttributesAndChildrenWithMixedText() {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
@@ -101,22 +91,21 @@ class NodeTest {
         children.add("moreText");
 
         Node node = new Node(null, "foo", attributes, children);
-        assertEquals("foo", node.name(), "name");
-        assertEquals(1, node.attributes().size(), "attributes");
-        assertEquals(5, node.children().size(), "value");
-        assertEquals("someTextJamesmoreTextBobmoreText", node.text(), "text");
+        assertEquals("name", "foo", node.name());
+        assertEquals("attributes", 1, node.attributes().size());
+        assertEquals("value", 5, node.children().size());
+        assertEquals("text", "someTextJamesmoreTextBobmoreText", node.text());
 
         // let's test get
         List list = (List) node.get("person");
-        assertEquals(2, list.size(), "Expected list size: " + list);
+        assertEquals("Expected list size: " + list, 2, list.size());
 
-        assertEquals(node1, list.get(0), "Node1");
-        assertEquals(node2, list.get(1), "Node2");
+        assertEquals("Node1", node1, list.get(0));
+        assertEquals("Node2", node2, list.get(1));
 
         dump(node);
     }
 
-    @Test
     void testNavigationUsingQNames() {
         QName name1 = new QName("http://something", "foo", "f");
 
@@ -132,24 +121,23 @@ class NodeTest {
 
         // let's look up by QName
         Object value = node.getAt(name1);
-        assertTrue(value instanceof NodeList, "Should return a list: " + value);
+        assertTrue("Should return a list: " + value, value instanceof NodeList);
         NodeList list = (NodeList) value;
-        assertEquals(1, list.size(), "Size");
+        assertEquals("Size", 1, list.size());
 
         Node answer = (Node) list.get(0);
         // check node
-        assertNotNull(answer, "Node is null!");
-        assertEquals("http://something", answer.name().namespaceURI, "namespace of node");
-        assertEquals("foo", answer.name().localPart, "localPart of node");
+        assertNotNull("Node is null!", answer);
+        assertEquals("namespace of node", "http://something", answer.name().namespaceURI);
+        assertEquals("localPart of node", "foo", answer.name().localPart);
 
         // check grandchild
         NodeList gc = list.getAt(new QName("http://something", "bar"));
-        assertEquals(1, gc.size(), "grand children size");
-        assertEquals("I am a youngling", gc.text(), "text of grandchildren");
-        assertEquals("http://something", gc[0].name().namespaceURI, "namespace of grandchild[0]");
+        assertEquals("grand children size", 1, gc.size());
+        assertEquals("text of grandchildren", "I am a youngling", gc.text());
+        assertEquals("namespace of grandchild[0]", "http://something", gc[0].name().namespaceURI);
     }
 
-    @Test
     void testRemove() {
         Node foo = new Node(null, 'foo')
         new Node(foo, 'bar', [id:'1'])
@@ -178,7 +166,6 @@ class NodeTest {
         assert !foo.bar.contains(bar3)
     }
 
-    @Test
     void testMove() {
         Node foo = new Node(null, 'foo')
         new Node(foo, 'bar', [id:'1'])
@@ -199,7 +186,6 @@ class NodeTest {
         assert foo.baz.bar[0] == bar2
     }
 
-    @Test
     void testPlus() {
         Node root = new Node(null, 'root')
         new Node(root, 'first')
@@ -208,7 +194,6 @@ class NodeTest {
         assert 'some text' == root.second.text()
     }
 
-    @Test
     void testUnsupportedReplaceForRootNode() {
         Node root = new Node(null, 'root')
         shouldFail(UnsupportedOperationException) {
@@ -216,7 +201,6 @@ class NodeTest {
         }
     }
 
-    @Test
     void testUnsupportedPlusOnRootNode() {
         Node root = new Node(null, 'root')
         shouldFail(UnsupportedOperationException) {
@@ -224,7 +208,6 @@ class NodeTest {
         }
     }
 
-    @Test
     void testPlusWithMixedContent() {
         Node root = new Node(null, 'root')
         new Node(root, 'beforeString')

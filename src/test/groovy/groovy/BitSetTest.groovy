@@ -18,17 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertFalse
-import static org.junit.jupiter.api.Assertions.assertNotSame
-import static org.junit.jupiter.api.Assertions.assertTrue
+class BitSetTest extends GroovyTestCase{
 
-
-class BitSetTest{
-
-    @Test
     void testSubscriptOperator() {
         def bitSet = new BitSet()
 
@@ -42,7 +35,6 @@ class BitSetTest{
         assertBitFalse bitSet, 4
     }
 
-    @Test
     void testSubscriptAssignmentWithRange() {
         def bitSet = new BitSet()
 
@@ -56,7 +48,6 @@ class BitSetTest{
         assertBitFalse bitSet, 5
     }
 
-    @Test
     void testSubscriptAssignmentWithReverseRange() {
         def bitSet = new BitSet()
 
@@ -70,7 +61,6 @@ class BitSetTest{
         assertBitFalse bitSet, 5
     }
 
-    @Test
     void testSubscriptAccessWithRange() {
         def bitSet = new BitSet()
 
@@ -79,12 +69,12 @@ class BitSetTest{
 
         def subSet = bitSet[5..11]
 
-        assertTrue subSet instanceof BitSet, 'subSet should have been a BitSet'
+        assertTrue 'subSet should have been a BitSet', subSet instanceof BitSet
 
-        assertNotSame bitSet, subSet, 'subSet should not have been the same object'
+        assertNotSame 'subSet should not have been the same object', bitSet, subSet
 
         // the last true bit should be at index 6
-        assertEquals 7, subSet.length(), 'result had wrong logical size'
+        assertEquals 'result had wrong logical size', 7, subSet.length()
 
         assertBitFalse subSet, 0
         assertBitFalse subSet, 1
@@ -95,7 +85,6 @@ class BitSetTest{
         assertBitTrue  subSet, 6
     }
 
-    @Test
     void testSubscriptAccessWithReverseRange() {
         def bitSet = new BitSet()
 
@@ -104,12 +93,12 @@ class BitSetTest{
 
         def subSet = bitSet[8..2]
 
-        assertTrue subSet instanceof BitSet, 'subSet should have been a BitSet'
+        assertTrue 'subSet should have been a BitSet', subSet instanceof BitSet
 
-        assertNotSame bitSet, subSet, 'subSet should not have been the same object'
+        assertNotSame 'subSet should not have been the same object', bitSet, subSet
 
         // the last true bit should be at index 5
-        assertEquals 6, subSet.length(), 'result had wrong logical size'
+        assertEquals 'result had wrong logical size', 6, subSet.length()
 
         assertBitFalse subSet, 0
         assertBitFalse subSet, 1
@@ -120,7 +109,6 @@ class BitSetTest{
         assertBitFalse subSet, 6
     }
 
-    @Test
     void testAnd() {
         def a = new BitSet()
         a[2] = true
@@ -135,7 +123,6 @@ class BitSetTest{
         assertBitTrue  c, 3
     }
 
-    @Test
     void testOr() {
         def a = new BitSet()
         a[2] = true
@@ -150,7 +137,6 @@ class BitSetTest{
         assertBitTrue  c, 3
     }
 
-    @Test
     void testXor() {
         def a = new BitSet()
         a[2] = true
@@ -165,7 +151,6 @@ class BitSetTest{
         assertBitFalse c, 3
     }
 
-    @Test
     void testBitwiseNegate() {
         def a = new BitSet()
         a[2] = true
@@ -177,7 +162,6 @@ class BitSetTest{
         assertBitFalse b, 3
     }
 
-    @Test
     void testLeftShift() {
         def testCases = [
             [1, -12L],
@@ -197,10 +181,10 @@ class BitSetTest{
     }
 
     private assertBitTrue(bitset, index) {
-        assertTrue  bitset[index], 'index ' + index + ' should have been true'
+        assertTrue  'index ' + index + ' should have been true',  bitset[index]
     }
 
     private assertBitFalse(bitset, index) {
-        assertFalse bitset[index], 'index ' + index + ' should have been false'
+        assertFalse 'index ' + index + ' should have been false', bitset[index]
     }
 }

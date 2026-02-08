@@ -18,15 +18,13 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests iterating with local variables
  */
-class ForLoopWithLocalVariablesTest {
+class ForLoopWithLocalVariablesTest extends GroovyTestCase {
 
-    @Test
     void testForLoop() {
         def x = null
 

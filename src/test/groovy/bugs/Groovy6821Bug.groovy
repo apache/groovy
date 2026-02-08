@@ -18,16 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests that 6821 is fixed using an explicit Outer.this notation if not using @CompileStatic
  */
-class Groovy6821Bug {
-    @Test
+class Groovy6821Bug extends GroovyTestCase {
     void testShouldAccessOuterClassMethodFromSpecialConstructorCall() {
         assertScript '''
 class Parent {
@@ -47,7 +43,6 @@ class Parent {
     assert o.test() == 'ok'
 '''
     }
-    @Test
     void testShouldAccessOuterClassMethodFromSpecialConstructorCallUsingPropertyAccess() {
         assertScript '''
 class Parent {

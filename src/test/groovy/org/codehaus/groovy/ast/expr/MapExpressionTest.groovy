@@ -18,24 +18,21 @@
  */
 package org.codehaus.groovy.ast.expr
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.builder.AstBuilder
-import org.junit.jupiter.api.Test
 
-class MapExpressionTest {
+class MapExpressionTest extends GroovyTestCase {
 
-    @Test
     void testGetText_emptyMap() {
         def expression = buildFromString '[:]'
         assert expression.text == '[:]'
     }
 
-    @Test
     void testGetText_singleEntry() {
         def expression = buildFromString '[x: 1]'
         assert expression.text == '[x:1]'
     }
 
-    @Test
     void testGetText_multipleEntries() {
         def expression = buildFromString '[x: 1, y: 2]'
         assert expression.text == '[x:1, y:2]'

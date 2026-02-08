@@ -18,18 +18,15 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ClosureInStaticMethodTest extends GroovyTestCase {
 
-class ClosureInStaticMethodTest {
-
-    @Test
     void testClosureInStaticMethod() {
         def closure = closureInStaticMethod()
         assertClosure(closure)
     }
 
-    @Test
     void testMethodClosureInStaticMethod() {
         def closure = methodClosureInStaticMethod()
         assertClosure(closure)
@@ -48,7 +45,6 @@ class ClosureInStaticMethodTest {
         block.call("hello!")
     }
 
-    @Test
     void testClosureInStaticMethodCallingStaticMethod() {
         assert doThing(1) == 10
         assert this.doThing(1) == 10

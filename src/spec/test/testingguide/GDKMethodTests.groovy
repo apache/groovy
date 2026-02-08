@@ -18,13 +18,11 @@
  */
 package testingguide
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class GDKMethodTests {
+class GDKMethodTests extends GroovyTestCase {
 
     // tag::combinations[]
-    @Test
     void testCombinations() {
         def combinations = [[2, 3],[4, 5, 6]].combinations()
         assert combinations == [[2, 4], [3, 4], [2, 5], [3, 5], [2, 6], [3, 6]]
@@ -32,7 +30,6 @@ class GDKMethodTests {
     // end::combinations[]
 
     // tag::each_combination[]
-    @Test
     void testEachCombination() {
         [[2, 3],[4, 5, 6]].eachCombination { println it[0] + it[1] }
     }

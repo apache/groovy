@@ -21,7 +21,7 @@ package bugs
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.control.SourceUnit
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class Groovy9666 {
     @Test

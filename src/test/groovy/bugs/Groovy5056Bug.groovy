@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy5056Bug {
-    @Test
+class Groovy5056Bug extends GroovyTestCase {
     void testASortedSetMinusACollection() {
         def comparator = [compare: {a,b->
                 def retVal = a.x.compareTo(b.x)
@@ -48,7 +46,6 @@ class Groovy5056Bug {
         assert difference.size() == 0
     }
 
-    @Test
     void testASortedSetMinusAnItem() {
         def comparator = [compare: {a,b->
                 def retVal = a.x.compareTo(b.x)

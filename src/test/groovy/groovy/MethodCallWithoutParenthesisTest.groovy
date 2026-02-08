@@ -18,14 +18,12 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class MethodCallWithoutParenthesisTest {
+class MethodCallWithoutParenthesisTest extends GroovyTestCase {
 
     def flag
 
-    @Test
     void testMethodCallWithOneParam() {
         flag = false
 
@@ -34,7 +32,6 @@ class MethodCallWithoutParenthesisTest {
         assert flag
     }
 
-    @Test
     void testMethodCallWithOneParamUsingThis() {
         flag = false
 
@@ -48,7 +45,6 @@ class MethodCallWithoutParenthesisTest {
         flag = true
     }
 
-    @Test
     void testMethodCallWithTwoParams() {
         methodWithTwoParams 5, 6
 
@@ -59,7 +55,6 @@ class MethodCallWithoutParenthesisTest {
         assert value == 11
     }
 
-    @Test
     void testMethodCallWithTwoParamsUsingThis() {
         def value = this.methodWithTwoParams(5, 6)
 

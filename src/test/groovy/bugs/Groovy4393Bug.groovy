@@ -18,12 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
+import org.junit.Ignore
 
-@Disabled('requires a specific configuration, see: https://issues.apache.org/jira/browse/GROOVY-4393 for details')
-class Groovy4393Bug {
-    @Test
+@Ignore('requires a specific configuration, see: https://issues.apache.org/jira/browse/GROOVY-4393 for details')
+class Groovy4393Bug extends GroovyTestCase {
     void testIfSourceFilesWithOtherExtensionsGotCompiledFine() {
         assert Groovy4393BugV1 != null
     }

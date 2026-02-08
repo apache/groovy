@@ -18,26 +18,22 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class SafeNavigationTest extends GroovyTestCase {
 
-class SafeNavigationTest {
-
-    @Test
     void testNullNavigation() {
         def x = null
         def y = x?.bar
         assert y == null
     }
 
-    @Test
     void testNormalPropertyNavigation() {
         def x = ['a':456, 'foo':['bar':123, 'x':456], 'z':99]
         def y = x?.foo?.bar
         assert y == 123
     }
 
-    @Test
     void testNullPropertyNavigation() {
         def x = null
         def y = x?.foo?.bar
@@ -48,21 +44,18 @@ class SafeNavigationTest {
         assert t == null
     }
 
-    @Test
     void testNormalMethodCall() {
         def x = 1234
         def y = x?.toString()
         assert y == "1234"
     }
 
-    @Test
     void testNullMethodCall() {
         def x = null
         def y = x?.toString()
         assert y == null
     }
 
-    @Test
     void testNewLine() {
         def x = [ a:1, b:2 ]
         def y = x
@@ -82,7 +75,6 @@ class SafeNavigationTest {
         x?.toString()
     }
 
-    @Test
     void testCachedSafeNavigation() {
         assert checkDouble(1234)!=null
         assert checkDouble(null)==null

@@ -19,7 +19,7 @@
 package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class Groovy10303 {
     @Test

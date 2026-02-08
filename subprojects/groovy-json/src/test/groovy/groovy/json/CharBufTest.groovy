@@ -18,15 +18,14 @@
  */
 package groovy.json
 
+import groovy.test.GroovyTestCase
 import org.apache.groovy.json.internal.CharBuf
-import org.junit.jupiter.api.Test
 
 /**
  * Test the internal CharBuf class
  */
-class CharBufTest {
+class CharBufTest extends GroovyTestCase {
 
-    @Test
     void testUnicodeAndControl() {
         String str = CharBuf.create(0).addJsonEscapedString("\u0001").toString()
         assert str == '"\\u0001"'
@@ -62,7 +61,6 @@ class CharBufTest {
         assert str == '" \\\\ "'
     }
 
-    @Test
     void testDisableUnicodeEscaping() {
         String str = CharBuf.create(0).addJsonEscapedString("Éric").toString()
         assert str == '"\\u00c9ric"'
@@ -78,7 +76,6 @@ class CharBufTest {
      * https://issues.apache.org/jira/browse/GROOVY-6937
      * https://issues.apache.org/jira/browse/GROOVY-6852
      */
-    @Test
     void testGroovy6937and6852() {
         // using raw CharBuf directly
         String s = CharBuf.create(0).addJsonEscapedString('\u0391\u03a6\u039f\u0399 \u039a\u039f\u039b\u039b\u0399\u0391 \u039a\u03a1\u0395\u03a9\u03a0\u039f\u039b\u0395\u0399\u039f \u03a4\u0391\u0392\u0395\u03a1\u039d\u0391').toString()
@@ -97,7 +94,6 @@ class CharBufTest {
         assert result == /["${'\\u20ac' * 20_000}"]/
     }
 
-    @Test
     void testRemoveLastChar() {
         CharBuf buffer
 

@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -35,7 +35,7 @@ final class Groovy10094 {
             }
         '''
 
-        assert err.message =~ /Cannot assign value of type java.lang.String to variable of type int/
+        assert err =~ /Cannot assign value of type java.lang.String to variable of type int/
     }
 
     @Test
@@ -49,7 +49,7 @@ final class Groovy10094 {
             }
         '''
 
-        assert err.message =~ /Cannot assign value of type java.lang.String to variable of type int/
+        assert err =~ /Cannot assign value of type java.lang.String to variable of type int/
     }
 
     @Test
@@ -62,6 +62,6 @@ final class Groovy10094 {
             }
         '''
 
-        assert err.message =~ /Cannot assign value of type java.lang.String to variable of type int/
+        assert err =~ /Cannot assign value of type java.lang.String to variable of type int/
     }
 }

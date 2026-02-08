@@ -18,23 +18,27 @@
  */
 package groovy.execute
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
-import static org.junit.jupiter.api.Assumptions.assumeTrue
+import static org.junit.Assume.assumeTrue
 
 /**
  * Test to ensure that the execute mechanism works fine on Windows systems.
  * <p>
  * These test are a bit trivial but at least they are here :-)
  */
-class ExecuteTest_Windows {
+@RunWith(JUnit4)
+class ExecuteTest_Windows extends GroovyTestCase {
 
   private static final boolean windows = System.properties['os.name'].toLowerCase().contains('windows')
 
-  @BeforeEach
+  @Before
   void assumeUnixOrSolaris() {
-    assumeTrue(windows, 'Test requires Windows.')
+    assumeTrue('Test requires Windows.', windows)
   }
 
   @Test

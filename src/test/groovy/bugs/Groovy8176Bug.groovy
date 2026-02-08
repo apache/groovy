@@ -18,12 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-class Groovy8176Bug {
-    @Test
+class Groovy8176Bug extends GroovyTestCase {
     void testTernaryWithTap() {
         assertScript '''
             import groovy.transform.CompileStatic

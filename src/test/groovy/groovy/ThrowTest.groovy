@@ -18,13 +18,9 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.fail
-
-
-class ThrowTest {
-    @Test
+class ThrowTest extends GroovyTestCase {
     void testThrow() {
         try {
             throw new Exception("abcd")

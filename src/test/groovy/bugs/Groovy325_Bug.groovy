@@ -18,15 +18,13 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy325_Bug {
+class Groovy325_Bug extends GroovyTestCase {
   static boolean staticMethod() {
     return true
   }
 
-  @Test
   void testCallStaticMethodFromClosure() {
     def c = { staticMethod() }
     assert c()

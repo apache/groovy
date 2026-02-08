@@ -18,18 +18,15 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
 import groovy.transform.NamedParam
 import groovy.transform.NamedParams
 import groovy.transform.TypeChecked
-import org.junit.jupiter.api.Test
 
 import static groovy.NamedParameterHelper.myJavaMethod
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
 
-final class NamedParameterTest {
+final class NamedParameterTest extends GroovyTestCase {
 
-    @Test
     void testPassingNamedParametersToMethod() {
         someMethod(name:"gromit", eating:"nice cheese", times:2)
     }
@@ -41,7 +38,6 @@ final class NamedParameterTest {
         assert args.size() == 3
     }
 
-    @Test
     void testNamedParameterSpreadOnSeveralLines() {
         someMethod( name:
                     "gromit",
@@ -51,7 +47,6 @@ final class NamedParameterTest {
                     2)
     }
 
-    @Test
     void testNamedParameterSpreadOnSeveralLinesWithCommandExpressions() {
         someMethod name:
                     "gromit",
@@ -62,7 +57,6 @@ final class NamedParameterTest {
     }
 
     @TypeChecked
-    @Test
     void testNamedParamsAnnotation() {
         assert myJavaMethod(foo: 'FOO', bar: 'BAR') == 'foo = FOO, bar = BAR'
         assert myJavaMethod(bar: 'BAR') == 'foo = null, bar = BAR'
@@ -90,7 +84,6 @@ final class NamedParameterTest {
         '''
     }
 
-    @Test
     void testMissingRequiredName() {
         def message = shouldFail '''
             import groovy.transform.TypeChecked
@@ -102,10 +95,9 @@ final class NamedParameterTest {
             }
             method()
         '''
-        assert message.message.contains("required named param 'bar' not found")
+        assert message.contains("required named param 'bar' not found")
     }
 
-    @Test
     void testUnknownName() {
         def message = shouldFail '''
             import groovy.transform.TypeChecked
@@ -117,11 +109,10 @@ final class NamedParameterTest {
             }
             method()
         '''
-        assert message.message.contains("unexpected named arg: baz")
+        assert message.contains("unexpected named arg: baz")
     }
 
     // GROOVY-10027
-    @Test
     void testFlowType() {
         assertScript '''
             import groovy.transform.TypeChecked
@@ -137,7 +128,6 @@ final class NamedParameterTest {
         '''
     }
 
-    @Test
     void testInvalidType1() {
         def message = shouldFail '''
             import groovy.transform.TypeChecked
@@ -148,10 +138,9 @@ final class NamedParameterTest {
                 myMethod(foo:42, -1)
             }
         '''
-        assert message.message.contains("argument for named param 'foo' has type 'int' but expected 'java.lang.String'")
+        assert message.contains("argument for named param 'foo' has type 'int' but expected 'java.lang.String'")
     }
 
-    @Test
     void testInvalidType2() {
         def message = shouldFail '''
             import groovy.transform.TypeChecked
@@ -163,11 +152,10 @@ final class NamedParameterTest {
                 myMethod(foo:answer, -1)
             }
         '''
-        assert message.message.contains("argument for named param 'foo' has type 'int' but expected 'java.lang.String'")
+        assert message.contains("argument for named param 'foo' has type 'int' but expected 'java.lang.String'")
     }
 
     // GROOVY-10027
-    @Test
     void testInvalidType3() {
         def message = shouldFail '''
             import groovy.transform.TypeChecked
@@ -180,7 +168,7 @@ final class NamedParameterTest {
                 myMethod(foo:answer, -1)
             }
         '''
-        assert message.message.contains("argument for named param 'foo' has type 'int' but expected 'java.lang.String'")
+        assert message.contains("argument for named param 'foo' has type 'int' but expected 'java.lang.String'")
     }
 
     //--------------------------------------------------------------------------

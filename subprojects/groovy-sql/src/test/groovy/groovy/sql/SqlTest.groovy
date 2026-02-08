@@ -18,9 +18,10 @@
  */
 package groovy.sql
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestInfo
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TestName
 
 import java.sql.Connection
 
@@ -38,11 +39,9 @@ import static groovy.test.GroovyAssert.assertScript
 final class SqlTest {
 
     private Sql sql
-    private String testMethodName
 
-    @BeforeEach
-    void setUp(TestInfo testInfo) {
-        testMethodName = testInfo.testMethod.get().name
+    @Before
+    void setUp() {
         sql = createSql()
     }
 
@@ -253,9 +252,12 @@ final class SqlTest {
 
     //--------------------------------------------------------------------------
 
+    @Rule
+    public final TestName test = new TestName()
+
     private Sql createSql() {
         javax.sql.DataSource ds = DB_DATASOURCE.newInstance(
-                (DB_DS_KEY): DB_URL_PREFIX + testMethodName,
+                (DB_DS_KEY): DB_URL_PREFIX + test.methodName,
                 user: DB_USER, password: DB_PASSWORD)
         sql = new Sql(ds.connection)
         def sql = new Sql(ds)

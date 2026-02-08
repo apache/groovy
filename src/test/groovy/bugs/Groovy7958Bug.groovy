@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy7958Bug {
-    @Test
+class Groovy7958Bug extends GroovyTestCase {
     void testCommaSepVariableDeclarationAfterIf() {
         assertScript """
             int xNext = 0, yNext = 0

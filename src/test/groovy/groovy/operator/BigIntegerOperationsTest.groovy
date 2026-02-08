@@ -18,13 +18,11 @@
  */
 package groovy.operator
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class BigIntegerOperationsTest {
+class BigIntegerOperationsTest extends GroovyTestCase {
     def x, y
 
-    @Test
     void testAssign() {
         BigInteger foo
         foo = (byte) 20
@@ -63,21 +61,18 @@ class BigIntegerOperationsTest {
         assert (BigInteger) d == d
     }
 
-    @Test
     void testPlus() {
         x = 2G + 3G
         assert x instanceof BigInteger
         assert x == 5G
     }
 
-    @Test
     void testMultiply() {
         x = 2G * 3G
         assert x instanceof BigInteger
         assert x == 6G
     }
 
-    @Test
     void testMod() {
         x = 100G.mod(3)
         assert x == 1G
@@ -90,7 +85,6 @@ class BigIntegerOperationsTest {
         assert y == 1G
     }
 
-    @Test
     void testRemainder() {
         x = 100G % 3
         assert x == 1G
@@ -103,7 +97,6 @@ class BigIntegerOperationsTest {
         assert y == -2G
     }
 
-    @Test
     void testAsOperatorPrecisionLoss() {
         def value = BigInteger.valueOf(Long.MAX_VALUE) + 1
         def value2 = value as BigInteger

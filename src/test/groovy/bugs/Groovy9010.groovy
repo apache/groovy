@@ -20,7 +20,7 @@ package bugs
 
 import groovy.test.NotYetImplemented
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -46,6 +46,6 @@ final class Groovy9010 {
             @groovy.transform.ASTTest(phase=SEMANTIC_ANALYSIS, value={assert 0==1})
             def x
         '''
-        assert err.message =~ /(?s)assert 0==1.*false\b/
+        assert err =~ /(?s)Assertion failed:.*assert 0==1.*false\b/
     }
 }

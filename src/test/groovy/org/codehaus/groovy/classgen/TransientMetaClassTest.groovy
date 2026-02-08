@@ -18,14 +18,10 @@
  */
 package org.codehaus.groovy.classgen
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class TransientMetaClassTest {
+class TransientMetaClassTest extends GroovyTestCase {
     // GROOVY-8284
-    @Test
     void testGetMetaClassMethodIsDeemedTransient() {
         assertScript '''
             def gcl = new GroovyClassLoader()

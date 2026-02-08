@@ -19,15 +19,12 @@
 package groovy
 
 import groovy.test.GroovyTestCase
-import org.junit.jupiter.api.Test
-
 
 /**
  * Tests the use of classes as variable expressions
  */
-class ClassExpressionTest {
+class ClassExpressionTest extends GroovyTestCase {
 
-    @Test
     void testUseOfClass() {
         def x = String
 
@@ -51,7 +48,6 @@ class ClassExpressionTest {
         assert x != null
     }
 
-    @Test
     void testClassPsuedoProperty() {
 
         def x = "cheese";
@@ -61,7 +57,6 @@ class ClassExpressionTest {
         assert x.class == x.getClass();
     }
 
-    @Test
     void testPrimitiveClasses() {
         assert void == Void.TYPE
         assert int == Integer.TYPE
@@ -73,7 +68,6 @@ class ClassExpressionTest {
         assert short == Short.TYPE
     }
 
-    @Test
     void testArrayClassReference() {
        def foo = int[]
        assert foo.name == "[I"

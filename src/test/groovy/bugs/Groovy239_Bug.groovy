@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class Groovy239_Bug extends GroovyTestCase {
 
-class Groovy239_Bug {
-
-    @Test
     void testBug() {
         def a = makeClosure()
         def b = makeClosure()
@@ -44,7 +42,6 @@ class Groovy239_Bug {
         return { it() }
     }
 
-    @Test
     void testBug2() {
         def a = { it() }
         def b = { it() }

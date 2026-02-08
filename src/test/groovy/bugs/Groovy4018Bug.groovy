@@ -18,14 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class Groovy4018Bug extends GroovyTestCase {
 
-
-class Groovy4018Bug {
-
-    @Test
     void testFloatAsBoolean() {
         assertScript '''
             assert 0.1f
@@ -38,7 +34,6 @@ class Groovy4018Bug {
         '''
     }
 
-    @Test
     void testDoubleAsBoolean() {
         assertScript '''
             assert 0.1d
@@ -51,7 +46,6 @@ class Groovy4018Bug {
         '''
     }
 
-    @Test
     void testFloatAsBooleanSTC() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -63,7 +57,6 @@ class Groovy4018Bug {
         '''
     }
 
-    @Test
     void testDoubleAsBooleanSTC() {
         assertScript '''
         @groovy.transform.CompileStatic

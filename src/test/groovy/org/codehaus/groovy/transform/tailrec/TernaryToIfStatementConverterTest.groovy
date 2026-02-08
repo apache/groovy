@@ -22,7 +22,7 @@ import org.codehaus.groovy.ast.builder.AstAssert
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class TernaryToIfStatementConverterTest {
 

@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy4038Bug {
-    @Test
+class Groovy4038Bug extends GroovyTestCase {
     void testResondsToOnClosures() {
         def c = {String x -> }
         assert c.metaClass.respondsTo(c, "doCall", "Hello")

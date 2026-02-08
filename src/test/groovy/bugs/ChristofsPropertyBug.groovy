@@ -18,16 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
-
-
-class ChristofsPropertyBug {
+class ChristofsPropertyBug extends GroovyTestCase {
 
     def mixedCaseProperty
 
-    @Test
     void testChristofsPropertyBug() {
         this.mixedCaseProperty = "test"
         shouldFail({this.mixedcaseproperty = "test"})

@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertNull
-
-
-class Groovy1593 {
-   @Test
+class Groovy1593 extends GroovyTestCase {
    void testPropertyAccessInSubClassOfHashMap() {
       def subclass = new SubClassOfHashMap()
       // any of the following caused a MPE previously

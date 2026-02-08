@@ -19,8 +19,7 @@
 package org.codehaus.groovy.runtime.powerassert
 
 import groovy.transform.AutoFinal
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.fail
+import org.junit.Assert
 
 /**
  * Utility methods for testing power assertions.
@@ -34,7 +33,7 @@ final class AssertionTestUtil {
     static fails(Closure<Void> assertion) {
         try {
             assertion.call();
-            fail("assertion should have failed but didn't")
+            Assert.fail("assertion should have failed but didn't")
         } catch (PowerAssertionError expected) {}
     }
 
@@ -51,9 +50,9 @@ final class AssertionTestUtil {
     static isRendered(String expectedRendering, Closure<Void> failingAssertion) {
         try {
             failingAssertion.call();
-            fail("assertion should have failed but didn't")
+            Assert.fail("assertion should have failed but didn't")
         } catch (PowerAssertionError e) {
-            assertEquals(expectedRendering.trim(), e.message.trim())
+            Assert.assertEquals(expectedRendering.trim(), e.message.trim())
         }
     }
 }

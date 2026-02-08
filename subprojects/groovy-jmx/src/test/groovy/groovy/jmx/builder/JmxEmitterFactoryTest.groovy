@@ -18,24 +18,19 @@
  */
 package groovy.jmx.builder
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import javax.management.MBeanServer
 
-import static groovy.test.GroovyAssert.shouldFail
-
-public class JmxEmitterFactoryTest {
+public class JmxEmitterFactoryTest extends GroovyTestCase {
     def builder
     MBeanServer server
 
-    @BeforeEach
     void setUp() {
         server = javax.management.MBeanServerFactory.createMBeanServer()
         builder = new JmxBuilder(server)
     }
 
-    @Test
     void testSimpleEmitterSetup() {
         def emitter = builder.emitter()
         assert emitter
@@ -48,7 +43,6 @@ public class JmxEmitterFactoryTest {
         assert seq > 1
     }
 
-    @Test
     void testEmitterWithImplicitListeners() {
         def emitter = builder.emitter(name: "jmx.builder:type=Emitter")
         assert emitter
@@ -70,7 +64,6 @@ public class JmxEmitterFactoryTest {
         }
     }
 
-    @Test
     void testEmitterWithExplicitListeners() {
         def count = 0
         def data

@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class PostfixTest extends GroovyTestCase {
 
-class PostfixTest {
-
-    @Test
     void testIntegerPostfix() {
         def x = 1
 
@@ -36,7 +34,6 @@ class PostfixTest {
         assert x == 3
     }
 
-    @Test
     void testDoublePostfix() {
         def x = 1.2
         def y = x++
@@ -46,7 +43,6 @@ class PostfixTest {
         assert x == 3.2
     }
 
-     @Test
      void testStringPostfix() {
          def x = "bbc"
          x++
@@ -58,7 +54,6 @@ class PostfixTest {
     }
 
 
-    @Test
     void testArrayPostfix() {
         int[] i = [1]
 
@@ -69,21 +64,18 @@ class PostfixTest {
         assert i[0] == 3
     }
 
-    @Test
     void testConstantPostFix() {
         assert 1 == 1++
     }
 
     def valueReturned() { 0 }
 
-    @Test
     void testFunctionPostfix() {
         def z = (valueReturned())++
 
         assert z == 0
     }
 
-    @Test
     void testPrefixAndPostfix() {
         def u = 0
 

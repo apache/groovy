@@ -19,13 +19,9 @@
 
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
-
-
-class Groovy7081Bug {
-    @Test
+class Groovy7081Bug extends GroovyTestCase {
     void testShouldSeeThatMethodIsNotImplemented() {
         def msg = shouldFail '''
             interface DefinesProperty {
@@ -37,10 +33,9 @@ class Groovy7081Bug {
             new Foo().name
             '''
 
-        assert msg.message.contains("The method 'java.lang.String getName()' is already defined in class 'Foo'")
+        assert msg.contains("The method 'java.lang.String getName()' is already defined in class 'Foo'")
     }
 
-    @Test
     void testShouldSeeConflictInTypeSignature() {
         def msg = shouldFail '''
             interface DefinesProperty {
@@ -52,10 +47,9 @@ class Groovy7081Bug {
             new Foo().name
             '''
 
-        assert msg.message.contains("Abstract method 'java.lang.String getName()' is not implemented but a method of the same name but different return type is defined: static method 'int getName()'")
+        assert msg.contains("Abstract method 'java.lang.String getName()' is not implemented but a method of the same name but different return type is defined: static method 'int getName()'")
     }
 
-    @Test
     void testShouldSeeConflictUsingTrait() {
         def msg = shouldFail '''
             trait SomeTrait {
@@ -67,6 +61,6 @@ class Groovy7081Bug {
                 static magicNumber = 'Forty Two'
             }
         '''
-        assert msg.message.contains("Abstract method 'int getMagicNumber()' is not implemented but a method of the same name but different return type is defined: static method 'java.lang.Object getMagicNumber()'")
+        assert msg.contains("Abstract method 'int getMagicNumber()' is not implemented but a method of the same name but different return type is defined: static method 'java.lang.Object getMagicNumber()'")
     }
 }

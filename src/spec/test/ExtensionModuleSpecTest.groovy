@@ -1,6 +1,4 @@
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
+import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,8 +18,7 @@ import static groovy.test.GroovyAssert.assertScript
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class ExtensionModuleSpecTest {
-    @Test
+class ExtensionModuleSpecTest extends GroovyTestCase {
     void testShouldAddMaxRetriesToInteger() {
         assertScript '''// tag::instance_extension_assert[]
 int i=0
@@ -42,7 +39,6 @@ try {
 '''
     }
 
-    @Test
     void testShouldAddStaticMethodToString() {
         assertScript '''// tag::static_extension_assert[]
 assert String.greeting() == 'Hello, world!'

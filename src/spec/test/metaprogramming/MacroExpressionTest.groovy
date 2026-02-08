@@ -19,6 +19,7 @@
 
 package metaprogramming
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -32,19 +33,14 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.AbstractASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
-import org.junit.jupiter.api.Test
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 
-import static groovy.test.GroovyAssert.assertScript
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+class MacroExpressionTest extends GroovyTestCase {
 
-class MacroExpressionTest {
-
-    @Test
     void testCreateExpressions() {
         assertScript '''
         // add::addgettwosample[]
@@ -67,6 +63,8 @@ class MacroExpressionTest {
 @GroovyASTTransformationClass(["metaprogramming.AddGetTwoASTTransformation"])
 @interface AddGetTwo { }
 // end::addgettwoannotation[]
+
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
 // tag::addgettwotransformation[]
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)

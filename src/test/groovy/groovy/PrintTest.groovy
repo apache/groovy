@@ -19,61 +19,56 @@
 package groovy
 
 import groovy.io.GroovyPrintStream
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.text.NumberFormat
 
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-class PrintTest {
+class PrintTest extends GroovyTestCase {
     PrintStream savedSystemOut
     private locale
 
-    @BeforeEach
     void setUp() {
         savedSystemOut = System.out
         locale = Locale.getDefault()
         Locale.setDefault(Locale.US)
     }
 
-    @AfterEach
     void tearDown() {
         Locale.setDefault(locale)
-        System.setOut(savedSystemOut)
+        System.setOut(savedSystemOut)        
     }
 
-    @Test
     void testToString() {
-        assertEquals('hello', "hello".toString())
-        assertEquals("[]", [].toString())
-        assertEquals('[1, 2, hello]', [1, 2, "hello"].toString())
-        assertEquals('[1:20, 2:40, 3:cheese]', [1: 20, 2: 40, 3: 'cheese'].toString())
-        assertEquals("[:]", [:].toString())
-        assertEquals('[[bob:drools, james:geronimo]]', [['bob': 'drools', 'james': 'geronimo']].toString())
-        assertEquals('[5, [bob, james], [bob:drools, james:geronimo], cheese]', [5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"].toString())
+        assertToString("hello", 'hello')
+
+        assertToString([], "[]")
+        assertToString([1, 2, "hello"], '[1, 2, hello]')
+
+        assertToString([1: 20, 2: 40, 3: 'cheese'], '[1:20, 2:40, 3:cheese]')
+        assertToString([:], "[:]")
+
+        assertToString([['bob': 'drools', 'james': 'geronimo']], '[[bob:drools, james:geronimo]]')
+        assertToString([5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"], '[5, [bob, james], [bob:drools, james:geronimo], cheese]')
     }
 
-    @Test
     void testInspect() {
-        assertEquals("'hello'", "hello".inspect())
-        assertEquals("[]", [].inspect())
-        assertEquals("[1, 2, 'hello']", [1, 2, "hello"].inspect())
-        assertEquals("[1:20, 2:40, 3:'cheese']", [1: 20, 2: 40, 3: 'cheese'].inspect())
-        assertEquals("[:]", [:].inspect())
-        assertEquals("[['bob':'drools', 'james':'geronimo']]", [['bob': 'drools', 'james': 'geronimo']].inspect())
-        assertEquals("[5, ['bob', 'james'], ['bob':'drools', 'james':'geronimo'], 'cheese']", [5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"].inspect())
+        assertInspect("hello", "'hello'")
+
+        assertInspect([], "[]")
+        assertInspect([1, 2, "hello"], "[1, 2, 'hello']")
+
+        assertInspect([1: 20, 2: 40, 3: 'cheese'], "[1:20, 2:40, 3:'cheese']")
+        assertInspect([:], "[:]")
+
+        assertInspect([['bob': 'drools', 'james': 'geronimo']], "[['bob':'drools', 'james':'geronimo']]")
+        assertInspect([5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"], "[5, ['bob', 'james'], ['bob':'drools', 'james':'geronimo'], 'cheese']")
     }
 
-    @Test
     void testCPlusPlusStylePrinting() {
         def endl = "\n"
         System.out << "Hello world!" << endl
     }
 
-    @Test
     void testSprintf() {
         def decimalSymbol = NumberFormat.instance.format(1.5) - '1' - '5'
         assert sprintf('%5.2f', 12 * 3.5) == "42${decimalSymbol}00"
@@ -83,7 +78,7 @@ class PrintTest {
         assert sprintf('%d + %d = %d', [4, 5, 4 + 5] as byte[]) == '4 + 5 = 9'
         assert sprintf('%d + %d = %d', [5, 6, 5 + 6] as short[]) == '5 + 6 = 11'
         def floatExpr = sprintf('%5.2f + %5.2f = %5.2f', [3, 4, 3 + 4] as float[])
-        assertEquals " 3${decimalSymbol}00 +  4${decimalSymbol}00 =  7${decimalSymbol}00".toString(), floatExpr
+        assertEquals " 3${decimalSymbol}00 +  4${decimalSymbol}00 =  7${decimalSymbol}00", floatExpr
         def doubleExpr = sprintf('%5.2g + %5.2g = %5.2g', [3, 4, 3 + 4] as double[])
         // TODO: work out why decimalSymbol is not used here (at least for FR and RU)
         assertEquals "  3.0 +   4.0 =   7.0", doubleExpr
@@ -95,7 +90,6 @@ class PrintTest {
         assert sprintf('%b %b', [true, false] as boolean[]) == 'true false'
     }
 
-    @Test
     void testSprintfExceptionPropagation() {
         shouldFail(IllegalArgumentException) {
             sprintf('%2.4f', [3])
@@ -179,8 +173,7 @@ void doTest(def param) {
     assert t1 == t8
 }
 
-@Test
-void testGroovy3227() {
+void testGroovy3227() { 
     doTest(null)
     doTest("foo")
     doTest(true)

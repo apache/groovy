@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy4980Bug {
-    @Test
+class Groovy4980Bug extends GroovyTestCase {
     void testNamedArgumentWithInnerClassConstructor() {
         assertScript """
             class Outer4980 {

@@ -18,12 +18,11 @@
  */
 package org.codehaus.groovy.control.io
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Test
 
-class FileReaderTest {
+class FileReaderTest extends GroovyTestCase {
 
-    @Test
     void testFileBOM() {
         def file = File.createTempFile("encoding", ".groovy")
         file.deleteOnExit()

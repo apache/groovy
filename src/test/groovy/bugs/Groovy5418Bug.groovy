@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy5418Bug {
-    @Test
+class Groovy5418Bug extends GroovyTestCase {
     void testShouldRecognizeCovariantReturnType() {
         assertScript '''interface Base {
             Base doSomething()

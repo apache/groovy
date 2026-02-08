@@ -18,12 +18,11 @@
  */
 package org.codehaus.groovy.control.io
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Test
 
-class StringReaderSourceTest {
+class StringReaderSourceTest extends GroovyTestCase {
 
-    @Test
     void testFileReaderCanNotBeReopened() {
         def dummyString = "return false"
         def writer = new StringReaderSource( dummyString, CompilerConfiguration.DEFAULT )

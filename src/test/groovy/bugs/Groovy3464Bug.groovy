@@ -18,26 +18,22 @@
  */
 package bugs
 
-import org.codehaus.groovy.control.CompilerConfiguration
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.shouldFail
+import org.codehaus.groovy.control.CompilerConfiguration
 
 /**
  * GROOVY-3463:
  * Spring/CGLIB proxies throw exception "object is not an instance of declaring class"
  */
-class Groovy3464Bug {
+class Groovy3464Bug extends GroovyTestCase {
 
     GroovyShell shell
     CompilerConfiguration config
     File targetDir, stubDir
 
-    @BeforeEach
-    void setUp() {
+    protected void setUp() {
+        super.setUp()
 
         config = new CompilerConfiguration()
         config.with {
@@ -77,16 +73,15 @@ class Groovy3464Bug {
 
     }
 
-    @AfterEach
-    void tearDown() {
+    protected void tearDown() {
         config.targetDirectory?.deleteDir()
         config.jointCompilationOptions?.stubDir?.deleteDir()
         targetDir?.deleteDir()
         stubDir?.deleteDir()
 
+        super.tearDown()
     }
 
-    @Test
     void testScenarioOne() {
         shouldFail(MissingMethodException) {
             shell.evaluate '''
@@ -100,7 +95,6 @@ class Groovy3464Bug {
         }
     }
 
-    @Test
     void testScenarioTwo() {
         shell.evaluate '''
             def t = new GroovyThing()

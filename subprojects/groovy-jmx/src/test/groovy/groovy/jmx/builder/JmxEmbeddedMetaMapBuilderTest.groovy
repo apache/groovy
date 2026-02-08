@@ -18,12 +18,11 @@
  */
 package groovy.jmx.builder
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import javax.management.ObjectName
 
-class JmxEmbeddedMetaMapBuilderTest {
-    @Test
+class JmxEmbeddedMetaMapBuilderTest extends GroovyTestCase {
     void testWithNoDescriptor() {
         def object = new BaseEmbeddedClass()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -73,7 +72,6 @@ class JmxEmbeddedMetaMapBuilderTest {
 
     }
 
-    @Test
     void testEmbeddedJmxNameOnly() {
         def object = new EmbeddedNameOnly()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -125,7 +123,6 @@ class JmxEmbeddedMetaMapBuilderTest {
         assert map.operations.doSomethingElse.name == "doSomethingElse"
     }
 
-    @Test
     void testEmbeddedAllAttributes() {
         def object = new EmbeddedAllAttribsOnly()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -167,7 +164,6 @@ class JmxEmbeddedMetaMapBuilderTest {
 
     }
 
-    @Test
     void testEmbeddedAttribList() {
         def object = new EmbeddedAttribsListOnly()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -198,7 +194,6 @@ class JmxEmbeddedMetaMapBuilderTest {
 
     }
 
-    @Test
     void testEmbeddedAttribDescriptor() {
         def object = new EmbeddedAttribsDescriptorOnly()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -230,7 +225,6 @@ class JmxEmbeddedMetaMapBuilderTest {
 
     }
 
-    @Test
     void testEmbeddedConstrucors() {
         def object = new EmbeddedConstructors()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -251,7 +245,6 @@ class JmxEmbeddedMetaMapBuilderTest {
         assert map.constructors.ctor2.params."int".displayName == "Identification"
     }
 
-    @Test
     void testEmbeddAllOps() {
         def object = new EmbeddedAllOps()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -274,7 +267,6 @@ class JmxEmbeddedMetaMapBuilderTest {
         assert map.operations.doSomethingElse.name == "doSomethingElse"
     }
 
-    @Test
     void testEmbeddedOpsList() {
         def object = new EmbeddedOpsList()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -291,7 +283,6 @@ class JmxEmbeddedMetaMapBuilderTest {
 
     }
 
-    @Test
     void testEmbeddedOpsDescriptor() {
         def object = new EmbeddedOpsDescriptor()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -316,7 +307,6 @@ class JmxEmbeddedMetaMapBuilderTest {
         assert map.operations.doThreeThings.params."int"
     }
 
-    @Test
     void testEmbeddedAttribChangeListener() {
         def object = new EmbeddedAttribEventListener()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -332,7 +322,6 @@ class JmxEmbeddedMetaMapBuilderTest {
         assert map.attributes.Id.methodListener.callback instanceof Closure
     }
 
-    @Test
     void testEmbeddedOpCallListener() {
         def object = new EmbeddedOpEventListener()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)
@@ -348,7 +337,6 @@ class JmxEmbeddedMetaMapBuilderTest {
         assert map.operations.doTwoThings.methodListener.callback instanceof Closure
     }
 
-    @Test
     void testEmbeddedEventListener() {
         def object = new EmbeddedEventListener()
         def map = JmxMetaMapBuilder.buildObjectMapFrom(object)

@@ -18,19 +18,14 @@
  */
 package groovy.beans
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Unit test for ListenerList.
  */
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
+class ListenerListTransformTest extends GroovyTestCase {
 
-class ListenerListTransformTest {
-
-    @Test
     void testDefaultFireAndName() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -59,7 +54,6 @@ class ListenerListTransformTest {
         assert evt.message.is(message)
     }
 
-    @Test
     void testCustomFireAndName() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -93,7 +87,6 @@ class ListenerListTransformTest {
         assert evt.message.is(message)
     }
 
-    @Test
     void testMultipleMethodListener() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -129,7 +122,6 @@ class ListenerListTransformTest {
         assert evt2.message.is(message2)
     }
 
-    @Test
     void testMultipleListenersConflictsDetected() {
         def message = shouldFail {
             new GroovyShell().evaluate("""
@@ -145,10 +137,9 @@ class ListenerListTransformTest {
             """)
         }
 
-        assert message.message.contains('Class b.TestClass already has method fireEventOccurred')
+        assert message.contains('Class b.TestClass already has method fireEventOccurred')
     }
 
-    @Test
     void testMultipleMethodListeners() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -184,7 +175,6 @@ class ListenerListTransformTest {
         assert evt2.message.is(message2)
     }
 
-    @Test
     void testMapEvent() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -209,7 +199,6 @@ class ListenerListTransformTest {
         assert evt.message.is(message)
     }
 
-    @Test
     void testError_AnnotationNotOnCollection() {
         def message = shouldFail {
             new GroovyShell().evaluate("""
@@ -221,10 +210,9 @@ class ListenerListTransformTest {
                 }
             """)
         }
-        assert message.message.contains('@groovy.beans.ListenerList can only annotate collection properties')
+        assert message.contains('@groovy.beans.ListenerList can only annotate collection properties')
     }
 
-    @Test
     void testError_AnnotationWithoutGeneric() {
         def message = shouldFail {
             new GroovyShell().evaluate("""
@@ -236,10 +224,9 @@ class ListenerListTransformTest {
                 }
             """)
         }
-        assert message.message.contains('@groovy.beans.ListenerList fields must have a generic type')
+        assert message.contains('@groovy.beans.ListenerList fields must have a generic type')
     }
 
-    @Test
     void testError_AnnotationWithWildcard() {
         def message = shouldFail {
             new GroovyShell().evaluate("""
@@ -251,10 +238,9 @@ class ListenerListTransformTest {
                 }
             """)
         }
-        assert message.message.contains('@groovy.beans.ListenerList fields with generic wildcards not yet supported')
+        assert message.contains('@groovy.beans.ListenerList fields with generic wildcards not yet supported')
     }
 
-    @Test
     void testListEvent() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -280,7 +266,6 @@ class ListenerListTransformTest {
         assert evt[1].is(message)
     }
 
-    @Test
     void testObjectEvent() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -304,7 +289,6 @@ class ListenerListTransformTest {
         assert evt.is(obj)
     }
 
-    @Test
     void testDefaultForGenericList() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -333,7 +317,6 @@ class ListenerListTransformTest {
         assert evt.is(source)
     }
 
-    @Test
     void testDefaultForGenericListUsingFirstAbstractMethodsParameter() {
         GroovyShell shell = new GroovyShell()
         def tc = shell.evaluate("""
@@ -364,7 +347,6 @@ class ListenerListTransformTest {
     }
 
         // GROOVY-4795
-        @Test
         void testSynchronized() {
             GroovyShell shell = new GroovyShell()
             shell.evaluate("""
@@ -388,7 +370,6 @@ class ListenerListTransformTest {
         }
 
         // GROOVY-4797
-        @Test
         void testPrimitiveTypes() {
             GroovyShell shell = new GroovyShell()
             shell.evaluate("""
@@ -404,7 +385,6 @@ class ListenerListTransformTest {
         }
 
     // GROOVY-8156
-    @Test
     void testListenerListWithEventClassInSameCompilationUnit() {
         assertScript '''
             class Event {}

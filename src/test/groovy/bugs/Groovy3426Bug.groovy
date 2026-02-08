@@ -18,27 +18,22 @@
  */
 package bugs
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class Groovy3426Bug {
+class Groovy3426Bug extends GroovyTestCase {
 
     MetaClassRegistry registry
     MetaClass originalMetaClass
 
-    @BeforeEach
     void setUp() {
         registry = GroovySystem.metaClassRegistry
         originalMetaClass = registry.getMetaClass(Groovy3426Foo)
     }
 
-    @AfterEach
     void tearDown() {
         registry.setMetaClass(Groovy3426Foo, originalMetaClass)
     }
 
-    @Test
     void testCallSiteShouldBeUpdatedAfterOriginalMetaClassIsRestored() {
         def getFoo = { -> Groovy3426Foo.get() }
 

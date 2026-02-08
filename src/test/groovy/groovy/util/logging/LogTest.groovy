@@ -18,27 +18,19 @@
  */
 package groovy.util.logging
 
-import groovy.mock.interceptor.MockFor
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
+import java.util.logging.*
+import groovy.mock.interceptor.MockFor
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
 /**
- * Test to make sure the @Log annotation is working correctly.
+ * Test to make sure the @Log annotation is working correctly. 
  */
+class LogTest extends GroovyTestCase {
 
-import java.util.logging.ConsoleHandler
-import java.util.logging.Formatter
-import java.util.logging.LogRecord
-import java.util.logging.Logger
-
-import static groovy.test.GroovyAssert.shouldFail
-
-class LogTest {
-
-    @Test
     void testPrivateFinalStaticLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
@@ -55,7 +47,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testPrivateFinalStaticNamedLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
@@ -72,7 +63,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testExplicitPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -90,7 +80,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testPackagePrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -110,7 +99,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testProtectedFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -128,7 +116,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testPublicFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -146,7 +133,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testClassAlreadyHasLogField() {
 
         shouldFail {
@@ -161,7 +147,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testClassAlreadyHasNamedLogField() {
 
         shouldFail {
@@ -176,7 +161,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testLogFromStaticMethods() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log
@@ -196,7 +180,6 @@ class LogTest {
         assert logSpy.infoParameter == 'info    called'
     }
 
-    @Test
     void testLogInfo() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
@@ -229,7 +212,6 @@ class LogTest {
         assert logSpy.finestParameter == 'finest  called'
     }
 
-    @Test
     void testLogInfoWithName() {
 
         Class clazz = new GroovyClassLoader().parseClass("""
@@ -262,7 +244,6 @@ class LogTest {
         assert logSpy.finestParameter == 'finest  called'
     }
 
-    @Test
     void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass("""
                @groovy.util.logging.Log
@@ -299,7 +280,6 @@ class LogTest {
         assert !logSpy.finestParameter
     }
 
-    @Test
     void testInheritance() {
 
         def clazz = new GroovyShell().evaluate("""
@@ -335,7 +315,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testInheritance_ProtectedShadowing() {
 
         shouldFail(MultipleCompilationErrorsException) {
@@ -350,7 +329,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testInheritance_PublicShadowing() {
 
         shouldFail(MultipleCompilationErrorsException) {
@@ -365,7 +343,6 @@ class LogTest {
         }
     }
 
-    @Test
     void testDefaultCategory() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log
@@ -381,7 +358,6 @@ class LogTest {
         assert logFormatterSpy.messageReceived
     }
 
-    @Test
     void testCustomCategory() {
         String categoryName = 'customCategory'
         Class clazz = new GroovyClassLoader().parseClass("""

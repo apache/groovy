@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class MapPropertyTest extends GroovyTestCase {
 
-class MapPropertyTest {
-
-    @Test
     void testGetAndSetProperties() {
         def m = ['name': 'James', 'location': 'London', 'id': 1]
 
@@ -40,7 +38,6 @@ class MapPropertyTest {
         assert m.id == 2
     }
 
-    @Test
     void testSetupAndEmptyMap() {
         def m = [:]
 
@@ -53,7 +50,6 @@ class MapPropertyTest {
         assert m.id == 2
     }
 
-    @Test
     void testMapSubclassing() {
         def c = new MyClass()
 
@@ -66,7 +62,6 @@ class MapPropertyTest {
     }
 
     // GROOVY-5985
-    @Test
     void testMapPutAtWithKeyMatchingReadOnlyProperty() {
         def map = [serialVersionUID: 123]
         assert map["serialVersionUID"] == 123

@@ -18,28 +18,24 @@
  */
 package groovy.gpath
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Some GPath tests using trees
  */
-class NodeGPathTest {
+class NodeGPathTest extends GroovyTestCase {
 
-    @Test
     void testFind() {
         def tree = createTree()
         assert tree.person.find { it['@name'] == 'James' }.location[0]['@name'] == 'London'
     }
 
-    @Test
     void testFindAll() {
         def tree = createTree()
         def peopleWithNameBob = tree.person.findAll { it['@name'] != 'Bob' }
         assert peopleWithNameBob.size() == 1
     }
 
-    @Test
     void testCollect() {
         def tree = createTree()
         def namesOfAllPeople = tree.person.collect { it['@name'] }

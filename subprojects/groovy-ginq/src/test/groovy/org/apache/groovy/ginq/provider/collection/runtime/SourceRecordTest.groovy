@@ -19,7 +19,7 @@
 package org.apache.groovy.ginq.provider.collection.runtime
 
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.lang.Tuple.tuple
 

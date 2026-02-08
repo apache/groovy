@@ -18,17 +18,15 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test numeric literal types (with and without suffixes)
  * @see org.codehaus.groovy.syntax.parser/ASTBuilder#createIntegralNumber()
  * @see org.codehaus.groovy.syntax.parser/ASTBuilder#createDecimalNumber()
  */
-class LiteralTypesTest {
+class LiteralTypesTest extends GroovyTestCase {
 
-    @Test
     void testIntegral() {
         def x = 42
         assert x instanceof Integer
@@ -107,7 +105,6 @@ class LiteralTypesTest {
         assert x instanceof BigInteger
     }
 
-    @Test
     void testDecimal() {
         def x = 3.2
         assert x instanceof BigDecimal
@@ -142,7 +139,6 @@ class LiteralTypesTest {
         assert x == Float.valueOf("-3.2")
     }
 
-    @Test
     void testExponential() {
         def x = 3.1415926535e42
         assert x instanceof BigDecimal

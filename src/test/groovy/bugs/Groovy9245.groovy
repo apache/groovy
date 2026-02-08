@@ -20,7 +20,7 @@ package bugs
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class Groovy9245 {
 

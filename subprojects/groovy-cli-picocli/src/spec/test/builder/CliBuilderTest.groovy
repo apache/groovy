@@ -19,17 +19,14 @@
 package builder
 
 import cli.CliBuilderTestCase
-import groovy.cli.TypedOption
 import groovy.cli.picocli.CliBuilder
+import groovy.cli.TypedOption
 import groovy.transform.TypeChecked
 
-import java.util.concurrent.TimeUnit
-
 // tag::mapOptionImports[]
-
+import java.util.concurrent.TimeUnit
 import static java.util.concurrent.TimeUnit.DAYS
 import static java.util.concurrent.TimeUnit.HOURS
-
 // end::mapOptionImports[]
 
 // Core functionality we expect to remain the same for all implementations is tested in the base test case

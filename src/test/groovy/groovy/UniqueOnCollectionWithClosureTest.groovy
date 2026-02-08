@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class UniqueOnCollectionWithClosureTest extends GroovyTestCase {
 
-class UniqueOnCollectionWithClosureTest {
-
-    @Test
     void testUniqueOnIterator() {
         def list = [-1, 0, 1, 1, 0, -1]
         def closure = { a, b -> Math.abs(a) <=> Math.abs(b) }
@@ -34,7 +32,6 @@ class UniqueOnCollectionWithClosureTest {
     }
 
     /** GROOVY-3213  */
-    @Test
     void testUniqueWithTwoParameterClosureOnSet() {
         def set = [-1, 0, 1] as Set
         def closure = { a, b -> Math.abs(a) <=> Math.abs(b) }
@@ -42,7 +39,6 @@ class UniqueOnCollectionWithClosureTest {
     }
 
     /** GROOVY-1236  */
-    @Test
     void testUniqueWithTwoParameterClosure() {
         def list = [-1, 0, 1, 1, 0, -1]
         def closure = { a, b -> Math.abs(a) <=> Math.abs(b) }
@@ -50,7 +46,6 @@ class UniqueOnCollectionWithClosureTest {
     }
 
     /** GROOVY-1236  */
-    @Test
     void testUniqueWithOneParameterClosure() {
         def list = [-1, 0, 1, 1, 0, -1]
         def closure = { a -> Math.abs(a) }
@@ -58,7 +53,6 @@ class UniqueOnCollectionWithClosureTest {
     }
 
     /** GROOVY-4742 */
-    @Test
     void testImmutableCollectionWithOneParamClosure() {
         def orig = [1, 3, 4, 5]
         def uniq = orig.unique(false) { it % 2 }
@@ -67,7 +61,6 @@ class UniqueOnCollectionWithClosureTest {
     }
 
     /** GROOVY-4742 */
-    @Test
     void testImmutableCollectionWithTwoParamClosure() {
         def orig = [2, 3, 3, 4]
         def uniq = orig.unique(false) { a, b -> a <=> b }

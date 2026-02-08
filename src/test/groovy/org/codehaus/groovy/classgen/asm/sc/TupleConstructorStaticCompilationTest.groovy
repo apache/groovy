@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.classgen.asm.sc
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 

@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class Bytecode7Bug {
+class Bytecode7Bug extends GroovyTestCase {
 
-    @Test
     void testDuplicateVariables() {
         if (true) {
             def a = 123
@@ -35,7 +33,6 @@ class Bytecode7Bug {
         }
     }
 
-    @Test
     void testDuplicateVariablesInClosures() {
         def coll = [1]
 

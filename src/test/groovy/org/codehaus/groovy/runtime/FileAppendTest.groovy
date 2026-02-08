@@ -18,14 +18,12 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 /**
  * Test File append and leftShift DGM methods
  */
-class FileAppendTest {
+class FileAppendTest extends GroovyTestCase {
     /**
      * The following instances are used in testing the file writes
      */
@@ -60,7 +58,6 @@ class FileAppendTest {
     // Our file instance
     def File file;
 
-    @BeforeEach
     void setUp() {
         // Setup guarantees us that we use a non-existent file
         file = File.createTempFile("unitTest", ".txt")
@@ -69,13 +66,11 @@ class FileAppendTest {
         assert file.length() == 0L
     }
 
-    @AfterEach
     void tearDown() {
         // we remove our temporary file
         file.deleteOnExit()
     }
 
-    @Test
     void testAppendString() {
         def expected
 
@@ -90,7 +85,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testAppendObjectToString() {
         def expected
 
@@ -105,7 +99,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testAppendWritable() {
         def expected
 
@@ -120,7 +113,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testAppendMixed() {
         def expected
 
@@ -151,7 +143,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testLeftShiftString() {
         def expected
 
@@ -166,7 +157,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testLeftShiftObjectToString() {
         def expected
 
@@ -181,7 +171,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testLeftShiftWritable() {
         def expected
 
@@ -196,7 +185,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testLeftShiftMixed() {
         def expected
 
@@ -227,7 +215,6 @@ class FileAppendTest {
         assert hasContents(file, expected)
     }
 
-    @Test
     void testByteArrayAppend() {
         def total = []
 
@@ -242,7 +229,6 @@ class FileAppendTest {
         assert hasContents(file, total)
     }
 
-    @Test
     void testBinaryAppend() {
         def total = []
 

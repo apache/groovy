@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy4235Bug {
-    @Test
+class Groovy4235Bug extends GroovyTestCase {
     void testAccessStaticPropInsideClosure() {
         assertScript """
             class Foo4235 {

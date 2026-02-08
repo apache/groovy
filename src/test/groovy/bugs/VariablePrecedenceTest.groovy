@@ -18,15 +18,13 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class VariablePrecedenceTest {
+class VariablePrecedenceTest extends GroovyTestCase {
     def x = 100
     def y = 93
     def c = {x -> assert x == 1; assert y == 93; }
 
-    @Test
     void testFoo() {
         String[] args = ["a"]
         main(args)

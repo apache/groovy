@@ -18,7 +18,7 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class ClosureUsingOuterVariablesTest {
 

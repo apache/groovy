@@ -18,16 +18,14 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class Bytecode3Bug {
+class Bytecode3Bug extends GroovyTestCase {
 
     def count
 
-    @Test
     void testIncrementPropertyInclosure() {
         def args = [1, 2, 3]
         def m = [:]

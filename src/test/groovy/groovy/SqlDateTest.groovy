@@ -18,44 +18,38 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase;
 import groovy.time.TimeCategory
-import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertTrue
+class SqlDateTest extends GroovyTestCase {
 
-class SqlDateTest {
-
-    @Test
     void testIncrement() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
         def nowOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
         sqlDate++
         def incOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
-        assertTrue sqlDate instanceof java.sql.Date, "incrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}"
+        assertTrue "incrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
 
         // difference adjusted for daylight savings
         def diff = (sqlDate.getTime() + incOffset) - (nowMillis + nowOffset)
-        assertEquals 1000 * 60 * 60 * 24, diff, "incrementing a java.sql.Date did not work properly"
+        assertEquals "incrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
 
-      @Test
       void testDecrement() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
         def nowOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
         sqlDate--
         def decOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
-        assertTrue sqlDate instanceof java.sql.Date, "decrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}"
+        assertTrue "decrementing a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
 
         // difference adjusted for daylight savings
         def diff = (nowMillis + nowOffset) - (sqlDate.getTime() + decOffset)
 
-        assertEquals 1000 * 60 * 60 * 24, diff, "decrementing a java.sql.Date did not work properly"
+        assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
 
-    @Test
     void testPlusOperator() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
@@ -63,14 +57,13 @@ class SqlDateTest {
         sqlDate += 1
         def incOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
 
-        assertTrue  sqlDate instanceof java.sql.Date, "the plus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}"
+        assertTrue  "the plus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
 
         // difference adjusted for daylight savings
         def diff = (sqlDate.getTime() + incOffset) - (nowMillis + nowOffset)
-        assertEquals 1000 * 60 * 60 * 24, diff, "decrementing a java.sql.Date did not work properly"
+        assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
 
-    @Test
     void testMinusOperator() {
         def nowMillis = System.currentTimeMillis()
         def sqlDate = new java.sql.Date(nowMillis)
@@ -78,10 +71,10 @@ class SqlDateTest {
         sqlDate -= 1
         def decOffset = TimeCategory.getDaylightSavingsOffset(sqlDate).toMilliseconds()
 
-        assertTrue  sqlDate instanceof java.sql.Date, "the minus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}"
+        assertTrue  "the minus operator applied to a java.sql.Date returned an incorrect type: ${sqlDate.class}", sqlDate instanceof java.sql.Date
 
         // difference adjusted for daylight savings
         def diff = (nowMillis + nowOffset) - (sqlDate.getTime() + decOffset)
-        assertEquals 1000 * 60 * 60 * 24, diff, "decrementing a java.sql.Date did not work properly"
+        assertEquals "decrementing a java.sql.Date did not work properly", 1000 * 60 * 60 * 24, diff
     }
 }

@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy37XXBug {
-    @Test
+class Groovy37XXBug extends GroovyTestCase {
     void testVarArgsWithAnInterfaceAsVarArgArrayTypeWithInheritenceInArgs() {
         def obj
 

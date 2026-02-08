@@ -21,23 +21,13 @@ package org.codehaus.groovy.ast.decompiled
 import org.codehaus.groovy.ast.AnnotationNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.decompiled.support.Groovy8632
-import org.codehaus.groovy.ast.decompiled.support.Groovy8632Abstract
-import org.codehaus.groovy.ast.decompiled.support.Groovy8632Groovy
-import org.codehaus.groovy.ast.expr.AnnotationConstantExpression
-import org.codehaus.groovy.ast.expr.ClassExpression
-import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.ast.expr.ListExpression
-import org.codehaus.groovy.ast.expr.PropertyExpression
+import org.codehaus.groovy.ast.decompiled.support.*
+import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.control.ClassNodeResolver
 import org.codehaus.groovy.control.CompilationUnit
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
-import static java.lang.reflect.Modifier.isAbstract
-import static java.lang.reflect.Modifier.isPrivate
-import static java.lang.reflect.Modifier.isProtected
-import static java.lang.reflect.Modifier.isPublic
-import static java.lang.reflect.Modifier.isStatic
+import static java.lang.reflect.Modifier.*
 
 final class AsmDecompilerTest {
 

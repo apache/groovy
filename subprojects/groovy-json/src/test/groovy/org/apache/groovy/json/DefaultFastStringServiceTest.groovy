@@ -18,20 +18,17 @@
  */
 package org.apache.groovy.json
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class DefaultFastStringServiceTest {
+class DefaultFastStringServiceTest extends GroovyTestCase {
 
     FastStringService service = new DefaultFastStringServiceFactory().service
 
-    @Test
     void testToCharArray() {
         def str = "some test"
         assert service.toCharArray(str) == str.toCharArray()
     }
 
-    @Test
     void testNoCopyStringFromChars() {
         def source = "äöüliu"
         def chars = source.toCharArray()

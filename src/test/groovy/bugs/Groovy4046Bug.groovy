@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertFalse
-
-
-class Groovy4046Bug {
-    @Test
+class Groovy4046Bug extends GroovyTestCase {
     void testComparableOnLeftObjectOnRight() {
         assertFalse MyEnum4046.A == new Object()
 

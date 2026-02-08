@@ -20,7 +20,7 @@ package groovy.transform
 
 import groovy.mock.interceptor.StubFor
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import java.util.concurrent.TimeoutException
 

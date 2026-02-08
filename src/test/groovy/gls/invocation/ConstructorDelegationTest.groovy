@@ -19,7 +19,7 @@
 package gls.invocation
 
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -110,13 +110,13 @@ final class ConstructorDelegationTest {
                 }
             }
         '''
-        assert err.message =~ /Implicit super constructor A\(\) is undefined. Must explicitly invoke another constructor./
+        assert err =~ /Implicit super constructor A\(\) is undefined. Must explicitly invoke another constructor./
 
         err = shouldFail CompilationFailedException, base + '''
             class C extends A {
             }
         '''
-        assert err.message =~ /Implicit super constructor A\(\) is undefined for generated constructor. Must define an explicit constructor./
+        assert err =~ /Implicit super constructor A\(\) is undefined for generated constructor. Must define an explicit constructor./
     }
 
     // GROOVY-3128

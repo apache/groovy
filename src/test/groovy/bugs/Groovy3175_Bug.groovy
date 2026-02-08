@@ -18,13 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class Groovy3175_Bug extends GroovyTestCase {
 
-class Groovy3175_Bug {
-
-    @Test
     void testSyntheticModifier() {
         assertScript """
         import groovy.transform.Generated

@@ -19,20 +19,17 @@
 package typing
 
 import groovy.test.GroovyAssert
+import groovy.test.GroovyTestCase
 import groovy.transform.TypeChecked
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import groovy.xml.MarkupBuilder
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
 
 import static asciidoctor.Utils.stripAsciidocMarkup
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
 
-final class TypeCheckingExtensionSpecTest {
+final class TypeCheckingExtensionSpecTest extends GroovyTestCase {
 
-    @Test
     void testIntro() {
         def out = new PrintWriter(new ByteArrayOutputStream())
         // tag::intro_stc_extensions[]
@@ -48,21 +45,18 @@ final class TypeCheckingExtensionSpecTest {
         // end::intro_stc_extensions[]
     }
 
-    @Test
     void testSetup() {
         assertScriptWithExtension 'setup.groovy', '''
             1+1
         '''
     }
 
-    @Test
     void testFinish() {
         assertScriptWithExtension 'finish.groovy', '''
             1+1
         '''
     }
 
-    @Test
     void testUnresolvedVariable() {
         assertScriptWithExtension 'unresolvedvariable.groovy', '''
             assert people.size() == 2
@@ -71,7 +65,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testUnresolvedProperty() {
         use (SpecSupport) {
             assertScriptWithExtension 'unresolvedproperty.groovy', '''
@@ -80,7 +73,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testUnresolvedAttribute() {
         try {
             assertScriptWithExtension 'unresolvedattribute.groovy', '''
@@ -92,7 +84,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testBeforeMethodCall() {
         try {
             assertScriptWithExtension 'beforemethodcall.groovy', '''
@@ -104,7 +95,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testAfterMethodCall() {
         try {
             assertScriptWithExtension 'aftermethodcall.groovy', '''
@@ -116,7 +106,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testOnMethodSelection() {
         try {
             assertScriptWithExtension 'onmethodselection.groovy', '''
@@ -130,7 +119,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testMethodNotFound() {
         use (SpecSupport) {
             assertScriptWithExtension 'methodnotfound.groovy', '''
@@ -139,7 +127,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testBeforeVisitMethod() {
         use (SpecSupport) {
             assertScriptWithExtension 'beforevisitmethod.groovy', '''
@@ -151,7 +138,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testAfterVisitMethod() {
         try {
             assertScriptWithExtension 'aftervisitmethod.groovy', '''
@@ -168,7 +154,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testBeforeVisitClass() {
         try {
             assertScriptWithExtension 'beforevisitclass.groovy', '''
@@ -181,7 +166,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testAfterVisitClass() {
         try {
             assertScriptWithExtension 'aftervisitclass.groovy', '''
@@ -194,7 +178,6 @@ final class TypeCheckingExtensionSpecTest {
         }
     }
 
-    @Test
     void testIncompatibleAssignment() {
         assertScriptWithExtension 'incompatibleassignment.groovy', '''
             import groovy.transform.TypeChecked
@@ -216,7 +199,6 @@ final class TypeCheckingExtensionSpecTest {
         '''
     }
 
-    @Test
     void testIncompatibleReturnType() {
         assertScriptWithExtension 'incompatiblereturntype.groovy', '''
             Closure<Date> c = { '1' }
@@ -224,7 +206,6 @@ final class TypeCheckingExtensionSpecTest {
         '''
     }
 
-    @Test
     void testAmbiguousMethods() {
         def err = shouldFail {
             assertScriptWithExtension 'ambiguousmethods.groovy', '''
@@ -234,10 +215,9 @@ final class TypeCheckingExtensionSpecTest {
                 assert foo(null) == 2
             '''
         }
-        assert err.message =~ /Cannot resolve which method to invoke for \[null\] due to overlapping prototypes/
+        assert err =~ /Cannot resolve which method to invoke for \[null\] due to overlapping prototypes/
     }
 
-    @Test
     void testSupportMethods() {
         assertScriptWithExtension 'selfcheck.groovy', '''
             class Foo {}
@@ -245,7 +225,6 @@ final class TypeCheckingExtensionSpecTest {
         '''
     }
 
-    @Test
     void testNewMethod() {
         assertScriptWithExtension 'newmethod.groovy','''
             class Foo {
@@ -256,7 +235,6 @@ final class TypeCheckingExtensionSpecTest {
         '''
     }
 
-    @Test
     void testScopingMethods() {
         assertScriptWithExtension 'scoping.groovy','''
             1+1
@@ -268,7 +246,6 @@ final class TypeCheckingExtensionSpecTest {
 
     //--------------------------------------------------------------------------
 
-    @Test
     void testRobotExample() {
         def err = shouldFail(MultipleCompilationErrorsException, '''import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -292,14 +269,13 @@ shell.setVariable('robot', robot)
 shell.evaluate(script)                                      // <3>
 // end::example_robot_setup[]
 ''')
-        assert err.message.contains(stripAsciidocMarkup('''
+        assert err.contains(stripAsciidocMarkup('''
 // tag::example_robot_expected_err[]
 [Static type checking] - The variable [robot] is undeclared.
 // end::example_robot_expected_err[]
 '''))
     }
 
-    @Test
     void testRobotExampleFixed() {
         assertScript '''import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -325,7 +301,6 @@ shell.evaluate(script)
 '''
     }
 
-    @Test
     void testRobotExamplePassWithCompileStatic() {
         assertScript '''import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -351,7 +326,6 @@ shell.evaluate(script)
 '''
     }
 
-    @Test
     void testRobotExampleDelegatingScript() {
         assertScript '''import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -375,7 +349,6 @@ runner.run()                                                // <4>
 '''
     }
 
-    @Test
     void testRobotExampleFailsWithCompileStatic() {
         def err = GroovyAssert.shouldFail '''import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -408,7 +381,6 @@ java.lang.NoSuchMethodError: java.lang.Object.move()Ltyping/Robot;
 ''')) || err.contains('java.lang.NoSuchMethodError: \'typing.Robot java.lang.Object.move()\'')
     }
 
-    @Test
     void testRobotExamplePassesWithCompileStatic() {
         assertScript '''import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -433,7 +405,6 @@ runner.run()
 '''
     }
 
-    @Test
     void testPrecompiledExtensions() {
         assertScript '''import groovy.transform.TypeChecked
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -546,47 +517,38 @@ assert expected == result
 """
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenReadingUsingDelegateOnly() {
         doDelegateResolutionForPropertyReadTest("Closure.DELEGATE_ONLY", "delegate")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenReadingUsingDelegateFirst() {
         doDelegateResolutionForPropertyReadTest("Closure.DELEGATE_FIRST", "delegate")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenReadingUsingOwnerOnly() {
         doDelegateResolutionForPropertyReadTest("Closure.OWNER_ONLY", "owner")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenReadingUsingOwnerFirst() {
         doDelegateResolutionForPropertyReadTest("Closure.OWNER_FIRST", "owner")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenWritingUsingDelegateOnly() {
         doDelegateResolutionForPropertyWriteTest("Closure.DELEGATE_ONLY", "delegate")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenWritingUsingDelegateFirst() {
         doDelegateResolutionForPropertyWriteTest("Closure.DELEGATE_FIRST", "delegate")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenWritingUsingOwnerOnly() {
         doDelegateResolutionForPropertyWriteTest("Closure.OWNER_ONLY", "owner")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenWritingUsingOwnerFirst() {
         doDelegateResolutionForPropertyWriteTest("Closure.OWNER_FIRST", "owner")
     }
 
-    @Test
     void testDelegateResolutionToPropertyWhenWritingInsideWith() {
         // Failing example provided by Jan Hackel (@jhunovis) in groovy slack
         // https://groovy-community.slack.com/files/U9CM8G6AJ/FAR1PJT1U/behavior_of__with__and___compilestatic.groovy

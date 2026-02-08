@@ -18,13 +18,10 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
-
-class Groovy4111Bug {
-    @Test
+class Groovy4111Bug extends GroovyTestCase {
     void testConstructorCallOnAnAbstractType() {
         try {
             new GroovyShell().parse """

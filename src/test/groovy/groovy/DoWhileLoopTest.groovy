@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class DoWhileLoopTest extends GroovyTestCase {
 
-class DoWhileLoopTest {
-
-    @Test
     void testDoWhileWhile() {
 
     /**

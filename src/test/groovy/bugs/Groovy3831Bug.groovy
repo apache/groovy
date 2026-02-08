@@ -18,18 +18,15 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy3831Bug {
-    @Test
+class Groovy3831Bug extends GroovyTestCase {
     void testClosureDefinitionInSpecialCallsInConstructorsV1() {
         def test = new Test3831V1('hello', ["world"])
         assert test.string == 'hello'
         assert test.uris.size() == 1
     }
 
-    @Test
     void testClosureDefinitionInSpecialCallsInConstructorsV2() {
         // just loading of class is test enough as it was giving VerifyError earlier.
         new Test3831V2()

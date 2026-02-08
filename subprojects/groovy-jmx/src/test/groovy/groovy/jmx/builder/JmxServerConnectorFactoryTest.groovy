@@ -18,32 +18,27 @@
  */
 package groovy.jmx.builder
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import javax.management.remote.JMXConnector
 import javax.management.remote.JMXConnectorFactory
 import javax.management.remote.JMXServiceURL
 import javax.management.remote.rmi.RMIConnectorServer
 
-class JmxServerConnectorFactoryTest {
+class JmxServerConnectorFactoryTest extends GroovyTestCase {
     def builder
     int defaultPort = 10995
     def rmi
 
-    @BeforeEach
     void setUp() {
         builder = new JmxBuilder()
         rmi = JmxConnectorHelper.createRmiRegistry(defaultPort)
     }
 
-    @AfterEach
     void tearDown() {
         JmxConnectorHelper.destroyRmiRegistry(rmi.registry)
     }
 
-    @Test
     void testJmxServerConnectorNode() {
         RMIConnectorServer result = builder.serverConnector(port: rmi.port)
 
@@ -53,7 +48,6 @@ class JmxServerConnectorFactoryTest {
         result.stop()
     }
 
-    @Test
     void testJmxServerConnectorClient() {
         RMIConnectorServer result = builder.serverConnector(port: rmi.port)
 

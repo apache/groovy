@@ -18,16 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static org.junit.jupiter.api.Assertions.assertTrue
-
-
-class GroovyInnerEnumBug {
+class GroovyInnerEnumBug extends GroovyTestCase {
 
     // GROOVY-3979
-    @Test
     void testInnerEnum1() {
         assertScript '''
             class EnumTest2 {
@@ -42,7 +37,6 @@ class GroovyInnerEnumBug {
     }
 
     // GROOVY-3994
-    @Test
     void testInnerEnum2() {
         assert MyEnum.a.name() == 'a'
         assertTrue Enum.isAssignableFrom(MyEnum.class)

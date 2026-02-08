@@ -18,14 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class Groovy278_Bug extends GroovyTestCase {
 
-
-class Groovy278_Bug {
-
-    @Test
     void testBug() {
         assertScript '''
         class MyRange extends IntRange {

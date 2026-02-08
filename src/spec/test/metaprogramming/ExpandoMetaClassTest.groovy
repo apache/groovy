@@ -18,14 +18,11 @@
  */
 package metaprogramming
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
+import groovy.test.GroovyTestCase
 
 
-class ExpandoMetaClassTest {
+class ExpandoMetaClassTest extends GroovyTestCase {
 
-    @Test
     void testConstructors() {
         assertScript '''
              // tag::emc_constructors[]
@@ -40,7 +37,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testMethodPointer() {
         assertScript '''
             // tag::emc_method_pointer[]
@@ -64,7 +60,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testDynamicMethodNames() {
         assertScript '''
             // tag::emc_dynamic_method_names[]
@@ -87,7 +82,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testOverrideInvokeMethod() {
         assertScript '''
             // tag::emc_invoke_method[]
@@ -113,7 +107,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testOverrideGetProperty() {
         assertScript '''
             // tag::emc_get_property[]
@@ -139,7 +132,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testOverrideInvokeMethodStatic() {
         assertScript '''
             // tag::emc_invoke_method_static[]
@@ -164,7 +156,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testGetProperty() {
         assertScript '''
             // tag::emc_getter[]
@@ -180,7 +171,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testSetGetProperty() {
         assertScript '''
             // tag::emc_getter_setter[]
@@ -200,7 +190,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testProperty() {
         assertScript '''
             // tag::emc_property[]
@@ -216,7 +205,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testStaticMethod() {
         assertScript '''
             // tag::emc_static[]
@@ -231,7 +219,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testMethod() {
         assertScript '''
             // tag::emc_method[]
@@ -248,7 +235,6 @@ class ExpandoMetaClassTest {
         '''
     }
 
-    @Test
     void testInterface() {
         assertScript '''
             // tag::emc_interface[]

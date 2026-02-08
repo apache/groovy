@@ -19,12 +19,12 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import static org.codehaus.groovy.control.ParserPlugin.buildAST;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for {@link ModuleNode}.
@@ -37,7 +37,7 @@ public final class ModuleNodeTest {
 
         assertEquals(1, mn.getClasses().size());
         assertTrue(mn.getClasses().get(0).getName().startsWith("Script"));
-        assertFalse(mn.getStatementBlock().isEmpty(), "Should have statements");
+        assertFalse("Should have statements", mn.getStatementBlock().isEmpty());
     }
 
     @Test // GROOVY-9194
@@ -45,7 +45,7 @@ public final class ModuleNodeTest {
         ModuleNode mn = new ModuleNode((CompileUnit) null);
         mn.setDescription("#script.groovy");
 
-        assertEquals("_script", mn.getScriptClassDummy().getName(), "Dummy class name should not be empty");
+        assertEquals("Dummy class name should not be empty", "_script", mn.getScriptClassDummy().getName());
     }
 
     @Test // GROOVY-9577

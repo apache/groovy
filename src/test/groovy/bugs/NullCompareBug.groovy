@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class NullCompareBug extends GroovyTestCase {
 
-class NullCompareBug {
-
-    @Test
     void testBug() {
         assert "dog" > null
         assert null < "dog"

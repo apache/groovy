@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.fail
-
-
-class Groovy4078Bug {
-    @Test
+class Groovy4078Bug extends GroovyTestCase {
     void testInfiniteLoopDetectionInStepUsage() {
         (2..2).step 0, {assert it != null} //IntRange
 

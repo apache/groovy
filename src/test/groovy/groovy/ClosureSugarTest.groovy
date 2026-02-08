@@ -18,14 +18,12 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class ClosureSugarTest {
+class ClosureSugarTest extends GroovyTestCase {
 
     def count;
 
-    @Test
     void testClosureSugar() {
         count = 11;
 
@@ -36,7 +34,6 @@ class ClosureSugarTest {
         assert count == 20;
     }
 
-    @Test
     void testMixedClosureSugar() {
         def count = 11;
 

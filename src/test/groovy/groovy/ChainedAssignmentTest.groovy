@@ -18,16 +18,14 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class ChainedAssignmentTest {
+class ChainedAssignmentTest extends GroovyTestCase {
 
     def dummy(v) {
         print v
     }
 
-    @Test
     void testCompare() {
         def i = 123
         def s = "hello"

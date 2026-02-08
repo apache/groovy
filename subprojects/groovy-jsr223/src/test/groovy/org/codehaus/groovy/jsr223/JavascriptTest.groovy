@@ -18,12 +18,11 @@
  */
 package org.codehaus.groovy.jsr223
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import javax.script.ScriptEngineManager
 
-class JavascriptTest {
-    @Test
+class JavascriptTest extends GroovyTestCase {
     void testIntegrationWithBuiltinJavaScript() {
         def binding = new Binding()
         binding.x = 10

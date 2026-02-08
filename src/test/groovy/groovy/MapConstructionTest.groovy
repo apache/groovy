@@ -18,15 +18,13 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /** 
  * Tests creating Maps in Groovy
  */
-class MapConstructionTest {
+class MapConstructionTest extends GroovyTestCase {
 
-    @Test
     void testMap() {
         def m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ]
 
@@ -36,12 +34,10 @@ class MapConstructionTest {
         assert mtoo[2][2] == 'def'
     }
 
-    @Test
     void testMapAsParameter() {
         assertMap([ 1 : 'abc', 2 : 'def', 3 : 'xyz' ])
     }
 
-    @Test
     void testMapViaHashMap() {
         def m = new HashMap()
         m.put(1, 'abc')

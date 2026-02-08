@@ -18,16 +18,15 @@
  */
 package groovy.jmx.builder
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import javax.management.Descriptor
 import javax.management.MBeanParameterInfo
 import javax.management.modelmbean.ModelMBeanConstructorInfo
 import javax.management.modelmbean.ModelMBeanOperationInfo
 
-class JmxOperationInfoManagerTest {
+class JmxOperationInfoManagerTest extends GroovyTestCase {
 
-    @Test
     void testGetConstructorInfoFromMap() {
         def object = new MockManagedObject()
         def maps = JmxMetaMapBuilder.buildConstructorMapFrom(object);
@@ -77,7 +76,6 @@ class JmxOperationInfoManagerTest {
         assert desc.getFieldValue(JmxBuilderTools.DESC_KEY_ROLE) == "constructor"
     }
 
-    @Test
     void testGetConstructorInfosMap() {
         def object = new MockManagedObject()
         def maps = JmxMetaMapBuilder.buildConstructorMapFrom(object)
@@ -88,7 +86,6 @@ class JmxOperationInfoManagerTest {
         assert infos.size() == 3
     }
 
-    @Test
     void testGetOperationInfoFromMap() {
         def object = new MockManagedObject()
         def maps = JmxMetaMapBuilder.buildOperationMapFrom(object);
@@ -131,7 +128,6 @@ class JmxOperationInfoManagerTest {
         assert desc.getFieldValue(JmxBuilderTools.DESC_KEY_TYPE) == "operation"
     }
 
-    @Test
     void testGetOperationInfosFromMap() {
         def object = new MockManagedObject()
         def maps = JmxMetaMapBuilder.buildOperationMapFrom(object)
@@ -142,7 +138,6 @@ class JmxOperationInfoManagerTest {
         assert infos.size() > 0
     }
 
-    @Test
     void testGetDynamicOperationInfo() {
         def object = new MockManagedObject()
         // note: closure:{->} returns 0 param, but closure:{} returns 1 param.
@@ -164,7 +159,6 @@ class JmxOperationInfoManagerTest {
         assert desc.getFieldValue(JmxBuilderTools.DESC_KEY_TYPE) == "operation"
     }
 
-    @Test
     void testCreateGetterOperationInfoFromProperty() {
         def object = new MockManagedObject()
         MetaProperty prop = object.metaClass.getMetaProperty("something")
@@ -175,7 +169,6 @@ class JmxOperationInfoManagerTest {
         assert op.signature.size() == 0
     }
 
-    @Test
     void testCreateSetterOperationInfoFromProperty() {
         def object = new MockManagedObject()
         MetaProperty prop = object.metaClass.getMetaProperty("something")

@@ -17,9 +17,12 @@
  *  under the License.
  */
 package groovy
+
+import groovy.test.GroovyTestCase
+
 // GROOVY-435
 
-class SingletonBugTest {
+class SingletonBugTest extends GroovyTestCase {
 
     public void testPrivate() {
         def x = SingletonBugPrivate.getInstance()

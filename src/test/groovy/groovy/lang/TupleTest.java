@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 import static groovy.lang.Tuple.tuple;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class TupleTest extends GroovyTestCase {
 
@@ -92,14 +92,14 @@ public class TupleTest extends GroovyTestCase {
         assertTrue("hashcode", a.hashCode() != c.hashCode());
 
         assertEquals("a and b", a, b);
-        assertNotEquals(a, c, "a != c");
+        assertNotEquals("a != c", a, c);
 
-        assertNotEquals(null, a, "!a.equals(null)");
+        assertNotEquals("!a.equals(null)", null, a);
 
         assertEquals("d.equals(e)", d, e);
         assertEquals("e.equals(d)", e, d);
-        assertNotEquals(e, f, "!e.equals(f)");
-        assertNotEquals(f, e, "!f.equals(e)");
+        assertNotEquals("!e.equals(f)", e, f);
+        assertNotEquals("!f.equals(e)", f, e);
     }
 
     public void testIterator() {

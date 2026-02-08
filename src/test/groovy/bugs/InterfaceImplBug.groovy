@@ -18,12 +18,11 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.dummy.FooHandler
-import org.junit.jupiter.api.Test
 
-class InterfaceImplBug implements FooHandler {
+class InterfaceImplBug extends GroovyTestCase implements FooHandler {
 
-    @Test
     void testMethodCall() {
         handle(null)
     }

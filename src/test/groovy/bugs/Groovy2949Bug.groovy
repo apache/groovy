@@ -18,7 +18,9 @@
  */
 package bugs
 
-class Groovy2949Bug {
+import groovy.test.GroovyTestCase
+
+class Groovy2949Bug extends GroovyTestCase {
     void testBug () {
         new GroovyShell().evaluate """
         public abstract class A { abstract protected void doIt() }

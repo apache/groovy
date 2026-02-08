@@ -18,15 +18,14 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 
-class Groovy8138Bug {
+class Groovy8138Bug extends GroovyTestCase {
     void test() {
         assertScript '''
             import groovy.transform.CompileStatic
 
             import static java.util.stream.Collectors.toList
-import org.junit.jupiter.api.Test
-import static groovy.test.GroovyAssert.*
 
             @CompileStatic
             class Test {

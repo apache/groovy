@@ -19,14 +19,14 @@
 package groovy.grape
 
 import groovy.test.NotYetImplemented
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.BeforeClass
+import org.junit.Test
 
 class GrapeClassLoaderTest {
 
     private static final jideVersion = '[3.6,3.7)'
 
-    @BeforeAll
+    @BeforeClass
     static void downloadToCache() {
         // ensure files are installed locally
         Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()],

@@ -18,14 +18,12 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class LocalFieldTest {
+class LocalFieldTest extends GroovyTestCase {
 
     private def x
 
-    @Test
     void testAssert() {
         this.x = "abc"
         assert this.x == "abc"

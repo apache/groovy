@@ -166,14 +166,14 @@ final class BuilderSupportTest {
     @Test
     void testSimpleNodeWithClosureThatThrowsAMissingMethodException() {
       def builder = new SpoofBuilder()
-      def errorMessage = shouldFail(MissingMethodException) {
+      String errorMessage = shouldFail(MissingMethodException) {
           builder.a {
               b {
                   error('xy'.foo())
               }
           }
       }
-      assert errorMessage.message.contains('No signature of method: foo for class: java.lang.String')
+      assert errorMessage.contains('No signature of method: foo for class: java.lang.String')
   }
 }
 

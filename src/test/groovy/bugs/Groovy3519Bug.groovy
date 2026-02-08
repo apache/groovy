@@ -18,14 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class Groovy3519Bug extends GroovyTestCase {
 
-
-class Groovy3519Bug {
-
-    @Test
     void testShouldSkipPrivateMethodsFromCovariantReturnTypeChecks() {
         assertScript '''
             class A {
@@ -42,7 +38,6 @@ class Groovy3519Bug {
         '''
     }
 
-    @Test
     void testShouldSkipPrivateMethodsFromCovariantReturnTypeChecksCS() {
         assertScript '''import groovy.transform.CompileStatic
 

@@ -18,18 +18,12 @@
  */
 package groovy.util
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertNotNull
-import static org.junit.jupiter.api.Assertions.assertNull
-import static org.junit.jupiter.api.Assertions.assertTrue
-
-class ObservableListTest {
-    @Test
+class ObservableListTest extends GroovyTestCase {
     void testFireEvent_add_withoutTest() {
         def list = new ObservableList()
         def contentListener = new SampleListPropertyChangeListener()
@@ -69,7 +63,6 @@ class ObservableListTest {
         assertNull(contentListener.event)
     }
 
-    @Test
     void testFireEvent_remove() {
         def list = new ObservableList()
         def contentListener = new SampleListPropertyChangeListener()
@@ -123,7 +116,6 @@ class ObservableListTest {
         assertEquals(0i, sizeListener.event.newValue)
     }
 
-    @Test
     void testFireEvent_clear() {
         def list = new ObservableList()
         def contentListener = new SampleListPropertyChangeListener()
@@ -157,7 +149,6 @@ class ObservableListTest {
         assertEquals(0i, sizeListener.event.newValue)
     }
 
-    @Test
     void testFireEvent_addAll() {
         def list = new ObservableList()
         def contentListener = new SampleListPropertyChangeListener()
@@ -192,7 +183,6 @@ class ObservableListTest {
         assertEquals(1i, contentListener.event.index)
     }
 
-    @Test
     void testFireEvent_removeAll() {
         def list = new ObservableList()
         def contentListener = new SampleListPropertyChangeListener()
@@ -225,7 +215,6 @@ class ObservableListTest {
         assertEquals(1i, sizeListener.event.newValue)
     }
 
-    @Test
     void testFireEvent_retainAll() {
         def list = new ObservableList()
         def contentListener = new SampleListPropertyChangeListener()
@@ -261,7 +250,6 @@ class ObservableListTest {
         assertEquals(1i, sizeListener.event.newValue)
     }
 
-    @Test
     void testFireEvent_withTest() {
         def list = new ObservableList({ !(it instanceof String) })
         def contentListener = new SampleListPropertyChangeListener()
@@ -280,21 +268,18 @@ class ObservableListTest {
         assertNull(contentListener.event)
     }
 
-    @Test
     void testSort_Groovy4937() {
         def list = [3, 2, 1] as ObservableList
         list = list.sort()
         assert list == [1, 2, 3]
     }
 
-    @Test
     void testListIterator() {
         def list = [1, 2, 3, 4, 5] as ObservableList
         assert list.listIterator(2).collect { it } == [3, 4, 5]
         assert list.listIterator().collect { it } == [1, 2, 3, 4, 5]
     }
 
-        @Test
         void testRetainAllBugGroovy4699() {
             def list = new ObservableList(['test', 'test2'])
             def contentListener = new SampleListPropertyChangeListener()

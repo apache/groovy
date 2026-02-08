@@ -18,12 +18,10 @@
  */
 package org.apache.groovy.json.internal
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ArrayUtilsTest extends GroovyTestCase {
 
-class ArrayUtilsTest {
-
-    @Test
     void testCopyRange() {
         char[] chars = "t"
         assert ArrayUtils.copyRange(chars, 0, 1) == ((char[]) "t")

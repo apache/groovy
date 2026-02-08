@@ -18,37 +18,29 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
-import static org.junit.jupiter.api.Assertions.fail
-
+import groovy.test.GroovyTestCase
 
 /**
  * A test case for switch statement with different types
  */
-class SwitchWithDifferentTypesTest {
+class SwitchWithDifferentTypesTest extends GroovyTestCase {
 
-    @Test
     void testSwitchWithIntValues() {
         assertSwitch(1, 2, 3, 4)
     }
 
-    @Test
     void testSwitchWithDoubleValues() {
         assertSwitch(1.5, 2.4, 3.2, 4.1)
     }
 
-    @Test
     void testSwitchWithStringValues() {
         assertSwitch("abc", "def", "xyz", "unknown")
     }
 
-    @Test
     void testSwitchWithMixedTypeValues() {
         assertSwitch("abc", new Date(), 5.32, 23)
     }
 
-    @Test
     void testSwitchWithMixedNumberValues() {
         def i = 1 as Integer
         def bi = 1 as BigInteger

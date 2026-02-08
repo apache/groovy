@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -73,7 +73,7 @@ final class Groovy9293 {
 
             new B().test()
         '''
-        assert err.message =~ /No such property: superField for class: b.B/
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
@@ -117,7 +117,7 @@ final class Groovy9293 {
 
             new B().test()
         '''
-        assert err.message =~ /No such property: superField for class: b.B/
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
@@ -161,7 +161,7 @@ final class Groovy9293 {
 
             new B().test()
         '''
-        assert err.message =~ /No such property: superField for class: b.B/
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
@@ -205,7 +205,7 @@ final class Groovy9293 {
 
             new B().test()
         '''
-        assert err.message =~ /No such property: superField for class: b.B/
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
@@ -249,7 +249,7 @@ final class Groovy9293 {
 
             new B().test()
         '''
-        assert err.message =~ /No such property: superField for class: b.B/
+        assert err =~ /No such property: superField for class: b.B/
     }
 
     @Test
@@ -293,6 +293,6 @@ final class Groovy9293 {
 
             new B().test()
         '''
-        assert err.message =~ /No such property: superField for class: b.B/
+        assert err =~ /No such property: superField for class: b.B/
     }
 }

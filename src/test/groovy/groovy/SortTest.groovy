@@ -18,13 +18,11 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class SortTest {
+class SortTest extends GroovyTestCase {
 
     // GROOVY-1956
-    @Test
     void testSortWithNull() {
         // normal case, should sort in place and return result
         def x = [1, 2, 3, 1, 2, 3, null, 'a', null]
@@ -41,7 +39,6 @@ class SortTest {
     }
 
     // GROOVY-1956
-    @Test
     void testSortWithNullUsingOrderBy() {
         def x = [1, 2, 'Z', 'a', null]
         def y = x.sort()
@@ -50,7 +47,6 @@ class SortTest {
         assert z == [null, 1, 2, 'a', 'Z']
     }
 
-    @Test
     void testSortWithOrderBy() {
         def list = getPeople()
         def order = new OrderBy({ it.cheese })
@@ -60,14 +56,12 @@ class SortTest {
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']
     }
 
-    @Test
     void testSortWithClosure() {
         def list = getPeople()
         list.sort { it.cheese }
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']
     }
 
-    @Test
     void testArraySort() {
         def s = "The quick brown fox jumped over the lazy dog"
         def words = s.split()
@@ -79,7 +73,6 @@ class SortTest {
         } == ['The', 'fox', 'the', 'dog', 'over', 'lazy', 'quick', 'brown', 'jumped'] as String[]
     }
 
-    @Test
     void testSortClassHierarchy() {
         def aFooList = [
                 new AFoo(5),

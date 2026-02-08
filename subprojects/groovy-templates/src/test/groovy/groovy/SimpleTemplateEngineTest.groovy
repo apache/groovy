@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class SimpleTemplateEngineTest extends GroovyTestCase {
 
-class SimpleTemplateEngineTest {
-
-    @Test
     void testBindingWithDefault() {
       def binding = [ firstname : "Grace", lastname  : "Hopper" ]
       def engine = new groovy.text.SimpleTemplateEngine()

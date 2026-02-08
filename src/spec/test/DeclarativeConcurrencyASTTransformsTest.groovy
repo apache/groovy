@@ -1,3 +1,4 @@
+import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -17,13 +18,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
-class DeclarativeConcurrencyASTTransformsTest {
-    @Test
+class DeclarativeConcurrencyASTTransformsTest extends GroovyTestCase {
     void testSynchronizedASTTransform() {
         assertScript '''
 // tag::example_synchronized[]
@@ -101,7 +96,6 @@ assert c.get() == 1000
 '''
     }
 
-    @Test
     void testWithReadLockASTTransform() {
         assertScript '''
 // tag::example_rwlock[]

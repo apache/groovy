@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.reflection.utils
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.reflection.ReflectionUtils
 
 // note, this must be in a package other than org.codehaus.groovy.reflection or else
 // the tests will incorrectly miss the target
 
-class ReflectionUtilsTest {
+class ReflectionUtilsTest extends GroovyTestCase {
 
     private Class privateCaller() {
         return ReflectionUtils.getCallingClass()

@@ -18,32 +18,39 @@
  */
 package gls.classes.methods
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static groovy.test.GroovyAssert.assertScript
 
+@RunWith(Parameterized)
 class MethodOverridingAllowedTest {
+    String baseVisibility, childVisibility
 
-    static List<Arguments> data() {
-        [
-            Arguments.of('private', 'private'),
-            Arguments.of('private', '@groovy.transform.PackageScope'),
-            Arguments.of('private', 'protected'),
-            Arguments.of('private', 'public'),
-            Arguments.of('@groovy.transform.PackageScope', '@groovy.transform.PackageScope'),
-            Arguments.of('@groovy.transform.PackageScope', 'protected'),
-            Arguments.of('@groovy.transform.PackageScope', 'public'),
-            Arguments.of('protected', 'protected'),
-            Arguments.of('protected', 'public'),
-            Arguments.of('public', 'public'),
-        ]
+    MethodOverridingAllowedTest(String baseVisibility, String childVisibility) {
+        this.baseVisibility = baseVisibility
+        this.childVisibility = childVisibility
     }
 
-    @ParameterizedTest(name = '{1} may override {0}')
-    @MethodSource('data')
-    void 'stronger access may override weaker'(String baseVisibility, String childVisibility) {
+    @Parameterized.Parameters(name = '{1} may override {0}')
+    static data() {
+        [
+            ['private', 'private'],
+            ['private', '@groovy.transform.PackageScope'],
+            ['private', 'protected'],
+            ['private', 'public'],
+            ['@groovy.transform.PackageScope', '@groovy.transform.PackageScope'],
+            ['@groovy.transform.PackageScope', 'protected'],
+            ['@groovy.transform.PackageScope', 'public'],
+            ['protected', 'protected'],
+            ['protected', 'public'],
+            ['public', 'public'],
+        ]*.toArray()
+    }
+
+    @Test
+    void 'stronger access may override weaker'() {
         assertScript("""
             class Base {
                 $baseVisibility myMethod() { true }

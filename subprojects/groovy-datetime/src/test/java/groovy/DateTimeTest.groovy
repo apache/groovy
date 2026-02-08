@@ -18,7 +18,7 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.text.SimpleDateFormat
 import java.time.Duration
@@ -38,11 +38,8 @@ import java.time.chrono.JapaneseDate
 import java.time.temporal.ChronoField
 import java.time.temporal.ChronoUnit
 
-import static org.junit.jupiter.api.Assertions.fail
+class DateTimeTest extends GroovyTestCase {
 
-class DateTimeTest {
-
-    @Test
     void testDurationPlusMinusPositiveNegative() {
         def duration = Duration.ofSeconds(10)
         def longer = duration + 5
@@ -54,7 +51,6 @@ class DateTimeTest {
         assert (--shorter).seconds == 4
     }
 
-    @Test
     void testInstantPlusMinusPositiveNegative() {
         def epoch = Instant.ofEpochMilli(0)
 
@@ -67,7 +63,6 @@ class DateTimeTest {
         assert (--oneSecPastEpoch).epochSecond == 0
     }
 
-    @Test
     void testLocalDatePlusMinusPositiveNegative() {
         def epoch = LocalDate.of(1970, Month.JANUARY, 1)
 
@@ -80,7 +75,6 @@ class DateTimeTest {
         assert (--oneDayPastEpoch).dayOfMonth == 1
     }
 
-    @Test
     void testLocalDateTimePlusMinusPositiveNegative() {
         def epoch = LocalDateTime.of(1970, Month.JANUARY, 1, 0, 0, 0, 0)
 
@@ -93,7 +87,6 @@ class DateTimeTest {
         assert (--oneSecPastEpoch).second == 0
     }
 
-    @Test
     void testLocalTimePlusMinusPositiveNegative() {
         def epoch = LocalTime.of(0, 0, 0, 0)
 
@@ -106,7 +99,6 @@ class DateTimeTest {
         assert (--oneSecPastEpoch).second == 0
     }
 
-    @Test
     void testOffsetDateTimePlusMinusPositiveNegative() {
         def epoch = OffsetDateTime.of(LocalDateTime.of(1970, Month.JANUARY, 1, 0, 0, 0, 0),
                 ZoneOffset.ofHours(0))
@@ -120,7 +112,6 @@ class DateTimeTest {
         assert (--oneSecPastEpoch).second == 0
     }
 
-    @Test
     void testOffsetTimePlusMinusPositiveNegative() {
         def epoch = OffsetTime.of(LocalTime.of(0, 0, 0, 0),
                 ZoneOffset.ofHours(0))
@@ -134,7 +125,6 @@ class DateTimeTest {
         assert (--oneSecPastEpoch).second == 0
     }
 
-    @Test
     void testPeriodPlusMinusPositiveNegative() {
         def fortnight = Period.ofDays(14)
 
@@ -147,7 +137,6 @@ class DateTimeTest {
         assert (--fortnightAndOneDay).days == 14
     }
 
-    @Test
     void testYearPlusMinusPositiveNegative() {
         def epoch = Year.of(1970)
 
@@ -160,7 +149,6 @@ class DateTimeTest {
         assert (--oneYearAfterEpoch).value == 1970
     }
 
-    @Test
     void testYearMonthPlusMinusPositiveNegative() {
         def epoch = YearMonth.of(1970, Month.JANUARY)
 
@@ -173,7 +161,6 @@ class DateTimeTest {
         assert (--oneMonthAfterEpoch).month == Month.JANUARY
     }
 
-    @Test
     void testZonedDateTimePlusMinusPositiveNegative() {
         def epoch = ZonedDateTime.of(LocalDateTime.of(1970, Month.JANUARY, 1, 0, 0, 0, 0),
                 ZoneId.systemDefault())
@@ -187,7 +174,6 @@ class DateTimeTest {
         assert (--oneSecPastEpoch).second == 0
     }
 
-    @Test
     void testDayOfWeekPlusMinus() {
         def mon = DayOfWeek.MONDAY
 
@@ -195,7 +181,6 @@ class DateTimeTest {
         assert mon - 4 == DayOfWeek.THURSDAY
     }
 
-    @Test
     void testMonthPlusMinus() {
         def jan = Month.JANUARY
 
@@ -203,7 +188,6 @@ class DateTimeTest {
         assert jan - 4 == Month.SEPTEMBER
     }
 
-    @Test
     void testDurationPositiveNegative() {
         def positiveDuration = Duration.ofSeconds(3)
         assert (-positiveDuration).seconds == -3
@@ -212,7 +196,6 @@ class DateTimeTest {
         assert (+negativeDuration).seconds == 5
     }
 
-    @Test
     void testDurationMultiplyDivide() {
         def duration = Duration.ofSeconds(60)
 
@@ -220,7 +203,6 @@ class DateTimeTest {
         assert (duration * 2).seconds == 120
     }
 
-    @Test
     void testDurationIsPositiveIsNonnegativeIsNonpositive() {
         def pos = Duration.ofSeconds(10)
         assert pos.isPositive() == true
@@ -237,7 +219,6 @@ class DateTimeTest {
         assert Duration.ZERO.isNonnegative() == true
     }
 
-    @Test
     void testPeriodPositiveNegative() {
         def positivePeriod = Period.of(1,2,3)
         Period madeNegative = -positivePeriod
@@ -252,7 +233,6 @@ class DateTimeTest {
         assert madePositive.days == 3
     }
 
-    @Test
     void testPeriodMultiply() {
         def period = Period.of(1,1,1)
         Period doublePeriod = period * 2
@@ -261,7 +241,6 @@ class DateTimeTest {
         assert doublePeriod.days == 2
     }
 
-    @Test
     void testPeriodIsPositiveIsNonnegativeIsNonpositive() {
         def pos = Period.ofDays(10)
         assert pos.isPositive() == true
@@ -278,25 +257,21 @@ class DateTimeTest {
         assert Period.ZERO.isNonnegative() == true
     }
 
-    @Test
     void testTemporalGetAt() {
         def epoch = Instant.ofEpochMilli(0)
         assert epoch[ChronoField.INSTANT_SECONDS] == 0
     }
 
-    @Test
     void testTemporalAmountGetAt() {
         def duration = Duration.ofHours(10)
         assert duration[ChronoUnit.SECONDS] == 36_000
     }
 
-    @Test
     void testZoneOffsetGetAt() {
         def offset = ZoneOffset.ofTotalSeconds(360)
         assert offset[ChronoField.OFFSET_SECONDS] == 360
     }
 
-    @Test
     void testTemporalRightShift() {
         def epoch = Instant.ofEpochMilli(0)
         def dayAfterEpoch = epoch + (60 * 60 * 24)
@@ -304,7 +279,6 @@ class DateTimeTest {
         assert instantDuration == Duration.ofDays(1)
     }
 
-    @Test
     void testLocalDateRightShift() {
         def localDate1 = LocalDate.of(2000, Month.JANUARY, 1)
         def localDate2 = localDate1.plusYears(2)
@@ -312,7 +286,6 @@ class DateTimeTest {
         assert localDatePeriod.years == 2
     }
 
-    @Test
     void testYearRightShift() {
         def year1 = Year.of(2000)
         def year2 = Year.of(2018)
@@ -320,7 +293,6 @@ class DateTimeTest {
         assert yearPeriod.years == 18
     }
 
-    @Test
     void testYearMonthRightShift() {
         def yearMonth1 = YearMonth.of(2018, Month.JANUARY)
         def yearMonth2 = YearMonth.of(2018, Month.MARCH)
@@ -328,7 +300,6 @@ class DateTimeTest {
         assert yearMonthPeriod.months == 2
     }
 
-    @Test
     void testRightShiftDifferentTypes() {
         try {
             LocalDate.now() >> LocalTime.now()
@@ -338,7 +309,6 @@ class DateTimeTest {
         }
     }
 
-    @Test
     void testUptoDifferentTypes() {
         try {
             LocalDate.now().upto(JapaneseDate.now().plus(1, ChronoUnit.MONTHS)) { d -> }
@@ -348,7 +318,6 @@ class DateTimeTest {
         }
     }
 
-    @Test
     void testDowntoDifferentTypes() {
         try {
             LocalDate.now().downto(JapaneseDate.now().minus(1, ChronoUnit.MONTHS)) { d -> }
@@ -358,7 +327,6 @@ class DateTimeTest {
         }
     }
 
-    @Test
     void testUptoSelfWithDefaultUnit() {
         def epoch = Instant.ofEpochMilli(0)
 
@@ -370,7 +338,6 @@ class DateTimeTest {
         assert iterations == 1: 'Iterating upto same value should call closure once'
     }
 
-    @Test
     void testDowntoSelfWithDefaultUnit() {
         def epoch = Instant.ofEpochMilli(0)
         int iterations = 0
@@ -381,7 +348,6 @@ class DateTimeTest {
         assert iterations == 1: 'Iterating downto same value should call closure once'
     }
 
-    @Test
     void testUptoWithSecondsDefaultUnit() {
         def epoch = Instant.ofEpochMilli(0)
 
@@ -395,7 +361,6 @@ class DateTimeTest {
         assert end.epochSecond == 1: 'Unexpected upto final value'
     }
 
-    @Test
     void testDowntoWithSecondsDefaultUnit() {
         def epoch = Instant.ofEpochMilli(0)
 
@@ -409,21 +374,18 @@ class DateTimeTest {
         assert end.epochSecond == -1 : 'Unexpected downto final value'
     }
 
-    @Test
     void testUptoWithYearsDefaultUnit() {
         def endYear = null
         Year.of(1970).upto(Year.of(1971)) { year -> endYear = year }
         assert endYear.value == 1971
     }
 
-    @Test
     void testDowntoWithYearsDefaultUnit() {
         def endYear = null
         Year.of(1971).downto(Year.of(1970)) { year -> endYear = year }
         assert endYear.value == 1970
     }
 
-    @Test
     void testUptoWithMonthsDefaultUnit() {
         def endYearMonth = null
         YearMonth.of(1970, Month.JANUARY).upto(YearMonth.of(1970, Month.FEBRUARY)) { yearMonth ->
@@ -432,7 +394,6 @@ class DateTimeTest {
         assert endYearMonth.month == Month.FEBRUARY
     }
 
-    @Test
     void testDowntoWithMonthsDefaultUnit() {
         def endYearMonth = null
         YearMonth.of(1970, Month.FEBRUARY).downto(YearMonth.of(1970, Month.JANUARY)) { yearMonth ->
@@ -441,7 +402,6 @@ class DateTimeTest {
         assert endYearMonth.month == Month.JANUARY
     }
 
-    @Test
     void testUptoWithDaysDefaultUnit() {
         def endLocalDate = null
         LocalDate.of(1970, Month.JANUARY, 1).upto(LocalDate.of(1970, Month.JANUARY, 2)) {  localDate ->
@@ -450,7 +410,6 @@ class DateTimeTest {
         assert endLocalDate.dayOfMonth == 2
     }
 
-    @Test
     void testDowntoWithDaysDefaultUnit() {
         def endLocalDate = null
         LocalDate.of(1970, Month.JANUARY, 2).downto(LocalDate.of(1970, Month.JANUARY, 1)) {  localDate ->
@@ -459,7 +418,6 @@ class DateTimeTest {
         assert endLocalDate.dayOfMonth == 1
     }
 
-    @Test
     void testUptoWithIllegalReversedArguments() {
         def epoch = Instant.ofEpochMilli(0)
         try {
@@ -470,7 +428,6 @@ class DateTimeTest {
         }
     }
 
-    @Test
     void testDowntoWithIllegalReversedArguments() {
         def epoch = Instant.ofEpochMilli(0)
         try {
@@ -480,7 +437,6 @@ class DateTimeTest {
         } catch (GroovyRuntimeException e) {}
     }
 
-    @Test
     void testUptoSelfWithCustomUnit() {
         def today = LocalDate.now()
 
@@ -492,7 +448,6 @@ class DateTimeTest {
         assert iterations == 1: 'Iterating upto same value should call closure once'
     }
 
-    @Test
     void testDowntoSelfWithCustomUnit() {
         def today = LocalDate.now()
 
@@ -504,7 +459,6 @@ class DateTimeTest {
         assert iterations == 1: 'Iterating downto same value should call closure once'
     }
 
-    @Test
     void testUptoWithCustomUnit() {
         LocalDateTime from = LocalDateTime.of(2018, Month.FEBRUARY, 11, 22, 9, 34)
         // one second beyond one iteration
@@ -520,7 +474,6 @@ class DateTimeTest {
         assert end.dayOfMonth == 12: "Upto should have iterated by DAYS twice"
     }
 
-    @Test
     void testDowntoWithCustomUnit() {
         LocalDateTime from = LocalDateTime.of(2018, Month.FEBRUARY, 11, 22, 9, 34)
         // one day beyond one iteration
@@ -536,7 +489,6 @@ class DateTimeTest {
         assert end.year == 2017 : "Downto should have iterated by YEARS twice"
     }
 
-    @Test
     void testInstantToDateToCalendar() {
         def epoch = Instant.ofEpochMilli(0).plusNanos(999_999)
 
@@ -548,7 +500,6 @@ class DateTimeTest {
         assert sdf.format(date) == '1970-01-01 00:00:00.000'
     }
 
-    @Test
     void testLocalDateToDateToCalendar() {
         def ld = LocalDate.of(2018, Month.FEBRUARY, 12)
 
@@ -562,7 +513,6 @@ class DateTimeTest {
         assert date.format('yyyy-MM-dd') == '2018-02-12'
     }
 
-    @Test
     void testLocalDateTimeToDateToCalendar() {
         def ldt = LocalDateTime.of(2018, Month.FEBRUARY, 12, 22, 26, 30, 123_999_999)
 
@@ -580,7 +530,6 @@ class DateTimeTest {
         assert date.format('yyyy-MM-dd HH:mm:ss.SSS') == '2018-02-12 22:26:30.123'
     }
 
-    @Test
     void testLocalTimeToDateToCalendar() {
         def today = Calendar.instance
         def lt = LocalTime.of(22, 38, 20, 9_999_999)
@@ -599,7 +548,6 @@ class DateTimeTest {
         assert date.format('HH:mm:ss.SSS') == '22:38:20.009'
     }
 
-    @Test
     void testOffsetDateTimeToDateToCalendar() {
         def ld = LocalDate.of(2018, Month.FEBRUARY, 12)
         def lt = LocalTime.of(22, 46, 10, 16_000_001)
@@ -622,7 +570,6 @@ class DateTimeTest {
         assert sdf.format(date) == '2018-02-12 22:46:10.016 -0500'
     }
 
-    @Test
     void testOffsetTimeToDateToCalendar() {
         def lt = LocalTime.of(22, 53, 2, 909_900_009)
         def offset = ZoneOffset.ofHours(-4)
@@ -645,7 +592,6 @@ class DateTimeTest {
         assert sdf.format(date) == '22:53:02.909 -0400'
     }
 
-    @Test
     void testZonedDateTimeToDateToCalendar() {
         def ldt = LocalDateTime.of(2018, Month.FEBRUARY, 13, 20, 33, 57)
         def zoneId = ZoneId.ofOffset('GMT', ZoneOffset.ofHours(3))
@@ -667,7 +613,6 @@ class DateTimeTest {
         assert sdf.format(date) == '2018-02-13 20:33:57.000 +0300'
     }
 
-    @Test
     void testZoneOffsetExtensionProperties() {
         def offset = ZoneOffset.ofHoursMinutesSeconds(3,4,5)
         assert offset.hours == 3
@@ -680,7 +625,6 @@ class DateTimeTest {
         assert negOffset.seconds == -3
     }
 
-    @Test
     void testZoneOffsetToZimeZone() {
         TimeZone utcTz = ZoneOffset.UTC.toTimeZone()
         assert utcTz.getID() == 'GMT'
@@ -692,7 +636,6 @@ class DateTimeTest {
         assert secsTz.getID() == 'GMT-04:15'
     }
 
-    @Test
     void testZoneIdExtensionProperties() {
         def offset = ZoneOffset.ofHours(7)
         def zoneId = ZoneId.ofOffset('GMT', offset)
@@ -707,27 +650,23 @@ class DateTimeTest {
         assert ny.getFullName(Locale.US) == 'Eastern Time'
     }
 
-    @Test
     void testZoneIdToTimeZone() {
         ZoneId ny = ZoneId.of('America/New_York')
 
         assert ny.toTimeZone() == TimeZone.getTimeZone(ny)
     }
 
-    @Test
     void testYearExtensionProperties() {
         def year = Year.of(2009)
         assert year.era == 1
         assert year.yearOfEra == 2009
     }
 
-    @Test
     void testDayOfWeekExtensionProperties() {
         assert DayOfWeek.SUNDAY.weekend
         assert DayOfWeek.MONDAY.weekday
     }
 
-    @Test
     void testYear_Month_leftShift() {
         def a = Year.now()
         def b = Month.JULY
@@ -737,7 +676,6 @@ class DateTimeTest {
         assert x == y
     }
 
-    @Test
     void testYear_MonthDay_leftShift() {
         def a = Year.now()
         def b = MonthDay.now()
@@ -747,7 +685,6 @@ class DateTimeTest {
         assert x == y
     }
 
-    @Test
     void testMonthDay_leftShift() {
         LocalDate d = MonthDay.of(Month.FEBRUARY, 13) << 2018
         assert d.year == 2018
@@ -755,14 +692,12 @@ class DateTimeTest {
         assert d.dayOfMonth == 13
     }
 
-    @Test
     void testMonth_leftShift() {
         MonthDay md = Month.JANUARY << 10
         assert md.month == Month.JANUARY
         assert md.dayOfMonth == 10
     }
 
-    @Test
     void testLocalDate_LocalTime_leftShift() {
         def a = LocalDate.now()
         def b = LocalTime.now()
@@ -772,7 +707,6 @@ class DateTimeTest {
         assert x == y
     }
 
-    @Test
     void testLocalDate_OffsetTime_leftShift() {
         def a = LocalDate.now()
         def b = OffsetTime.now()
@@ -782,7 +716,6 @@ class DateTimeTest {
         assert x == y
     }
 
-    @Test
     void testLocalDateTime_ZoneOffset_leftShift() {
         def a = LocalDateTime.now()
         def b = ZoneOffset.ofHours(5)
@@ -792,7 +725,6 @@ class DateTimeTest {
         assert x == y
     }
 
-    @Test
     void testLocalDateTime_ZoneId_leftShift() {
         def a = LocalDateTime.now()
         def b = ZoneId.systemDefault()
@@ -802,7 +734,6 @@ class DateTimeTest {
         assert x == y
     }
 
-    @Test
     void testLocalTime_ZoneOffset_leftShift() {
         def a = LocalTime.now()
         def b = ZoneOffset.ofHours(5)
@@ -812,7 +743,6 @@ class DateTimeTest {
         assert x == y
     }
 
-    @Test
     void testLocalDateTimeClearTime() {
         def d = LocalDateTime.of(LocalDate.now(), LocalTime.of(8, 9, 10, 100_032))
         d = d.clearTime()
@@ -823,7 +753,6 @@ class DateTimeTest {
         assert d.nano == 0
     }
 
-    @Test
     void testOffsetDateTimeClearTime() {
         def offset = ZoneOffset.ofHours(-1)
         def d = OffsetDateTime.of(LocalDate.now(), LocalTime.of(8, 9, 10, 100_032), offset)
@@ -836,7 +765,6 @@ class DateTimeTest {
         assert d.offset == offset : 'cleartTime() should not change offset'
     }
 
-    @Test
     void testZonedDateTimeClearTime() {
         def zone =  ZoneId.of('America/New_York')
         def d = ZonedDateTime.of(LocalDate.now(), LocalTime.of(8, 9, 10, 100_032), zone)
@@ -849,7 +777,6 @@ class DateTimeTest {
         assert d.zone == zone : 'cleartTime() should not change zone'
     }
 
-    @Test
     void testFormatByPattern() {
         def zone =  ZoneId.of('America/New_York')
         def offset = ZoneOffset.ofHours(2)
@@ -869,13 +796,11 @@ class DateTimeTest {
         assert zdt.format('yyyy-MM-dd HH:mm:ss.SSS VV') == '2018-02-13 03:04:05.006 America/New_York'
     }
 
-    @Test
     void testLocalDateParse() {
         LocalDate ld = LocalDate.parse('2018-02-15', 'yyyy-MM-dd')
         assert [ld.year, ld.month, ld.dayOfMonth] == [2018, Month.FEBRUARY, 15]
     }
 
-    @Test
     void testLocalDateTimeParse() {
         LocalDateTime ldt = LocalDateTime.parse('2018-02-15 21:43:03.002', 'yyyy-MM-dd HH:mm:ss.SSS')
         assert [ldt.year, ldt.month, ldt.dayOfMonth] == [2018, Month.FEBRUARY, 15]
@@ -883,14 +808,12 @@ class DateTimeTest {
         assert ldt.nano == 2 * 1e6
     }
 
-    @Test
     void testLocalTimeParse() {
         LocalTime lt = LocalTime.parse('21:43:03.002', 'HH:mm:ss.SSS')
         assert [lt.hour, lt.minute, lt.second] == [21, 43, 03]
         assert lt.nano == 2 * 1e6
     }
 
-    @Test
     void testOffsetDateTimeParse() {
         OffsetDateTime odt = OffsetDateTime.parse('2018-02-15 21:43:03.002 -00', 'yyyy-MM-dd HH:mm:ss.SSS X')
         assert [odt.year, odt.month, odt.dayOfMonth] == [2018, Month.FEBRUARY, 15]
@@ -899,7 +822,6 @@ class DateTimeTest {
         assert odt.offset.totalSeconds == 0
     }
 
-    @Test
     void testOffsetTimeParse() {
         OffsetTime ot = OffsetTime.parse('21:43:03.002 -00', 'HH:mm:ss.SSS X')
         assert [ot.hour, ot.minute, ot.second] == [21, 43, 03]
@@ -907,7 +829,6 @@ class DateTimeTest {
         assert ot.offset.totalSeconds == 0
     }
 
-    @Test
     void testZonedDateTimeParse() {
         ZonedDateTime zdt = ZonedDateTime.parse('2018-02-15 21:43:03.002 UTC', 'yyyy-MM-dd HH:mm:ss.SSS z')
         assert [zdt.year, zdt.month, zdt.dayOfMonth] == [2018, Month.FEBRUARY, 15]
@@ -915,7 +836,6 @@ class DateTimeTest {
         assert zdt.nano == 2 * 1e6
     }
 
-    @Test
     void testPeriodBetweenYears() {
         def period = Period.between(Year.of(2000), Year.of(2010))
         assert period.years == 10
@@ -923,7 +843,6 @@ class DateTimeTest {
         assert period.days == 0
     }
 
-    @Test
     void testPeriodBetweenYearMonths() {
         def period = Period.between(YearMonth.of(2018, Month.MARCH), YearMonth.of(2016, Month.APRIL))
 

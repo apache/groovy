@@ -18,13 +18,13 @@
  */
 package bugs
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class CustomMetaClassTest {
+class CustomMetaClassTest extends GroovyTestCase {
 
-    @BeforeEach
-    void setUp() {
+    @Override
+    protected void setUp() {
+        super.setUp()
 
         ExpandoMetaClass.disableGlobally()
 
@@ -34,7 +34,6 @@ class CustomMetaClassTest {
         reg.removeMetaClass(this.metaClass.class)
     }
 
-    @Test
     void testReplaceMetaClass() {
         /*
          * Constructing first instance before metaclass replacement
@@ -69,13 +68,11 @@ class CustomMetaClassTest {
         assert stored instanceof MetaClassImpl
     }
 
-    @Test
     void testNormalCreated() {
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == metaClass.class
         assert MetaClassImpl == metaClass.delegate.class
     }
 
-    @Test
     void testEmcCreated() {
         GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
         ExpandoMetaClass.enableGlobally()
@@ -90,7 +87,6 @@ class CustomMetaClassTest {
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
     }
 
-    @Test
     void testStaticMetaClass() {
         // Custom metaclass created
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == metaClass.class

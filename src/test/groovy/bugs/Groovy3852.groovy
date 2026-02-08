@@ -19,8 +19,8 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
+import org.junit.Assert
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -37,7 +37,7 @@ final class Groovy3852 {
             class A {}
         '''
 
-        assert err.message =~ /Cannot specify duplicate annotation/
+        assert err =~ /Cannot specify duplicate annotation/
     }
 
     @Test
@@ -49,7 +49,7 @@ final class Groovy3852 {
             @interface B {}
         '''
 
-        assert err.message =~ /Cannot specify duplicate annotation/
+        assert err =~ /Cannot specify duplicate annotation/
     }
 
     @Test
@@ -63,7 +63,7 @@ final class Groovy3852 {
             }
         '''
 
-        assert err.message =~ /Cannot specify duplicate annotation/
+        assert err =~ /Cannot specify duplicate annotation/
 
         err = shouldFail '''
             class D {
@@ -74,7 +74,7 @@ final class Groovy3852 {
             }
         '''
 
-        assert err.message =~ /Cannot specify duplicate annotation/
+        assert err =~ /Cannot specify duplicate annotation/
     }
 
     @Test
@@ -90,7 +90,7 @@ final class Groovy3852 {
                 }
             '''
         } catch (any) {
-            Assertions.fail('Compilation should have succeeded as it has duplication annotations but with retention policy "not RUNTIME"')
+            Assert.fail('Compilation should have succeeded as it has duplication annotations but with retention policy "not RUNTIME"')
         }
     }
 
@@ -109,7 +109,7 @@ final class Groovy3852 {
                 }
             '''
         } catch (any) {
-            Assertions.fail('Compilation should have succeeded as it has duplication annotations but with retention policy "not RUNTIME"')
+            Assert.fail('Compilation should have succeeded as it has duplication annotations but with retention policy "not RUNTIME"')
         }
     }
 }

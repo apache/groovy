@@ -18,17 +18,13 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  * Expose how to deal with multi-dimensional Arrays until this is supported at the language level.
  */
-class MultiDimArraysTest {
+class MultiDimArraysTest extends GroovyTestCase {
 
-    @Test
     void testCallTwoDimStringArray() {
         assertScript '''
             def someArrayOfStringArrays = new groovy.SomeClass().anArrayOfStringArrays()
@@ -37,7 +33,6 @@ class MultiDimArraysTest {
         '''
     }
 
-    @Test
     void testCallTwoDimStringArrayWorkaround() {
         assertScript '''
             def someArrayOfStringArrays = new groovy.SomeClass().anArrayOfStringArraysWorkaround()
@@ -49,7 +44,6 @@ class MultiDimArraysTest {
         '''
     }
 
-    @Test
     void testCallTwoDimStringArrayWorkaroundWithNull() {
         assertScript '''
             def someArrayOfStringArrays = new groovy.SomeClass().anArrayOfStringArraysWorkaround()
@@ -59,7 +53,6 @@ class MultiDimArraysTest {
         '''
     }
 
-    @Test
     void testInsideGroovyMultiDimReplacement() {
         assertScript '''
             Object[] someArrayOfStringArrays = [["a", "a", "a"], ["b", "b", "b", null]]
@@ -68,7 +61,6 @@ class MultiDimArraysTest {
         '''
     }
 
-    @Test
     void testMultiDimCreationWithSizes() {
         assertScript '''
             Object[][] objectArray = new Object[2][5]
@@ -80,7 +72,6 @@ class MultiDimArraysTest {
         '''
     }
 
-    @Test
     void testMultiDimCreationWithoutSizeAtEnd() {
         assertScript '''
             def array = new int[5][6][]
@@ -90,7 +81,6 @@ class MultiDimArraysTest {
         '''
     }
 
-    @Test
     void testMultiDimArrayForCustomClass() {
         assertScript '''
             def arr = new groovy.MultiDimArraysTest[3][4]
@@ -98,7 +88,6 @@ class MultiDimArraysTest {
         '''
     }
 
-    @Test
     void testIntArrayIncrement() {
         assertScript '''
             int[][] x = new int[10][10]

@@ -18,10 +18,9 @@
  */
 package groovy.util
 
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
-
-class ProxyGeneratorTest {
+class ProxyGeneratorTest extends GroovyTestCase {
 
     ProxyGenerator generator = ProxyGenerator.INSTANCE
 
@@ -91,7 +90,7 @@ class ProxyGeneratorTest {
         def delegate = [1, 2, 3, 4, 5]
         def testClass = generator.instantiateDelegate([List], delegate)
         assert testClass instanceof List
-        assert 5 == testClass.size()
+        assert 5 == testClass.size() 
         assert [1, 2, 3, 4, 5] == testClass.iterator().collect { it }
         assert 3 == testClass[2]
         testClass[3] = 99

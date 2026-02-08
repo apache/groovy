@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.util.concurrent
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 

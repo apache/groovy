@@ -20,10 +20,9 @@ package org.apache.groovy.contracts.tests.post
 
 import org.apache.groovy.contracts.PostconditionViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertThrows
+import static org.junit.Assert.assertEquals
 
 class SimplePostconditionTests extends BaseTestClass {
 
@@ -278,22 +277,20 @@ class Account {
         a.m()
     }
 
-    @Test
+    @Test(expected = PostconditionViolation.class)
     void ensures_on_private_methods() {
-        assertThrows(PostconditionViolation) {
 
-            def source = """
-                        import groovy.contracts.*
+        def source = """
+                    import groovy.contracts.*
 
-                            class A {
+                        class A {
 
-                                @Ensures({ result != null })
-                                private def m(def a) { return null }
-                            }
-                     """
+                            @Ensures({ result != null })
+                            private def m(def a) { return null }
+                        }
+                 """
 
-            def a = create_instance_of(source)
-            a.m(null)
-        }
+        def a = create_instance_of(source)
+        a.m(null)
     }
 }

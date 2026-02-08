@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy8026Bug {
-    @Test
+class Groovy8026Bug extends GroovyTestCase {
     void testMatcherGetAtCases() {
         assertScript '''
             def mm = '1 2 3 4 5 6 7 8 9' =~ /\\d/

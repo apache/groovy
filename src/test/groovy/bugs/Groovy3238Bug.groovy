@@ -18,7 +18,9 @@
  */
 package bugs
 
-class Groovy3238Bug {
+import groovy.test.GroovyTestCase
+
+class Groovy3238Bug extends GroovyTestCase {
     def void testRelativeExactnessToMatchForBigIntegerParam() {
         def obj = new Groovy3238Bug()
         def bi = new BigInteger("1")

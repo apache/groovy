@@ -18,18 +18,12 @@
  */
 package groovy.util
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertNotNull
-import static org.junit.jupiter.api.Assertions.assertNull
-import static org.junit.jupiter.api.Assertions.assertTrue
-
-class ObservableMapTest {
-    @Test
+class ObservableMapTest extends GroovyTestCase {
     void testFireEvent_withoutTest() {
         def map = new ObservableMap()
         def propertyListener = new SamplePropertyChangeListener()
@@ -73,7 +67,6 @@ class ObservableMapTest {
 
     }
 
-    @Test
     void testFireEvent_removeKey() {
         def map = new ObservableMap()
         def propertyListener = new SamplePropertyChangeListener()
@@ -113,7 +106,6 @@ class ObservableMapTest {
         assert 0 == sizeListener.event.newValue
     }
 
-    @Test
     void testFireEvent_clearMap() {
         def map = new ObservableMap()
         def propertyListener = new SamplePropertyChangeListener()
@@ -147,7 +139,6 @@ class ObservableMapTest {
         assert 0 == sizeListener.event.newValue
     }
 
-    @Test
     void testFireEvent_putAll() {
         def map = new ObservableMap()
         def propertyListener = new SamplePropertyChangeListener()
@@ -183,7 +174,6 @@ class ObservableMapTest {
         assert 2 == sizeListener.event.newValue
     }
 
-    @Test
     void testFireEvent_withTest() {
         def map = new ObservableMap({ it != 'value2' })
         def propertyListener = new SamplePropertyChangeListener()
@@ -205,7 +195,6 @@ class ObservableMapTest {
         assertNull(propertyListener.event)
     }
 
-    @Test
     void testFireEvent_withTestOnKey() {
         def map = new ObservableMap({ name, value -> name != 'key' })
         def propertyListener = new SamplePropertyChangeListener()

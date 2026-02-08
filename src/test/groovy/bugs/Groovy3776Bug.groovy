@@ -18,14 +18,13 @@
  */
 package bugs
 
-import org.codehaus.groovy.GroovyBugError
+import groovy.test.GroovyTestCase
+
+import java.lang.reflect.*
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
+import org.codehaus.groovy.GroovyBugError
 
-import static org.junit.jupiter.api.Assertions.fail
-
-class Groovy3776Bug {
-    @Test
+class Groovy3776Bug extends GroovyTestCase {
     void testInvalidListWithMapEntryExpressions() {
         GroovyClassLoader cl = new GroovyClassLoader();
 

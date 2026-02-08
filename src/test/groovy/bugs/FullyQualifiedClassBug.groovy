@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class FullyQualifiedClassBug {
+class FullyQualifiedClassBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         java.lang.System.err.println("Hello world")
     }

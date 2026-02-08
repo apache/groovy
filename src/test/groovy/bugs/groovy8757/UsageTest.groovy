@@ -18,12 +18,9 @@
  */
 package bugs.groovy8757
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-class UsageTest {
-    @Test
+class UsageTest extends GroovyTestCase {
     void testAccessingPrecompiledTraitWithMethodGenerics() {
         def c0 = new GroovyShell().evaluate('''
             import bugs.groovy8757.T0

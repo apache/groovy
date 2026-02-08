@@ -18,27 +18,22 @@
  */
 package bugs
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class StaticPropertyBug {
+class StaticPropertyBug extends GroovyTestCase {
 
     MetaClassRegistry registry
     MetaClass originalMetaClass
 
-    @BeforeEach
     void setUp() {
         registry = GroovySystem.metaClassRegistry
         originalMetaClass = registry.getMetaClass(StaticPropertyFoo)
     }
 
-    @AfterEach
     void tearDown() {
         registry.setMetaClass(StaticPropertyFoo, originalMetaClass)
     }
 
-    @Test
     void testCallSiteShouldBeUpdatedAfterProxyMetaClassIsSet() {
         def getFoo = {-> StaticPropertyFoo.bar }
 
@@ -52,7 +47,6 @@ class StaticPropertyBug {
         assert 'static' == getFoo()
     }
 
-    @Test
     void testCallSiteShouldBeUpdatedAfterOriginalMetaClassIsRestored() {
         def getFoo = {-> StaticPropertyFoo.bar }
 

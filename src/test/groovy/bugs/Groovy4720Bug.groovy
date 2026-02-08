@@ -18,15 +18,13 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Groovy-4720: Method overriding with ExpandoMetaClass is partially broken
  */
-class Groovy4720Bug {
+class Groovy4720Bug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def instanceMethods = [DummyApi1.getMethod('test', java.io.Serializable), DummyApi2.getMethod('test', java.io.Serializable)]
 

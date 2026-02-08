@@ -18,12 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-class Groovy4922Bug {
-    @Test
+class Groovy4922Bug extends GroovyTestCase {
     void testShouldNotThrowStackOverflow() {
         assertScript """
             package groovy.bugs

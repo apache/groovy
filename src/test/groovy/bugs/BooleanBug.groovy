@@ -18,16 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class BooleanBug {
+class BooleanBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def x = new BooleanBean(name:'James', foo:true)
         def y = new BooleanBean(name:'Bob', foo:false)
@@ -38,7 +34,6 @@ class BooleanBug {
         assert y.foo
     }
 
-    @Test
     void testBug2() {
         BooleanBean bean = new BooleanBean(name:'Gromit', foo:false)
         def value = isApplicableTo(bean)

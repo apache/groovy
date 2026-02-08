@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-
-class Groovy2558Bug {
-    @Test
+class Groovy2558Bug extends GroovyTestCase {
     void testMe () {
         Person person = new Person()
         String propertyName = 'name'

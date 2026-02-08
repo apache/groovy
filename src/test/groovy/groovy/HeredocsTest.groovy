@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class HeredocsTest extends GroovyTestCase {
 
-class HeredocsTest {
-
-    @Test
     void testHeredocs() {
         def name = "James"
         def s = """
@@ -43,7 +41,6 @@ hello ${name}
         assert numlines == 8
     }
 
-    @Test
     void testDollarEscaping() {
         def s = """
 hello \${name}

@@ -18,17 +18,14 @@
  */
 package bugs
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class Groovy3405Bug {
+class Groovy3405Bug extends GroovyTestCase {
 
-    @AfterEach
-    void tearDown() {
+    protected void tearDown() {
         String.metaClass = null
     }
 
-    @Test
     void testAddingStaticMethodsOnMCWithDefaultParameters() {
         // test with 2 params having default values
         String.metaClass.'static'.testStaticTwoParams = { first = "foo", second = "bar" ->  return "$first - $second" }

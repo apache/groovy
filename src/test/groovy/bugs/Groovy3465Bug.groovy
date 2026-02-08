@@ -18,12 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static bugs.Groovy3465Helper.func
+import static bugs.Groovy3465Helper.*
 
-class Groovy3465Bug {
-    @Test
+class Groovy3465Bug extends GroovyTestCase {
     void testCallingAStaticImportedMethodWithNamedParamaters() {
 
         func text: 'Some text', value: 1

@@ -18,7 +18,7 @@
  */
 package groovy.json
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import static groovy.json.JsonTokenType.CLOSE_BRACKET
 import static groovy.json.JsonTokenType.CLOSE_CURLY
@@ -33,9 +33,8 @@ import static groovy.json.JsonTokenType.STRING
 import static groovy.json.JsonTokenType.TRUE
 import static groovy.json.JsonTokenType.startingWith
 
-class JsonTokenTypeTest {
+class JsonTokenTypeTest extends GroovyTestCase {
 
-    @Test
     void testMatchingConstants() {
         assert !TRUE.matching('xyz')
         assert !TRUE.matching('t')
@@ -57,7 +56,6 @@ class JsonTokenTypeTest {
         assert NULL.matching('null')
     }
 
-    @Test
     void testMatchingPunctuation() {
         assert OPEN_CURLY.matching('{')
         assert CLOSE_CURLY.matching('}')
@@ -67,7 +65,6 @@ class JsonTokenTypeTest {
         assert COMMA.matching(',')
     }
 
-    @Test
     void testMatchingNumbers() {
         assert !NUMBER.matching('-')
         assert NUMBER.matching('-1')
@@ -85,7 +82,6 @@ class JsonTokenTypeTest {
         assert NUMBER.matching('12.34e56')
     }
 
-    @Test
     void testMatchingString() {
         assert !STRING.matching('1234')
 
@@ -99,12 +95,10 @@ class JsonTokenTypeTest {
         assert STRING.matching('"a\\""')
     }
 
-    @Test
     void testMatchingLongStringWithBackslashes() {
         assert STRING.matching('"a' + '\\"' * 10000 + '"')
     }
 
-    @Test
     void testTokenStartingWithChar() {
         assert startingWith('{' as char) == OPEN_CURLY
         assert startingWith('}' as char) == CLOSE_CURLY

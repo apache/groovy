@@ -21,7 +21,7 @@ package bugs
 import groovy.transform.AnnotationCollector
 import groovy.transform.CompileStatic
 import groovy.transform.Immutable
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 

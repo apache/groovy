@@ -18,13 +18,9 @@
  */
  package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
-
-
-class CollateTest {
-  @Test
+class CollateTest extends GroovyTestCase {
   void testSimple() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     assert list.collate( 3 ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ], [ 10 ] ]
@@ -34,7 +30,6 @@ class CollateTest {
     assert iterable.collate( 3 ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ], [ 10 ] ]
   }
 
-  @Test
   void testRemain() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     assert list.collate( 3, false ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ] ]
@@ -44,7 +39,6 @@ class CollateTest {
     assert iterable.collate( 3, false ) == [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8, 9 ] ]
   }
 
-  @Test
   void testStepSimple() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     def expected = [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4, 5 ],
@@ -57,7 +51,6 @@ class CollateTest {
     assert iterable.collate( 3, 1 ) == expected
   }
 
-  @Test
   void testStepSimpleRemain() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     def expected = [ [ 1, 2, 3 ], [ 2, 3, 4 ], [ 3, 4, 5 ],
@@ -70,7 +63,6 @@ class CollateTest {
     assert iterable.collate( 3, 1, false ) == expected
   }
 
-  @Test
   void testTwoDimensions() {
     def list = 1..8
     def expected = [ [ [ 1,2 ], [ 3,4 ] ],
@@ -78,43 +70,36 @@ class CollateTest {
     assert list.collate( 2 ).collate( 2 ) == expected
   }
 
-  @Test
   void testLargeStep() {
     def list = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
     assert list.collate( 2, 4, false ) == [ [ 1, 2 ], [ 5, 6 ], [ 9, 10 ] ]
     assert list.collate( 2, 4        ) == [ [ 1, 2 ], [ 5, 6 ], [ 9, 10 ] ]
   }
 
-  @Test
   void testEmpty() {
     assert [].collate( 3 ) == []
   }
 
-  @Test
   void testZero() {
     assert [ 1, 2, 3 ].collate( 0 ) == [[ 1, 2, 3 ]]
   }
 
-  @Test
   void testNegative() {
     assert [ 1, 2, 3 ].collate( -1 ) == [[ 1, 2, 3 ]]
   }
 
-  @Test
   void testNegativeStep() {
     // As soon as pos goes out of bounds, we get back what we are up to...
     assert [ 1, 2, 3 ].collate( 2, -1 ) == [[ 1, 2 ]]
   }
 
-  @Test
   void testZeroedStep() {
-    def message = shouldFail (IllegalArgumentException) {
+    String message = shouldFail (IllegalArgumentException) {
       [ 1, 2, 3 ].collate( 2, 0 )
     }
-    assert message.message == 'step cannot be zero'
+    assert message == 'step cannot be zero'
   }
 
-  @Test
   void testChaining() {
     def list = 1..15
     def expected = [ [ [ 1, 2, 3],  [ 4, 5, 6] ],
@@ -123,7 +108,6 @@ class CollateTest {
     assert list.collate( 3 ).collate( 2 ) == expected
   }
 
-  @Test
   void testChainingRemain() {
     def list = 1..15
     def expected = [ [ [ 1, 2, 3],  [ 4, 5, 6] ],
@@ -131,7 +115,6 @@ class CollateTest {
     assert list.collate( 3 ).collate( 2, false ) == expected
   }
 
-  @Test
   void testSimpleUsecase() {
     def list = [ 'tim', 20, 'dave', 14, 'steve', 23 ]
     assert list.collate( 2 ).collectEntries() == [ 'tim':20, 'dave':14, 'steve':23 ]

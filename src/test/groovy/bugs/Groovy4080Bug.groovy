@@ -18,14 +18,14 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 
-class Groovy4080Bug {
+class Groovy4080Bug extends GroovyTestCase {
     public void testClassGeneratedWithAnnotationHavingGrabOnImport() {
         GroovyShell shell = new GroovyShell(new GroovyClassLoader())
         shell.evaluate """
             @Grab(group='commons-primitives', module='commons-primitives', version='1.0')
             import java.lang.annotation.*
-import org.junit.jupiter.api.Test
 
             @Retention(RetentionPolicy.RUNTIME)
             @interface Require {

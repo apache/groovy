@@ -18,17 +18,15 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class ClassLoaderBug {
+class ClassLoaderBug extends GroovyTestCase {
 
     static void main(args) {
         def gst = new ClassLoaderBug();
         gst.testWithOneVariable();
     }
 
-    @Test
     void testWithOneVariable() {
         println("Called method")
     }

@@ -18,15 +18,13 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
 
-class OverloadInvokeMethodBug {
+class OverloadInvokeMethodBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def a = new OverloadA()
         a.duh()

@@ -18,19 +18,12 @@
  */
 package gls.syntax
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static gls.syntax.Container.medium_bowl
-import static gls.syntax.CookingAction.coat
-import static gls.syntax.Ingredient.chicken
-import static gls.syntax.Ingredient.chili_powder
-import static gls.syntax.Ingredient.garlic
-import static gls.syntax.Ingredient.sauce
-import static gls.syntax.Ingredient.soy_sauce
-import static gls.syntax.Ingredient.vinegar
-import static gls.syntax.Temperature.room_temperature
-import static groovy.test.GroovyAssert.assertScript
+import static Container.*
+import static Ingredient.*
+import static CookingAction.*
+import static Temperature.*
 
 /**
  * Test case for "extended command expressions" (GEP-3) added in Groovy 1.8
@@ -72,17 +65,15 @@ import static groovy.test.GroovyAssert.assertScript
  * - extend command expressions to be allowed on the RHS of assignments.
  *  def txt = foo a1() not allowed right now
  */
-class Gep3Test {
+class Gep3Test extends GroovyTestCase {
 
-    @AfterEach
-    void tearDown() {
+    protected void tearDown() {
         Number.metaClass = null
         Integer.metaClass = null
     }
 
     static String txt = "Lidia is Groovy ;)"
 
-    @Test
     void testSimpleClassicalCommandExpressions() {
         foo txt
         foo a1()
@@ -95,7 +86,6 @@ class Gep3Test {
     static a1() { return txt }
     static a2(Closure c) { return txt }
 
-    @Test
     void testNewSyntax() {
         def expectedResult = "from:Lidia;to:Guillaume;body:how are you?;"
         def e = new Email()
@@ -105,13 +95,11 @@ class Gep3Test {
         assert expectedResult == result
     }
 
-    @Test
     void testContactInfo() {
         def contact = [name: { String name -> assert name == "Guillaume"; [age: { int age -> assert age == 33 }]}]
         contact.name "Guillaume" age 33
     }
 
-    @Test
     void testArtistPaintingWithAMixOfNamedAndNonNamedParams() {
         Number.metaClass.getPm = { -> "$delegate PM" }
 
@@ -136,7 +124,6 @@ class Gep3Test {
         artist.paint "wall" with "Red", "Green", and: "Blue" at 3.pm
     }
 
-    @Test
     void testArgWith() {
         def arr = ["he", "ll", "o"]
         def concat = { String s1 -> [with: { String s2 -> [and: { String s3 -> assert s1+s2+s3 == "hello"}]}]}
@@ -144,7 +131,6 @@ class Gep3Test {
         concat arr[0] with arr[1] and arr[2]
     }
 
-    @Test
     void testWaitAndExecuteUsingParamsTakingClosureAsArg() {
         Number.metaClass.getSecond { -> delegate * 1000 }
         def wait = { int t -> [and: { Closure c -> c() }]}
@@ -157,7 +143,6 @@ class Gep3Test {
     static String message = ""
     static drugQuantity, drug
 
-    @Test
     void testMedicine() {
         Number.metaClass.getPills = { -> new DrugQuantity(q: delegate, form: "pills") }
         Number.metaClass.getHours = { -> new Duration(q: delegate, unit: "hours") }
@@ -174,7 +159,6 @@ class Gep3Test {
     def of(Drug d) { drug = d; this }
     def after(Duration dur) { message = "Take $drugQuantity of $drug after $dur" }
 
-    @Test
     void testRecipeDsl() {
         def (once, twice) = [1, 2]
 
@@ -189,7 +173,6 @@ class Gep3Test {
         }
     }
 
-    @Test
     void testExtendedCommandExpressionSpanningTwoLinesWithNewlineAfterNamedArg() {
         boolean success = false
         def good = true
@@ -204,7 +187,6 @@ class Gep3Test {
 
     def check(Map m) { m.that }
 
-    @Test
     void testExtendedCommandExpressionsOnTheRHS() {
         def ( coffee,   sugar,   milk,   liquor ) =
             ["coffee", "sugar", "milk", "liquor"]
@@ -227,7 +209,6 @@ class Gep3Test {
      * case             a b  c d
      * equivalent       a(b).c(d)
      */
-    @Test
     void testNominalCase() {
 
         def turned = false
@@ -245,7 +226,6 @@ class Gep3Test {
      * case            a b  c
      * equivalent      a(b).getC()
      */
-    @Test
     void testTrailingElementAsGetter() {
         def drank = false
         def more = 'more'
@@ -263,7 +243,6 @@ class Gep3Test {
      * equivalent    a({}).b({}).c({})
      *
      */
-    @Test
     void testOnlyClosureParameters() {
         def bdd = 0
         def given = { c1 -> c1(); [when: { c2 -> c2(); [then: { c3 -> c3() }] }]}
@@ -285,7 +264,6 @@ class Gep3Test {
      * case            a b  c()
      * equivalent      a(b).c()
      */
-    @Test
     void testZeroArgMethodCallAtEndOfChain() {
         def built = false
         def all = 'all'
@@ -302,7 +280,6 @@ class Gep3Test {
      * case            a b  c() d e
      * equivalent      a(b).c().d(e)
      */
-    @Test
     void testZeroArgMethodCallInTheMiddleOfTheChain() {
         def uploaded = false
         def (file, here) = ['file', 'here']
@@ -319,7 +296,6 @@ class Gep3Test {
      * case            a b  c[1](){} d e
      * equivalent      a(b).c[1](){}.d(e)
      */
-    @Test
     void testComplexCaseWithSubscriptAndMethodCallWithClosureArgument() {
         def resolved = false
         def (cube, topLayer, down) = ['cube', 3, 'down']
@@ -336,7 +312,6 @@ class Gep3Test {
     * case            a b 1 2
     * equivalent      a(b)."1"(2)
     */
-    @Test
     void testIntegerAsName() {
         Integer.metaClass."1" = {x-> assert delegate == 10; x}
         def a = {x-> assert x == "b"; 10}
@@ -346,7 +321,6 @@ class Gep3Test {
         assert a(b)."1"(2) == 2
     }
 
-    @Test
     void testMethodAndMethodCallTakingClosureArgument() {
         def valued = { it() }
         def at = { it }
@@ -360,7 +334,6 @@ class Gep3Test {
 
     // case             a b  c d
     // equivalent       a(b).c(d)
-    @Test
     void testTurnLeftThenRight() {
         def turned = false
         def (left, right) = ['left', 'right']
@@ -373,7 +346,6 @@ class Gep3Test {
 
     // case         task copy(type: Copy) { 10 }
     // equivalent   task(copy(type:Copy,{10}))
-    @Test
     void testInnerMethodWithClosure() {
         // with simple expression
         assertScript """
@@ -401,11 +373,10 @@ class Gep3Test {
             }
             def a(x){this}
             def b(x){x*10}
-            task copy(type: Copy) { a 10 b 10 }
+            task copy(type: Copy) { a 10 b 10 }        
         """
     }
 
-    @Test
     void testGradleDSL() {
         assertScript '''
             def invokeMethod(String name, args) {
@@ -424,7 +395,7 @@ class Gep3Test {
             def constraints(Closure c) {
                 c.delegate = [authCode: { Map m -> println m }]
                 c.resolveStrategy = Closure.DELEGATE_FIRST
-                c()
+                c() 
             }
 
             def authCode(Map m) {
@@ -435,13 +406,12 @@ class Gep3Test {
 
             name xxx: "/c/$val"(controller: 'foo', action: 'bar') {
                 constraints {
-                    authCode blank: false
+                    authCode blank: false 
                 }
-            }
+            }        
         '''
     }
 
-    @Test
     void testUsageOfInnerClass() {
         assertScript """
             class Demo  {

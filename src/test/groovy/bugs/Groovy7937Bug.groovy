@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy7937Bug {
-    @Test
+class Groovy7937Bug extends GroovyTestCase {
     void testMethodsWithinAnInstanceShouldBeChosenAheadOfDGMMethodsOnAnInterface() {
         assertScript """
             class MyList extends LinkedList<String> {

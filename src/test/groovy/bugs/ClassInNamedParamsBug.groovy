@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ClassInNamedParamsBug extends GroovyTestCase {
 
-class ClassInNamedParamsBug {
-
-    @Test
     void testBug() {
         def foo = method(class:'cheese', name:'cheddar')
 

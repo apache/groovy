@@ -21,7 +21,7 @@ package bugs
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.control.CompilationUnit
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -125,7 +125,7 @@ final class Groovy9127 {
             def err = shouldFail CompilationFailedException, {
                 compile CLASS_GENERATION
             }
-            assert err.message =~ /\[Static type checking\] - Cannot set read-only property: field/
+            assert err =~ /\[Static type checking\] - Cannot set read-only property: field/
         }
     }
 
@@ -146,7 +146,7 @@ final class Groovy9127 {
                 String getField() { return 'value' }
             }
         '''
-        assert err.message =~ /\[Static type checking\] - Cannot set read-only property: field/
+        assert err =~ /\[Static type checking\] - Cannot set read-only property: field/
     }
 
     @Test

@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.ast.builder
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
@@ -70,9 +71,6 @@ import org.codehaus.groovy.ast.stmt.WhileStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Test case to show an ASTBuilder working off of a code block.
@@ -81,7 +79,7 @@ import static groovy.test.GroovyAssert.shouldFail
  * and most of the comments are all meaningful and tested.
  */
 @WithAstBuilder
-class AstBuilderFromCodeTest {
+class AstBuilderFromCodeTest extends GroovyTestCase {
 
     List<ASTNode> normalField = new AstBuilder().buildFromCode { "constant#1" }
 
@@ -98,7 +96,6 @@ class AstBuilderFromCodeTest {
     List<ASTNode> normalProperty = new AstBuilder().buildFromCode { "constant#5" }
 
 
-    @Test
     void testImportedClassName() {
 
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
@@ -109,7 +106,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testFullyQualifiedClassName() {
 
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
@@ -121,7 +117,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testAliasedClassName() {
 
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
@@ -132,7 +127,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testVariableInvocation() {
 
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
@@ -144,7 +138,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testMethodReturnTypeInvocation() {
         shouldFail(IllegalStateException) {
             //todo: is there any way to make this work?
@@ -162,7 +155,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testPhase_SemanticAnalysis() {
 
         def expected = new AstBuilder().buildFromString(CompilePhase.SEMANTIC_ANALYSIS, """ println "Hello World" """)
@@ -173,7 +165,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testPhase_Conversion() {
 
         def expected = new AstBuilder().buildFromString(CompilePhase.CONVERSION, """ println "Hello World" """)
@@ -184,7 +175,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testStatementsOnly_ReturnsScriptClass() {
         def expected = new AstBuilder().buildFromString(CompilePhase.CONVERSION, false, """ println "Hello World" """)
 
@@ -194,7 +184,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testSingleLineClosure() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
@@ -202,7 +191,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testSingleLineClosure_WithComment() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
@@ -210,7 +198,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testSingleLineClosure_MultipleStatements() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
@@ -218,7 +205,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testMultilineClosure_WithComments() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
@@ -228,7 +214,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testSingleLineClosure_WithCStyleComment() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
@@ -236,7 +221,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testSingleLineClosure_WithMultipleCStyleComments() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 
@@ -246,7 +230,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testThreeLineClosure() {
         def expected = new AstBuilder().buildFromString(""" println "I"; println "Love"; println "Groovy" """)
 
@@ -258,31 +241,26 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree(expected, result)
     }
 
-    @Test
     void testInitializationInFieldDeclaration() {
         def expected = new AstBuilder().buildFromString(""" "constant#1" """)
         AstAssert.assertSyntaxTree(expected, normalField)
     }
 
-    @Test
     void testInitializationInstaticInialization() {
         def expected = new AstBuilder().buildFromString(""" "constant#3" """)
         AstAssert.assertSyntaxTree(expected, staticInitializedField)
     }
 
-    @Test
     void testInitializationInConstructor() {
         def expected = new AstBuilder().buildFromString(""" "constant#4" """)
         AstAssert.assertSyntaxTree(expected, constructorInializedField)
     }
 
-    @Test
     void testInitializationInPropertyDeclaration() {
         def expected = new AstBuilder().buildFromString(""" "constant#5" """)
         AstAssert.assertSyntaxTree(expected, normalProperty)
     }
 
-    @Test
     void testNamedArgumentListExpression() {
 
         def result = new AstBuilder().buildFromCode {
@@ -308,7 +286,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testElvisOperatorExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -326,7 +303,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testWhileStatementAndContinue() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -359,7 +335,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testTernaryExpression() {
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
             true ? 'male' : 'female'
@@ -378,7 +353,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testSpreadMapExpression() {
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
             func(*: m)
@@ -403,7 +377,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testForStatementAndClosureListExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -451,7 +424,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testFinallyStatement() {
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
             try {
@@ -489,7 +461,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testReturnAndSynchronizedStatement() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -513,7 +484,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testAssertStatement() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -545,7 +515,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testSwitchAndCaseAndBreakStatements() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -610,7 +579,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testRangeExpression_SimpleForm() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -628,7 +596,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testMethodPointerExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -646,7 +613,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testGStringExpression() {
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
             "$foo"
@@ -662,7 +628,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testGStringExpression2() {
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
             "${foo.bar}"
@@ -678,7 +643,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testMapAndMapEntryExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -704,7 +668,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testClassExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -723,7 +686,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testUnaryPlusExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -739,7 +701,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testUnaryMinusExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -755,7 +716,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testPrefixExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -773,7 +733,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testPostfixExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -791,7 +750,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testNotExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -808,7 +766,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testConstructorCallExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -828,7 +785,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testClosureExpression_MultipleParameters() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -859,7 +815,6 @@ class AstBuilderFromCodeTest {
     }
 
 
-    @Test
     void testCastExpression() {
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
             (Integer) ""
@@ -874,7 +829,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testDeclarationAndListExpression() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {
@@ -895,7 +849,6 @@ class AstBuilderFromCodeTest {
         AstAssert.assertSyntaxTree([expected], result)
     }
 
-    @Test
     void testIfStatement() {
 
         def result = new AstBuilder().buildFromCode(CompilePhase.SEMANTIC_ANALYSIS) {

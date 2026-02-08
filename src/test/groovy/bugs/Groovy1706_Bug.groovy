@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy1706_Bug {
-   @Test
+class Groovy1706_Bug extends GroovyTestCase {
    void testStaticMethodIsCalledFromSubclass() {
       // disclaimer: static methods shouldn't be
       // called on instances
@@ -32,7 +30,6 @@ class Groovy1706_Bug {
       assert "B" == b.doit()
    }
 
-   @Test
    void testStaticMethodIsCalledInCorrectInstance() {
       // disclaimer: static methods shouldn't be
       // called on instances

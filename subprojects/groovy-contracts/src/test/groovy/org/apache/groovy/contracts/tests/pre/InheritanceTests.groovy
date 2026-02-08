@@ -18,9 +18,9 @@
  */
 package org.apache.groovy.contracts.tests.pre
 
-import org.apache.groovy.contracts.PostconditionViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.jupiter.api.Test
+import org.junit.Test
+import org.apache.groovy.contracts.PostconditionViolation
 
 class InheritanceTests extends BaseTestClass {
 

@@ -18,19 +18,14 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-
-class NestedCategoryTest {
-    @Test
+class NestedCategoryTest extends GroovyTestCase {
     void testGreeter_plain() {
         def greeter = new Greeter()
         assertEquals "Hello Groovy!", greeter.greet()
     }
 
-    @Test
     void testGreeter_withOne() {
         def greeter = new Greeter()
         assertEquals "Hello Groovy!", greeter.greet()
@@ -40,7 +35,6 @@ class NestedCategoryTest {
         assertEquals "Hello Groovy!", greeter.greet()
     }
 
-    @Test
     void testGreeter_withTwo() {
         def greeter = new Greeter();
         assertEquals "Hello Groovy!", greeter.greet();
@@ -50,7 +44,6 @@ class NestedCategoryTest {
         assertEquals "Hello Groovy!", greeter.greet();
     }
 
-    @Test
     void testGreeter_withOneAndTwo_nested() {
         // fails!
         def greeter = new Greeter()

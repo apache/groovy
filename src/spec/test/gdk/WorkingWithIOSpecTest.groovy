@@ -20,12 +20,16 @@ package gdk
 
 import groovy.io.FileType
 import groovy.io.FileVisitResult
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
-import static org.junit.jupiter.api.Assumptions.assumeTrue
+import static org.junit.Assume.assumeTrue
 
-class WorkingWithIOSpecTest {
+@RunWith(JUnit4)
+class WorkingWithIOSpecTest extends GroovyTestCase {
 
     private final static boolean unixlike =
             System.getProperty('os.name').contains('Linux') ||
@@ -34,7 +38,7 @@ class WorkingWithIOSpecTest {
             System.getProperty('os.name').contains('Windows')
 
     private assumeUnixLikeSystem() {
-        assumeTrue(unixlike, 'Test requires unix like system.')
+        assumeTrue('Test requires unix like system.', unixlike)
     }
 
     @CompileStatic

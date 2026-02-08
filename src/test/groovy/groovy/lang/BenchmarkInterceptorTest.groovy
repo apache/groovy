@@ -18,28 +18,22 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
-import static org.junit.jupiter.api.Assertions.assertEquals
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test for the BenchmarkInterceptor
  */
-class BenchmarkInterceptorTest {
+class BenchmarkInterceptorTest extends GroovyTestCase {
 
     Interceptor benchmarkInterceptor
     def proxy
 
-    @BeforeEach
     void setUp() {
         benchmarkInterceptor = new BenchmarkInterceptor()
         proxy = ProxyMetaClass.getInstance(Date)
         proxy.setInterceptor(benchmarkInterceptor)
     }
 
-    @Test
     void testSimpleInterception() {
         proxy.use {
             def x = new Date(0)

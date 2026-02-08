@@ -18,7 +18,9 @@
  */
 package groovy
 
-class ConstructorTest {
+import groovy.test.GroovyTestCase
+
+class ConstructorTest extends GroovyTestCase {
 
     public ConstructorTest() { }
 

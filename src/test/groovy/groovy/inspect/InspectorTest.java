@@ -20,7 +20,7 @@ package groovy.inspect;
 
 import groovy.lang.GroovyShell;
 import groovy.lang.PropertyValue;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -38,8 +38,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @SuppressWarnings("serial")
 public class InspectorTest implements Serializable {
@@ -184,8 +184,8 @@ public class InspectorTest implements Serializable {
             "setMetaClass", "split", "sprintf", "sprintf", "tap", "toString", "use", "use", "use", "with",
             "with", "withMethodClosure", "withTraits", "stream", "sleep", "sleep", "macro", "macro", "macro", "macro"
         };
-        assertEquals(names.length, metaMethods.length, "Incorrect number of methods found examining: " + Arrays.stream(metaMethods)
-                .map(mm -> ((String[])mm)[Inspector.MEMBER_NAME_IDX]).collect(Collectors.toList()));
+        assertEquals("Incorrect number of methods found examining: " + Arrays.stream(metaMethods)
+                .map(mm -> ((String[])mm)[Inspector.MEMBER_NAME_IDX]).collect(Collectors.toList()), names.length, metaMethods.length);
         assertNameEquals(names, metaMethods);
         String[] details = {"GROOVY", "public", "Object", "void", "println", "Object", "n/a"};
         assertContains(metaMethods, details);

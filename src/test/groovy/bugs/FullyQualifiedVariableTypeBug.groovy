@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class FullyQualifiedVariableTypeBug {
+class FullyQualifiedVariableTypeBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         java.lang.String s = "hey"
         assert s.length() == 3

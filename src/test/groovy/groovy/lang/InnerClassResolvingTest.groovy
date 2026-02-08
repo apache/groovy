@@ -18,12 +18,9 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
-
-class InnerClassResolvingTest {
-    @Test
+class InnerClassResolvingTest extends GroovyTestCase {
     void testInnerClass() {
         // Thread.UncaughtExceptionHandler was added in Java 1.5
         def script = '''
@@ -39,7 +36,6 @@ class InnerClassResolvingTest {
         new GroovyShell().evaluate(script)
     }
 
-    @Test
     void testInnerClassWithPartialMatchOnImport() {
         def script = '''
             import java.lang.Thread as X

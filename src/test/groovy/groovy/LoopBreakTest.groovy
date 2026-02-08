@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class LoopBreakTest extends GroovyTestCase {
 
-class LoopBreakTest {
-
-    @Test
     void testWhileWithBreak() {
         def x = 0
         while (true) {
@@ -40,7 +38,6 @@ class LoopBreakTest {
 
       We currently do not support do ... while in the JSR syntax
 
-    @Test
     void testDoWhileWithBreak() {
         def x = 0
         do {
@@ -59,7 +56,6 @@ class LoopBreakTest {
     }
     */
 
-    @Test
     void testForWithBreak() {
         def returnValue
         for (x in 0..20) {

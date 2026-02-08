@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class MultilineStringTest extends GroovyTestCase {
 
-class MultilineStringTest {
-
-    @Test
     void testMultilineString() {
         def s = """abcd
 efg

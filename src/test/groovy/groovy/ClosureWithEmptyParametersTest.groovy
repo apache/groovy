@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ClosureWithEmptyParametersTest extends GroovyTestCase {
 
-class ClosureWithEmptyParametersTest {
-
-    @Test
     void testNoParams() {
 
         def block = { -> }

@@ -18,18 +18,15 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ArrayTypeTest extends GroovyTestCase {
 
-class ArrayTypeTest {
-
-    @Test
     void testClosureWithTypedParam() {
         def c = {String[] foo-> assert !foo}
         c(null)
     }
 
-    @Test
     void testVariableType() {
         Object[] foo = methodThatReturnsArray()
         assert !foo

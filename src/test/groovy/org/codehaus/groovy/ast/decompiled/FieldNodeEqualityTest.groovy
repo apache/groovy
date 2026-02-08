@@ -20,7 +20,7 @@ package org.codehaus.groovy.ast.decompiled
 
 import org.codehaus.groovy.ast.FieldNode
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class FieldNodeEqualityTest {
     @Test

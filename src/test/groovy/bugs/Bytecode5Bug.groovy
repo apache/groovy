@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class Bytecode5Bug {
+class Bytecode5Bug extends GroovyTestCase {
 
-    @Test
     void testUsingLocalVar() {
         def c = 0
         getCollection().each { c += it }

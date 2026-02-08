@@ -18,26 +18,23 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-
-import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Test case for the eachObject method on a file containing
  * zero, one or more objects (object stream).  Also test cases
  * for eachDir, eachFileMatch and runAfter methods.
  */
-class GroovyClosureMethodsTest {
+class GroovyClosureMethodsTest extends GroovyTestCase {
 
     private String dirname_target = "build"
     private String dirname_source = "src/test/groovy/groovy"
 
     private String filename = "${dirname_target}/GroovyClosureMethodsTest.each.object"
 
-    @Test
     void testEachObjectMany() {
         def file = new File(filename)
         def oos = new ObjectOutputStream(new FileOutputStream(file))
@@ -55,7 +52,6 @@ class GroovyClosureMethodsTest {
         file.delete()
     }
 
-    @Test
     void testEachObjectOne() {
         def file = new File(filename)
         def oos = new ObjectOutputStream(new FileOutputStream(file))
@@ -70,7 +66,6 @@ class GroovyClosureMethodsTest {
         file.delete()
     }
 
-    @Test
     void testEachObjectEmptyFile() {
         def file = new File(filename)
         def oos = new ObjectOutputStream(new FileOutputStream(file))
@@ -85,7 +80,6 @@ class GroovyClosureMethodsTest {
         file.delete()
     }
 
-    @Test
     void testEachObjectNullFile() {
         def file = new File(filename)
         def oos = new ObjectOutputStream(new FileOutputStream(file))
@@ -102,7 +96,6 @@ class GroovyClosureMethodsTest {
         file.delete()
     }
 
-    @Test
     void testEachDir() {
         def dir = new File(dirname_source)
 
@@ -113,7 +106,6 @@ class GroovyClosureMethodsTest {
         assert c > 0
     }
 
-    @Test
     void testEachFileMatch() {
         def file = new File(dirname_source)
 
@@ -136,7 +128,6 @@ class GroovyClosureMethodsTest {
         assert c == 1
     }
 
-    @Test
     void testEachFileOnNonExistingDir() {
         shouldFail {
             File dir = new File("SomeNonExistingDir")
@@ -146,7 +137,6 @@ class GroovyClosureMethodsTest {
         }
     }
 
-    @Test
     void testEachFileOnNonDirFile() {
         shouldFail {
             File dir = new File("${dirname_source}/GroovyClosureMethodsTest.groovy")
@@ -156,7 +146,6 @@ class GroovyClosureMethodsTest {
         }
     }
 
-    @Test
     void testRunAfter() {
         CountDownLatch latch = new CountDownLatch(1)
         new Timer().runAfter(50) {
@@ -167,7 +156,6 @@ class GroovyClosureMethodsTest {
         assert latch.getCount() == 0
     }
 
-    @Test
     void testSplitEachLine() {
         String s = """A B C D
 E F G H
@@ -181,7 +169,6 @@ E F G H
         assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
     }
 
-    @Test
     void testSplitEachLineVarArgClosure() {
         String s = """A B C D
 E F G H
@@ -195,7 +182,6 @@ E F G H
         assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
     }
 
-    @Test
     void testSplitEachLinePattern() {
         String s = """A B C D
 E F G H

@@ -18,28 +18,21 @@
  */
 package groovy.mock.interceptor
 
+import groovy.test.GroovyTestCase
 import junit.framework.AssertionFailedError
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.fail
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Testing Groovy Mock support for single calls to the Collaborator with
  * no, one, multiple, or arbitrary arguments, exceptions and failures.
  */
-class MockSingleCallTest {
+class MockSingleCallTest extends GroovyTestCase {
 
     MockFor mocker
 
-    @BeforeEach
     void setUp() {
         mocker = new MockFor(Collaborator.class)
     }
 
-    @Test
     void testMockGetter() {
         mocker.demand.getFoo { "foo" }
         mocker.demand.getFoo { "foobar" }
@@ -49,7 +42,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testMockSetter() {
 
         def result = null
@@ -66,7 +58,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testSingleCallNoArgs() {
         mocker.demand.one { 1 }
         mocker.use {
@@ -74,7 +65,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testSingleCallOneArg() {
         mocker.demand.one { arg -> return arg }
         mocker.use {
@@ -82,7 +72,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testSingleCallTwoArgs() {
         mocker.demand.one { one, two -> return one + two }
         mocker.use {
@@ -90,7 +79,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testNoSingleCallTwoArgsWhenNoArgDemanded() {
         mocker.demand.one { 2 }
         mocker.use {
@@ -100,7 +88,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testSingleCallTwoArgsWhenArbitraryArgsDemanded() {
         mocker.demand.one { Object[] arg -> 2 }
         mocker.use {
@@ -108,7 +95,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testSingleCallTwoArgsWhenDefaultArgsDemanded() {
         mocker.demand.one { one = null, two = null -> 2 }
         mocker.use {
@@ -116,7 +102,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testVerifyFailsIfOneDemandedButNoneExcecuted() {
         mocker.demand.one { 1 }
         def msg = shouldFail(AssertionFailedError.class) {
@@ -128,10 +113,9 @@ class MockSingleCallTest {
            If we think this assert is important, we should extend AssertionFailedError and add the properties
            expectedRange and callCount to it. But I think the test is good enough with just checking for the thrown
            exception. */
-        // assert msg.message =~ /0.*1..1.*never called/
+        // assert msg =~ /0.*1..1.*never called/
     }
 
-    @Test
     void testFirstOptionalOmitted() {
         mocker.demand.one(0..1) { 1 }
         mocker.use {
@@ -140,7 +124,6 @@ class MockSingleCallTest {
         // Getting here means no exception, which is what we want to test.  (Fix for GROOVY-2309)
     }
 
-    @Test
     void testSingleCallExceptionDemanded() {
         mocker.demand.one { throw new IllegalArgumentException() }
         mocker.use {
@@ -151,7 +134,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testSingleCallFailDemanded() {
         mocker.demand.one { fail 'just kidding' }
         mocker.use {
@@ -159,7 +141,6 @@ class MockSingleCallTest {
         }
     }
 
-    @Test
     void testJavaCall() {
         mocker = new MockFor(String.class)
         mocker.demand.toString { 'groovy' }

@@ -17,15 +17,10 @@
  *  under the License.
  */
 
-
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
-
-class DelegatesToSpecTest {
-    @Test
+class DelegatesToSpecTest extends GroovyTestCase {
     void testEmailWithoutDelegatesTo() {
         assertScript '''
             // tag::emailspec_no_delegatesto[]
@@ -70,7 +65,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testEmailWithoutDelegatesToTypeChecked() {
         shouldFail(MultipleCompilationErrorsException) {
             assertScript '''
@@ -116,7 +110,6 @@ class DelegatesToSpecTest {
         }
     }
 
-    @Test
     void testEmailWithDelegatesTo() {
         assertScript '''
             class EmailSpec {
@@ -155,7 +148,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testEmailWithDelegatesToAndStrategy() {
         assertScript '''
             class EmailSpec {
@@ -194,7 +186,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testEmailWithDelegatesToAndStrategyTypeChecked() {
         assertScript '''import groovy.transform.TypeChecked
 
@@ -237,7 +228,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testDelegatesToSimple() {
         assertScript '''
             class BodySpec {
@@ -262,7 +252,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testDelegatesToWithStrategy() {
         shouldFail(MultipleCompilationErrorsException) {
         assertScript '''
@@ -299,7 +288,6 @@ class DelegatesToSpecTest {
         }
     }
 
-    @Test
     void testDelegatesToTarget() {
         assertScript '''
             class Email {
@@ -350,7 +338,6 @@ class DelegatesToSpecTest {
             }
         '''
     }
-    @Test
     void testDelegatesToTargetFlowTyping() {
         assertScript '''
             def exec(@DelegatesTo.Target Object target, @DelegatesTo Closure code) {
@@ -376,7 +363,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testDelegatesToMultipleAnnotations() {
         assertScript '''
 
@@ -414,7 +400,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testDelegatesToMultipleTargets() {
         assertScript '''
             // tag::foobarbaz_classes[]
@@ -456,7 +441,6 @@ class DelegatesToSpecTest {
         '''
     }
 
-    @Test
     void testDelegatesToGenericType() {
         assertScript '''
             // tag::configure_list_method[]
@@ -485,7 +469,6 @@ class DelegatesToSpecTest {
 
     }
 
-    @Test
     void testDelegatesToGenericTypeAndCompileStatic() {
         assertScript '''
             @groovy.transform.ToString
@@ -516,7 +499,6 @@ class DelegatesToSpecTest {
 
     }
 
-    @Test
     void testDelegatesToType() {
         def msg = shouldFail '''
 
@@ -538,7 +520,7 @@ void test() {
     // end::delegatestotype_mapper_test[]
 }
 '''
-        assert msg.message.contains('Static type checking] - Cannot find matching method')
+        assert msg.contains('Static type checking] - Cannot find matching method')
 
         assertScript '''
 

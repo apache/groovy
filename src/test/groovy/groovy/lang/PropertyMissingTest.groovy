@@ -18,22 +18,16 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertNull
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests the behaviour of the propertyMissing functionality of Groovy
  *
  * @since 1.5
  */
-class PropertyMissingTest {
+class PropertyMissingTest extends GroovyTestCase {
 
 
-    @Test
     void testPropertyMissingWithMethods() {
         def t = new PMTest1()
 
@@ -47,7 +41,6 @@ class PropertyMissingTest {
         assertEquals "keepme", t.bar
     }
 
-    @Test
     void testPropertyMissingViaMetaClass() {
         def store = [:]
         PMTest2.metaClass.propertyMissing = { String name ->
@@ -69,7 +62,6 @@ class PropertyMissingTest {
 
     }
 
-    @Test
     void testStaticPropertyMissingViaMetaClass() {
 
         shouldFail(MissingPropertyException) {
@@ -85,7 +77,6 @@ class PropertyMissingTest {
     }
 
     // GROOVY-7723
-    @Test
     void testPropertyMissingSetterWithNoGetter() {
         def t = new PMTest3()
 
@@ -107,16 +98,14 @@ class PropertyMissingTest {
 
     }
 
-    @Test
     void testClassDotProperty() {
-        assert shouldFail(MissingPropertyException, "Integer.xxx").message ==
+        assert shouldFail(MissingPropertyException, "Integer.xxx") ==
                 'No such property: xxx for class: java.lang.Integer'
     }
 
-    @Test
     void testClassDotPropertyInClosure() {
         // GROOVY-10188: strange looking parameter in Closure to force a particular edge case
-        assert shouldFail(NullPointerException, "{ Integer -> Integer.xxx }()").message ==
+        assert shouldFail(NullPointerException, "{ Integer -> Integer.xxx }()") ==
                 "Cannot get property 'xxx' on null object"
     }
 

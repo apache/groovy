@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy5109Bug {
-    @Test
+class Groovy5109Bug extends GroovyTestCase {
     void testShouldNotThrowArrayOutOfBounds() {
         assertScript '''
         class C1 {

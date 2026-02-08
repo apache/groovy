@@ -18,14 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class Groovy3462Bug extends GroovyTestCase {
 
-
-class Groovy3462Bug {
-
-    @Test
     void testClosureWithParameterHavingDefaultExpression() {
         assertScript """
             month = { String date = new Date().format("yyyyMM") ->

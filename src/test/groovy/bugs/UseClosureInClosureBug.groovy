@@ -18,13 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class UseClosureInClosureBug {
-    @Test
+class UseClosureInClosureBug extends GroovyTestCase {
     void testBugWithPrintln() {
         def inner = { it * 3 }
         def outer1 = { inner(it) + 5 }

@@ -18,22 +18,20 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.util.concurrent.Callable
 
 /**
  * LK-TODO
  */
-class Groovy6508Bug {
+class Groovy6508Bug extends GroovyTestCase {
 
-    @Test
     void testInnerClassAccessingFieldWithCustomGetter() {
         PropertyGetterOverride x = new PropertyGetterOverride()
         assert x.field == x.getFieldViaInner()
     }
 
-    @Test
     void testInnerClassAccessingBaseFieldProperty() {
         BaseFieldBearerSub sub = new BaseFieldBearerSub();
         assert sub.baseField == sub.getBaseFieldViaInner()

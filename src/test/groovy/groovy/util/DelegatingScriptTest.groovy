@@ -20,7 +20,7 @@ package groovy.util
 
 import groovy.xml.MarkupBuilder
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class DelegatingScriptTest {
 

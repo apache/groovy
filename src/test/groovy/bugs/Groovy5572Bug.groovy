@@ -18,20 +18,15 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy5572Bug {
-    @Test
+class Groovy5572Bug extends GroovyTestCase {
     void testTernaryOperator() {
         assertScript '''
             assert (true ? null : true) == null
         '''
     }
 
-    @Test
     void testExampleFromJira() {
         assertScript '''
         def c = {

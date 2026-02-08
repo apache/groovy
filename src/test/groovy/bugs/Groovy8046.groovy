@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -34,7 +34,7 @@ final class Groovy8046 {
             }
         '''
 
-        assert err.message =~ /The field 'field' has invalid type void|void is not allowed here/
+        assert err =~ /The field 'field' has invalid type void|void is not allowed here/
     }
 
     @Test
@@ -45,7 +45,7 @@ final class Groovy8046 {
             }
         '''
 
-        assert err.message =~ /The parameter 'param' in method 'int foo\(void\)' has invalid type void|void is not allowed here/
+        assert err =~ /The parameter 'param' in method 'int foo\(void\)' has invalid type void|void is not allowed here/
     }
 
     @Test
@@ -58,6 +58,6 @@ final class Groovy8046 {
             }
         '''
 
-        assert err.message =~ /The variable 'bar' has invalid type void|void is not allowed here/
+        assert err =~ /The variable 'bar' has invalid type void|void is not allowed here/
     }
 }

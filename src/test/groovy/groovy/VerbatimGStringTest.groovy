@@ -18,11 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class VerbatimGStringTest {
+class VerbatimGStringTest extends GroovyTestCase {
 
-    @Test
     void testWithOneVariable() {
 
         def name = "Bob"
@@ -44,7 +43,6 @@ hello ${name} how are you?
         assert string == "hello Bob how are you?"
     }
 
-    @Test
     void testWithVariableAtEnd() {
         def name = "Bob"
 
@@ -57,7 +55,6 @@ hello ${name}
         assert string == "hello Bob"
     }
 
-    @Test
     void testWithVariableAtBeginning() {
         def name = "Bob"
 
@@ -67,10 +64,9 @@ hello
 """
         def string = template.toString().trim()
 
-        assert string.normalize() == "Bob hey,\nhello"
+        assert fixEOLs(string) == "Bob hey,\nhello"
     }
 
-    @Test
     void testWithJustVariable() {
         def name = "Bob"
 

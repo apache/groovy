@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy8085Bug {
-    @Test
+class Groovy8085Bug extends GroovyTestCase {
     void testTryCatchFinally() {
         assertScript '''
             try {
@@ -39,7 +35,6 @@ class Groovy8085Bug {
         '''
     }
 
-    @Test
     void testTryCatchFinally2() {
         assertScript '''
             def visitSequence = []
@@ -61,7 +56,6 @@ class Groovy8085Bug {
         '''
     }
 
-    @Test
     void testTryCatchFinallyWithExplicitReturn() {
         assertScript '''
             try {
@@ -76,7 +70,6 @@ class Groovy8085Bug {
         '''
     }
 
-    @Test
     void testTryCatchFinallyWithExplicitReturn2() {
         assertScript '''
             def visitSequence = []

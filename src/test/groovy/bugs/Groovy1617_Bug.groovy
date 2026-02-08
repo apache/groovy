@@ -18,18 +18,15 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy1617_Bug {
-   @Test
+class Groovy1617_Bug extends GroovyTestCase {
    void testCoerceStringIntoStringArray() {
       def expected = ["G","r","o","o","v","y"] as String[]
       def actual = "Groovy" as String[]
       assert expected == actual
    }
 
-   @Test
    void testCoerceGStringIntoStringArray() {
       def expected = ["G","r","o","o","v","y"] as String[]
       def a = "Gro"

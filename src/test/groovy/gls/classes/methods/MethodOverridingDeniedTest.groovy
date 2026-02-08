@@ -19,28 +19,35 @@
 package gls.classes.methods
 
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 import static groovy.test.GroovyAssert.shouldFail
 
+@RunWith(Parameterized)
 class MethodOverridingDeniedTest {
+    String baseVisibility, childVisibility
 
-    static List<Arguments> data() {
-        [
-                Arguments.of('public', 'private'),
-                Arguments.of('public', '@groovy.transform.PackageScope'),
-                Arguments.of('public', 'protected'),
-                Arguments.of('protected', 'private'),
-                Arguments.of('protected', '@groovy.transform.PackageScope'),
-                Arguments.of('@groovy.transform.PackageScope', 'private'),
-        ]
+    MethodOverridingDeniedTest(String baseVisibility, String childVisibility) {
+        this.baseVisibility = baseVisibility
+        this.childVisibility = childVisibility
     }
 
-    @ParameterizedTest(name = '{1} should not override {0}')
-    @MethodSource('data')
-    void 'weaker access must not override stronger'(String baseVisibility, String childVisibility) {
+    @Parameterized.Parameters(name = '{1} should not override {0}')
+    static data() {
+        [
+                ['public', 'private'],
+                ['public', '@groovy.transform.PackageScope'],
+                ['public', 'protected'],
+                ['protected', 'private'],
+                ['protected', '@groovy.transform.PackageScope'],
+                ['@groovy.transform.PackageScope', 'private'],
+        ]*.toArray()
+    }
+
+    @Test
+    void 'weaker access must not override stronger'() {
         def ex = shouldFail(CompilationFailedException,"""
             abstract class Base {
                 $baseVisibility abstract myMethod()

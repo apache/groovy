@@ -18,20 +18,17 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Invoke normal methods first: if no statically typed method exist, use invokeMethod().
  */
-class InvokeNormalMethodsFirstTest {
+class InvokeNormalMethodsFirstTest extends GroovyTestCase {
 
-    @Test
     void testPrintln() {
         println "call global println function"
     }
 
-    @Test
     void testStaticMethodOnJdkObject() {
         def myString = " static method "
         def newString = myString.trim()
@@ -39,7 +36,6 @@ class InvokeNormalMethodsFirstTest {
         assert newString == "static method"
     }
 
-    @Test
     void testCallClosure() {
         def clos = { msg -> msg + " is Groovy" }
         def str = clos("Guillaume")
@@ -47,7 +43,6 @@ class InvokeNormalMethodsFirstTest {
         assert str == "Guillaume is Groovy"
     }
 
-    @Test
     void testCallNormalMethodFromAGroovyDefinedClass() {
         def p = new Printer()
         def str = "Guillaume"
@@ -56,7 +51,6 @@ class InvokeNormalMethodsFirstTest {
         assert result == str
     }
 
-    @Test
     void testCallNormalMethodFirstFromWackyObject() {
         def w = new Wacky()
         def str = "Groovy"

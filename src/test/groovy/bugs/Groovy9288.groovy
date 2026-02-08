@@ -18,16 +18,28 @@
  */
 package bugs
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import groovy.transform.CompileStatic
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
+import org.junit.runners.Parameterized.Parameter
+import org.junit.runners.Parameterized.Parameters
 
+@CompileStatic @RunWith(Parameterized)
 final class Groovy9288 {
+
+    @Parameters
+    static modifiers() {
+        ['public', 'protected']
+    }
+
+    @Parameter
+    public String modifier
 
     private final GroovyShell shell = new GroovyShell()
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - same package'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - same package'() {
         shell.evaluate """
             package a
 
@@ -49,9 +61,8 @@ final class Groovy9288 {
         """
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - diff package'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - diff package'() {
         shell.evaluate """
             package a
 
@@ -79,9 +90,8 @@ final class Groovy9288 {
         '''
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - same package, it qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - same package, it qualifier'() {
         shell.evaluate """
             package a
 
@@ -103,9 +113,8 @@ final class Groovy9288 {
         """
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - diff package, it qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - diff package, it qualifier'() {
         shell.evaluate """
             package a
 
@@ -133,9 +142,8 @@ final class Groovy9288 {
         '''
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - same package, this qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - same package, this qualifier'() {
         shell.evaluate """
             package a
 
@@ -157,9 +165,8 @@ final class Groovy9288 {
         """
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - diff package, this qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - diff package, this qualifier'() {
         shell.evaluate """
             package a
 
@@ -187,9 +194,8 @@ final class Groovy9288 {
         '''
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - same package, owner qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - same package, owner qualifier'() {
         shell.evaluate """
             package a
 
@@ -211,9 +217,8 @@ final class Groovy9288 {
         """
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - diff package, owner qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - diff package, owner qualifier'() {
         shell.evaluate """
             package a
 
@@ -241,9 +246,8 @@ final class Groovy9288 {
         '''
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - same package, delegate qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - same package, delegate qualifier'() {
         shell.evaluate """
             package a
 
@@ -265,9 +269,8 @@ final class Groovy9288 {
         """
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - diff package, delegate qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - diff package, delegate qualifier'() {
         shell.evaluate """
             package a
 
@@ -295,9 +298,8 @@ final class Groovy9288 {
         '''
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - same package, thisObject qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - same package, thisObject qualifier'() {
         shell.evaluate """
             package a
 
@@ -319,9 +321,8 @@ final class Groovy9288 {
         """
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ['public', 'protected'])
-    void 'test accessing a super class field inside a closure - diff package, thisObject qualifier'(String modifier) {
+    @Test
+    void 'test accessing a super class field inside a closure - diff package, thisObject qualifier'() {
         shell.evaluate """
             package a
 

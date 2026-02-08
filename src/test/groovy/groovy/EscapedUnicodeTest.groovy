@@ -18,10 +18,9 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class EscapedUnicodeTest {
-    @Test
+class EscapedUnicodeTest extends GroovyTestCase {
     void testNothing() {}
 }
 
@@ -55,9 +54,8 @@ class EscapedUnicodeTest {
 */
 
 /*
-class EscapedUnicodeTest {
+class EscapedUnicodeTest extends GroovyTestCase {
 
-    @Test
     void testAssert() {
         def x = "abc"
 
@@ -69,7 +67,6 @@ class EscapedUnicodeTest {
         assert x.equals("abc")
 	}
 
-    @Test
     void testUnknownVariable() {
         try {
 	        def y = this.x

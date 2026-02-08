@@ -16,13 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 
-import static groovy.test.GroovyAssert.assertScript
-
 @CompileStatic
-class BaseScriptSpecTest {
+class BaseScriptSpecTest extends GroovyTestCase {
     void testSimpleScript() {
         def script = '''
 // tag::simple_script[]

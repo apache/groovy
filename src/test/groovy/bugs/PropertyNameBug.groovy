@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test to fix the issue GROOVY-843.
  */
-class PropertyNameBug {
-    @Test
+class PropertyNameBug extends GroovyTestCase {
     void testNonJavaIdentifierChacactersWithJavaSyntax() {
         Map map = new HashMap()
         map.put("foo.bar", "FooBar")
@@ -33,7 +31,6 @@ class PropertyNameBug {
         map.put("foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!", "Any character")
     }
 
-    @Test
     void testNonJavaIdentifierChacactersWithGroovySyntax() {
         def map = [:]
         map."foo.bar" = "FooBar"

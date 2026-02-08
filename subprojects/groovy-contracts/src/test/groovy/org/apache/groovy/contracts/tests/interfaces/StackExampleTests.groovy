@@ -19,9 +19,9 @@
 package org.apache.groovy.contracts.tests.interfaces
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
-import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.Assert.assertTrue
 
 class StackExampleTests extends BaseTestClass {
 

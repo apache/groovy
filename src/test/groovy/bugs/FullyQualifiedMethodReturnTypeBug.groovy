@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class FullyQualifiedMethodReturnTypeBug {
+class FullyQualifiedMethodReturnTypeBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def s = foo()
         assert s.length() == 3

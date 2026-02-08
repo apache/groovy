@@ -18,7 +18,9 @@
  */
 package groovy.lang
 
-class GroovyShellTest2 {
+import groovy.test.GroovyTestCase
+
+class GroovyShellTest2 extends GroovyTestCase {
     void testBindingsInBaseScriptInitializers() {
         def shell = new GroovyShell();
         def scriptText = '''

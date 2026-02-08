@@ -20,14 +20,11 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import org.apache.groovy.util.Maps;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CommonCacheTest {
     @Test
@@ -41,21 +38,21 @@ public class CommonCacheTest {
                         )
                 );
 
-        assertEquals("Daniel", sc.get("name"));
-        assertEquals("Male", sc.get("gender"));
-        assertEquals("Shanghai", sc.get("city"));
-        assertNull(sc.get("foo"));
+        Assert.assertEquals("Daniel", sc.get("name"));
+        Assert.assertEquals("Male", sc.get("gender"));
+        Assert.assertEquals("Shanghai", sc.get("city"));
+        Assert.assertNull(sc.get("foo"));
     }
 
     @Test
     public void put() {
         CommonCache<String, String> sc = new CommonCache<>();
 
-        assertNull(sc.put("name", "Daniel"));
-        assertEquals("Daniel", sc.get("name"));
+        Assert.assertNull(sc.put("name", "Daniel"));
+        Assert.assertEquals("Daniel", sc.get("name"));
 
-        assertEquals("Daniel", sc.put("name", "sunlan"));
-        assertEquals("sunlan", sc.get("name"));
+        Assert.assertEquals("Daniel", sc.put("name", "sunlan"));
+        Assert.assertEquals("sunlan", sc.get("name"));
     }
 
     @Test
@@ -65,11 +62,11 @@ public class CommonCacheTest {
         EvictableCache.ValueProvider vp =
                 (EvictableCache.ValueProvider<String, String>) key -> "Chinese";
 
-        assertEquals("Chinese", sc.getAndPut("language", vp,false));
-        assertNull(sc.get("language"));
+        Assert.assertEquals("Chinese", sc.getAndPut("language", vp,false));
+        Assert.assertNull(sc.get("language"));
 
-        assertEquals("Chinese", sc.getAndPut("language", vp));
-        assertEquals("Chinese", sc.get("language"));
+        Assert.assertEquals("Chinese", sc.getAndPut("language", vp));
+        Assert.assertEquals("Chinese", sc.get("language"));
     }
 
     @Test
@@ -83,7 +80,7 @@ public class CommonCacheTest {
                         )
                 );
 
-        assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.values().toArray(new String[0]));
+        Assert.assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.values().toArray(new String[0]));
     }
 
     @Test
@@ -97,7 +94,7 @@ public class CommonCacheTest {
                         )
                 );
 
-        assertArrayEquals(new String[] {"name", "gender", "city"}, sc.keys().toArray(new String[0]));
+        Assert.assertArrayEquals(new String[] {"name", "gender", "city"}, sc.keys().toArray(new String[0]));
     }
 
     @Test
@@ -111,7 +108,7 @@ public class CommonCacheTest {
                         )
                 );
 
-        assertTrue(sc.containsKey("name"));
+        Assert.assertTrue(sc.containsKey("name"));
     }
 
     @Test
@@ -125,7 +122,7 @@ public class CommonCacheTest {
                         )
                 );
 
-        assertEquals(3, sc.size());
+        Assert.assertEquals(3, sc.size());
     }
 
     @Test
@@ -139,8 +136,8 @@ public class CommonCacheTest {
                         )
                 );
 
-        assertEquals("Shanghai", sc.remove("city"));
-        assertNull(sc.get("city"));
+        Assert.assertEquals("Shanghai", sc.remove("city"));
+        Assert.assertNull(sc.get("city"));
     }
 
     @Test
@@ -154,7 +151,7 @@ public class CommonCacheTest {
                         )
                 );
 
-        assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.clearAll().values().toArray(new String[0]));
+        Assert.assertArrayEquals(new String[] {"Daniel", "Male", "Shanghai"}, sc.clearAll().values().toArray(new String[0]));
     }
 
     @Test
@@ -169,7 +166,7 @@ public class CommonCacheTest {
                 );
 
         sc.cleanUpNullReferences();
-        assertArrayEquals(new String[] {"Daniel", "Male"}, sc.values().toArray(new String[0]));
+        Assert.assertArrayEquals(new String[] {"Daniel", "Male"}, sc.values().toArray(new String[0]));
     }
 
     @Test
@@ -180,10 +177,10 @@ public class CommonCacheTest {
         sc.put("c", "3");
         sc.put("a", "4");
         sc.put("d", "5");
-        assertEquals(3, sc.size());
-        assertEquals("3", sc.get("c"));
-        assertEquals("4", sc.get("a"));
-        assertEquals("5", sc.get("d"));
+        Assert.assertEquals(3, sc.size());
+        Assert.assertEquals("3", sc.get("c"));
+        Assert.assertEquals("4", sc.get("a"));
+        Assert.assertEquals("5", sc.get("d"));
     }
 
     @Test
@@ -194,9 +191,9 @@ public class CommonCacheTest {
         sc.put("c", "3");
         sc.put("a", "4");
         sc.put("d", "5");
-        assertArrayEquals(new String[] {"b", "c", "d"}, sc.keys().toArray(new String[0]));
-        assertEquals("2", sc.get("b"));
-        assertEquals("3", sc.get("c"));
-        assertEquals("5", sc.get("d"));
+        Assert.assertArrayEquals(new String[] {"b", "c", "d"}, sc.keys().toArray(new String[0]));
+        Assert.assertEquals("2", sc.get("b"));
+        Assert.assertEquals("3", sc.get("c"));
+        Assert.assertEquals("5", sc.get("d"));
     }
 }

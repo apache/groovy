@@ -19,12 +19,9 @@
 package groovy
 
 import groovy.test.GroovyTestCase
-import org.junit.jupiter.api.Test
 
+class ClassTest extends GroovyTestCase {
 
-class ClassTest {
-
-    @Test
     void testClassExpression() {
         def c = String.class
         assert c instanceof Class
@@ -39,7 +36,6 @@ class ClassTest {
         assert c.name.endsWith("ClassTest") , c.name
     }
 
-    @Test
     def testClassesHaveSuperModiferSet() {
         assert java.lang.reflect.Modifier.isSynchronized(this.class.modifiers)
     }

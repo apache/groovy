@@ -20,18 +20,14 @@ package groovy.cli.picocli
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
+import groovy.test.GroovyTestCase
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 import picocli.CommandLine.DuplicateOptionAnnotationsException
 
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertNull
-import static org.junit.jupiter.api.Assertions.assertTrue
 import static picocli.CommandLine.Model.OptionSpec.builder
 
 /**
@@ -41,14 +37,13 @@ import static picocli.CommandLine.Model.OptionSpec.builder
  * picocli-specific functionality.
  */
 
-class CliBuilderTest {
+class CliBuilderTest extends GroovyTestCase {
     /** Commons-cli constant that specifies the number of argument values is infinite */
     private static final int COMMONS_CLI_UNLIMITED_VALUES = -2;
 
     private StringWriter stringWriter
     private PrintWriter printWriter
 
-    @BeforeEach
     void setUp() {
         resetPrintWriter()
     }
@@ -79,11 +74,11 @@ class CliBuilderTest {
   -h, --help                 usage information
   -i=[<extension>]           modify files in place, create backup if extension
                                is specified (e.g. '.bak')"""
-        assertEquals(expectedUsage.toString(), stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         resetPrintWriter()
         cli.writer = printWriter
         if (options.help) { cli.usage() }
-        assertEquals(expectedUsage.toString(), stringWriter.toString().tokenize('\r\n').join('\n'))
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         assert options.hasOption('c')
         assert options.c
         assert options.hasOption('encoding')
@@ -103,17 +98,14 @@ class CliBuilderTest {
         printWriter = new PrintWriter(stringWriter)
     }
 
-    @Test
     void testSampleShort() {
         runSample(['-h', '-c', expectedParameter])
     }
 
-    @Test
     void testSampleLong() {
         runSample( ['--help', '--encoding', expectedParameter])
     }
 
-    @Test
     void testSimpleArg() {
         def cli = new CliBuilder()
         cli.a([:], '')
@@ -121,18 +113,16 @@ class CliBuilderTest {
         assertEquals(['1', '2'], options.arguments())
     }
 
-    @Test
     void testMultipleArgs() {
         def cli = new CliBuilder()
         cli.a(longOpt: 'arg', args: 2, valueSeparator: ',' as char, 'arguments')
         def options = cli.parse(['-a', '1,2'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2'], options.as as List)
+        assertEquals(['1', '2'], options.as)
         assertEquals('1', options.arg)
-        assertEquals(['1', '2'], options.args as List)
+        assertEquals(['1', '2'], options.args)
     }
 
-    @Test
     void testPosixNullValueHandledCorrectly_inConstructor() {
         def cli = new CliBuilder()
         assert cli.posix == true
@@ -147,7 +137,6 @@ class CliBuilderTest {
         assert !cli.parser.posixClusteredShortOptionsAllowed()
     }
 
-    @Test
     void testPosixNullValueHandledCorrectly_inSetter() {
         def cli = new CliBuilder()
         assert cli.posix == true
@@ -166,7 +155,6 @@ class CliBuilderTest {
         assert !cli.parser.posixClusteredShortOptionsAllowed()
     }
 
-    @Test
     void testFailedParsePrintsUsage() {
         def cli = new CliBuilder(writer: printWriter)
         cli.x(required: true, 'message')
@@ -178,7 +166,6 @@ class CliBuilderTest {
                 "  -x     message%n")
     }
 
-    @Test
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
         def cli = new CliBuilder()
         def anOption = builder('anOption').arity("1").description('An option.')
@@ -193,7 +180,6 @@ class CliBuilderTest {
         assert options.arguments() == ['-v', '--anOption', 'something']
     }
 
-    @Test
     void testLongAndShortOpts_allOptionsValid() {
         def cli = new CliBuilder()
         def anOption = builder('--anOption').arity("1").description('An option.').build()
@@ -206,7 +192,6 @@ class CliBuilderTest {
         assert !options.arguments()
     }
 
-    @Test
     void testUnrecognizedOptions() {
         def cli = new CliBuilder()
         cli.v(longOpt: 'verbose', 'verbose mode')
@@ -214,19 +199,17 @@ class CliBuilderTest {
         assertEquals(['-x', '-yyy', '--zzz', 'something'], options.arguments())
     }
 
-    @Test
     void testMultipleOccurrencesSeparateSeparate() {
         def cli = new CliBuilder()
         cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, 'arguments')
         def options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2', '3'], options.as as List)
+        assertEquals(['1', '2', '3'], options.as)
         assertEquals('1', options.arg)
-        assertEquals(['1', '2', '3'], options.args as List)
+        assertEquals(['1', '2', '3'], options.args)
         assertEquals([], options.arguments())
     }
 
-    @Test
     void testMandatoryParametersDoNotConsumeOtherOptions() {
         def cli = new CliBuilder()
         cli.a(args: 2, 'arguments')
@@ -240,7 +223,6 @@ class CliBuilderTest {
         assertNull(options)
     }
 
-    @Test
     void testMultipleOccurrencesSeparateSeparate3() {
         def cli = new CliBuilder()
 //        cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, 'arguments')
@@ -253,47 +235,47 @@ class CliBuilderTest {
 
         options = cli.parse(['-a1'])
         assertEquals('1', options.a)
-        assertEquals(['1'], options.as as List)
+        assertEquals(['1'], options.as)
 
 //        options = cli.parse(['-a', '1', '-a', '2']) // TODO
 //        assertNull(options)
 
         options = cli.parse(['-a1', '-a2'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2'], options.as as List)
+        assertEquals(['1', '2'], options.as)
 
         options = cli.parse(['-a1', '-a2', '-a3'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2', '3'], options.as as List)
+        assertEquals(['1', '2', '3'], options.as)
 
 //        options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
 //        assertNull(options)
 
         options = cli.parse(['-a', '1', '2'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2'], options.as as List)
+        assertEquals(['1', '2'], options.as)
 
         options = cli.parse(['-a1', '2'])
         assertEquals('1', options.a)
         assert options.arguments() == ['2']
-        assertEquals(['1'], options.as as List)
+        assertEquals(['1'], options.as)
 
         options = cli.parse(['-a', '1', '2', '-a', '3', '4'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2', '3', '4'], options.as as List)
+        assertEquals(['1', '2', '3', '4'], options.as)
 
         options = cli.parse(['-a', '1', '2', '-a3', '-a4', '-a5'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2', '3', '4', '5'], options.as as List)
+        assertEquals(['1', '2', '3', '4', '5'], options.as)
 
         options = cli.parse(['-a', '1', '2', '-a3', '-a', '4', '5' ])
         assertEquals('1', options.a)
-        assertEquals(['1', '2', '3', '4', '5'], options.as as List)
+        assertEquals(['1', '2', '3', '4', '5'], options.as)
 
         options = cli.parse(['-a1', '2', '-a3', '4'])
         assertEquals('1', options.a)
         assert options.arguments() == ['2', '-a3', '4']
-        //assertEquals(['1', '2', '3', '4'], options.as as List)
+        //assertEquals(['1', '2', '3', '4'], options.as)
 
         options = cli.parse(['-b1,2'])
         assert options.bs == ['1', '2']
@@ -313,47 +295,43 @@ class CliBuilderTest {
         assert options.bs == ['1', '2', '3', '4']
     }
 
-    @Test
     void testMultipleOccurrencesSeparateJuxtaposed() {
         def cli = new CliBuilder()
 //        cli.a ( longOpt : 'arg' , args : COMMONS_CLI_UNLIMITED_VALUES , 'arguments' )
         cli.a(longOpt: 'arg', args: 1, 'arguments')
         def options = cli.parse(['-a1', '-a2', '-a3'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2', '3'], options.as as List)
+        assertEquals(['1', '2', '3'], options.as)
         assertEquals('1', options.arg)
-        assertEquals(['1', '2', '3'], options.args as List)
+        assertEquals(['1', '2', '3'], options.args)
         assertEquals([], options.arguments())
     }
 
-    @Test
     void testMultipleOccurrencesTogetherSeparate() {
         def cli = new CliBuilder()
         cli.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
         def options = cli.parse(['-a 1,2,3'])
         assertEquals(' 1', options.a)
-        assertEquals([' 1', '2', '3'], options.as as List)
+        assertEquals([' 1', '2', '3'], options.as)
         assertEquals(' 1', options.arg)
-        assertEquals([' 1', '2', '3'], options.args as List)
+        assertEquals([' 1', '2', '3'], options.args)
         assertEquals([], options.arguments())
     }
 
-    @Test
     void testMultipleOccurrencesTogetherJuxtaposed() {
         def cli1 = new CliBuilder()
         cli1.a(longOpt: 'arg', args: COMMONS_CLI_UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
         def options = cli1.parse(['-a1,2,3'])
         assertEquals('1', options.a)
-        assertEquals(['1', '2', '3'], options.as as List)
+        assertEquals(['1', '2', '3'], options.as)
         assertEquals('1', options.arg)
-        assertEquals(['1', '2', '3'], options.args as List)
+        assertEquals(['1', '2', '3'], options.args)
         assertEquals([], options.arguments()) }
 
     /*
      *  Behaviour with unrecognized options.
      */
 
-    @Test
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter)
         def options = cli.parse(['-v'])
@@ -365,7 +343,6 @@ class CliBuilderTest {
         assert stringWriter.toString().tokenize('\r\n').join('\n') == ''''''
     }
 
-    @Test
     void testUnrecognizedOptionSilentlyIgnored_DefaultParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter/*, parser: new DefaultParser()*/)
         def options = cli.parse(['-v'])
@@ -373,7 +350,6 @@ class CliBuilderTest {
         assert !options.v
     }
 
-    @Test
     void testUnrecognizedOptionTerminatesParse_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter/*, parser: new GnuParser()*/)
         cli.h(longOpt: 'help', 'usage information')
@@ -384,7 +360,6 @@ class CliBuilderTest {
         assertEquals(['-v', '-h'], options.arguments())
     }
 
-    @Test
     void testUnrecognizedOptionTerminatesParse_DefaultParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter/*, parser: new DefaultParser()*/)
         cli.h(longOpt: 'help', 'usage information')
@@ -395,7 +370,6 @@ class CliBuilderTest {
         assertEquals(['-v', '-h'], options.arguments())
     }
 
-    @Test
     void testMultiCharShortOpt() {
         def cli = new CliBuilder(writer: printWriter)
         cli.abc('abc option')
@@ -407,7 +381,6 @@ class CliBuilderTest {
         checkNoOutput()
     }
 
-    @Test
     void testArgumentBursting_DefaultParserOnly() {
         def cli = new CliBuilder(writer: printWriter)
         // must not have longOpt 'abc' and also no args for a or b
@@ -421,7 +394,6 @@ class CliBuilderTest {
         checkNoOutput()
     }
 
-    @Test
     void testLongOptEndingWithS() {
         def cli = new CliBuilder()
         cli.s(longOpt: 'number_of_seconds', 'a long arg that ends with an "s"')
@@ -434,7 +406,6 @@ class CliBuilderTest {
         assert options.number_of_seconds
     }
 
-    @Test
     void testArgumentFileExpansion() {
         def cli = new CliBuilder(usage: 'test usage')
         cli.h(longOpt: 'help', 'usage information')
@@ -449,7 +420,6 @@ class CliBuilderTest {
         assert options.arguments() == ['bar', 'foo', '@baz']
     }
 
-    @Test
     void testArgumentFileExpansionArgOrdering() {
         def cli = new CliBuilder(usage: 'test usage')
         def args = ['one', '@temp1.args', 'potato', '@temp2.args', 'four']
@@ -463,7 +433,6 @@ class CliBuilderTest {
         assert options.arguments() == 'one potato two potato three potato four'.split()
     }
 
-    @Test
     void testArgumentFileExpansionTurnedOff() {
         def cli = new CliBuilder(usage: 'test usage', expandArgumentFiles:false)
         cli.h(longOpt: 'help', 'usage information')
@@ -478,7 +447,6 @@ class CliBuilderTest {
         assert options.arguments() == ['@temp.args', 'foo', '@@baz']
     }
 
-    @Test
     void testGStringSpecification_Groovy4621() {
         def user = 'scott'
         def pass = 'tiger'
@@ -496,19 +464,16 @@ class CliBuilderTest {
         assert options.i
     }
 
-    @Test
     void testNoExpandArgsWithEmptyArg() {
         def cli = new CliBuilder(expandArgumentFiles: false)
         cli.parse(['something', ''])
     }
 
-    @Test
     void testExpandArgsWithEmptyArg() {
         def cli = new CliBuilder(expandArgumentFiles: true)
         cli.parse(['something', ''])
     }
 
-    @Test
     void testDoubleHyphenShortOptions() {
         def cli = new CliBuilder()
         cli.a([:], '')
@@ -517,7 +482,6 @@ class CliBuilderTest {
         assert options.arguments() == ['-b', 'foo']
     }
 
-    @Test
     void testDoubleHyphenLongOptions() {
         def cli = new CliBuilder()
         cli._([longOpt:'alpha'], '')
@@ -527,7 +491,6 @@ class CliBuilderTest {
         assert options.arguments() == ['--beta', 'foo']
     }
 
-    @Test
     void testMixedShortAndLongOptions() {
         def cli = new CliBuilder()
         cli.a([longOpt:'alpha', args:1], '')
@@ -537,7 +500,6 @@ class CliBuilderTest {
         assert options.arguments() == ['foo']
     }
 
-    @Test
     void testMixedBurstingAndLongOptions() {
         def cli = new CliBuilder()
         cli.a([:], '')
@@ -562,11 +524,10 @@ class CliBuilderTest {
         cli.writer = printWriter
         options = cli.parse(['-abacus', 'foo'])
         assert options == null
-        assertTrue(stringWriter.toString().startsWith('error: Unknown option'), stringWriter.toString())
-        assertTrue(stringWriter.toString().contains('-us'), stringWriter.toString())
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unknown option'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().contains('-us'))
     }
 
-    @Test
     void testMixedBurstingAndLongOptions_singleHyphen() {
         def cli = new CliBuilder()
         cli.acceptLongOptionsWithSingleHyphen = true
@@ -598,7 +559,6 @@ class CliBuilderTest {
     }
 
     // GROOVY-9528
-    @Test
     void testRequiredParamsWithUnknownArgumentLikeParams() {
         def cli = new CliBuilder()
         cli.parser.stopAtPositional(false)
@@ -627,7 +587,6 @@ class CliBuilderTest {
 
     def argz = "--first John --last Smith --flag1 --flag2 --specialFlag --age  21 --born 1980 --discount 3.5 --pi 3.14159 --biography cv.txt --roundingMode DOWN and some more".split()
 
-    @Test
     void testParseFromSpec() {
         def builder1 = new CliBuilder()
         def p1 = builder1.parseFromSpec(PersonI, argz)
@@ -702,7 +661,6 @@ class CliBuilderTest {
         @Option(shortName='b') int by = 1
     }
 
-    @Test
     void testDefaultValueClass() {
         def cli = new CliBuilder()
         def options = new DefaultValueC()
@@ -725,7 +683,6 @@ class CliBuilderTest {
         @Unparsed remaining
     }
 
-    @Test
     void testValSepClass() {
         def cli = new CliBuilder()
 
@@ -772,7 +729,6 @@ class CliBuilderTest {
         @Unparsed List remaining
     }
 
-    @Test
     void testConvertClass() {
         Date newYears = new SimpleDateFormat("yyyy-MM-dd").parse("2016-01-01")
         def argz = '''-a John -b Mary -d 2016-01-01 and some more'''.split()
@@ -792,7 +748,6 @@ class CliBuilderTest {
     }
 
     @TypeChecked
-    @Test
     void testTypeCheckedClass() {
         def argz = "--name John --age 21 and some more".split()
         def cli = new CliBuilder()
@@ -804,7 +759,6 @@ class CliBuilderTest {
         assert options.remaining == ['and', 'some', 'more']
     }
 
-    @Test
     void testParseFromInstance() {
         def p2 = new PersonC()
         def builder2 = new CliBuilder()
@@ -819,7 +773,6 @@ class CliBuilderTest {
     }
 
     // this feature is incubating
-    @Test
     void testTypedUnparsedFromSpec() {
         def argz = '12 34 56'.split()
         def cli = new CliBuilder()
@@ -832,7 +785,6 @@ class CliBuilderTest {
     }
 
     // this feature is incubating
-    @Test
     void testTypedUnparsedFromInstance() {
         def argz = '12 34 56'.split()
         def cli = new CliBuilder()
@@ -849,7 +801,6 @@ class CliBuilderTest {
         @Unparsed List remaining()
     }
 
-    @Test
     void testParseFromInstanceFlagEdgeCases_singleHyphen() {
         def cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         def options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -efg true -ijk foo -lmn bar baz'.split())
@@ -867,7 +818,6 @@ class CliBuilderTest {
         assert options.remaining() == ['bar', 'baz']
     }
 
-    @Test
     void testParseFromInstanceFlagEdgeCases_doubleHyphen() {
         def cli = new CliBuilder()
         def options = cli.parseFromSpec(FlagEdgeCasesI, '--abc --efg true --ijk foo --lmn bar baz'.split())
@@ -885,7 +835,6 @@ class CliBuilderTest {
         assert options.remaining() == ['bar', 'baz']
     }
 
-    @Test
     void testParseScript() {
         new GroovyShell().run('''
             import groovy.cli.OptionField
@@ -923,7 +872,6 @@ class CliBuilderTest {
         ''', 'CliBuilderTestScript.groovy', argz)
     }
 
-    @Test
     void testOptionProperties() {
         CliBuilder cli = new CliBuilder(usage: 'groovyConsole [options] [filename]', stopAtNonOption: false)
         cli.with {
@@ -936,12 +884,10 @@ class CliBuilderTest {
         assert 'v2' == props.getProperty('k2')
     }
 
-    @Test
     void testAcceptLongOptionsWithSingleHyphen_defaultFalse() {
         assert !new CliBuilder().acceptLongOptionsWithSingleHyphen
     }
 
-    @Test
     void testAcceptLongOptionsWithSingleHyphen_DuplicateOptionAnnotationsException() {
         CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         try {
@@ -954,7 +900,6 @@ class CliBuilderTest {
         }
     }
 
-    @Test
     void testLongOptionsRequireDoubleHyphenByDefault() {
         CliBuilder cli = new CliBuilder()
         cli.with {
@@ -990,8 +935,8 @@ class CliBuilderTest {
         resetPrintWriter()
         cli.writer = printWriter
         assert cli.parse(['-help']) == null
-        assertTrue(stringWriter.toString().startsWith('error: Unknown option'), stringWriter.toString())
-        assertTrue(stringWriter.toString().contains('-elp'), stringWriter.toString())
+        assertTrue(stringWriter.toString(), stringWriter.toString().startsWith('error: Unknown option'))
+        assertTrue(stringWriter.toString(), stringWriter.toString().contains('-elp'))
 
         assert cli.parse(['--version']).version
         assert cli.parse(['--version']).V
@@ -1008,7 +953,6 @@ class CliBuilderTest {
         assert options.arguments() == ['-configscript', 'abc']
     }
 
-    @Test
     void testAcceptLongOptionsWithSingleHyphen_registersLongOptionsTwice() {
         CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         cli.with {
@@ -1046,7 +990,6 @@ class CliBuilderTest {
     }
 
     // GROOVY-8607
-    @Test
     void testOptIgnoredWhenSupplyingMapOfArgs() {
         def builder = new CliBuilder()
         def helpOpt = [opt:'h', longOpt: 'help']
@@ -1062,7 +1005,6 @@ class CliBuilderTest {
     }
 
     // GROOVY-8975
-    @Test
     void testTypedCaseWithRemainingArray() {
         def cli = new CliBuilder()
         def argz = '--user abc 12 34'.split()
@@ -1071,7 +1013,6 @@ class CliBuilderTest {
         assert hello.nums() == [12, 34]
     }
 
-    @Test
     void testAcceptLongOptionsWithSingleHyphen_usage() {
         resetPrintWriter()
         CliBuilder cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true, writer: printWriter)
@@ -1128,7 +1069,6 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
     }
 
-    @Test
     void testNonOption() {
         CliBuilder cli = new CliBuilder(stopAtNonOption: false)
         def optionAccessor = cli.parse(['-x'])
@@ -1136,7 +1076,6 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
     }
 
     // GROOVY-9519
-    @Test
     void testIntOptionWithDefaultZeroShouldNotConvertToBooleanFalse() {
         def cli = new CliBuilder()
         cli.i(type: Integer, longOpt: 'intTest', required: false, args: 1, defaultValue: '0', 'Testing integer with default value 0')
@@ -1149,7 +1088,6 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
     }
 
     // GROOVY-9599
-    @Test
     void testStringOptionWithDefaultEmptyStringShouldNotConvertToFalseOrNullObject() {
         def cli = new CliBuilder()
         cli.s(type: String, longOpt: 'strTest', required: false, args: 1, defaultValue: '', 'Testing string with default empty string')

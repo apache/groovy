@@ -18,11 +18,9 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class ScriptCacheTest {
+class ScriptCacheTest extends GroovyTestCase {
 
     def packageName = "scriptcachetest"
     def className
@@ -30,8 +28,7 @@ class ScriptCacheTest {
     def file
     def packageDir
 
-    @BeforeEach
-    void setUp() {
+    public void setUp() {
         packageDir = new File(new File("build"), packageName)
         packageDir.mkdir()
         packageDir.deleteOnExit()
@@ -48,8 +45,7 @@ class ScriptCacheTest {
         """
     }
 
-    @AfterEach
-    void tearDown() {
+    public void tearDown() {
         file.delete()
         packageDir.delete()
     }
@@ -60,7 +56,6 @@ class ScriptCacheTest {
         assert groovyClass1 == groovyClass2
     }
 
-    @Test
     void testScriptNaming() {
         def groovyClass1 = cl.loadClass(className, true, false)
         assert groovyClass1.getName() == className

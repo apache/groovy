@@ -18,12 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.sql.Timestamp
 
-class Groovy4986Bug {
-    @Test
+class Groovy4986Bug extends GroovyTestCase {
     void testPlusMinusToTimestamp() {
         def d = new Date()
         def t = new Timestamp(d.time)

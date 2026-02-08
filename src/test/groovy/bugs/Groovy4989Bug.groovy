@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy4989Bug {
-    @Test
+class Groovy4989Bug extends GroovyTestCase {
     void testCovariantReturnForGetterImplmentedAsProperty() {
         assertScript """
             interface Foo4989 {

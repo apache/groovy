@@ -18,12 +18,11 @@
  */
 package groovy.xml.bugs
 
+import groovy.test.GroovyTestCase
 import groovy.xml.MarkupBuilder
-import org.junit.jupiter.api.Test
 
-class Groovy249_Bug {
+class Groovy249_Bug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def t = new Bean249()
         t.b = "hello"
@@ -43,7 +42,6 @@ class Groovy249_Bug {
 
 /** @todo don't know why this fails
 
-    @Test
     void testBugInScript() {
         assertScript <<<EOF
             import groovy.xml.MarkupBuilder;

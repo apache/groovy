@@ -18,15 +18,13 @@
  */
 package groovy.operator
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test Math Power Operation in Classic/New Groovy
  */
-class PowerOperatorsTest {
+class PowerOperatorsTest extends GroovyTestCase {
 
-    @Test
     void testConstantPowerOperation() {
         assert 2**5 == 32
         assert -2**5 == -32
@@ -40,7 +38,6 @@ class PowerOperatorsTest {
         assert (-7)**2 - 7 * 3 + 2 == 30     //  49 - 21 + 2 = 30
     }
 
-    @Test
     void testPowerOperation() {
         def x = 9
         --x
@@ -72,7 +69,6 @@ class PowerOperatorsTest {
         assert x == 4
     }
 
-    @Test
     void testConstantPowerAssignmentOperation() {
         def x = 5
         x **= 2
@@ -82,7 +78,6 @@ class PowerOperatorsTest {
         assert -x**2 == -625
     }
 
-    @Test
     void testPowerAssignmentOperation() {
         def x = 5
         def y = 2
@@ -94,7 +89,6 @@ class PowerOperatorsTest {
         assert x**-y == x**(-y)
     }
 
-    @Test
     void testPowerConversions() {
         assert (2**5).class == Integer
         assert (2l**5).class == Long

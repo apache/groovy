@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 
-
-class Groovy4966Bug {
-    @Test
+class Groovy4966Bug extends GroovyTestCase {
     void testMethodsThatUseMultiDimensionalArrays() {
         assert matrix2D(new int[4][4]) == 1
         assert matrix3D(new int[4][4][4]) == 1

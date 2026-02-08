@@ -1039,7 +1039,7 @@ final class AnnotationTest {
 
             Object o = new @Tag Object()
         '''
-        assert err.message =~ /Annotation @Tag is not allowed on element TYPE/
+        assert err =~ /Annotation @Tag is not allowed on element TYPE/
     }
 
     // GROOVY-9155
@@ -1052,7 +1052,7 @@ final class AnnotationTest {
             def m(List<@Tag(foo="") String> strings) {
             }
         '''
-        assert err.message =~ /'foo' is not part of the annotation Tag in @p.Tag/
+        assert err =~ /'foo' is not part of the annotation Tag in @p.Tag/
     }
 
     // GROOVY-8234
@@ -1160,7 +1160,7 @@ final class AnnotationTest {
             @As([@A("c")])
             class Foo {}
         '''
-        assert err.message =~ /Cannot specify duplicate annotation/
+        assert err =~ /Cannot specify duplicate annotation/
     }
 
     // GROOVY-7033

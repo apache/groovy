@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.tools.rootloadersync;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import java.util.HashSet;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 
 public class SubclassingInJavaTest {

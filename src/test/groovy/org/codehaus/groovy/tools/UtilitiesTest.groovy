@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.tools
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class UtilitiesTest extends GroovyTestCase {
 
-class UtilitiesTest {
-
-  @Test
   void testValidJavaIdentifiers() {
     assert Utilities.isJavaIdentifier("abc")
     assert Utilities.isJavaIdentifier("\$abc")
@@ -32,7 +30,6 @@ class UtilitiesTest {
     assert Utilities.isJavaIdentifier("Boolean")
   }
 
-  @Test
   void testInvalidJavaIdentifiers() {
     assert !Utilities.isJavaIdentifier("")
     assert !Utilities.isJavaIdentifier("a b c")

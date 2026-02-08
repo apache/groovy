@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy4416Bug {
-    @Test
+class Groovy4416Bug extends GroovyTestCase {
     void testImplicitThisPassingInNonStaticInnerClassesBug() {
         assertScript """
             class Dummy4416 {

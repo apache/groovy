@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class BadScriptNameBug extends GroovyTestCase {
 
-class BadScriptNameBug {
-
-    @Test
     void testBug() {
         GroovyClassLoader cl = new GroovyClassLoader();
         cl.parseClass("println 'oops!'", "/script.groovy");

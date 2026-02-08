@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy5030Bug {
-    @Test
+class Groovy5030Bug extends GroovyTestCase {
     void testPrimitiveOptimizationGuardsMixupInInheritanceCase() {
         assertScript """
             def list = []

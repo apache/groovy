@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -182,7 +182,8 @@ final class NamedVariantTransformTest {
 
     @Test // GROOVY-9158, GROOVY-10497
     void testNamedParamWithDefaultArgument() {
-        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
+        assertScript shell, '''
+            import static groovy.test.GroovyAssert.shouldFail
 
             @NamedVariant(coerce=true)
             Map m(@NamedParam(required=true) String one, @NamedParam String two = 'X') {
@@ -213,7 +214,8 @@ final class NamedVariantTransformTest {
             }
         '''
 
-        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
+        assertScript shell, '''
+            import static groovy.test.GroovyAssert.shouldFail
 
             @NamedVariant
             def m(int one, int two = 42) {
@@ -267,7 +269,7 @@ final class NamedVariantTransformTest {
 
             m(alpha: 123)
         '''
-        assert err.message =~ /Missing required named argument 'color'/
+        assert err =~ /Missing required named argument 'color'/
 
         // also check static error (GROOVY-10484)
         err = shouldFail shell, '''
@@ -283,7 +285,7 @@ final class NamedVariantTransformTest {
                 m(alpha: 123)
             }
         '''
-        assert err.message =~ /required named param 'color' not found/
+        assert err =~ /required named param 'color' not found/
     }
 
     @Test // GROOVY-9183

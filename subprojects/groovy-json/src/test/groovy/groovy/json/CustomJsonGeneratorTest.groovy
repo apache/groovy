@@ -20,15 +20,14 @@ package groovy.json
 
 import groovy.json.JsonGenerator.Converter
 import groovy.json.JsonGenerator.Options
+import groovy.test.GroovyTestCase
 import org.apache.groovy.json.internal.CharBuf
-import org.junit.jupiter.api.Test
 
 /**
  * Tests extensibility of JsonGenerator and associated classes
  */
-class CustomJsonGeneratorTest {
+class CustomJsonGeneratorTest extends GroovyTestCase {
 
-    @Test
     void testCustomGenerator() {
         def generator = new CustomJsonOptions()
                             .excludeNulls()

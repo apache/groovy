@@ -55,7 +55,7 @@ final class NewifyTransformBlackBoxTest {
     assertScript(script0)
 
     final result = shouldFail(script1)
-    assert result.message =~ "Cannot find matching method NewifyFoo#AB\\(java.lang.String\\)"
+    assert result =~ "Cannot find matching method NewifyFoo#AB\\(java.lang.String\\)"
   }
 
   @Test
@@ -208,8 +208,8 @@ final class NewifyTransformBlackBoxTest {
 
     println "script=|$script|"
 
-    final def result = shouldFail(script)
-    assert result.message ==~ '(?s).*Inner class name lookup is ambiguous between the following classes: Foo, Foo\\$Foo, Foo\\$Foo\\$Foo\\..*'
+    final String result = shouldFail(script)
+    assert result ==~ '(?s).*Inner class name lookup is ambiguous between the following classes: Foo, Foo\\$Foo, Foo\\$Foo\\$Foo\\..*'
   }
 
   @Test
@@ -362,8 +362,8 @@ final class NewifyTransformBlackBoxTest {
 
     println "script=|$script|"
 
-    final def result = shouldFail(script)
-    assert result.message ==~ /(?s).*\[Static type checking] - Cannot find matching method TestScript[A-Za-z0-9]*#StringBuilder\(java\.lang\.String\).*/
+    final String result = shouldFail(script)
+    assert result ==~ /(?s).*\[Static type checking] - Cannot find matching method TestScript[A-Za-z0-9]*#StringBuilder\(java\.lang\.String\).*/
   }
 
   @Test
@@ -386,8 +386,8 @@ final class NewifyTransformBlackBoxTest {
 
     println "script=|$script|"
 
-    final def result = shouldFail(script)
-    assert result.message ==~ /(?s).*Invalid class name pattern: Illegal character range near index 3.*/
+    final String result = shouldFail(script)
+    assert result ==~ /(?s).*Invalid class name pattern: Illegal character range near index 3.*/
   }
 
   @Test

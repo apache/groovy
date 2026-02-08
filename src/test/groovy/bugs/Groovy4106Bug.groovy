@@ -19,10 +19,9 @@
 package bugs
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class Groovy4106Bug {
-    @Test
+class Groovy4106Bug extends GroovyTestCase {
     void testStackOverflowError() {
         MetaClassCreationHandle handle = new ExpandoMetaClassCreationHandle()
         handle.create(ExpandoMetaClass, GroovySystem.getMetaClassRegistry())

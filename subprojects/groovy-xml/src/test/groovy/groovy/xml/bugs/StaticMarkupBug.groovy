@@ -18,12 +18,11 @@
  */
 package groovy.xml.bugs
 
+import groovy.test.GroovyTestCase
 import groovy.xml.MarkupBuilder
-import org.junit.jupiter.api.Test
 
-class StaticMarkupBug {
+class StaticMarkupBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         doMarkup(new MarkupBuilder())
     }

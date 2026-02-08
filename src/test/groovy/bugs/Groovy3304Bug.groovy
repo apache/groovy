@@ -18,13 +18,10 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
-
-class Groovy3304Bug {
-    @Test
+class Groovy3304Bug extends GroovyTestCase {
     void testBreakAfterSwitchCausesSyntaxError() {
         try {
             new GroovyShell().parse("switch(x) {}\nbreak")

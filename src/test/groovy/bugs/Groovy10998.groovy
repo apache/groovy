@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -30,7 +30,7 @@ final class Groovy10998 {
         def err = shouldFail '''
             def <T extends T> void test() {}
         '''
-        assert err.message =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
+        assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
     }
 
     @Test
@@ -38,7 +38,7 @@ final class Groovy10998 {
         def err = shouldFail '''
             def <T extends U, U extends T> void test() {}
         '''
-        assert err.message =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
+        assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
     }
 
     @Test

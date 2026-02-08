@@ -19,13 +19,13 @@
 package groovy.grape
 
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.BeforeClass
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assumptions.assumeFalse
-import static org.junit.jupiter.api.Assumptions.assumeTrue
+import static org.junit.Assume.assumeFalse
+import static org.junit.Assume.assumeTrue
 
 final class GrapeIvyTest {
 
@@ -35,7 +35,7 @@ final class GrapeIvyTest {
 
     private static final jideVersion = '[3.6,3.7)'
 
-    @BeforeAll
+    @BeforeClass
     static void setUpClass() {
         // ensure files are installed locally
         Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()],

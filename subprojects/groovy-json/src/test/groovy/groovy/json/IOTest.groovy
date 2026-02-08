@@ -18,22 +18,19 @@
  */
 package groovy.json
 
+import groovy.test.GroovyTestCase
 import org.apache.groovy.json.internal.CharBuf
 import org.apache.groovy.json.internal.IO
-import org.junit.jupiter.api.Test
-
-import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Test the internal IO class
  */
-class IOTest {
+class IOTest extends GroovyTestCase {
 
     public static final String TEST_STRING = '{"results":[{"columns":["n"],"data":[{"row":[{"name":"Alin Coen Band","type":"group"}]}]}],"errors":[]}'
 
     int bufSize = 256
 
-    @Test
     void testReadProper() {
         IO io = new IO()
         ProperReader reader = new ProperReader();
@@ -47,7 +44,6 @@ class IOTest {
     /**
      * See https://issues.apache.org/jira/browse/GROOVY-7132
      */
-    @Test
     void testReadBumpy() {
         IO io = new IO()
         BumpyReader reader = new BumpyReader();

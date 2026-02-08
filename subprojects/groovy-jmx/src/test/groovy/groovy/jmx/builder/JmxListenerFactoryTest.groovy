@@ -18,22 +18,17 @@
  */
 package groovy.jmx.builder
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import javax.management.ObjectName
 
-import static groovy.test.GroovyAssert.shouldFail
-
-class JmxListenerFactoryTest {
+class JmxListenerFactoryTest extends GroovyTestCase {
     def builder
 
-    @BeforeEach
     void setUp() {
         builder = new JmxBuilder()
     }
 
-    @Test
     void testRequiredAttributeFrom() {
         builder.timer(name: "test:type=timer")
         def lstr = builder.listener(from: "test:type=timer")
@@ -48,7 +43,6 @@ class JmxListenerFactoryTest {
         }
     }
 
-    @Test
     void testListenerEvent() {
         def eventCount = 0
         builder.timer(name: "test:type=timer", period: 200).start()

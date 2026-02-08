@@ -18,15 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
+class Groovy2350Bug extends GroovyTestCase{
 
-
-class Groovy2350Bug{
-
-     @Test
      void testNoArg () {
          shouldFail (org.codehaus.groovy.runtime.metaclass.MethodSelectionException) {
              def a = new DefaultNoArgCtor()
@@ -35,7 +30,6 @@ class Groovy2350Bug{
          assertEquals "NULL", new DefaultNoArgCtor2().value
      }
 
-     @Test
      void testNoDefCtor () {
          def a = new NoDefaultCtor("first")
          assertEquals "toS: first", a.toString()

@@ -19,11 +19,10 @@
 package bugs
 
 import groovy.mock.interceptor.StubFor
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class Groovy3139Bug {
+class Groovy3139Bug extends GroovyTestCase {
 
-    @Test
     void testStubbingIssueDueToCachingWhenUsing2Stubs() {
         def urlStub1 = new StubFor(URL)
         urlStub1.demand.openConnection {""}

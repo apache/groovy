@@ -18,52 +18,45 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.fails
-import static org.junit.jupiter.api.Assertions.fail
+import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.*
 
 /**
  * Defines assertions in different locations and checks if they are transformed.
  */
-final class AssertionsInDifferentLocationsTest {
+final class AssertionsInDifferentLocationsTest extends GroovyTestCase {
 
-    @Test
     void testInConstructor() {
         fails {
             new AssertionInConstructor()
         }
     }
 
-    @Test
     void testInConstructorAfterThisCall() {
         fails {
             new AssertionInConstructorAfterThisCall()
         }
     }
 
-    @Test
     void testInConstructorAfterSuperCall() {
         fails {
             new AssertionInConstructorAfterSuperCall()
         }
     }
 
-    @Test
     void testInInstanceInitializer() {
         fails {
             new AssertionInInstanceInitializer()
         }
     }
 
-    @Test
     void testInClassInitializer() {
         fails {
             new AssertionInClassInitializer()
         }
     }
 
-    @Test
     void testInEmbeddedScript() {
         try {
             new GroovyShell().evaluate("assert true; assert false")

@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy4134Bug {
-    @Test
+class Groovy4134Bug extends GroovyTestCase {
     void testClosureParamsWithDefaultValues() {
         def c = {Integer maxRows = Integer.MAX_VALUE -> maxRows}
         assert c() == Integer.MAX_VALUE

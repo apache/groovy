@@ -18,24 +18,22 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import groovy.transform.Synchronized
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.jupiter.api.Test
 
 import java.util.concurrent.CountDownLatch
 
-import static groovy.test.GroovyAssert.shouldFail
 import static java.util.concurrent.TimeUnit.SECONDS
 
-class SynchronizedTransformTest {
+class SynchronizedTransformTest extends GroovyTestCase {
 
     def countReadyLatch = new CountDownLatch(1)
     def testReadyLatch = new CountDownLatch(1)
     CountDownLatch countReadyLatchCS = new CountDownLatch(1)
     CountDownLatch testReadyLatchCS = new CountDownLatch(1)
 
-    @Test
     void testSynchronized() {
         def c = new Count()
         Thread.start {
@@ -46,7 +44,6 @@ class SynchronizedTransformTest {
         c.incDec()
     }
 
-    @Test
     void testSynchronizedCustom() {
         def c = new CountCustom()
         Thread.start {
@@ -57,7 +54,6 @@ class SynchronizedTransformTest {
         c.incDec()
     }
 
-    @Test
     void testSynchronizedCS() {
         def c = new CountCS()
         Thread.start {
@@ -68,7 +64,6 @@ class SynchronizedTransformTest {
         c.incDec()
     }
 
-    @Test
     void testSynchronizedAbstractShouldNotCompile() {
         def msg = shouldFail CompilationFailedException, '''
             class Foo {
@@ -76,10 +71,9 @@ class SynchronizedTransformTest {
                 abstract void bar()
             }
         '''
-        assert msg.message.contains("annotation not allowed on abstract method 'bar'")
+        assert msg.contains("annotation not allowed on abstract method 'bar'")
     }
 
-    @Test
     void testSynchronizedInstanceLockWithStaticMethodShouldNotCompile() {
         def msg = shouldFail CompilationFailedException, '''
             class Foo {
@@ -88,7 +82,7 @@ class SynchronizedTransformTest {
                 static void bar() {}
             }
         '''
-        assert msg.message.contains("lock field with name 'mylock' must be static for static method 'bar'")
+        assert msg.contains("lock field with name 'mylock' must be static for static method 'bar'")
     }
 
     class Count {

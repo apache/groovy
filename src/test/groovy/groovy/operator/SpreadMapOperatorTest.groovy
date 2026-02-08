@@ -18,10 +18,7 @@
  */
 package groovy.operator
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  * Test the spread map operator "*:".
@@ -36,7 +33,7 @@ import static groovy.test.GroovyAssert.assertScript
  *            assert z == w
  *
  */
-class SpreadMapOperatorTest {
+class SpreadMapOperatorTest extends GroovyTestCase {
     def f(m) {
         println m.c
     }
@@ -53,7 +50,6 @@ class SpreadMapOperatorTest {
         return [1: 'ein', 2: 'zwei', 3: 'drei']
     }
 
-    @Test
     void testSpreadMap() {
         try {
             def m = ["a": 100, "b": 200]
@@ -81,7 +77,6 @@ class SpreadMapOperatorTest {
         }
     }
 
-    @Test
     void testSpreadMapVsWithClosure() {
         def m = ['a': 11, 'aa': 22, 'aaa': 33]
         def z = ['c': 100, *: m]
@@ -103,7 +98,6 @@ class SpreadMapOperatorTest {
         assert w == w2
     }
 
-    @Test
     void testSpecialSpreadMapIndexNotation() {
         assertScript '''
             @groovy.transform.ToString
@@ -122,7 +116,6 @@ class SpreadMapOperatorTest {
     }
 
     // GROOVY-3421
-    @Test
     void testSpreadMapSingleEval() {
         assertScript '''
             int i = 1
@@ -131,7 +124,6 @@ class SpreadMapOperatorTest {
         '''
     }
 
-    @Test
     void testSpreadMapFunctionCall() {
         def m = ['a': 10, 'b': 20, 'c': 30]
         f(*: m)                 // Call with only one spread map argument

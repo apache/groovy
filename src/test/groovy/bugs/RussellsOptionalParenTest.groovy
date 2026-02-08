@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class RussellsOptionalParenTest extends GroovyTestCase {
 
-class RussellsOptionalParenTest {
-
-    @Test
     void testMethodCallWithOneParam() {
         def adob = new ArrayList()
         adob.add "hello"

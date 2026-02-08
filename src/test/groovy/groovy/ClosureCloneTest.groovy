@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ClosureCloneTest extends GroovyTestCase {
 
-class ClosureCloneTest {
-
-    @Test
     void testCloneOfClosure() {
         def factor = 2
         def closure = { it * factor }

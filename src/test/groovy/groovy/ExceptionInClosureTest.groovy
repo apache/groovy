@@ -18,17 +18,13 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
-import static org.junit.jupiter.api.Assertions.fail
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests exception handling inside of a closure
  */
-class ExceptionInClosureTest {
+class ExceptionInClosureTest extends GroovyTestCase {
 
-    @Test
     void testCallingOfFailedClosure() {
         def closure = { it -> it.foo() }
 

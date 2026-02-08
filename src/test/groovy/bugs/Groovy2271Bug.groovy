@@ -19,10 +19,9 @@
 package bugs
 
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-class Groovy2271Bug {
+class Groovy2271Bug extends GroovyTestCase {
     static final String TEST_TEXT = "I'm a mock"
 
     def void testClosureMock() {

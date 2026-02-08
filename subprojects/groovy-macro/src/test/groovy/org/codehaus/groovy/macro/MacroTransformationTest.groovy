@@ -18,15 +18,12 @@
  */
 package org.codehaus.groovy.macro
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
 
 @CompileStatic
-class MacroTransformationTest {
+class MacroTransformationTest extends GroovyTestCase {
 
-    @Test
     void testSimple() {
         assertScript """
         def nullObject = null
@@ -35,7 +32,6 @@ class MacroTransformationTest {
 """
     }
 
-    @Test
     void testMacroInClosure() {
         assertScript """
         def cl = {
@@ -46,7 +42,6 @@ class MacroTransformationTest {
 """
     }
 
-    @Test
     void testCascade() {
         assertScript """
         def nullObject = null
@@ -54,7 +49,6 @@ class MacroTransformationTest {
 """
     }
 
-    @Test
     void testMethodName() {
         assertScript """
         assert "toString" == methodName(123.toString())
@@ -67,7 +61,6 @@ class MacroTransformationTest {
 """
     }
 
-    @Test
     void testPropertyName() {
         assertScript """
         assert "bytes" == propertyName("".bytes)

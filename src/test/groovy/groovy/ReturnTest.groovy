@@ -18,20 +18,17 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests the use of returns in Groovy
  */
-class ReturnTest {
-    @Test
+class ReturnTest extends GroovyTestCase {
     void testIntegerReturnValues() {
         def value = foo(5)
         assert value == 10
     }
 
-    @Test
     void testBooleanReturnValues() {
         def value = bar(6)
         assert value
@@ -45,7 +42,6 @@ class ReturnTest {
         return x > 5
     }
 
-    @Test
     void testVoidReturn() {
         explicitVoidReturn()
         implicitVoidReturn()

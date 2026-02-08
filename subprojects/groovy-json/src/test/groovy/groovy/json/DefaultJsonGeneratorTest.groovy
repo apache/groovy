@@ -18,14 +18,10 @@
  */
 package groovy.json
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
+class DefaultJsonGeneratorTest extends GroovyTestCase {
 
-
-class DefaultJsonGeneratorTest {
-
-    @Test
     void testExcludesNullValues() {
         def generator = new JsonGenerator.Options()
                 .excludeNulls()
@@ -62,7 +58,6 @@ class DefaultJsonGeneratorTest {
         assert generator.toJson((Map)null) == ''
     }
 
-    @Test
     void testCustomDateFormat() {
         def generator = new JsonGenerator.Options()
                 .dateFormat('yyyy-MM')
@@ -83,7 +78,6 @@ class DefaultJsonGeneratorTest {
         assert generator.toJson((Iterable)jsonArray) == jsonExpected
     }
 
-    @Test
     void testDateFormatBadInput() {
         shouldFail(NullPointerException) {
             new JsonGenerator.Options().dateFormat(null)
@@ -96,7 +90,6 @@ class DefaultJsonGeneratorTest {
         }
     }
 
-    @Test
     void testClosureConverters() {
         def generator = new JsonGenerator.Options()
                 .addConverter(JsonCyclicReference) { object, key ->
@@ -127,7 +120,6 @@ class DefaultJsonGeneratorTest {
         assert generator.toJson([timeline: Calendar.getInstance()]) == '{"timeline":"22 days ago"}'
     }
 
-    @Test
     void testCustomConverters() {
         def converter = new JsonGenerator.Converter() {
             @Override
@@ -150,7 +142,6 @@ class DefaultJsonGeneratorTest {
         assert generator.toJson([new Date()]) == '[7]'
     }
 
-    @Test
     void testConverterAddedLastTakesPrecedence() {
         def options = new JsonGenerator.Options()
         def c1 = { 'c1' }
@@ -166,7 +157,6 @@ class DefaultJsonGeneratorTest {
         assert !options.@converters.find { it.convert(null, null) == 'c1' }
     }
 
-    @Test
     void testConvertersBadInput() {
         shouldFail(NullPointerException) {
             new JsonGenerator.Options().addConverter(null, null)
@@ -185,7 +175,6 @@ class DefaultJsonGeneratorTest {
         }
     }
 
-    @Test
     void testExcludesFieldsByName() {
         def generator = new JsonGenerator.Options()
                 .excludeFieldsByName('name')
@@ -211,14 +200,12 @@ class DefaultJsonGeneratorTest {
         assert json == '{"baz":"three"}'
     }
 
-    @Test
     void testExcludeFieldsByNameBadInput() {
         shouldFail(NullPointerException) {
             new JsonGenerator.Options().excludeFieldsByName(null)
         }
     }
 
-    @Test
     void testExcludeFieldsByNameShouldIgnoreNulls() {
         def opts = new JsonGenerator.Options()
                 .excludeFieldsByName('foo', null, "${'bar'}")
@@ -228,7 +215,6 @@ class DefaultJsonGeneratorTest {
         assert !opts.@excludedFieldNames.contains(null)
     }
 
-    @Test
     void testExcludesFieldsByType() {
         def generator = new JsonGenerator.Options()
                 .excludeFieldsByType(Date)
@@ -277,14 +263,12 @@ class DefaultJsonGeneratorTest {
         assert json == '{"bar":"two"}'
     }
 
-    @Test
     void testExcludeFieldsByTypeBadInput() {
         shouldFail(NullPointerException) {
             new JsonGenerator.Options().excludeFieldsByType(null)
         }
     }
 
-    @Test
     void testExcludeFieldsByTypeShouldIgnoreNulls() {
         def opts = new JsonGenerator.Options()
                 .excludeFieldsByType(Date, null, URL)
@@ -294,7 +278,6 @@ class DefaultJsonGeneratorTest {
         assert !opts.@excludedFieldTypes.contains(null)
     }
 
-    @Test
     void testDisableUnicodeEscaping() {
         def json = new JsonGenerator.Options()
                 .disableUnicodeEscaping()

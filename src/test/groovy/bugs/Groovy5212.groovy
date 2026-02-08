@@ -24,10 +24,10 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CompileUnit
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.tools.javac.JavaStubGenerator
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+import static org.objectweb.asm.Opcodes.*
 
 @AutoFinal
 final class Groovy5212 {

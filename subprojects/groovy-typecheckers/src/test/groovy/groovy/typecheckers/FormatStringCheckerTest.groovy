@@ -20,19 +20,19 @@ package groovy.typecheckers
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.BeforeClass
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assumptions.assumeTrue
+import static org.junit.Assume.assumeTrue
 
 final class FormatStringCheckerTest {
 
     private static GroovyShell shell
 
-    @BeforeAll
+    @BeforeClass
     static void setUp() {
         shell = new GroovyShell(new CompilerConfiguration().tap {
             def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
@@ -46,11 +46,11 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%003d', 3)
         '''
-        assert err.message =~ /DuplicateFormatFlags: Flags = '0'/
+        assert err =~ /DuplicateFormatFlags: Flags = '0'/
         err = shouldFail shell, '''
             String.format('%++3d', 3)
         '''
-        assert err.message =~ /DuplicateFormatFlags: Flags = '\+'/
+        assert err =~ /DuplicateFormatFlags: Flags = '\+'/
     }
 
     @Test
@@ -58,11 +58,11 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%--3d', 3 + 0)
         '''
-        assert err.message =~ /DuplicateFormatFlags: Flags = '-'/
+        assert err =~ /DuplicateFormatFlags: Flags = '-'/
         err = shouldFail shell, '''
             String.format('%  3d', 3 + 0)
         '''
-        assert err.message =~ /DuplicateFormatFlags: Flags = ' '/
+        assert err =~ /DuplicateFormatFlags: Flags = ' '/
     }
 
     @Test
@@ -70,15 +70,15 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%-03d', 3)
         '''
-        assert err.message =~ /IllegalFormatFlags: Flags = '-0'/
+        assert err =~ /IllegalFormatFlags: Flags = '-0'/
         err = shouldFail shell, '''
             String.format('% +3d', 3)
         '''
-        assert err.message =~ /IllegalFormatFlags: Flags = '\+ '/
+        assert err =~ /IllegalFormatFlags: Flags = '\+ '/
         err = shouldFail shell, '''
             String.format('%+ 3d', 3)
         '''
-        assert err.message =~ /IllegalFormatFlags: Flags = '\+ '/
+        assert err =~ /IllegalFormatFlags: Flags = '\+ '/
     }
 
     @Test
@@ -86,15 +86,15 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%-03d', 3 + 0)
         '''
-        assert err.message =~ /IllegalFormatFlags: Flags = '-0'/
+        assert err =~ /IllegalFormatFlags: Flags = '-0'/
         err = shouldFail shell, '''
             String.format('% +3d', 3 + 0)
         '''
-        assert err.message =~ /IllegalFormatFlags: Flags = ' \+'/
+        assert err =~ /IllegalFormatFlags: Flags = ' \+'/
         err = shouldFail shell, '''
             String.format('%+ 3d', 3 + 0)
         '''
-        assert err.message =~ /IllegalFormatFlags: Flags = '\+ '/
+        assert err =~ /IllegalFormatFlags: Flags = '\+ '/
     }
 
     @Test
@@ -102,7 +102,7 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%1.7d', 3)
         '''
-        assert err.message =~ /IllegalFormatPrecision: 7/
+        assert err =~ /IllegalFormatPrecision: 7/
     }
 
     @Test
@@ -110,11 +110,11 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%1.8tT', new Date())
         '''
-        assert err.message =~ /IllegalFormatPrecision: 8/
+        assert err =~ /IllegalFormatPrecision: 8/
         err = shouldFail shell, '''
             String.format('%1.7d', 3 + 0)
         '''
-        assert err.message =~ /IllegalFormatPrecision: 7/
+        assert err =~ /IllegalFormatPrecision: 7/
     }
 
     @Test
@@ -122,7 +122,7 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%tT', 'foo')
         '''
-        assert err.message =~ /IllegalFormatConversion: T != java\.lang\.String/
+        assert err =~ /IllegalFormatConversion: T != java\.lang\.String/
     }
 
     @Test
@@ -130,7 +130,7 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%tq', new Date())
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'tq'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'tq'/
     }
 
     @Test
@@ -138,11 +138,11 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%-c', 'c' as char)
         '''
-        assert err.message =~ /MissingFormatWidth: %-c/
+        assert err =~ /MissingFormatWidth: %-c/
         err = shouldFail shell, '''
             String.format('%-tT', new Date())
         '''
-        assert err.message =~ /MissingFormatWidth: %-tT/
+        assert err =~ /MissingFormatWidth: %-tT/
     }
 
     @Test
@@ -150,15 +150,15 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%+#tT', new Date())
         '''
-        assert err.message =~ /FormatFlagsConversionMismatch: Conversion = T, Flags = '\+#'/
+        assert err =~ /FormatFlagsConversionMismatch: Conversion = T, Flags = '\+#'/
         err = shouldFail shell, '''
             String.format('%0,c', 'c' as char)
         '''
-        assert err.message =~ /FormatFlagsConversionMismatch: Conversion = c, Flags = '0,'/
+        assert err =~ /FormatFlagsConversionMismatch: Conversion = c, Flags = '0,'/
         err = shouldFail shell, '''
             String.format('%#b', true || true)
         '''
-        assert err.message =~ /FormatFlagsConversionMismatch: Conversion = b, Flags = '#'/
+        assert err =~ /FormatFlagsConversionMismatch: Conversion = b, Flags = '#'/
     }
 
     @Test
@@ -166,27 +166,27 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%r', 7)
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'r'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'r'/
         err = shouldFail shell, '''
             String.format('%d %d %u', 7, 7, 7)
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'u'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'u'/
         err = shouldFail shell, '''
             System.out.printf('%v', 7)
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'v'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'v'/
         err = shouldFail shell, '''
             printf '%t', 'foo'
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 't'/
+        assert err =~ /UnknownFormatConversion: Conversion = 't'/
         err = shouldFail shell, '''
             printf '%w'
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'w'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'w'/
         err = shouldFail shell, '''
             sprintf '%z', 7, 8
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'z'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'z'/
     }
 
     @Test
@@ -194,27 +194,27 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%r', 7 + 0)
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'r'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'r'/
         err = shouldFail shell, '''
             String.format('%d %d %u', 7 + 0, 7, 7)
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'u'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'u'/
         err = shouldFail shell, '''
             System.out.printf('%v', 7 + 0)
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'v'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'v'/
         err = shouldFail shell, '''
             printf '%t', 'foo' + ''
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 't'/
+        assert err =~ /UnknownFormatConversion: Conversion = 't'/
         err = shouldFail shell, '''
             printf '%w'
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'w'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'w'/
         err = shouldFail shell, '''
             sprintf '%z', 7 + 0, 8
         '''
-        assert err.message =~ /UnknownFormatConversion: Conversion = 'z'/
+        assert err =~ /UnknownFormatConversion: Conversion = 'z'/
     }
 
     @Test
@@ -222,19 +222,19 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%d', 'some string')
         '''
-        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        assert err =~ /IllegalFormatConversion: d != java\.lang\.String/
         err = shouldFail shell, '''
             System.out.printf('%o', 3.5)
         '''
-        assert err.message =~ /IllegalFormatConversion: o != java\.math\.BigDecimal/
+        assert err =~ /IllegalFormatConversion: o != java\.math\.BigDecimal/
         err = shouldFail shell, '''
             printf '%s %x', 'foo', 'bar'
         '''
-        assert err.message =~ /IllegalFormatConversion: x != java\.lang\.String/
+        assert err =~ /IllegalFormatConversion: x != java\.lang\.String/
         err = shouldFail shell, '''
             sprintf '%c', true
         '''
-        assert err.message =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
+        assert err =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
     }
 
     @Test
@@ -242,19 +242,19 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%d', 'some string' + '')
         '''
-        assert err.message =~ /IllegalFormatConversion: d != java\.lang\.String/
+        assert err =~ /IllegalFormatConversion: d != java\.lang\.String/
         err = shouldFail shell, '''
             System.out.printf('%o', 3.5 + 0)
         '''
-        assert err.message =~ /IllegalFormatConversion: o != java\.math\.BigDecimal/
+        assert err =~ /IllegalFormatConversion: o != java\.math\.BigDecimal/
         err = shouldFail shell, '''
             printf '%s %x', 'foo', 'bar' + ''
         '''
-        assert err.message =~ /IllegalFormatConversion: x != java\.lang\.String/
+        assert err =~ /IllegalFormatConversion: x != java\.lang\.String/
         err = shouldFail shell, '''
             sprintf '%c', true || true
         '''
-        assert err.message =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
+        assert err =~ /IllegalFormatConversion: c != java\.lang\.Boolean/
     }
 
     @Test
@@ -262,15 +262,15 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%<s', 'some string')
         '''
-        assert err.message =~ /MissingFormatArgument: Format specifier '%<s'/
+        assert err =~ /MissingFormatArgument: Format specifier '%<s'/
         err = shouldFail shell, '''
             String.format('%s %s', 'some string')
         '''
-        assert err.message =~ "MissingFormatArgument: Format specifier '%s'"
+        assert err =~ "MissingFormatArgument: Format specifier '%s'"
         err = shouldFail shell, '''
             String.format('%2$s', 'some string')
         '''
-        assert err.message =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
+        assert err =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
     }
 
     @Test
@@ -278,15 +278,15 @@ final class FormatStringCheckerTest {
         def err = shouldFail shell, '''
             String.format('%<s', 'some string' + '')
         '''
-        assert err.message =~ /MissingFormatArgument: Format specifier '%<s'/
+        assert err =~ /MissingFormatArgument: Format specifier '%<s'/
         err = shouldFail shell, '''
             String.format('%s %s', 'some string' + '')
         '''
-        assert err.message =~ "MissingFormatArgument: Format specifier '%s'"
+        assert err =~ "MissingFormatArgument: Format specifier '%s'"
         err = shouldFail shell, '''
             String.format('%2$s', 'some string' + '')
         '''
-        assert err.message =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
+        assert err =~ /MissingFormatArgument: Format specifier '%\d[$]s'/
     }
 
     @Test

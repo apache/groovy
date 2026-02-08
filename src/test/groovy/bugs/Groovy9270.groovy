@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -37,7 +37,7 @@ final class Groovy9270 {
             }
         '''
 
-        assert err.message =~ / Cannot perform instanceof check against primitive type int/
+        assert err =~ / Cannot perform instanceof check against primitive type int/
     }
 
     @Test
@@ -50,7 +50,7 @@ final class Groovy9270 {
             }
         '''
 
-        assert err.message =~ / Cannot perform instanceof check against primitive type int/
+        assert err =~ / Cannot perform instanceof check against primitive type int/
     }
 
     @Test
@@ -76,7 +76,7 @@ final class Groovy9270 {
             }
         '''
 
-        assert err.message =~ / Cannot perform instanceof check against type parameter T/
+        assert err =~ / Cannot perform instanceof check against type parameter T/
     }
 
     @Test
@@ -91,6 +91,6 @@ final class Groovy9270 {
             }
         '''
 
-        assert err.message =~ / Cannot perform instanceof check against type parameter T/
+        assert err =~ / Cannot perform instanceof check against type parameter T/
     }
 }

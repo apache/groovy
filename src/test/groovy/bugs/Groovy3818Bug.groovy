@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy3818Bug {
-    @Test
+class Groovy3818Bug extends GroovyTestCase {
     void testCreatingSimilarSetandMapWithComparator() {
         def scompare = { a, b -> a.id <=> b.id } as Comparator
 

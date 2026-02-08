@@ -18,7 +18,7 @@
  */
 package groovy.transform.stc
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -94,7 +94,7 @@ final class LambdaTest {
             def map = (Map<String, Long>) [:]
             map.computeIfAbsent('key', (k) -> 1)
         '''
-        assert err.message =~ /Cannot return value of type int for lambda expecting java.lang.Long/
+        assert err =~ /Cannot return value of type int for lambda expecting java.lang.Long/
     }
 
     @Test
@@ -205,7 +205,7 @@ final class LambdaTest {
             IntUnaryOperator f = (i) -> null
             int i = f.applyAsInt(42)
         '''
-        assert err.message =~ /Cannot return null for lambda expecting int/
+        assert err =~ /Cannot return null for lambda expecting int/
     }
 
     @Test
@@ -239,7 +239,7 @@ final class LambdaTest {
                 Comparator<Integer> c = (int a, String b) -> 42
             }
         '''
-        assert err.message =~ /Expected type java.lang.Integer for lambda parameter: b/
+        assert err =~ /Expected type java.lang.Integer for lambda parameter: b/
     }
 
     // GROOVY-9977
@@ -863,7 +863,7 @@ final class LambdaTest {
 
             I face = (List<Object> list) -> null
         '''
-        assert err.message =~ /Expected type java.util.List<java.lang.String> for lambda parameter: list/
+        assert err =~ /Expected type java.util.List<java.lang.String> for lambda parameter: list/
     }
 
     // GROOVY-11013

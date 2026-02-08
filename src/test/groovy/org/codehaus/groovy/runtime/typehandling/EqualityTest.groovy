@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.runtime.typehandling
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class EqualityTest extends GroovyTestCase {
 
-class EqualityTest {
-
-    @Test
     void testEquality() {
         def classA = new EqualityTestClassA(1, "Test")
         def classB = new EqualityTestClassB(1, "Test")

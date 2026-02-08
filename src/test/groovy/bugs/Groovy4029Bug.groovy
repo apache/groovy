@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy4029Bug {
-    @Test
+class Groovy4029Bug extends GroovyTestCase {
     void testAddNullKeyEntryInMapUsingSubscriptNotation() {
         Map m = [:]
         m[null] = null

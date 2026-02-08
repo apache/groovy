@@ -19,16 +19,14 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import org.apache.groovy.util.Maps;
-import org.junit.jupiter.api.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.TreeSet;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UnlimitedConcurrentCacheTest {
     @Test
@@ -42,21 +40,21 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        assertEquals("Daniel", sc.get("name"));
-        assertEquals("Male", sc.get("gender"));
-        assertEquals("Shanghai", sc.get("city"));
-        assertNull(sc.get("foo"));
+        Assert.assertEquals("Daniel", sc.get("name"));
+        Assert.assertEquals("Male", sc.get("gender"));
+        Assert.assertEquals("Shanghai", sc.get("city"));
+        Assert.assertNull(sc.get("foo"));
     }
 
     @Test
     public void put() {
         UnlimitedConcurrentCache<String, String> sc = new UnlimitedConcurrentCache<>();
 
-        assertNull(sc.put("name", "Daniel"));
-        assertEquals("Daniel", sc.get("name"));
+        Assert.assertNull(sc.put("name", "Daniel"));
+        Assert.assertEquals("Daniel", sc.get("name"));
 
-        assertEquals("Daniel", sc.put("name", "sunlan"));
-        assertEquals("sunlan", sc.get("name"));
+        Assert.assertEquals("Daniel", sc.put("name", "sunlan"));
+        Assert.assertEquals("sunlan", sc.get("name"));
     }
 
     @Test
@@ -66,8 +64,8 @@ public class UnlimitedConcurrentCacheTest {
         EvictableCache.ValueProvider vp =
                 (EvictableCache.ValueProvider<String, String>) key -> "Chinese";
 
-        assertEquals("Chinese", sc.getAndPut("language", vp));
-        assertEquals("Chinese", sc.get("language"));
+        Assert.assertEquals("Chinese", sc.getAndPut("language", vp));
+        Assert.assertEquals("Chinese", sc.get("language"));
     }
 
     @Test
@@ -81,7 +79,7 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male", "Shanghai")), new TreeSet<>(sc.values()));
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male", "Shanghai")), new TreeSet<>(sc.values()));
     }
 
     @Test
@@ -95,7 +93,7 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        assertEquals(new TreeSet<>(Arrays.asList("name", "gender", "city")), new TreeSet<>(sc.keys()));
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("name", "gender", "city")), new TreeSet<>(sc.keys()));
     }
 
     @Test
@@ -109,7 +107,7 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        assertTrue(sc.containsKey("name"));
+        Assert.assertTrue(sc.containsKey("name"));
     }
 
     @Test
@@ -123,7 +121,7 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        assertEquals(3, sc.size());
+        Assert.assertEquals(3, sc.size());
     }
 
     @Test
@@ -137,8 +135,8 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        assertEquals("Shanghai", sc.remove("city"));
-        assertNull(sc.get("city"));
+        Assert.assertEquals("Shanghai", sc.remove("city"));
+        Assert.assertNull(sc.get("city"));
     }
 
     @Test
@@ -152,7 +150,7 @@ public class UnlimitedConcurrentCacheTest {
                         )
                 );
 
-        assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male", "Shanghai")), new TreeSet<>(sc.clearAll().values()));
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male", "Shanghai")), new TreeSet<>(sc.clearAll().values()));
     }
 
     @Test
@@ -167,7 +165,7 @@ public class UnlimitedConcurrentCacheTest {
                 );
 
         sc.cleanUpNullReferences();
-        assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male")), new TreeSet<>(sc.values()));
+        Assert.assertEquals(new TreeSet<>(Arrays.asList("Daniel", "Male")), new TreeSet<>(sc.values()));
     }
 
 }

@@ -18,11 +18,10 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.MethodClosure
-import org.junit.jupiter.api.Test
 
-class Groovy4104Bug {
-    @Test
+class Groovy4104Bug extends GroovyTestCase {
     void testMethodClosureWithProtectedMethodInSuperClass() {
         MethodClosure mc1 = new Groovy4104A().createMethodClosure();
         MethodClosure mc2 = new Groovy4104B().createMethodClosure();

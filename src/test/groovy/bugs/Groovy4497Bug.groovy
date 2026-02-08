@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy4497Bug {
-    @Test
+class Groovy4497Bug extends GroovyTestCase {
     void testAccessSuperPrivateField() {
         assertScript """
             class Base4497 {

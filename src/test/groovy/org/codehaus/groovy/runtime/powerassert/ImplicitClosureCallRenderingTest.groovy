@@ -18,18 +18,17 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.isRendered
+import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.*
 
 /**
  * Tests rendering of assertions that contain a closure call
  * with the implicit "foo(args)" syntax instead of the explicit
  * "foo.call(args)" syntax. See GROOVY-4344.
  */
-final class ImplicitClosureCallRenderingTest {
+final class ImplicitClosureCallRenderingTest extends GroovyTestCase {
 
-    @Test
     void testWithLocalVariable() {
         isRendered """
 assert func(42) == null
@@ -45,7 +44,6 @@ assert func(42) == null
         assert func(42) == null
     }
 
-    @Test
     void testWithMethodArgument() {
         isRendered """
 assert func(42) == null
@@ -58,7 +56,6 @@ assert func(42) == null
 
     private funcField = { it }
 
-    @Test
     void testWithField() {
         isRendered """
 assert funcField(42) == null
@@ -71,7 +68,6 @@ assert funcField(42) == null
 
     def func = { it }
 
-    @Test
     void testWithProperty() {
         isRendered """
 assert func(42) == null
@@ -86,7 +82,6 @@ assert func(42) == null
         def func = { it }
     }
 
-    @Test
     void testWithQualifiedProperty() {
         def holder = new FuncHolder()
 
@@ -106,7 +101,6 @@ assert holder.func(42) == null
     // complicates implementation, unclear how to
     // render in an intuitive way)
 
-     @Test
      void testWithMethodCall() {
         isRendered """
 assert getFunc()(42) == null
@@ -118,7 +112,6 @@ assert getFunc()(42) == null
         }
     }
 
-    @Test
     void testWithQualifiedMethodCall() {
         def holder = new FuncHolder()
 

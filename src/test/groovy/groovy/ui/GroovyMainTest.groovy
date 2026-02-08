@@ -18,8 +18,8 @@
  */
 package groovy.ui
 
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import org.junit.Ignore
+import org.junit.Test
 
 final class GroovyMainTest {
 
@@ -166,7 +166,7 @@ assert new MyConcreteClass() != null"""
         }
     }
 
-    @Test @Disabled('current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions')
+    @Test @Ignore('current xstream causes illegal access errors on JDK9+ - skip on those JDK versions, get coverage on older versions')
     void testGroovyASTDump() {
         def temporaryDirectory = new File("build/tmp/testGroovyXMLAstGeneration/")
         temporaryDirectory.mkdirs()

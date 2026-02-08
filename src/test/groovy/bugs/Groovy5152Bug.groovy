@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy5152Bug {
-    @Test
+class Groovy5152Bug extends GroovyTestCase {
     void testShouldNotThrowClassFormatError() {
         assertScript '''
             class MyObject{}

@@ -18,21 +18,18 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Check Range.size finishes in a timely fashion. If we get a regression on this bug,
  * the build will take 10 - 20 minutes longer than normal
  */
-class Groovy5425_Bug {
+class Groovy5425_Bug extends GroovyTestCase {
 
-  @Test
   void testBigDecimalRangeSize() {
     assert (1.0G..2147483647.0G).size() == 2147483647
   }
 
-  @Test
   void testBigIntegerRangeSize() {
     assert (1G..2147483647G).size() == 2147483647
   }

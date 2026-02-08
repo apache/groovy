@@ -18,7 +18,7 @@
  */
 package testingguide
 // tag::junit4_example[]
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 

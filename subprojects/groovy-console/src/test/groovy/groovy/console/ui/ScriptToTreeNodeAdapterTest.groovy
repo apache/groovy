@@ -18,16 +18,12 @@
  */
 package groovy.console.ui
 
+import groovy.test.GroovyTestCase
+import junit.framework.AssertionFailedError
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.Phases
-import org.junit.jupiter.api.Test
 
 import javax.swing.tree.TreeNode
-
-import static groovy.test.GroovyAssert.fail
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertNotNull
 
 /**
  * Unit test for {@link ScriptToTreeNodeAdapter}.
@@ -36,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull
  * an object. Normally, this is bad form. However, the class under test is meant to display
  * toString() forms in a user interface. So in this case it is appropriate.
  */
-final class ScriptToTreeNodeAdapterTest {
+final class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
      private final classLoader = new GroovyClassLoader()
 
@@ -88,11 +84,11 @@ final class ScriptToTreeNodeAdapterTest {
      * Helper method to assert a map entry element.
      */
     private assertMapEntry(mapEntry, expectedKey, expectedValue) {
-        assertNotNull(mapEntry, 'Could not locate 1st MapEntryExpression in AST')
+        assertNotNull('Could not locate 1st MapEntryExpression in AST', mapEntry)
         def children = mapEntry.children().toList()
-        assertEquals(2, children.size(), 'Wrong # map entries')
-        assertEquals(expectedKey, children[0].toString(), 'Wrong key')
-        assertEquals(expectedValue, children[1].toString(), 'Wrong value')
+        assertEquals('Wrong # map entries', 2, children.size())
+        assertEquals('Wrong key', expectedKey, children[0].toString())
+        assertEquals('Wrong value', expectedValue, children[1].toString())
     }
 
     /**
@@ -131,7 +127,6 @@ final class ScriptToTreeNodeAdapterTest {
         }
     }
 
-    @Test
     void testHelloWorld() {
         assertTreeStructure(
                 '"Hello World"',
@@ -142,7 +137,6 @@ final class ScriptToTreeNodeAdapterTest {
                 ])
     }
 
-    @Test
     void testSimpleClass() {
         assertTreeStructure(
                 ' class Foo { public aField } ',
@@ -154,7 +148,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testMethodWithParameter() {
         assertTreeStructure(
                 ' def foo(String bar) { println bar } ',
@@ -168,7 +161,6 @@ final class ScriptToTreeNodeAdapterTest {
             )
     }
 
-    @Test
     void testMethodWithParameterAndInitialValue() {
         def script = ' def foo(String bar = "some_value") { println bar } '
         // check path for bar
@@ -181,7 +173,6 @@ final class ScriptToTreeNodeAdapterTest {
         ])
     }
 
-    @Test
     void testClosureParameters() {
         assertTreeStructure(
                 ' def x = { parm1 ->  println parm1 } ',
@@ -195,7 +186,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testClosureParametersWithInitialValue() {
         def script = ' def x = { parm1 = "some_value" ->  println parm1 } '
         // check path for parm1
@@ -208,7 +198,6 @@ final class ScriptToTreeNodeAdapterTest {
         ])
     }
 
-    @Test
     void testNamedArgumentListExpression() {
         def script = "new String(foo: 'bar', baz: 'qux')"
         ScriptToTreeNodeAdapter adapter = createAdapter(true, true, true)
@@ -225,16 +214,15 @@ final class ScriptToTreeNodeAdapterTest {
         }?.children()?.find {
             it.toString().startsWith 'NamedArgumentListExpression'
         }
-        assertNotNull(namedArgList, 'Could not locate NamedArgumentListExpression in AST')
+        assertNotNull('Could not locate NamedArgumentListExpression in AST', namedArgList)
 
         def children = namedArgList.children().toList()
-        assertEquals(2, children.size(), 'Wrong # named arguments')
+        assertEquals('Wrong # named arguments', 2, children.size())
 
         assertMapEntry(children[0], 'Constant - java.lang.String foo', 'Constant - java.lang.String bar')
         assertMapEntry(children[1], 'Constant - java.lang.String baz', 'Constant - java.lang.String qux')
     }
 
-    @Test
     void testDynamicVariable() {
         assertTreeStructure(
                 " foo = 'bar' ",
@@ -248,7 +236,6 @@ final class ScriptToTreeNodeAdapterTest {
             )
     }
 
-    @Test
     void testVariableParameters() {
         assertTreeStructure(
                 " 'foo' ",
@@ -264,7 +251,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testMultipleAssignments() {
         assertTreeStructure(
                 ' def (x, y) = [1, 2] ',
@@ -277,7 +263,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testEnum() {
         assertTreeStructure(
                 '''enum MyEnum {
@@ -291,7 +276,6 @@ final class ScriptToTreeNodeAdapterTest {
                 ])
     }
 
-    @Test
     void testExpression_DuplicateDoesNotAppear() {
         assertTreeStructure(
                 " 'foo' ",
@@ -306,7 +290,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testInnerClass() {
         assertTreeStructure(
                 '''class Outer {
@@ -323,7 +306,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testInnerClassWithMethods() {
         assertTreeStructure(
                 '''class Outer {
@@ -341,7 +323,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testInnerClassWithFields() {
         assertTreeStructure(
                 '''class Outer {
@@ -357,7 +338,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testInnerClassWithProperties() {
         assertTreeStructure(
                 '''class Outer {
@@ -373,7 +353,6 @@ final class ScriptToTreeNodeAdapterTest {
         )
     }
 
-    @Test
     void testScriptWithMethods() {
         // verify the free form script
         assertTreeStructure(
@@ -399,12 +378,11 @@ final class ScriptToTreeNodeAdapterTest {
             )
     }
 
-    @Test
     void testScriptWithAdapterThatLoadsClassButNotFreeForm() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
 
         // since free standing script is not being loaded, it should fail
-        shouldFail(AssertionError) {
+        shouldFail(AssertionFailedError) {
             assertTreeStructure(
                     'def foo(String bar) {}',
                     [
@@ -431,7 +409,6 @@ final class ScriptToTreeNodeAdapterTest {
             )
     }
 
-    @Test
     void testScriptWithAdapterThatLoadsFreeFormButNotClass() {
         ScriptToTreeNodeAdapter adapter = createAdapter(true, false, false)
 
@@ -448,7 +425,7 @@ final class ScriptToTreeNodeAdapterTest {
             )
 
         // since script class is not being loaded, it should fail
-        shouldFail(AssertionError) {
+        shouldFail(AssertionFailedError) {
             assertTreeStructure(
                     'def foo(String bar) {}',
                     [
@@ -463,12 +440,11 @@ final class ScriptToTreeNodeAdapterTest {
         }
     }
 
-   @Test
    void testScriptWithAdapterThatLoadsNeitherFreeFormNorClass() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, false, false)
 
         // since free standing script is not being loaded, it should fail
-        shouldFail(AssertionError) {
+        shouldFail(AssertionFailedError) {
             assertTreeStructure(
                     'def foo(String bar) {}',
                     [
@@ -482,7 +458,7 @@ final class ScriptToTreeNodeAdapterTest {
         }
 
         // since script class is not being loaded, it should fail
-        shouldFail(AssertionError) {
+        shouldFail(AssertionFailedError) {
             assertTreeStructure(
                     'def foo(String bar) {}',
                     [
@@ -497,7 +473,6 @@ final class ScriptToTreeNodeAdapterTest {
         }
     }
 
-    @Test
     void testScriptWithAdapterThatAddsDescriptorToMethodNodeProperties() {
         ScriptToTreeNodeAdapter adapter = createAdapter(true, false, false)
         TreeNode root = adapter.compile('''
@@ -514,7 +489,6 @@ final class ScriptToTreeNodeAdapterTest {
         assert methodNodeTest.properties.any { name, value, type, _ -> name == 'descriptor' && value == '()V' && type == 'String' }
     }
 
-    @Test
     void testScriptWithAdapterThatLoadsGeneratedClosureClass() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
 
@@ -529,7 +503,6 @@ final class ScriptToTreeNodeAdapterTest {
             )
     }
 
-    @Test
     void testScriptWithAdapterThatLoadsMultipleGeneratedClosureClasses() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
 
@@ -575,7 +548,6 @@ final class ScriptToTreeNodeAdapterTest {
     }
 
     // GROOVY-4636
-    @Test
     void testScriptWithObjectInitializers() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
 
@@ -603,7 +575,6 @@ final class ScriptToTreeNodeAdapterTest {
 
     }
 
-    @Test
     void testTraitObjectInitializers() {
         ScriptToTreeNodeAdapter adapter = createAdapter(false, true, true)
 
@@ -627,7 +598,6 @@ final class ScriptToTreeNodeAdapterTest {
                 adapter)
     }
 
-    @Test
     void testCompileIndyBytecode() {
         ScriptToTreeNodeAdapter adapter = createAdapter(true, false, false)
         TreeNode root = adapter.compile('''

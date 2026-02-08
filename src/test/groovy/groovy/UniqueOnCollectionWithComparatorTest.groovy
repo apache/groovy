@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class UniqueOnCollectionWithComparatorTest extends GroovyTestCase {
 
-class UniqueOnCollectionWithComparatorTest {
-
-    @Test
     void testUniqueOnIterator() {
         def list = [-1, 0, 1, 1, 0, -1]
         def comparator = new ClosureComparator({ a, b -> Math.abs(a) <=> Math.abs(b) })
@@ -33,14 +31,12 @@ class UniqueOnCollectionWithComparatorTest {
         assert result == [-1, 0]
     }
 
-    @Test
     void testUniqueWithComparatorList() {
         def list = [-1, 0, 1, 1, 0, -1]
         def comparator = new ClosureComparator({ a, b -> Math.abs(a) <=> Math.abs(b) })
         assert list.unique(comparator) == [-1, 0]
     }
 
-    @Test
     void testUniqueWithComparatorSet() {
         def set = [-1, 0, 1] as Set
         def comparator = new ClosureComparator({ a, b -> Math.abs(a) <=> Math.abs(b) })
@@ -48,7 +44,6 @@ class UniqueOnCollectionWithComparatorTest {
     }
 
     /** GROOVY-4742 */
-    @Test
     void testImmutableUniqueWithComparatorList() {
         def list = [-1, 0, 1, 1, 0, -1]
         def comparator = new ClosureComparator({ a, b -> Math.abs(a) <=> Math.abs(b) })
@@ -58,7 +53,6 @@ class UniqueOnCollectionWithComparatorTest {
     }
 
     /** GROOVY-4742 */
-    @Test
     void testImmutableUniqueWithComparatorSet() {
         def set = [-1, 0, 1] as Set
         def comparator = new ClosureComparator({ a, b -> Math.abs(a) <=> Math.abs(b) })
@@ -68,7 +62,6 @@ class UniqueOnCollectionWithComparatorTest {
     }
 
     /** GROOVY-4742 */
-    @Test
     void testImmutableUniqueWithComparator() {
         def comparator = [compare: { p1, p2 -> p1.lname <=> p2.lname ?: p1.fname <=> p2.fname }] as Comparator
 

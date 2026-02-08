@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy3383Bug {
-    @Test
+class Groovy3383Bug extends GroovyTestCase {
     void testClassUsageInInterfaceDef() {
         assertScript """
             interface Groovy3383 {

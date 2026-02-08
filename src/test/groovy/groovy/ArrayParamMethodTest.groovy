@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ArrayParamMethodTest extends GroovyTestCase implements DummyInterface {
 
-class ArrayParamMethodTest implements DummyInterface {
-
-    @Test
     void testMethodCall() {
         def array = "a b c".split(' ')
 

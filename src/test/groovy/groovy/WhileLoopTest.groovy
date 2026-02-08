@@ -18,25 +18,21 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class WhileLoopTest extends GroovyTestCase {
 
-class WhileLoopTest {
-
-    @Test
     void testVerySimpleWhile() {
         def val = doWhileMethod(0, 5)
         assert val == 5
     }
 
-    @Test
     void testWhileWithEmptyBody() {
         int x = 3
         while (--x);
         assert x == 0
     }
 
-    @Test
     void testMoreComplexWhile() {
         def x = 0
         def y = 5

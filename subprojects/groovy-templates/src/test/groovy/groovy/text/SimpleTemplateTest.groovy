@@ -18,25 +18,19 @@
  */
 package groovy.text
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+class SimpleTemplateTest extends GroovyTestCase {
 
-
-class SimpleTemplateTest {
-
-    @Test
     void testSimpleCallFromGroovyEmpty() {
         assertEquals('', simpleCall(''))
     }
 
-    @Test
     void testSimpleCallFromGroovyStatic() {
         def input = 'some static text'
         assertEquals(input, simpleCall(input))
     }
 
-    @Test
     void testExpressionAssign() {
         assertEquals('1',   simpleCall('<%=1%>'))
         assertEquals(' 1',  simpleCall(' <%=1%>'))
@@ -47,13 +41,11 @@ class SimpleTemplateTest {
         assertEquals(' 1', bindingCall([a:1],' <%=a%>'))
     }
 
-    @Test
     void testExpressionEval() {
         assertEquals('1', simpleCall('<%print(1)%>'))
         assertEquals('01', simpleCall('<%for(i in 0..1){print(i)}%>'))
     }
 
-    @Test
     void testWithMarkupBuilder(){
     def text = '''<%
         builder = new groovy.xml.MarkupBuilder(out)
@@ -64,7 +56,6 @@ class SimpleTemplateTest {
     assertEquals('111', simpleCall(text))
     }
 
-    @Test
     void testWithMarkupBuilderWithSemicolons(){
     def text = '''<%
         builder = new groovy.xml.MarkupBuilder(out);
@@ -75,7 +66,6 @@ class SimpleTemplateTest {
     assertEquals('111', simpleCall(text))
     }
 
-    @Test
     void testWithQuotesInScriplet(){
     def text = '''<%
         ['1',"2",/3/].each{ x ->

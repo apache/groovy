@@ -18,13 +18,11 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class SimpleGroovyRootDocTests {
+class SimpleGroovyRootDocTests extends GroovyTestCase {
 
     // GROOVY-6017
-    @Test
     void testClassNamedWithNullGroovyDocClass() {
 
         final expectedResult = new SimpleGroovyClassDoc([], 'Foo')

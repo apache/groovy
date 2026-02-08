@@ -18,12 +18,9 @@
  */
 package org.codehaus.groovy.classgen
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class CallClosureFieldAsMethodTest {
+class CallClosureFieldAsMethodTest extends GroovyTestCase {
 
     String firstname = "Guillaume"
     def closureMethod = { greeting -> "${greeting} ${firstname}" }
@@ -32,18 +29,15 @@ class CallClosureFieldAsMethodTest {
     /**
      * Check that we can call a closure defined as a field as if it were a normal method
      */
-    @Test
     void testCallToClosureAsMethod() {
         def obj = new CallClosureFieldAsMethodTest()
         assert obj.closureMethod("Hello") == "Hello Guillaume"
     }
 
-    @Test
     void testCallToClosureAsMethodFromStaticField() {
         assert CallClosureFieldAsMethodTest.staticClosureMethod("Hello") == "Hello"
     }
 
-    @Test
     void testEnsureCallMethodIsUsed() {
         assertScript """
             class Dummy {

@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class SuperMethodBug {
+class SuperMethodBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def base = new TestBase("yyy")
         def value = base.doSomething()

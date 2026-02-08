@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class ClosureWithBitwiseDefaultParamTest {
-    @Test
+class ClosureWithBitwiseDefaultParamTest extends GroovyTestCase {
     void testAmbiguousStuff() {
         def c = { x, y = 1 | 2, z = 0->
             println x

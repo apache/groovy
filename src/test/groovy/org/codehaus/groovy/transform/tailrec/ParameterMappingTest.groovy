@@ -20,7 +20,7 @@ package org.codehaus.groovy.transform.tailrec
 
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.builder.AstBuilder
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 

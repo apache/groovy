@@ -18,15 +18,12 @@
  */
 package groovy.json
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
-
-class StreamingJsonBuilderTest {
+class StreamingJsonBuilderTest extends GroovyTestCase {
 
     @CompileStatic
-    @Test
     void testJsonBuilderUsageWithCompileStatic() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -65,7 +62,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testJsonBuilderWithWritableValue() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -90,7 +86,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testJsonBuilderWithNestedClosures() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -107,7 +102,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testJsonBuilderConstructor() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w, [a: 1, b: true])
@@ -115,7 +109,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testUnescapedJson() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w).call {
@@ -129,7 +122,6 @@ class StreamingJsonBuilderTest {
 
 
     @CompileStatic
-    @Test
     void testUnescapedJsonCompileStatic() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w).call {
@@ -141,7 +133,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testEmptyArray() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -150,7 +141,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testSimpleArray() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -160,7 +150,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testComplexArray() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -170,7 +159,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testMap() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -180,7 +168,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testEmptyObject() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -190,7 +177,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testBasicObject() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -204,7 +190,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testNestedObjects() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -220,7 +205,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testStandardBuilderStyle() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -233,7 +217,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testMethodCallWithNamedArguments() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -243,7 +226,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testThrowAnExceptionWhenPassingSomethingElseThanAClosure() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -254,7 +236,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testListWithAnEmptyObject() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -264,7 +245,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testListOfObjects() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -274,7 +254,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testElementHasListOfObjects() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -290,7 +269,6 @@ class StreamingJsonBuilderTest {
         String name
     }
 
-    @Test
     void testCollectionAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -304,7 +282,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testIterableAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
         Iterable it = [iterator:{->
@@ -320,7 +297,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testMethodWithIterableAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
         Iterable it = [iterator:{->
@@ -337,7 +313,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testMethodWithArrayAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -352,7 +327,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testMethodWithCollectionAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -366,7 +340,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testNestedMethodWithCollectionAndClosure() {
         def theAuthors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -382,7 +355,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testComplexStructureFromTheGuardian() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -420,7 +392,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testNestedListMap() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -432,7 +403,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testEmptyList() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -442,7 +412,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testTrendsFromTwitter() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -469,7 +438,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testExampleFromTheGep7Page() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -492,7 +460,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testEdgeCases() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -527,7 +494,6 @@ class StreamingJsonBuilderTest {
         }
     }
 
-    @Test
     void testWithGenerator() {
         def generator = new JsonGenerator.Options()
                 .excludeNulls()
@@ -554,7 +520,6 @@ class StreamingJsonBuilderTest {
     }
 
     @CompileStatic
-    @Test
     void testWithGeneratorCompileStatic() {
         def generator = new JsonGenerator.Options()
                 .excludeNulls()

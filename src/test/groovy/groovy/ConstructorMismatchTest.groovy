@@ -18,14 +18,9 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
-
-
-class ConstructorMismatchTest {
-    @Test
+class ConstructorMismatchTest extends GroovyTestCase {
     void testConstructorMismatch() {
         def message = shouldFail(GroovyRuntimeException, '''
             class Event {
@@ -36,10 +31,9 @@ class ConstructorMismatchTest {
             }
             new Event(42G)
         ''')
-        assert message.message == 'Could not find matching constructor for: Event(BigInteger)'
+        assert message == 'Could not find matching constructor for: Event(BigInteger)'
     }
 
-    @Test
     void testConstructorMismatchNamedArgs() {
         def message = shouldFail(GroovyRuntimeException, '''
             class Event {
@@ -50,10 +44,9 @@ class ConstructorMismatchTest {
             }
             new Event(when: new Date())
         ''')
-        assert message.message == 'Could not find named-arg compatible constructor. Expecting one of:\nEvent(Map)\nEvent()'
+        assert message == 'Could not find named-arg compatible constructor. Expecting one of:\nEvent(Map)\nEvent()'
     }
 
-    @Test
     void testMapConstructorThroughEMC() {
         assertScript'''
             class Person {

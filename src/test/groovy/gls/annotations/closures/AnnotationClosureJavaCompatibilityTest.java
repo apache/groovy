@@ -18,11 +18,9 @@
  */
 package gls.annotations.closures;
 
-import groovy.lang.Closure;
-
 import java.lang.reflect.Constructor;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import groovy.lang.Closure;
 
 // Uses annotation type declared in Java,
 // instantiates annotation closure using pure Java APIs (no GDK),

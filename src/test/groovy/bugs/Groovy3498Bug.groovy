@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy3498Bug {
-    @Test
+class Groovy3498Bug extends GroovyTestCase {
     void testClosureExpressionFiltering() {
         new GroovyShell().evaluate """
         { -> assert false, 'This statement should not have been executed' }

@@ -18,14 +18,12 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 /**
  * Test Writer append and leftShift DGM methods
  */
-class WriterAppendTest {
+class WriterAppendTest extends GroovyTestCase {
     /**
      * The following instances are used in testing the file writes
      */
@@ -61,7 +59,6 @@ class WriterAppendTest {
     // Our file instance
     def File file;
 
-    @BeforeEach
     void setUp() {
         // Setup guarantees us that we use a non-existent file
         file = File.createTempFile("unitTest", ".txt")
@@ -70,7 +67,6 @@ class WriterAppendTest {
         assert file.length() == 0L
     }
 
-    @AfterEach
     void tearDown() {
         // we remove our temporary file
         def deleted = false
@@ -79,7 +75,6 @@ class WriterAppendTest {
         assert file.exists() == false
     }
 
-    @Test
     void testAppendStringWithEncoding() {
         def expected
         // test new
@@ -97,7 +92,6 @@ class WriterAppendTest {
         assert hasContents(file, expected, UTF8_ENCODING)
     }
 
-    @Test
     void testAppendWritableWithEncoding() {
         def expected
 
@@ -117,7 +111,6 @@ class WriterAppendTest {
     }
 
 
-    @Test
     void testLeftShiftStringWithEncoding() {
         def expected
 
@@ -136,7 +129,6 @@ class WriterAppendTest {
         assert hasContents(file, expected, UTF8_ENCODING)
     }
 
-    @Test
     void testLeftShiftWritableWithEncoding() {
         def expected
 
@@ -155,7 +147,6 @@ class WriterAppendTest {
         assert hasContents(file, expected, UTF8_ENCODING)
     }
 
-    @Test
     void testFileSetText() {
         // test new
         file.text = 'foobar'
@@ -166,7 +157,6 @@ class WriterAppendTest {
         assert hasContents(file, 'foobarbaz', defaultEncoding)
     }
 
-    @Test
     void testAppendStringDefaultEncoding() {
         def expected
         // test new
@@ -184,7 +174,6 @@ class WriterAppendTest {
         assert hasContents(file, expected, defaultEncoding)
     }
 
-    @Test
     void testAppendWritableDefaultEncoding() {
         def expected
 
@@ -204,7 +193,6 @@ class WriterAppendTest {
     }
 
 
-    @Test
     void testLeftShiftStringDefaultEncoding() {
         def expected
 
@@ -224,7 +212,6 @@ class WriterAppendTest {
     }
 
 
-    @Test
     void testLeftShiftWritableDefaultEncoding() {
         def expected
 

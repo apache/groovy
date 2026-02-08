@@ -18,9 +18,9 @@
  */
 package groovy.xml
 
+import groovy.test.GroovyTestCase
 import org.custommonkey.xmlunit.Diff
 import org.custommonkey.xmlunit.XMLUnit
-import org.junit.jupiter.api.Test
 
 import javax.xml.stream.XMLOutputFactory
 
@@ -29,9 +29,8 @@ import javax.xml.stream.XMLOutputFactory
 /**
  * Tests Stax builder with XML
  */
-class StaxBuilderTest {
+class StaxBuilderTest extends GroovyTestCase {
 
-    @Test
     void testJava6() {
         def factory = XMLOutputFactory.newInstance()
         def writer = new StringWriter()

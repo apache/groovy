@@ -22,7 +22,7 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
 import groovy.transform.ToString
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import java.util.stream.Collectors
 import java.util.stream.Stream

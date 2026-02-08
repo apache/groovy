@@ -18,7 +18,7 @@
  */
 package bugs.groovy10121
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class AnnotationCollectorReflectionTest {
     @Test

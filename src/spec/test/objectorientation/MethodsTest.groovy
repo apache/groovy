@@ -18,14 +18,10 @@
  */
 package objectorientation
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
+class MethodsTest extends GroovyTestCase {
 
-class MethodsTest {
-
-    @Test
     void testMethodDefinition() {
         assertScript '''
             // tag::method_definition[]
@@ -37,7 +33,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testNamedArguments() {
         assertScript '''
             // tag::named_arguments[]
@@ -47,7 +42,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testNamedArgumentsAlongWithOtherArguments() {
         assertScript '''
             // tag::named_arguments_with_additional_arguments[]
@@ -58,7 +52,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testFailedNamedArgumentsAlongWithOtherArguments() {
         shouldFail '''
             // tag::failed_named_arguments_with_additional_arguments[]
@@ -68,7 +61,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testExplicitNamedArgumentsAlongWithOtherArguments() {
         assertScript '''
             // tag::explicit_named_arguments_with_additional_arguments[]
@@ -78,7 +70,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testDefaultArguments() {
         assertScript '''
             // tag::default_arguments[]
@@ -98,7 +89,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testVarargs() {
         assertScript '''
             // tag::varargs_example[]
@@ -110,7 +100,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testVarargsArrayNotation() {
         assertScript '''
             // tag::varargs_array_notation[]
@@ -122,7 +111,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testVarargsNullParameter() {
         assertScript '''
             // tag::varargs_null_parameter[]
@@ -132,7 +120,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testVarargsArrayParameter() {
         assertScript '''
             // tag::varargs_array_parameter[]
@@ -143,7 +130,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testVarargsMethodOverloading() {
         assertScript '''
             // tag::varargs_method_overloading[]
@@ -156,10 +142,9 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testIdiomaticMethodDeclaration() {
-        assertScript '''            import static groovy.test.GroovyAssert.shouldFail
-
+        assertScript '''
+            import static groovy.test.GroovyAssert.shouldFail
             // tag::idiomatic_method_declaration[]
             def badRead() {
                 new File('doesNotExist.txt').text
@@ -172,7 +157,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testMethodDeclarationWithCheckedException() {
         assertScript '''
             import static groovy.test.GroovyAssert.shouldFail
@@ -188,7 +172,6 @@ class MethodsTest {
         '''
     }
 
-    @Test
     void testMultiMethods() {
         assertScript '''
             // tag::multi_methods[]

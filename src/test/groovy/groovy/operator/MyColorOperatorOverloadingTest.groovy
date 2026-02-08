@@ -18,15 +18,11 @@
  */
 package groovy.operator
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static java.awt.Color.DARK_GRAY
-import static java.awt.Color.GRAY
-import static java.awt.Color.LIGHT_GRAY
-import static java.awt.Color.WHITE
+import static java.awt.Color.*
 
-class MyColorOperatorOverloadingTest {
-    @Test
+class MyColorOperatorOverloadingTest extends GroovyTestCase {
     void testAll() {
         if (HeadlessTestSupport.headless) return
 

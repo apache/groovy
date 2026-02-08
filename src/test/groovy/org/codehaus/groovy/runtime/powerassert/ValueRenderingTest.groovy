@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.isRendered
 

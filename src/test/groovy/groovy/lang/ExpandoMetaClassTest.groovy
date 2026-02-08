@@ -18,18 +18,13 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.fail
-import static org.junit.jupiter.api.Assertions.assertEquals
+class ExpandoMetaClassTest extends GroovyTestCase {
 
-
-class ExpandoMetaClassTest {
-
-    @BeforeEach
-    void setUp() {
+    @Override
+    protected void setUp() {
+        super.setUp()
         def reg = GroovySystem.metaClassRegistry
         reg.removeMetaClass(EMCT_Another)
         reg.removeMetaClass(EMCT_Child)
@@ -44,7 +39,6 @@ class ExpandoMetaClassTest {
         reg.removeMetaClass(EMCT_SuperClass)
     }
 
-    @Test
     void testClosureCallDoCall() {
         ExpandoMetaClass.enableGlobally()
         def cl = { assert it.class == Object[] }
@@ -58,7 +52,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testFindAll() {
         ExpandoMetaClass.enableGlobally()
         try {
@@ -78,7 +71,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testMethodsAfterAddingNewMethod() {
         EMCT_Class.metaClass.newMethod = { -> "foo" }
 
@@ -93,7 +85,6 @@ class ExpandoMetaClassTest {
         assertEquals 1, methods.size()
     }
 
-    @Test
     void testPropertiesAfterAddingProperty() {
         EMCT_Class.metaClass.getNewProp = { -> "foo" }
 
@@ -108,7 +99,6 @@ class ExpandoMetaClassTest {
         assertEquals 1, props.size()
     }
 
-    @Test
     void testOverrideStaticMethod() {
         EMCT_Static.metaClass.'static'.f = { "first" }
         assertEquals "first", EMCT_Static.f("")
@@ -118,7 +108,6 @@ class ExpandoMetaClassTest {
     }
 
 
-    @Test
     void testOverrideMethod() {
         EMCT_Static.metaClass.f = { "first" }
         assertEquals "first", new EMCT_Static().f("")
@@ -128,7 +117,6 @@ class ExpandoMetaClassTest {
     }
 
 
-    @Test
     void testStaticBeanStyleProperties() {
         def mc = new ExpandoMetaClass(EMCT_InvokeMethod.class, true, true)
         mc.initialize()
@@ -139,7 +127,6 @@ class ExpandoMetaClassTest {
         assertEquals "bar!", EMCT_InvokeMethod.hello
     }
 
-    @Test
     void testOverrideInvokeStaticMethod() {
         def mc = new ExpandoMetaClass(EMCT_InvokeMethod.class, true, true)
         mc.initialize()
@@ -159,7 +146,6 @@ class ExpandoMetaClassTest {
         assertEquals "foo!", EMCT_InvokeMethod.dynamicMethod()
     }
 
-    @Test
     void testOverrideInvokeMethod() {
         def mc = new ExpandoMetaClass(EMCT_InvokeMethod.class, false, true)
         mc.initialize()
@@ -175,10 +161,9 @@ class ExpandoMetaClassTest {
         t.metaClass = mc
 
         assertEquals "bar!!", t.doStuff()
-        assertEquals "Foo!! hello", t.invokeMe("hello").toString()
+        assertEquals "Foo!! hello", t.invokeMe("hello")
     }
 
-    @Test
     void testOverrideSetProperty() {
         def mc = new ExpandoMetaClass(EMCT_GetProperty.class, false, true)
         mc.initialize()
@@ -206,7 +191,6 @@ class ExpandoMetaClassTest {
         assertEquals "bar", testValue
     }
 
-    @Test
     void testOverrideGetProperty() {
         def mc = new ExpandoMetaClass(EMCT_GetProperty.class, false, true)
         mc.initialize()
@@ -222,13 +206,12 @@ class ExpandoMetaClassTest {
         def t = new EMCT_GetProperty()
         t.metaClass = mc
 
-        assertEquals "foo bar", t.getProperty("bar").toString()
-        assertEquals "foo bar", t.bar.toString()
+        assertEquals "foo bar", t.getProperty("bar")
+        assertEquals "foo bar", t.bar
         assertEquals "Fred", t.getProperty("name")
         assertEquals "Fred", t.name
     }
 
-    @Test
     void testBooleanGetterWithClosure() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
         metaClass.initialize()
@@ -241,7 +224,6 @@ class ExpandoMetaClassTest {
         assert t.valid
     }
 
-    @Test
     void testAllowAdditionOfProperties() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
 
@@ -265,7 +247,6 @@ class ExpandoMetaClassTest {
         assertEquals "testagain", t.two
     }
 
-    @Test
     void testAllowAdditionOfMethods() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, false, true)
 
@@ -289,7 +270,6 @@ class ExpandoMetaClassTest {
         assertEquals "testagain", t.mySecondMethod()
     }
 
-    @Test
     void testForbiddenAdditionOfMethods() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -311,7 +291,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testPropertyGetterWithClosure() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -326,7 +305,6 @@ class ExpandoMetaClassTest {
         assertEquals "testme", t.something
     }
 
-    @Test
     void testPropertySetterWithClosure() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -345,7 +323,6 @@ class ExpandoMetaClassTest {
         assertEquals "test2", testSet
     }
 
-    @Test
     void testNewMethodOverloading() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -360,7 +337,6 @@ class ExpandoMetaClassTest {
         assertEquals 10, t.overloadMe(10)
     }
 
-    @Test
     void testOverloadExistingMethodAfterInitialize() {
         def t = new EMCT_Class()
 
@@ -377,7 +353,6 @@ class ExpandoMetaClassTest {
         assertEquals 11, t.doSomething(10)
     }
 
-    @Test
     void testOverloadExistingMethodBeforeInitialize() {
         def t = new EMCT_Class()
 
@@ -396,7 +371,6 @@ class ExpandoMetaClassTest {
         assertEquals 11, t.doSomething(10)
     }
 
-    @Test
     void testNewPropertyMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -425,7 +399,6 @@ class ExpandoMetaClassTest {
         assertEquals "test3", t2.something
     }
 
-    @Test
     void testCheckFailOnExisting() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
         try {
@@ -439,7 +412,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testCheckFailOnExistingConstructor() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
         try {
@@ -453,7 +425,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testCheckFailOnExistingStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
         try {
@@ -467,7 +438,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testNewStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
@@ -479,7 +449,6 @@ class ExpandoMetaClassTest {
         assertEquals "testme", EMCT_Class.myStaticMethod("blah")
     }
 
-    @Test
     void testReplaceStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
@@ -492,7 +461,6 @@ class ExpandoMetaClassTest {
 
     }
 
-    @Test
     void testNewZeroArgumentStaticMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
@@ -504,7 +472,6 @@ class ExpandoMetaClassTest {
         assertEquals "testme", EMCT_Class.myStaticMethod()
     }
 
-    @Test
     void testNewInstanceMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -520,7 +487,6 @@ class ExpandoMetaClassTest {
         assertEquals "testme", t.myMethod()
     }
 
-    @Test
     void testNewConstructor() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
@@ -539,7 +505,6 @@ class ExpandoMetaClassTest {
         GroovySystem.metaClassRegistry.removeMetaClass(EMCT_Class.class)
     }
 
-    @Test
     void testReplaceConstructor() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class, true)
 
@@ -556,7 +521,6 @@ class ExpandoMetaClassTest {
         GroovySystem.metaClassRegistry.removeMetaClass(EMCT_Class.class)
     }
 
-    @Test
     void testReplaceInstanceMethod() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -572,7 +536,6 @@ class ExpandoMetaClassTest {
         assertEquals "testme", t.existing2(var)
     }
 
-    @Test
     void testBorrowMethodFromAnotherClass() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -584,13 +547,12 @@ class ExpandoMetaClassTest {
         def t = new EMCT_Class()
         t.metaClass = metaClass
 
-        assertEquals "mine blah!", t.borrowMe("blah").toString()
-        assertEquals "mine blah+foo!", t.borrowMe("blah", "foo").toString()
+        assertEquals "mine blah!", t.borrowMe("blah")
+        assertEquals "mine blah+foo!", t.borrowMe("blah", "foo")
         // GROOVY-1993
         assertEquals "no args here!", t.borrowMeToo()
     }
 
-    @Test
     void testClosureWithOptionalArgs() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -602,11 +564,10 @@ class ExpandoMetaClassTest {
         def t = new EMCT_Class()
         t.metaClass = metaClass
 
-        assertEquals("blah + no param", t.withOptional("blah").toString())
-        assertEquals("blah + foo", t.withOptional("blah", "foo").toString())
+        assertEquals("blah + no param", t.withOptional("blah"))
+        assertEquals("blah + foo", t.withOptional("blah", "foo"))
     }
 
-    @Test
     void testBorrowByName() {
         def metaClass = new ExpandoMetaClass(EMCT_Class.class)
 
@@ -618,13 +579,11 @@ class ExpandoMetaClassTest {
         def t = new EMCT_Class()
         t.metaClass = metaClass
 
-        assertEquals "mine blah!", t.borrowMe("blah").toString()
+        assertEquals "mine blah!", t.borrowMe("blah")
         // GROOVY-1993
         assertEquals "no args here!", t.borrowMeToo()
-
     }
 
-    @Test
     void testAddIdenticalPropertyToChildAndParent() {
         ExpandoMetaClass.enableGlobally()
         doMethods(EMCT_SuperClass.class)
@@ -643,7 +602,6 @@ class ExpandoMetaClassTest {
         ExpandoMetaClass.disableGlobally()
     }
 
-    @Test
     void testMissingPropertyClosure() {
         assertScript """
             class Circle {
@@ -670,7 +628,6 @@ class ExpandoMetaClassTest {
         """
     }
 
-    @Test
     void testMissingMethodClosure() {
         assertScript """
             class Circle {
@@ -697,7 +654,6 @@ class ExpandoMetaClassTest {
         """
     }
 
-    @Test
     void testMissingMethodExceptionThrownFromMissingMethod() {
         assertScript """
            class Circle {
@@ -755,7 +711,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testGetProperty() {
         def x = new EMCT_SuperClass()
         def mc = x.metaClass
@@ -788,14 +743,13 @@ class ExpandoMetaClassTest {
         application = new Object()
         assertEquals("non-null application", x.prop)
         application = null
-        assertEquals("prop", x.prop.toString())
+        assertEquals("prop", x.prop)
         application = new Object()
-        assertEquals("prop", x.prop.toString())
+        assertEquals("prop", x.prop)
     }
 
     def application
 
-    @Test
     void testWithNull() {
         EMCT_SuperClass.metaClass = null
         ExpandoMetaClass.enableGlobally()
@@ -817,7 +771,6 @@ class ExpandoMetaClassTest {
         ExpandoMetaClass.disableGlobally()
     }
 
-    @Test
     void testInterfaceWithGetProperty() {
         EMCT_Implemented.metaClass.getProperty = { String name ->
             return "META " + delegate.class.metaClass.getMetaProperty(name).getProperty(delegate)
@@ -829,7 +782,6 @@ class ExpandoMetaClassTest {
         assertEquals "META js", x.format
     }
 
-    @Test
     void testPickMethodForVarg() {
         // as of 1.6 a metaClass is often the HandleMetaclass, which delegates
         // methods to an underlying metaclass. hasMethod is a Method on EMC
@@ -840,7 +792,6 @@ class ExpandoMetaClassTest {
         assert "".metaClass.pickMethod("trim")
     }
 
-    @Test
     void testEMCMetaClassProperty() {
         // GROOVY-2516
         try {
@@ -850,7 +801,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testDynamicAddedMethodWithGStringCall() {
         // GROOVY-4691
         assertScript """
@@ -876,7 +826,6 @@ class ExpandoMetaClassTest {
         def foo() { 2 }
     }
 
-    @Test
     void testPOJOMetaClassInterception() {
         String invoking = 'ha'
         try {
@@ -890,7 +839,6 @@ class ExpandoMetaClassTest {
         }
     }
 
-    @Test
     void testPOGOMetaClassInterception() {
         X entity = new X()
         try {

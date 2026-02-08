@@ -23,14 +23,14 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.control.SourceUnit;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
@@ -249,7 +249,7 @@ public final class ClassCompletionVerifierTest {
     }
 
     private void checkErrorCount(int count) {
-        assertEquals(count, source.getErrorCollector().getErrorCount(), buildErrorMessage(count));
+        assertEquals(buildErrorMessage(count), count, source.getErrorCollector().getErrorCount());
     }
 
     private String buildErrorMessage(int count) {
@@ -268,8 +268,8 @@ public final class ClassCompletionVerifierTest {
     }
 
     private void checkErrorMessage(String expectedErrorMessage) {
-        assertTrue(source.getErrorCollector().hasErrors(), "Expected an error message but none found.");
-        assertTrue(flattenErrorMessage().contains(expectedErrorMessage), "Expected message to contain <" + expectedErrorMessage + "> but was <" + flattenErrorMessage() + ">.");
+        assertTrue("Expected an error message but none found.", source.getErrorCollector().hasErrors());
+        assertTrue("Expected message to contain <" + expectedErrorMessage + "> but was <" + flattenErrorMessage() + ">.", flattenErrorMessage().contains(expectedErrorMessage));
     }
 
     private String flattenErrorMessage() {

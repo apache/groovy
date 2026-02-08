@@ -25,8 +25,8 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.syntax.Types
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.Before
+import org.junit.Test
 
 /**
  * Tests for {@link SecureASTCustomizer}.
@@ -36,7 +36,7 @@ final class SecureASTCustomizerTest {
     private final CompilerConfiguration configuration = new CompilerConfiguration()
     private final SecureASTCustomizer customizer = new SecureASTCustomizer()
 
-    @BeforeEach
+    @Before
     void setUp() {
         configuration.addCompilationCustomizers(customizer)
     }

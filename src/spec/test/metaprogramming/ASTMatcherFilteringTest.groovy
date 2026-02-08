@@ -19,6 +19,7 @@
 
 package metaprogramming
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer
@@ -30,18 +31,14 @@ import org.codehaus.groovy.macro.matcher.ASTMatcher
 import org.codehaus.groovy.transform.AbstractASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
-import org.junit.jupiter.api.Test
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 
-import static groovy.test.GroovyAssert.assertScript
+class ASTMatcherFilteringTest extends GroovyTestCase {
 
-class ASTMatcherFilteringTest {
-
-    @Test
     void testFilteringNodes() {
         assertScript '''
         // tag::jokingexample[]

@@ -18,11 +18,9 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy5396Bug {
+class Groovy5396Bug extends GroovyTestCase {
     void testClassAccessToPackageLocalPropertyInSuper() {
         assertScript """
             class GroovyBase extends AbstractBase {

@@ -18,19 +18,14 @@
  */
 package groovy.lang
 
+import groovy.test.GroovyTestCase;
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
-
-import static org.junit.jupiter.api.Assertions.assertEquals
-import static org.junit.jupiter.api.Assertions.assertTrue
-import static org.junit.jupiter.api.Assertions.fail
 
 /**
  * Provides unit tests for the <code>IntRange</code> class.
  */
-final class IntRangeTest {
+final class IntRangeTest extends GroovyTestCase {
 
-    @Test
     void testCreateTooBigRange() {
         assert new IntRange(1, Integer.MAX_VALUE).size() == Integer.MAX_VALUE // biggest allowed
         try {
@@ -45,18 +40,16 @@ final class IntRangeTest {
     /**
      * Tests providing invalid arguments to the protected constructor.
      */
-    @Test
     void testInvalidArgumentsToConstructor() {
         try {
             new IntRange(2, 1, true)
             fail("invalid range created")
         }
         catch (IllegalArgumentException ignore) {
-            assertTrue(true, "expected exception thrown")
+            assertTrue("expected exception thrown", true)
         }
     }
 
-    @Test
     void testSizeEdgeCases() {
         assert new IntRange(false, 0, 0).size() == 0
         assert new IntRange(true, 0, 0).size() == 1
@@ -69,7 +62,6 @@ final class IntRangeTest {
         assert new IntRange(false, false, 0, 1).size() == 0
     }
 
-    @Test
     void testSubListBorders() {
         // reminder: RangeInfo stores "to+1" for direct use in places like List#subList and CharSequence#subSequence
         new IntRange(true, true, 1, 5).subListBorders(-1).with{ assert it.from == 1 && it.to == 6 && !it.reverse }
@@ -85,29 +77,25 @@ final class IntRangeTest {
     /**
      * Tests getting the to and from values as <code>int</code>s.
      */
-    @Test
     void testGetToFromInt() {
         final int from = 3, to = 7
         final IntRange range = new IntRange(from, to)
-        assertEquals(from, range.getFromInt(), "wrong 'from'")
-        assertEquals(to, range.getToInt(), "wrong 'to'")
+        assertEquals("wrong 'from'", from, range.getFromInt())
+        assertEquals("wrong 'to'", to, range.getToInt())
     }
 
-    @Test
     void test_Step_ShouldNotOverflowForIntegerMaxValue() {
         (Integer.MAX_VALUE..Integer.MAX_VALUE).step(1) {
             assert it == Integer.MAX_VALUE
         }
     }
 
-    @Test
     void test_Step_ShouldNotOverflowForIntegerMinValue() {
         (Integer.MIN_VALUE..Integer.MIN_VALUE).step(-1) {
             assert it == Integer.MIN_VALUE
         }
     }
 
-    @Test
     void test_Step_ShouldNotOverflowForBigSteps(){
         (0..2000000000).step(1000000000) {
             assert it >= 0
@@ -118,7 +106,6 @@ final class IntRangeTest {
         }
     }
 
-    @Test
     void testInclusiveRangesWithNegativesAndPositives() {
         final a = [1, 2, 3, 4]
         assert a[-3..-2]   == [2, 3]
@@ -148,7 +135,6 @@ final class IntRangeTest {
         assert a[-5..<-5]  == []
     }
 
-    @Test
     void testInclusiveRangesWithNegativesAndPositivesStrings() {
         def items = 'abcde'
         assert items[1..-2]    == 'bcd'
@@ -176,7 +162,6 @@ final class IntRangeTest {
         assert items[-2<..<-3] == ''
     }
 
-    @Test
     void testInclusiveRangesWithNegativesAndPositivesPrimBoolArray() {
         boolean[] bs = [true, false, true, true]
         assert bs[-3..-2]   == [false, true]
@@ -200,7 +185,6 @@ final class IntRangeTest {
         assert bs[-2<..<-3] == []
     }
 
-    @Test
     void testInclusiveRangesWithNegativesAndPositivesBitset() {
         int bits = 0b100001110100010001111110
         int numBits = 24
@@ -232,7 +216,6 @@ final class IntRangeTest {
     }
 
     // GROOVY-8704
-    @Test
     void testSerialization() {
         def baos = new ByteArrayOutputStream()
         baos.withObjectOutputStream { oos -> oos.writeObject([4..1, 2..<5]) }
@@ -240,7 +223,6 @@ final class IntRangeTest {
         bais.withObjectInputStream { ois -> assert ois.readObject() == [4..1, 2..<5] }
     }
 
-    @Test
     void testHashCode() {
         def maxRange = new IntRange(1,Integer.MAX_VALUE)
         def rangeWithName = [:]
@@ -249,7 +231,6 @@ final class IntRangeTest {
         assertEquals(rangeWithName.get(dupRange), "maxRange")
     }
 
-    @Test
     void testEquals() {
         IntRange r1 = new IntRange(0, 10)
         IntRange r2 = new IntRange(0, 10)
@@ -289,7 +270,6 @@ final class IntRangeTest {
     }
 
     // GROOVY-10496
-    @Test
     void testBy() {
         IntRange ir = new IntRange(5, 10)
         assert ir == [5, 6, 7, 8, 9, 10]
@@ -307,7 +287,6 @@ final class IntRangeTest {
 
     // GROOVY-10496
     @CompileStatic
-    @Test
     void testSC() {
         IntRange ir = 1<..<5
         assert ir == [2, 3, 4]

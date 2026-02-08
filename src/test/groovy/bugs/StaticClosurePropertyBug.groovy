@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class StaticClosurePropertyBug {
+class StaticClosurePropertyBug extends GroovyTestCase {
 
     static def out = {System.out.println(it)}
 
-    @Test
     void testCallStaticClosure() {
         callStaticClosure()
     }

@@ -20,7 +20,7 @@ package testingguide
 
 import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
-import org.junit.jupiter.api.AfterEach
+import groovy.test.GroovyTestCase
 
 // tag::map_coercion[]
         class TranslationService {
@@ -57,13 +57,13 @@ import org.junit.jupiter.api.AfterEach
 
 // end::emc2[]
 
-class MockingExampleTests {
+class MockingExampleTests extends GroovyTestCase {
 
-    @AfterEach
     void tearDown() {
         GroovySystem.metaClassRegistry.setMetaClass(TranslationService, null)
         GroovySystem.metaClassRegistry.setMetaClass(BaseService, null)
         GroovySystem.metaClassRegistry.setMetaClass(Book, null)
+        super.tearDown()
     }
 
     void testMapCoercion() {

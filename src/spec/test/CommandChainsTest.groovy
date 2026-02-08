@@ -1,3 +1,4 @@
+import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -17,13 +18,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
-class CommandChainsTest {
-    @Test
+class CommandChainsTest extends GroovyTestCase {
     void testCommandChainEquivalence() {
         assertScript '''String left = 'left'
 String right = 'right'
@@ -260,7 +255,6 @@ assert m1.thing == 'cookies'
 '''
     }
 
-    @Test
     void testCommandChainImplementation() {
         assertScript '''
 // tag::commandchain_impl1[]

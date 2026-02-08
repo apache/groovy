@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy7920Bug {
-    @Test
+class Groovy7920Bug extends GroovyTestCase {
     void testGetAtViaInterface() {
         assertScript '''
             interface Foo {}
@@ -38,7 +34,6 @@ class Groovy7920Bug {
         '''
     }
 
-    @Test
     void testGetAtViaSuper() {
         assertScript '''
             class Foo {}
@@ -52,7 +47,6 @@ class Groovy7920Bug {
         '''
     }
 
-    @Test
     void testGetAtNonNumeric() {
         assertScript '''
             @groovy.transform.CompileStatic

@@ -18,12 +18,9 @@
  */
 package bugs.groovy8953
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-class SyntheticParameterAnnotationsBug {
-    @Test
+class SyntheticParameterAnnotationsBug extends GroovyTestCase {
     void testEnumConstructorWithSyntheticParamUsageWithAsmResolvingDisabled() {
         assertScript '''
             import org.codehaus.groovy.control.CompilerConfiguration

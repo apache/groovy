@@ -18,23 +18,17 @@
  */
 package org.codehaus.groovy.transform
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
 import groovy.transform.Memoized
-import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.Assert.*
 
 /**
  * Unit tests for {@link MemoizedASTTransformation}.
  */
+class MemoizedASTTransformationTest extends GroovyTestCase {
 
-import static org.junit.jupiter.api.Assertions.assertTrue
-import static org.junit.jupiter.api.Assertions.fail
-
-class MemoizedASTTransformationTest {
-
-    @Test
     void testMethodWithoutParams() {
         [new MemoizedTestClass(), new MemoizedTestClass3()].each {
             def ins = new MemoizedTestClass3()
@@ -47,7 +41,6 @@ class MemoizedASTTransformationTest {
         }
     }
 
-    @Test
     void testMethodWithParams() {
         [new MemoizedTestClass(), new MemoizedTestClass3()].each {
             def ins = new MemoizedTestClass3()
@@ -64,7 +57,6 @@ class MemoizedASTTransformationTest {
         }
     }
 
-    @Test
     void testPrivateMethodWithParams() {
         [new MemoizedTestClass(), new MemoizedTestClass3()].each {
             def ins = new MemoizedTestClass3()
@@ -79,7 +71,6 @@ class MemoizedASTTransformationTest {
         }
     }
 
-    @Test
     void testMethodWithException() {
         [new MemoizedTestClass(), new MemoizedTestClass3()].each {
             def ins = new MemoizedTestClass3()
@@ -104,7 +95,6 @@ class MemoizedASTTransformationTest {
         }
     }
 
-    @Test
     void testConflictName() {
         [new MemoizedTestClass(), new MemoizedTestClass3()].each {
             def ins = new MemoizedTestClass3()
@@ -115,7 +105,6 @@ class MemoizedASTTransformationTest {
         }
     }
 
-    @Test
     void testMaxCacheSize() {
         MemoizedTestClass2 ins = new MemoizedTestClass2()
         assertTrue(ins.getValue('prop1') == 'prop1_value')
@@ -134,7 +123,6 @@ class MemoizedASTTransformationTest {
         assertEquals(ins.counter, 4)
     }
 
-    @Test
     void testProtectedCacheSize() {
         // Test the only method call
         MemoizedTestClass2 ins = new MemoizedTestClass2()
@@ -144,7 +132,6 @@ class MemoizedASTTransformationTest {
         assertEquals(ins.counter, 2)
     }
 
-    @Test
     void testProtectedCacheSizeMaxCacheSize() {
         // Test the only method call
         MemoizedTestClass2 ins = new MemoizedTestClass2()
@@ -154,19 +141,16 @@ class MemoizedASTTransformationTest {
         assertEquals(ins.counter, 2)
     }
 
-    @Test
     void testInheritedMemoizedMethod() {
         def ins = new SubClassOfMemoizedTestClass()
         assertEquals(ins.methodWithoutParams(), 123)
     }
 
-    @Test
     void testVarargsMemoizedMethod() {
         def ins = new MemoizedTestClassWithVarargs()
         assertEquals(ins.getValue(12, 'foo', 'boo'), 'foo')
     }
 
-    @Test
     void testMultiDimensionalArrayMemoizedMethod() {
         def ins = new MemoizedTestClassWithMultiDimensionalArray()
         assertEquals(ins.getValue(new String[2][2]), 'foo')
@@ -174,7 +158,6 @@ class MemoizedASTTransformationTest {
 
     // -- static methods -- //
 
-    @Test
     void testStaticMethodWithoutParams() {
         assertEquals(MemoizedTestClass.staticMethodWithoutParams(), 'foo')
         assertEquals(MemoizedTestClass.staticMethodWithoutParamsCounter, 1)
@@ -182,7 +165,6 @@ class MemoizedASTTransformationTest {
         assertEquals(MemoizedTestClass.staticMethodWithoutParamsCounter, 1)
     }
 
-    @Test
     void testStaticMethodWithParams() {
         assertEquals(MemoizedTestClass.staticMethodWithParams(2, 'foo'), 'foofoo')
         assertEquals(MemoizedTestClass.staticMethodWithParamsCounter, 1)
@@ -194,7 +176,6 @@ class MemoizedASTTransformationTest {
         assertEquals(MemoizedTestClass.staticMethodWithParamsCounter, 2)
     }
 
-    @Test
     void testPrivateStaticMethodWithParams() {
         assertEquals(MemoizedTestClass.privateStaticMethodWithParams(20, 5), 15)
         assertEquals(MemoizedTestClass.privateStaticMethodWithParamsCounter, 1)
@@ -212,7 +193,6 @@ class MemoizedASTTransformationTest {
         assertEquals(MemoizedTestClass.privateStaticMethodWithParamsCounter, 3)
     }
 
-    @Test
     void testMemoizedAIC_Groovy8043() {
         assertScript '''
             class A {}
@@ -226,7 +206,6 @@ class MemoizedASTTransformationTest {
     }
 
     // GROOVY-8326
-    @Test
     void testMemoizedMethodWithOverrideAnnotation() {
         assertScript '''
             class A {
@@ -241,7 +220,6 @@ class MemoizedASTTransformationTest {
     }
 
     // GROOVY-8367
-    @Test
     void testMemoizedInInnerClass() {
         assertScript '''
             import groovy.transform.Memoized

@@ -18,13 +18,11 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class NullPropertyTest {
+class NullPropertyTest extends GroovyTestCase {
     def wensleydale = null
 
-    @Test
     void testNullProperty() {
         assert wensleydale == null
     }

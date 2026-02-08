@@ -18,14 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class BytecodeBug {
+class BytecodeBug extends GroovyTestCase {
 
-    @Test
     void testTedsBytecodeBug() {
         //def a = ['tom','dick','harry']
         def a = [1, 2, 3, 4]

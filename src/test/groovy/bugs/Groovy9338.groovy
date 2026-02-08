@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -39,7 +39,7 @@ final class Groovy9338 {
             }
             test()
         '''
-        assert err.message =~ /Cannot call \w+#meth\(java.lang.Class<\? extends java.lang.CharSequence>\) with arguments \[java.lang.Class<\?>\]/
+        assert err =~ /Cannot call \w+#meth\(java.lang.Class<\? extends java.lang.CharSequence>\) with arguments \[java.lang.Class<\?>\]/
     }
 
     @Test
@@ -55,6 +55,6 @@ final class Groovy9338 {
             }
             test()
         '''
-        assert err.message =~ /Cannot call \w+#meth\(java.lang.Class<\? super java.lang.CharSequence>\) with arguments \[java.lang.Class<\?>\]/
+        assert err =~ /Cannot call \w+#meth\(java.lang.Class<\? super java.lang.CharSequence>\) with arguments \[java.lang.Class<\?>\]/
     }
 }

@@ -19,8 +19,8 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import org.junit.Ignore
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -44,7 +44,7 @@ final class Groovy8063 {
         '''
     }
 
-    @Test @Disabled
+    @Test @Ignore
     void testTypeAnnotationWithUnqualifiedInnerClassReference() {
         def err = shouldFail '''
             @interface Anno {
@@ -59,6 +59,6 @@ final class Groovy8063 {
             new Outer()
         '''
 
-        assert err.message =~ / X /
+        assert err =~ / X /
     }
 }

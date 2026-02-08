@@ -17,10 +17,13 @@
  *  under the License.
  */
 package org.codehaus.groovy.runtime.trampoline
+
+import groovy.test.GroovyTestCase
+
 /**
  * Test for the trampoline capabilities of closures.
  */
-class TrampolineTest {
+class TrampolineTest extends GroovyTestCase {
     public void testFactorial() {
         def fact
         fact = { int n, BigInteger accumulator ->

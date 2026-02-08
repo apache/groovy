@@ -18,21 +18,15 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests for method missing handling in Groovy
  *
  * @since 1.5
  */
-class MethodMissingTest {
+class MethodMissingTest extends GroovyTestCase {
 
-    @AfterEach
     void tearDown() {
         MMTest.metaClass = null
         MMTest2.metaClass = null
@@ -41,7 +35,6 @@ class MethodMissingTest {
         MMTest6.metaClass = null
     }
 
-    @Test
     void testOverrideStaticMethodMissingTwice() {
         MMTest2.metaClass.'static'.methodMissing = { String name, args -> "foo" }
         assertEquals "foo",MMTest2.doStuff()
@@ -49,14 +42,12 @@ class MethodMissingTest {
         assertEquals "bar",MMTest2.doStuff()
     }
 
-    @Test
     void testSimpleMethodMissing() {
         def t = new MMTest()
         assertEquals "world", t.hello()
         assertEquals "foo", t.stuff()
     }
 
-    @Test
     void testMethodMissingViaMetaClass() {
         def t1 = new MMTest2()
         shouldFail(MissingMethodException) {
@@ -71,10 +62,9 @@ class MethodMissingTest {
         assertEquals "foo", t2.stuff()
     }
 
-    @Test
     void testMethodMissingWithRegistration() {
         MMTest2.metaClass.methodMissing = { String name, args ->
-             MMTest2.metaClass."$name" = {-> "bar" }
+             MMTest2.metaClass."$name" = {-> "bar" }        
             "foo"
         }
         def t2 = new MMTest2()
@@ -84,11 +74,10 @@ class MethodMissingTest {
     }
 
 
-    @Test
     void testStaticMethodMissingViaMetaClass() {
         assertEquals "world", MMTest3.hello()
         shouldFail(MissingMethodException) {
-            MMTest3.stuff()
+            MMTest3.stuff()            
         }
         MMTest3.metaClass.'static'.methodMissing = { String name, args->
              "foo"
@@ -97,7 +86,6 @@ class MethodMissingTest {
         assertEquals "foo", MMTest3.stuff()
     }
 
-    @Test
     void testMethodMissingWithInheritance() {
          assertEquals "world",MMTest6.hello()
          assertEquals "cruel world",MMTest6.goodbye()
@@ -113,7 +101,6 @@ class MethodMissingTest {
     }
 
     // GROOVY-4701
-    @Test
     void testMethodMissingExceptionWithBrokenToString() {
         def exception = new MissingMethodException("methodName", getClass(), new Broken())
         def sw = new StringWriter()

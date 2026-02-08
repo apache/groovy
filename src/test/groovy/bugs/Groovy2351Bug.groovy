@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-
-class Groovy2351Bug {
-   @Test
+class Groovy2351Bug extends GroovyTestCase {
    void testVarArgs () {
 
        def a = new VarArgs()

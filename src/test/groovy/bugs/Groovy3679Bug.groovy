@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy3679Bug {
-    @Test
+class Groovy3679Bug extends GroovyTestCase {
     void testMapEntryWinOverPvtAndPkgPrivateClassFields() {
         // map entry should win over a package-private field
         def map1 = new HashMap()

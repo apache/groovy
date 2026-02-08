@@ -18,13 +18,10 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
-
-class Groovy4188Bug {
-    @Test
+class Groovy4188Bug extends GroovyTestCase {
     void testClassProvidingMetaClassFieldOfWrongType() {
         try {
             new GroovyShell().parse """

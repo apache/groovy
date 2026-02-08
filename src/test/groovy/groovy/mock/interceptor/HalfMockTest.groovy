@@ -18,19 +18,16 @@
  */
 package groovy.mock.interceptor
 
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class HalfMockTest {
+class HalfMockTest extends GroovyTestCase {
 
-    @BeforeEach
     void setUp() {
         Baz.constructorCalls = 0
         Baz.staticExistsCalls = 0
         Baz.existsCalls = 0
     }
 
-    @Test
     void testCallsConstructorOfMockedObject() {
         def mock = new MockFor(Baz)
         mock.use {
@@ -39,7 +36,6 @@ class HalfMockTest {
         assert Baz.constructorCalls == 1
     }
 
-    @Test
     void testMocksNonExistingMethods() {
         def mock = new MockFor(Baz)
         mock.demand.doesntExist() { 'testMocksNonExistingMethods' }
@@ -49,7 +45,6 @@ class HalfMockTest {
         }
     }
 
-    @Test
     void testCallsExistingMethodsIfIgnored() {
         def mock = new MockFor(Baz)
         mock.ignore('exists')
@@ -60,7 +55,6 @@ class HalfMockTest {
         assert Baz.existsCalls == 1
     }
 
-    @Test
     void testMocksExistingMethods() {
         def mock = new MockFor(Baz)
         mock.demand.exists() { 'testMocksExistingMethods' }
@@ -71,7 +65,6 @@ class HalfMockTest {
         assert Baz.existsCalls == 0
     }
 
-    @Test
     void testMocksNonExistingStaticMethods() {
         def mock = new MockFor(Baz)
         mock.demand.staticDoesntExist() { 'testMocksNonExistingStaticMethods' }
@@ -81,7 +74,6 @@ class HalfMockTest {
         }
     }
 
-    @Test
     void testCallsExistingStaticMethodsIfIgnored() {
         def mock = new MockFor(Baz)
         mock.ignore('staticExists')
@@ -92,7 +84,6 @@ class HalfMockTest {
         assert Baz.staticExistsCalls == 1
     }
 
-    @Test
     void testMocksNonExistingProperties() {
         def mock = new MockFor(Baz)
         mock.demand.setNonExistingProperty() {}
@@ -104,7 +95,6 @@ class HalfMockTest {
         }
     }
 
-    @Test
     void testAccessesExistingPropertiesIfIgnored() {
         def mock = new MockFor(Baz)
         mock.ignore(~'[sg]etExistingProperty')
@@ -115,7 +105,6 @@ class HalfMockTest {
         }
     }
 
-    @Test
     void testAccessesExistingInheritedPropertiesIfIgnored() {
         def mock = new MockFor(Bar)
         mock.ignore(~'[sg]etExistingProperty')

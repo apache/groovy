@@ -93,8 +93,8 @@ final class PackageScopeTransformTest {
         assertScript '''
             import groovy.transform.PackageScope
             import static java.lang.reflect.Modifier.*
-            import static groovy.transform.PackageScopeTarget.*
             import static groovy.test.GroovyAssert.shouldFail
+            import static groovy.transform.PackageScopeTarget.*
 
             @PackageScope(FIELDS) class C {
                 C() {}
@@ -126,6 +126,7 @@ final class PackageScopeTransformTest {
         assertScript '''
             import groovy.transform.PackageScope
             import static java.lang.reflect.Modifier.*
+            import static groovy.test.GroovyAssert.shouldFail
             import static groovy.transform.PackageScopeTarget.*
 
             @PackageScope(METHODS) class C {
@@ -155,6 +156,7 @@ final class PackageScopeTransformTest {
         assertScript '''
             import groovy.transform.PackageScope
             import static java.lang.reflect.Modifier.*
+            import static groovy.test.GroovyAssert.shouldFail
             import static groovy.transform.PackageScopeTarget.*
 
             @PackageScope([CLASS, CONSTRUCTORS, METHODS]) class C {

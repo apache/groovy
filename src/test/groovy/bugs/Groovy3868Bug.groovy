@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy3868Bug {
-    @Test
+class Groovy3868Bug extends GroovyTestCase {
     void testAsTypeCallWithPrimitiveType() {
         callAndcheckResults(Long)
         callAndcheckResults(Integer)

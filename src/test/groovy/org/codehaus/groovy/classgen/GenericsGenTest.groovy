@@ -18,13 +18,11 @@
  */
 package org.codehaus.groovy.classgen
 
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.tools.FileSystemCompiler
-import org.junit.jupiter.api.AfterEach
+import groovy.test.GroovyTestCase
+import org.codehaus.groovy.tools.*
+import org.codehaus.groovy.control.*
 
-import static org.junit.jupiter.api.Assertions.assertNotNull
-
-class GenericsGenTest {
+class GenericsGenTest extends GroovyTestCase {
 
     void testCompile() {
         File dir = createTempDir("groovy-src-", "-src")
@@ -79,7 +77,6 @@ class GenericsGenTest {
 
     private filesToDelete = []
 
-    @AfterEach
     void tearDown() {
         filesToDelete.each {file ->
             if (file instanceof File) {

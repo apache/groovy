@@ -18,10 +18,9 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class DynamicMemberTest {
+class DynamicMemberTest extends GroovyTestCase {
   def aTestMethod(o){o}
   def aProperty
 
@@ -67,7 +66,6 @@ class DynamicMemberTest {
     assert cl("String") == "String"
   }
 
-  @Test
   void testNewLine() {
       def x = 1
       def y = x

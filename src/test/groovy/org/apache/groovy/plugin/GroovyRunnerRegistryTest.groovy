@@ -18,12 +18,11 @@
  */
 package org.apache.groovy.plugin
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.shouldFail
 import static java.util.Collections.emptyMap
 
-class GroovyRunnerRegistryTest {
+class GroovyRunnerRegistryTest extends GroovyTestCase {
 
     Map<String, GroovyRunner> knownRunners = [
             Junit3TestRunner: DefaultRunners.junit3TestRunner(),
@@ -33,7 +32,6 @@ class GroovyRunnerRegistryTest {
 
     GroovyRunnerRegistry registry = new GroovyRunnerRegistry(knownRunners)
 
-    @Test
     void testRegistryContainsDefaultRunners() {
         for (runner in GroovyRunnerRegistry.getInstance()) {
             knownRunners.remove(runner.getClass().getSimpleName())
@@ -41,7 +39,6 @@ class GroovyRunnerRegistryTest {
         assert knownRunners.isEmpty()
     }
 
-    @Test
     void testDefaultRunnersAreLoaded() {
         def reg = GroovyRunnerRegistry.getInstance()
         reg.clear()
@@ -49,7 +46,6 @@ class GroovyRunnerRegistryTest {
         testRegistryContainsDefaultRunners()
     }
 
-    @Test
     void testCustomRunner() {
         DummyRunner customRunner = new DummyRunner()
         GroovyRunnerRegistry realRegistry = GroovyRunnerRegistry.getInstance()
@@ -62,36 +58,30 @@ class GroovyRunnerRegistryTest {
         }
     }
 
-    @Test
     void testSize() {
         assert registry.size() == knownRunners.size()
     }
 
-    @Test
     void testIsEmpty() {
         assert !registry.isEmpty()
         assert new GroovyRunnerRegistry(emptyMap()).isEmpty()
     }
 
-    @Test
     void testContainsKey() {
         assert registry.containsKey('Junit4TestRunner')
         assert !registry.containsKey(null)
     }
 
-    @Test
     void testContainsValue() {
         assert registry.containsValue(knownRunners.get('Junit4TestRunner'))
         assert !registry.containsValue(null)
     }
 
-    @Test
     void testGet() {
         assert registry.get('Junit4TestRunner') == knownRunners.get('Junit4TestRunner')
         assert !registry.get(null)
     }
 
-    @Test
     void testPut() {
         DummyRunner runner = new DummyRunner()
         registry.put('DummyRunner', runner)
@@ -104,7 +94,6 @@ class GroovyRunnerRegistryTest {
         assert !registry.put(null, null)
     }
 
-    @Test
     void testRemove() {
         DummyRunner runner = new DummyRunner()
         registry.put('DummyRunner', runner)
@@ -114,7 +103,6 @@ class GroovyRunnerRegistryTest {
         assert !registry.remove(null)
     }
 
-    @Test
     void testClear() {
         registry.put('DummyRunner', new DummyRunner())
         assert registry.size() == knownRunners.size() + 1
@@ -122,7 +110,6 @@ class GroovyRunnerRegistryTest {
         assert registry.size() == knownRunners.size()
     }
 
-    @Test
     void testPutAll() {
         shouldFail(NullPointerException) {
             registry.putAll(null as Map<String, GroovyRunner>)
@@ -136,7 +123,6 @@ class GroovyRunnerRegistryTest {
         assert registry.size() == knownRunners.size() + 1
     }
 
-    @Test
     void testAsIterable() {
         Iterator itr = registry.iterator()
         assert itr.hasNext()
@@ -146,7 +132,6 @@ class GroovyRunnerRegistryTest {
         }
     }
 
-    @Test
     void testValues() {
         Collection<GroovyRunner> values = registry.values()
         assert values.size() == 3
@@ -156,7 +141,6 @@ class GroovyRunnerRegistryTest {
         }
     }
 
-    @Test
     void testKeySet() {
         Set<String> keySet = registry.keySet()
         assert keySet.size() == 3
@@ -166,7 +150,6 @@ class GroovyRunnerRegistryTest {
         }
     }
 
-    @Test
     void testEntrySet() {
         Set<Map.Entry<String, GroovyRunner>> entries = registry.entrySet()
         assert entries.size() == 3

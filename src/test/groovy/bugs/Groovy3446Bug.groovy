@@ -18,10 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class Groovy3446Bug {
-    @Test
+import static java.lang.System.currentTimeMillis
+
+class Groovy3446Bug extends GroovyTestCase {
     void testLocalMethodFavoredOverStaticallyImportedMethod() {
         assert currentTimeMillis() == "local method called"
     }

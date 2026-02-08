@@ -18,12 +18,10 @@
  */
 package groovy.swing.model
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class TableModelTest extends GroovyTestCase {
 
-class TableModelTest {
-
-    @Test
     void testTableModel() {
         def list = [ ['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta']]
 

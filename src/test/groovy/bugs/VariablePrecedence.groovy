@@ -18,14 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class VariblePrecedence extends GroovyTestCase {
 
-
-class VariblePrecedence {
-
-    @Test
     void testVariablePrecedence() {
 
         assertScript( """
@@ -58,7 +54,6 @@ class VariblePrecedence {
 
     }
 
-    @Test
     void testVariablePrecedenceInScript_FAILS() {
         assertScript( """
             c = { x -> assert x == 1; assert y == 93; }

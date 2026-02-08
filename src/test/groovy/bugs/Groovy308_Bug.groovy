@@ -18,13 +18,14 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
+
+import java.io.*
 
 /**
  */
-class Groovy308_Bug {
+class Groovy308_Bug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def out = new StringWriter()
         out << "hello " << "world!"

@@ -18,13 +18,11 @@
  */
 package groovy.io
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.nio.CharBuffer
 
-import static groovy.test.GroovyAssert.shouldFail
-
-class LineColumnReaderTest {
+class LineColumnReaderTest extends GroovyTestCase {
 
     String text = '''L'invitation au voyage
 
@@ -78,7 +76,6 @@ Luxe, calme et volupté.'''
 
     def reader = new LineColumnReader(new StringReader(text))
 
-    @Test
     void testReadLine() {
         reader.withReader { LineColumnReader r ->
             assert r.readLine() == "L'invitation au voyage"
@@ -90,7 +87,6 @@ Luxe, calme et volupté.'''
         }
     }
 
-    @Test
     void testReadLineWholeFile() {
         reader.withReader { LineColumnReader r ->
             int linesRead = 0
@@ -105,7 +101,6 @@ Luxe, calme et volupté.'''
         }
     }
 
-    @Test
     void testSkip() {
         reader.withReader { LineColumnReader r ->
             r.skip(13)
@@ -113,7 +108,6 @@ Luxe, calme et volupté.'''
         }
     }
 
-    @Test
     void testWindowsNewLine() {
         def reader = new LineColumnReader(new StringReader("12345\r\nABCDEF\r1234"))
         reader.withReader { LineColumnReader r ->
@@ -126,7 +120,6 @@ Luxe, calme et volupté.'''
         }
     }
 
-    @Test
     void testReadCharBuffer() {
         shouldFail(UnsupportedOperationException) {
             reader.withReader { LineColumnReader r ->

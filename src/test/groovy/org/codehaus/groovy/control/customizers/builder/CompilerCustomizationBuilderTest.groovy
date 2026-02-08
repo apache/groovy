@@ -19,25 +19,23 @@
 package org.codehaus.groovy.control.customizers.builder
 
 import groovy.mock.interceptor.StubFor
+import groovy.test.GroovyTestCase
 import groovy.transform.ToString
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.codehaus.groovy.transform.ToStringASTTransformation
+import org.codehaus.groovy.control.customizers.SecureASTCustomizer
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.codehaus.groovy.control.customizers.SecureASTCustomizer
-import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
-import org.codehaus.groovy.transform.ToStringASTTransformation
-import org.junit.jupiter.api.Test
-
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import org.codehaus.groovy.control.customizers.SourceAwareCustomizer
+import org.codehaus.groovy.control.CompilerConfiguration
 
 /**
  * Test cases for {@link CompilerCustomizationBuilder}
  */
-class CompilerCustomizationBuilderTest {
-    @Test
+class CompilerCustomizationBuilderTest extends GroovyTestCase {
     void testAstCustomizerBuilder() {
         def builder = new CompilerCustomizationBuilder()
         def cz = builder.ast(ToString)
@@ -50,7 +48,6 @@ class CompilerCustomizationBuilderTest {
         assert cz.annotationNode.getMember('includeNames').text == 'true'
     }
 
-    @Test
     void testSecureASTCustomizerBuilder() {
         def builder = new CompilerCustomizationBuilder()
         def cz = builder.secureAst {
@@ -70,7 +67,6 @@ class CompilerCustomizationBuilderTest {
 
     }
 
-    @Test
     void testCustomizerArray() {
         def builder = new CompilerCustomizationBuilder()
         def cz = builder.customizers {
@@ -83,7 +79,6 @@ class CompilerCustomizationBuilderTest {
         assert cz[1] instanceof SecureASTCustomizer
     }
 
-    @Test
     void testImportBuilder() {
         def builder = new CompilerCustomizationBuilder()
         // regular imports using strings
@@ -180,7 +175,6 @@ class CompilerCustomizationBuilderTest {
         assert cz.imports[0].alias == 'pi'
     }
 
-    @Test
     void testSourceAwareCustomizerBuilder() {
         def builder = new CompilerCustomizationBuilder()
         def cz = builder.source {
@@ -308,7 +302,6 @@ class CompilerCustomizationBuilderTest {
 
     }
 
-    @Test
     void testInlinedCustomizerFactory() {
         def builder = new CompilerCustomizationBuilder()
         def foo = 0
@@ -328,7 +321,6 @@ class CompilerCustomizationBuilderTest {
         assert astNode.methods.find { it.name == 'm' }
     }
 
-    @Test
     void testCompilerConfigurationBuilderStyle() {
         def config = new CompilerConfiguration()
         // the "customizers" method is added through a custom metaclass
@@ -341,7 +333,6 @@ class CompilerCustomizationBuilderTest {
         assert result == 'A(1)'
     }
 
-    @Test
     void testCompilerConfigurationBuilderWithSecureAstCustomizer() {
         def config = new CompilerConfiguration()
         CompilerCustomizationBuilder.withConfig(config) {
@@ -353,7 +344,6 @@ class CompilerCustomizationBuilderTest {
     }
 
     // GROOVY-9035
-    @Test
     void testEmptySourceAwareCustomizerBuilder() {
         def builder = new CompilerCustomizationBuilder()
         def cz = builder.source {

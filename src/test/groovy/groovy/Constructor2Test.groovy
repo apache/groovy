@@ -18,14 +18,12 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Constructor2Test {
+class Constructor2Test extends GroovyTestCase {
 
     Constructor2Test() { }
 
-    @Test
     void testConstructor() {
         def foo = new Constructor2Test()
         assert foo != null

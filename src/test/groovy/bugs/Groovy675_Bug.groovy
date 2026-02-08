@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy675_Bug {
-    @Test
+class Groovy675_Bug extends GroovyTestCase {
     void testStringAndGString() {
     assert "\\"!="\\\\"
     assert "\\\$"=="\\"+"\$"

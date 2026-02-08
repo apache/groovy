@@ -18,7 +18,7 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class Groovy3406 {
 

@@ -19,7 +19,7 @@
 package groovy.beans
 
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import java.beans.PropertyChangeListener
 

@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class KeywordsInPropertyNamesTest extends GroovyTestCase {
 
-class KeywordsInPropertyNamesTest {
-
-    @Test
     void testKeywords() {
         def value = "returnValue"
         StaticAndDefaultClass.metaClass.static.dynStaticMethod = {-> value }
@@ -36,7 +34,6 @@ class KeywordsInPropertyNamesTest {
         assert String.package.name == 'java.lang'
     }
 
-    @Test
     void testModifierKeywordsAsMapKeys() {
         def map = [
                 private: 1, public: 2, protected: 3, static: 4,
@@ -50,7 +47,6 @@ class KeywordsInPropertyNamesTest {
         ]
     }
 
-    @Test
     void testBuiltInTypeKeywordsAsExpandoKeys() {
         def e = new Expando(void: 1, boolean: 2, byte: 3, char: 4, short: 5, int: 6)
         e.float = 7
@@ -63,7 +59,6 @@ class KeywordsInPropertyNamesTest {
         ]
     }
 
-    @Test
     void testMapWithKeywords() {
         def d = new Date()
         def map = [

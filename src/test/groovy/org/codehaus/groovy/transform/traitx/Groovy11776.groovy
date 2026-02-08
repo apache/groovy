@@ -20,7 +20,7 @@ package org.codehaus.groovy.transform.traitx
 
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.junit.jupiter.api.Test
+import org.junit.Test
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.CheckClassAdapter
 

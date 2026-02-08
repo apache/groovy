@@ -18,12 +18,11 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.text.SimpleDateFormat
 
-class Groovy5687Bug {
-    @Test
+class Groovy5687Bug extends GroovyTestCase {
     void testStaticAccessToInterfaceConstant() {
         assert DateTimeUtils.convertMilitaryTimeToAmPm('20:30') == '8:30pm'
     }

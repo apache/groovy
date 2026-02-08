@@ -18,14 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class Groovy4457GenericTypeDeclarationLeakTest extends GroovyTestCase {
 
-
-class Groovy4457GenericTypeDeclarationLeakTest {
-
-    @Test
     void testLeak() {
         assertScript """
             class A<String> {}
@@ -41,7 +37,6 @@ class Groovy4457GenericTypeDeclarationLeakTest {
         """
     }
 
-    @Test
     void testLeakWithInnerClass() {
         assertScript """
             class A<String> {
@@ -54,7 +49,6 @@ class Groovy4457GenericTypeDeclarationLeakTest {
         """
     }
 
-    @Test
     void testNonStaticInnerClassGenerics() {
         assertScript '''
             class A<T> {

@@ -18,13 +18,9 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class ExpandoMetaClassConstructorTest {
-    @Test
+class ExpandoMetaClassConstructorTest extends GroovyTestCase {
     void testVariousConstructorForms() {
         try {
             assertScript """

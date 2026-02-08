@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -31,7 +31,7 @@ final class Groovy10113 {
             class C<T extends T> {
             }
         '''
-        assert err.message =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
+        assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
     }
 
     @Test
@@ -41,7 +41,7 @@ final class Groovy10113 {
             }
         '''
         // TODO:                 ^ error is here but refers to T; is there a way to move the error or improve it
-        assert err.message =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
+        assert err =~ /Cycle detected: the type T cannot extend.implement itself or one of its own member types/
     }
 
     @Test // GROOVY-10125
@@ -61,7 +61,7 @@ final class Groovy10113 {
                 }
             }
         '''
-        assert err.message =~ /Cycle detected: the type C cannot extend.implement itself or one of its own member types/
+        assert err =~ /Cycle detected: the type C cannot extend.implement itself or one of its own member types/
     }
 
     @Test
@@ -74,7 +74,7 @@ final class Groovy10113 {
             class D extends C.Inner {
             }
         '''
-        assert err.message =~ /Cycle detected: a cycle exists in the type hierarchy between D and C/
+        assert err =~ /Cycle detected: a cycle exists in the type hierarchy between D and C/
     }
 
     @Test
@@ -85,7 +85,7 @@ final class Groovy10113 {
                 }
             }
         '''
-        assert err.message =~ /Cycle detected: the type C cannot extend.implement itself or one of its own member types/
+        assert err =~ /Cycle detected: the type C cannot extend.implement itself or one of its own member types/
     }
 
     @Test
@@ -98,7 +98,7 @@ final class Groovy10113 {
             class D implements C.I {
             }
         '''
-        assert err.message =~ /Cycle detected: a cycle exists in the type hierarchy between D and C/
+        assert err =~ /Cycle detected: a cycle exists in the type hierarchy between D and C/
     }
 
     @Test
@@ -109,6 +109,6 @@ final class Groovy10113 {
             class B extends A {
             }
         '''
-        assert err.message =~ /Cycle detected: a cycle exists in the type hierarchy between B and A/
+        assert err =~ /Cycle detected: a cycle exists in the type hierarchy between B and A/
     }
 }

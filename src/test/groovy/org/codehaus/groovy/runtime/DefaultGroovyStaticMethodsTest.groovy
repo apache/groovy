@@ -18,14 +18,12 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Tests for DefaultGroovyStaticMethods
  */
-class DefaultGroovyStaticMethodsTest {
-    @Test
+class DefaultGroovyStaticMethodsTest extends GroovyTestCase {
     void testCurrentTimeSeconds() {
 	    long timeMillis = System.currentTimeMillis()
         long timeSeconds = System.currentTimeSeconds()
@@ -34,12 +32,10 @@ class DefaultGroovyStaticMethodsTest {
         assert timeMillis2/1000 as int >= timeSeconds
     }
 
-    @Test
     void testDumpAll() {
         assert Thread.dumpAll().contains("dumpAll")
     }
 
-    @Test
     void testAllThreads() {
         assert Thread.allThreads().stream().anyMatch(t -> 'Finalizer' == t.name)
     }

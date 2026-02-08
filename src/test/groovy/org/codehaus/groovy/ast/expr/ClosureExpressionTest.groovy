@@ -20,7 +20,7 @@ package org.codehaus.groovy.ast.expr
 
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.control.CompilePhase
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class ClosureExpressionTest {
 

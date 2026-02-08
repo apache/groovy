@@ -18,16 +18,13 @@
  */
 package groovy.xml.dom
 
+import groovy.test.GroovyTestCase
 import groovy.xml.DOMBuilder
 import groovy.xml.StreamingDOMBuilder
-import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
-
-class DOMTest {
+class DOMTest extends GroovyTestCase {
     def benchmark = false
 
-    @Test
     void testDOMParser() {
         def xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>")
         def doc = DOMBuilder.parse(xml)
@@ -35,7 +32,6 @@ class DOMTest {
         if (!benchmark) assertCorrect html
     }
 
-    @Test
     void testDOMBuilder() {
         def html = DOMBuilder.newInstance().
                 html {
@@ -49,7 +45,6 @@ class DOMTest {
         if (!benchmark) assertCorrect html
     }
 
-    @Test
     void testDOMBuilderWithNullValue() {
         def html = DOMBuilder.newInstance().
                 html {
@@ -62,7 +57,6 @@ class DOMTest {
         }
     }
 
-    @Test
     void testStreamingDOMBuilder() {
         def builder = new StreamingDOMBuilder()
         def make = builder.bind {

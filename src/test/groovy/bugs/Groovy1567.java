@@ -21,7 +21,7 @@ package bugs;
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.util.GroovyScriptEngine;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.io.File;
 

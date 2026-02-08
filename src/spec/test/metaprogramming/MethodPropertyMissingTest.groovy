@@ -18,14 +18,10 @@
  */
 package metaprogramming
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class MethodPropertyMissingTest extends GroovyTestCase {
 
-
-class MethodPropertyMissingTest {
-
-    @Test
     void testMethodMissing() {
         assertScript '''
             //tag::method_missing_simple[]
@@ -41,7 +37,6 @@ class MethodPropertyMissingTest {
         '''
     }
 
-    @Test
     void testPropertyMissingGetter() {
         assertScript '''
             //tag::property_missing_getter[]
@@ -54,7 +49,6 @@ class MethodPropertyMissingTest {
         '''
     }
 
-    @Test
     void testPropertyMissingGetterSetter() {
         assertScript '''
             //tag::property_missing_getter_setter[]

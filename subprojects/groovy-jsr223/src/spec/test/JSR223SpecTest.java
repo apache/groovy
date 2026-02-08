@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 // tag::jsr223_imports[]
 import javax.script.ScriptEngine;
@@ -25,7 +25,7 @@ import javax.script.ScriptException;
 // end::jsr223_imports[]
 import javax.script.Invocable;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 
 public class JSR223SpecTest {

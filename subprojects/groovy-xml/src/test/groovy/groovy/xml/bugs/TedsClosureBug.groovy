@@ -18,11 +18,11 @@
  */
 package groovy.xml.bugs
 
-import groovy.test.StringTestUtil
 import groovy.xml.MarkupBuilder
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
+import groovy.test.StringTestUtil
 
-class TedsClosureBug {
+class TedsClosureBug extends GroovyTestCase {
     def EXPECTED= '''<atom>
   <title>Ted Leung off the air</title>
   <link>http://www.sauria.com/noblog</link>
@@ -51,7 +51,6 @@ class TedsClosureBug {
   </entry>
 </atom>'''
 
-    @Test
     void testBug() {
         def f = new Feed()
         f.author = new Person(name:'Ted Leung',url:'http://www.sauria.com/blog', email:'twl@sauria.com')

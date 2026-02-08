@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.tools.groovydoc
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class SimpleGroovyClassDocTests extends GroovyTestCase {
 
-class SimpleGroovyClassDocTests {
-
-    @Test
     void testReplaceTags_link() {
         def text = 'Use the {@link #getComponentAt(int, int) getComponentAt} method.'
 
@@ -32,7 +30,6 @@ class SimpleGroovyClassDocTests {
         assert result == "Use the <a href='#getComponentAt(int, int)'>getComponentAt</a> method."
     }
 
-    @Test
     void testReplaceTags_literal() {
         def text = 'text with literal {@literal A<B>C} tag'
 
@@ -41,7 +38,6 @@ class SimpleGroovyClassDocTests {
         assert result == 'text with literal A&lt;B&gt;C tag'
     }
 
-    @Test
     void testReplaceTags_code() {
         def text = 'text with code {@code A<B>C} tag'
 
@@ -50,7 +46,6 @@ class SimpleGroovyClassDocTests {
         assert result == 'text with code <CODE>A&lt;B&gt;C</CODE> tag'
     }
 
-    @Test
     void testEncodeAngleBracketsInTagBody() {
         def text = 'text with <tag1> outside and {@code <tag2> inside} a @code tag'
         def regex = SimpleGroovyClassDoc.CODE_REGEX
@@ -58,7 +53,6 @@ class SimpleGroovyClassDocTests {
         assert encodedText == 'text with <tag1> outside and {@code &lt;tag2&gt; inside} a @code tag'
     }
 
-    @Test
     void testEncodeAngleBracketsInTagBodyWithDollar() {
         def text = 'text with dollar {@code $foo.bar} and dollar with less than {@code $foo < $bar}'
         def regex = SimpleGroovyClassDoc.CODE_REGEX
@@ -66,7 +60,6 @@ class SimpleGroovyClassDocTests {
         assert encodedText == 'text with dollar {@code $foo.bar} and dollar with less than {@code $foo &lt; $bar}'
     }
 
-    @Test
     void testEncodeAngleBracketsInTagBodyLeavesSpecialChars() {
         def text = 'text with illegal group ref {@code $3 \\$}'
         def regex = SimpleGroovyClassDoc.CODE_REGEX
@@ -74,7 +67,6 @@ class SimpleGroovyClassDocTests {
         assert encodedText == text
     }
 
-    @Test
     void testEncodeAngleBrackets() {
         def text = 'text with <tag1> and <tag2>'
 
@@ -83,7 +75,6 @@ class SimpleGroovyClassDocTests {
         assert encodedText == 'text with &lt;tag1&gt; and &lt;tag2&gt;'
     }
 
-    @Test
     void testExpandDocRootTag() {
         def text = "<img src='{@docRoot}/logo.jpg'><img src='{@docRoot}logo.jpg'>"
         def doc = classDoc

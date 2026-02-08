@@ -24,7 +24,7 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.GenericsType
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class GenericsUtilsTest {
 

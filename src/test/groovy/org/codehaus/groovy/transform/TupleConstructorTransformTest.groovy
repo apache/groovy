@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -557,7 +557,7 @@ final class TupleConstructorTransformTest {
             String string = new Foo(x:3, y:3, z:3)
             assert string == 'Foo(x:3, y:3, z:3)'
         '''
-        assert err.message =~ /Unrecognized namedArgKey: x/
+        assert err =~ /Unrecognized namedArgKey: x/
     }
 
     // GROOVY-10790

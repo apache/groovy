@@ -18,7 +18,7 @@
  */
 package groovy.generated
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class ClosureGeneratedTest extends AbstractGeneratedAstTestCase {
 

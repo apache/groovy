@@ -24,8 +24,6 @@ import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 
 import java.io.File;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 public class Groovy2365Bug extends Groovy2365Base {
 
     public void testDeadlock() {
@@ -80,7 +78,7 @@ public class Groovy2365Bug extends Groovy2365Base {
                     e.printStackTrace();
                 }
 
-                assertTrue(completed[0] && completed[1], "Potentially deadlock");
+                assertTrue("Potentially deadlock", completed[0] && completed[1]);
             }
         } finally {
             ResourceGroovyMethods.deleteDir(new File(path));

@@ -18,14 +18,10 @@
  */
 package semantics
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
+class TheGroovyTruthTest extends GroovyTestCase {
 
-
-class TheGroovyTruthTest {
-
-    @Test
     void testGroovyTruth() {
         // tag::boolean_truth[]
         assert true
@@ -78,7 +74,6 @@ class TheGroovyTruthTest {
         // end::object_truth[]
     }
 
-    @Test
     void testAsBoolean() {
         assertScript '''
             // tag::asBoolean_object[]
@@ -86,7 +81,7 @@ class TheGroovyTruthTest {
                 String name
 
                 boolean asBoolean(){
-                    name == 'green' ? true : false
+                    name == 'green' ? true : false 
                 }
             }
             // end::asBoolean_object[]

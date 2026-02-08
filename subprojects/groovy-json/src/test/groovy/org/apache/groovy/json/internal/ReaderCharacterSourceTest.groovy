@@ -18,18 +18,14 @@
  */
 package org.apache.groovy.json.internal
 
+import groovy.test.GroovyTestCase
 import org.apache.groovy.json.internal.Exceptions.JsonInternalException
-import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-class ReaderCharacterSourceTest {
+class ReaderCharacterSourceTest extends GroovyTestCase {
 
     public static final int QUOTE_CHAR = (int)'"'.charAt(0)
     public static final int BACKSLASH_CHAR = (int)'\\'.charAt(0)
 
-    @Test
     void testFindNextChar() {
         def testCases = [
                 [ input: '""', expected: '' ],
@@ -50,13 +46,12 @@ class ReaderCharacterSourceTest {
 
                 String result = new String(rcs.findNextChar(QUOTE_CHAR, BACKSLASH_CHAR))
 
-                assertEquals(it.expected, result, "Buffer size ${i}".toString())
-                assertEquals(containsEscape, rcs.hadEscape(), "Expected escape character in ${it.input}, buffer size ${i}".toString())
+                assertEquals("Buffer size ${i}", it.expected, result)
+                assertEquals("Expected escape character in ${it.input}, buffer size ${i}", containsEscape, rcs.hadEscape())
             }
         }
     }
 
-    @Test
     void testFindNextCharException() {
         shouldFail(JsonInternalException) {
             ReaderCharacterSource rcs = new ReaderCharacterSource(new StringReader('"missing end quote'))
@@ -65,7 +60,6 @@ class ReaderCharacterSourceTest {
         }
     }
 
-    @Test
     void testFindNextCharExceptionWithEscapedEnding() {
         shouldFail(JsonInternalException) {
             ReaderCharacterSource rcs = new ReaderCharacterSource(new StringReader('"missing end quote ending with escape \\'))
@@ -74,7 +68,6 @@ class ReaderCharacterSourceTest {
         }
     }
 
-    @Test
     void testFindNextCharExceptionWithEscapedQuote() {
         shouldFail(JsonInternalException) {
             ReaderCharacterSource rcs = new ReaderCharacterSource(new StringReader('"missing end quote with escaped quote \\"'))

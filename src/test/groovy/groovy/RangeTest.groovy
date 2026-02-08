@@ -18,11 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-class RangeTest {
+class RangeTest extends GroovyTestCase {
 
-    @Test
     void testRange() {
         def x = 0
         for (i in 0..9) {
@@ -55,7 +54,6 @@ class RangeTest {
         assert x == 45
     }
 
-    @Test
     void testRangeEach() {
         def x = 0
         (0..9).each {
@@ -82,7 +80,6 @@ class RangeTest {
         assert x == 44
     }
 
-    @Test
     void testIntStep() {
         assertStep(0..9, 3, [0, 3, 6, 9])
         assertStep(0..<10, 3, [0, 3, 6, 9])
@@ -95,7 +92,6 @@ class RangeTest {
     }
 
 
-    @Test
     void testNegativeStep() {
         assertStep(0..8, -3, [8, 5, 2])
         assertStep(9..0, -3, [0, 3, 6, 9])
@@ -103,7 +99,6 @@ class RangeTest {
         assertStep(9.0..0.0, -3, [0, 3, 6, 9])
     }
 
-    @Test
     void testObjectStep() {
         assertStep('a'..'f', 2, ['a', 'c', 'e'])
         assertStep('f'..'a', 2, ['f', 'd', 'b'])
@@ -116,13 +111,11 @@ class RangeTest {
         assertStep('z'<..<'u', 2, ['y', 'w'])
     }
 
-    @Test
     void testNegativeObjectStep() {
         assertStep('a'..'f', -2, ['f', 'd', 'b'])
         assertStep('f'..'a', -2, ['a', 'c', 'e'])
     }
 
-    @Test
     void testIterateIntRange() {
         assertIterate(0..9, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
         assertIterate(1..<8, [1, 2, 3, 4, 5, 6, 7])
@@ -134,7 +127,6 @@ class RangeTest {
         assertIterate(6<..<1, [5, 4, 3, 2])
     }
 
-    @Test
     void testIterateObjectRange() {
         assertIterate('a'..'d', ['a', 'b', 'c', 'd'])
         assertIterate('a'..<'d', ['a', 'b', 'c'])
@@ -156,7 +148,6 @@ class RangeTest {
         def next() { (ordinal() + 1).with { (it >= values().size()) ? null : values()[it] } }
     }
 
-    @Test
     void testStepWithEnumRange() {
         [RomanNumber, NullableRomanNumber].each { num ->
             def range = num.II..num.IV
@@ -172,7 +163,6 @@ class RangeTest {
         }
     }
 
-    @Test
     void testStepWithReverseEnumRange() {
         [RomanNumber, NullableRomanNumber].each { num ->
             def reverseRange = num.IV..num.II
@@ -188,7 +178,6 @@ class RangeTest {
         }
     }
 
-    @Test
     void testRangeContains() {
         def range = 0..10
         assert range.contains(0) && 0 in range
@@ -207,7 +196,6 @@ class RangeTest {
         assert !range.contains(5) && !(5 in range)
     }
 
-    @Test
     void testBackwardsRangeContains() {
         def range = 10..0
         assert range.contains(0) && 0 in range
@@ -226,7 +214,6 @@ class RangeTest {
         assert !range.contains(1) && !(1 in range)
     }
 
-    @Test
     void testObjectRangeContains() {
         def range = 'a'..'x'
         assert range.contains('a')
@@ -253,7 +240,6 @@ class RangeTest {
         assert range.contains('c')
     }
 
-    @Test
     void testBackwardsObjectRangeContains() {
         def range = 'x'..'a'
         assert range.contains('a')
@@ -280,7 +266,6 @@ class RangeTest {
         assert range.contains('c')
     }
 
-    @Test
     void testIntRangeToString() {
         assertToString(0..10, "0..10")
         assertToString([1, 4..10, 9], "[1, 4..10, 9]")
@@ -307,19 +292,18 @@ class RangeTest {
         assertToString([1, 11<..<4, 9], "[1, 11<..<4, 9]")
     }
 
-    @Test
     void testObjectRangeToString() {
         assertToString('a'..'d', 'a..d', "'a'..'d'")
         assertToString('a'..<'d', 'a..c', "'a'..'c'")
         assertToString('a'<..'d', 'b..d', "'b'..'d'")
         assertToString('a'<..<'d', 'b..c', "'b'..'c'")
+
         assertToString('z'..'x', 'z..x', "'z'..'x'")
         assertToString('z'..<'x', 'z..y', "'z'..'y'")
         assertToString('z'<..'x', 'y..x', "'y'..'x'")
         assertToString('z'<..<'x', 'y..y', "'y'..'y'")
     }
 
-    @Test
     void testRangeSize() {
         assertSize(1..10, 10)
         assertSize(11..<21, 10)
@@ -332,7 +316,6 @@ class RangeTest {
         assertSize(41<..<30, 10)
     }
 
-    @Test
     void testBorderCases() {
         assertIterate(0..1, [0, 1])
         assertIterate(0..0, [0])
@@ -342,7 +325,6 @@ class RangeTest {
         assertIterate(0<..<-1, [])
     }
 
-    @Test
     void testEmptyRanges() {
         assertSize(0..<0, 0)
         assertSize(1..<1, 0)
@@ -377,7 +359,6 @@ class RangeTest {
         assertIterate(0..<0, [])
     }
 
-    @Test
     void testStringRange() {
         def range = 'a'..'d'
 
@@ -389,7 +370,6 @@ class RangeTest {
         assert s == 4
     }
 
-    @Test
     void testBackwardsStringRange() {
         def range = 'd'..'a'
 
@@ -401,7 +381,6 @@ class RangeTest {
         assert s == 4
     }
 
-    @Test
     void testShortAndByteRanges() {
         byte upper1 = 4
         assert (0..upper1).size() == 5

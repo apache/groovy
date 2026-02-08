@@ -1,6 +1,4 @@
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
+import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,9 +18,8 @@ import static groovy.test.GroovyAssert.assertScript
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class PrimitiveTest {
+class PrimitiveTest extends GroovyTestCase {
 
-    @Test
     void testPrimitiveReferences() {
         assertScript '''
             // tag::primitive_references[]
@@ -36,7 +33,6 @@ class PrimitiveTest {
         '''
     }
 
-    @Test
     void testPrimitiveWideningVsBoxing() {
         assertScript '''
             // tag::widening_vs_boxing[]
@@ -54,7 +50,6 @@ class PrimitiveTest {
         '''
     }
 
-    @Test
     void testPrimitiveVsWrapperPosNegZero() {
         assertScript '''
             // tag::pos_neg_zero[]

@@ -18,16 +18,15 @@
  */
 package gls.ch06.s05
 
-import gls.ch06.s05.testClasses.Tt1
-import gls.ch06.s05.testClasses.Tt1c
 import gls.ch06.s05.testClasses.Tt1cgi
 import gls.ch06.s05.testClasses.Tt1cgo
 import gls.ch06.s05.testClasses.Tt1gi
 import gls.ch06.s05.testClasses.Tt1go
-import org.junit.jupiter.api.Test
+import gls.ch06.s05.testClasses.Tt1
+import gls.ch06.s05.testClasses.Tt1c
+import groovy.test.GroovyTestCase
 
-class GName1Test {
-  @Test
+class GName1Test extends GroovyTestCase {
   void testObjectSupportNameHandling() {
     Tt1  obj = new Tt1()  // Test POJO
     def newX = "new x"
@@ -50,7 +49,6 @@ class GName1Test {
     assert obj.@x == newX1
   }
 
-  @Test
   void testObjectSupportNameHandling1() {
     Tt1go  obj = new Tt1go()  // Test class subclassing GroovyObjectSupport
     def newX = "new x"
@@ -73,7 +71,6 @@ class GName1Test {
     assert obj.@x == newX1
   }
 
-  @Test
   void testObjectSupportNameHandling2() {
     Tt1  obj = new Tt1gi()  // Test POJO implementing GroovyObject
     def newX = "new x"
@@ -96,7 +93,6 @@ class GName1Test {
     assert obj.@x == newX1
   }
 
-  @Test
   void testObjectSupportNameHandlingWitnClosureValues() {
     Tt1c obj = new Tt1c()  // Test POJO
     def newX = {"new x"}
@@ -120,7 +116,6 @@ class GName1Test {
     assert obj.@x() == newX1()
   }
 
-  @Test
   void testObjectSupportNameHandlingWitnClosureValues1() {
     Tt1cgo obj = new Tt1cgo()  // class subclassing GroovyObjectSupport
     def newX = {"new x"}
@@ -144,7 +139,6 @@ class GName1Test {
     assert (obj.@x)() == newX1()
   }
 
-  @Test
   void testObjectSupportNameHandlingWitnClosureValues2() {
     Tt1c obj = new Tt1cgi()  // Test POJO implementing GroovyObject
     def newX = {"new x"}

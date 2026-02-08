@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ArrayAutoboxingTest extends GroovyTestCase {
 
-class ArrayAutoboxingTest {
-
-    @Test
     void testUnwantedAutoboxingWhenInvokingMethods() {
       def cl
       cl = blah2(new int[2*2])

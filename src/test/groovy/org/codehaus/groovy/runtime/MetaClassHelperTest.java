@@ -18,9 +18,9 @@
  */
 package org.codehaus.groovy.runtime;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.Assert.assertNull;
 
 public final class MetaClassHelperTest {
 

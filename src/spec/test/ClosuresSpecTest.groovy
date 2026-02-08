@@ -1,6 +1,4 @@
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
+import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,10 +18,9 @@ import static groovy.test.GroovyAssert.assertScript
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class ClosuresSpecTest {
+class ClosuresSpecTest extends GroovyTestCase {
     static void sink(Closure cl) {}
 
-    @Test
     void testClosureSyntax() {
         sink
                 // tag::closure_syntax_1[]
@@ -64,7 +61,6 @@ class ClosuresSpecTest {
                 // end::closure_syntax_6[]
     }
 
-    @Test
     void testAssignClosureToAVariable() {
         // tag::closure_is_an_instance_of_Closure[]
         def listener = { e -> println "Clicked on $e.source" }      // <1>
@@ -76,7 +72,6 @@ class ClosuresSpecTest {
         // end::closure_is_an_instance_of_Closure[]
     }
 
-    @Test
     void testCallClosure() {
         // tag::closure_call_1[]
         def code = { 123 }
@@ -99,7 +94,6 @@ class ClosuresSpecTest {
         // end::closure_call_2[]
     }
 
-    @Test
     void testClosureParameters() {
         // tag::closure_param_declaration[]
         def closureWithOneArg = { str -> str.toUpperCase() }
@@ -122,7 +116,6 @@ class ClosuresSpecTest {
         // end::closure_param_declaration[]
     }
 
-    @Test
     void testImplicitIt() {
         assertScript '''
         // tag::implicit_it[]
@@ -153,7 +146,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testClosureVargs() {
         // tag::closure_vargs[]
         def concat1 = { String... args -> args.join('') }           // <1>
@@ -169,7 +161,6 @@ class ClosuresSpecTest {
 
     }
 
-    @Test
     void testThisObject() {
         assertScript '''
         // tag::closure_this[]
@@ -226,7 +217,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testOwner() {
         assertScript '''
         // tag::closure_owner[]
@@ -263,7 +253,6 @@ class ClosuresSpecTest {
 '''
     }
 
-    @Test
     void testClosureDelegate() {
         assertScript '''
         // tag::delegate_is_owner[]
@@ -317,7 +306,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testDelegationStrategy() {
         assertScript '''
                 // tag::delegation_strategy_intro[]
@@ -332,7 +320,6 @@ class ClosuresSpecTest {
             '''
     }
 
-    @Test
     void testOwnerFirst() {
         assertScript '''
             // tag::closure_owner_first[]
@@ -362,7 +349,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testDelegateOnly() {
         assertScript '''
             // tag::delegate_only[]
@@ -397,7 +383,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testDelegateOnlyPropertyMissing() {
         assertScript '''
             // tag::delegate_only_prop_missing[]
@@ -423,7 +408,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testGStringEager() {
         // tag::gstring_eager_intro[]
         def x = 1
@@ -440,7 +424,6 @@ class ClosuresSpecTest {
         assert gs == 'x = 1'
     }
 
-    @Test
     void testGStringLazy() {
         // tag::gstring_lazy[]
         def x = 1
@@ -452,7 +435,6 @@ class ClosuresSpecTest {
         // end::gstring_lazy[]
     }
 
-    @Test
     void testGStringWithMutation() {
         assertScript '''
             // tag::gstring_mutation[]
@@ -473,7 +455,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testGStringWithoutMutation() {
         assertScript '''
             // tag::gstring_no_mutation[]
@@ -493,7 +474,6 @@ class ClosuresSpecTest {
         '''
     }
 
-    @Test
     void testLeftCurry() {
         // tag::left_curry[]
         def nCopies = { int n, String str -> str*n }    // <1>
@@ -503,7 +483,6 @@ class ClosuresSpecTest {
         // end::left_curry[]
     }
 
-    @Test
     void testRightCurry() {
         // tag::right_curry[]
         def nCopies = { int n, String str -> str*n }    // <1>
@@ -513,7 +492,6 @@ class ClosuresSpecTest {
         // end::right_curry[]
     }
 
-    @Test
     void testNCurry() {
         // tag::ncurry[]
         def volume = { double l, double w, double h -> l*w*h }      // <1>
@@ -524,7 +502,6 @@ class ClosuresSpecTest {
         // end::ncurry[]
     }
 
-    @Test
     void testMemoize() {
         // tag::naive_fib[]
         def fib
@@ -537,7 +514,6 @@ class ClosuresSpecTest {
         // end::memoized_fib[]
     }
 
-    @Test
     void testComposition() {
         // tag::closure_composition[]
         def plus2  = { it + 2 }
@@ -557,7 +533,6 @@ class ClosuresSpecTest {
 
     }
 
-    @Test
     void testTrampoline() {
         // tag::trampoline[]
         def factorial

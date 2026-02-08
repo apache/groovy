@@ -21,8 +21,6 @@ package org.apache.groovy.groovysh.commands
 import groovy.grape.Grape
 import groovy.mock.interceptor.StubFor
 
-import static groovy.test.GroovyAssert.shouldFail
-
 /**
  * Tests for the {@code /grab} command.
  */

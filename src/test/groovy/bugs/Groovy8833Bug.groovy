@@ -18,12 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-class Groovy8833Bug {
-    @Test
+class Groovy8833Bug extends GroovyTestCase {
     void testEqualsAndHashCodeAndToStringWithCompileStatic() {
         assertScript '''
             import groovy.transform.*

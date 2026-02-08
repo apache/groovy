@@ -18,13 +18,12 @@
  */
 package groovy.lang
 
-
-import static groovy.test.GroovyAssert.shouldFail
+import groovy.test.GroovyTestCase
 
 /**
  * Tests maps of closures coerced to classes by asType()
  */
-class MapOfClosureTest {
+class MapOfClosureTest extends GroovyTestCase {
 
     void testInterfaceProxy() {
         def outer = 1

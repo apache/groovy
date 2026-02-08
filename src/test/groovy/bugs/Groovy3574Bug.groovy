@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.fail
-
-
-class Groovy3574Bug {
-    @Test
+class Groovy3574Bug extends GroovyTestCase {
     void testToStringCallDelegationToConvertedClosureProxy() {
         Closure failing1 = {
             throw new RuntimeException("Call to this closure fails.")

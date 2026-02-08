@@ -18,21 +18,18 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class Bytecode2Bug {
+class Bytecode2Bug extends GroovyTestCase {
 
     Integer count = 0
 
-    @Test
     void testBytecodeBug() {
         getCollection().each { count += it }
     }
 
-    @Test
     void testTedsBytecodeBug() {
         //doTest(getCollection())
         def a = [1, 2, 3, 4]
@@ -53,7 +50,6 @@ class Bytecode2Bug {
         assert i == 5
     }
 
-    @Test
     void testTedsBytecode2Bug() {
         def m = [:]
         def i = 1

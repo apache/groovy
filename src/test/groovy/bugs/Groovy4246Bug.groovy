@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy4246Bug {
-    @Test
+class Groovy4246Bug extends GroovyTestCase {
     void testPostFixExpEvaluations() {
         assertScript """
             class Bug4246 {

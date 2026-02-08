@@ -18,12 +18,10 @@
  */
 package groovy.console.ui.text
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class GroovyFilterTests extends GroovyTestCase {
 
-class GroovyFilterTests {
-
-    @Test
     void testDecimalIntegerLiteral() {
 
         assert '0' ==~ GroovyFilter.DECIMAL_INTEGER_LITERAL
@@ -38,7 +36,6 @@ class GroovyFilterTests {
         assert !('123_L' ==~ GroovyFilter.DECIMAL_INTEGER_LITERAL)
     }
 
-    @Test
     void testHexIntegerLiteral() {
 
         assert '0xA' ==~ GroovyFilter.HEX_INTEGER_LITERAL
@@ -54,7 +51,6 @@ class GroovyFilterTests {
         assert !('123' ==~ GroovyFilter.HEX_INTEGER_LITERAL)
     }
 
-    @Test
     void testOctalIntegerLiteral() {
 
         assert '011223344' ==~ GroovyFilter.OCTAL_INTEGER_LITERAL
@@ -65,7 +61,6 @@ class GroovyFilterTests {
         assert !('123' ==~ GroovyFilter.OCTAL_INTEGER_LITERAL)
     }
 
-    @Test
     void testBinaryIntegerLiteral() {
 
         assert '0b0011' ==~ GroovyFilter.BINARY_INTEGER_LITERAL
@@ -76,7 +71,6 @@ class GroovyFilterTests {
         assert !('123' ==~ GroovyFilter.BINARY_INTEGER_LITERAL)
     }
 
-    @Test
     void testDecimalFloatingPointLiteral() {
 
         assert '0.0' ==~ GroovyFilter.DECIMAL_FLOATING_POINT_LITERAL
@@ -98,7 +92,6 @@ class GroovyFilterTests {
         assert !('10.0e+_' ==~ GroovyFilter.DECIMAL_FLOATING_POINT_LITERAL)
     }
 
-    @Test
     void testHexadecimalFloatingPointLiteral() {
 
         assert '0x0' ==~ GroovyFilter.HEXADECIMAL_FLOATING_POINT_LITERAL
@@ -116,7 +109,6 @@ class GroovyFilterTests {
         assert !('123' ==~ GroovyFilter.HEXADECIMAL_FLOATING_POINT_LITERAL)
     }
 
-    @Test
     void testQuotes() {
 
         assert '"test"' ==~ GroovyFilter.QUOTES
@@ -126,7 +118,6 @@ class GroovyFilterTests {
         assert '""""""' ==~ GroovyFilter.QUOTES
     }
 
-    @Test
     void testSingleQuotes() {
 
         assert "''" ==~ GroovyFilter.SINGLE_QUOTES
@@ -139,7 +130,6 @@ class GroovyFilterTests {
         assert multilineTripleSingleQuotes ==~ GroovyFilter.SINGLE_QUOTES
     }
 
-    @Test
     void testSlashyQuotes() {
         assert '/foo/' ==~ GroovyFilter.SLASHY_QUOTES
         assert '/foo\\//' ==~ GroovyFilter.SLASHY_QUOTES

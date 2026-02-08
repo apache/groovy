@@ -18,12 +18,10 @@
  */
 package org.codehaus.groovy.classgen
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ReflectorLoaderTest extends GroovyTestCase {
 
-class ReflectorLoaderTest {
-
-    @Test
     void testDuplication() {
         def program = '''
             closureA = {}

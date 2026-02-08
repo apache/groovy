@@ -18,13 +18,10 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
-
-class Groovy4121Bug {
-    @Test
+class Groovy4121Bug extends GroovyTestCase {
     void testAssignmentToAFieldMadeFinalByImmutable() {
         try {
             new GroovyShell().parse """

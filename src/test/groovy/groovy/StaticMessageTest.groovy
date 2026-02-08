@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class StaticMessageTest extends GroovyTestCase {
 
-class StaticMessageTest {
-
-   @Test
    void testStaticMissingMethodException() {
       try {
          Integer.foobarbaz()
@@ -32,7 +30,6 @@ class StaticMessageTest {
       }
    }
 
-   @Test
    void testInstanceMissingMethodException() {
       try {
          Integer x = 5;

@@ -18,13 +18,9 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.fail
-
-
-class GroovyCategoryTest {
-    @Test
+class GroovyCategoryTest extends GroovyTestCase {
     void testUseWithVarArg() {
         // Try out the single class case
         use(Category1) {

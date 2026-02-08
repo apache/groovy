@@ -18,15 +18,13 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
  * Checks that it's possible to call inner classes constructor from groovy
  */
-class CallInnerClassCtorTest {
+class CallInnerClassCtorTest extends GroovyTestCase {
 
-    @Test
     void testCallCtor() {
         def user = new groovy.OuterUser()
         user.name = "Guillaume"
@@ -36,7 +34,6 @@ class CallInnerClassCtorTest {
         assert user.age == 27
     }
 
-    @Test
     void testCallInnerCtor() {
         def address = new groovy.OuterUser.InnerAddress()
         address.city = "Meudon"
@@ -46,7 +43,6 @@ class CallInnerClassCtorTest {
         assert address.zipcode == 92360
     }
 
-    @Test
     void testCallInnerInnerCtor() {
         def address = new groovy.OuterUser.InnerAddress.Street()
         address.name = "rue de la paix"

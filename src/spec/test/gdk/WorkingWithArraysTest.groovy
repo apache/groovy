@@ -18,7 +18,7 @@
  */
 package gdk
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 final class WorkingWithArraysTest {
 

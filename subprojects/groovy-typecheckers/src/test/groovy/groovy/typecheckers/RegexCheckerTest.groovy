@@ -19,10 +19,9 @@
 package groovy.typecheckers
 
 import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.codehaus.groovy.control.customizers.*
+import org.junit.BeforeClass
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -31,7 +30,7 @@ final class RegexCheckerTest {
 
     private static GroovyShell shell
 
-    @BeforeAll
+    @BeforeClass
     static void setUp() {
         shell = new GroovyShell(new CompilerConfiguration().tap {
             def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
@@ -45,7 +44,7 @@ final class RegexCheckerTest {
         def err = shouldFail shell, '''
             def shortNamed = ~/\\w{3/ // missing closing quantifier brace
         '''
-        assert err.message =~ /Bad regex: Unclosed counted closure/
+        assert err =~ /Bad regex: Unclosed counted closure/
 
         err = shouldFail shell, '''
             def oNamed = ~/(.)o(.*/ // missing closing grouping bracket
@@ -245,7 +244,7 @@ final class RegexCheckerTest {
     void testBadRegexGroupCount() {
         def shouldFailWithGroupCountError = { String script ->
             def err = shouldFail(shell, script)
-            assert err.message =~ /Invalid group count 3 for regex with 2 groups/
+            assert err =~ /Invalid group count 3 for regex with 2 groups/
         }
 
         shouldFailWithGroupCountError '''

@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.fail
-
-class Groovy4009Bug {
-    @Test
+class Groovy4009Bug extends GroovyTestCase {
     void testNoOfTimesResolveCallIsMade() {
         try {
             assertScript """

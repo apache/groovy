@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class MorgansBug extends GroovyTestCase {
 
-class MorgansBug {
-
-    @Test
     void testBug() {
         def result = 4 + "x"
         assert result == "4x"

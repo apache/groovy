@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy4257Bug {
-    @Test
+class Groovy4257Bug extends GroovyTestCase {
     void testSetUnique() {
         Set orig = [[3035, 26972], [2795, 34412]]
         Set clone = orig.clone()
@@ -32,7 +30,6 @@ class Groovy4257Bug {
         assert orig == clone
     }
 
-    @Test
     void testNumberCoercion() {
         def orig = [3, 3L, 3.0] as Set
         def expected = [3] as Set

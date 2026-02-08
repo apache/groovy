@@ -18,10 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class MethodPointerBug {
+class MethodPointerBug extends GroovyTestCase {
 
     void sayHello() {
         println "hello"
@@ -32,7 +31,6 @@ class MethodPointerBug {
     }
 
     // Test a standard method pointer operator ".&".  For example, foo.&bar.
-    @Test
     void testMethodPointer() {
         def bug = new MethodPointerBug()
         def x = bug.&sayHello
@@ -40,7 +38,6 @@ class MethodPointerBug {
     }
 
     // Test a standard method pointer operator ".&" with this object.  For example, this.&bar.
-    @Test
     void testThisMethodPointer() {
         def y = this.&sayHello
         y()
@@ -50,7 +47,6 @@ class MethodPointerBug {
     // This shows that the issue GROOVY-826 has been fixed in groovy-1.0-jar-02.
 /*
   todo - commented out due to groovy.g non-determinisms
-    @Test
     void testDefaultMethodPointer() {
         def z = &sayHello
         z()
@@ -58,7 +54,6 @@ class MethodPointerBug {
 */
 
     // Test a default method pointer operator ".&" with returned object.  For example, someMethod().&bar.
-    @Test
     void testMethodPointerWithReturn() {
         def u = getThisObject().&sayHello
         u()

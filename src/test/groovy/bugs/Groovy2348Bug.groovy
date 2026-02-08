@@ -18,11 +18,9 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-
-class Groovy2348Bug{
+class Groovy2348Bug extends GroovyTestCase{
   void test () {
      assertEquals( ['1.0', '2.0'], Foo.test(['1.0-vers', '2.0-subvers']))
   }

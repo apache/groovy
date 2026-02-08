@@ -18,17 +18,14 @@
  */
 package org.codehaus.groovy.control.io
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class NullWriterTest extends GroovyTestCase {
 
-class NullWriterTest {
-
-    @Test
     void testProperties() {
         assert NullWriter.DEFAULT instanceof NullWriter
     }
 
-    @Test
     void testWriterMethodsForCoverage() {
         def writer = NullWriter.DEFAULT
         writer.close()

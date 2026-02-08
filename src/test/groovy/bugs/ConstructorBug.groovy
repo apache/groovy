@@ -18,12 +18,11 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.junit.jupiter.api.Test
 
-class ConstructorBug {
+class ConstructorBug extends GroovyTestCase {
 
-    @Test
     void testBug() {
         def type = new GroovyClassLoader().parseClass(new File("src/test/groovy/bugs/TestBase.groovy"))
         assert type != null

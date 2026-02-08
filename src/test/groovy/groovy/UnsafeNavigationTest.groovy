@@ -18,14 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.fail
+class UnsafeNavigationTest extends GroovyTestCase {
 
-
-class UnsafeNavigationTest {
-
-    @Test
     void testUnsafePropertyNavigations() {
         def x = null
 

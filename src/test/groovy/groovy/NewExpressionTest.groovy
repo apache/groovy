@@ -18,54 +18,47 @@
  */
 package groovy
 
+import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.DummyBean
-import org.junit.jupiter.api.Test
 
-class NewExpressionTest {
+class NewExpressionTest extends GroovyTestCase {
 
-    @Test
     void testNewInstance() {
         def cheese = new String( "hey you hosers" )
 
         assert cheese != null
     }
 
-    @Test
     void testNewBeanNoArgs() {
         def bean = new DummyBean()
         assert bean.name == "James"
         assert bean.i == 123
     }
 
-    @Test
     void testNewBean1Args() {
         def bean = new DummyBean("Bob")
         assert bean.name == "Bob"
         assert bean.i == 123
     }
 
-    @Test
     void testNewBean2Args() {
         def bean = new DummyBean("Bob", 1707)
         assert bean.name == "Bob"
         assert bean.i == 1707
     }
 
-    @Test
     void testNewInstanceWithFullyQualifiedName() {
         def bean = new org.codehaus.groovy.runtime.DummyBean("Bob", 1707)
         assert bean.name == "Bob"
         assert bean.i == 1707
     }
 
-    @Test
     void testNewInstanceWithFullyQualifiedNameNotImported() {
         def bean = new java.io.File("Foo")
 
         assert bean != null
     }
 
-    @Test
     void testNewOnMultipleLines() {
         def bean =
           new

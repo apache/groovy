@@ -18,10 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  * Ensure that the correct line information is reported when an exception is thrown.
@@ -30,9 +27,8 @@ import static groovy.test.GroovyAssert.assertScript
  * <li><a href="https://issues.apache.org/jira/browse/GROOVY-3067">GROOVY-3067</a></li>
  * <li><a href="https://issues.apache.org/jira/browse/GROOVY-2983">GROOVY-2983</a></li>
  */
-class BadLineNumberOnExceptionBugTest {
+class BadLineNumberOnExceptionBugTest extends GroovyTestCase {
 
-    @Test
     void testGroovy3067() {
         assertScript """
             class Foo {
@@ -57,7 +53,6 @@ class BadLineNumberOnExceptionBugTest {
         """
     }
 
-    @Test
     void testGroovy2983() {
         assertScript """
             def foo() {

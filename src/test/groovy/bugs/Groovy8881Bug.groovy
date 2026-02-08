@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy8881Bug {
-    @Test
+class Groovy8881Bug extends GroovyTestCase {
     void testClosureWithinClosureInInnerClassReferencesThisCorrectly() {
         assertScript '''
             class OuterClass {

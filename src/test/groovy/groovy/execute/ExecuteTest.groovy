@@ -18,12 +18,11 @@
  */
 package groovy.execute
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 /**
  *  Cross platform tests for the DGM#execute() family of methods.
  */
-final class ExecuteTest {
+final class ExecuteTest extends GroovyTestCase {
 
     private String getCmd() {
         def cmd = "ls -l"
@@ -33,7 +32,6 @@ final class ExecuteTest {
         return cmd
     }
 
-    @Test
     void testExecuteCommandLineProcessUsingAString() {
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
@@ -45,7 +43,6 @@ final class ExecuteTest {
         assert value == 0
     }
 
-    @Test
     void testExecuteCommandLineProcessUsingAStringArray() {
         def cmdArray = cmd.split(' ')
         StringBuffer sbout = new StringBuffer()
@@ -58,7 +55,6 @@ final class ExecuteTest {
         assert value == 0
     }
 
-    @Test
     void testExecuteCommandLineProcessUsingAList() {
         List<String> cmdList = Arrays.asList(cmd.split(' '))
         StringBuffer sbout = new StringBuffer()
@@ -71,7 +67,6 @@ final class ExecuteTest {
         assert value == 0
     }
 
-    @Test
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
         List<String> javaArgs = [System.getProperty('java.home') + "/bin/java",
                 "-classpath",
@@ -110,7 +105,6 @@ final class ExecuteTest {
         assert value != 0 // should have been killed
     }
 
-    @Test
     void testExecuteCommandLineUnderWorkingDirectory() {
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
@@ -122,7 +116,6 @@ final class ExecuteTest {
         assert value == 0
     }
 
-    @Test
     void testExecuteCommandLineWithEnvironmentProperties() {
         List<String> java = [
                 System.getProperty('java.home') + '/bin/java',
@@ -144,7 +137,6 @@ final class ExecuteTest {
     }
 
     // GROOVY-9392
-    @Test
     void testExecuteCommandLineProcessWithGroovySystemClassLoader() {
         List<String> java = [
                 System.getProperty('java.home') + '/bin/java',

@@ -18,15 +18,13 @@
  */
 package gls.closures
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
 
 import static groovy.lang.Closure.*
-import static groovy.test.GroovyAssert.shouldFail
 
-final class ResolveStrategyTest {
+final class ResolveStrategyTest extends GroovyTestCase {
 
-    @Test
     void testDynamicResolveStrategy() {
         new ClassRST().with {
             assert run(OWNER_ONLY) == 1234
@@ -64,7 +62,6 @@ final class ResolveStrategyTest {
     }
 
     @CompileStatic
-    @Test
     void testStaticResolveStrategy() {
         new ClassRST().with {
             assert runOwnerOnly { m1() + m2() + m3() } == 1230

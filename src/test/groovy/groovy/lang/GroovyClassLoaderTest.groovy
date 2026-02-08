@@ -30,7 +30,7 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import java.security.CodeSource
 import java.util.concurrent.atomic.AtomicInteger

@@ -18,14 +18,9 @@
  */
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
-
-
-class Groovy7883Bug {
-    @Test
+class Groovy7883Bug extends GroovyTestCase {
     void testGroovy7883() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -42,7 +37,6 @@ class Groovy7883Bug {
         '''
     }
 
-    @Test
     void test2() {
         def errMsg = shouldFail '''
         @groovy.transform.CompileStatic
@@ -58,10 +52,9 @@ class Groovy7883Bug {
         new B().m()
         '''
 
-        assert errMsg.message.contains('[Static type checking] - Cannot find matching method A#doIt()')
+        assert errMsg.contains('[Static type checking] - Cannot find matching method A#doIt()')
     }
 
-    @Test
     void test4() {
         def errMsg = shouldFail '''
         @groovy.transform.CompileStatic
@@ -77,13 +70,12 @@ class Groovy7883Bug {
         new B().m()
         '''
 
-        assert errMsg.message.contains('[Static type checking] - Cannot find matching method B#doIt()')
+        assert errMsg.contains('[Static type checking] - Cannot find matching method B#doIt()')
     }
 
     /**
      * ensure the filtering logic does not break any code
      */
-    @Test
     void test5() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -103,7 +95,6 @@ class Groovy7883Bug {
         '''
     }
 
-    @Test
     void test6() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -121,7 +112,6 @@ class Groovy7883Bug {
         '''
     }
 
-    @Test
     void test7() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -146,7 +136,6 @@ class Groovy7883Bug {
         '''
     }
 
-    @Test
     void test8() {
         def errMsg = shouldFail  '''
         @groovy.transform.CompileStatic
@@ -165,6 +154,6 @@ class Groovy7883Bug {
 
         '''
 
-        assert errMsg.message.contains('[Static type checking] - Cannot find matching method B$C#doIt2(java.util.ArrayList)')
+        assert errMsg.contains('[Static type checking] - Cannot find matching method B$C#doIt2(java.util.ArrayList)')
     }
 }

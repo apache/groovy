@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class ClosureTypedVariableBug extends GroovyTestCase {
 
-class ClosureTypedVariableBug {
-
-    @Test
     void testBug2() {
         def count = makeClosure(0)
         assert count == 1
@@ -45,7 +43,6 @@ class ClosureTypedVariableBug {
         return count
     }
 
-    @Test
     void testBug() {
         Integer count = 0
         def closure = { count = it }
@@ -53,7 +50,6 @@ class ClosureTypedVariableBug {
         assert count == 1
     }
 
-    @Test
     void testBug3() {
         def closure = getElementClosure("p")
         def answer = closure("b")
@@ -72,7 +68,6 @@ class ClosureTypedVariableBug {
         }
     }
 
-    @Test
     void testDoubleSlotReference() {
         // there was a bug that the local variable index
         // was wrong set for a closure shared variable.

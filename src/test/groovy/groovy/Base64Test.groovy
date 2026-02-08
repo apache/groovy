@@ -18,20 +18,17 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
 import java.nio.charset.StandardCharsets
 
-import static groovy.test.GroovyAssert.shouldFail
-
-class Base64Test {
+class Base64Test extends GroovyTestCase {
     String testString = '\u00A71234567890-=\u00B1!@\u00A3\$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;\'\\ASDFGHJKL:"|`zxcvbnm,./~ZXCVBNM<>?\u0003\u00ff\u00f0\u000f'
     byte[] testBytes = testString.getBytes("ISO-8859-1")
 
     // Test bytes that have both the 62nd and 63rd base64 alphabet in the encoded string
     static final byte[] testBytesChar62And63 = new BigInteger('4bf7ce5201fe239ab42ebead5acd8fa3', 16).toByteArray()
 
-    @Test
     void testCodec() {
         // turn the bytes back into a string for later comparison
         def savedString = new String(testBytes, "ISO-8859-1")
@@ -44,7 +41,6 @@ class Base64Test {
 
     // embedding special characters in a string without unicode will yield platform
     // specific results but should still convert back to what it started with
-    @Test
     void testCodecSpecialCharacters() {
         def specialString = "§±£"
         def specialBytes = specialString.getBytes("ISO-8859-1")
@@ -56,7 +52,6 @@ class Base64Test {
         assert decodedString.equals(savedString)
     }
 
-    @Test
     void testChunking() {
         def encodedBytes = testBytes.encodeBase64(true).toString()
         // Make sure the encoded, chunked data ends with '\r\n', the chunk separator per RFC 2045 (see also RFC 4648)
@@ -73,13 +68,11 @@ class Base64Test {
         assert (encodedBytes + '\t ').decodeBase64() == testBytes
     }
 
-    @Test
     void testNonChunked() {
         def encodedBytes = testBytes.encodeBase64().toString()
         assert encodedBytes == 'pzEyMzQ1Njc4OTAtPbEhQKMkJV4mKigpXytxd2VydHl1aW9wW11RV0VSVFlVSU9Qe31hc2RmZ2hqa2w7J1xBU0RGR0hKS0w6InxgenhjdmJubSwuL35aWENWQk5NPD4/A//wDw=='
     }
 
-    @Test
     void testRfc4648Section10Encoding() {
         assert b64('') == ''
         assert b64('f') == 'Zg=='
@@ -90,7 +83,6 @@ class Base64Test {
         assert b64('foobar') == 'Zm9vYmFy'
     }
 
-    @Test
     void testRfc4648Section10Decoding() {
         assert decodeB64('') == ''
 
@@ -111,7 +103,6 @@ class Base64Test {
         assert decodeB64('Zm9vYmFy') == 'foobar'
     }
 
-    @Test
     void testRfc4648Section10EncodingUrlSafe() {
         assert b64url('') == ''
         assert b64url('f') == 'Zg'
@@ -122,7 +113,6 @@ class Base64Test {
         assert b64url('foobar') == 'Zm9vYmFy'
     }
 
-    @Test
     void testRfc4648Section10EncodingUrlSafeWithPadding() {
         assert b64url('', true) == ''
         assert b64url('f', true) == 'Zg=='
@@ -133,7 +123,6 @@ class Base64Test {
         assert b64url('foobar', true) == 'Zm9vYmFy'
     }
 
-    @Test
     void testRfc4648Section10DecodingUrlSafe() {
         assert decodeB64url('') == ''
 
@@ -154,65 +143,55 @@ class Base64Test {
         assert decodeB64url('Zm9vYmFy') == 'foobar'
     }
 
-    @Test
     void testEncodingWithChar62And63() {
         assert testBytesChar62And63.encodeBase64().toString() == 'S/fOUgH+I5q0Lr6tWs2Pow=='
     }
 
-    @Test
     void testUrlSafeEncodingWithChar62And63() {
         assert testBytesChar62And63.encodeBase64Url().toString() == 'S_fOUgH-I5q0Lr6tWs2Pow'
         assert testBytesChar62And63.encodeBase64Url(true).toString() == 'S_fOUgH-I5q0Lr6tWs2Pow=='
     }
 
-    @Test
     void testDecodingWithChar62And63() {
         assert 'S/fOUgH+I5q0Lr6tWs2Pow=='.decodeBase64() == testBytesChar62And63
         assert 'S/fOUgH+I5q0Lr6tWs2Pow'.decodeBase64() == testBytesChar62And63
     }
 
-    @Test
     void testUrlSafeDecodingWithChar62And63() {
         assert 'S_fOUgH-I5q0Lr6tWs2Pow=='.decodeBase64Url() == testBytesChar62And63
         assert 'S_fOUgH-I5q0Lr6tWs2Pow'.decodeBase64Url() == testBytesChar62And63
     }
 
-    @Test
     void testUrlSafeEncodingByDefaultOmitsPadding() {
         assert testBytes.encodeBase64Url().toString() ==
                 'pzEyMzQ1Njc4OTAtPbEhQKMkJV4mKigpXytxd2VydHl1aW9wW11RV0VSVFlVSU9Qe31h' +
                 'c2RmZ2hqa2w7J1xBU0RGR0hKS0w6InxgenhjdmJubSwuL35aWENWQk5NPD4_A__wDw'
     }
 
-    @Test
     void testUrlSafeEncodingWithPadding() {
         assert testBytes.encodeBase64Url(true).toString() ==
                 'pzEyMzQ1Njc4OTAtPbEhQKMkJV4mKigpXytxd2VydHl1aW9wW11RV0VSVFlVSU9Qe31h' +
                 'c2RmZ2hqa2w7J1xBU0RGR0hKS0w6InxgenhjdmJubSwuL35aWENWQk5NPD4_A__wDw=='
     }
 
-    @Test
     void testDecodingNonBase64Alphabet() {
         shouldFail {
             decodeB64('S_fOUgH-I5q0Lr6tWs2Pow==')
         }
     }
 
-    @Test
     void testUrlSafeDecodingNonUrlSafeAlphabet() {
         shouldFail {
             decodeB64url('S/fOUgH+I5q0Lr6tWs2Pow==')
         }
     }
 
-    @Test
     void testDecodingWithInnerPad() {
         shouldFail {
             decodeB64('Zm9v=YmE=')
         }
     }
 
-    @Test
     void testUrlSafeDecodingWithInnerPad() {
         shouldFail {
             decodeB64url('Zm9v=YmE=')

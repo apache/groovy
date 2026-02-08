@@ -18,16 +18,12 @@
  */
 package bugs
 
+import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
-final class Groovy8609Bug {
+final class Groovy8609Bug extends GroovyTestCase {
 
-    @Test
     void testUpperBoundWithGenerics() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -47,7 +43,6 @@ final class Groovy8609Bug {
         '''
     }
 
-    @Test
     void testUpperBoundWithoutGenerics() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -67,7 +62,6 @@ final class Groovy8609Bug {
         '''
     }
 
-    @Test
     void testNoUpperBound() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -87,7 +81,6 @@ final class Groovy8609Bug {
         '''
     }
 
-    @Test
     void testUpperBoundWithGenericsThroughWrongType() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic
@@ -105,10 +98,9 @@ final class Groovy8609Bug {
                 }
             }
         '''
-        assert err.message.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.TreeMap<java.lang.String, java.lang.Integer>>]')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.TreeMap<java.lang.String, java.lang.Integer>>]')
     }
 
-    @Test
     void testUpperBoundWithGenericsThroughWrongType2() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic
@@ -126,10 +118,9 @@ final class Groovy8609Bug {
                 }
             }
         '''
-        assert err.message.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Long>>]')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Long>>]')
     }
 
-    @Test
     void testUpperBoundWithGenericsThroughWrongType3() {
         def err = shouldFail '''
             @groovy.transform.CompileStatic
@@ -147,6 +138,6 @@ final class Groovy8609Bug {
                 }
             }
         '''
-        assert err.message.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.StringBuffer, java.lang.Integer>>]')
+        assert err.contains('Cannot call A#getFirstRecord(java.util.ArrayList<java.util.HashMap<java.lang.String, java.lang.Integer>>) with arguments [java.util.ArrayList<java.util.HashMap<java.lang.StringBuffer, java.lang.Integer>>]')
     }
 }

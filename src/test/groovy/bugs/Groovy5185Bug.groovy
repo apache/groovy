@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy5185Bug {
-    @Test
+class Groovy5185Bug extends GroovyTestCase {
     void testShouldNotThrowMethodMissingException() {
         assertScript '''
             enum Foo {

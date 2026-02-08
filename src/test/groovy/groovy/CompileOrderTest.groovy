@@ -18,11 +18,9 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class CompileOrderTest {
-   @Test
+class CompileOrderTest extends GroovyTestCase {
    void testCompileOrder() {
       def interfaceFile = File.createTempFile("TestOrderInterface", ".groovy", buildDir())
       def concreteFile = File.createTempFile("TestOrderConcrete", ".groovy", buildDir())
@@ -56,7 +54,6 @@ class CompileOrderTest {
         new File("build")
     }
 
-    @Test
     void testCompileFileURI() {
         def interfaceFile = File.createTempFile("TestURLOrderInterface", ".groovy", buildDir())
         def concreteFile = File.createTempFile("TestURLOrderConcrete", ".groovy", buildDir())

@@ -18,17 +18,16 @@
  */
 package groovy.xml
 
+import groovy.test.GroovyTestCase
 import org.custommonkey.xmlunit.Diff
 import org.custommonkey.xmlunit.XMLUnit
-import org.junit.jupiter.api.Test
 import org.xml.sax.ContentHandler
 
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamResult
 
-class StreamingSAXBuilderTest {
+class StreamingSAXBuilderTest extends GroovyTestCase {
 
-    @Test
     void testDefaultSerialization() {
         def handler = TransformerFactory.newInstance().newTransformerHandler()
         def outstream = new ByteArrayOutputStream()
@@ -47,7 +46,6 @@ class StreamingSAXBuilderTest {
         assert xmlDiff.similar(), xmlDiff.toString()
     }
 
-    @Test
     void testDefaultSerializationNamespaces() {
         def handler = TransformerFactory.newInstance().newTransformerHandler()
         def outstream = new ByteArrayOutputStream()
@@ -68,7 +66,6 @@ class StreamingSAXBuilderTest {
         assert xmlDiff.similar(), xmlDiff.toString()
     }
 
-    @Test
     void testCustomHandler() {
         def visited = []
         def handler = [

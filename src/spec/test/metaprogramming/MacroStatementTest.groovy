@@ -19,12 +19,8 @@
 
 package metaprogramming
 
-
-import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.ClassHelper
-import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.Parameter
+import groovy.test.GroovyTestCase
+import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.stmt.ReturnStatement
 import org.codehaus.groovy.control.CompilePhase
@@ -32,19 +28,14 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.AbstractASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
-import org.junit.jupiter.api.Test
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 
-import static groovy.test.GroovyAssert.assertScript
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+class MacroStatementTest extends GroovyTestCase {
 
-class MacroStatementTest {
-
-    @Test
     void testOlderASTTransformation() {
         assertScript '''
         package metaprogramming
@@ -58,7 +49,6 @@ class MacroStatementTest {
         '''
     }
 
-    @Test
     void testOlderASTTransformationWithMacros() {
         assertScript '''
         package metaprogramming
@@ -79,6 +69,8 @@ class MacroStatementTest {
 @GroovyASTTransformationClass(["metaprogramming.AddMethodASTTransformation"])
 @interface AddMethod { }
 // end::addmethodannotation[]
+
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
 // tag::addmethodtransformationwithoutmacro[]
 @GroovyASTTransformation(phase = CompilePhase.INSTRUCTION_SELECTION)

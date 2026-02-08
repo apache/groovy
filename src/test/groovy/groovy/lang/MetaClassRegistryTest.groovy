@@ -18,16 +18,13 @@
  */
 package groovy.lang
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.shouldFail
-
+import groovy.test.GroovyTestCase
 
 /**
  * GROOVY-2875: MetaClassRegistryImpl constantMetaClasses map is leaking resources
  * GROOVY-4481: the listener and iterator mechanism over the MetaClassRegistry wasn't working.
  */
-class MetaClassRegistryTest {
+class MetaClassRegistryTest extends GroovyTestCase {
 
     def registry = GroovySystem.metaClassRegistry
     static initSize
@@ -39,7 +36,6 @@ class MetaClassRegistryTest {
         initSize = GroovySystem.metaClassRegistry.metaClassRegistryChangeEventListeners.size()
     }
 
-    @Test
     void testListenerAdditionAndRemoval() {
         def called = null
         def listener = { event -> called = event } as MetaClassRegistryChangeEventListener
@@ -70,14 +66,12 @@ class MetaClassRegistryTest {
         }
     }
 
-    @Test
     void testDefaultListenerRemoval() {
         assert registry.metaClassRegistryChangeEventListeners.size() == initSize
         registry.removeMetaClassRegistryChangeEventListener(registry.metaClassRegistryChangeEventListeners[0])
         assert registry.metaClassRegistryChangeEventListeners.size() == initSize
     }
 
-    @Test
     void testIteratorIteration() {
         // at the start the iteration might show elements, even if
         // they are no longer in use. After they are added to the list,
@@ -98,7 +92,6 @@ class MetaClassRegistryTest {
         Integer.metaClass = null
     }
 
-    @Test
     void testIteratorRemove() {
         Integer.metaClass.foo { -> 1 }
         assert 1.foo() == 1
@@ -110,7 +103,6 @@ class MetaClassRegistryTest {
         }
     }
 
-    @Test
     void testAddingAnEventListenerAndChangingAMetaClassWithAnEMC() {
         def events = []
         def listener = { MetaClassRegistryChangeEvent event ->
@@ -146,7 +138,6 @@ class MetaClassRegistryTest {
         String.metaClass = null
     }
 
-    @Test
     void testAddingAnEventListenerAndChangingAMetaClassWithANormalMetaClass() {
         def events = []
         def listener = { MetaClassRegistryChangeEvent event ->

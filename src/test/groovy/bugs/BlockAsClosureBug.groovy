@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class BlockAsClosureBug extends GroovyTestCase {
 
-class BlockAsClosureBug {
-
-    @Test
     void testBug() {
         def c = 0
 
@@ -34,12 +32,10 @@ class BlockAsClosureBug {
         assert c == 9
     }
 
-    @Test
     void testStaticBug() {
         staticMethod(null)
     }
 
-    @Test
     void testNonVoidMethod() {
         foo()
     }

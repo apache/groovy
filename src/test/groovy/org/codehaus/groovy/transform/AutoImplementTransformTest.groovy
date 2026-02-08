@@ -20,7 +20,7 @@ package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -239,7 +239,7 @@ final class AutoImplementTransformTest {
             @AutoImplement
             class C implements B { }
         '''
-        assert err.message =~ /The return type of java.lang.Iterable findAll\(\) in B is incompatible with java.util.List in A/
+        assert err =~ /The return type of java.lang.Iterable findAll\(\) in B is incompatible with java.util.List in A/
 
         assertScript shell, '''
             interface A { Iterable findAll() }
@@ -258,7 +258,7 @@ final class AutoImplementTransformTest {
             @AutoImplement
             class C implements B { }
         '''
-        assert err.message =~ /The return type of java.lang.Iterable findAll\(\) in B is incompatible with java.util.ArrayList in A/
+        assert err =~ /The return type of java.lang.Iterable findAll\(\) in B is incompatible with java.util.ArrayList in A/
 
         assertScript shell, '''
             interface A { AbstractList findAll() }

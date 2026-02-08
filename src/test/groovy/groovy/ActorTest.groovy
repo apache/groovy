@@ -18,20 +18,18 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import java.lang.ref.WeakReference
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.LinkedBlockingQueue
+import java.lang.ref.WeakReference
 
-class ActorTest {
-    @Test
+class ActorTest extends GroovyTestCase {
     void testSync () {
         new FibCalculator().calcFibSync(15)
     }
 
-    @Test
     void testAsync () {
         ReentrantLock.metaClass {
             withLock { Closure c ->

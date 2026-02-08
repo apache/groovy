@@ -18,8 +18,7 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
+import groovy.test.GroovyTestCase
 
 /**
   * Test that ensures that:
@@ -29,8 +28,7 @@ import org.junit.jupiter.api.Test
   *       without the methods being trapped endlessly by createNode()</li>
   * </ul>
   */
-class InvokeNormalMethodFromBuilder_Bug657 {
-    @Test
+class InvokeNormalMethodFromBuilder_Bug657 extends GroovyTestCase {
     void testInvokeNormalMethod() {
         def b = new Builder()
         assert b.callNormalMethod() == "first"

@@ -18,12 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class SubscriptTest extends GroovyTestCase {
 
-class SubscriptTest {
-
-    @Test
     void testListRange() {
         def list = ['a', 'b', 'c', 'd', 'e']
 
@@ -53,7 +51,6 @@ class SubscriptTest {
         assert sub == ['b', 'c']
     }
 
-    @Test
     void testObjectRangeRange() {
         def list = 'a'..'e'
 
@@ -74,7 +71,6 @@ class SubscriptTest {
         assert sub == ['d', 'c', 'b']
     }
 
-    @Test
     void testStringArrayRange() {
         String[] list = ['a', 'b', 'c', 'd', 'e']
 
@@ -95,7 +91,6 @@ class SubscriptTest {
         assert sub == ['d', 'c', 'b']
     }
 
-    @Test
     void testIntRangeRange() {
         def list = 10..15
 
@@ -116,7 +111,6 @@ class SubscriptTest {
         assert sub == [13, 12, 11]
     }
 
-    @Test
     void testIntArrayRange() {
         Integer[] list = [ 10, 11, 12, 13, 14, 15 ]
 
@@ -137,7 +131,6 @@ class SubscriptTest {
         assert sub == [13, 12, 11]
     }
 
-    @Test
     void testStringSubscript() {
         def text = "nice cheese gromit!"
 
@@ -160,12 +153,10 @@ class SubscriptTest {
 
     }
 
-    @Test
     void testStringPutAtRange(){
         def text = "0123"
     }
 
-    @Test
     void testListSubscriptWithList() {
         def list = ['a', 'b', 'c', 'd', 'e']
 
@@ -183,7 +174,6 @@ class SubscriptTest {
     }
 
 
-    @Test
     void testListSubscriptWithListAndRange() {
         def list = 100..200
 
@@ -198,14 +188,12 @@ class SubscriptTest {
     }
 
     // GROOVY-5865
-    @Test
     void testListSubscriptWithListAndEmptyRange() {
         def list = [0, 1, 2]
 
         assert list[0, 1..<1] == [0]
     }
 
-    @Test
     void testStringWithSubscriptList() {
 
         def text = "nice cheese gromit!"
@@ -215,7 +203,6 @@ class SubscriptTest {
         assert sub == "icecheese"
     }
 
-    @Test
     void testSubMap() {
         def map = ['a':123, 'b':456, 'c':789]
 
@@ -230,7 +217,6 @@ class SubscriptTest {
         assert map.getClass() == sub.getClass()
     }
 
-    @Test
     void testSubMapWithNonExistentKey() {
         def map = ['a':123, 'b':456, 'c':789]
 
@@ -246,7 +232,6 @@ class SubscriptTest {
         assert map.getClass() == sub.getClass()
     }
 
-    @Test
     void testListWithinAListSyntax() {
         def list = [1, 2, 3, 4..10, 5, 6]
 
@@ -257,7 +242,6 @@ class SubscriptTest {
     }
 
 
-    @Test
     void testBeanProperties() {
         def foo = new Foo()
 

@@ -18,7 +18,7 @@
  */
 package groovy.xml
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class XmlParserFactoryTest {
     @Test

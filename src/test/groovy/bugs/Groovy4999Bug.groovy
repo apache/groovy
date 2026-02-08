@@ -18,13 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
+import groovy.test.GroovyTestCase
 
 
-class Groovy4999Bug {
-    @Test
+class Groovy4999Bug extends GroovyTestCase {
     void testStaticOverloadedMixinMethods() {
         assertScript """
             @Mixin(UtilClass)

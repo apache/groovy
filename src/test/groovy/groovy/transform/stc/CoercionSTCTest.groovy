@@ -702,7 +702,6 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
             @Grab('io.vavr:vavr:0.10.4')
             import io.vavr.control.Try
             import io.vavr.Tuple2
-import static groovy.test.GroovyAssert.shouldFail
 
             Map<String,Object> getSpec() { [:] }
 

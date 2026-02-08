@@ -18,11 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class Groovy3949Bug {
-    @Test
+class Groovy3949Bug extends GroovyTestCase {
     void testClosureCallInStaticContextForClassWithStaticCallMethod() {
         assert Class3949.m { "$it 123" } == "1234 123"
     }

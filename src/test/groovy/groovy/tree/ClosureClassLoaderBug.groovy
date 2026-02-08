@@ -18,14 +18,12 @@
  */
 package groovy.tree
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-
-class ClosureClassLoaderBug {
+class ClosureClassLoaderBug extends GroovyTestCase {
     def b
     def EXPECTED = 'root1[attributes={}; value=[elem1[attributes={}; value=hello1]]]'
 
-    @Test
     void testTree() {
         b = NodeBuilder.newInstance()
 

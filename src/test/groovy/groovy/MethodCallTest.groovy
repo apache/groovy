@@ -18,17 +18,14 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class MethodCallTest extends GroovyTestCase {
 
-class MethodCallTest {
-
-    @Test
     void testMethodCall() {
         assert Math.max(5, 7) == 7
     }
 
-    @Test
     void testObjectMethodCall() {
         def c = getClass()
         assert c != null
@@ -36,7 +33,6 @@ class MethodCallTest {
         assert c.getName().endsWith("MethodCallTest")
     }
 
-    @Test
     void testObjectMethodCall2() {
         def s = "hello"
         def c = s.getClass()
@@ -45,7 +41,6 @@ class MethodCallTest {
         assert c.getName() == "java.lang.String"
     }
 
-    @Test
     void testGetNameBug() {
         def c = getClass()
         def n = c.getName()

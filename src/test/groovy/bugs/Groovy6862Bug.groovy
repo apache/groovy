@@ -18,13 +18,9 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy6862Bug {
-    @Test
+class Groovy6862Bug extends GroovyTestCase {
     void testDollarAllowedInTraitMethodNames() {
         assertScript '''
             trait Test {

@@ -18,12 +18,10 @@
  */
 package groovy.xml
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class SafeNumberXmlParserTest extends GroovyTestCase {
 
-class SafeNumberXmlParserTest {
-
-    @Test
     void testSafetyWhenConvertingToNumbers() {
         def xmlText = '''
                 <someNumberValues>

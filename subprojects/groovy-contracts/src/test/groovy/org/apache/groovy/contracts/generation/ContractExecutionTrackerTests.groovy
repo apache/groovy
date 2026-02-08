@@ -18,7 +18,7 @@
  */
 package org.apache.groovy.contracts.generation
 
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 class ContractExecutionTrackerTests {
 

@@ -18,13 +18,9 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-
-class FileLeftShiftTest {
-    @Test
+class FileLeftShiftTest extends GroovyTestCase {
     void testFileLeftShift() {
         def base = new File("build/classes/")
         new File(base, "MyFileLeftShiftTest.txt").delete()

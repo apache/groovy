@@ -18,15 +18,10 @@
  */
 package groovy
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
-import static groovy.test.GroovyAssert.assertScript
-import static org.junit.jupiter.api.Assertions.assertEquals
+class SwitchTest extends GroovyTestCase {
 
-
-class SwitchTest {
-
-    @Test
     void testSwitch() {
         callSwitch("foo", "foo")
         callSwitch("bar", "barfoo")
@@ -91,7 +86,6 @@ class SwitchTest {
     }
 
     // test the continue in switch, which should jump to the while start
-    @Test
     void testSwitchScope() {
         def i = 0
         def j = 0
@@ -111,7 +105,6 @@ class SwitchTest {
         assert j == 6
     }
 
-    @Test
     void testSwitchWithClosure() {
         switch (0) {
             case {true}: break
@@ -133,7 +126,6 @@ class SwitchTest {
     /** older versions of groovy produced a ListExpression for a
         fall through. the result was that it worked in some cases
         and in other cases not. For example not for patterns */
-    @Test
     void testFallthroughToOtherCaseWithNoCode() {
         def a = ['FileName.java', 'AnotherFileName.groovy', 'foo']
         def i = 0
@@ -150,7 +142,6 @@ class SwitchTest {
         assertEquals 12, i
     }
 
-    @Test
     void testFallthroughToOtherCaseWithCode() {
         def a = ['FileName.java', 'AnotherFileName.groovy', 'foo']
         def i = 0
@@ -168,7 +159,6 @@ class SwitchTest {
         assertEquals 17, i
     }
 
-    @Test
     void testFallthroughToDefaultWithNoCode() {
         def a = ['FileName.java', 'AnotherFileName.groovy', 'foo']
         def i = 0
@@ -185,7 +175,6 @@ class SwitchTest {
         assertEquals 21, i
     }
 
-    @Test
     void testFallthroughToDefaultWithCode() {
         def a = ['FileName.java', 'AnotherFileName.groovy', 'foo']
         def i = 0
@@ -203,7 +192,6 @@ class SwitchTest {
         assertEquals 26, i
     }
 
-    @Test
     void testSwitchNoStatementsAtEnd() {
         def a = ['FileName.java', 'AnotherFileName.groovy', 'foo']
         def i = 0
@@ -228,7 +216,6 @@ class SwitchTest {
         assertEquals 1, i
     }
 
-    @Test
     void testSwitchReturn1() {
         assertScript '''
             def test(x) {
@@ -245,7 +232,6 @@ class SwitchTest {
     }
 
     // GROOVY-3789
-    @Test
     void testSwitchReturn2() {
         assertScript '''
             def test = { ->
@@ -266,7 +252,6 @@ class SwitchTest {
     }
 
     // GROOVY-4727
-    @Test
     void testSwitchReturn3() {
         assertScript '''
             def test(x,y) {
@@ -288,7 +273,6 @@ class SwitchTest {
     }
 
     // GROOVY-9880
-    @Test
     void testSwitchReturn4() {
         assertScript '''
             def test(sb) {
@@ -308,7 +292,6 @@ class SwitchTest {
     }
 
     // GROOVY-9896
-    @Test
     void testSwitchReturn5() {
         assertScript '''
             def test(x) {

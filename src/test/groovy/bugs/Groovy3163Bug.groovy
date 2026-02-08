@@ -18,12 +18,10 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
+import groovy.test.GroovyTestCase
 
+class Groovy3163Test extends GroovyTestCase {
 
-class Groovy3163Test {
-
-@Test
 void testSuperOverStatic() {
     def siws = new Groovy3163SomeImplementorWithStatic()
 

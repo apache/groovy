@@ -18,16 +18,12 @@
  */
 package bugs
 
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
+import groovy.test.GroovyTestCase
 
 /**
  */
-class ClosureVariableBug {
+class ClosureVariableBug extends GroovyTestCase {
 
-    @Test
     void testClosurePassingBug() {
         def count = 0
         def closure = { assert count == it }
@@ -37,7 +33,6 @@ class ClosureVariableBug {
         closure(1)
     }
 
-    @Test
     void testPassingClosureAsNamedParameter() {
         def x = 123
 
@@ -49,7 +44,6 @@ class ClosureVariableBug {
         assert value == 123
     }
 
-    @Test
     void testBug() {
         def value = callClosure([1, 2])
         assert value == 2
@@ -64,7 +58,6 @@ class ClosureVariableBug {
         return x
     }
 
-    @Test
     void testLocalVariableWithPrimitiveType() {
         assertScript """
             int x

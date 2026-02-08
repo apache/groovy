@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.jupiter.api.Test
+import org.junit.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -35,7 +35,7 @@ final class Groovy8686 {
                 obj.toLowerCase() // typeof(obj) should be Object, not String
             }
         '''
-        assert err.message =~ /Cannot find matching method java.lang.Object#toLowerCase/
+        assert err =~ /Cannot find matching method java.lang.Object#toLowerCase/
     }
 
     @Test
@@ -47,6 +47,6 @@ final class Groovy8686 {
                 obj.toLowerCase() // typeof(obj) should be Object, not String
             }
         '''
-        assert err.message =~ /Cannot find matching method java.lang.Object#toLowerCase/
+        assert err =~ /Cannot find matching method java.lang.Object#toLowerCase/
     }
 }
