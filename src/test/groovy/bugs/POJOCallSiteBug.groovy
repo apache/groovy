@@ -18,23 +18,28 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class POJOCallSiteBug extends GroovyTestCase {
+class POJOCallSiteBug {
 
     MetaClassRegistry registry
     MetaClass originalMetaClass
 
+    @BeforeEach
     void setUp() {
         registry = GroovySystem.metaClassRegistry
         originalMetaClass = registry.getMetaClass(POJOCallSiteBugFoo)
     }
 
+    @AfterEach
     void tearDown() {
         registry.setMetaClass(POJOCallSiteBugFoo, originalMetaClass)
         org.codehaus.groovy.runtime.NullObject.getNullObject().setMetaClass(null)
     }
 
+    @Test
     void testPOJOCallSiteShouldBeUpdatedAfterMetaClassIsChanged() {
         def foo = {s -> s.foo() }
         def s = new POJOCallSiteBugFoo()
@@ -48,6 +53,7 @@ class POJOCallSiteBug extends GroovyTestCase {
         assert 'test' == foo(s)
     }
 
+    @Test
     void testPOJOPropertyCallSiteShouldBeUpdatedAfterMetaClassIsChanged() {
         def bar = {foo -> foo.bar }
         def foo = new POJOCallSiteBugFoo()
@@ -61,6 +67,7 @@ class POJOCallSiteBug extends GroovyTestCase {
         assert 'test' == bar(foo)
     }
 
+    @Test
     void testPOJOFieldCallSiteShouldBeUpdatedAfterMetaClassIsChanged() {
         def field = {foo -> foo.field }
         def foo = new POJOCallSiteBugFoo()
@@ -74,6 +81,7 @@ class POJOCallSiteBug extends GroovyTestCase {
         assert 'test' == field(foo)
     }
 
+    @Test
     void testChangeFromNullToOther() {
         def emc = new ExpandoMetaClass( org.codehaus.groovy.runtime.NullObject.getNullObject().getClass())
         emc.plus = {b -> b}

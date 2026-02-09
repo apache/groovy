@@ -19,21 +19,25 @@
 package groovy.jmx.builder
 
 import groovy.jmx.GroovyMBean
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import javax.management.MBeanServerConnection
 import javax.management.ObjectName
 
-class JmxBeanExportFactoryTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+class JmxBeanExportFactoryTest {
     JmxBuilder builder
     MBeanServerConnection server
 
+    @BeforeEach
     void setUp() {
-        super.setUp()
         builder = new JmxBuilder()
         server = builder.getMBeanServer()
     }
 
+    @Test
     void testBeanExportReplacePolicy() {
         def object = new MockManagedObject()
         // defaults to regpolicy = replace
@@ -45,6 +49,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert beans.size() == 1
     }
 
+    @Test
     void testBeanExportIgnorePolicy() {
         def object = new MockManagedObject()
         def beans = builder.export(regPolicy: "ignore") {
@@ -55,6 +60,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert beans.size() == 1
     }
 
+    @Test
     void testBeanExportErrorPolicy() {
         def object = new MockManagedObject()
         shouldFail {
@@ -67,6 +73,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testImplicitBeanGeneration() {
         def object = new MockManagedObject()
         def objName = "jmx.builder:type=ExportedObject,name=${object.class.canonicalName}@${object.hashCode()}"
@@ -98,6 +105,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert bean.info().getOperation("doSomethingElse").signature[1].type == "java.lang.String"
     }
 
+    @Test
     void testImplicitWithObjectName() {
         def objName = "jmx.builder:type=ImplicitDescriptor"
         def object = new MockManagedObject()
@@ -124,6 +132,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert bean.info().getOperation("doSomethingElse").signature.size() == 2
     }
 
+    @Test
     void testImplicitEmbeddedBeanExport() {
         def object = new BaseEmbeddedClass()
         def objName = "jmx.builder:type=ExportedObject,name=${object.class.canonicalName}@${object.hashCode()}"
@@ -159,6 +168,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testExplicitAttributesDeclaration() {
         def objName = "jmx.builder:type=ExplicitDescriptor"
         def beans
@@ -221,6 +231,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testExplicitEmbeddedAttribDeclaration() {
         def object = new EmbeddedAllAttribsOnly()
         def beans = builder.export {
@@ -252,6 +263,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert !bean.info().getAttribute("Available").descriptor.getFieldValue("writable")
     }
 
+    @Test
     void testExplicitConstructorDeclaration() {
         def objName = "jmx.builder:type=ExplicitDescriptor"
         def beans
@@ -315,6 +327,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert gbean.info().getConstructors()[0].signature[1].type == "int"
     }
 
+    @Test
     void testExplicitOperationDeclaration() {
         def objName = "jmx.builder:type=ExplicitDescriptor"
         def beans
@@ -390,6 +403,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testExplicitEmbeddedOperations() {
         def object = new EmbeddedAllOps()
         def beans = builder.export {
@@ -409,6 +423,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert bean.info().getOperation("doThreeThings").signature[2].type == "int"
     }
 
+    @Test
     void testAttributeChangeListener() {
         def objName = "jmx.builder:type=ExplicitDescriptor"
         def object = new MockManagedObject()
@@ -446,6 +461,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testOperationCallListener() {
         def object = new MockManagedObject()
         def testFlag1 = "0"
@@ -492,6 +508,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testExportMBeanObject() {
         def object = new MockSimpleObject(id: "0001", priority: 99)
         def object2 = new MockSimpleObject(id: "0003", priority: 100)
@@ -514,6 +531,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
         assert gbeans[1].Priority == 100
     }
 
+    @Test
     void testBeansExport() {
         def object1 = new MockManagedObject()
         def object2 = new BaseEmbeddedClass()

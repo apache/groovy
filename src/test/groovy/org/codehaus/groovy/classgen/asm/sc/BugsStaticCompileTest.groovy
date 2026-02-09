@@ -66,7 +66,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     // GROOVY-5526
     void testAssertEqualsShouldNotThrowVerifyError() {
-        assertScript '''import static org.junit.Assert.*
+        assertScript '''import static org.junit.jupiter.api.Assertions.*
             class CompilerBugs {
                 public static void main(String[] args) {
                     int expected = 0
@@ -112,7 +112,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     // GROOVY-9863
     void testPlusShouldNotThrowGroovyBugError() {
         assertScript '''
-            import static org.junit.Assert.assertEquals
+            import static org.junit.jupiter.api.Assertions.assertEquals
 
             class C {
                 double getSomeValue() {

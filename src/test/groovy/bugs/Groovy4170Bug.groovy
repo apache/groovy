@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4170Bug extends GroovyTestCase {
+
+class Groovy4170Bug {
+    @Test
     void testClosureCurrying() {
         new CurryFoo4170().bar()
     }

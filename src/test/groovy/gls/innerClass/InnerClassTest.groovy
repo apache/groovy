@@ -89,6 +89,18 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-11854
+    @Test
+    void testScriptAIC() {
+        assertScript '''
+            def obj = new Object(){}
+            def aic = obj.getClass()
+            assert aic.getName().endsWith('$1')
+            assert aic.getEnclosingClass().getName().startsWith('TestScript')
+            assert aic.getEnclosingMethod()?.getName() == 'run'
+        '''
+    }
+
     // GROOVY-7370, GROOVY-10722
     @Test
     void testVargsAIC() {
@@ -485,7 +497,7 @@ final class InnerClassTest {
                 }
             }
         '''
-        assert err =~ 'Could not find matching constructor for: A\\$B\\(Class\\)'
+        assert err.message =~ 'Could not find matching constructor for: A\\$B\\(Class\\)'
     }
 
     @Test @NotYetImplemented
@@ -506,11 +518,15 @@ final class InnerClassTest {
             class A {
                 class B {
                     String p
+                    String getQ() { WHY }
                 }
                 B m() {
                     return [p:'x'] // calls ScriptBytecodeAdapter.castToType([p:'x'], A$B.class)
+                    // Cannot cast object '{p=x}' with class 'java.util.LinkedHashMap' to class 'A$B' due to:
+                    // GroovyRuntimeException: Could not find named-arg compatible constructor. Expecting one of: A$B(Map), A$B()
                 }
                 final String q = 'y'
+                private static final String WHY = 'y'
             }
 
             o = new A().m()
@@ -574,7 +590,7 @@ final class InnerClassTest {
             }
             B.m()
         '''
-        assert err =~ /An explicit constructor is required because the implicit super constructor A\(\) is undefined/
+        assert err.message =~ /An explicit constructor is required because the implicit super constructor A\(\) is undefined/
     }
 
     @Test
@@ -910,7 +926,7 @@ final class InnerClassTest {
             C.m()
         '''
 
-        assert err =~ /Apparent variable 'count' was found in a static scope but doesn't refer to a local variable, static field or class./
+        assert err.message =~ /Apparent variable 'count' was found in a static scope but doesn't refer to a local variable, static field or class./
     }
 
     // GROOVY-8050
@@ -925,7 +941,7 @@ final class InnerClassTest {
 
             new Outer.Inner(new Outer()).p
         '''
-        assert err =~ /MissingPropertyException: No such property: p for class: Outer.Inner/
+        assert err.message =~ /No such property: p for class: Outer.Inner/
     }
 
     @NotYetImplemented @Test
@@ -1443,7 +1459,7 @@ final class InnerClassTest {
                 }
             }
         '''
-        assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
+        assert err.message =~ /No enclosing instance passed in constructor call of a non-static inner class/
     }
 
     // GROOVY-10289
@@ -1460,7 +1476,7 @@ final class InnerClassTest {
                 }
             }
         '''
-        assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
+        assert err.message =~ /No enclosing instance passed in constructor call of a non-static inner class/
     }
 
     @Test
@@ -1478,7 +1494,7 @@ final class InnerClassTest {
                 }
             }
         '''
-        assert err =~ /No enclosing instance passed in constructor call of a non-static inner class/
+        assert err.message =~ /No enclosing instance passed in constructor call of a non-static inner class/
     }
 
     // GROOVY-11711
@@ -1562,6 +1578,7 @@ final class InnerClassTest {
             }
             class C extends B {
             }
+
             def c = new C()
             assert c.foo() instanceof C
         '''
@@ -2363,7 +2380,7 @@ final class InnerClassTest {
             }
             new Outer.Inner().missing
         '''
-        assert err =~ /No such property: missing for class: Outer.Inner/
+        assert err.message =~ /No such property: missing for class: Outer.Inner/
     }
 
     // GROOVY-11612
@@ -2400,7 +2417,7 @@ final class InnerClassTest {
             }
             new Outer.Inner().missing = 42
         """
-        assert err =~ /No such property: missing for class: Outer.Inner/
+        assert err.message =~ /No such property: missing for class: Outer.Inner/
     }
 
     // GROOVY-11823
@@ -2454,7 +2471,7 @@ final class InnerClassTest {
 
             new Other().m()
         '''
-        assert err =~ /MissingPropertyException: No such property: X for class: Other/
+        assert err.message =~ /No such property: X for class: Other/
     }
 
     // GROOVY-7312
@@ -2524,7 +2541,7 @@ final class InnerClassTest {
             }
         '''
 
-        assert err =~ / Could not find matching constructor for: Test.A\(Test.A\)/
+        assert err.message =~ /Could not find matching constructor for: Test.A\(Test.A\)/
     }
 
     // GROOVY-6809
@@ -2582,7 +2599,7 @@ final class InnerClassTest {
             new Outer()
         '''
 
-        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
+        assert err.message =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
     // GROOVY-9168
@@ -2598,7 +2615,7 @@ final class InnerClassTest {
             new Outer()
         '''
 
-        assert err =~ / Cannot reference 'this' before supertype constructor has been called. /
+        assert err.message =~ / Cannot reference 'this' before supertype constructor has been called. /
     }
 
     // GROOVY-9168

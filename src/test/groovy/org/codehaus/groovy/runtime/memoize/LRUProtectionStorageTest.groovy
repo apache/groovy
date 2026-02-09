@@ -18,9 +18,14 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class LRUProtectionStorageTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertNull
+
+
+class LRUProtectionStorageTest {
+    @Test
     void testLRUStrategyWithOneElement() {
         def storage = new LRUProtectionStorage(1)
         assert storage.size() == 0
@@ -36,6 +41,7 @@ class LRUProtectionStorageTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testLRUStrategy() {
         def storage = new LRUProtectionStorage(3)
         assert storage.size() == 0
@@ -63,6 +69,7 @@ class LRUProtectionStorageTest extends GroovyTestCase {
         assertEquals 5, storage['key5']
     }
 
+    @Test
     void testTouch() {
         def storage = new LRUProtectionStorage(3)
         storage['key1'] = 1

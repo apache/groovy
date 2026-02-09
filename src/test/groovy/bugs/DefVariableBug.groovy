@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class DefVariableBug extends GroovyTestCase {
 
+class DefVariableBug {
+
+    @Test
     void testBug() {
 
      /* cpoirier - "def" can be referred as a variable name,

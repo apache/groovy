@@ -20,17 +20,17 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 public final class ClassNodeTest {
@@ -38,7 +38,7 @@ public final class ClassNodeTest {
     private final ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
     private final ClassNode innerClassNode = new InnerClassNode(classNode, "Foo$1", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
 
-    @Before
+    @BeforeEach
     public void setUp() {
         classNode.addField("field", ACC_PUBLIC, ClassHelper.STRING_TYPE, null);
     }
@@ -79,7 +79,7 @@ public final class ClassNodeTest {
         ClassNode superClass = GenericsUtils.makeClassSafe0(ClassHelper.REFERENCE_TYPE, ClassHelper.STRING_TYPE.asGenericsType());
         classNode.setSuperClass(superClass);
 
-        assertTrue("'using generics' not updated", classNode.isUsingGenerics());
+        assertTrue(classNode.isUsingGenerics(), "'using generics' not updated");
     }
 
     @Test // GROOVY-10763
@@ -90,15 +90,15 @@ public final class ClassNodeTest {
         ClassNode[] interfaces = {GenericsUtils.makeClassSafe0(ClassHelper.ITERABLE_TYPE, ClassHelper.STRING_TYPE.asGenericsType())};
         classNode.setInterfaces(interfaces);
 
-        assertTrue("'using generics' not updated", classNode.isUsingGenerics());
+        assertTrue(classNode.isUsingGenerics(), "'using generics' not updated");
     }
 
     @Test
     public void testPackageName() {
-        assertEquals("Package", null, classNode.getPackageName());
+        assertEquals(null, classNode.getPackageName(), "Package");
 
         ClassNode packageNode = new ClassNode("com.acme.Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
-        assertEquals("Package", "com.acme", packageNode.getPackageName());
+        assertEquals("com.acme", packageNode.getPackageName(), "Package");
     }
 
     @Test

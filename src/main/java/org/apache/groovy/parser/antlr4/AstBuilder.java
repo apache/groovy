@@ -126,6 +126,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -3971,7 +3972,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             GenericsType[] generics = this.visitTypeArguments(ctx.typeArguments());
             classNode.setGenericsTypes(generics);
             if (isTrue(ctx, IS_INSIDE_INSTANCEOF_EXPR) && Arrays.stream(generics).anyMatch(gt ->
-                    !gt.isWildcard() || asBoolean(gt.getLowerBound()) || asBoolean(gt.getUpperBounds()))) { // GROOVY-11585
+                    !gt.isWildcard() || asBoolean(gt.getLowerBound()) || ArrayGroovyMethods.asBoolean(gt.getUpperBounds()))) { // GROOVY-11585
                 throw this.createParsingFailedException("Cannot perform instanceof check against parameterized type " + classNode, ctx);
             }
         }

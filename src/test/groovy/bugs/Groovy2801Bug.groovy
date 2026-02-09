@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy2801Bug extends GroovyTestCase {
+
+class Groovy2801Bug {
+    @Test
     void testOverrideToStringInMapOfClosures() {
         def proxyImpl = [foo: { "Foo!" }, toString: { "overridden." }] as IGroovy2801Bug
         assert proxyImpl.toString() == "overridden."

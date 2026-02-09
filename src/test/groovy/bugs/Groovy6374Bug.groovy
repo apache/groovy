@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6374Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy6374Bug {
+    @Test
     void testShouldNotAllowCoercionOfFinalClass() {
         assertScript '''import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 

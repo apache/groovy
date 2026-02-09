@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy5122Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class Groovy5122Bug {
+    @Test
     void testInterfaceFieldShouldBeInitialized() {
         assertScript '''
             import java.lang.reflect.Field

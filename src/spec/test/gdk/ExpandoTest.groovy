@@ -18,9 +18,11 @@
  */
 package gdk
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ExpandoTest extends GroovyTestCase {
+
+class ExpandoTest {
+    @Test
     void testExpandoAddProperty() {
         // tag::expando_property[]
         def expando = new Expando()
@@ -30,6 +32,7 @@ class ExpandoTest extends GroovyTestCase {
         // end::expando_property[]
     }
 
+    @Test
     void testExpandoAddMethod() {
         // tag::expando_method[]
         def expando = new Expando()

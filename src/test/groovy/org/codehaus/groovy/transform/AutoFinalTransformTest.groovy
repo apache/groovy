@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -139,6 +139,6 @@ final class AutoFinalTransformTest {
                 }
             }
         '''
-        assert err =~ /The parameter \[y\] is declared final but is reassigned/
+        assert err.message =~ /The parameter \[y\] is declared final but is reassigned/
     }
 }

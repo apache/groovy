@@ -21,7 +21,7 @@ package org.codehaus.groovy.ast
 import org.codehaus.groovy.ast.expr.AnnotationConstantExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.ListExpression
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class Groovy9871 {
 

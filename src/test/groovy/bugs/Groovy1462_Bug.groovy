@@ -18,14 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  *  Verifies that the Groovy parser can accept quoted methods.
  */
 
-class Groovy1462_Bug extends GroovyTestCase {
+class Groovy1462_Bug {
 
+    @Test
     void testShort() {
         def smn = new StringMethodName()
         assert smn.foo0() == 'foo0'

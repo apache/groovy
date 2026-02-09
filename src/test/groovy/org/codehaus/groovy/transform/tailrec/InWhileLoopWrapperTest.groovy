@@ -21,7 +21,7 @@ package org.codehaus.groovy.transform.tailrec
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.builder.AstAssert
 import org.codehaus.groovy.ast.builder.AstBuilder
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 

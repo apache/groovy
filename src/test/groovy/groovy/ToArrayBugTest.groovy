@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ToArrayBugTest extends GroovyTestCase {
 
+class ToArrayBugTest {
+
+    @Test
     void testToArrayBug() {
 
         def array = getArray()

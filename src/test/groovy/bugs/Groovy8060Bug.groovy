@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy8060Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class Groovy8060Bug {
+    @Test
     void testLoggingWithinClosuresThatAreMethodArgsShouldHaveGuards() {
         assertScript '''
             import groovy.util.logging.Slf4j

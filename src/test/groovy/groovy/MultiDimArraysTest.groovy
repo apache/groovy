@@ -18,13 +18,17 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
 
 /**
  * Expose how to deal with multi-dimensional Arrays until this is supported at the language level.
  */
-class MultiDimArraysTest extends GroovyTestCase {
+class MultiDimArraysTest {
 
+    @Test
     void testCallTwoDimStringArray() {
         assertScript '''
             def someArrayOfStringArrays = new groovy.SomeClass().anArrayOfStringArrays()
@@ -33,6 +37,7 @@ class MultiDimArraysTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testCallTwoDimStringArrayWorkaround() {
         assertScript '''
             def someArrayOfStringArrays = new groovy.SomeClass().anArrayOfStringArraysWorkaround()
@@ -44,6 +49,7 @@ class MultiDimArraysTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testCallTwoDimStringArrayWorkaroundWithNull() {
         assertScript '''
             def someArrayOfStringArrays = new groovy.SomeClass().anArrayOfStringArraysWorkaround()
@@ -53,6 +59,7 @@ class MultiDimArraysTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testInsideGroovyMultiDimReplacement() {
         assertScript '''
             Object[] someArrayOfStringArrays = [["a", "a", "a"], ["b", "b", "b", null]]
@@ -61,6 +68,7 @@ class MultiDimArraysTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMultiDimCreationWithSizes() {
         assertScript '''
             Object[][] objectArray = new Object[2][5]
@@ -72,6 +80,7 @@ class MultiDimArraysTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMultiDimCreationWithoutSizeAtEnd() {
         assertScript '''
             def array = new int[5][6][]
@@ -81,6 +90,7 @@ class MultiDimArraysTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMultiDimArrayForCustomClass() {
         assertScript '''
             def arr = new groovy.MultiDimArraysTest[3][4]
@@ -88,6 +98,7 @@ class MultiDimArraysTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testIntArrayIncrement() {
         assertScript '''
             int[][] x = new int[10][10]

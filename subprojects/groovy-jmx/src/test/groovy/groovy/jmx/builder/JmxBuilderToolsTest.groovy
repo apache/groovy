@@ -18,25 +18,31 @@
  */
 package groovy.jmx.builder
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import javax.management.ObjectName
 
-class JmxBuilderToolsTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+class JmxBuilderToolsTest {
+
+    @Test
     void testCapitalize() {
         assert JmxBuilderTools.capitalize("test") == "Test"
     }
 
+    @Test
     void testUncapitalize() {
         assert JmxBuilderTools.uncapitalize("Test") == "test"
     }
 
+    @Test
     void testGetMBeanServer() {
         def server = JmxBuilderTools.getMBeanServer()
         assert server
     }
 
+    @Test
     void testGetNormalizedType() {
         assert JmxBuilderTools.getNormalizedType("byte") == "byte"
         assert JmxBuilderTools.getNormalizedType("Byte") == "java.lang.Byte"
@@ -74,6 +80,7 @@ class JmxBuilderToolsTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testGetDefaultObjectName() {
         def object = new MockManagedObject()
         def name = new ObjectName(JmxBuilderTools.DEFAULT_DOMAIN + ":" +
@@ -84,6 +91,7 @@ class JmxBuilderToolsTest extends GroovyTestCase {
         assert result.equals(name)
     }
 
+    @Test
     void testIsClassMBean() {
         def object = new MockManagedObject()
         assert !JmxBuilderTools.isClassMBean(object.getClass())
@@ -96,6 +104,7 @@ class JmxBuilderToolsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testRegisterMBeanFromMap() {
         def object = new BaseEmbeddedClass()
         def objName = "jmx.builder:type=ExportedObject,name=${object.class.canonicalName}@${object.hashCode()}"

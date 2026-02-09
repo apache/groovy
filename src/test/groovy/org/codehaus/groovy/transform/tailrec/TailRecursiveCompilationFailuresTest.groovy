@@ -60,7 +60,7 @@ class TailRecursiveCompilationFailuresTest extends GroovyShellTestCase {
             class TargetClass {
             	@TailRecursive
             	int aNonTailRecursiveMethod() {
-            		return 1 + aNonTailRecursiveMethod() 
+            		return 1 + aNonTailRecursiveMethod()
             	}
             }
         """) }
@@ -72,7 +72,7 @@ class TailRecursiveCompilationFailuresTest extends GroovyShellTestCase {
             class TargetClass {
             	@TailRecursive
             	static int aNonTailRecursiveMethod() {
-            		return 1 + aNonTailRecursiveMethod() 
+            		return 1 + aNonTailRecursiveMethod()
             	}
             }
         """) }

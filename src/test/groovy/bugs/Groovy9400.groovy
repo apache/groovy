@@ -19,9 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.Test
-
-import static groovy.test.GroovyAssert.assertScript
+import org.junit.jupiter.api.Test
 
 @CompileStatic
 final class Groovy9400 {

@@ -18,13 +18,17 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+
 
 /**
  * Tests for ClosureComparator
  */
-class ClosureComparatorTest extends GroovyTestCase {
+class ClosureComparatorTest {
 
+    @Test
     void testClosureComparatorForGroovyObjects() {
 
         def comparator = new ClosureComparator({ one, another ->
@@ -40,6 +44,7 @@ class ClosureComparatorTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testClosureComparatorForNumericTypes() {
 
         def comparator = new ClosureComparator({ one, another ->

@@ -19,22 +19,26 @@
 package groovy.jmx.builder
 
 import groovy.jmx.GroovyMBean
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import javax.management.MBeanServer
 import javax.management.ObjectName
 
-class JmxTimerFactoryTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+class JmxTimerFactoryTest {
     def builder
     MBeanServer server
 
+    @BeforeEach
     void setUp() {
-        super.setUp()
         builder = new JmxBuilder()
         builder.registerFactory "timer", new JmxTimerFactory()
         server = builder.getMBeanServer()
     }
 
+    @Test
     void testSimpleTimerSetup() {
         GroovyMBean timer = builder.timer()
         assert timer
@@ -47,6 +51,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTimerWithName() {
         GroovyMBean timer = builder.timer(name: "jmx.builder:type=TimerService")
         assert timer
@@ -57,6 +62,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTimerEventName() {
         GroovyMBean timer = builder.timer(event: "timer.event")
         assert timer
@@ -67,6 +73,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTimerMessage() {
         GroovyMBean timer = builder.timer(message: "foo is here")
         assert timer
@@ -77,6 +84,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTimerUserData() {
         def today = new Date()
         GroovyMBean timer = builder.timer(data: today)
@@ -88,6 +96,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTimerDate() {
         def today = new Date()
         GroovyMBean timer = builder.timer(date: today)
@@ -103,6 +112,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTimerPeriod() {
         GroovyMBean timer = builder.timer(period: 1000)
         assert timer
@@ -141,6 +151,7 @@ class JmxTimerFactoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testNestedTimer() {
         def timers = builder.export {
             timer(event: "event.hi.heartbeat")

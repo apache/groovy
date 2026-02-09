@@ -18,10 +18,16 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class NestedClassTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+
+class NestedClassTest {
+
+    @Test
     void testStaticInnerStaticMethod () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -31,6 +37,7 @@ class NestedClassTest extends GroovyTestCase {
         assertEquals 30, script.run()
     }
 
+    @Test
     void testStaticInnerInstanceMethod () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -40,6 +47,7 @@ class NestedClassTest extends GroovyTestCase {
         assertEquals 239, script.run()
     }
 
+    @Test
     void testParam () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -52,6 +60,7 @@ class NestedClassTest extends GroovyTestCase {
         assertEquals 239, script.run()
     }
 
+    @Test
     void testTypeDecl () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -66,6 +75,7 @@ class NestedClassTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testFieldDecl () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -80,6 +90,7 @@ class NestedClassTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInstanceof () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy
@@ -90,6 +101,7 @@ class NestedClassTest extends GroovyTestCase {
         assertTrue script.run ()
     }
 
+    @Test
     void testExtends () {
         def script = new GroovyClassLoader(getClass().getClassLoader()).parseClass ("""
         package groovy

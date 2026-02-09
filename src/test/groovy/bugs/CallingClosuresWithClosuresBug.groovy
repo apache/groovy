@@ -18,12 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class CallingClosuresWithClosuresBug extends GroovyTestCase {
+class CallingClosuresWithClosuresBug {
 
+    @Test
     void testBug() {
         def a = {1}
         // old workaround

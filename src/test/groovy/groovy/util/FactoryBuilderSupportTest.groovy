@@ -18,13 +18,17 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
 
 /**
  *   Test for FactoryBuilderSupport based in BuilderSupportTest
  *   as it should comply with the same contract
  */
-class FactoryBuilderSupportTest extends GroovyTestCase {
+class FactoryBuilderSupportTest {
+    @Test
     void testSimpleNode() {
         def b = new SpoofFactoryBuilder()
         assert b.@log == [
@@ -50,6 +54,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         assert log == expected
     }
 
+    @Test
     void testSimpleNodeWithValue() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('value')
@@ -66,6 +71,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeWithOneAttribute() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo(name:'value')
@@ -82,6 +88,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeWithClosure() {
         def b = new SpoofFactoryBuilder()
         b.foo(){
@@ -108,6 +115,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         assert log == expected
     }
 
+    @Test
     void testSimpleNodeWithOneAttributeAndValue() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo(bar:'baz', 'value')
@@ -124,6 +132,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeWithValueAndOneAttribute() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('value', bar:'baz')
@@ -140,6 +149,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeWithOneAttributeAndValueAndClosure() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo(bar:'baz', 'value') { 1 }
@@ -156,6 +166,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeWithValueAndOneAttributeAndClosure() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('value', bar:'baz') { 1 }
@@ -172,6 +183,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeTwoValues() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2')
@@ -188,6 +200,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeTwoValuesClosure() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2') { 1 }
@@ -204,6 +217,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeThreeValues() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2', 'arg3')
@@ -220,6 +234,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testSimpleNodeFourValues() {
         def b = new SpoofFactoryBuilder()
         def node = b.foo('arg1', 'arg2', 'arg3', 'arg4')
@@ -237,6 +252,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testNestedMethodCallsResolution() {
         def b = new SpoofFactoryBuilder()
         b.outest {
@@ -251,6 +267,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         builder.inner()
     }
 
+    @Test
     void testExplicitProperty() {
         def b = new SpoofFactoryBuilder();
         // property neither set in the binding or explicitly, should fail
@@ -282,6 +299,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         assert val == 5
     }
 
+    @Test
     void testExplicitMethod() {
         def b = new SpoofFactoryBuilder();
         // property neither set in the binding or explicitly, should fail
@@ -310,6 +328,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
 
     // ==================================
 
+    @Test
     void testNestedBuilderSimpleNode() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -348,6 +367,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testNestedBuilderSimpleNodeWithValue() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -372,6 +392,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testNestedBuilderSimpleNodeWithOneAttribute() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -396,6 +417,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testNestedBuilderSimpleNodeWithClosure() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -428,6 +450,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testNestedBuilderSimpleNodeWithOneAttributeAndValue() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -452,6 +475,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testNestedBuilderSimpleNodeWithValueAndOneAttribute() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -476,6 +500,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testNestedBuilderSimpleNodeWithOneAttributeAndValueAndClosure() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -500,6 +525,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testNestedBuilderSimpleNodeWithValueAndOneAttributeAndClosure() {
         def n = new SpoofFactoryBuilder()
         def b = new SpoofFactoryBuilder(proxyBuilder:n)
@@ -524,6 +550,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testWithBuilder() {
         def b = new SpoofFactoryBuilder()
         def c = new SpoofFactoryBuilder()
@@ -576,6 +603,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testWithBuilderAndName() {
         def b = new SpoofFactoryBuilder()
         def c = new SpoofFactoryBuilder()
@@ -635,6 +663,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testWithBuilderAndNameAndAttributes() {
         def b = new SpoofFactoryBuilder()
         def c = new SpoofFactoryBuilder()
@@ -694,6 +723,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testWithBuilderAndThrowAnException() {
         def b = new SpoofFactoryBuilder()
         def c = new SpoofFactoryBuilder()
@@ -734,6 +764,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testHandlesChildren() {
         def b = new SpoofFactoryBuilder()
         b.getFactories().foo.handlesNodeChildren = true
@@ -760,6 +791,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testInteceptsChildren() {
         def b = new SpoofFactoryBuilder()
         b.getFactories().foo.handlesNodeChildren = true
@@ -781,23 +813,25 @@ class FactoryBuilderSupportTest extends GroovyTestCase {
         ]
     }
 
+    @Test
     void testErrorMessage_checkValueIsType() {
         def msg = shouldFail(Exception) {
             FactoryBuilderSupport.checkValueIsType('message', 'prop', Integer)
         }
-        assert msg.contains('prop')
-        assert msg.contains('Integer')
-        assert msg.contains('String')
+        assert msg.message.contains('prop')
+        assert msg.message.contains('Integer')
+        assert msg.message.contains('String')
     }
 
+    @Test
     void testErrorMessage_checkValueIsTypeNotString() {
         def msg = shouldFail(Exception) {
             FactoryBuilderSupport.checkValueIsTypeNotString(123G, 'prop', Integer)
         }
-        assert msg.contains('prop')
-        assert msg.contains('Integer')
-        assert msg.contains('String')
-        assert msg.contains('BigInteger')
+        assert msg.message.contains('prop')
+        assert msg.message.contains('Integer')
+        assert msg.message.contains('String')
+        assert msg.message.contains('BigInteger')
 
     }
 

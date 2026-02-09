@@ -18,26 +18,31 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class UnaryMinusNumberTests extends GroovyTestCase {
 
+class UnaryMinusNumberTests {
+
+    @Test
     void testNegateInteger() {
         def a = -1
         assert a == -1
     }
 
+    @Test
     void testNegateIntegerExpression() {
         def a = -1
         a = -a
         assert a == 1
     }
 
+    @Test
     void testNegateDouble() {
         def a = -1.0
         assert a == -1.0
     }
 
+    @Test
     void testNegateDoubleExpression() {
         def a = -1.0
         a = -a

@@ -18,7 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase;
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test withWriter with inner loop closing the stream in advance.
@@ -26,8 +27,9 @@ import groovy.test.GroovyTestCase;
  * If used inside a withWriter(), it must not lead to problems
  */
 
-class WithResourceStreamClosedTest extends GroovyTestCase {
+class WithResourceStreamClosedTest {
 
+    @Test
     void testWithWriterStreamClosed() {
 
         def outer = new StringWriter()
@@ -40,6 +42,7 @@ class WithResourceStreamClosedTest extends GroovyTestCase {
         assert outer.toString() == "Hallo Welt"
     }
 
+    @Test
     void testWithOutputStreamClosed() {
         def os = new ByteArrayOutputStream()
         os.withStream { out ->

@@ -109,7 +109,7 @@ final class BreakContinueLabelTest {
 
             test()
         '''
-        assert err =~ /cannot break to label 'first' from here/
+        assert err.message =~ /cannot break to label 'first' from here/
     }
 
     @Test

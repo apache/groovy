@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SliceTest extends GroovyTestCase {
 
+class SliceTest {
+
+    @Test
     void testListSlice() {
         def list = [1, 2, 3, 4]
         list[1,2] = 5

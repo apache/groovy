@@ -17,13 +17,18 @@
  *  under the License.
  */
 
-import groovy.test.GroovyTestCase
 
 /**
  * Specification tests for records
  */
-class RecordSpecificationTest extends GroovyTestCase {
 
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+class RecordSpecificationTest {
+
+    @Test
     void testSimpleRecordKeyword() {
         assertScript '''
 // tag::record_message_defn[]
@@ -57,10 +62,11 @@ final class Message extends Record {
 '''
     }
 
+    @Test
     void testRecordDefaultsAndNamedArguments() {
         assertScript '''
-import static groovy.test.GroovyAssert.shouldFail
 import groovy.transform.*
+import static groovy.test.GroovyAssert.shouldFail
 
 // tag::record_point_defn[]
 record ColoredPoint(int x, int y = 0, String color = 'white') {}
@@ -95,6 +101,7 @@ assert new ColoredPoint3(y: 5).toString() == 'ColoredPoint3[x=0, y=5, color=whit
 '''
     }
 
+    @Test
     void testOverrideToString() {
         assertScript '''
 // tag::record_point3d[]
@@ -109,6 +116,7 @@ assert new Point3D(10, 20, 30).toString() == 'Point3D[coords=10,20,30]'
 '''
     }
 
+    @Test
     void testCopyWith() {
         assertScript '''
 import groovy.transform.RecordOptions
@@ -136,6 +144,7 @@ shouldFail(MissingMethodException) {
 '''
     }
 
+    @Test
     void testImmutable() {
         assertScript '''
 import groovy.transform.ImmutableProperties
@@ -151,6 +160,7 @@ assert shop.items() == ['bread', 'milk']
 '''
     }
 
+    @Test
     void testToList() {
         assertScript '''
 // tag::record_to_list[]
@@ -165,6 +175,7 @@ assert c == 'green'
 '''
     }
 
+    @Test
     void testToMap() {
         assertScript '''
 // tag::record_to_map[]
@@ -176,6 +187,7 @@ assert p.toMap() == [x: 100, y: 200, color: 'green']
 '''
     }
 
+    @Test
     void testSize() {
         assertScript '''
 // tag::record_size[]
@@ -187,6 +199,7 @@ assert p.size() == 3
 '''
     }
 
+    @Test
     void testGetAt() {
         assertScript '''
 // tag::record_get_at[]
@@ -198,6 +211,7 @@ assert p[1] == 200
 '''
     }
 
+    @Test
     void testGenerics() {
         assertScript '''
 import groovy.transform.CompileStatic
@@ -220,6 +234,7 @@ method()
 '''
     }
 
+    @Test
     void testComponents() {
         assert '''
 // tag::record_components[]
@@ -251,6 +266,7 @@ method()
 '''
     }
 
+    @Test
     void testRecordCompactConstructor() {
         assertScript '''
 // tag::record_compact_constructor[]
@@ -267,6 +283,7 @@ assert w.message() == 'HELP'
 '''
     }
 
+    @Test
     void testToStringAnnotation() {
         assertScript '''
 // tag::record_point3d_tostring_annotation[]
@@ -296,6 +313,7 @@ assert new Point(10, 20).toString() == 'twod.Point[x=10, y=20]'
 '''
     }
 
+    @Test
     void testSimpleRecordAnnotation() {
         assertScript '''
 import groovy.transform.RecordType

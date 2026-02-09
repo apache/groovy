@@ -245,7 +245,7 @@ final class MapTest {
             assert map.keySet() == ['x','y','z'].toSet()
         """
         assertScript """import groovy.transform.*
-            import static groovy.test.GroovyAssert.*
+import static groovy.test.GroovyAssert.shouldFail
             class M extends HashMap {
                 def           $mode final v = 'v'
                 public        $mode final w = 'w'

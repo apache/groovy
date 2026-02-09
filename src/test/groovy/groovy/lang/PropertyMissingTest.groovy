@@ -18,16 +18,22 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertNull
+
 
 /**
  * Tests the behaviour of the propertyMissing functionality of Groovy
  *
  * @since 1.5
  */
-class PropertyMissingTest extends GroovyTestCase {
+class PropertyMissingTest {
 
 
+    @Test
     void testPropertyMissingWithMethods() {
         def t = new PMTest1()
 
@@ -41,6 +47,7 @@ class PropertyMissingTest extends GroovyTestCase {
         assertEquals "keepme", t.bar
     }
 
+    @Test
     void testPropertyMissingViaMetaClass() {
         def store = [:]
         PMTest2.metaClass.propertyMissing = { String name ->
@@ -62,6 +69,7 @@ class PropertyMissingTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testStaticPropertyMissingViaMetaClass() {
 
         shouldFail(MissingPropertyException) {
@@ -77,6 +85,7 @@ class PropertyMissingTest extends GroovyTestCase {
     }
 
     // GROOVY-7723
+    @Test
     void testPropertyMissingSetterWithNoGetter() {
         def t = new PMTest3()
 
@@ -98,14 +107,16 @@ class PropertyMissingTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testClassDotProperty() {
-        assert shouldFail(MissingPropertyException, "Integer.xxx") ==
+        assert shouldFail(MissingPropertyException, "Integer.xxx").message ==
                 'No such property: xxx for class: java.lang.Integer'
     }
 
+    @Test
     void testClassDotPropertyInClosure() {
         // GROOVY-10188: strange looking parameter in Closure to force a particular edge case
-        assert shouldFail(NullPointerException, "{ Integer -> Integer.xxx }()") ==
+        assert shouldFail(NullPointerException, "{ Integer -> Integer.xxx }()").message ==
                 "Cannot get property 'xxx' on null object"
     }
 

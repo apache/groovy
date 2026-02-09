@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4069Bug extends GroovyTestCase {
 
+class Groovy4069Bug {
+
+    @Test
     void testEMCConstructorWithSubClassingTest1V1() {
         def shell = new GroovyShell()
         shell.evaluate """
@@ -50,6 +52,7 @@ class Groovy4069Bug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testEMCConstructorWithSubClassingTest1V2() {
         def shell = new GroovyShell()
         shell.evaluate """
@@ -78,6 +81,7 @@ class Groovy4069Bug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testEMCConstructorWithSubClassingTest2V1() {
         def shell = new GroovyShell()
         shell.evaluate """
@@ -106,6 +110,7 @@ class Groovy4069Bug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testEMCConstructorWithSubClassingTest2V2() {
         def shell = new GroovyShell()
         shell.evaluate """

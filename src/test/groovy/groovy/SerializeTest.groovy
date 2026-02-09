@@ -18,10 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SerializeTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+
+class SerializeTest {
+
+    @Test
     void testGString () {
         def a = 2, b = 2
         def gs = "${a + b} = ${b * a}"
@@ -32,9 +37,9 @@ class SerializeTest extends GroovyTestCase {
         def res = read(buffer)
 
         assertTrue(res instanceof GString)
-        assertEquals "4 = 4", res
-    }
+        assertEquals "4 = 4", res.toString()    }
 
+    @Test
     void testGStringField () {
         def a = 2, b = 2
 
@@ -44,9 +49,10 @@ class SerializeTest extends GroovyTestCase {
         def buffer = write(obj)
         def resObj = read(buffer)
 
-        assertEquals "4 = 4", resObj.f
+        assertEquals "4 = 4", resObj.f.toString()
     }
 
+    @Test
     void testFoo() {
         def foo = new Foo()
         foo.name = "Gromit"

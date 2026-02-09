@@ -29,7 +29,7 @@ import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.ast.stmt.IfStatement
 import org.codehaus.groovy.ast.stmt.TryCatchStatement
 import org.codehaus.groovy.control.CompilePhase
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 /**
  * Tests the CodeVisitorSupport.

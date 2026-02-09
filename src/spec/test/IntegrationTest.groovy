@@ -1,4 +1,3 @@
-import groovy.test.GroovyTestCase
 
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
@@ -18,7 +17,7 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class IntegrationTest extends GroovyTestCase {
+class IntegrationTest {
     void testEval() {
         assertScript '''// tag::eval_me[]
 import groovy.util.Eval
@@ -163,6 +162,8 @@ o.doIt()                                                                    // <
 
         assertScript '''// tag::gcl_distinct_classes[]
 import groovy.lang.GroovyClassLoader
+import org.junit.jupiter.api.Test
+import static groovy.test.GroovyAssert.*
 
 def gcl = new GroovyClassLoader()
 def clazz1 = gcl.parseClass('class Foo { }')                                // <1>

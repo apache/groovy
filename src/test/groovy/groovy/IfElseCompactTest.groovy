@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class IfElseCompactTest extends GroovyTestCase {
 
+class IfElseCompactTest {
+
+    @Test
     void testIf_NoElse() {
 
         def x = false
@@ -31,6 +33,7 @@ class IfElseCompactTest extends GroovyTestCase {
         assert x == true
     }
 
+    @Test
     void testIf_WithElse_MatchIf() {
 
         def x = false

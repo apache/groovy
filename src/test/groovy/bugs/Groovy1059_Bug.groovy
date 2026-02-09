@@ -18,7 +18,8 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * GROOVY-1059
@@ -34,8 +35,9 @@ import groovy.test.GroovyTestCase
  *    have the same meaning.
  */
 
-class Groovy1059_Bug extends GroovyTestCase {
+class Groovy1059_Bug {
 
+    @Test
     void testClosureAsAttribute() {
         def x = new Groovy1059Foo()
 

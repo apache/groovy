@@ -234,7 +234,7 @@ final class InterfaceTest {
         """
         spec = spec.split()[0]
         if (spec == '@PackageScope') spec = 'package-private'
-        assert err =~ /$spec method m\(\) from B cannot shadow the public method in A/
+        assert err.message =~ /$spec method m\(\) from B cannot shadow the public method in A/
     }
 
     // GROOVY-11753

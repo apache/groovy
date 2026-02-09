@@ -18,15 +18,18 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.GroovyBugError
+import org.junit.jupiter.api.Test
 
-class Groovy2666Bug extends GroovyTestCase{
+import static org.junit.jupiter.api.Assertions.fail
+
+class Groovy2666Bug{
 
     private void ex () {
         throw new GroovyBugError ("ERR")
     }
 
+    @Test
     void testMe () {
 
         try {

@@ -18,12 +18,16 @@
  */
 package gls.invocation
 
-import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 @CompileStatic
-final class DefaultParamTest extends GroovyTestCase {
+final class DefaultParamTest {
 
+    @Test
     void testDefaultParameterCausingDoubledMethod() {
         //GROOVY-2191
         shouldFail '''
@@ -42,6 +46,7 @@ final class DefaultParamTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDefaultParameters() {
         assertScript '''
             def doSomething(a, b = 'defB', c = 'defC') {
@@ -60,6 +65,7 @@ final class DefaultParamTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDefaultTypedParameters() {
         assertScript '''
             String doTypedSomething(String a = 'defA', String b = 'defB', String c = 'defC') {
@@ -72,6 +78,7 @@ final class DefaultParamTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDefaultTypedParametersAnother() {
         assertScript '''
             String doTypedSomethingAnother(String a = 'defA', String b = 'defB', String c) {
@@ -90,6 +97,7 @@ final class DefaultParamTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testConstructor() {
         assertScript '''
             class DefaultParamTestTestClass {
@@ -104,6 +112,7 @@ final class DefaultParamTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPrecendence() {
         // def meth(Closure cl = null) will produce a call meth(null)
         // since interfaces are preferred over normal classes and since
@@ -130,6 +139,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-9151
+    @Test
     void testMethodWithAllParametersDefaulted() {
         assertScript '''
             String greet(Object o = 'world', String s = o.toString()) {
@@ -140,6 +150,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-6851, GROOVY-9151, GROOVY-10104
+    @Test
     void testMethodWithAllParametersDefaultedCS() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -163,6 +174,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-9151
+    @Test
     void testConstructorWithAllParametersDefaulted() {
         assertScript '''
             class Greeting {
@@ -176,6 +188,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-9151
+    @Test
     void testConstructorWithAllParametersDefaulted2() {
         def err = shouldFail '''
             class Greeting {
@@ -187,10 +200,11 @@ final class DefaultParamTest extends GroovyTestCase {
             assert new Greeting().text == 'hello world'
         '''
 
-        assert err =~ /The generated constructor "Greeting\(\)" references parameter 'o' which has been replaced by a default value expression./
+        assert err.message =~ /The generated constructor "Greeting\(\)" references parameter 'o' which has been replaced by a default value expression./
     }
 
     // GROOVY-5632
+    @Test
     void testClosureSharedVariableRefersToDefaultParameter1() {
         assertScript '''
             def f1( int x = 3, fn={ -> x } ) {
@@ -203,6 +217,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-5632
+    @Test
     void testClosureSharedVariableRefersToDefaultParameter2() {
         assertScript '''
            def f2( int x = 3, fn={ -> def c2 = { -> x }; c2.call() } ) {
@@ -216,6 +231,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-5632
+    @Test
     void testClosureSharedVariableRefersToDefaultParameter3() {
         assertScript '''
            def f3(fn={ -> 42 }, fn2={ -> def c2 = { -> fn() }; c2.call() } ) {
@@ -228,6 +244,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-5632
+    @Test
     void testClosureSharedVariableRefersToDefaultParameter4() {
         assertScript '''
            def f4(def s = [1,2,3], fn = { -> s.size() }) {
@@ -239,6 +256,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-5632
+    @Test
     void testClosureSharedVariableRefersToDefaultParameter5() {
         assertScript '''
            static <T extends Number> Integer f5(List<T> s = [1,2,3], fn = { -> (s*.intValue()).sum() }) {
@@ -251,6 +269,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-5632
+    @Test
     void testClosureSharedVariableRefersToDefaultParameter6() {
         assertScript '''
            def f6(def s = [1,2,3], fn = { -> s.size() }, fn2 = { fn() + s.size() }) {
@@ -262,6 +281,7 @@ final class DefaultParamTest extends GroovyTestCase {
     }
 
     // GROOVY-5632
+    @Test
     void testClosureSharedVariableRefersToDefaultParameter7() {
         assertScript '''
             def f7( int x = 3, int y = 39, fn={ -> x + y } ) {

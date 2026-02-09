@@ -21,8 +21,9 @@ package org.codehaus.groovy.transform;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.EmptyExpression;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit test for SingletonASTTransformation.
@@ -37,11 +38,11 @@ public class SingletonASTTransformationTest {
                     EmptyExpression.INSTANCE
             };
             new SingletonASTTransformation().visit(badInput, null);
-            Assert.fail("Contract Failure");
+            fail("Contract Failure");
         } catch (Error e) {
-            Assert.assertTrue("Bad error msg: " + e.getMessage(), e.getMessage().contains("ConstantExpression"));
-            Assert.assertTrue("Bad error msg: " + e.getMessage(), e.getMessage().contains("EmptyExpression"));
-            Assert.assertTrue("Bad error msg: " + e.getMessage(), e.getMessage().contains("expecting [AnnotationNode, AnnotatedNode]"));
+            assertTrue(e.getMessage().contains("ConstantExpression"), "Bad error msg: " + e.getMessage());
+            assertTrue(e.getMessage().contains("EmptyExpression"), "Bad error msg: " + e.getMessage());
+            assertTrue(e.getMessage().contains("expecting [AnnotationNode, AnnotatedNode]"), "Bad error msg: " + e.getMessage());
         }
     }
 

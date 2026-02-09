@@ -19,9 +19,9 @@
 package org.apache.groovy.contracts.tests.doc
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assert.assertTrue
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 class DocumentationExampleTests extends BaseTestClass {
 
@@ -101,7 +101,7 @@ class DocumentationExampleTests extends BaseTestClass {
         def remove()  {
             elements.pop()
         }
-    }    
+    }
     '''
 
 

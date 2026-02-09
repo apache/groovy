@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4241Bug extends GroovyTestCase {
+
+class Groovy4241Bug {
+    @Test
     void testAsTypeWithinvokeMethodOverridden() {
         Foo4241.metaClass.invokeMethod = { String name, args ->
             println name

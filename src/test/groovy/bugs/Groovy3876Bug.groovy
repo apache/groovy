@@ -18,10 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+import org.junit.jupiter.api.Test
 
-class Groovy3876Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
+
+class Groovy3876Bug {
+    @Test
     void testGStringToNumberConversion() {
         def a
 

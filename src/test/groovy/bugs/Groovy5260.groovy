@@ -24,10 +24,12 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.CompileUnit
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.tools.javac.JavaStubGenerator
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
-import static org.objectweb.asm.Opcodes.*
+import static org.objectweb.asm.Opcodes.ACC_FINAL
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
+import static org.objectweb.asm.Opcodes.ACC_STATIC
 
 @AutoFinal
 final class Groovy5260 {

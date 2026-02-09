@@ -18,13 +18,15 @@
  */
 package org.apache.groovy.groovysh
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Verifies the programmatic API surface exists and is callable.
  */
-class ProgrammaticStartTest extends GroovyTestCase {
+class ProgrammaticStartTest {
 
+    @Test
     void testStartMethodIsPresentAndCallable() {
         // We just verify it accepts parameters and doesn't throw on trivial help/version paths.
         int rc = Main.start(foo: 1, '--help')

@@ -18,19 +18,22 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * Unit test for IndentPrinter.
  */
-class IndentPrinterTest extends GroovyTestCase {
+class IndentPrinterTest {
 
     Writer out
 
+    @BeforeEach
     void setUp(){
         out = new StringWriter()
     }
 
+    @Test
     void testSimpleIndentation() {
         def printer = new IndentPrinter(new PrintWriter(out))
 
@@ -47,6 +50,7 @@ class IndentPrinterTest extends GroovyTestCase {
         assert 'parent\n  child\nparent2\n' == out.toString()
     }
 
+    @Test
     void testAutoIndentation() {
         def printer = new IndentPrinter(new PrintWriter(out))
         printer.autoIndent = true
@@ -61,6 +65,7 @@ class IndentPrinterTest extends GroovyTestCase {
         assert 'parent\n  child\nparent2\n' == out.toString()
     }
 
+    @Test
     void testInWithBlock() {
         new IndentPrinter(new PrintWriter(out)).with { p ->
             p.printIndent()

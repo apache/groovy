@@ -18,11 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class WriteOnlyPropertyBug extends GroovyTestCase {
+class WriteOnlyPropertyBug {
+    @Test
     void testSettingWriteOnlyProperty() {
         def c = new WriteOnlyBean()
         c.writeOnlyProperty = 'x' + 'y'

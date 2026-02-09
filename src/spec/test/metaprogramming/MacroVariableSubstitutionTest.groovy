@@ -19,8 +19,13 @@
 
 package metaprogramming
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.ast.*
+
+import org.codehaus.groovy.ast.ASTNode
+import org.codehaus.groovy.ast.ClassHelper
+import org.codehaus.groovy.ast.ClassNode
+import org.codehaus.groovy.ast.FieldNode
+import org.codehaus.groovy.ast.MethodNode
+import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.tools.GeneralUtils
@@ -29,14 +34,19 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.transform.AbstractASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
+import org.junit.jupiter.api.Test
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 
-class MacroVariableSubstitutionTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
+class MacroVariableSubstitutionTest {
+
+    @Test
     void testVariableSubstitution() {
         assertScript '''
         package metaprogramming
@@ -58,8 +68,6 @@ class MacroVariableSubstitutionTest extends GroovyTestCase {
 @GroovyASTTransformationClass(["metaprogramming.MD5ASTTransformation"])
 @interface MD5 { }
 // end::md5annotation[]
-
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
 // tag::md5transformation[]
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)

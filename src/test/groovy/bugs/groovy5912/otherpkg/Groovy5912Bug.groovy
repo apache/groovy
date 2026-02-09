@@ -18,14 +18,15 @@
  */
 package bugs.groovy5912.otherpkg
 
-import groovy.test.GroovyTestCase
 
-class Groovy5912Bug extends GroovyTestCase {
+class Groovy5912Bug {
     void test() {
         def errMsg = shouldFail '''
         package bugs.groovy5912.otherpkg
 
         import bugs.groovy5912.PluginPathAwareFileSystemResourceLoader
+import org.junit.jupiter.api.Test
+import static groovy.test.GroovyAssert.*
 
         @groovy.transform.CompileStatic
         class GrailsProjectLoader {
@@ -37,6 +38,6 @@ class Groovy5912Bug extends GroovyTestCase {
         new GrailsProjectLoader().access()
         '''
 
-        assert errMsg.contains('[Static type checking] - Cannot find matching method bugs.groovy5912.PluginPathAwareFileSystemResourceLoader#setSearchLocations')
+        assert errMsg.message.contains('[Static type checking] - Cannot find matching method bugs.groovy5912.PluginPathAwareFileSystemResourceLoader#setSearchLocations')
     }
 }

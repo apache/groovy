@@ -19,7 +19,7 @@
 package org.apache.groovy.contracts.tests.post
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class InheritanceTests extends BaseTestClass {
 
@@ -91,7 +91,7 @@ class Descendant extends Parent {
   @Override
   @Ensures({ false })
   void some_operation(Integer param1) {
-    field1 = param1  
+    field1 = param1
   }
 
   @Override
@@ -100,7 +100,7 @@ class Descendant extends Parent {
     field1 = param1
   }
 
-  @Ensures({ true })                                             
+  @Ensures({ true })
   void some_operation3(Integer param1) {
     field1 = param1
   }

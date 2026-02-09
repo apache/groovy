@@ -18,15 +18,19 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertTrue
+
 
 /**
  *  Verifies that DefaultGroovyMethods.transformLine(Reader, Writer, Closure)
  *  actually writes its output.
  */
 
-class Groovy1081_Bug extends GroovyTestCase {
+class Groovy1081_Bug {
 
+    @Test
     void testShort() {
          def reader = new StringReader('abc')
         def writer = new StringWriter()

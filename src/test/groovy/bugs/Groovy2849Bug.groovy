@@ -18,9 +18,7 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
-
-class Groovy2849Bug extends GroovyTestCase {
+class Groovy2849Bug {
     def void testPropertySelectionConflictInANestedClosure(){
         assert c1() == 11
         assert p == 11

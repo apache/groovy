@@ -20,17 +20,19 @@ package groovy.cli.commons
 
 import groovy.cli.Option
 import groovy.cli.Unparsed
-import groovy.test.GroovyTestCase
 import groovy.transform.ToString
 import groovy.transform.TypeChecked
 import org.apache.commons.cli.BasicParser
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.GnuParser
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import java.math.RoundingMode
 
 import static org.apache.commons.cli.Option.UNLIMITED_VALUES
 import static org.apache.commons.cli.Option.builder
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Test class for the CliBuilder.
@@ -40,11 +42,12 @@ import static org.apache.commons.cli.Option.builder
  * and really need behavior that can only be supplied by one of the legacy parsers, we also include
  * some test case runs against some of the legacy parsers.
  */
-class CliBuilderTest extends GroovyTestCase {
+class CliBuilderTest {
 
     private StringWriter stringWriter
     private PrintWriter printWriter
 
+    @BeforeEach
     void setUp() {
         resetPrintWriter()
     }
@@ -74,7 +77,7 @@ class CliBuilderTest extends GroovyTestCase {
  -c,--encoding <charset>   character encoding
  -h,--help                 usage information
  -i                        modify files in place, create backup if
-                           extension is given (e.g. '.bak')"""
+                           extension is given (e.g. '.bak')""".toString()
         assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
         resetPrintWriter()
         cli.writer = printWriter
@@ -99,18 +102,21 @@ class CliBuilderTest extends GroovyTestCase {
         printWriter = new PrintWriter(stringWriter)
     }
 
+    @Test
     void testSampleShort() {
         [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             runSample(parser, ['-h', '-c', expectedParameter])
         }
     }
 
+    @Test
     void testSampleLong() {
         [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             runSample(parser, ['--help', '--encoding', expectedParameter])
         }
     }
 
+    @Test
     void testSimpleArg() {
         [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -120,6 +126,7 @@ class CliBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMultipleArgs() {
         [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -132,6 +139,7 @@ class CliBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testFailedParsePrintsUsage() {
         def cli = new CliBuilder(writer: printWriter)
         cli.x(required: true, 'message')
@@ -143,6 +151,7 @@ usage: groovy
 '''
     }
 
+    @Test
     void testLongOptsOnly_nonOptionShouldStopArgProcessing() {
         [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -159,6 +168,7 @@ usage: groovy
         }
     }
 
+    @Test
     void testLongAndShortOpts_allOptionsValid() {
         [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -173,6 +183,7 @@ usage: groovy
         }
     }
 
+    @Test
     void testUnrecognizedOptions() {
         [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -182,6 +193,7 @@ usage: groovy
         }
     }
 
+    @Test
     void testMultipleOccurrencesSeparateSeparate() {
         [new DefaultParser(), new GnuParser(), new BasicParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -195,6 +207,7 @@ usage: groovy
         }
     }
 
+    @Test
     void testMultipleOccurrencesSeparateJuxtaposed() {
         [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -209,6 +222,7 @@ usage: groovy
         }
     }
 
+    @Test
     void testMultipleOccurrencesTogetherSeparate() {
         [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(parser: parser)
@@ -222,6 +236,7 @@ usage: groovy
         }
     }
 
+    @Test
     void testMultipleOccurrencesTogetherJuxtaposed() {
         [new DefaultParser(), new GnuParser()].each { parser ->
             def cli1 = new CliBuilder(parser: parser)
@@ -240,6 +255,7 @@ usage: groovy
     *  TODO: Should add the BasicParser here as well?
     */
 
+    @Test
     void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new GnuParser())
         def options = cli.parse(['-v'])
@@ -251,6 +267,7 @@ usage: groovy
         assert stringWriter.toString().tokenize('\r\n').join('\n') == ''''''
     }
 
+    @Test
     void testUnrecognizedOptionSilentlyIgnored_DefaultParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new DefaultParser())
         def options = cli.parse(['-v'])
@@ -258,6 +275,7 @@ usage: groovy
         assert !options.v
     }
 
+    @Test
     void testUnrecognizedOptionTerminatesParse_GnuParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new GnuParser())
         cli.h(longOpt: 'help', 'usage information')
@@ -268,6 +286,7 @@ usage: groovy
         assertEquals(['-v', '-h'], options.arguments())
     }
 
+    @Test
     void testUnrecognizedOptionTerminatesParse_DefaultParser() {
         def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new DefaultParser())
         cli.h(longOpt: 'help', 'usage information')
@@ -278,6 +297,7 @@ usage: groovy
         assertEquals(['-v', '-h'], options.arguments())
     }
 
+    @Test
     void testMultiCharShortOpt() {
         [new DefaultParser(), new GnuParser()].each { parser ->
             def cli = new CliBuilder(writer: printWriter, parser: parser)
@@ -291,6 +311,7 @@ usage: groovy
         }
     }
 
+    @Test
     void testArgumentBursting_DefaultParserOnly() {
         def cli = new CliBuilder(writer: printWriter)
         // must not have longOpt 'abc' and also no args for a or b
@@ -304,6 +325,7 @@ usage: groovy
         checkNoOutput()
     }
 
+    @Test
     void testLongOptEndingWithS() {
         def cli = new CliBuilder()
         cli.s(longOpt: 'number_of_seconds', 'a long arg that ends with an "s"')
@@ -316,6 +338,7 @@ usage: groovy
         assert options.number_of_seconds
     }
 
+    @Test
     void testArgumentFileExpansion() {
         def cli = new CliBuilder(usage: 'test usage')
         cli.h(longOpt: 'help', 'usage information')
@@ -330,6 +353,7 @@ usage: groovy
         assert options.arguments() == ['bar', 'foo', '@baz']
     }
 
+    @Test
     void testArgumentFileExpansionArgOrdering() {
         def cli = new CliBuilder(usage: 'test usage')
         def args = ['one', '@temp1.args', 'potato', '@temp2.args', 'four']
@@ -343,6 +367,7 @@ usage: groovy
         assert options.arguments() == 'one potato two potato three potato four'.split()
     }
 
+    @Test
     void testArgumentFileExpansionTurnedOff() {
         def cli = new CliBuilder(usage: 'test usage', expandArgumentFiles:false)
         cli.h(longOpt: 'help', 'usage information')
@@ -357,6 +382,7 @@ usage: groovy
         assert options.arguments() == ['@temp.args', 'foo', '@@baz']
     }
 
+    @Test
     void testGStringSpecification_Groovy4621() {
         def user = 'scott'
         def pass = 'tiger'
@@ -374,16 +400,19 @@ usage: groovy
         assert options.i
     }
 
+    @Test
     void testNoExpandArgsWithEmptyArg() {
         def cli = new CliBuilder(expandArgumentFiles: false)
         cli.parse(['something', ''])
     }
 
+    @Test
     void testExpandArgsWithEmptyArg() {
         def cli = new CliBuilder(expandArgumentFiles: true)
         cli.parse(['something', ''])
     }
 
+    @Test
     void testDoubleHyphenShortOptions() {
         def cli = new CliBuilder()
         cli.a([:], '')
@@ -392,6 +421,7 @@ usage: groovy
         assert options.arguments() == ['-b', 'foo']
     }
 
+    @Test
     void testDoubleHyphenLongOptions() {
         def cli = new CliBuilder()
         cli._([longOpt:'alpha'], '')
@@ -401,6 +431,7 @@ usage: groovy
         assert options.arguments() == ['--beta', 'foo']
     }
 
+    @Test
     void testMixedShortAndLongOptions() {
         def cli = new CliBuilder()
         cli.a([longOpt:'alpha', args:1], '')
@@ -410,6 +441,7 @@ usage: groovy
         assert options.arguments() == ['foo']
     }
 
+    @Test
     void testMixedBurstingAndLongOptions() {
         def cli = new CliBuilder()
         cli.a([:], '')
@@ -447,6 +479,7 @@ usage: groovy
 
     def argz = "--first John --last Smith --flag1 --flag2 --specialFlag --age  21 --born 1980 --discount 3.5 --pi 3.14159 --biography cv.txt --roundingMode DOWN and some more".split()
 
+    @Test
     void testParseFromSpec() {
         def builder1 = new CliBuilder()
         def p1 = builder1.parseFromSpec(PersonI, argz)
@@ -521,6 +554,7 @@ usage: groovy
         @Option(shortName='b') int by = 1
     }
 
+    @Test
     void testDefaultValueClass() {
         def cli = new CliBuilder()
         def options = new DefaultValueC()
@@ -543,6 +577,7 @@ usage: groovy
         @Unparsed remaining
     }
 
+    @Test
     void testValSepClass() {
         def cli = new CliBuilder()
 
@@ -580,6 +615,7 @@ usage: groovy
         @Unparsed List remaining
     }
 
+    @Test
     void testConvertClass() {
         Date newYears = Date.parse("yyyy-MM-dd", "2016-01-01")
         def argz = '''-a John -b Mary -d 2016-01-01 and some more'''.split()
@@ -599,6 +635,7 @@ usage: groovy
     }
 
     @TypeChecked
+    @Test
     void testTypeCheckedClass() {
         def argz = "--name John --age 21 and some more".split()
         def cli = new CliBuilder()
@@ -610,6 +647,7 @@ usage: groovy
         assert options.remaining == ['and', 'some', 'more']
     }
 
+    @Test
     void testParseFromInstance() {
         def p2 = new PersonC()
         def builder2 = new CliBuilder()
@@ -623,6 +661,7 @@ usage: groovy
         @Unparsed Integer[] nums()
     }
 
+    @Test
     void testTypedUnparsedFromSpec() {
         def argz = '12 34 56'.split()
         def cli = new CliBuilder()
@@ -634,6 +673,7 @@ usage: groovy
         @Unparsed Integer[] nums
     }
 
+    @Test
     void testTypedUnparsedFromInstance() {
         def argz = '12 34 56'.split()
         def cli = new CliBuilder()
@@ -651,6 +691,7 @@ usage: groovy
     }
 
     // GROOVY-8607
+    @Test
     void testOptIgnoredWhenSupplyingMapOfArgs() {
         def builder = new CliBuilder()
         def helpOpt = [opt:'h', longOpt: 'help']
@@ -666,6 +707,7 @@ usage: groovy
     }
 
     // GROOVY-8975
+    @Test
     void testTypedCaseWithRemainingArray() {
         def cli = new CliBuilder()
         def argz = '--user abc 12 34'.split()
@@ -674,6 +716,7 @@ usage: groovy
         assert hello.nums() == [12, 34]
     }
 
+    @Test
     void testParseFromInstanceFlagEdgeCases() {
         def cli = new CliBuilder()
         def options = cli.parseFromSpec(FlagEdgeCasesI, '-abc -efg true --ijk foo --lmn bar baz'.split())
@@ -691,6 +734,7 @@ usage: groovy
         assert options.remaining() == ['bar', 'baz']
     }
 
+        @Test
         void testParseScript() {
         new GroovyShell().run('''
             import groovy.cli.OptionField

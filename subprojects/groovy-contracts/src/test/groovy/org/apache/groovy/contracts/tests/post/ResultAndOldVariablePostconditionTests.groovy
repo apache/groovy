@@ -19,7 +19,7 @@
 package org.apache.groovy.contracts.tests.post
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 class ResultAndOldVariablePostconditionTests extends BaseTestClass {
 

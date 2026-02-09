@@ -18,9 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3834Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+
+class Groovy3834Bug {
+    @Test
     void testDuplicateCallsToMissingMethod() {
         def instance = new AClassWithMethodMissingMethod()
         shouldFail MissingMethodException, { instance.someMissingMethod() }

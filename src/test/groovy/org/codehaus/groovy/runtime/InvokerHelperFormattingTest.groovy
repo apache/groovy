@@ -18,9 +18,12 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class InvokerHelperFormattingTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+
+class InvokerHelperFormattingTest {
 
     private static class ExceptionOnToString implements Comparable {
         public static final String MATCHER = '<org.codehaus.groovy.runtime.InvokerHelperFormattingTest\\$ExceptionOnToString@[0-9a-z]+>'
@@ -36,6 +39,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testToStringLiterals() {
         assert 'null' == FormatHelper.toString(null)
         assert '0.5' == FormatHelper.toString(0.5)
@@ -46,12 +50,14 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testToStringThrows() {
         shouldFail(UnsupportedOperationException) {
             FormatHelper.toString(new ExceptionOnToString())
         }
     }
 
+    @Test
     void testFormat() {
         assert 'null' == FormatHelper.format(null, false)
         assert '0.5' == FormatHelper.format(0.5, false)
@@ -77,6 +83,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert FormatHelper.format(new ExceptionOnToString(), false, -1, true) =~ (ExceptionOnToString.MATCHER)
     }
 
+    @Test
     void testFormatRanges() {
         assert '1..4' == FormatHelper.format(1..4, false)
         assert "a'b..a'd" == FormatHelper.format('a\'b'..'a\'d', false)
@@ -98,11 +105,13 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert FormatHelper.format(eObject..eObject, false, -1, true) == '<ObjectRange@????>'
     }
 
+    @Test
     void testToStringLists() {
         assert '[]' == FormatHelper.toString([])
         assert '[1, true, a, \'b\']' == FormatHelper.toString([1, true, 'a, \'b\''])
     }
 
+    @Test
     void testToListString() {
         assert '[]' == FormatHelper.toString([])
         assert '[1, true, a, \'b\']' == FormatHelper.toListString([1, true, 'a, \'b\''])
@@ -132,6 +141,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testToStringRanges() {
         assert '1..4' == FormatHelper.toString(1..4)
         assert "a'b..a'd" == FormatHelper.toString('a\'b'..'a\'d')
@@ -139,11 +149,13 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert "[a'b..a'd]" == FormatHelper.toString(['a\'b'..'a\'d'])
     }
 
+    @Test
     void testToStringArrays() {
         assert "[a, a'b]" == FormatHelper.toString(['a', 'a\'b'] as String[])
         assert "[a, a'b]" == FormatHelper.toString(['a', 'a\'b'] as Object[])
     }
 
+    @Test
     void testFormatArrays() {
         assert "[a, a'b]" == FormatHelper.format(['a', 'a\'b'] as String[], false)
         assert "[a, a'b]" == FormatHelper.format(['a', 'a\'b'] as Object[], false)
@@ -157,11 +169,13 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert FormatHelper.format([new ExceptionOnToString()] as Object[], false, -1, true) =~ "\\[${ExceptionOnToString.MATCHER}\\]"
     }
 
+    @Test
     void testToStringMaps() {
         assert '[:]' == FormatHelper.toString([:])
         assert "[a'b:1, 2:b'c]" == FormatHelper.toString(['a\'b':1, 2:'b\'c'])
     }
 
+    @Test
     void testFormatMaps() {
         assert '[:]' == FormatHelper.format([:], false)
         assert "[a'b:1, 2:b'c]" == FormatHelper.format(['a\'b':1, 2:'b\'c'], false)
@@ -179,6 +193,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert FormatHelper.format(m, false, -1, true) =~ "\\[${ExceptionOnToString.MATCHER}:${ExceptionOnToString.MATCHER}\\]"
     }
 
+    @Test
     void testToMapString() {
         assert '[:]' == FormatHelper.toMapString([:])
         assert "[a'b:1, 2:b'c]" == FormatHelper.toMapString(['a\'b':1, 2:'b\'c'])
@@ -193,6 +208,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEmbedded() {
         List list = []
         list.add(['a\'b': 'c\'d'])
@@ -206,6 +222,7 @@ class InvokerHelperFormattingTest extends GroovyTestCase {
         assert "['key':[['a\\'b':'c\\'d'], ['e', 'f', 'g'], 5..9, 'fog'..'fop', ['h', 'i'], [10, 11]]]" == FormatHelper.format([key:list], true, -1, false)
     }
 
+    @Test
     void testToStringSelfContained() {
         List l = [];
         l.add(l)

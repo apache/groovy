@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class OverloadInvokeMethodTest extends GroovyTestCase {
 
+class OverloadInvokeMethodTest {
+
+    @Test
     void testBug() {
         def value = foo(123)
         assert value == 246

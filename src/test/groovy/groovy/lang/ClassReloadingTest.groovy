@@ -18,11 +18,12 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.jupiter.api.Test
 
-class ClassReloadingTest extends GroovyTestCase {
+class ClassReloadingTest {
 
+    @Test
     void testReloading() {
         def file = File.createTempFile("TestReload", ".groovy", buildDir())
         file.deleteOnExit()
@@ -68,6 +69,7 @@ class ClassReloadingTest extends GroovyTestCase {
         new File("build")
     }
 
+    @Test
     void testReloadingInStringStringVersion() {
         def fileName = "Dummy3981.groovy"
 
@@ -94,6 +96,7 @@ class ClassReloadingTest extends GroovyTestCase {
         assert "goodbye" == message
     }
 
+    @Test
     void testReloadingIfInitialFileMissesTimestamp() {
         def parent = File.createTempDir("reload","test")
         def file = File.createTempFile("TestReload", ".groovy", parent)

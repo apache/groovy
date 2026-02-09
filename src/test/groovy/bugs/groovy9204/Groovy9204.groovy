@@ -18,9 +18,13 @@
  */
 package bugs.groovy9204
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy9204 extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy9204 {
+    @Test
     void testGenerics() {
         assertScript '''
             package bugs.groovy9204

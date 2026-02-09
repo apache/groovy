@@ -18,13 +18,19 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.fail
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertTrue
+
 
 /**
  * Various tests for Strings.
  */
-class StringTest extends GroovyTestCase {
+class StringTest {
 
+    @Test
     void testString() {
         def s = "abcd"
         assert s.length() == 4
@@ -39,12 +45,14 @@ class StringTest extends GroovyTestCase {
         assert "abcdef".size() == 6
     }
 
+    @Test
     void testStringPlusNull() {
         def y = null
         def x = "hello " + y
         assert x == "hello null"
     }
 
+    @Test
     void testNextPrevious() {
         def x = 'a'
         def y = x.next()
@@ -62,6 +70,7 @@ class StringTest extends GroovyTestCase {
         assert b.charAt(0) == '{'
     }
 
+    @Test
     void testApppendToString() {
         def name = "Gromit"
         def result = "hello " << name << "!"
@@ -69,6 +78,7 @@ class StringTest extends GroovyTestCase {
         assert result.toString() == "hello Gromit!"
     }
 
+    @Test
     void testApppendToStringBuffer() {
         def buffer = new StringBuffer()
 
@@ -78,12 +88,14 @@ class StringTest extends GroovyTestCase {
         assert buffer.toString() == "hello Gromit!"
     }
 
+    @Test
     void testApppendAndSubscipt() {
         def result =  'hello' << " Gromit!"
         result[1..4] = 'i'
         assert result.toString() == "hi Gromit!"
     }
 
+    @Test
     void testSimpleStringLiterals() {
         assertLength("\n", 1)
         assertLength("\"", 1)
@@ -101,14 +113,17 @@ y", 2, "xy")
 y', 2, 'xy')
     }
 
+    @Test
     void testMinusRemovesFirstOccurenceOfString() {
         assert "abcdeabcd" - 'bc' == 'adeabcd'
     }
 
+    @Test
     void testMinusEscapesRegexChars() {
         assert "abcdeab.d.f" - '.d.' == 'abcdeabf'
     }
 
+    @Test
     void testMultilineStringLiterals() {
         assertContains(""""x""", 2, '"x');
         assertContains("""""x""", 3, '""x');
@@ -126,6 +141,7 @@ y''', 3, 'x\ny');
 
     }
 
+    @Test
     void testRegexpStringLiterals() {
         assert "foo" == /foo/
         assert '\\$$' == /\$$/
@@ -137,6 +153,7 @@ y''', 3, 'x\ny');
 /
     }
 
+    @Test
     void testMultilineRegexpStringContainingNormalRegexp() {
         def script = /
         'foo' ==~ \/f.o\/
@@ -144,6 +161,7 @@ y''', 3, 'x\ny');
         assert new GroovyShell().evaluate(script)
     }
 
+    @Test
     void testMultilineRegexpXml() {
         def xml = /
 <xml>
@@ -153,6 +171,7 @@ foo
         assert "\n<xml>\nfoo\n</xml>\n" == xml
     }
 
+    @Test
     void testMultilineSlashyRegexpEscaping() {
         def str = 'groovy.codehaus.org and www.aboutgroovy.com'
         def re = /(?x)  # to enable whitespace and comments
@@ -175,6 +194,7 @@ foo
         assert out == 'groovy.codehaus.org[19] and www.aboutgroovy.com[19]'
     }
 
+    @Test
     void testDollarSlashyFirstCharEscaping() {
         def VAR = 'foo'
         def result = $/$/VAR/$
@@ -185,6 +205,7 @@ foo
         assert result == 'foo'
     }
 
+    @Test
     void testMultilineDollarSlashyRegexpEscaping() {
         def str = 'groovy.codehaus.org and www.aboutgroovy.com'
         def re = $/(?x)  # to enable whitespace and comments
@@ -207,6 +228,7 @@ foo
         assert out == 'groovy.codehaus.org[19] and www.aboutgroovy.com[19]'
     }
 
+    @Test
     void testBoolCoerce() {
         // Explicit coercion
         assertFalse((Boolean) "")
@@ -228,6 +250,7 @@ foo
 
     }
 
+    @Test
     void testDollarEscaping() {
         def text = $/a/b\c$$ $//$
         assert text == 'a/b\\c$ /'
@@ -249,18 +272,21 @@ foo
         assert s1 == 'abc\\\\' && s2 == 'def\\' && s3 == 'ghi'
     }
 
+    @Test
     void testSplit() {
         def text = "hello there\nhow are you"
         def splitted = text.split().toList()
         assert splitted == ['hello', 'there', 'how', 'are', 'you']
     }
 
+    @Test
     void testSplitEmptyText() {
         def text = ""
         def splitted = text.split().toList()
         assert splitted == []
     }
 
+    @Test
     void testReadLines() {
         assert "a\nb".readLines() == ['a', 'b']
         assert "a\rb".readLines() == ['a', 'b']
@@ -268,6 +294,7 @@ foo
         assert "a\n\nb".readLines() == ['a', '', 'b']
     }
 
+    @Test
     void testReplace() {
         assert "".replace("", "") == ""
         assert "".replace("", "r") == "r"
@@ -295,6 +322,7 @@ foo
         assert (/\Q\E\\\Q\E/).replace(/\Q\E\\\Q\E/, 'z') == 'z'
     }
 
+    @Test
     void testNormalize() {
         assert "a".normalize() == "a"
         assert "\n".normalize() == "\n"
@@ -310,6 +338,7 @@ foo
         assert "a\n\r\nb".normalize() == "a\n\nb"
     }
 
+    @Test
     void testDenormalize() {
         def LS = System.getProperty('line.separator')
         assert "\n".denormalize() == LS
@@ -350,6 +379,7 @@ foo
         }
     }
 
+    @Test
     void testNormalizationFileRoundTrip() {
         doNormalizationFileRoundTrip("a line 1\nline 2")
         doNormalizationFileRoundTrip("a line 1\nline 2\n")
@@ -361,6 +391,7 @@ foo
         doNormalizationFileRoundTrip("abcdef\n")
     }
 
+    @Test
     void testSplitEqualsTokenize() {
         def text = """
         A text with different words and
@@ -385,6 +416,7 @@ foo
         assert s.indexOf(subs) >= 0
     }
 
+    @Test
     void testExpandUnexpand() {
         assert '\t\tabc\tdef\n12345\t67\t '.expand().unexpand() == '\t\tabc\tdef\n12345\t67\t '
         assert '1234567\t8\t '.expand() == '1234567 8        '

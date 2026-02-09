@@ -18,14 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * test to ensure that private instance variables are visible to
  * other instance variables of the same class
  */
 
-class PrivateVariableAccessFromAnotherInstanceTest extends GroovyTestCase implements Cloneable {
+class PrivateVariableAccessFromAnotherInstanceTest implements Cloneable {
     def foo
     private def bar
 
@@ -42,6 +43,7 @@ class PrivateVariableAccessFromAnotherInstanceTest extends GroovyTestCase implem
         return result
     }
 
+    @Test
     void testClone() {
         def fred = new PrivateVariableAccessFromAnotherInstanceTest()
 

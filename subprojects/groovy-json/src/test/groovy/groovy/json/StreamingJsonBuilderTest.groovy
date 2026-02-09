@@ -18,12 +18,15 @@
  */
 package groovy.json
 
-import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
+import org.junit.jupiter.api.Test
 
-class StreamingJsonBuilderTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+class StreamingJsonBuilderTest {
 
     @CompileStatic
+    @Test
     void testJsonBuilderUsageWithCompileStatic() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -62,6 +65,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testJsonBuilderWithWritableValue() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -86,6 +90,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testJsonBuilderWithNestedClosures() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -102,6 +107,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testJsonBuilderConstructor() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w, [a: 1, b: true])
@@ -109,6 +115,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testUnescapedJson() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w).call {
@@ -122,6 +129,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
 
 
     @CompileStatic
+    @Test
     void testUnescapedJsonCompileStatic() {
         new StringWriter().with { w ->
             new StreamingJsonBuilder(w).call {
@@ -133,6 +141,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEmptyArray() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -141,6 +150,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testSimpleArray() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -150,6 +160,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testComplexArray() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -159,6 +170,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMap() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -168,6 +180,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEmptyObject() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -177,6 +190,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testBasicObject() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -190,6 +204,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testNestedObjects() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -205,6 +220,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testStandardBuilderStyle() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -217,6 +233,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMethodCallWithNamedArguments() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -226,6 +243,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testThrowAnExceptionWhenPassingSomethingElseThanAClosure() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -236,6 +254,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testListWithAnEmptyObject() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -245,6 +264,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testListOfObjects() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -254,6 +274,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testElementHasListOfObjects() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -269,6 +290,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         String name
     }
 
+    @Test
     void testCollectionAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -282,6 +304,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIterableAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
         Iterable it = [iterator:{->
@@ -297,6 +320,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMethodWithIterableAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
         Iterable it = [iterator:{->
@@ -313,6 +337,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMethodWithArrayAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -327,6 +352,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMethodWithCollectionAndClosure() {
         def authors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -340,6 +366,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testNestedMethodWithCollectionAndClosure() {
         def theAuthors = [new Author(name: "Guillaume"), new Author(name: "Jochen"), new Author(name: "Paul")]
 
@@ -355,6 +382,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testComplexStructureFromTheGuardian() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -392,6 +420,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testNestedListMap() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -403,6 +432,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEmptyList() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -412,6 +442,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTrendsFromTwitter() {
         new StringWriter().with { w ->
             def json = new StreamingJsonBuilder(w)
@@ -438,6 +469,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExampleFromTheGep7Page() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -460,6 +492,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testEdgeCases() {
         new StringWriter().with { w ->
             def builder = new StreamingJsonBuilder(w)
@@ -494,6 +527,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testWithGenerator() {
         def generator = new JsonGenerator.Options()
                 .excludeNulls()
@@ -520,6 +554,7 @@ class StreamingJsonBuilderTest extends GroovyTestCase {
     }
 
     @CompileStatic
+    @Test
     void testWithGeneratorCompileStatic() {
         def generator = new JsonGenerator.Options()
                 .excludeNulls()

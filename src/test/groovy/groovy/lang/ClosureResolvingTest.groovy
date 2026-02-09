@@ -18,9 +18,9 @@
  */
 package groovy.lang
 
-import org.junit.After
-import org.junit.Ignore
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -52,7 +52,7 @@ final class ClosureResolvingTest {
 
     //--------------------------------------------------------------------------
 
-    @After
+    @AfterEach
     void tearDown() {
         Closure.metaClass = null
     }
@@ -280,7 +280,7 @@ final class ClosureResolvingTest {
         '''
     }
 
-    @Ignore @Test // GROOVY-7232
+    @Disabled @Test // GROOVY-7232
     void testOwnerDelegateChain4() {
         assertScript '''
             @GrabResolver(name='grails', root='https://repo.grails.org/grails/core')

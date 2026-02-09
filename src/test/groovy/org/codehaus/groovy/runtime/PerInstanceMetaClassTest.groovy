@@ -18,14 +18,21 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class PerInstanceMetaClassTest extends GroovyTestCase{
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-    protected void setUp() {
+
+class PerInstanceMetaClassTest{
+
+    @BeforeEach
+    void setUp() {
         Integer.metaClass = null
     }
 
+    @Test
     void testEMC () {
         def x = Integer.valueOf(22)
         def FOUR = Integer.valueOf(4)
@@ -99,6 +106,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
 
     static def CONST = 2
 
+    @Test
     void testMetaClassMethod () {
         def x = Integer.valueOf(22)
         x.metaClass {
@@ -138,6 +146,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         assertEquals 16, x - 6
     }
 
+    @Test
     void testBean () {
         def bean = new PimctBean()
 
@@ -182,6 +191,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         assertEquals 21, bean.foo ()
     }
 
+    @Test
     void testClass () {
         def FOUR = Integer.valueOf(4)
 
@@ -225,6 +235,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         FOUR.metaClass = null
     }
 
+    @Test
     void testCategory () {
         def FOUR = Integer.valueOf(4)
 
@@ -247,6 +258,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         FOUR.metaClass = null
     }
 
+    @Test
     void testInteger () {
        ExpandoMetaClass.enableGlobally()
 

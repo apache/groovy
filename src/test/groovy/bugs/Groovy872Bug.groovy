@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy872 extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy872 {
+  @Test
   void testScript ( ) {
     assertScript ( """
 def cal = new GregorianCalendar ( )
@@ -28,6 +32,7 @@ cal.set ( Calendar.DAY_OF_MONTH , 1 )
 println ( cal.get ( Calendar.DAY_OF_MONTH ) )
 """)
   }
+  @Test
   void testCode ( ) {
     new MyCalendar ( ).tryit ( )
   }

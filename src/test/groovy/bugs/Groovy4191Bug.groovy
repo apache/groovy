@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4191Bug extends GroovyTestCase {
+
+class Groovy4191Bug {
+    @Test
     void testPutIntoArray() {
         recreateProblem()
         recreateProblem()

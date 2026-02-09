@@ -18,23 +18,25 @@
  */
 package groovy.servlet
 
-import groovy.test.GroovyTestCase
-
 import jakarta.servlet.ServletConfig
 import jakarta.servlet.ServletContext
 import jakarta.servlet.http.HttpServletRequest
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * This test case tests the AbstractHttpServlet class. It uses a test
  * specific subclass called ConcreteHttpServlet to test the abstract
  * class in isolation from any implementations.
  */
-class AbstractHttpServletTest extends GroovyTestCase {
+class AbstractHttpServletTest {
 
     def servlet
 
+    @BeforeEach
     void setUp() {
-        super.setUp()
         servlet = new ConcreteHttpServlet()
     }
 
@@ -42,6 +44,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
      * getScriptUri() concatenates the servlet path and path info
      * attributes if attributes exist on the http request.
      */
+    @Test
     void testGetScriptUri_AllAttributesExist() {
         // just return whatever attributes were requested
         def request = { attribute -> attribute }
@@ -54,6 +57,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
      * getScriptUri() returns the servlet path if the http request
      * contains path but no path info attribute.
      */
+    @Test
     void testGetScriptUri_NoPathInfoAttribute() {
         // just return whatever attributes were requested, except for path info attribute
         def request = { attribute ->
@@ -68,6 +72,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
      * Tests getScriptUri when no attributes exist, but servletPath and
      * pathInfo methods return data.
      */
+    @Test
     void testGetScriptUri_NoAttributesPathInfoExists() {
         def request = [
                 getAttribute: { null },
@@ -84,6 +89,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
      * Tests getScriptUri when no attributes exist, no path info exists,
      * but servletPath returns data.
      */
+    @Test
     void testGetScriptUri_NoAttributesPathInfoMissing() {
         def request = [
                 getAttribute: { null },
@@ -99,6 +105,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
     /**
      * Tests getting URIs as files.
      */
+    @Test
     void testGetScriptURIasFile() {
         def request = [
                 getAttribute: { null },
@@ -124,6 +131,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
     /**
      * Tests getting URIs as files where filename not available.
      */
+    @Test
     void testGetScriptURIasFileNoMapping() {
         def request = [
                 getAttribute: { null },
@@ -149,6 +157,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
     /**
      * Tests that exception is thrown when resource is not found.
      */
+    @Test
     void testGetResourceConnection_MissingResource() {
         def servletContext = [
                 getRealPath: { arg -> 'realPath' + arg },
@@ -171,6 +180,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
     /**
      * Tests finding resource.
      */
+    @Test
     void testGetResourceConnection_FoundInCurrentDir() {
         def urlStub = new java.net.URL('file:realPath/someresource')
         def servletContext = [
@@ -194,6 +204,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
     /**
      * Tests finding resource in web-inf directory.
      */
+    @Test
     void testGetResourceConnection_FoundInWebInf() {
         def urlStub = new java.net.URL('file:realPath/WEB-INF/groovy/someresource')
         def servletContext = [
@@ -217,6 +228,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
     /**
      * Tests regex style resource replacement for first occurrence.
      */
+    @Test
     void testGetResourceConnection_Replace1stFooWithBar() {
         def servletContext = [
                 getRealPath: { arg -> 'realPath' + arg },
@@ -255,6 +267,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
     /**
      * Tests regex style resource replacement for all occurrences.
      */
+    @Test
     void testGetResourceConnection_ReplaceAllFooWithBar() {
         def servletContext = [
                 getRealPath: { arg -> 'realPath' + arg },

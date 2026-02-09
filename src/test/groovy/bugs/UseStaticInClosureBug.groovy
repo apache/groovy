@@ -18,14 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class UseStaticInClosureBug extends GroovyTestCase {
+class UseStaticInClosureBug {
 
     static def stuff = [:]
 
+    @Test
     void testBug() {
         [1,2,3].each { stuff[it] = "dog" }
 
@@ -33,6 +35,7 @@ class UseStaticInClosureBug extends GroovyTestCase {
         assert stuff[2] == "dog"
     }
 
+    @Test
     void testBug2() {
         doStatic()
     }

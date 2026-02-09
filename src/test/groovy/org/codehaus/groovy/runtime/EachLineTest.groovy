@@ -18,10 +18,12 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase;
+import org.junit.jupiter.api.Test
 
-class EachLineTest extends GroovyTestCase {
+
+class EachLineTest {
     // GROOVY-4364
+    @Test
     void testReturnsLastValueReturnedByClosure() {
         def result = "ONE\nTWO\nTHREE".eachLine { it.toLowerCase() }
         assert result == "three"

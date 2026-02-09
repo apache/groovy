@@ -18,10 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class GroovyTruthTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+
+class GroovyTruthTest {
+
+    @Test
     void testTruth() {
         testFalse null
 
@@ -58,6 +63,7 @@ class GroovyTruthTest extends GroovyTestCase {
         testFalse new Character((char) 0)
     }
 
+    @Test
     void testPrimitiveArrayTruth() {
         testTrue([1] as byte[])
         testTrue([1] as short[])
@@ -78,11 +84,13 @@ class GroovyTruthTest extends GroovyTestCase {
         testFalse([] as char[])
     }
 
+    @Test
     void testIteratorTruth() {
         testFalse([].iterator())
         testTrue([1].iterator())
     }
 
+    @Test
     void testEnumerationTruth() {
         def v = new Vector()
         testFalse(v.elements())
@@ -98,6 +106,7 @@ class GroovyTruthTest extends GroovyTestCase {
         assertFalse someObj ? true : false
     }
 
+    @Test
     void testLogicORandAND() {
         def x = null
         assert ((false || x) == false)

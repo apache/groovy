@@ -18,9 +18,13 @@
  */
 package gdk
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class WorkingWithCollectionsTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class WorkingWithCollectionsTest {
+    @Test
     void testListLiterals() {
         // tag::list_literals[]
         def list = [5, 6, 7, 8]
@@ -35,6 +39,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_literals[]
     }
 
+    @Test
     void testList() {
         // tag::list_usecases[]
         def list = [5, 6, 7, 8]
@@ -68,6 +73,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_usecases[]
     }
 
+    @Test
     void testListsAsBoolean() {
         // tag::list_to_bool[]
         assert ![]             // an empty list evaluates as false
@@ -77,6 +83,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_to_bool[]
     }
 
+    @Test
     void testLeftShiftOnList() {
         // tag::list_leftshift[]
         def list = []
@@ -100,6 +107,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_leftshift[]
     }
 
+    @Test
     void testListAdd() {
         // tag::list_add[]
         assert [1, 2] + 3 + [4, 5] + 6 == [1, 2, 3, 4, 5, 6]
@@ -134,6 +142,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_add[]
     }
 
+    @Test
     void testListIteration() {
         // tag::list_each[]
         [1, 2, 3].each {
@@ -145,6 +154,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_each[]
     }
 
+    @Test
     void testListConstruct() {
         // tag::list_construct[]
         def list1 = ['a', 'b', 'c']
@@ -159,6 +169,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_construct[]
     }
 
+    @Test
     void testListCollect() {
         // tag::list_collect[]
         assert [1, 2, 3].collect { it * 2 } == [2, 4, 6]
@@ -173,6 +184,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_collect[]
     }
 
+    @Test
     void testListGDK() {
         // tag::list_gdk1[]
         assert [1, 2, 3].find { it > 1 } == 2           // find 1st element matching criteria
@@ -304,6 +316,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testListComparator() {
         // tag::list_comparator[]
         Comparator mc = { a, b -> a == b ? 0 : (a < b ? -1 : 1) }
@@ -323,6 +336,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_comparator[]
     }
 
+    @Test
     void testListSort() {
         // tag::list_sort[]
         assert [6, 3, 9, 2, 7, 1, 5].sort() == [1, 2, 3, 5, 6, 7, 9]
@@ -352,6 +366,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_sort[]
     }
 
+    @Test
     void testListMultiply() {
         // tag::list_multiply[]
         assert [1, 2, 3] * 3 == [1, 2, 3, 1, 2, 3, 1, 2, 3]
@@ -363,6 +378,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::list_multiply[]
     }
 
+    @Test
     void testIntRange() {
         // tag::intrange[]
         // an inclusive range
@@ -390,6 +406,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::intrange[]
     }
 
+    @Test
     void testStringRange() {
         // tag::stringrange[]
         // an inclusive range
@@ -404,6 +421,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::stringrange[]
     }
 
+    @Test
     void testRangeIteration() {
         // tag::range_for[]
         for (i in 1..10) {
@@ -417,6 +435,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::range_each[]
     }
 
+    @Test
     void testRangeInSwitch() {
         int years = 1
         double interestRate
@@ -431,6 +450,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testMapLiteral() {
         // tag::map_literal[]
         def map = [name: 'Gromit', likes: 'cheese', id: 1234]
@@ -448,6 +468,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::map_literal[]
     }
 
+    @Test
     void testMapLiteralUsingEscape() {
         // tag::map_literal_gotcha[]
         def a = 'Bob'
@@ -460,6 +481,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::map_literal_gotcha[]
     }
 
+    @Test
     void testMapPropertyNotation() {
         // tag::map_property[]
         def map = [name: 'Gromit', likes: 'cheese', id: 1234]
@@ -474,6 +496,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::map_property[]
     }
 
+    @Test
     void testMapPropertyGotcha() {
         // tag::map_property_gotcha[]
         def map = [name: 'Gromit', likes: 'cheese', id: 1234]
@@ -496,6 +519,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::map_property_gotcha[]
     }
 
+    @Test
     void testMapIteration() {
         // tag::map_iteration[]
         def map = [
@@ -526,6 +550,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::map_iteration[]
     }
 
+    @Test
     void testAddElementsToMap() {
         // tag::map_add[]
         def defaults = [1: 'a', 2: 'b', 3: 'c', 4: 'd']
@@ -539,6 +564,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::map_add[]
     }
 
+    @Test
     void testMapGDK() {
         assertScript '''
             // tag::map_gdk1[]
@@ -631,6 +657,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testShouldNotUseGStringAsKey() {
         assertScript '''
             // tag::gstring_gotcha[]
@@ -643,6 +670,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMapConstruct() {
         // tag::map_construct[]
         def map = [
@@ -657,6 +685,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         // end::map_construct[]
     }
 
+    @Test
     void testGPathSupport() {
         // tag::gpath_support_1[]
         def listOfMaps = [['a': 11, 'b': 12], ['a': 21, 'b': 22]]
@@ -693,6 +722,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testStarDot() {
         // tag::stardot_1[]
         assert [1, 3, 5] == ['a', 'few', 'words']*.size()
@@ -709,6 +739,7 @@ class WorkingWithCollectionsTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testSubscriptOperator() {
         // tag::subscript[]
         def text = 'nice cheese gromit!'

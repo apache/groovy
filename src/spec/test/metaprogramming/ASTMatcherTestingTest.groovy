@@ -19,16 +19,12 @@
 
 package metaprogramming
 
-import groovy.test.GroovyTestCase
-import groovy.transform.CompileDynamic
-import groovy.transform.CompileStatic
+
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
-import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.Expression
-import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -36,18 +32,20 @@ import org.codehaus.groovy.macro.transform.MacroClass
 import org.codehaus.groovy.transform.AbstractASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
+import org.junit.jupiter.api.Test
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 
-import static org.codehaus.groovy.ast.ClassHelper.Integer_TYPE
-import static org.codehaus.groovy.ast.tools.GeneralUtils.*
+import static groovy.test.GroovyAssert.assertScript
+import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
-class ASTMatcherTestingTest extends GroovyTestCase {
+class ASTMatcherTestingTest {
 
     // tag::testexpression[]
+    @Test
     void testTestingSumExpression() {
         use(ASTMatcher) {                 // <1>
             TwiceASTTransformation sample = new TwiceASTTransformation()
@@ -65,6 +63,7 @@ class ASTMatcherTestingTest extends GroovyTestCase {
     // end::testexpression[]
 
     // tag::executiontesting[]
+    @Test
     void testASTBehavior() {
         assertScript '''
         package metaprogramming

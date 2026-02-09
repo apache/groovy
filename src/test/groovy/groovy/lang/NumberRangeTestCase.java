@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  * Provides unit tests for ranges of numbers.
@@ -93,7 +93,7 @@ public abstract class NumberRangeTestCase extends TestCase {
         assertTrue("hashcode", a.hashCode() != c.hashCode());
 
         assertEquals("a and b", a, b);
-        assertNotEquals("a != c", a, c);
+        assertNotEquals(a, c, "a != c");
     }
 
     /**
@@ -525,22 +525,22 @@ public abstract class NumberRangeTestCase extends TestCase {
 
         // compare lists that are the same size but contain different elements
         list.set(0, createValue(3));
-        assertNotEquals("range equals list", range, list);
-        assertNotEquals("list equals range", list, range);
+        assertNotEquals(range, list, "range equals list");
+        assertNotEquals(list, range, "list equals range");
         assertFalse("hash codes are equal", range.hashCode() == list.hashCode());
 
         // compare a list longer than the range
         list.set(0, createValue(1));
         list.add(createValue(3));
-        assertNotEquals("range equals list", range, list);
-        assertNotEquals("list equals range", list, range);
+        assertNotEquals(range, list, "range equals list");
+        assertNotEquals(list, range, "list equals range");
         assertFalse("hash are equal", range.hashCode() == list.hashCode());
 
         // compare a list shorter than the range
         list.remove(2);
         list.remove(1);
-        assertNotEquals("range equals list", range, list);
-        assertNotEquals("list equals range", list, range);
+        assertNotEquals(range, list, "range equals list");
+        assertNotEquals(list, range, "list equals range");
         assertFalse("hash are equal", range.hashCode() == list.hashCode());
     }
 
@@ -549,7 +549,7 @@ public abstract class NumberRangeTestCase extends TestCase {
      */
     public void testEqualsNonRange() {
         final Range range = createRange(1, 5);
-        assertNotEquals("range equal to string", range, "hello");
+        assertNotEquals(range, "hello", "range equal to string");
     }
 
     /**
@@ -572,28 +572,28 @@ public abstract class NumberRangeTestCase extends TestCase {
         assertEquals("hash codes not equal", range1.hashCode(), range2.hashCode());
 
         range2 = createRange(0, 5);
-        assertNotEquals("ranges equal", range1, (Object) range2);
-        assertNotEquals("ranges equal", range2, (Object) range1);
+        assertNotEquals(range1, (Object) range2, "ranges equal");
+        assertNotEquals(range2, (Object) range1, "ranges equal");
         assertFalse("hash codes equal", range1.hashCode() == range2.hashCode());
 
         range2 = createRange(1, 6);
-        assertNotEquals("ranges equal", range1, (Object) range2);
-        assertNotEquals("ranges equal", range2, (Object) range1);
+        assertNotEquals(range1, (Object) range2, "ranges equal");
+        assertNotEquals(range2, (Object) range1, "ranges equal");
         assertFalse("hash codes equal", range1.hashCode() == range2.hashCode());
 
         range2 = createRange(0, 6);
-        assertNotEquals("ranges equal", range1, (Object) range2);
-        assertNotEquals("ranges equal", range2, (Object) range1);
+        assertNotEquals(range1, (Object) range2, "ranges equal");
+        assertNotEquals(range2, (Object) range1, "ranges equal");
         assertFalse("hash codes equal", range1.hashCode() == range2.hashCode());
 
         range2 = createRange(2, 4);
-        assertNotEquals("ranges equal", range1, (Object) range2);
-        assertNotEquals("ranges equal", range2, (Object) range1);
+        assertNotEquals(range1, (Object) range2, "ranges equal");
+        assertNotEquals(range2, (Object) range1, "ranges equal");
         assertFalse("hash codes equal", range1.hashCode() == range2.hashCode());
 
         range2 = createRange(5, 1);
-        assertNotEquals("ranges equal", range1, (Object) range2);
-        assertNotEquals("ranges equal", range2, (Object) range1);
+        assertNotEquals(range1, (Object) range2, "ranges equal");
+        assertNotEquals(range2, (Object) range1, "ranges equal");
         assertFalse("hash codes equal", range1.hashCode() == range2.hashCode());
     }
 
@@ -628,10 +628,10 @@ public abstract class NumberRangeTestCase extends TestCase {
      */
     public void testEqualsNull() {
         final Range range = createRange(1, 5);
-        assertNotEquals("range equal to null", range, null);
-        assertNotEquals("range equal to null Object", range, (Object) null);
-        assertNotEquals("range equal to null Range", range, (Range) null);
-        assertNotEquals("range equal to null List", range, (List) null);
+        assertNotEquals(range, null, "range equal to null");
+        assertNotEquals(range, (Object) null, "range equal to null Object");
+        assertNotEquals(range, (Range) null, "range equal to null Range");
+        assertNotEquals(range, (List) null, "range equal to null List");
     }
 
     /**

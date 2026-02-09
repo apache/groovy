@@ -18,11 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
+import org.junit.jupiter.api.Test
 
-class SimpleGStringTemplateEngineTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+class SimpleGStringTemplateEngineTest {
+    @Test
     void testRegressionCommentBug() {
         final Template template = new GStringTemplateEngine().createTemplate(
                 "<% // This is a comment that will be filtered from output %>\n" +
@@ -34,6 +37,7 @@ class SimpleGStringTemplateEngineTest extends GroovyTestCase {
         assertEquals("\nHello World!", sw.toString())
     }
 
+    @Test
     void testShouldNotShareBinding() {
         String text = "<% println delegate.books; books = books.split(\",\"); out << books %>"
 

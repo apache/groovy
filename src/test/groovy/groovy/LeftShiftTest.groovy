@@ -18,12 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class LeftShiftTest extends GroovyTestCase {
+
+class LeftShiftTest {
 
     def foo = [1, 2, 3]
 
+    @Test
     void testShift() {
         def x = 4
 
@@ -34,6 +36,7 @@ class LeftShiftTest extends GroovyTestCase {
         assert x << 2 == 16
     }
 
+    @Test
     void testShiftList() {
         def list = []
 
@@ -42,6 +45,7 @@ class LeftShiftTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testLeftShiftOnExpression() {
         this.foo << 4
 

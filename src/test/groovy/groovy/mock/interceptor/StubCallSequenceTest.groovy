@@ -18,21 +18,27 @@
  */
 package groovy.mock.interceptor
 
-import groovy.test.GroovyTestCase
 import junit.framework.AssertionFailedError
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 /**
  * Testing Groovy Stub support for multiple calls to the Collaborator with
  * demanding one or two methods multiple and various ranges.
  */
-class StubCallSequenceTest extends GroovyTestCase {
+class StubCallSequenceTest {
 
     StubFor stub
 
+    @BeforeEach
     void setUp() {
         stub = new StubFor(Collaborator.class)
     }
 
+    @Test
     void testUndemandedCallFailsEarly() {
         // no demand here
         stub.use {
@@ -41,6 +47,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedTwoCalledFailsEarly() {
         stub.demand.one { 1 }
         stub.use {
@@ -50,6 +57,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedDefaultRange() {
         stub.demand.one(1..1) { 1 }
         stub.use {
@@ -58,6 +66,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedExactRange() {
         stub.demand.one(2..2) { 1 }
         stub.use {
@@ -68,6 +77,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedRealRange() {
         stub.demand.one(1..2) { 1 }
         stub.use {
@@ -78,6 +88,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOneDemandedOptionalRange() {
         stub.demand.one(0..2) { 1 }
         stub.use {
@@ -88,6 +99,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedNoRange() {
         stub.demand.one() { 1 }
         stub.demand.two() { 2 }
@@ -99,6 +111,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedFirstRangeExploited() {
         stub.demand.one(1..2) { 1 }
         stub.demand.two() { 2 }
@@ -111,6 +124,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedFirstRangeNotExploited() {
         stub.demand.one(1..2) { 1 }
         stub.demand.two() { 2 }
@@ -122,6 +136,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTwoDemandedFirstOptionalOmitted() {
         stub.demand.one(0..2) { 1 }
         stub.demand.two() { 2 }
@@ -132,6 +147,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMixedDemandedMinimumOutOfSequence() {
         stub.demand.one(0..1) { 1 }
         stub.demand.two() { 2 }
@@ -150,6 +166,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         stub.expect.verify()
     }
 
+    @Test
     void testMixedDemandedMaximum() {
         stub.demand.one(0..1) { 1 }
         stub.demand.two() { 2 }
@@ -172,6 +189,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMixedDemandedOutOfSequenceFailsEarly() {
         stub.demand.one(0..1) { 1 }
         stub.demand.two() { 2 }
@@ -188,6 +206,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testRangeDemandedOutOfSequenceCalls() {
         stub.demand.one(0..3) { 1 }
         stub.demand.two(0..3) { 2 }
@@ -204,12 +223,14 @@ class StubCallSequenceTest extends GroovyTestCase {
         stub.expect.verify()
     }
 
+    @Test
     void testUnreachedDemandFailsOnVerify() {
         stub.demand.one { 1 }
         // nothing used
         shouldFail(AssertionFailedError.class) { stub.expect.verify() }
     }
 
+    @Test
     void testRangeDemandedButNotExploitedFailsOnVerify() {
         stub.demand.one(2..4) { 1 }
         shouldFail(AssertionFailedError.class) { // fails on verify
@@ -221,6 +242,7 @@ class StubCallSequenceTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testReversedRangesNotAllowed() {
         shouldFail(IllegalArgumentException.class) { stub.demand.one(1..0) { 1 } }
     }
