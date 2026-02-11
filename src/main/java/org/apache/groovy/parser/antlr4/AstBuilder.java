@@ -521,7 +521,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
           .map(e -> (Expression) this.visit(e)).orElse(EmptyExpression.INSTANCE));
         closureListExpression.addExpression(this.visitForUpdate(ctx.forUpdate()));
 
-        return (body) -> new ForStatement(ForStatement.FOR_LOOP_DUMMY, closureListExpression, body);
+        return (body) -> new ForStatement(closureListExpression, body);
     }
 
     @Override

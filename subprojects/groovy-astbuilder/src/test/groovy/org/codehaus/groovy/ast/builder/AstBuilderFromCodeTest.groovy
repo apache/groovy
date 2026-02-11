@@ -413,39 +413,38 @@ class AstBuilderFromCodeTest {
         }
 
         def expected = new BlockStatement([new ForStatement(
-                new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter"),
-                new ClosureListExpression(
-                        [
-                                new DeclarationExpression(
-                                        new VariableExpression("x"),
-                                        new Token(Types.EQUALS, "=", -1, -1),
-                                        new ConstantExpression(0)
-                                ),
-                                new BinaryExpression(
-                                        new VariableExpression("x"),
-                                        new Token(Types.COMPARE_LESS_THAN, "<", -1, -1),
-                                        new ConstantExpression(10)
-                                ),
-                                new PostfixExpression(
-                                        new VariableExpression("x"),
-                                        new Token(Types.PLUS_PLUS, "++", -1, -1)
-                                )
-                        ]
-                ),
-                new BlockStatement(
-                        [
-                                new ExpressionStatement(
-                                        new MethodCallExpression(
-                                                new VariableExpression("this"),
-                                                new ConstantExpression("println"),
-                                                new ArgumentListExpression(
-                                                        new VariableExpression("x"),
-                                                )
-                                        )
-                                )
-                        ],
-                        new VariableScope()
-                )
+            new ClosureListExpression(
+                [
+                    new DeclarationExpression(
+                        new VariableExpression("x"),
+                        new Token(Types.EQUALS, "=", -1, -1),
+                        new ConstantExpression(0)
+                    ),
+                    new BinaryExpression(
+                        new VariableExpression("x"),
+                        new Token(Types.COMPARE_LESS_THAN, "<", -1, -1),
+                        new ConstantExpression(10)
+                    ),
+                    new PostfixExpression(
+                        new VariableExpression("x"),
+                        new Token(Types.PLUS_PLUS, "++", -1, -1)
+                    )
+                ]
+            ),
+            new BlockStatement(
+                [
+                    new ExpressionStatement(
+                        new MethodCallExpression(
+                            new VariableExpression("this"),
+                            new ConstantExpression("println"),
+                            new ArgumentListExpression(
+                                new VariableExpression("x"),
+                            )
+                        )
+                    )
+                ],
+                new VariableScope()
+            )
         )], new VariableScope())
 
         AstAssert.assertSyntaxTree([expected], result)

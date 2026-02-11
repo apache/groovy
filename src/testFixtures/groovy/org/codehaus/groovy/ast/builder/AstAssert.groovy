@@ -237,7 +237,14 @@ class AstAssert {
                 assertSyntaxTree([expected.arguments], [actual.arguments])
             },
             ForStatement : { expected, actual ->
-                assertSyntaxTree([expected.variable], [actual.variable])
+                assert expected.valueVariable.asBoolean() == actual.valueVariable.asBoolean()
+                if (expected.valueVariable) {
+                    assertSyntaxTree([expected.valueVariable], [actual.valueVariable])
+                    assert expected.indexVariable.asBoolean() == actual.indexVariable.asBoolean()
+                    if (expected.indexVariable) {
+                        assertSyntaxTree([expected.indexVariable], [actual.indexVariable])
+                    }
+                }
                 assertSyntaxTree([expected.collectionExpression], [actual.collectionExpression])
                 assertSyntaxTree([expected.loopBlock], [actual.loopBlock])
             },
