@@ -406,7 +406,9 @@ BuiltInPrimitiveType
     ;
 
 ABSTRACT      : 'abstract';
+ASYNC         : 'async';
 ASSERT        : 'assert';
+AWAIT         : 'await';
 
 fragment
 BOOLEAN       : 'boolean';
