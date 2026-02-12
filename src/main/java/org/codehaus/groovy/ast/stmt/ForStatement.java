@@ -109,6 +109,8 @@ public class ForStatement extends Statement implements LoopingStatement {
     //--------------------------------------------------------------------------
 
     /**
+     * Retrieves the index variable of for-in loops with an index variable or null in other cases.
+     *
      * @since 5.0.0
      */
     public Parameter getIndexVariable() {
@@ -116,6 +118,8 @@ public class ForStatement extends Statement implements LoopingStatement {
     }
 
     /**
+     * Retrieves the value variable of for-in loops or null for a classic for loop.
+     *
      * @since 5.0.0
      */
     public Parameter getValueVariable() {
@@ -132,6 +136,10 @@ public class ForStatement extends Statement implements LoopingStatement {
         return valueVariable.getType();
     }
 
+    /**
+     * Retrieves the collection expression of a for loop.
+     * Will be an instance of {@link ClosureListExpression} for a classic for loop.
+     */
     public Expression getCollectionExpression() {
         return collectionExpression;
     }
