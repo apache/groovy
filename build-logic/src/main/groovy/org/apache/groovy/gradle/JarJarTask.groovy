@@ -60,8 +60,7 @@ class JarJarTask extends DefaultTask {
 
     final protected String projectName = project.name
 
-    @InputFiles
-    @Classpath
+    @Input
     @Optional
     List<String> untouchedFiles = []
 
