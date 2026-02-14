@@ -18,13 +18,11 @@
  */
 package bugs.groovy8531
 
-import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class Groovy8531 {
 
     @Test
@@ -82,7 +80,6 @@ final class Groovy8531 {
                 void reduce(PrivateContext context) {}
             }
         '''
-
         assert err.message.contains('unable to resolve class PrivateContext')
     }
 
@@ -94,7 +91,6 @@ final class Groovy8531 {
                 void reduce(PrivateBaseContext context) {}
             }
         '''
-
         assert err.message.contains('unable to resolve class PrivateBaseContext')
     }
 
@@ -109,7 +105,6 @@ final class Groovy8531 {
                 void reduce(PackagePrivateContext context) {}
             }
         '''
-
         assert err.message.contains('unable to resolve class PackagePrivateContext')
     }
 }

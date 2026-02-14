@@ -23,6 +23,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 
 final class Groovy9413 {
+
     @Test
     void testInterfaceGenerics() {
         def config = new CompilerConfiguration(

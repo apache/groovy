@@ -26,6 +26,7 @@ import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
 final class Groovy9589 {
+
     @Test
     void testParallelParse() {
         final cnt = 2

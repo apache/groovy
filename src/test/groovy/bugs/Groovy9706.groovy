@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
+final class Groovy9706 {
 
-class Groovy9706 {
     @Test
     void testVarargsPrimitive() {
         assertScript '''

@@ -623,7 +623,7 @@ public class StatementWriter {
             }
             cs.applyBlockRecorder();
             mv.visitInsn(RETURN);
-        } else {
+        } else { // return value
             Expression expression = statement.getExpression();
             expression.visit(controller.getAcg());
 
@@ -634,15 +634,15 @@ public class StatementWriter {
             }
 
             if (cs.hasBlockRecorder()) {
-                ClassNode top = os.getTopOperand();
-                int returnVal = cs.defineTemporaryVariable("returnValue", returnType, true);
-                cs.applyBlockRecorder();
-                os.load(top, returnVal);
-                cs.removeVar(returnVal);
+                int rv = cs.defineTemporaryVariable("returnValue", returnType, true);
+                cs.applyBlockRecorder(); // handle finally block
+                BytecodeHelper.load(mv, returnType, rv);
+                BytecodeHelper.doReturn(mv, returnType);
+                cs.removeVar(rv);
+            } else {
+                BytecodeHelper.doReturn(mv, returnType);
+                os.remove(1);
             }
-
-            BytecodeHelper.doReturn(mv, returnType);
-            os.remove(1);
         }
     }
 

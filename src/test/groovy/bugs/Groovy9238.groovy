@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
 final class Groovy9238 {
 
     @Test

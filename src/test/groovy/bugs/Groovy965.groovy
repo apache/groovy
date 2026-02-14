@@ -22,27 +22,28 @@ import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
-
 /**
  * A test case to ensure that Groovy can compile class names and variable names with non-ASCII
  * characters and that non-ASCII characters in Strings do the right thing.
  */
-class Groovy965_Bug {
+final class Groovy965 {
 
-  @Test
-  void testUnicodeVariableNamesAndStrings ( ) {
-    def âøñè = 'âøñè'
-    assertEquals ( 'âøñè' , âøñè )
-  }
+    @Test
+    void testUnicodeVariableNamesAndStrings() {
+        def âøñè = 'âøñè'
+        assertEquals('âøñè', âøñè)
+    }
 
-  @Test
-  void testUnicodeMëthødName ( ) { }
+    @Test
+    void testUnicodeMëthødName() {
+    }
 
-  @Test
-  void testUnicodeClassName ( ) {
-    def object = new Bläh ( )
-    assert true
-  }
+    @Test
+    void testUnicodeClassName() {
+        def blah = new Bläh()
+        assert true
+    }
+
+    static class Bläh {
+    }
 }
-
-class Bläh { }

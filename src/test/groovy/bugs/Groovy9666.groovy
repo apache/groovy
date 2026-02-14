@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.junit.jupiter.api.Test
 
 final class Groovy9666 {
+
     @Test
     void testCanIterateImportsWhileAdding() {
         def mn = new ModuleNode((SourceUnit)null)

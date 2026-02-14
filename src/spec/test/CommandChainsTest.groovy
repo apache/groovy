@@ -1,4 +1,3 @@
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -22,9 +21,10 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class CommandChainsTest {
+final class CommandChainsTest {
+
     @Test
-    void testCommandChainEquivalence() {
+    void testCommandChainEquivalence1() {
         assertScript '''String left = 'left'
 String right = 'right'
 
@@ -56,6 +56,10 @@ assert m1.list == ['left', 'right']
 assert m1.list == m2.list
 
 '''
+    }
+
+    @Test
+    void testCommandChainEquivalence2() {
         assertScript '''import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
@@ -107,6 +111,10 @@ assert m1.medicine == 'chloroquinine'
 assert m1.duration == 6
 assert m1 == m2
 '''
+    }
+
+    @Test
+    void testCommandChainEquivalence3() {
         assertScript '''import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
@@ -143,6 +151,10 @@ assert m1 == m2
 assert m1.object == 'wall'
 assert m1.colors == ['red','green','yellow']
 '''
+    }
+
+    @Test
+    void testCommandChainEquivalence4() {
         assertScript '''import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
@@ -170,6 +182,10 @@ assert m1 == m2
 assert m1.map == [that: 'margarita']
 assert m1.test == true
 '''
+    }
+
+    @Test
+    void testCommandChainEquivalence5() {
         assertScript '''
 class DSL {
     int count
@@ -191,6 +207,10 @@ m2.given({}).when({}).then({})
 assert m1.count == 3
 assert m2.count == 3
 '''
+    }
+
+    @Test
+    void testCommandChainEquivalence6() {
         assertScript '''import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
@@ -221,6 +241,10 @@ m2.select(all).unique().from(names)
 assert m1 == m2
 assert (m1.names as Set) == ['Bob','Alice'] as Set
 '''
+    }
+
+    @Test
+    void testCommandChainEquivalence7() {
         assertScript '''import groovy.transform.Canonical
 
 @Canonical
@@ -261,7 +285,7 @@ assert m1.thing == 'cookies'
     }
 
     @Test
-    void testCommandChainImplementation() {
+    void testCommandChainImplementation1() {
         assertScript '''
 // tag::commandchain_impl1[]
 show = { println it }
@@ -278,6 +302,10 @@ please show the square_root of 100
 // ==> 10.0
 // end::commandchain_impl1[]
 '''
+    }
+
+    @Test
+    void testCommandChainImplementation2() {
         assertScript '''
 // tag::commandchain_impl2[]
 @Grab('com.google.guava:guava:r09')
@@ -288,6 +316,10 @@ def result = Splitter.on(',').trimResults(CharMatcher.is('_' as char)).split("_a
 // end::commandchain_impl2_assert[]
 assert result == ['a ', 'b_ ', 'c']
 '''
+    }
+
+    @Test
+    void testCommandChainImplementation3() {
         assertScript '''
 // tag::commandchain_impl3[]
 @Grab('com.google.guava:guava:r09')

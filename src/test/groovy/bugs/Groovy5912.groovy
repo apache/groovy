@@ -16,28 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs.groovy5912.otherpkg
+package bugs
 
-
-class Groovy5912Bug {
-    void test() {
-        def errMsg = shouldFail '''
-        package bugs.groovy5912.otherpkg
-
-        import bugs.groovy5912.PluginPathAwareFileSystemResourceLoader
 import org.junit.jupiter.api.Test
-import static groovy.test.GroovyAssert.*
 
-        @groovy.transform.CompileStatic
-        class GrailsProjectLoader {
-            def access() {
-                new PluginPathAwareFileSystemResourceLoader().setSearchLocations(null)
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy5912 {
+
+    @Test
+    void testPackageVisibility() {
+        def err = shouldFail '''
+            import bugs.groovy5912.PluginPathAwareFileSystemResourceLoader
+
+            @groovy.transform.CompileStatic
+            class GrailsProjectLoader {
+                def access() {
+                    new PluginPathAwareFileSystemResourceLoader().setSearchLocations(null)
+                }
             }
-        }
 
-        new GrailsProjectLoader().access()
+            new GrailsProjectLoader().access()
         '''
-
-        assert errMsg.message.contains('[Static type checking] - Cannot find matching method bugs.groovy5912.PluginPathAwareFileSystemResourceLoader#setSearchLocations')
+        assert err.message.contains('Cannot find matching method bugs.groovy5912.PluginPathAwareFileSystemResourceLoader#setSearchLocations')
     }
 }

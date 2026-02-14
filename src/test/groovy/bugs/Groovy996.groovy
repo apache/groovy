@@ -20,21 +20,21 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy996 {
 
-class Groovy996_Bug {
     @Test
     void testAccessToSuperProtectedField() {
-        def a = new Groovy996_SubClass()
+        def a = new SubClass()
         a.out()
     }
-}
 
-class Groovy996_SuperClass {
-    protected String x = 'This is an X'
-}
+    static class SuperClass {
+        protected String x = 'This is an X'
+    }
 
-class Groovy996_SubClass extends Groovy996_SuperClass {
-    void out() {
-       println( x )
+    static class SubClass extends SuperClass {
+        void out() {
+            println( x )
+        }
     }
 }

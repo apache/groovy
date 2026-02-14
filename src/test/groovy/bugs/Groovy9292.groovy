@@ -29,7 +29,8 @@ final class Groovy9292 {
         ast(groovy.transform.CompileStatic)
     }
 
-    @Test // GROOVY-11356
+    // GROOVY-11356
+    @Test
     void 'test accessing a private super class field inside a closure - same module'() {
         def err = shouldFail shell, '''
             package a
@@ -49,7 +50,8 @@ final class Groovy9292 {
         assert err.message =~ /No such property: superField for class: a.B/
     }
 
-    @Test // GROOVY-11356
+    // GROOVY-11356
+    @Test
     void 'test accessing a private super class field inside a closure - same package'() {
         assertScript shell, '''
             package a
@@ -74,7 +76,8 @@ final class Groovy9292 {
         assert err.message =~ /No such property: superField for class: a.B/
     }
 
-    @Test // GROOVY-11356
+    // GROOVY-11356
+    @Test
     void 'test accessing a private super class field inside a closure - diff package'() {
         assertScript shell, '''
             package a

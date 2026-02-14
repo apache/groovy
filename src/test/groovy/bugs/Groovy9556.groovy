@@ -23,7 +23,7 @@ import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
 import org.junit.jupiter.api.Test
 
 final class Groovy9556 {
-// .\gradlew --no-daemon --max-workers 2 :test --tests groovy.bugs.Groovy9556 --debug-jvm
+
     @Test
     void testInheritConstructors() {
         def config = new CompilerConfiguration(

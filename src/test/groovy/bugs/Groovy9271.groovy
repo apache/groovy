@@ -18,11 +18,9 @@
  */
 package bugs
 
-import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
-@CompileStatic
 final class Groovy9271 {
 
     @Test

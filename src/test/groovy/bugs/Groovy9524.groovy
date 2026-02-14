@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy9524 {
+
     @Test
     void testEnumConstClassCallingPrivateMethod() {
         assertScript '''
