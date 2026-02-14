@@ -125,8 +125,11 @@ public class ClassNode extends AnnotatedNode {
         Map<Object, List<MethodNode>> map;
 
         List<MethodNode> get(Object key) {
-            return Optional.ofNullable(map)
-                .map(m -> m.get(key)).orElseGet(Collections::emptyList);
+            if (map != null) {
+                List<MethodNode> result = map.get(key);
+                if (result != null) return result;
+            }
+            return Collections.emptyList();
         }
 
         void put(Object key, MethodNode value) {

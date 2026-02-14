@@ -404,13 +404,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         String typeName = type.getName();
 
-        GenericsType typeParameter = genericParameterNames.get(new GenericsTypeName(typeName));
-        if (typeParameter != null) {
-            type.setDeclaringClass(typeParameter.getType().getDeclaringClass());
-            type.setGenericsTypes(new GenericsType[]{typeParameter});
-            type.setRedirect(typeParameter.getType());
-            type.setGenericsPlaceHolder(true);
-            return true;
+        if (!genericParameterNames.isEmpty()) {
+            GenericsType typeParameter = genericParameterNames.get(new GenericsTypeName(typeName));
+            if (typeParameter != null) {
+                type.setDeclaringClass(typeParameter.getType().getDeclaringClass());
+                type.setGenericsTypes(new GenericsType[]{typeParameter});
+                type.setRedirect(typeParameter.getType());
+                type.setGenericsPlaceHolder(true);
+                return true;
+            }
         }
 
         boolean resolved;
@@ -498,8 +500,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private static String replaceLastPointWithDollar(final String name) {
         int lastPointIndex = name.lastIndexOf('.');
-
-        return name.substring(0, lastPointIndex) + "$" + name.substring(lastPointIndex + 1);
+        char[] chars = name.toCharArray();
+        chars[lastPointIndex] = '$';
+        return new String(chars);
     }
 
     protected boolean resolveFromStaticInnerClasses(final ClassNode type) {
@@ -1482,7 +1485,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         currentClass.setUsingGenerics(true);
         ClassNode type = genericsType.getType();
         visitTypeAnnotations(type); // JSR 308 support
-        GenericsType tp = genericParameterNames.get(new GenericsTypeName(type.getName()));
+        GenericsType tp = genericParameterNames.isEmpty() ? null : genericParameterNames.get(new GenericsTypeName(type.getName()));
         if (tp != null) {
             ClassNode[] bounds = tp.getUpperBounds();
             if (bounds != null && (bounds.length > 1 || (bounds[0].isRedirectNode()

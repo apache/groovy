@@ -113,7 +113,7 @@ public class BytecodeHelper {
      * @return the ASM internal name of the type
      */
     public static String getClassInternalName(String name) {
-        return name.replace('.', '/');
+        return name.indexOf('.') < 0 ? name : name.replace('.', '/');
     }
 
     /**

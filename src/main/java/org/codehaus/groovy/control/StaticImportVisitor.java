@@ -182,8 +182,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         ModuleNode module = currentClass.getModule();
         if (module != null && key instanceof ConstantExpression) {
             Map<String, ImportNode> importNodes = module.getStaticImports();
-            if (importNodes.containsKey(key.getText())) {
-                ImportNode importNode = importNodes.get(key.getText());
+            ImportNode importNode = importNodes.get(key.getText());
+            if (importNode != null) {
                 if (importNode.getType().equals(constructorCallType)) {
                     String newKey = importNode.getFieldName();
                     return new MapEntryExpression(new ConstantExpression(newKey), value.transformExpression(this));
@@ -407,9 +407,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         // look for one of these:
         //   import static MyClass.prop [as otherProp]
         // when resolving property or field reference
-        if (staticImports.containsKey(name)) { ImportNode importNode = staticImports.get(name);
-            expression = findStaticPropertyOrField(importNode.getType(), importNode.getFieldName());
-            if (expression != null) return expression;
+        {
+            ImportNode importNode = staticImports.get(name);
+            if (importNode != null) {
+                expression = findStaticPropertyOrField(importNode.getType(), importNode.getFieldName());
+                if (expression != null) return expression;
+            }
         }
 
         // look for one of these:
@@ -436,16 +439,18 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         //   import static MyClass.method [as alias]
         //   import static MyClass.property [as alias]
         // when resolving implicit-this call name(args)
-        if (staticImports.containsKey(name)) {
+        {
             ImportNode importNode = staticImports.get(name);
-            expression = findStaticMethod(importNode.getType(), importNode.getFieldName(), args);
-            if (expression != null) return expression;
-            if (!inLeftExpression) { // GROOVY-11056, et al.
-                expression = findStaticPropertyOrField(importNode.getType(), importNode.getFieldName());
-                if (expression != null) { // assume name refers to a callable static field/property
-                    MethodCallExpression call = new MethodCallExpression(expression, "call", args);
-                    call.setImplicitThis(false);
-                    return call;
+            if (importNode != null) {
+                expression = findStaticMethod(importNode.getType(), importNode.getFieldName(), args);
+                if (expression != null) return expression;
+                if (!inLeftExpression) { // GROOVY-11056, et al.
+                    expression = findStaticPropertyOrField(importNode.getType(), importNode.getFieldName());
+                    if (expression != null) { // assume name refers to a callable static field/property
+                        MethodCallExpression call = new MethodCallExpression(expression, "call", args);
+                        call.setImplicitThis(false);
+                        return call;
+                    }
                 }
             }
         }
