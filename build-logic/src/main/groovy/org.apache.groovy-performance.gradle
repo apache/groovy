@@ -86,6 +86,11 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+tasks.named('jmh') {
+    inputs.property('benchInclude', project.findProperty('benchInclude') ?: '')
+    dependsOn tasks.named('jmhClasses')
+}
+
 tasks.named('jmhJar') {
     from(sourceSets.jmh.output)
 }
