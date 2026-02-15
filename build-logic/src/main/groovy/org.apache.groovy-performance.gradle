@@ -46,6 +46,8 @@ dependencies {
     testImplementation project(':')
     testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit5}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit5Platform}"
+
     stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
 }
 
