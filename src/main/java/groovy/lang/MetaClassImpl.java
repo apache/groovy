@@ -1265,7 +1265,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return outer;
     }
 
-    private static Class<?> getNonClosureOuter(Class<?> c) {
+    protected static Class<?> getNonClosureOuter(Class<?> c) {
         do { c = c.getEnclosingClass();
         } while (c != null && GeneratedClosure.class.isAssignableFrom(c));
 

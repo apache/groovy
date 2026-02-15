@@ -144,4 +144,17 @@ final class ClosureDelegationTest {
             assert Bar.visited == true
         '''
     }
+
+    // GROOVY-11858
+    @Test
+    void testDelegateMethodVsClosureExtension() {
+        assertScript '''
+            def array = 'a b c'.with { split() }
+
+            assert array.length == 3
+            assert array.contains('a')
+            assert array.contains('b')
+            assert array.contains('c')
+        '''
+    }
 }

@@ -261,8 +261,19 @@ public final class ClosureMetaClass extends MetaClassImpl {
             if (method == null) throw new MissingMethodException(methodName, theClass, theArguments, false);
         }
 
+        MetaMethod cmm = null;
         if (method == null && (resolveStrategy != Closure.DELEGATE_ONLY || !isInternalMethod(methodName))) {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
+            // GROOVY-11858: delegate or owner may be desired target
+            if (method != null && resolveStrategy != Closure.TO_SELF
+                    && sender == getNonClosureOuter(getTheClass())) {
+                CachedClass methodOwner = method.getDeclaringClass();
+                if (methodOwner != getTheCachedClass()
+                        && methodOwner.getTheClass() != Closure.class
+                        && methodOwner.getTheClass() != GroovyObject.class) {
+                    cmm= method; method= null; // try delegate or owner first
+                }
+            }
         }
 
         if (method != null) return method.doMethodInvoke(closure, theArguments);
@@ -322,6 +333,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 return invokeOnDelegationObjects(invokeOnDelegate, delegate, invokeOnOwner, owner, methodName, arguments, sender);
             }
         }
+
+        if (cmm != null) cmm.doMethodInvoke(closure, theArguments);
 
         throw new MissingMethodException(methodName, theClass, theArguments, false);
     }
