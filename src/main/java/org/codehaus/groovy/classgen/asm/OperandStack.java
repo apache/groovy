@@ -612,22 +612,26 @@ public class OperandStack {
 
     public void storeVar(final BytecodeVariable variable) {
         MethodVisitor mv = controller.getMethodVisitor();
-        int idx = variable.getIndex();
         ClassNode type = variable.getType();
-        // value is on stack
+
+        doGroovyCast(type);
         if (variable.isHolder()) {
-            doGroovyCast(type);
             box();
-            mv.visitVarInsn(ALOAD, idx);
+            mv.visitVarInsn(ALOAD, variable.getIndex());
             mv.visitTypeInsn(CHECKCAST, "groovy/lang/Reference");
             mv.visitInsn(SWAP);
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "set", "(Ljava/lang/Object;)V", false);
         } else {
-            doGroovyCast(type);
-            BytecodeHelper.store(mv, type, idx);
+            if (!getTopOperand().equals(type) && controller.getCompileStack().hasBlockRecorder()) {
+                // GROOVY-9805: force type in the stackmap
+                mv.visitTypeInsn(CHECKCAST, type.isArray()
+                        ? BytecodeHelper.getTypeDescription(type)
+                        : BytecodeHelper.getClassInternalName(type.getName()));
+            }
+            BytecodeHelper.store(mv, type, variable.getIndex());
         }
-        // remove RHS value from operand stack
-        remove(1);
+
+        remove(1); // remove RHS value from operand stack
     }
 
     public void load(final ClassNode type, final int idx) {
