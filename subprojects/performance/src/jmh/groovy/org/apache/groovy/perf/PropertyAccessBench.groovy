@@ -47,7 +47,8 @@ class PropertyAccessBench {
     void setBackingField(int value) { _backingField = value }
 
     /**
-     * Read/write a public field — the simplest property access path.
+     * Read/write a Groovy property — in Groovy, {@code int instanceField}
+     * declares a property backed by a private field with generated getter/setter.
      */
     @Benchmark
     void fieldReadWrite(Blackhole bh) {
@@ -89,8 +90,8 @@ class PropertyAccessBench {
     }
 
     /**
-     * Map-style property access using bracket notation —
-     * tests Groovy's map-like property access on a POGO.
+     * Map bracket notation — {@code map['key']} dispatches to
+     * {@code Map.getAt()} / {@code Map.putAt()}.
      */
     @Benchmark
     void mapStyleAccess(Blackhole bh) {
@@ -119,14 +120,14 @@ class PropertyAccessBench {
 
     /**
      * Chained property access — tests multiple property resolutions
-     * in a single expression.
+     * in a single expression using nested maps.
      */
     @Benchmark
     void chainedPropertyAccess(Blackhole bh) {
-        List<String> list = ["hello", "world"]
+        Map<String, Object> root = [level1: [level2: [value: 42]]]
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
-            sum += list.first().length()
+            sum += root.level1.level2.value
         }
         bh.consume(sum)
     }
