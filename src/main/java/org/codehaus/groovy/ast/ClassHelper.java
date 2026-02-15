@@ -66,6 +66,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -185,6 +187,26 @@ public class ClassHelper {
             GROOVY_OBJECT_TYPE, GROOVY_INTERCEPTABLE_TYPE, Enum_Type, Annotation_TYPE
     };
 
+    // O(1) lookup maps for make(Class) and make(String), replacing O(n) linear scans
+    private static final Map<Class<?>, ClassNode> classToTypeMap = new IdentityHashMap<>();
+    private static final Map<String, ClassNode> nameToTypeMap = new HashMap<>();
+    private static final Map<String, ClassNode> primitiveNameToTypeMap = new HashMap<>();
+    private static final Set<ClassNode> cachedTypeSet = Collections.newSetFromMap(new IdentityHashMap<>());
+    static {
+        for (int i = 0; i < classes.length; i++) {
+            classToTypeMap.put(classes[i], types[i]);
+        }
+        for (int i = 0; i < primitiveClassNames.length; i++) {
+            if (!primitiveClassNames[i].isEmpty()) {
+                primitiveNameToTypeMap.put(primitiveClassNames[i], types[i]);
+            }
+        }
+        for (int i = 0; i < classes.length; i++) {
+            nameToTypeMap.put(classes[i].getName(), types[i]);
+        }
+        cachedTypeSet.addAll(Arrays.asList(types));
+    }
+
     private static final String DYNAMIC_TYPE_METADATA = "_DYNAMIC_TYPE_METADATA_";
 
     protected static final ClassNode[] EMPTY_TYPE_ARRAY = ClassNode.EMPTY_ARRAY;
@@ -238,9 +260,8 @@ public class ClassHelper {
     }
 
     public static ClassNode make(Class c, boolean includeGenerics) {
-        for (int i = 0; i < classes.length; i++) {
-            if (c == classes[i]) return types[i];
-        }
+        ClassNode cached = classToTypeMap.get(c);
+        if (cached != null) return cached;
         if (c.isArray()) {
             ClassNode cn = make(c.getComponentType(), includeGenerics);
             return cn.makeArray();
@@ -295,14 +316,12 @@ public class ClassHelper {
     public static ClassNode make(String name) {
         if (name == null || name.isEmpty()) return dynamicType();
 
-        for (int i = 0; i < primitiveClassNames.length; i++) {
-            if (primitiveClassNames[i].equals(name)) return types[i];
-        }
+        ClassNode cached = primitiveNameToTypeMap.get(name);
+        if (cached != null) return cached;
 
-        for (int i = 0; i < classes.length; i++) {
-            String cname = classes[i].getName();
-            if (name.equals(cname)) return types[i];
-        }
+        cached = nameToTypeMap.get(name);
+        if (cached != null) return cached;
+
         return makeWithoutCaching(name);
     }
 
@@ -424,10 +443,7 @@ public class ClassHelper {
     }
 
     public static boolean isCachedType(ClassNode type) {
-        for (ClassNode cachedType : types) {
-            if (cachedType == type) return true;
-        }
-        return false;
+        return cachedTypeSet.contains(type);
     }
 
     public static boolean isDynamicTyped(ClassNode type) {
