@@ -52,6 +52,7 @@ class OperatorBench {
 
     /**
      * Integer multiplication — dispatches to Integer.multiply(Integer).
+     * Uses modulo to keep operands small and avoid overflow to zero.
      */
     @Benchmark
     void integerMultiply(Blackhole bh) {

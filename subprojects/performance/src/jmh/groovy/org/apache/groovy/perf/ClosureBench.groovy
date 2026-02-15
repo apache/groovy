@@ -69,7 +69,7 @@ class ClosureBench {
      */
     @Benchmark
     void benchmarkClosureMultiParams(Blackhole bh) {
-        Closure c = { a, b, c -> a + b + c }
+        Closure c = { a, b, x -> a + b + x }
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
             sum += c(i, i + 1, i + 2)
