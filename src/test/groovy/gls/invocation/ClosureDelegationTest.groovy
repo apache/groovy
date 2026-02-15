@@ -18,108 +18,117 @@
  */
 package gls.invocation
 
-import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class ClosureDelegationTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
 
+final class ClosureDelegationTest {
+
+    @Test
     void testMissingMethodMissingMethod() {
-      assertScript """
-class A {
-  def methodMissing(String name, args) {
-     "A" 
-  }
-}
+        assertScript '''
+            class A {
+                def methodMissing(String name, args) {
+                    "A"
+                }
+            }
 
-def methodMissing(String name, args) {
-  visited=true
-  throw new MissingMethodException(name,this.class,args)
-}
+            def methodMissing(String name, args) {
+                visited=true
+                throw new MissingMethodException(name,this.class,args)
+            }
 
-visited=false
-def closure = { foo() }
-closure.delegate = new A()
-assert closure() == "A"
-assert visited==true
-        """
+            visited=false
+            def closure = { foo() }
+            closure.delegate = new A()
+            assert closure() == "A"
+            assert visited==true
+        '''
     }
 
+    @Test
     void testInvokeMethodMissingMethod() {
-      assertScript """
-class A {
-  def invokeMethod(String name, args) {
-     "A" 
-  }
-}
+        assertScript '''
+            class A {
+                def invokeMethod(String name, args) {
+                    "A"
+                }
+            }
 
-def methodMissing(String name, args) {
-  visited=true
-  throw new MissingMethodException(name,this.class,args)
-}
+            def methodMissing(String name, args) {
+                visited=true
+                throw new MissingMethodException(name,this.class,args)
+            }
 
-visited=false
-def closure = { foo() }
-closure.delegate = new A()
-assert closure() == "A"
-assert visited==true
-        """
+            visited=false
+            def closure = { foo() }
+            closure.delegate = new A()
+            assert closure() == "A"
+            assert visited==true
+        '''
     }
 
+    @Test
     void testMissingMethodInvokeMethod() {
-      assertScript """
-class A {
-  def methodMissing(String name, args) {
-     "A" 
-  }
-}
+        assertScript '''
+            class A {
+                def methodMissing(String name, args) {
+                    "A"
+                }
+            }
 
-def invokeMethod(String name, args) {
-  visited=true
-  throw new MissingMethodException(name,this.class,args)
-}
+            def invokeMethod(String name, args) {
+                visited=true
+                throw new MissingMethodException(name,this.class,args)
+            }
 
-visited=false
-def closure = { foo() }
-closure.delegate = new A()
-assert closure() == "A"
-assert visited==true
-        """
+            visited=false
+            def closure = { foo() }
+            closure.delegate = new A()
+            assert closure() == "A"
+            assert visited==true
+        '''
     }
 
+    @Test
     void testInvokeMethodInvokeMethod() {
-      assertScript """
-class A {
-  def invokeMethod(String name, args) {
-     "A" 
-  }
-}
+        assertScript '''
+            class A {
+                def invokeMethod(String name, args) {
+                    "A"
+                }
+            }
 
-def invokeMethod(String name, args) {
-  visited=true
-  throw new MissingMethodException(name,this.class,args)
-}
+            def invokeMethod(String name, args) {
+                visited=true
+                throw new MissingMethodException(name,this.class,args)
+            }
 
-visited=false
-def closure = { foo() }
-closure.delegate = new A()
-assert closure() == "A"
-assert visited==true
-        """
+            visited=false
+            def closure = { foo() }
+            closure.delegate = new A()
+            assert closure() == "A"
+            assert visited==true
+        '''
     }
 
+    @Test
     void testStaticMethod() {
         assertScript '''
             class Foo {
-                static visited 
+                static visited
                 static closureInStaticContext = {
                     foo()
                 }
                 static foo(){ visited = true }
             }
+
             Foo.closureInStaticContext()
             assert Foo.visited == true
         '''
     }
 
+    @Test
     void testStaticContextClosureDelegation() {
         assertScript '''
             class Foo {
@@ -130,6 +139,7 @@ assert visited==true
                 static visited
                 def foo() { visited = true }
             }
+
             Foo.aClosure()
             assert Bar.visited == true
         '''
