@@ -309,7 +309,7 @@ public class CompileStack {
     }
 
     /**
-     * creates a temporary variable.
+     * Creates a temporary variable.
      *
      * @param name defines type and name
      * @param store defines if the top-level argument of the stack should be stored
@@ -320,7 +320,7 @@ public class CompileStack {
     }
 
     /**
-     * creates a temporary variable.
+     * Creates a temporary variable.
      *
      * @param name the variable name
      * @param type the variable type

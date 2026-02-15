@@ -53,6 +53,7 @@ public class BytecodeVariable {
         this.type = type;
         this.name = name;
         this.prevCurrent = prevCurrent;
+        this.dynamicTyped = ClassHelper.isDynamicTyped(type);
     }
 
     /**
@@ -83,8 +84,8 @@ public class BytecodeVariable {
         return dynamicTyped;
     }
 
-    public void setDynamicTyped(final boolean b) {
-        dynamicTyped = b;
+    public void setDynamicTyped(final boolean dynamicTyped) {
+        this.dynamicTyped = dynamicTyped;
     }
 
     /**

@@ -424,7 +424,7 @@ public class StatementWriter {
 
         mv.visitLabel(catchAll);
         operandStack.push(ClassHelper.THROWABLE_TYPE);
-        int anyThrowable = compileStack.defineTemporaryVariable("throwable", true);
+        int anyThrowable = compileStack.defineTemporaryVariable("throwable", ClassHelper.THROWABLE_TYPE, true);
 
         finallyStatement.visit(controller.getAcg());
 

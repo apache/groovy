@@ -143,8 +143,8 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
 
     private void createCloneSerialization(ClassNode cNode) {
         final BlockStatement body = new BlockStatement();
-        // def baos = new ByteArrayOutputStream()
-        final Expression baos = localVarX("baos");
+        // ByteArrayOutputStream baos = new ByteArrayOutputStream()
+        final Expression baos = localVarX("baos", BAOS_TYPE);
         body.addStatement(declS(baos, ctorX(BAOS_TYPE)));
 
         // baos.withObjectOutputStream{ it.writeObject(this) }
@@ -154,8 +154,8 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
         writeClos.setVariableScope(new VariableScope());
         body.addStatement(stmt(callX(baos, "withObjectOutputStream", args(writeClos))));
 
-        // def bais = new ByteArrayInputStream(baos.toByteArray())
-        final Expression bais = localVarX("bais");
+        // ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray())
+        final Expression bais = localVarX("bais", BAIS_TYPE);
         body.addStatement(declS(bais, ctorX(BAIS_TYPE, args(callX(baos, "toByteArray")))));
 
         // return bais.withObjectInputStream(getClass().classLoader){ (<type>) it.readObject() }
@@ -238,7 +238,7 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
             addGeneratedConstructor(cNode, ACC_PUBLIC, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block(EmptyStatement.INSTANCE));
         }
         addSimpleCloneHelperMethod(cNode, fieldNodes, excludes);
-        final Expression result = localVarX("_result");
+        final Expression result = localVarX("_result", cNode);
         ClassNode[] exceptions = {make(CloneNotSupportedException.class)};
         ConstructorCallExpression init = ctorX(cNode);
         if (AnnotatedNodeUtils.hasAnnotation(cNode, COMPILESTATIC_CLASSNODE) && cNode.getDeclaredConstructor(Parameter.EMPTY_ARRAY) == null) {
@@ -285,8 +285,8 @@ public class AutoCloneASTTransformation extends AbstractASTTransformation {
     private static void createClone(ClassNode cNode, List<FieldNode> fieldNodes, List<String> excludes) {
         final BlockStatement body = new BlockStatement();
 
-        // def _result = super.clone() as cNode
-        final Expression result = localVarX("_result");
+        // Type _result = (Type) super.clone()
+        final Expression result = localVarX("_result", cNode);
         body.addStatement(declS(result, castX(cNode, callSuperX("clone"))));
 
         for (FieldNode fieldNode : fieldNodes) {

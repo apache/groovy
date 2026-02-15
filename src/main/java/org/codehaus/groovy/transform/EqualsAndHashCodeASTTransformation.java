@@ -212,8 +212,8 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }
         final BlockStatement body = new BlockStatement();
-        // def _result = HashCodeHelper.initHash()
-        final Expression result = localVarX("_result");
+        // int _result = HashCodeHelper.initHash()
+        final Expression result = localVarX("_result", ClassHelper.int_TYPE);
         body.addStatement(declS(result, callX(HASHUTIL_TYPE, "initHash")));
 
         for (PropertyNode pNode : pList) {
