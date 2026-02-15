@@ -20,6 +20,7 @@ package groovy.jmx.builder
 
 import groovy.jmx.GroovyMBean
 import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 import javax.management.MBeanServerConnection
@@ -29,7 +30,18 @@ import static groovy.test.GroovyAssert.shouldFail
 
 final class JmxBeanExportFactoryTest {
 
-    private final JmxBuilder builder = new JmxBuilder()
+    private JmxBuilder builder
+    private MBeanServerConnection server
+
+    @BeforeEach
+    void setUp() {
+        builder = new JmxBuilder()
+        try {
+            server = builder.getMBeanServer()
+        } catch (e) {
+            Assumptions.abort(e.getMessage())
+        }
+    }
 
     @Test
     void testBeanExportReplacePolicy() {
@@ -76,12 +88,6 @@ final class JmxBeanExportFactoryTest {
             bean(object)
         }
 
-        MBeanServerConnection server
-        try {
-            server = builder.getMBeanServer()
-        } catch (e) {
-            Assumptions.abort(e.getMessage())
-        }
         GroovyMBean bean = new GroovyMBean(server, new ObjectName(objName))
 
         assert server.isRegistered(new ObjectName(objName))

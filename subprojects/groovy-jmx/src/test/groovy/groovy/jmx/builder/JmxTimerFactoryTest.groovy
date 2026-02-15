@@ -31,23 +31,23 @@ import static groovy.test.GroovyAssert.shouldFail
 final class JmxTimerFactoryTest {
 
     private JmxBuilder builder
+    private MBeanServerConnection server
 
     @BeforeEach
     void setUp() {
         builder = new JmxBuilder()
         builder.registerFactory('timer', new JmxTimerFactory())
+        try {
+            server = builder.getMBeanServer()
+        } catch (e) {
+            Assumptions.abort(e.getMessage())
+        }
     }
 
     @Test
     void testSimpleTimerSetup() {
         GroovyMBean timer = builder.timer()
         assert timer
-        MBeanServerConnection server
-        try {
-            server = builder.getMBeanServer()
-        } catch (e) {
-            Assumptions.abort(e.getMessage())
-        }
         Set<ObjectName> objectNames = server.queryNames(new ObjectName('jmx.builder:type=TimerService,*'), null)
         assert !objectNames.isEmpty()
         shouldFail {
