@@ -42,4 +42,4 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: perf-reports
-          path: build/*.csv
+          path: subprojects/performance/build/*.csv

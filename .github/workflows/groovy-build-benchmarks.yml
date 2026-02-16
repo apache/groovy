@@ -35,19 +35,35 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: gradle/actions/setup-gradle@v5
-      - name: Benchmarks
-        run: ./gradlew perf:jmh
+      - name: Benchmarks (bench)
+        run: ./gradlew perf:jmh -PbenchInclude=bench
         timeout-minutes: 60
-      - name: Upload benchmarks report
+      - name: Upload bench-reports-bench-indy report
         uses: actions/upload-artifact@v6
         with:
-          name: bench-reports-indy
+          name: bench-reports-bench-indy
+          path: build/results/jmh/
+      - name: Benchmarks (bench classic)
+        run: ./gradlew perf:jmh -PbenchInclude=bench -Pindy=false
+        timeout-minutes: 60
+      - name: Upload bench-reports-bench-classic report
+        uses: actions/upload-artifact@v6
+        with:
+          name: bench-reports-bench-classic
+          path: build/results/jmh/
+      - name: Benchmarks
+        run: ./gradlew perf:jmh -PbenchInclude=perf
+        timeout-minutes: 60
+      - name: Upload bench-reports-perf-indy report
+        uses: actions/upload-artifact@v6
+        with:
+          name: bench-reports-perf-indy
           path: build/results/jmh/
       - name: Benchmarks classic
-        run: ./gradlew perf:jmh -Pindy=false
+        run: ./gradlew perf:jmh -PbenchInclude=perf -Pindy=false
         timeout-minutes: 60
-      - name: Upload benchmarks report
+      - name: Upload bench-reports-perf-classic report
         uses: actions/upload-artifact@v6
         with:
-          name: bench-reports-classic
+          name: bench-reports-perf-classic
           path: build/results/jmh/
