@@ -35,11 +35,19 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: gradle/actions/setup-gradle@v5
-      - name: Compiler performance comparison
-        run: ./gradlew perf:performanceTests
+      - name: Benchmarks
+        run: ./gradlew perf:jmh
         timeout-minutes: 60
-      - name: Upload perf report
+      - name: Upload benchmarks report
         uses: actions/upload-artifact@v6
         with:
-          name: perf-reports
-          path: build/*.csv
+          name: bench-reports-indy
+          path: build/results/jmh/
+      - name: Benchmarks classic
+        run: ./gradlew perf:jmh -Pindy=false
+        timeout-minutes: 60
+      - name: Upload benchmarks report
+        uses: actions/upload-artifact@v6
+        with:
+          name: bench-reports-classic
+          path: build/results/jmh/
