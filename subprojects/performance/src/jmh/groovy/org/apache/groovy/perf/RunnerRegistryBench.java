@@ -38,10 +38,10 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(2)
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-public class GroovyRunnerRegistryBench {
+public class RunnerRegistryBench {
 
     static List<Object> control = new ArrayList<>();
     static GroovyRunnerRegistry registry = GroovyRunnerRegistry.getInstance();
@@ -49,7 +49,7 @@ public class GroovyRunnerRegistryBench {
         control.add(new Object());
         control.add(new Object());
         control.add(new Object());
-        registry.load(GroovyRunnerRegistryBench.class.getClassLoader());
+        registry.load(RunnerRegistryBench.class.getClassLoader());
     }
 
     @Benchmark
@@ -60,7 +60,7 @@ public class GroovyRunnerRegistryBench {
     }
 
     @Benchmark
-    public void linkedListIterator(Blackhole bh) {
+    public void listIterator(Blackhole bh) {
         for (Object obj : control) {
             bh.consume(obj);
         }
