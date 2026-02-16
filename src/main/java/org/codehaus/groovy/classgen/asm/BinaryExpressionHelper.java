@@ -502,7 +502,7 @@ public class BinaryExpressionHelper {
             iterator.setImplicitThis(false);
             iterator.visit(acg);
 
-            int iteratorId = compileStack.defineTemporaryVariable("$iter", true);
+            int iteratorId = compileStack.defineTemporaryVariable("$iter", operandStack.getTopOperand(), true);
             Expression seq = new VariableSlotLoader(iteratorId, operandStack);
 
             MethodCallExpression hasNext = callX(seq, "hasNext");

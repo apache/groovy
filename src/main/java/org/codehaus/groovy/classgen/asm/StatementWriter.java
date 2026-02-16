@@ -424,7 +424,7 @@ public class StatementWriter {
 
         mv.visitLabel(catchAll);
         operandStack.push(ClassHelper.THROWABLE_TYPE);
-        int anyThrowable = compileStack.defineTemporaryVariable("throwable", true);
+        int anyThrowable = compileStack.defineTemporaryVariable("throwable", ClassHelper.THROWABLE_TYPE, true);
 
         finallyStatement.visit(controller.getAcg());
 
@@ -474,12 +474,14 @@ public class StatementWriter {
         writeStatementLabel(statement);
 
         statement.getExpression().visit(controller.getAcg());
+        ClassNode exprType = controller.getOperandStack().getTopOperand();
+        if (ClassHelper.isPrimitiveType(exprType)) exprType = ClassHelper.getWrapper(exprType);
 
         // switch does not have a continue label; use enclosing continue label
         CompileStack compileStack = controller.getCompileStack();
         Label breakLabel = compileStack.pushSwitch();
 
-        int switchVariableIndex = compileStack.defineTemporaryVariable("switch", true);
+        int switchVariableIndex = compileStack.defineTemporaryVariable("switch", exprType, true);
 
         List<CaseStatement> caseStatements = statement.getCaseStatements();
         int caseCount = caseStatements.size();
@@ -623,7 +625,7 @@ public class StatementWriter {
             }
             cs.applyBlockRecorder();
             mv.visitInsn(RETURN);
-        } else {
+        } else { // return value
             Expression expression = statement.getExpression();
             expression.visit(controller.getAcg());
 
@@ -634,15 +636,15 @@ public class StatementWriter {
             }
 
             if (cs.hasBlockRecorder()) {
-                ClassNode top = os.getTopOperand();
-                int returnVal = cs.defineTemporaryVariable("returnValue", returnType, true);
-                cs.applyBlockRecorder();
-                os.load(top, returnVal);
-                cs.removeVar(returnVal);
+                int rv = cs.defineTemporaryVariable("returnValue", returnType, true);
+                cs.applyBlockRecorder(); // handle finally block
+                BytecodeHelper.load(mv, returnType, rv);
+                BytecodeHelper.doReturn(mv, returnType);
+                cs.removeVar(rv);
+            } else {
+                BytecodeHelper.doReturn(mv, returnType);
+                os.remove(1);
             }
-
-            BytecodeHelper.doReturn(mv, returnType);
-            os.remove(1);
         }
     }
 

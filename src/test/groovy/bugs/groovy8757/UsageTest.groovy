@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
-class UsageTest {
+final class UsageTest {
+
     @Test
     void testAccessingPrecompiledTraitWithMethodGenerics() {
         def c0 = new GroovyShell().evaluate('''

@@ -21,6 +21,7 @@ package bugs.groovy10121
 import org.junit.jupiter.api.Test
 
 final class AnnotationCollectorReflectionTest {
+
     @Test
     void testHelperIsVisibleAsInnerClass() {
         def innerNames = SomeCollectedAnnotations.classes*.name

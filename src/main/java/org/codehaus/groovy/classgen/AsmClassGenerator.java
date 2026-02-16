@@ -1892,7 +1892,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // in a temporary variable
         BytecodeHelper.pushConstant(mv, size);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-        int listArrayVar = controller.getCompileStack().defineTemporaryVariable("_listOfClosures", true);
+        int listArrayVar = controller.getCompileStack().defineTemporaryVariable("_listOfClosures", ClassHelper.OBJECT_TYPE.makeArray(), true);
 
         // add curried versions
         for (int i = 0; i < size; i += 1) {

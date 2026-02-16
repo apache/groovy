@@ -18,12 +18,10 @@
  */
 package bugs
 
-import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
-@CompileStatic
 final class Groovy9261 {
 
     @Test

@@ -18,10 +18,13 @@
  */
 package bugs
 
-import org.codehaus.groovy.classgen.TestSupport
+import org.junit.jupiter.api.Test
 
-class ClosureParameterPassingBug extends TestSupport {
+import static groovy.test.GroovyAssert.assertScript
 
+final class ClosureParameterPassingBug {
+
+    @Test
     void testBugInMethod() {
         def c = { x ->
             def y = 123
@@ -30,28 +33,24 @@ class ClosureParameterPassingBug extends TestSupport {
                 println x
                 println x[0]
             }
-
             c1()
         }
-
         c([1])
     }
 
+    @Test
     void testBug() {
-        assertScript """
-def c = { x ->
-    def y = 123
-    def c1 = {
-        assert x != null , "Could not find a value for x"
-        assert y == 123 , "Could not find a value for y"
-        println x[0]
+        assertScript '''
+            def c = { x ->
+                def y = 1234
+                def c1 = {
+                    assert x != null : 'Could not find a value for x'
+                    assert y == 1234 : 'Could not find a value for y'
+                    println x[0]
+                }
+                c1()
+            }
+            c([1])
+        '''
     }
-
-    c1()
-}
-
-c([1])
-"""
-    }
-
 }

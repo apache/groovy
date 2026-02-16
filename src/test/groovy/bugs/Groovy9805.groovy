@@ -18,17 +18,37 @@
  */
 package bugs
 
-import groovy.test.NotYetImplemented
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy9805 {
-    @NotYetImplemented @Test
-    void testNoVerifyErrorForStatementsOnSameLine() {
+
+    @Test
+    void testSameLineAssignments1() {
         assertScript '''
-            def x; try { x = System.nanoTime(); x = "ok" } catch (e) { }
-            //                                 ^ adding a label here in classgen is possible fix
+            Object x; x = System.nanoTime(); x = ""
+        '''
+    }
+
+    @Test
+    void testSameLineAssignments2() {
+        assertScript '''
+            Object x; try { x = System.nanoTime(); x = "x value" } catch (e) { }
+        '''
+    }
+
+    @Test
+    void testSameLineAssignments3() {
+        assertScript '''
+            Object[] x; try { x = new Long[0]; x = new String[0] } catch (e) { }
+        '''
+    }
+
+    @Test
+    void testSameLineAssignments4() {
+        assertScript '''
+            CharSequence x; try { x = new StringBuffer(); x = "" } catch (e) { }
         '''
     }
 }

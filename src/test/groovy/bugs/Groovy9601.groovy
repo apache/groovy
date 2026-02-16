@@ -18,14 +18,13 @@
  */
 package bugs
 
-import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
 final class Groovy9601 {
-    @Test // regression test
+
+    @Test
     void testAccessVariableSpecifiedByAbstractGetter() {
         assertScript '''
             abstract class Base {

@@ -309,7 +309,7 @@ public class CompileStack {
     }
 
     /**
-     * creates a temporary variable.
+     * Creates a temporary variable.
      *
      * @param name defines type and name
      * @param store defines if the top-level argument of the stack should be stored
@@ -320,15 +320,15 @@ public class CompileStack {
     }
 
     /**
-     * creates a temporary variable.
+     * Creates a temporary variable.
      *
-     * @param name defines the name
-     * @param node defines the node
-     * @param store defines if the top-level argument of the stack should be stored
+     * @param name the variable name
+     * @param type the variable type
+     * @param store indicates if the top-level argument of the stack should be stored
      * @return the index used for this temporary variable
      */
-    public int defineTemporaryVariable(final String name, final ClassNode node, final boolean store) {
-        BytecodeVariable answer = defineVar(name, node, false, false);
+    public int defineTemporaryVariable(final String name, final ClassNode type, final boolean store) {
+        BytecodeVariable answer = defineVar(name, type, false, false);
         temporaryVariables.addFirst(answer); // TRICK: we add at the beginning so when we find for remove or get we always have the last one
         usedVariables.removeLast();
 

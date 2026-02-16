@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class SyntheticParameterAnnotationsBug {
+final class SyntheticParameterAnnotationsBug {
+
     @Test
     void testEnumConstructorWithSyntheticParamUsageWithAsmResolvingDisabled() {
         assertScript '''

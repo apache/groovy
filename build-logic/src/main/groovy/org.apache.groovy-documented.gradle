@@ -59,13 +59,12 @@ tasks.withType(Javadoc).configureEach {
         overview = project.relativePath(rootProject.file('src/main/java/overviewj.html'))
         bottom = 'Copyright &copy; 2003-2026 The Apache Software Foundation. All rights reserved.'
         source = sharedConfiguration.targetJavaVersion.get()
-        links('https://docs.oracle.com/en/java/javase/11/docs/api/',
-                'https://docs.oracle.com/javaee/7/api/',
-                'https://commons.apache.org/proper/commons-cli/javadocs/api-release/',
-                'https://junit.org/junit4/javadoc/latest/',
-                'https://docs.junit.org/current/api/',
-                'https://picocli.info/apidocs/',
-                'https://docs.oracle.com/javaee/6/api/')
+        links("https://docs.oracle.com/en/java/javase/${17}/docs/api/",
+              'https://docs.oracle.com/javaee/7/api/',
+              'https://commons.apache.org/proper/commons-cli/javadocs/api-release/',
+              'https://junit.org/junit4/javadoc/latest/',
+              'https://docs.junit.org/current/api/',
+              'https://picocli.info/apidocs/')
     }
 }
 
@@ -82,7 +81,7 @@ tasks.withType(Groovydoc).configureEach {
     overviewText = rootProject.resources.text.fromFile('src/main/java/overview.html')
     access = GroovydocAccess.PROTECTED
     link 'https://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
-    link 'https://docs.oracle.com/javase/11/docs/api/java.base/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
+    link "https://docs.oracle.com/javase/${17}/docs/api/java.base/", 'java.', 'org.xml.', 'javax.', 'org.w3c.'
     link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
     link 'https://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
     link 'https://docs.junit.org/current/api/org.junit.jupiter.api/', 'org.junit.jupiter.', 'org.junit.platform.'

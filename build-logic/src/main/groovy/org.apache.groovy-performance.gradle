@@ -44,7 +44,10 @@ repositories {
 dependencies {
     jmh project(':')
     testImplementation project(':')
-    testImplementation "junit:junit:${versions.junit}"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit5}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit5Platform}"
+
     stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
 }
 
@@ -79,4 +82,17 @@ tasks.register('performanceTests', PerformanceTestSummary)
 
 sonarqube {
     skipProject = true
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.named('jmh') {
+    inputs.property('benchInclude', project.findProperty('benchInclude') ?: '')
+    dependsOn tasks.named('jmhClasses')
+}
+
+tasks.named('jmhJar') {
+    from(sourceSets.jmh.output)
 }

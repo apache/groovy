@@ -18,10 +18,8 @@
  */
 package bugs
 
-import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
-@CompileStatic
 final class Groovy9236 {
 
     /**
