@@ -90,6 +90,7 @@ tasks.named('test') {
 
 tasks.named('jmh') {
     inputs.property('benchInclude', project.findProperty('benchInclude') ?: '')
+    inputs.property('indy', project.findProperty('indy') ?: '')
     dependsOn tasks.named('jmhClasses')
 }
 

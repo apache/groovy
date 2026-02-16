@@ -39,10 +39,9 @@ JMH Benchmarks can be run using:
 
     ./gradlew :perf:jmh
 
-In order to run the benchmarks against InvokeDynamic generated classes use
-the `indy` property:
+Groovy currently defaults to InvokeDynamic generated classes, but to get classic callsite generation use the `indy` property:
 
-    ./gradlew -Pindy=true :perf:jmh
+    ./gradlew -Pindy=false :perf:jmh
 
 Groovy and Java sources placed in `src/test` will also be available to the
 benchmarks.
@@ -53,5 +52,5 @@ To run a single benchmark or a matched set of benchmarks, use the
     ./gradlew -PbenchInclude=CallsiteBench :perf:jmh
 
 The `benchInclude` property will perform a partial match against package
-names or class names. It is equivalent to `.*${benchInclude}.*`.
+names or class names. It is equivalent to `.\*${benchInclude}.*`.
 
