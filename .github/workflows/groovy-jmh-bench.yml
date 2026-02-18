@@ -36,7 +36,7 @@ jobs:
           check-latest: true
       - uses: gradle/actions/setup-gradle@v5
       - name: Benchmarks (bench)
-        run: ./gradlew perf:displayJmhResults -PbenchInclude=\\.bench\\.
+        run: ./gradlew perf:jmh -PbenchInclude=\\.bench\\.
         timeout-minutes: 60
       - name: Upload reports-jmh-bench
         uses: actions/upload-artifact@v6
