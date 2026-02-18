@@ -47,9 +47,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -253,7 +251,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (CLOSURE_DO_CALL_METHOD.equals(methodName) || CLOSURE_CALL_METHOD.equals(methodName)) {
             method = pickClosureMethod(argClasses);
             if (method == null && argClasses.length == 1 && List.class.isAssignableFrom(argClasses[0])) {
-                var list = (theArguments[0] instanceof Wrapper ? ((Wrapper) theArguments[0]).unwrap() : theArguments[0]);
+                var list = (theArguments[0] instanceof Wrapper wrapper ? wrapper.unwrap() : theArguments[0]);
                 if (list != null) {
                     var newArguments = ((List<?>) list).toArray();
                     var newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
@@ -263,8 +261,19 @@ public final class ClosureMetaClass extends MetaClassImpl {
             if (method == null) throw new MissingMethodException(methodName, theClass, theArguments, false);
         }
 
+        MetaMethod cmm = null;
         if (method == null && (resolveStrategy != Closure.DELEGATE_ONLY || !isInternalMethod(methodName))) {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
+            // GROOVY-11858: delegate or owner may be desired target
+            if (method != null && resolveStrategy != Closure.TO_SELF
+                    && sender == getNonClosureOuter(getTheClass())) {
+                CachedClass methodOwner = method.getDeclaringClass();
+                if (methodOwner != getTheCachedClass()
+                        && methodOwner.getTheClass() != Closure.class
+                        && methodOwner.getTheClass() != GroovyObject.class) {
+                    cmm= method; method= null; // try delegate or owner first
+                }
+            }
         }
 
         if (method != null) return method.doMethodInvoke(closure, theArguments);
@@ -325,6 +334,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
         }
 
+        if (cmm != null) cmm.doMethodInvoke(closure, theArguments);
+
         throw new MissingMethodException(methodName, theClass, theArguments, false);
     }
 
@@ -375,7 +386,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         throw first;
     }
 
-    private static final Set<String> INTERNAL_METHODS = new HashSet<>(Arrays.asList("curry", "ncurry", "rcurry", "leftShift", "rightShift"));
+    private static final Set<String> INTERNAL_METHODS = Set.of("curry", "ncurry", "rcurry", "leftShift", "rightShift");
     private static boolean isInternalMethod(final String methodName) {
         return INTERNAL_METHODS.contains(methodName);
     }
