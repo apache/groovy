@@ -1212,6 +1212,36 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-7909
+    @CompileModesTest
+    void testTraitMethodOverloadAndOverride2(String mode) {
+        assertScript shell, """
+            $mode
+            trait Three implements One, Two {
+                def postMake() {
+                    '3' + Two.super.postMake() + One.super.postMake()
+                }
+            }
+            $mode
+            trait One {
+                def postMake() { '1' }
+            }
+            $mode
+            trait Two {
+                def postMake() { '2' }
+            }
+            $mode
+            class Four implements Three {
+                def make() {
+                    '4' + Three.super.postMake()
+                }
+            }
+
+            String result = new Four().make()
+            assert result == '4321'
+        """
+    }
+
     // GROOVY-9255
     @Test
     void testTraitSuperPropertyGet() {

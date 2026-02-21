@@ -94,7 +94,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.throwS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
-import static org.codehaus.groovy.transform.trait.SuperCallTraitTransformer.UNRESOLVED_HELPER_CLASS;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_INTERFACE;
@@ -139,7 +138,11 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             checkExtendsClause(cNode);
             replaceExtendsByImplements(cNode);
             generateMethodsWithDefaultArgs(cNode);
-            resolveHelperClassIfNecessary(createHelperClass(cNode));
+
+            cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE
+                    | (cNode.getOuterClass() != null ? ACC_STATIC : 0)); // GROOVY-11600
+
+            createHelperClasses(cNode);
         }
     }
 
@@ -182,10 +185,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
         }.addDefaultParameterMethods(cNode);
     }
 
-    private ClassNode createHelperClass(final ClassNode cNode) {
-        cNode.setModifiers(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE
-                | (cNode.getOuterClass() != null ? ACC_STATIC : 0)); // GROOVY-11600
-
+    private void createHelperClasses(final ClassNode cNode) {
         ClassNode helper = new InnerClassNode(
                 cNode,
                 Traits.helperClassName(cNode),
@@ -252,7 +252,7 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             if (!methodNode.isSynthetic() && (methodNode.isProtected() || methodNode.isPackageScope())) {
                 sourceUnit.addError(new SyntaxException("Cannot have protected/package-private method in a trait (" + cNode.getName() + "#" + methodNode.getTypeDescriptor() + ")",
                         methodNode.getLineNumber(), methodNode.getColumnNumber()));
-                return null;
+                return;
             }
             if (!methodNode.isAbstract()) {
                 MethodNode newMethod = processMethod(cNode, helper, methodNode, fieldHelper, fieldNames);
@@ -315,17 +315,6 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             resolveScope(fieldHelper);
             if (staticFieldHelper != null) {
                 resolveScope(staticFieldHelper);
-            }
-        }
-
-        return helper;
-    }
-
-    private void resolveHelperClassIfNecessary(final ClassNode helperClass) {
-        for (ClassNode cn : sourceUnit.getAST().getClasses()) {
-            ClassNode unresolvedHelperClass = cn.getNodeMetaData(UNRESOLVED_HELPER_CLASS);
-            if (unresolvedHelperClass != null && unresolvedHelperClass.getName().equals(helperClass.getName())) {
-                unresolvedHelperClass.setRedirect(helperClass);
             }
         }
     }
