@@ -38,6 +38,11 @@ public class CallsiteBench {
     }
 
     @Benchmark
+    public void dispatch_1_monomorphic_groovyCS(MonomorphicState state, Blackhole bh) {
+        Callsite.dispatchCS(state.receivers, bh);
+    }
+
+    @Benchmark
     public void dispatch_1_monomorphic_java(MonomorphicState state, Blackhole bh) {
         JavaDispatch.dispatch(state.receivers, bh);
     }
@@ -48,6 +53,11 @@ public class CallsiteBench {
     }
 
     @Benchmark
+    public void dispatch_3_polymorphic_groovyCS(PolymorphicState state, Blackhole bh) {
+        Callsite.dispatchCS(state.receivers, bh);
+    }
+
+    @Benchmark
     public void dispatch_3_polymorphic_java(PolymorphicState state, Blackhole bh) {
         JavaDispatch.dispatch(state.receivers, bh);
     }
@@ -55,6 +65,11 @@ public class CallsiteBench {
     @Benchmark
     public void dispatch_8_megamorphic_groovy(MegamorphicState state, Blackhole bh) {
         Callsite.dispatch(state.receivers, bh);
+    }
+
+    @Benchmark
+    public void dispatch_8_megamorphic_groovyCS(MegamorphicState state, Blackhole bh) {
+        Callsite.dispatchCS(state.receivers, bh);
     }
 
     @Benchmark
