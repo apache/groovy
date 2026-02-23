@@ -52,6 +52,11 @@ public class AryBench {
         return Ary.ary(n);
     }
 
+    @Benchmark
+    public int groovyCS() {
+        return Ary.aryCS(n);
+    }
+
     private static class JavaAry {
         static int ary(int n) {
             int[] x = new int[n];
