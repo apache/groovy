@@ -73,10 +73,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static java.lang.reflect.Modifier.isStatic;
-import static java.util.Collections.addAll;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
+import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 
 /**
  * Initializes the variable scopes for an AST.
@@ -197,6 +197,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private Variable findClassMember(final ClassNode node, final String name) {
         final boolean abstractType = node.isAbstract();
         Deque<ClassNode> interfaces = new LinkedList<>();
+        Consumer<ClassNode[]> interfacesAndTraits = (next) -> {
+            for (int i = 0; i < next.length; i += 1) {
+                if (!isTrait(next[i])) interfaces.add(next[i]);
+            }
+            for (int i = next.length - 1; i >= 0; i -= 1) {
+                if ( isTrait(next[i])) interfaces.add(next[i]);
+            }
+        };
 
         for (ClassNode cn = node; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
             for (FieldNode fn : cn.getFields()) {
@@ -232,7 +240,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            addAll(interfaces, cn.getInterfaces());
+            interfacesAndTraits.accept(cn.getInterfaces());
         }
 
         Set<ClassNode> done = new HashSet<>();
@@ -240,7 +248,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             ClassNode i = interfaces.remove();
             if (done.add(i)) {
                 FieldNode fn = i.getDeclaredField(name);
-                if (fn != null) {
+                if (fn != null && !isTrait(i)) {
                     return fn;
                 }
                 PropertyNode pn = i.getProperty(name);
@@ -248,7 +256,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                     return pn;
                 }
 
-                addAll(interfaces, i.getInterfaces());
+                interfacesAndTraits.accept(i.getInterfaces());
             }
         }
 
