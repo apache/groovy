@@ -63,15 +63,17 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static java.lang.reflect.Modifier.isFinal;
 import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Collections.addAll;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.getPropertyName;
 import static org.apache.groovy.ast.tools.MethodNodeUtils.withDefaultArgumentMethods;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getAllProperties;
@@ -194,21 +196,28 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     private Variable findClassMember(final ClassNode node, final String name) {
         final boolean abstractType = node.isAbstract();
+        Deque<ClassNode> interfaces = new LinkedList<>();
 
         for (ClassNode cn = node; cn != null && !ClassHelper.isObjectType(cn); cn = cn.getSuperClass()) {
             for (FieldNode fn : cn.getFields()) {
-                if (name.equals(fn.getName())) return fn;
+                if (name.equals(fn.getName())) {
+                    return fn;
+                }
             }
 
             for (PropertyNode pn : cn.getProperties()) {
-                if (name.equals(pn.getName())) return pn;
+                if (name.equals(pn.getName())) {
+                    return pn;
+                }
             }
 
             for (MethodNode mn : withDefaultArgumentMethods(cn.getMethods())) { // GROOVY-11827
                 if ((abstractType || !mn.isAbstract()) && name.equals(getPropertyName(mn))) {
                     // check for super property before returning a pseudo-property
                     for (PropertyNode pn : getAllProperties(cn.getSuperClass())) {
-                        if (name.equals(pn.getName())) return pn;
+                        if (name.equals(pn.getName())) {
+                            return pn;
+                        }
                     }
 
                     FieldNode fn = new FieldNode(name, mn.getModifiers() & 0xF, ClassHelper.dynamicType(), cn, null);
@@ -223,11 +232,23 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 }
             }
 
-            for (ClassNode in : cn.getAllInterfaces()) {
-                FieldNode fn = in.getDeclaredField(name);
-                if (fn != null) return fn;
-                PropertyNode pn = in.getProperty(name);
-                if (pn != null) return pn;
+            addAll(interfaces, cn.getInterfaces());
+        }
+
+        Set<ClassNode> done = new HashSet<>();
+        while (!interfaces.isEmpty()) {
+            ClassNode i = interfaces.remove();
+            if (done.add(i)) {
+                FieldNode fn = i.getDeclaredField(name);
+                if (fn != null) {
+                    return fn;
+                }
+                PropertyNode pn = i.getProperty(name);
+                if (pn != null) {
+                    return pn;
+                }
+
+                addAll(interfaces, i.getInterfaces());
             }
         }
 
@@ -346,7 +367,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         BiConsumer<VariableExpression, ASTNode> checkForFinal = (expr, node) -> {
             Variable variable = expr.getAccessedVariable();
             if (variable != null) {
-                if (isFinal(variable.getModifiers()) && variable instanceof Parameter) {
+                if (variable.isFinal() && variable instanceof Parameter) {
                     addError("Cannot assign a value to final variable '" + variable.getName() + "'", node);
                 }
                 // TODO: handle local variables
@@ -382,7 +403,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (variable.isInStaticContext()) {
             if (inConstructor && currentClass.isEnum() && variable instanceof FieldNode
                     && currentClass.equals(((FieldNode) variable).getDeclaringClass())) { // GROOVY-7025
-                if (!isFinal(variable.getModifiers()) || !(ClassHelper.isStaticConstantInitializerType(variable.getOriginType())
+                if (!variable.isFinal() || !(ClassHelper.isStaticConstantInitializerType(variable.getOriginType())
                         || "String".equals(variable.getOriginType().getName()))) { // TODO: String requires constant initializer
                     addError("Cannot refer to the static enum field '" + variable.getName() + "' within an initializer", expression);
                 }
