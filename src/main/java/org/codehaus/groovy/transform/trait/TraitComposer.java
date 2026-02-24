@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.transform.trait;
 
-import groovy.transform.CompileStatic;
 import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -47,6 +46,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor;
+import org.codehaus.groovy.transform.sc.StaticCompilationVisitor;
 import org.codehaus.groovy.transform.sc.StaticCompileTransformation;
 import org.codehaus.groovy.transform.stc.StaticTypesMarker;
 import org.objectweb.asm.Opcodes;
@@ -85,7 +85,11 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  */
 public abstract class TraitComposer {
 
-    public static final ClassNode COMPILESTATIC_CLASSNODE = ClassHelper.make(CompileStatic.class);
+    /**
+     * @deprecated
+     */
+    @Deprecated(since = "6.0.0")
+    public static final ClassNode COMPILESTATIC_CLASSNODE = StaticCompilationVisitor.COMPILESTATIC_CLASSNODE;
 
     /**
      * Given a class node, if this class node implements a trait, then generate

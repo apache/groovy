@@ -68,11 +68,16 @@ tasks.named('jmhClasses') {
     dependsOn tasks.named('clean')
 }
 
+var indy = (project.findProperty('indy') ?: 'true').toBoolean()
+
 tasks.named('compileJmhGroovy') {
     classpath += compileJmhJava.classpath
+    groovyOptions.optimizationOptions.indy = indy
+    inputs.property('indy', indy)
 }
 
 tasks.register('displayJmhResults') {
+    dependsOn('jmh')
     doLast {
         println layout.buildDirectory.file('results/jmh/results.txt').get().asFile.text
     }

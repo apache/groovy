@@ -25,9 +25,9 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-@Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
+@Fork(2)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class CallsiteBench {
@@ -35,6 +35,11 @@ public class CallsiteBench {
     @Benchmark
     public void dispatch_1_monomorphic_groovy(MonomorphicState state, Blackhole bh) {
         Callsite.dispatch(state.receivers, bh);
+    }
+
+    @Benchmark
+    public void dispatch_1_monomorphic_groovyCS(MonomorphicState state, Blackhole bh) {
+        Callsite.dispatchCS(state.receivers, bh);
     }
 
     @Benchmark
@@ -48,6 +53,11 @@ public class CallsiteBench {
     }
 
     @Benchmark
+    public void dispatch_3_polymorphic_groovyCS(PolymorphicState state, Blackhole bh) {
+        Callsite.dispatchCS(state.receivers, bh);
+    }
+
+    @Benchmark
     public void dispatch_3_polymorphic_java(PolymorphicState state, Blackhole bh) {
         JavaDispatch.dispatch(state.receivers, bh);
     }
@@ -55,6 +65,11 @@ public class CallsiteBench {
     @Benchmark
     public void dispatch_8_megamorphic_groovy(MegamorphicState state, Blackhole bh) {
         Callsite.dispatch(state.receivers, bh);
+    }
+
+    @Benchmark
+    public void dispatch_8_megamorphic_groovyCS(MegamorphicState state, Blackhole bh) {
+        Callsite.dispatchCS(state.receivers, bh);
     }
 
     @Benchmark

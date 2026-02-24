@@ -29,9 +29,9 @@ import java.util.concurrent.TimeUnit
  * currying, composition, spread operator, trampoline recursion, and
  * collection operations (each/collect/findAll/inject).
  */
-@Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
+@Fork(2)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
@@ -44,7 +44,7 @@ class ClosureBench {
      * Benchmark: Simple closure creation and invocation
      */
     @Benchmark
-    void benchmarkSimpleClosureCreation(Blackhole bh) {
+    void simpleClosureCreation(Blackhole bh) {
         for (int i = 0; i < ITERATIONS; i++) {
             Closure c = { it * 2 }
             bh.consume(c(i))
@@ -55,7 +55,7 @@ class ClosureBench {
      * Benchmark: Reuse same closure (no creation overhead)
      */
     @Benchmark
-    void benchmarkClosureReuse(Blackhole bh) {
+    void closureReuse(Blackhole bh) {
         Closure c = { it * 2 }
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
@@ -68,7 +68,7 @@ class ClosureBench {
      * Benchmark: Closure with multiple parameters
      */
     @Benchmark
-    void benchmarkClosureMultiParams(Blackhole bh) {
+    void closureMultiParams(Blackhole bh) {
         Closure c = { a, b, x -> a + b + x }
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
@@ -81,7 +81,7 @@ class ClosureBench {
      * Benchmark: Closure accessing local variable (captured variable)
      */
     @Benchmark
-    void benchmarkClosureWithCapture(Blackhole bh) {
+    void closureWithCapture(Blackhole bh) {
         int captured = 100
         Closure c = { it + captured }
         int sum = 0
@@ -95,7 +95,7 @@ class ClosureBench {
      * Benchmark: Closure modifying captured variable
      */
     @Benchmark
-    void benchmarkClosureModifyCapture(Blackhole bh) {
+    void closureModifyCapture(Blackhole bh) {
         int counter = 0
         Closure c = { counter++ }
         for (int i = 0; i < ITERATIONS; i++) {
@@ -108,7 +108,7 @@ class ClosureBench {
      * Benchmark: Closure with owner delegation
      */
     @Benchmark
-    void benchmarkClosureDelegation(Blackhole bh) {
+    void closureDelegation(Blackhole bh) {
         Closure c = { instanceProperty.length() }
         c.delegate = this
         c.resolveStrategy = Closure.DELEGATE_FIRST
@@ -124,7 +124,7 @@ class ClosureBench {
      * Benchmark: Nested closures
      */
     @Benchmark
-    void benchmarkNestedClosures(Blackhole bh) {
+    void nestedClosures(Blackhole bh) {
         Closure outer = { x ->
             Closure inner = { y -> x + y }
             inner(x)
@@ -141,7 +141,7 @@ class ClosureBench {
      * Benchmark: Method reference as closure
      */
     @Benchmark
-    void benchmarkMethodReference(Blackhole bh) {
+    void methodReference(Blackhole bh) {
         List<Integer> list = [1, 2, 3, 4, 5]
         Closure sizeRef = list.&size
 
@@ -156,7 +156,7 @@ class ClosureBench {
      * Benchmark: Curried closure
      */
     @Benchmark
-    void benchmarkCurriedClosure(Blackhole bh) {
+    void curriedClosure(Blackhole bh) {
         Closure add = { a, b -> a + b }
         Closure addFive = add.curry(5)
 
@@ -171,7 +171,7 @@ class ClosureBench {
      * Benchmark: Right curried closure
      */
     @Benchmark
-    void benchmarkRightCurriedClosure(Blackhole bh) {
+    void rightCurriedClosure(Blackhole bh) {
         Closure subtract = { a, b -> a - b }
         Closure subtractFive = subtract.rcurry(5)
 
@@ -186,7 +186,7 @@ class ClosureBench {
      * Benchmark: Closure composition (rightShift >>)
      */
     @Benchmark
-    void benchmarkClosureComposition(Blackhole bh) {
+    void closureComposition(Blackhole bh) {
         Closure double_ = { it * 2 }
         Closure addOne = { it + 1 }
         Closure composed = double_ >> addOne
@@ -202,7 +202,7 @@ class ClosureBench {
      * Benchmark: Closure as method parameter
      */
     @Benchmark
-    void benchmarkClosureAsParameter(Blackhole bh) {
+    void closureAsParameter(Blackhole bh) {
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
             sum += applyOperation(i) { it * 2 }
@@ -218,7 +218,7 @@ class ClosureBench {
      * Benchmark: Closure with spread operator
      */
     @Benchmark
-    void benchmarkClosureSpread(Blackhole bh) {
+    void closureSpread(Blackhole bh) {
         Closure sum3 = { a, b, c -> a + b + c }
         List<Integer> args = [1, 2, 3]
 
@@ -233,7 +233,7 @@ class ClosureBench {
      * Benchmark: Closure call vs doCall
      */
     @Benchmark
-    void benchmarkClosureCallMethod(Blackhole bh) {
+    void closureCallMethod(Blackhole bh) {
         Closure c = { it * 2 }
         int sum = 0
         for (int i = 0; i < ITERATIONS; i++) {
@@ -246,7 +246,7 @@ class ClosureBench {
      * Benchmark: Closure with trampoline (for recursion)
      */
     @Benchmark
-    void benchmarkClosureTrampoline(Blackhole bh) {
+    void closureTrampoline(Blackhole bh) {
         Closure factorial
         factorial = { n, acc = 1G ->
             n <= 1 ? acc : factorial.trampoline(n - 1, n * acc)
@@ -262,7 +262,7 @@ class ClosureBench {
      * Benchmark: each with closure (common pattern)
      */
     @Benchmark
-    void benchmarkEachWithClosure(Blackhole bh) {
+    void eachWithClosure(Blackhole bh) {
         List<Integer> list = (1..10).toList()
         int sum = 0
         for (int i = 0; i < ITERATIONS / 10; i++) {
@@ -275,7 +275,7 @@ class ClosureBench {
      * Benchmark: collect with closure
      */
     @Benchmark
-    void benchmarkCollectWithClosure(Blackhole bh) {
+    void collectWithClosure(Blackhole bh) {
         List<Integer> list = (1..10).toList()
         for (int i = 0; i < ITERATIONS / 10; i++) {
             bh.consume(list.collect { it * 2 })
@@ -286,7 +286,7 @@ class ClosureBench {
      * Benchmark: findAll with closure
      */
     @Benchmark
-    void benchmarkFindAllWithClosure(Blackhole bh) {
+    void findAllWithClosure(Blackhole bh) {
         List<Integer> list = (1..10).toList()
         for (int i = 0; i < ITERATIONS / 10; i++) {
             bh.consume(list.findAll { it > 5 })
@@ -297,7 +297,7 @@ class ClosureBench {
      * Benchmark: inject/reduce with closure
      */
     @Benchmark
-    void benchmarkInjectWithClosure(Blackhole bh) {
+    void injectWithClosure(Blackhole bh) {
         List<Integer> list = (1..10).toList()
         int sum = 0
         for (int i = 0; i < ITERATIONS / 10; i++) {

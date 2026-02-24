@@ -29,9 +29,9 @@ import java.util.concurrent.TimeUnit
  * interpolation, comparison against plain String concatenation, use as
  * Map keys, and repeated toString() evaluation.
  */
-@Warmup(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
+@Fork(2)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)

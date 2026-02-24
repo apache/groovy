@@ -18,9 +18,25 @@
  */
 package org.apache.groovy.bench
 
+import groovy.transform.CompileStatic
+
 class Ary {
 
     static int ary(int n) {
+        int[] x = new int[n]
+        int[] y = new int[n]
+
+        for (int i = 0; i < n; i++)
+            x[i] = i + 1
+        for (int k = 0; k < 1000; k++ )
+            for (int j = n-1; j >= 0; j--)
+                y[j] += x[j]
+
+        return y[0] + y[n-1]
+    }
+
+    @CompileStatic
+    static int aryCS(int n) {
         int[] x = new int[n]
         int[] y = new int[n]
 
