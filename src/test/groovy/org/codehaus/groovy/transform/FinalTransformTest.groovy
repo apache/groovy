@@ -18,80 +18,80 @@
  */
 package org.codehaus.groovy.transform
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.codehaus.groovy.control.CompilationFailedException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Tests for the {@code @Final} transformation
+ * Tests for the {@code @Final} transformation.
  */
-class FinalTransformTest {
+final class FinalTransformTest {
+
+    private final GroovyShell shell = GroovyShell.withConfig {
+        imports {
+            staticMember 'java.lang.reflect.Modifier','isFinal'
+            star 'groovy.transform'
+        }
+    }
 
     @Test
     void testUsageInAnnoationCollectorForClass() {
-        assertScript """
-            import groovy.transform.*
-            import static java.lang.reflect.Modifier.isFinal
-
+        assertScript shell, '''
             @AnnotationCollector
             @Canonical
             @Final
-            @interface MyCanonical {}
-
-            @MyCanonical class Foo {}
+            @interface MyCanonical {
+            }
+            @MyCanonical class Foo {
+            }
 
             assert isFinal(Foo.modifiers)
-        """
+        '''
     }
 
     @Test
     void testUsageDirectDisabled() {
-        assertScript """
-            import groovy.transform.*
-            import static java.lang.reflect.Modifier.isFinal
-
+        assertScript shell, '''
             @Final(enabled=false)
-            class Foo {}
+            class Foo {
+            }
 
             assert !isFinal(Foo.modifiers)
-        """
+        '''
     }
 
     @Test
     void testUsageInAnnoationCollectorForClassDisabled() {
-        assertScript """
-            import groovy.transform.*
-            import static java.lang.reflect.Modifier.isFinal
-
+        assertScript shell, '''
             @AnnotationCollector(mode=AnnotationCollectorMode.PREFER_EXPLICIT_MERGED)
             @Canonical
             @Final
-            @interface MyCanonical {}
-
+            @interface MyCanonical {
+            }
             @MyCanonical
             @Final(enabled=false)
-            class Foo {}
+            class Foo {
+            }
 
             assert !isFinal(Foo.modifiers)
-        """
+        '''
     }
 
     @Test
     void testUsageInAnnoationCollectorForMethod() {
-        assertScript """
-            import groovy.transform.*
-            import static java.lang.reflect.Modifier.isFinal
-            import static groovy.test.GroovyAssert.shouldFail
-
+        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
             @AnnotationCollector
             @NullCheck
             @Final
-            @interface MyNullCheck {}
-
+            @interface MyNullCheck {
+            }
             class Foo {
-                @MyNullCheck upper(String s) { s.toUpperCase() }
+                @MyNullCheck
+                String upper(String s) {
+                    s.toUpperCase()
+                }
             }
 
             assert isFinal(Foo.getMethod('upper', String).modifiers)
@@ -100,14 +100,29 @@ class FinalTransformTest {
             shouldFail(IllegalArgumentException) {
                 foo.upper(null)
             }
-        """
+        '''
     }
 
     @Test
     void testDirectClassUsage() {
-        shouldFail MultipleCompilationErrorsException, '''
-            @Final class Foo {}
-            class Bar extends Foo {}
+        def err = shouldFail shell, CompilationFailedException, '''
+            @Final class Foo {
+            }
+            class Bar extends Foo {
+            }
         '''
+        assert err =~ /You are not allowed to extend the final class 'Foo'/
+    }
+
+    // GROOVY-11860
+    @Test
+    void testDirectConstructorUsage() {
+        def err = shouldFail shell, CompilationFailedException, '''
+            class C {
+                @Final C() {
+                }
+            }
+        '''
+        assert err =~ /Error during Final processing: cannot modify a constructor/
     }
 }

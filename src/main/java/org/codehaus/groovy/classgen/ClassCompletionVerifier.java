@@ -60,6 +60,7 @@ import java.util.stream.Stream;
 
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Modifier.isFinal;
+import static java.lang.reflect.Modifier.isInterface;
 import static java.lang.reflect.Modifier.isNative;
 import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isProtected;
@@ -69,6 +70,7 @@ import static java.lang.reflect.Modifier.isStrict;
 import static java.lang.reflect.Modifier.isSynchronized;
 import static java.lang.reflect.Modifier.isTransient;
 import static java.lang.reflect.Modifier.isVolatile;
+import static java.util.stream.Collectors.joining;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.buildWildcardType;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpecRecurse;
@@ -273,6 +275,12 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private static String getDescription(final ClassNode node) {
         String kind = (node.isInterface() ? (Traits.isTrait(node) ? "trait" : "interface") : (node.isEnum() ? "enum" : "class"));
         return kind + " '" + node.getName() + "'";
+    }
+
+    private static String getDescription(final ConstructorNode node) {
+        String name = node.getDeclaringClass().getNameWithoutPackage();
+        String spec = Stream.of(node.getParameters()).map(p -> ClassNodeUtils.formatTypeName(p.getType())).collect(joining(", ", "(", ")"));
+        return "constructor '" + name + spec + "'";
     }
 
     private static String getDescription(final MethodNode node) {
@@ -575,9 +583,9 @@ out:        for (ClassNode sc : superTypes) {
         checkMethodForIncorrectModifiers(node);
         checkGenericsUsage(node, node.getReturnType());
         checkGenericsUsage(node, node.getParameters());
-        for (Parameter param : node.getParameters()) {
-            if (ClassHelper.isPrimitiveVoid(param.getType())) {
-                addError("The " + getDescription(param) + " in " +  getDescription(node) + " has invalid type void", param);
+        for (Parameter parameter : node.getParameters()) {
+            if (ClassHelper.isPrimitiveVoid(parameter.getType())) {
+                addError("The " + getDescription(parameter) + " in " +  getDescription(node) + " has invalid type void", parameter);
             }
         }
         super.visitMethod(node);
@@ -761,9 +769,30 @@ out:        for (ClassNode sc : superTypes) {
 
     @Override
     public void visitConstructor(final ConstructorNode node) {
-        inConstructor = true;
-        inStaticConstructor = node.isStaticConstructor();
+        inConstructor = true; inStaticConstructor = false;
         checkGenericsUsage(node, node.getParameters());
+        List<String> modifiers = new ArrayList<>();
+        int mods = node.getModifiers();
+
+        if (isStatic      (mods)) modifiers.add("static"      );
+        if (isFinal       (mods)) modifiers.add("final"       );
+        if (isSynchronized(mods)) modifiers.add("synchronized");
+        if (isVolatile    (mods)) modifiers.add("volatile"    );
+        if (isNative      (mods)) modifiers.add("native"      );
+        if (isInterface   (mods)) modifiers.add("interface"   );
+        if (isAbstract    (mods)) modifiers.add("abstract"    );
+        if (isStrict      (mods)) modifiers.add("strictfp"    );
+
+        for (String modifier : modifiers) {
+            addError("The " + getDescription(node) + " has invalid modifier " + modifier + ".", node);
+        }
+
+        for (Parameter parameter : node.getParameters()) {
+            if (ClassHelper.isPrimitiveVoid(parameter.getType())) {
+                addError("The " + getDescription(parameter) + " in " +  getDescription(node) + " has invalid type void", parameter);
+            }
+        }
+
         super.visitConstructor(node);
     }
 
