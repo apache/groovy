@@ -333,6 +333,38 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-7217
+    @ParameterizedTest
+    @ValueSource(strings=['byte','short','int','long','float','double','Byte','Short','Integer','Long','Float','Double','Number'])
+    void testTraitWithProperty6(String type) {
+        assertScript shell, """
+            trait T {
+                $type n = 42
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.getN() == 42
+        """
+    }
+
+    // GROOVY-11862
+    @ParameterizedTest
+    @ValueSource(strings=['byte','short','int','long','float','double','Byte','Short','Integer','Long','Float','Double','Number'])
+    void testTraitWithProperty7(String type) {
+        assertScript shell, """
+            trait T {
+                static $type n = 42
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.getN() == 42
+        """
+    }
+
     @Test
     void testUpdatePropertyFromSelf() {
         assertScript shell, '''
