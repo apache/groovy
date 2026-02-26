@@ -119,9 +119,12 @@ public class Grape {
     public static synchronized GrapeEngine getInstance() {
         if (instance == null) {
             try {
-                // by default use GrapeIvy
+                String grapeClass = System.getProperty("groovy.grape.impl");
+                if (grapeClass == null) {
+                    grapeClass = "groovy.grape.GrapeIvy"; // by default use GrapeIvy
+                }
                 // TODO: META-INF/services resolver?
-                instance = (GrapeEngine) Class.forName("groovy.grape.GrapeIvy").getDeclaredConstructor().newInstance();
+                instance = (GrapeEngine) Class.forName(grapeClass).getDeclaredConstructor().newInstance();
             } catch (ReflectiveOperationException ignore) {
             }
         }
