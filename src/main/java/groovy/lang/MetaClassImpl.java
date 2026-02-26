@@ -2395,7 +2395,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // sort interfaces so that we may ensure a deterministic behaviour in case of
             // ambiguous fields -- class implementing two interfaces using the same field
             if (superInterfaces.size() > 1) {
-                superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR);
+                superInterfaces.sort(CACHED_CLASS_NAME_COMPARATOR); // GROOVY-5272
             }
 
             if (theCachedClass.isArray) { // add the special read-only "length" property
