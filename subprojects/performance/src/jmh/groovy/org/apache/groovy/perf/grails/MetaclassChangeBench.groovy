@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.perf
+package org.apache.groovy.perf.grails
 
 import groovy.lang.ExpandoMetaClass
 import groovy.lang.GroovySystem
@@ -43,8 +43,8 @@ import java.util.concurrent.TimeUnit
  * modification variants to measure the invalidation overhead.
  */
 @Warmup(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
-@Measurement(iterations = 3, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(1)
+@Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(2)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)

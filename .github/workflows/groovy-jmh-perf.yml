@@ -24,6 +24,12 @@ jobs:
   test:
     strategy:
       fail-fast: false
+      matrix:
+        include:
+          - suite: core
+            pattern: '\\.perf\\.[A-Z]'
+          - suite: grails
+            pattern: '\\.perf\\.grails\\.'
     runs-on: ubuntu-latest
     env:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
@@ -35,12 +41,12 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: gradle/actions/setup-gradle@v5
-      - name: Benchmarks (perf)
-        run: ./gradlew perf:jmh -PbenchInclude=\\.perf\\.
+      - name: Benchmarks (perf ${{ matrix.suite }})
+        run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }}
         timeout-minutes: 60
-      - name: Upload reports-jmh-perf
+      - name: Upload reports-jmh-perf-${{ matrix.suite }}
         uses: actions/upload-artifact@v6
         with:
-          name: reports-jmh-perf
+          name: reports-jmh-perf-${{ matrix.suite }}
           path: subprojects/performance/build/results/jmh/
 
