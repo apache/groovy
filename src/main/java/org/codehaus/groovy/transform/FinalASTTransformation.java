@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.control.CompilePhase;
@@ -42,31 +43,34 @@ public class FinalASTTransformation extends AbstractASTTransformation {
     private static final ClassNode MY_TYPE = make(Final.class);
 
     @Override
-    public void visit(ASTNode[] nodes, SourceUnit source) {
+    public void visit(final ASTNode[] nodes, final SourceUnit source) {
         init(nodes, source);
-        AnnotatedNode candidate = (AnnotatedNode) nodes[1];
-        AnnotationNode node = (AnnotationNode) nodes[0];
-        if (!MY_TYPE.equals(node.getClassNode())) return;
-        if (memberHasValue(node, "enabled", false)) return;
+        var aNode = (AnnotationNode) nodes[0];
+        var target = (AnnotatedNode) nodes[1];
+        if (!MY_TYPE.equals(aNode.getClassNode())) return;
+        if (memberHasValue(aNode, "enabled", false)) return;
 
-        if (candidate instanceof ClassNode cNode) {
-            checkModifiers(this, cNode.getModifiers(), cNode, "type " + cNode.getName());
+        if (target instanceof ClassNode cNode) {
+            checkModifiers(cNode.getModifiers(), "type " + cNode.getName(), cNode);
             cNode.setModifiers(cNode.getModifiers() | ACC_FINAL);
-        } else if (candidate instanceof MethodNode mNode) {
-            // includes constructors
-            checkModifiers(this, mNode.getModifiers(), mNode, "method or constructor " + mNode.getName());
-            mNode.setModifiers(mNode.getModifiers() | ACC_FINAL);
-        } else if (candidate instanceof FieldNode fNode) {
-            checkModifiers(this, fNode.getModifiers(), fNode, "field " + fNode.getName());
+        } else if (target instanceof FieldNode fNode) {
+            checkModifiers(fNode.getModifiers(), "field " + fNode.getName(), fNode);
             fNode.setModifiers(fNode.getModifiers() | ACC_FINAL);
+        } else if (target instanceof ConstructorNode cNode) {
+            xformError("cannot modify a constructor",cNode); // GROOVY-11860
+        } else if (target instanceof MethodNode mNode) {
+            checkModifiers(mNode.getModifiers(), "method " + mNode.getName(), mNode);
+            mNode.setModifiers(mNode.getModifiers() | ACC_FINAL);
         }
     }
 
-    static void checkModifiers(final AbstractASTTransformation xform, final int modifiers, final AnnotatedNode node, final String place) {
-        if ((modifiers & ACC_FINAL) == 0 && (modifiers & (ACC_ABSTRACT | ACC_SYNTHETIC)) == (ACC_ABSTRACT | ACC_SYNTHETIC)) {
-            xform.addError("Error during " + MY_TYPE.getNameWithoutPackage() +
-                    " processing: annotation found on " + place + " with innapropriate modifiers", node);
+    private void checkModifiers(final int mods, final String spec, final ASTNode where) {
+        if ((mods & ACC_FINAL) == 0 && (mods & (ACC_ABSTRACT | ACC_SYNTHETIC)) == (ACC_ABSTRACT | ACC_SYNTHETIC)) {
+            xformError("annotation found on " + spec + " with innapropriate modifiers", where);
         }
     }
 
+    private void xformError(final String error, final ASTNode where) {
+        addError("Error during " + MY_TYPE.getNameWithoutPackage() + " processing: " + error, where);
+    }
 }
