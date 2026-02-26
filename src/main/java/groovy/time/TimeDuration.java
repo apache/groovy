@@ -16,6 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package groovy.time;
 
 import java.util.Calendar;
@@ -38,54 +39,53 @@ import java.util.Date;
 public class TimeDuration extends Duration {
     public TimeDuration(final int hours, final int minutes, final int seconds, final int millis) {
         super(0, hours, minutes, seconds, millis);
-     }
+    }
 
-    public TimeDuration(final int days, final int hours, final int minutes, final int seconds, final int millis) {
+    public TimeDuration(final int days, final int hours, final int minutes, final int seconds,
+                        final int millis) {
         super(days, hours, minutes, seconds, millis);
-     }
+    }
 
     @Override
     public Duration plus(final Duration rhs) {
         return new TimeDuration(this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
-                                this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
-                                this.getMillis() + rhs.getMillis());
+            this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
+            this.getMillis() + rhs.getMillis());
     }
 
     @Override
     public DatumDependentDuration plus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(rhs.getYears(), rhs.getMonths(),
-                                              this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
-                                              this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
-                                              this.getMillis() + rhs.getMillis());
+            this.getDays() + rhs.getDays(), this.getHours() + rhs.getHours(),
+            this.getMinutes() + rhs.getMinutes(), this.getSeconds() + rhs.getSeconds(),
+            this.getMillis() + rhs.getMillis());
     }
 
     @Override
     public Duration minus(final Duration rhs) {
         return new TimeDuration(this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
-                                this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
-                                this.getMillis() - rhs.getMillis());
+            this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+            this.getMillis() - rhs.getMillis());
     }
 
     @Override
     public DatumDependentDuration minus(final DatumDependentDuration rhs) {
         return new TimeDatumDependentDuration(-rhs.getYears(), -rhs.getMonths(),
-                                              this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
-                                              this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
-                                              this.getMillis() - rhs.getMillis());
+            this.getDays() - rhs.getDays(), this.getHours() - rhs.getHours(),
+            this.getMinutes() - rhs.getMinutes(), this.getSeconds() - rhs.getSeconds(),
+            this.getMillis() - rhs.getMillis());
     }
 
     @Override
     public Date getAgo() {
-        final Calendar cal = Calendar.getInstance();
-
-        cal.add(Calendar.DAY_OF_YEAR, -this.getDays());
-        cal.add(Calendar.HOUR_OF_DAY, -this.getHours());
-        cal.add(Calendar.MINUTE, -this.getMinutes());
-        cal.add(Calendar.SECOND, -this.getSeconds());
-        cal.add(Calendar.MILLISECOND, -this.getMillis());
-
-        return cal.getTime();
-    }        
+        return new TimeAgoFromData(
+            this.days,
+            this.hours,
+            this.minutes,
+            this.seconds,
+            this.millis)
+            .toDateFormat();
+    }
 
     @Override
     public From getFrom() {
@@ -93,13 +93,11 @@ public class TimeDuration extends Duration {
             @Override
             public Date getNow() {
                 final Calendar cal = Calendar.getInstance();
-
                 cal.add(Calendar.DAY_OF_YEAR, TimeDuration.this.getDays());
                 cal.add(Calendar.HOUR_OF_DAY, TimeDuration.this.getHours());
                 cal.add(Calendar.MINUTE, TimeDuration.this.getMinutes());
                 cal.add(Calendar.SECOND, TimeDuration.this.getSeconds());
                 cal.add(Calendar.MILLISECOND, TimeDuration.this.getMillis());
-
                 return cal.getTime();
             }
         };
