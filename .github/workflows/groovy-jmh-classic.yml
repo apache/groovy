@@ -48,8 +48,8 @@ jobs:
         timeout-minutes: 60
       - name: Rename JMH result file
         run: |
-          mv subprojects/performance/build/results/jmh/result.txt \
-             subprojects/performance/build/results/jmh/result-${{ matrix.suite }}.txt
+          mv subprojects/performance/build/results/jmh/results.txt \
+             subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.txt
 
       - name: Upload reports-jmh-classic-${{ matrix.suite }}
         uses: actions/upload-artifact@v6
