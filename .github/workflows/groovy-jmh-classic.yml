@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: jmh-perf-classic
+name: jmh-classic
 
 on: [push, pull_request]
 
@@ -26,6 +26,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - suite: bench
+            pattern: '\\.bench\\.'
           - suite: core
             pattern: '\\.perf\\.[A-Z]'
           - suite: grails
@@ -41,11 +43,17 @@ jobs:
           java-version: 21
           check-latest: true
       - uses: gradle/actions/setup-gradle@v5
-      - name: Benchmarks (perf classic ${{ matrix.suite }})
+      - name: JMH (${{ matrix.suite }} classic)
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }} -Pindy=false
         timeout-minutes: 60
-      - name: Upload reports-jmh-perf-classic-${{ matrix.suite }}
+      - name: Rename JMH result file
+        run: |
+          mv subprojects/performance/build/results/jmh/result.txt \
+             subprojects/performance/build/results/jmh/result-${{ matrix.suite }}.txt
+
+      - name: Upload reports-jmh-classic-${{ matrix.suite }}
         uses: actions/upload-artifact@v6
         with:
-          name: reports-jmh-perf-classic-${{ matrix.suite }}
+          name: reports-jmh-classic-${{ matrix.suite }}
           path: subprojects/performance/build/results/jmh/
+
