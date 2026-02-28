@@ -298,8 +298,18 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type Foo for method returning Bar'
     }
 
-    // GROOVY-11007
     void testInstanceOf13() {
+        assertScript '''
+            "".with { x ->
+                if (x instanceof String) {
+                    x.toUpperCase()
+                }
+            }
+        '''
+    }
+
+    // GROOVY-11007
+    void testInstanceOf14() {
         assertScript '''
             interface I {
                 CharSequence getCharSequence()
@@ -319,7 +329,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11290
-    void testInstanceOf14() {
+    void testInstanceOf15() {
         assertScript '''
             def test(List<String> list) {
                 if (list instanceof List) {
@@ -332,7 +342,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11815
-    void testInstanceOf15() {
+    void testInstanceOf16() {
         assertScript '''
             def c = true ? new ArrayDeque() : new Stack()
             if (c instanceof Deque) {
@@ -351,7 +361,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11864
-    void testInstanceOf16() {
+    void testInstanceOf17() {
         assertScript '''
             boolean enabled() {}
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -368,6 +378,13 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             assert test(42) == 42
         '''
+        shouldFailWithMessages '''
+            void test(Integer i) {
+                if (i instanceof Long) {
+                }
+            }
+        ''',
+        'Incompatible instanceof types: java.lang.Integer and java.lang.Long'
     }
 
     // GROOVY-5226
@@ -425,16 +442,16 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             class B {
                int bar() { 2 }
             }
+            class C {
+            }
 
-            def o = new A()
-            int result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
-            assert result == 1
-            o = new B()
-            result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
-            assert result == 2
-            o = new Object()
-            result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
-            assert result == 3
+            def test(o) {
+                o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
+            }
+
+            assert test(new A()) == 1
+            assert test(new B()) == 2
+            assert test(new C()) == 3
         '''
     }
 
