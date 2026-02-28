@@ -4201,9 +4201,11 @@ trying: for (ClassNode[] signature : signatures) {
             visitStatement(ifElse);
             ifElse.getBooleanExpression().visit(this);
 
+            var tti = Map.copyOf(typeCheckingContext.temporaryIfBranchTypeInformation.peek()); // GROOVY-11864
+
             thenPath.visit(this);
 
-            Map<Object, List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+            typeCheckingContext.temporaryIfBranchTypeInformation.pop();
             // GROOVY-6099: isolate assignment tracking
             restoreTypeBeforeConditional();
 

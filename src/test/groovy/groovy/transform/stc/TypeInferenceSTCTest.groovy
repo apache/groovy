@@ -316,6 +316,26 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call <UnionType:java.util.AbstractCollection','#add(java.lang.String) with arguments [int]'
     }
 
+    // GROOVY-11864
+    void testInstanceOf16() {
+        assertScript '''
+            boolean enabled() {}
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def expr = lookup('x').get(0).expression
+                def type = expr.getNodeMetaData(INFERRED_TYPE)
+                assert type.name == 'java.lang.Number'
+            })
+            def test(Number n) {
+                if (enabled()) {
+                    if (n instanceof Long) return n
+                    throw new IllegalArgumentException()
+                }
+            x:  n
+            }
+            assert test(42) == 42
+        '''
+    }
+
     // GROOVY-5226
     void testNestedInstanceOf1() {
         assertScript '''
