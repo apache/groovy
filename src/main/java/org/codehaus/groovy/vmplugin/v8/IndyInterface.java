@@ -31,7 +31,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +52,11 @@ public class IndyInterface {
     private static final long INDY_OPTIMIZE_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.optimize.threshold", 1_000L);
     private static final long INDY_FALLBACK_THRESHOLD = SystemUtil.getLongSafe("groovy.indy.fallback.threshold", 1_000L);
     private static final long INDY_FALLBACK_CUTOFF = SystemUtil.getLongSafe("groovy.indy.fallback.cutoff", 100L);
+    /**
+     * Initial capacity for the call site registry used to track all active call sites
+     * for cache invalidation when metaclass changes occur.
+     */
+    private static final int INDY_CALLSITE_INITIAL_CAPACITY = SystemUtil.getIntegerSafe("groovy.indy.callsite.initial.capacity", 1024);
 
     /**
      * Flags for method and property calls.
@@ -172,17 +180,31 @@ public class IndyInterface {
     }
 
     protected static SwitchPoint switchPoint = new SwitchPoint();
+    
+    /**
+     * Weak set of all CacheableCallSites. Used to invalidate caches when metaclass changes.
+     * Uses WeakReferences so call sites can be garbage collected when no longer referenced.
+     */
+    private static final Set<WeakReference<CacheableCallSite>> ALL_CALL_SITES = ConcurrentHashMap.newKeySet(INDY_CALLSITE_INITIAL_CAPACITY);
 
     static {
         GroovySystem.getMetaClassRegistry().addMetaClassRegistryChangeEventListener(cmcu -> invalidateSwitchPoints());
     }
+    
+    /**
+     * Register a call site for cache invalidation when metaclass changes.
+     */
+    static void registerCallSite(CacheableCallSite callSite) {
+        ALL_CALL_SITES.add(new WeakReference<>(callSite));
+    }
 
     /**
-     * Callback for constant metaclass update change
+     * Callback for constant metaclass update change.
+     * Invalidates all call site caches to ensure metaclass changes are visible.
      */
     protected static void invalidateSwitchPoints() {
         if (LOG_ENABLED) {
-            LOG.info("invalidating switch point");
+            LOG.info("invalidating switch point and call site caches");
         }
 
         synchronized (IndyInterface.class) {
@@ -190,6 +212,22 @@ public class IndyInterface {
             switchPoint = new SwitchPoint();
             SwitchPoint.invalidateAll(new SwitchPoint[]{old});
         }
+        
+        // Invalidate all call site caches and reset targets to default (cache lookup).
+        ALL_CALL_SITES.removeIf(ref -> {
+            CacheableCallSite cs = ref.get();
+            if (cs == null) {
+                return true; // Remove garbage collected references
+            }
+            // Reset target to default (fromCache) so next call goes through cache lookup
+            MethodHandle defaultTarget = cs.getDefaultTarget();
+            if (defaultTarget != null && cs.getTarget() != defaultTarget) {
+                cs.setTarget(defaultTarget);
+            }
+            // Clear the cache so stale method handles are discarded
+            cs.clearCache();
+            return false;
+        });
     }
 
     /**
@@ -230,6 +268,9 @@ public class IndyInterface {
         mc.setTarget(mh);
         mc.setDefaultTarget(mh);
         mc.setFallbackTarget(makeFallBack(mc, sender, name, callID, type, safe, thisCall, spreadCall));
+        
+        // Register for cache invalidation on metaclass changes
+        registerCallSite(mc);
 
         return mc;
     }

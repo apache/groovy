@@ -31,6 +31,7 @@ import groovy.lang.MetaMethod;
 import groovy.lang.MissingMethodException;
 import groovy.lang.ProxyMetaClass;
 import groovy.transform.Internal;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -122,6 +123,18 @@ public abstract class Selector {
      * Cache values for read-only access
      */
     private static final CallType[] CALL_TYPE_VALUES = CallType.values();
+    
+    /**
+     * Controls whether the global SwitchPoint guard is applied to method handles.
+     * When {@code false} (default), the SwitchPoint guard is NOT applied, which improves
+     * performance when metaclass changes occur by avoiding global invalidation of all call sites.
+     * Instead, call sites are invalidated individually via {@link IndyInterface#invalidateSwitchPoints()}.
+     * <p>
+     * Set {@code groovy.indy.switchpoint.guard=true} <strong>only</strong> for specific
+     * debugging or backward-compatibility scenarios where strict metaclass change
+     * detection is required, and not for general production use.
+     */
+    private static final boolean INDY_SWITCHPOINT_GUARD = SystemUtil.getBooleanSafe("groovy.indy.switchpoint.guard");
 
     /**
      * Returns a Selector or throws a GroovyBugError.
@@ -947,9 +960,11 @@ public abstract class Selector {
                 }
             }
 
-            // handle constant metaclass and category changes
-            handle = switchPoint.guardWithTest(handle, fallback);
-            if (LOG_ENABLED) LOG.info("added switch point guard");
+            // Apply global switchpoint guard if enabled (disabled by default for performance)
+            if (INDY_SWITCHPOINT_GUARD) {
+                handle = switchPoint.guardWithTest(handle, fallback);
+                if (LOG_ENABLED) LOG.info("added switch point guard");
+            }
 
             java.util.function.Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
