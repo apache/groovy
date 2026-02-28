@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools;
 
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -204,9 +205,11 @@ public class DgmConverter {
             loadParameters(method, 2, mv);
         }
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor, false);
-        BytecodeHelper.box(mv, returnType);
-        if (method.getReturnType() == void.class) {
+        if (returnType == void.class) {
             mv.visitInsn(ACONST_NULL);
+        } else if (returnType.isPrimitive()) {
+            Class<?> wrapperType = TypeUtil.autoboxType(returnType);
+            mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(wrapperType), "valueOf", "(" + BytecodeHelper.getTypeDescription(returnType) + ")" + BytecodeHelper.getTypeDescription(wrapperType), false);
         }
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
@@ -221,9 +224,11 @@ public class DgmConverter {
         BytecodeHelper.doCast(mv, method.getParameterTypes()[0].getTheClass());
         loadParameters(method, 2, mv);
         mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor, false);
-        BytecodeHelper.box(mv, returnType);
-        if (method.getReturnType() == void.class) {
+        if (returnType == void.class) {
             mv.visitInsn(ACONST_NULL);
+        } else if (returnType.isPrimitive()) {
+            Class<?> wrapperType = TypeUtil.autoboxType(returnType);
+            mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(wrapperType), "valueOf", "(" + BytecodeHelper.getTypeDescription(returnType) + ")" + BytecodeHelper.getTypeDescription(wrapperType), false);
         }
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
