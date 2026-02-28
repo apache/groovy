@@ -54,7 +54,7 @@ import java.util.Set;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
-import static org.codehaus.groovy.transform.trait.TraitComposer.COMPILESTATIC_CLASSNODE;
+import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.COMPILESTATIC_CLASSNODE;
 import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
 import static org.objectweb.asm.Opcodes.ACC_ANNOTATION;
 import static org.objectweb.asm.Opcodes.ACC_ENUM;
@@ -129,7 +129,7 @@ public class AnnotationCollectorTransform {
                 helper = new InnerClassNode(cn, cn.getName() + "$CollectorHelper",
                         ACC_PUBLIC | ACC_STATIC | ACC_FINAL, ClassHelper.OBJECT_TYPE.getPlainNodeReference());
                 cn.getModule().addClass(helper);
-                helper.addAnnotation(new AnnotationNode(COMPILESTATIC_CLASSNODE));
+                helper.addAnnotation(COMPILESTATIC_CLASSNODE);
                 collector.setMember("serializeClass", new ClassExpression(helper.getPlainNodeReference()));
             }
 
