@@ -22,7 +22,10 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -49,7 +52,6 @@ public class AnnotationNode extends ASTNode {
 
     private final ClassNode classNode;
     private Map<String, Expression> members;
-    private int allowedTargets = 0x4FF; // GROOVY-11838: JLS 9.6.4.1
     private boolean runtimeRetention = false, sourceRetention = false, /*explicit*/ classRetention = false;
 
     public AnnotationNode(final ClassNode type) {
@@ -77,8 +79,8 @@ public class AnnotationNode extends ASTNode {
         }
     }
 
-    public void setAllowedTargets(final int bitmap) {
-        allowedTargets = bitmap;
+    @Deprecated(since = "6.0.0")
+    public void setAllowedTargets(final int ignored) {
     }
 
     /**
@@ -137,12 +139,48 @@ public class AnnotationNode extends ASTNode {
     }
 
     public boolean isTargetAllowed(final int target) {
-        return (this.allowedTargets & target) == target;
+        if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
+            throw new IllegalStateException("cannot check target at this time");
+
+        // GROOVY-6526: check class for @Target
+        int allowedTargets = classNode.getNodeMetaData(Target.class, (k) -> {
+            for (AnnotationNode an : classNode.getAnnotations()) {
+                if ("java.lang.annotation.Target".equals(an.getClassNode().getName())
+                        && an.getMember("value") instanceof ListExpression list) {
+                    int bits = 0;
+                    for (Expression e : list.getExpressions()) {
+                        if (e instanceof PropertyExpression item) {
+                            String name = item.getPropertyAsString();
+                            bits |= switch (ElementType.valueOf(name)) {
+                                case TYPE             -> TYPE_TARGET;
+                                case FIELD            -> FIELD_TARGET;
+                                case METHOD           -> METHOD_TARGET;
+                                case PARAMETER        -> PARAMETER_TARGET;
+                                case CONSTRUCTOR      -> CONSTRUCTOR_TARGET;
+                                case LOCAL_VARIABLE   -> LOCAL_VARIABLE_TARGET;
+                                case ANNOTATION_TYPE  -> ANNOTATION_TARGET;
+                                case PACKAGE          -> PACKAGE_TARGET;
+                                case TYPE_PARAMETER   -> TYPE_PARAMETER_TARGET;
+                                case TYPE_USE         -> TYPE_USE_TARGET;
+                                case MODULE           -> TYPE_TARGET; //TODO
+                                case RECORD_COMPONENT -> RECORD_COMPONENT_TARGET;
+                                default -> throw new GroovyBugError("unsupported Target " + name);
+                            };
+                        }
+                    }
+                    return bits;
+                }
+            }
+            return 0x4FF; // GROOVY-11838: JLS 9.6.4.1
+        });
+
+        return (target & allowedTargets) == target;
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.RUNTIME</code>.
-     * @return <tt>true</tt> if the annotation should be visible at runtime,
+     *
+     * @return <tt>true</tt> if the annotation should be visible at runtime;
      *         <tt>false</tt> otherwise
      */
     public boolean hasRuntimeRetention() {
@@ -151,7 +189,8 @@ public class AnnotationNode extends ASTNode {
 
     /**
      * Flag corresponding to <code>RetentionPolicy.SOURCE</code>.
-     * @return <tt>true</tt> if the annotation is only allowed in sources
+     *
+     * @return <tt>true</tt> if the annotation is only allowed in sources;
      *         <tt>false</tt> otherwise
      */
     public boolean hasSourceRetention() {
@@ -160,9 +199,9 @@ public class AnnotationNode extends ASTNode {
 
     /**
      * Flag corresponding to <code>RetentionPolicy.CLASS</code>.
-     * This is the default when no <code>RetentionPolicy</code> annotations are present.
+     * This is the default when no <code>Retention</code> annotation is present.
      *
-     * @return <tt>true</tt> if the annotation is written in the bytecode, but not visible at runtime
+     * @return <tt>true</tt> if the annotation is written in the bytecode but not visible at runtime;
      *         <tt>false</tt> otherwise
      */
     public boolean hasClassRetention() {

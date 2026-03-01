@@ -20,7 +20,6 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
-import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -70,9 +69,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.Permission;
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Java 8 based functions.
@@ -344,44 +341,12 @@ public class Java8 implements VMPlugin {
         return null;
     }
 
-    //
-
-    protected final Map<ElementType, Integer> elementTypeToTarget = new EnumMap<>(Maps.of(
-        ElementType.TYPE,            AnnotationNode.TYPE_TARGET,
-        ElementType.FIELD,           AnnotationNode.FIELD_TARGET,
-        ElementType.METHOD,          AnnotationNode.METHOD_TARGET,
-        ElementType.PARAMETER,       AnnotationNode.PARAMETER_TARGET,
-        ElementType.CONSTRUCTOR,     AnnotationNode.CONSTRUCTOR_TARGET,
-        ElementType.LOCAL_VARIABLE,  AnnotationNode.LOCAL_VARIABLE_TARGET,
-        ElementType.ANNOTATION_TYPE, AnnotationNode.ANNOTATION_TARGET,
-        ElementType.PACKAGE,         AnnotationNode.PACKAGE_TARGET,
-        ElementType.TYPE_PARAMETER,  AnnotationNode.TYPE_PARAMETER_TARGET,
-        ElementType.TYPE_USE,        AnnotationNode.TYPE_USE_TARGET
-    ));
-
     @Override
     public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode node) {
-        switch (definition.getClassNode().getName()) {
-          case "java.lang.annotation.Retention":
-            if (definition.getMember("value") instanceof PropertyExpression value) {
-                var policy = RetentionPolicy.valueOf(value.getPropertyAsString());
-                setRetentionPolicy(policy, node);
-            }
-            break;
-          case "java.lang.annotation.Target":
-            if (definition.getMember("value") instanceof ListExpression list) {
-                int targets = 0;
-                for (Expression e : list.getExpressions()) {
-                    if (e instanceof PropertyExpression item) {
-                        String name = item.getPropertyAsString();
-                        ElementType type = ElementType.valueOf(name);
-                        Integer target = elementTypeToTarget.get(type);
-                        if (target == null) throw new GroovyBugError("unsupported Target " + type);
-                        targets |= target;
-                    }
-                }
-                node.setAllowedTargets(targets);
-            }
+        if ("java.lang.annotation.Retention".equals(definition.getClassNode().getName())
+                 && definition.getMember("value") instanceof PropertyExpression value) {
+            var policy = RetentionPolicy.valueOf(value.getPropertyAsString());
+            setRetentionPolicy(policy, node);
         }
     }
 
