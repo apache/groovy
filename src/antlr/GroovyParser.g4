@@ -134,6 +134,7 @@ modifier
           |   VOLATILE
           |   DEF
           |   VAR
+          |   ASYNC
           )
     ;
 
@@ -600,7 +601,7 @@ switchStatement
     ;
 
 loopStatement
-    :   FOR LPAREN forControl RPAREN nls statement                                                            #forStmtAlt
+    :   FOR AWAIT? LPAREN forControl RPAREN nls statement                                                     #forStmtAlt
     |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
     |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
     ;
@@ -642,6 +643,8 @@ statement
     |   continueStatement                                                                                   #continueStmtAlt
     |   { inSwitchExpressionLevel > 0 }?
         yieldStatement                                                                                      #yieldStmtAlt
+    |   YIELD RETURN nls expression                                                                         #yieldReturnStmtAlt
+    |   DEFER nls (closureOrLambdaExpression | statementExpression)                                         #deferStmtAlt
     |   identifier COLON nls statement                                                                      #labeledStmtAlt
     |   assertStatement                                                                                     #assertStmtAlt
     |   localVariableDeclaration                                                                            #localVariableDeclarationStmtAlt
@@ -778,12 +781,16 @@ expression
     // must come before postfixExpression to resolve the ambiguities between casting and call on parentheses expression, e.g. (int)(1 / 2)
     :   castParExpression castOperandExpression                                             #castExprAlt
 
+    // async closure/lambda must come before postfixExpression to resolve the ambiguities between async and method call, e.g. async { ... }
+    |   ASYNC nls closureOrLambdaExpression                                                 #asyncClosureExprAlt
+    |   AWAIT nls (LPAREN expression RPAREN | expression)                                   #awaitExprAlt
+
     // qualified names, array expressions, method invocation, post inc/dec
     |   postfixExpression                                                                   #postfixExprAlt
 
     |   switchExpression                                                                    #switchExprAlt
 
-    // ~(BNOT)/!(LNOT) (level 1)
+    // ~(BNOT)/!(LNOT)/await (level 1)
     |   (BITNOT | NOT) nls expression                                                       #unaryNotExprAlt
 
     // math power operator (**) (level 2)
@@ -1228,6 +1235,9 @@ identifier
     :   Identifier
     |   CapitalizedIdentifier
     |   AS
+    |   ASYNC
+    |   AWAIT
+    |   DEFER
     |   IN
     |   PERMITS
     |   RECORD
@@ -1246,12 +1256,15 @@ keywords
     :   ABSTRACT
     |   AS
     |   ASSERT
+    |   ASYNC
+    |   AWAIT
     |   BREAK
     |   CASE
     |   CATCH
     |   CLASS
     |   CONST
     |   CONTINUE
+    |   DEFER
     |   DEF
     |   DEFAULT
     |   DO
