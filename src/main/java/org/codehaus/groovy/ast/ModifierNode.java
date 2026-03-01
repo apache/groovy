@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.apache.groovy.parser.antlr4.GroovyParser.ABSTRACT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.ASYNC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEF;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DEFAULT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.FINAL;
@@ -55,6 +56,7 @@ public class ModifierNode extends ASTNode {
     public static final int ANNOTATION_TYPE = -999;
     public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Maps.of(
             ANNOTATION_TYPE, 0,
+            ASYNC, 0,
             DEF, 0,
             VAR, 0,
 

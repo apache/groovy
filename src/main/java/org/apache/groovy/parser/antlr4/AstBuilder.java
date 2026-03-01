@@ -97,6 +97,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.SpreadExpression;
 import org.codehaus.groovy.ast.expr.SpreadMapExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.UnaryMinusExpression;
@@ -465,12 +466,57 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public ForStatement visitForStmtAlt(final ForStmtAltContext ctx) {
+    public Statement visitForStmtAlt(final ForStmtAltContext ctx) {
+        // 'for await' async iteration
+        if (ctx.AWAIT() != null) {
+            return visitForAwait(ctx);
+        }
+
         Function<Statement, ForStatement> maker = this.visitForControl(ctx.forControl());
 
         Statement loopBody = this.unpackStatement((Statement) this.visit(ctx.statement()));
 
         return configureAST(maker.apply(loopBody), ctx);
+    }
+
+    /**
+     * Transforms {@code for await (item in source) { ... }} into a while-loop
+     * over an {@link groovy.concurrent.AsyncStream}: the source expression is
+     * adapted via {@code AsyncSupport.toAsyncStream()}, then repeatedly polled
+     * with {@code moveNext()} / {@code getCurrent()}.
+     */
+    private Statement visitForAwait(final ForStmtAltContext ctx) {
+        ForControlContext forCtrl = ctx.forControl();
+        EnhancedForControlContext enhCtrl = forCtrl.enhancedForControl();
+        if (enhCtrl == null) {
+            throw createParsingFailedException("for await requires enhanced for syntax: for await (item in source)", ctx);
+        }
+
+        ClassNode varType = this.visitType(enhCtrl.type());
+        String varName = this.visitIdentifier(enhCtrl.identifier());
+        Expression source = (Expression) this.visit(enhCtrl.expression());
+        Statement loopBody = this.unpackStatement((Statement) this.visit(ctx.statement()));
+
+        ClassNode asyncUtilsType = ClassHelper.make("org.apache.groovy.runtime.async.AsyncSupport");
+        String streamVar = "$__asyncStream__" + (asyncStreamCounter++);
+
+        // def $__asyncStream__N = AsyncUtils.toAsyncStream(source)
+        Expression toStreamCall = callX(asyncUtilsType, "toAsyncStream", new ArgumentListExpression(source));
+        ExpressionStatement streamDecl = new ExpressionStatement(declX(varX(streamVar), toStreamCall));
+
+        // while (AsyncUtils.await($__asyncStream__N.moveNext()))
+        Expression moveNextCall = callX(varX(streamVar), "moveNext");
+        Expression awaitCall = callX(asyncUtilsType, "await", new ArgumentListExpression(moveNextCall));
+        BooleanExpression condition = new BooleanExpression(awaitCall);
+
+        // def <varName> = $__asyncStream__N.getCurrent()
+        Expression getCurrentCall = callX(varX(streamVar), "getCurrent");
+        ExpressionStatement getItemStmt = new ExpressionStatement(declX(varX(varName, varType), getCurrentCall));
+
+        BlockStatement whileBody = block(getItemStmt, loopBody);
+        WhileStatement whileStmt = new WhileStatement(condition, whileBody);
+
+        return configureAST(block(streamDecl, whileStmt), ctx);
     }
 
     @Override
@@ -863,6 +909,15 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     @Override
     public ReturnStatement visitYieldStmtAlt(final YieldStmtAltContext ctx) {
         return configureAST(this.visitYieldStatement(ctx.yieldStatement()), ctx);
+    }
+
+    @Override
+    public ExpressionStatement visitYieldReturnStmtAlt(final YieldReturnStmtAltContext ctx) {
+        Expression expr = (Expression) this.visit(ctx.expression());
+        Expression yieldCall = callX(
+                ClassHelper.make("org.apache.groovy.runtime.async.AsyncSupport"), "yieldReturn",
+                new ArgumentListExpression(expr));
+        return configureAST(new ExpressionStatement(yieldCall), ctx);
     }
 
     @Override
@@ -1699,6 +1754,12 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         } else { // script method declaration
             methodNode = createScriptMethodNode(modifierManager, methodName, returnType, parameters, exceptions, code);
         }
+
+        // Inject @Async annotation for methods declared with the 'async' keyword modifier
+        if (modifierManager.containsAny(ASYNC)) {
+            methodNode.addAnnotation(new AnnotationNode(ClassHelper.make("groovy.transform.Async")));
+        }
+
         anonymousInnerClassList.forEach(e -> e.setEnclosingMethod(methodNode));
 
         methodNode.setGenericsTypes(this.visitTypeParameters(ctx.typeParameters()));
@@ -2875,6 +2936,106 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         throw createParsingFailedException("Unsupported unary expression: " + ctx.getText(), ctx);
+    }
+
+    @Override
+    public Expression visitAwaitExprAlt(final AwaitExprAltContext ctx) {
+        Expression expr = (Expression) this.visit(ctx.expression());
+        return configureAST(
+                callX(ClassHelper.make("org.apache.groovy.runtime.async.AsyncSupport"), "await",
+                        new ArgumentListExpression(expr)),
+                ctx);
+    }
+
+    @Override
+    public Expression visitAsyncClosureExprAlt(final AsyncClosureExprAltContext ctx) {
+        ClosureExpression closure = this.visitClosureOrLambdaExpression(ctx.closureOrLambdaExpression());
+        boolean hasUserParams = closure.getParameters() != null && closure.getParameters().length > 0;
+        boolean hasYieldReturn = containsYieldReturnCalls(closure);
+
+        ClassNode asyncUtils = ClassHelper.make("org.apache.groovy.runtime.async.AsyncSupport");
+        if (hasYieldReturn) {
+            // Inject synthetic $__asyncGen__ as first parameter — rebuild closure
+            Parameter genParam = new Parameter(ClassHelper.DYNAMIC_TYPE, "$__asyncGen__");
+            Parameter[] existingParams = closure.getParameters();
+            Parameter[] newParams;
+            if (hasUserParams) {
+                newParams = new Parameter[existingParams.length + 1];
+                newParams[0] = genParam;
+                System.arraycopy(existingParams, 0, newParams, 1, existingParams.length);
+            } else {
+                newParams = new Parameter[]{genParam};
+            }
+            ClosureExpression genClosure = new ClosureExpression(newParams, closure.getCode());
+            genClosure.setVariableScope(closure.getVariableScope());
+            genClosure.setSourcePosition(closure);
+            // Transform yieldReturn(expr) → yieldReturn($__asyncGen__, expr)
+            injectGenParamIntoYieldReturnCalls(genClosure.getCode(), genParam);
+            String method = hasUserParams ? "wrapAsyncGenerator" : "generateAsyncStream";
+            return configureAST(callX(asyncUtils, method, new ArgumentListExpression(genClosure)), ctx);
+        } else {
+            String method = hasUserParams ? "wrapAsync" : "async";
+            return configureAST(callX(asyncUtils, method, new ArgumentListExpression(closure)), ctx);
+        }
+    }
+
+    /**
+     * Walks the statement tree and transforms
+     * {@code AsyncSupport.yieldReturn(expr)} calls to
+     * {@code AsyncSupport.yieldReturn($__asyncGen__, expr)}, injecting the
+     * async generator parameter as the first argument.  This enables
+     * ThreadLocal-free yield semantics.  Does not descend into nested closures.
+     */
+    private static void injectGenParamIntoYieldReturnCalls(Statement code, Parameter genParam) {
+        code.visit(new org.codehaus.groovy.ast.CodeVisitorSupport() {
+            @Override
+            public void visitExpressionStatement(org.codehaus.groovy.ast.stmt.ExpressionStatement stmt) {
+                Expression expr = stmt.getExpression();
+                if (expr instanceof org.codehaus.groovy.ast.expr.StaticMethodCallExpression smce
+                        && "yieldReturn".equals(smce.getMethod())
+                        && "org.apache.groovy.runtime.async.AsyncSupport".equals(smce.getOwnerType().getName())) {
+                    VariableExpression genRef = varX("$__asyncGen__");
+                    genRef.setAccessedVariable(genParam);
+                    ArgumentListExpression newArgs = new ArgumentListExpression();
+                    newArgs.addExpression(genRef);
+                    if (smce.getArguments() instanceof ArgumentListExpression argList) {
+                        for (Expression arg : argList.getExpressions()) {
+                            newArgs.addExpression(arg);
+                        }
+                    }
+                    org.codehaus.groovy.ast.expr.StaticMethodCallExpression replacement =
+                            new org.codehaus.groovy.ast.expr.StaticMethodCallExpression(
+                                    smce.getOwnerType(), "yieldReturn", newArgs);
+                    replacement.setSourcePosition(smce);
+                    stmt.setExpression(replacement);
+                }
+                super.visitExpressionStatement(stmt);
+            }
+            @Override
+            public void visitClosureExpression(ClosureExpression expression) {
+                // Don't descend into nested closures
+            }
+        });
+    }
+
+    /**
+     * Checks whether the closure body contains any
+     * {@code AsyncSupport.yieldReturn()} calls, used to determine whether an
+     * async closure is a plain async closure or an async generator.
+     */
+    private static boolean containsYieldReturnCalls(ClosureExpression closure) {
+        boolean[] found = {false};
+        closure.getCode().visit(new CodeVisitorSupport() {
+            @Override
+            public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+                if ("yieldReturn".equals(call.getMethod())
+                        && "org.apache.groovy.runtime.async.AsyncSupport".equals(call.getOwnerType().getName())) {
+                    found[0] = true;
+                }
+                super.visitStaticMethodCallExpression(call);
+            }
+        });
+        return found[0];
     }
 
     @Override
@@ -4727,6 +4888,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     private final GroovyLangParser parser;
     private final GroovydocManager groovydocManager;
     private final TryWithResourcesASTTransformation tryWithResourcesASTTransformation;
+    private int asyncStreamCounter;
 
     private final List<ClassNode> classNodeList = new ArrayList<>();
     private final Deque<ClassNode> classNodeStack = new ArrayDeque<>();
