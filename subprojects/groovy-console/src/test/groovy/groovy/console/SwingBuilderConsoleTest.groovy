@@ -36,7 +36,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     File temporaryFolder
     Preferences testPreferences
-    private static final String BASE_DIR = new File(Console.class.classLoader.getResource('groovy/console/ui/ConsoleIcon.png').toURI()).parentFile.parentFile.parentFile.parent
+    private static final String BASE_DIR = new File(Console.classLoader.getResource('groovy/console/ui/ConsoleIcon.png').toURI()).parentFile.parentFile.parentFile.parent
 
     @Override
     protected void setUp() throws Exception {
@@ -52,14 +52,17 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     @Override
     protected void tearDown() throws Exception {
+        GroovySystem.metaClassRegistry.with {
+            removeMetaClass(SwingUtilities)
+            removeMetaClass(Preferences)
+            removeMetaClass(Thread)
+        }
         temporaryFolder.deleteDir()
-
         super.tearDown()
     }
 
     void testTabbedPane() {
         testInEDT {
-
             def swing = new SwingBuilder()
             swing.tabbedPane(id: 'tp') {
                 panel(id: 'p1', name: 'Title 1')
@@ -142,7 +145,6 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     void testTabbedPaneRenamedProperties() {
         testInEDT {
-
             def swing = new SwingBuilder()
             swing.tabbedPane(id: 'tp',
                     titleProperty: 'xTitle',
@@ -412,30 +414,25 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             // in case the static final var has been already initialized
             Console.prefs = testPreferences
 
-            try {
-                def binding = new Binding()
-                binding.setVariable('controller', new Console())
+            def binding = new Binding()
+            binding.setVariable('controller', new Console())
 
-                final consoleActions = new ConsoleActions()
-                final console = new Console()
+            final consoleActions = new ConsoleActions()
+            final console = new Console()
 
-                def swing = new SwingBuilder()
-                swing.controller = console
+            def swing = new SwingBuilder()
+            swing.controller = console
 
-                swing.build(consoleActions)
-                console.run()
+            swing.build(consoleActions)
+            console.run()
 
-                console.inputArea.text = 'throw new Exception()'
-                console.runScript(new EventObject([:]))
-                sleep 20
+            console.inputArea.text = 'throw new Exception()'
+            console.runScript(new EventObject([:]))
+            sleep 100
 
-                def doc = console.outputArea.document
-                assert doc.getText(0, doc.length) =~ /java.lang.Exception/
-            } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
-                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
-                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
-            }
+            def doc = console.outputArea.document
+            def txt = doc.getText(0, doc.length)
+            assert txt =~ /java.lang.Exception/
         }
     }
 
@@ -523,48 +520,42 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
             Console.prefs = testPreferences
 
-            try {
-                def swing = new SwingBuilder()
-                final Console console = new Console()
-                swing.controller = console
-                swing.build(new ConsoleActions())
-                console.run()
-                console.fileNewWindow()
-                final Console console2 = Console.consoleControllers.last()
+            Console console1 = new Console()
+            def swing = new SwingBuilder()
+            swing.controller = console1
+            swing.build(new ConsoleActions())
+            console1.run()
+            console1.fileNewWindow()
+            Console console2 = Console.consoleControllers.last()
 
-                console.showScriptInOutput = false
-                console2.showScriptInOutput = false
+            console1.showScriptInOutput = false
+            console2.showScriptInOutput = false
 
-                def doc = console.outputArea.document
-                def doc2 = console2.outputArea.document
+            def doc1 = console1.outputArea.document
+            def doc2 = console2.outputArea.document
 
-                assert console.consoleId != console2.consoleId
+            assert console1.consoleId != console2.consoleId
 
-                console.inputArea.text = 'println "test1"'
-                console.runScript()
-                sleep 20
+            console1.inputArea.text = 'println "test1"'
+            console1.runScript()
+            sleep 100
 
-                assert 'test1' == doc.getText(0, doc.length).trim()
-                assert '' == doc2.getText(0, doc2.length).trim()
+            assert doc1.getText(0, doc1.length).trim() == 'test1'
+            assert doc2.getText(0, doc2.length).trim() == ''
 
-                console2.inputArea.text = 'println "test2"'
-                console2.runScript()
-                sleep 20
+            console2.inputArea.text = 'println "test2"'
+            console2.runScript()
+            sleep 100
 
-                assert 'test1' == doc.getText(0, doc.length).trim()
-                assert 'test2' == doc2.getText(0, doc2.length).trim()
+            assert doc1.getText(0, doc1.length).trim() == 'test1'
+            assert doc2.getText(0, doc2.length).trim() == 'test2'
 
-                console2.inputArea.text = 'System.err.println "error2"'
-                console2.runScript()
-                sleep 20
+            console2.inputArea.text = 'System.err.println "error2"'
+            console2.runScript()
+            sleep 100
 
-                assert 'test1' == doc.getText(0, doc.length).trim()
-                assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
-            } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
-                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
-                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
-            }
+            assert doc1.getText(0, doc1.length).trim() == 'test1'
+            assert doc2.getText(0, doc2.length) ==~ /(?s)(test2)[^\w].*(error2).*/
         }
     }
 
@@ -578,37 +569,31 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
             }
             // in case the static final var has been already initialized
             Console.prefs = testPreferences
-            try {
-                def swing = new SwingBuilder()
-                final Console console = new Console()
-                swing.controller = console
-                swing.build(new ConsoleActions())
-                console.showScriptInOutput = false
-                console.run()
 
-                String scriptSource = '"foo".concat("bar")'
+            def swing = new SwingBuilder()
+            final Console console = new Console()
+            swing.controller = console
+            swing.build(new ConsoleActions())
+            console.showScriptInOutput = false
+            console.run()
 
-                def outputDocument = console.outputArea.document
-                console.inputEditor.textEditor.text = scriptSource
+            String scriptSource = '"foo".concat("bar")'
 
-                console.runScript(new EventObject([:]))
-                sleep 20
+            def outputDocument = console.outputArea.document
+            console.inputEditor.textEditor.text = scriptSource
 
-                assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
-                assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
+            console.runScript(new EventObject([:]))
+            sleep 100
 
-                console.outputArea.text = ''
-                console.runScript(new EventObject([:]))
-                sleep 20
+            assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
+            assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
 
-                assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
-                assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
-            } finally {
-                GroovySystem.metaClassRegistry.removeMetaClass(Thread)
-                GroovySystem.metaClassRegistry.removeMetaClass(SwingUtilities)
-                GroovySystem.metaClassRegistry.removeMetaClass(Preferences)
-            }
+            console.outputArea.text = ''
+            console.runScript(new EventObject([:]))
+            sleep 100
+
+            assert console.config.getOptimizationOptions().get(CompilerConfiguration.INVOKEDYNAMIC)
+            assert outputDocument.getText(0, outputDocument.length) == 'Result: foobar'
         }
     }
-
 }
