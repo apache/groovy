@@ -18,9 +18,8 @@
  */
 package org.codehaus.groovy.benchmarks.vm5.b2394;
 
-public class Builder
-{
-    public void add(String option, String suboption)
-    {
+public class Builder {
+
+    public void add(final String option, final String suboption) {
     }
 }
