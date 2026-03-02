@@ -18,10 +18,9 @@
  */
 package org.codehaus.groovy.control.customizers
 
-import groovy.transform.TimedInterrupt
+import groovy.transform.*
 import groovy.util.logging.Log
 import org.codehaus.groovy.ast.ASTNode
-import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.SourceUnit
@@ -33,6 +32,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 import static groovy.test.GroovyAssert.shouldFail
+import static groovy.transform.PackageScopeTarget.METHODS
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
 
@@ -110,7 +110,7 @@ final class ASTTransformationCustomizerTest {
     @Test
     void testLocalTransformationPropertyExpressionParameter() {
         def shell = GroovyShell.withConfig {
-            ast(TimedInterrupt, value:300, unit:propX(classX(ClassHelper.make(TimeUnit)),'MILLISECONDS'))
+            ast(TimedInterrupt, value:300, unit:propX(classX(TimeUnit),'MILLISECONDS'))
             imports { normal 'java.util.concurrent.TimeoutException' }
         }
         assert shell.evaluate('''
@@ -127,7 +127,8 @@ final class ASTTransformationCustomizerTest {
         ''')
     }
 
-    @Test // GROOVY-10654
+    // GROOVY-10654
+    @Test
     void testLocalTransformationEnumerationConstantParameter() {
         def shell = GroovyShell.withConfig {
             ast(TimedInterrupt, value:300, unit:TimeUnit.MILLISECONDS)
@@ -145,6 +146,35 @@ final class ASTTransformationCustomizerTest {
 
             interrupted
         ''')
+    }
+
+    // GROOVY-11865
+    @Test
+    void testLocalTransformationListOfEnumerationConstantParameter() {
+        def shell = GroovyShell.withConfig {
+            ast(PackageScope, value: [PackageScopeTarget.CONSTRUCTORS, METHODS])
+            imports { staticStar 'java.lang.reflect.Modifier' }
+        }
+        shell.evaluate '''
+            class C {
+                C() {
+                }
+                def m() {
+                }
+            }
+
+            int mods = C.getModifiers()
+
+            assert isPublic(mods)
+
+            mods = C.getDeclaredConstructors().first().getModifiers()
+
+            assert !isPublic(mods) && !isPrivate(mods) && !isProtected(mods)
+
+            mods = C.getDeclaredMethod('m').getModifiers()
+
+            assert !isPublic(mods) && !isPrivate(mods) && !isProtected(mods)
+        '''
     }
 
     //--------------------------------------------------------------------------

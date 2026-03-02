@@ -20,7 +20,6 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -44,7 +43,6 @@ import org.codehaus.groovy.syntax.TokenUtil;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.isThisExpression;
@@ -61,11 +59,9 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.declX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.getSetterName;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.classgen.AsmClassGenerator.ELIDE_EXPRESSION_VALUE;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_ADD_METHOD;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CONSTRUCTOR;
@@ -291,35 +287,6 @@ public class StaticTypesBinaryExpressionMultiTypeDispatcher extends BinaryExpres
             return true;
         }
 
-        if (makeSetPrivateFieldWithBridgeMethod(receiver, (thisReceiver && !controller.isInGeneratedFunction()) ? controller.getClassNode() : receiverType, propertyName, arguments, safe, spreadSafe, implicitThis)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean makeSetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final Expression arguments, final boolean safe, final boolean spreadSafe, final boolean implicitThis) {
-        FieldNode fieldNode = receiverType.getField(fieldName);
-        if (fieldNode != null) {
-            ClassNode classNode = controller.getClassNode();
-            if (fieldNode.isPrivate() && !receiverType.equals(classNode)
-                    && (StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)
-                        || StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(classNode, receiverType))) {
-                Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
-                if (mutators != null) {
-                    MethodNode methodNode = mutators.get(fieldName);
-                    if (methodNode != null) {
-                        MethodCallExpression call = callX(receiver, methodNode.getName(), args(fieldNode.isStatic() ? nullX() : receiver, arguments));
-                        call.setImplicitThis(implicitThis);
-                        call.setMethodTarget(methodNode);
-                        call.setSafe(safe);
-                        call.setSpreadSafe(spreadSafe);
-                        call.visit(controller.getAcg());
-                        return true;
-                    }
-                }
-            }
-        }
         return false;
     }
 

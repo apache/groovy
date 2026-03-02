@@ -797,16 +797,6 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method','test(java.lang.Integer[])'
     }
 
-    void testInstanceOfOnExplicitParameter() {
-        assertScript '''
-            1.with { obj ->
-                if (obj instanceof String) {
-                    obj.toUpperCase()
-                }
-            }
-        '''
-    }
-
     void testSAMWithExplicitParameter1() {
         assertScript '''
             public interface SAM {
@@ -902,7 +892,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             def it = ""
             if (it instanceof String) {
                 bar(it)
-                it = 123
+                it = 12
                 foo(it)
             }
         '''
@@ -913,7 +903,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                 bar(it)
                 if (it instanceof String) {
                     bar(it)
-                    it = 123
+                    it = 12
                     foo(it)
                 } else {
                     bar(it)
@@ -929,9 +919,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
             def foo(Date d) { 'Date' }
             def it = ""
             if (it instanceof String) {
-                it = 123
+                it = 12
                 foo(it)
-                if (it instanceof Date) {
+                if (it !instanceof Date) {
                     foo(it)
                 }
             }

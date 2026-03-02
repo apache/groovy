@@ -251,7 +251,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
             for (String s in 'abc') assert s instanceof String
         '''
         assertScript '''
-            for (char c in 'abc') assert c instanceof Character
+            for (char c in 'abc') assert c !instanceof String
             for (Character c in 'abc') assert c instanceof Character
         '''
     }

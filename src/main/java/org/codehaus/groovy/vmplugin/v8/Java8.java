@@ -360,27 +360,28 @@ public class Java8 implements VMPlugin {
     ));
 
     @Override
-    public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode root) {
-        String typeName = definition.getClassNode().getName();
-        if ("java.lang.annotation.Retention".equals(typeName)) {
-            Expression exp = definition.getMember("value");
-            if (!(exp instanceof PropertyExpression pe)) return;
-            String name = pe.getPropertyAsString();
-            RetentionPolicy policy = RetentionPolicy.valueOf(name);
-            setRetentionPolicy(policy, root);
-        } else if ("java.lang.annotation.Target".equals(typeName)) {
-            Expression exp = definition.getMember("value");
-            if (!(exp instanceof ListExpression list)) return;
-            int targets = 0;
-            for (Expression e : list.getExpressions()) {
-                if (!(e instanceof PropertyExpression element)) return;
-                String name = element.getPropertyAsString();
-                ElementType type = ElementType.valueOf(name);
-                Integer target = elementTypeToTarget.get(type);
-                if (target == null) throw new GroovyBugError("unsupported Target " + type);
-                targets |= target;
+    public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode node) {
+        switch (definition.getClassNode().getName()) {
+          case "java.lang.annotation.Retention":
+            if (definition.getMember("value") instanceof PropertyExpression value) {
+                var policy = RetentionPolicy.valueOf(value.getPropertyAsString());
+                setRetentionPolicy(policy, node);
             }
-            root.setAllowedTargets(targets);
+            break;
+          case "java.lang.annotation.Target":
+            if (definition.getMember("value") instanceof ListExpression list) {
+                int targets = 0;
+                for (Expression e : list.getExpressions()) {
+                    if (e instanceof PropertyExpression item) {
+                        String name = item.getPropertyAsString();
+                        ElementType type = ElementType.valueOf(name);
+                        Integer target = elementTypeToTarget.get(type);
+                        if (target == null) throw new GroovyBugError("unsupported Target " + type);
+                        targets |= target;
+                    }
+                }
+                node.setAllowedTargets(targets);
+            }
         }
     }
 

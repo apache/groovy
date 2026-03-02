@@ -54,24 +54,17 @@ import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.assignS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorThisS;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.returnS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.addMethodGenerics;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.applyGenericsContextToPlaceHolders;
@@ -83,8 +76,6 @@ import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.BIN
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.COMPONENT_TYPE;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.DYNAMIC_OUTER_NODE_CALLBACK;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_BRIDGE_METHODS;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS;
-import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.PROPERTY_OWNER;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.RECEIVER_OF_DYNAMIC_PROPERTY;
 import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
@@ -92,8 +83,6 @@ import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.INITIAL_EXPRESSION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PARAMETER_TYPE;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_ACCESS;
-import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_FIELDS_MUTATION;
 import static org.codehaus.groovy.transform.stc.StaticTypesMarker.PV_METHODS_ACCESS;
 import static org.codehaus.groovy.transform.trait.TraitASTTransformation.POST_TYPECHECKING_REPLACEMENT;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
@@ -395,7 +384,6 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
                 outer.putNodeMetaData(DYNAMIC_OUTER_NODE_CALLBACK, (IPrimaryClassNodeOperation) (source, context, classNode) -> {
                     if (classNode == outer) {
                         addPrivateBridgeMethods(classNode);
-                        addPrivateFieldsAccessors(classNode);
                     }
                 });
             }
@@ -406,64 +394,8 @@ public class StaticCompilationVisitor extends StaticTypeCheckingVisitor {
 
     private static void addPrivateFieldAndMethodAccessors(final ClassNode node) {
         addPrivateBridgeMethods(node);
-        addPrivateFieldsAccessors(node);
         for (Iterator<InnerClassNode> it = node.getInnerClasses(); it.hasNext(); ) {
             addPrivateFieldAndMethodAccessors(it.next());
-        }
-    }
-
-    /**
-     * Adds special accessors and mutators for private fields so that inner classes can get/set them.
-     */
-    @Deprecated(since = "5.0.0")
-    private static void addPrivateFieldsAccessors(final ClassNode node) {
-        Map<String, MethodNode> privateFieldAccessors = node.getNodeMetaData(PRIVATE_FIELDS_ACCESSORS);
-        Map<String, MethodNode> privateFieldMutators = node.getNodeMetaData(PRIVATE_FIELDS_MUTATORS);
-        if (privateFieldAccessors != null || privateFieldMutators != null) {
-            // already added
-            return;
-        }
-        Set<ASTNode> accessedFields = node.getNodeMetaData(PV_FIELDS_ACCESS);
-        Set<ASTNode> mutatedFields = node.getNodeMetaData(PV_FIELDS_MUTATION);
-        if (accessedFields == null && mutatedFields == null) return;
-        // GROOVY-9385: mutation includes access in case of compound assignment or pre/post-increment/decrement
-        if (mutatedFields != null) {
-            accessedFields = new HashSet<>(Optional.ofNullable(accessedFields).orElseGet(Collections::emptySet));
-            accessedFields.addAll(mutatedFields);
-        }
-
-        int acc = -1;
-        privateFieldAccessors = (accessedFields != null ? new HashMap<>() : null);
-        privateFieldMutators = (mutatedFields != null ? new HashMap<>() : null);
-        for (FieldNode fieldNode : node.getFields()) {
-            boolean generateAccessor = accessedFields != null && accessedFields.contains(fieldNode);
-            boolean generateMutator = mutatedFields != null && mutatedFields.contains(fieldNode);
-            if (generateAccessor) {
-                acc += 1;
-                Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
-                Expression receiver = fieldNode.isStatic() ? classX(node) : varX(param);
-                Statement body = returnS(attrX(receiver, constX(fieldNode.getName())));
-                MethodNode accessor = node.addMethod("pfaccess$" + acc, ACC_STATIC | ACC_SYNTHETIC, fieldNode.getOriginType(), new Parameter[]{param}, ClassNode.EMPTY_ARRAY, body);
-                accessor.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
-                privateFieldAccessors.put(fieldNode.getName(), accessor);
-            }
-            if (generateMutator) {
-                // increment acc if it hasn't been incremented in the current iteration
-                if (!generateAccessor) acc += 1;
-                Parameter param = new Parameter(node.getPlainNodeReference(), "$that");
-                Expression receiver = fieldNode.isStatic() ? classX(node) : varX(param);
-                Parameter value = new Parameter(fieldNode.getOriginType(), "$value");
-                Statement body = assignS(attrX(receiver, constX(fieldNode.getName())), varX(value));
-                MethodNode mutator = node.addMethod("pfaccess$0" + acc, ACC_STATIC | ACC_SYNTHETIC, fieldNode.getOriginType(), new Parameter[]{param, value}, ClassNode.EMPTY_ARRAY, body);
-                mutator.setNodeMetaData(STATIC_COMPILE_NODE, Boolean.TRUE);
-                privateFieldMutators.put(fieldNode.getName(), mutator);
-            }
-        }
-        if (privateFieldAccessors != null) {
-            node.setNodeMetaData(PRIVATE_FIELDS_ACCESSORS, privateFieldAccessors);
-        }
-        if (privateFieldMutators != null) {
-            node.setNodeMetaData(PRIVATE_FIELDS_MUTATORS, privateFieldMutators);
         }
     }
 

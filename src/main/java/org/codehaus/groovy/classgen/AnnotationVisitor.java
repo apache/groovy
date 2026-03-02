@@ -32,6 +32,8 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
+import static org.codehaus.groovy.ast.tools.ClosureUtils.hasImplicitParameter;
 
 /**
  * An Annotation visitor responsible for:
@@ -89,8 +92,17 @@ public class AnnotationVisitor {
         for (Map.Entry<String, Expression> entry : node.getMembers().entrySet()) {
             String attrName = entry.getKey();
             ClassNode attrType = getAttributeType(node, attrName);
-            Expression attrExpr = transformInlineConstants(entry.getValue(), attrType);
+
+            Expression attrExpr = entry.getValue();
+            // GROOVY-11492: @Type(name={}) and @Type(name={""}) cannot be converted sooner
+            if (attrType.isArray() && !ClassHelper.isClassType(attrType.getComponentType())
+                    && attrExpr instanceof ClosureExpression c && hasImplicitParameter(c) && c.getCode() instanceof BlockStatement block) {
+                attrExpr = new ListExpression(block.getStatements().stream().map(s -> ((ExpressionStatement) s).getExpression()).toList());
+                attrExpr.setSourcePosition(c);
+            }
+            attrExpr = transformInlineConstants(attrExpr, attrType);
             entry.setValue(attrExpr);
+
             visitExpression(attrName, attrExpr, attrType);
         }
         VMPluginFactory.getPlugin().configureAnnotation(node);
@@ -160,37 +172,37 @@ public class AnnotationVisitor {
 
     protected void visitExpression(final String attrName, final Expression valueExpr, final ClassNode attrType) {
         if (attrType.isArray()) {
-            // check needed as @Test(attr = {"elem"}) passes through the parser
-            if (valueExpr instanceof ListExpression le) {
-                visitListExpression(attrName, le, attrType.getComponentType());
-            } else if (valueExpr instanceof ClosureExpression) {
-                addError("Annotation list attributes must use Groovy notation [el1, el2]", valueExpr);
-            } else {
+            ClassNode itemType = attrType.getComponentType();
+            if (valueExpr instanceof ListExpression listExpr) {
+                visitListExpression(attrName, listExpr, itemType);
+            } else if (!itemType.isArray()) {
                 // treat like a singleton list as per Java
-                ListExpression listExp = new ListExpression();
-                listExp.addExpression(valueExpr);
+                var listExpr = new ListExpression();
+                listExpr.addExpression(valueExpr);
                 if (annotation != null) {
-                    annotation.setMember(attrName, listExp);
+                    annotation.setMember(attrName, listExpr);
                 }
-                visitExpression(attrName, listExp, attrType);
+                visitListExpression(attrName, listExpr, itemType);
+            } else {
+                addError("Array-based attributes must use array or list notation", valueExpr);
             }
         } else if (ClassHelper.isPrimitiveType(attrType) || ClassHelper.isStringType(attrType)) {
             visitConstantExpression(attrName, getConstantExpression(valueExpr, attrType), ClassHelper.getWrapper(attrType));
         } else if (ClassHelper.isClassType(attrType)) {
             if (!(valueExpr instanceof ClassExpression || valueExpr instanceof ClosureExpression)) {
-                addError("Only classes, closures, method references and method pointers can be used for attribute '" + attrName + "'", valueExpr);
+                addError("Only classes, closures, and method references can be used for attribute '" + attrName + "'", valueExpr);
             }
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
-            if (valueExpr instanceof PropertyExpression) {
-                visitEnumExpression(attrName, (PropertyExpression) valueExpr, attrType);
+            if (valueExpr instanceof PropertyExpression propExpr) {
+                visitEnumExpression(attrName, propExpr, attrType);
             } else if (valueExpr instanceof ConstantExpression) {
                 visitConstantExpression(attrName, getConstantExpression(valueExpr, attrType), attrType);
             } else {
                 addError("Expected enum value for attribute " + attrName, valueExpr);
             }
         } else if (isValidAnnotationClass(attrType)) {
-            if (valueExpr instanceof AnnotationConstantExpression) {
-                visitAnnotationExpression(attrName, (AnnotationConstantExpression) valueExpr, attrType);
+            if (valueExpr instanceof AnnotationConstantExpression annoExpr) {
+                visitAnnotationExpression(attrName, annoExpr, attrType);
             } else {
                 addError("Expected annotation of type '" + attrType.getName() + "' for attribute " + attrName, valueExpr);
             }

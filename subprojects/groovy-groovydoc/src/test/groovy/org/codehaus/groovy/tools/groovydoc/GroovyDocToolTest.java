@@ -1237,7 +1237,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
 
         assertTrue("The Groovy class declaration header should have the annotation in:\n" + groovydoc, Pattern.compile(Pattern.quote(
-                "<pre>@groovy.transform.EqualsAndHashCode(cache: true)\n" +
+                "<pre>@groovy.transform.EqualsAndHashCode(cache=true)\n" +
                         "class Groovy"
         )).matcher(groovydoc).find());
 
@@ -1275,7 +1275,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The Groovy ctor details should have the annotation in:\n" + groovydoc, Pattern.compile(
                 "<h4>@groovy.transform.Generated<br>" +
                         "<strong>Groovy</strong>\\(" +
-                        "@groovy.transform.NamedParam\\(value: ctorParam, type: java.util.List\\)<br>" +
+                        "@groovy.transform.NamedParam\\(value=\"ctorParam\", type=java.util.List\\)<br>" +
                         "(<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a>|java.util.Map) namedArgs" +
                         "\\)</h4>"
         ).matcher(groovydoc).find());
@@ -1296,7 +1296,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue("The Groovy method details should have the annotations in:\n" + groovydoc, Pattern.compile(
                 "<h4>@groovy.transform.Generated<br>" +
                         "void <strong>annotatedMethod</strong>\\(" +
-                        "@groovy.transform.NamedParam\\(required: true, value: methodParam, type: java.lang.String\\)<br>" +
+                        "@groovy.transform.NamedParam\\(required=true, value=\"methodParam\", type=java.lang.String\\)<br>" +
                         "(<a href='https://docs.oracle.com/javase/8/docs/api/java/util/Map.html' title='Map'>Map</a>|java.util.Map) namedArgs" +
                         "\\)</h4>"
         ).matcher(groovydoc).find());

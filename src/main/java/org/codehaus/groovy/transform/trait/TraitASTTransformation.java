@@ -507,13 +507,14 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
             return;
         }
 
-        Expression initialExpression = field.getInitialExpression();
+        Expression initExpression = field.getInitialExpression();
         MethodNode selectedMethod = field.isStatic() ? staticInitializer : initializer;
         ClassNode target = field.isStatic() && staticFieldHelper != null ? staticFieldHelper : fieldHelper;
-        if (initialExpression != null) {
+        if (initExpression != null) {
             VariableExpression thisObject = varX(selectedMethod.getParameters()[0]);
-            ExpressionStatement initCode = new ExpressionStatement(initialExpression);
-            processBody(thisObject, initCode, trait, helper, fieldHelper, knownFields);
+            ExpressionStatement initValue = new ExpressionStatement(initExpression);
+            processBody(thisObject, initValue, trait, helper, fieldHelper, knownFields);
+            initExpression = initValue.getExpression(); // extract transformed expression
             if (field.isFinal()) {
                 String baseName = field.isStatic() ? Traits.STATIC_INIT_METHOD : Traits.INIT_METHOD;
                 MethodNode fieldInitializer = new MethodNode(
@@ -522,37 +523,35 @@ public class TraitASTTransformation extends AbstractASTTransformation implements
                         field.getOriginType(),
                         new Parameter[]{createSelfParameter(trait, field.isStatic())},
                         ClassNode.EMPTY_ARRAY,
-                        returnS(initCode.getExpression())
+                        returnS(initExpression)
                 );
                 helper.addMethod(fieldInitializer);
             } else {
-                BlockStatement code = (BlockStatement) selectedMethod.getCode();
-                MethodCallExpression mce;
+                initExpression = castX(field.getOriginType(), initExpression); // GROOVY-7217, GROOVY-11862
+
+                Expression receiver;
+                String methodTarget;
+                Expression callArgs;
                 if (field.isStatic()) {
-                    if (staticFieldHelper != null) {
-                        target = staticFieldHelper;
-                    }
-                    mce = callX(
-                            classX(InvokerHelper.class),
-                            "invokeStaticMethod",
-                            args(
-                                    thisObject,
-                                    constX(Traits.helperSetterName(field)),
-                                    initCode.getExpression()
-                            )
+                    receiver = classX(InvokerHelper.class);
+                    methodTarget = "invokeStaticMethod";
+                    callArgs = args(
+                            thisObject,
+                            constX(Traits.helperSetterName(field)),
+                            initExpression
                     );
                 } else {
-                    mce = callX(
-                            castX(createReceiverType(field.isStatic(), fieldHelper), thisObject),
-                            Traits.helperSetterName(field),
-                            castX(field.getOriginType(), initCode.getExpression())
-                    );
+                    receiver = castX(fieldHelper, thisObject);
+                    methodTarget = Traits.helperSetterName(field);
+                    callArgs = initExpression;
                 }
+                MethodCallExpression mce = callX(receiver, methodTarget, callArgs);
                 mce.setImplicitThis(false);
-                mce.setSourcePosition(initialExpression);
-                code.addStatement(stmt(mce));
+                mce.setSourcePosition(field.getInitialExpression());
+                ((BlockStatement)selectedMethod.getCode()).addStatement(stmt(mce));
             }
         }
+
         // define setter/getter helper methods (setter added even for final fields for legacy compatibility)
         addGeneratedMethod(target,
                 Traits.helperSetterName(field),

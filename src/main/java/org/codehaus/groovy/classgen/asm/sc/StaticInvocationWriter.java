@@ -350,6 +350,7 @@ public class StaticInvocationWriter extends InvocationWriter {
         return false;
     }
 
+    @Deprecated(since = "6.0.0")
     protected static boolean isPrivateBridgeMethodsCallAllowed(final ClassNode receiver, final ClassNode caller) {
         if (receiver == null) return false;
         if (receiver.redirect() == caller) return true;

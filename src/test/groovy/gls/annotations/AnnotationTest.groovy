@@ -759,6 +759,35 @@ final class AnnotationTest {
         '''
     }
 
+    // GROOVY-11492
+    @ParameterizedTest
+    @ValueSource(strings=['','"a"','"a","b"','"a","b",'])
+    void testAttributeValueConstants13(String values) {
+        assertScript shell, """
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface A {
+                String[] value()
+            }
+
+            @A({$values}) class B { }
+            String[] array = [$values]
+            assert B.getAnnotation(A).value() == array
+        """
+
+        assertScript shell, """
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.TYPE)
+            @interface A {
+                String[] values()
+            }
+
+            @A(values={$values}) class B { }
+            String[] array = [$values]
+            assert B.getAnnotation(A).values() == array
+        """
+    }
+
     @Test
     void testRuntimeRetentionAtAllLevels() {
         assertScript shell, '''

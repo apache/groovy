@@ -977,6 +977,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             } else if (op == KEYWORD_INSTANCEOF) {
+                rType = rightExpression.getType();
+                if (lType instanceof WideningCategories.LowestUpperBoundClassNode) lType = lType.getUnresolvedSuperClass();
+                if (!lType.isInterface() && !rType.isInterface() && !(lType.isDerivedFrom(rType) || rType.isDerivedFrom(lType))) {
+                    addError("Incompatible instanceof types: " + prettyPrintTypeName(lType) + " and " + prettyPrintTypeName(rType), expression);
+                }
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
             } else if (op == COMPARE_NOT_INSTANCEOF) { // GROOVY-6429, GROOVY-8321, GROOVY-8412, GROOVY-8523, GROOVY-9931
                 putNotInstanceOfTypeInfo(extractTemporaryTypeInfoKey(leftExpression), Set.of(rightExpression.getType()));
@@ -987,7 +992,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
-            if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
+            if (leftExpression instanceof VariableExpression vexp && vexp.isClosureSharedVariable()) {
                 typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
             }
         } finally {
@@ -4236,9 +4241,11 @@ trying: for (ClassNode[] signature : signatures) {
             visitStatement(ifElse);
             ifElse.getBooleanExpression().visit(this);
 
+            var tti = Map.copyOf(typeCheckingContext.temporaryIfBranchTypeInformation.peek()); // GROOVY-11864
+
             thenPath.visit(this);
 
-            Map<Object, List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+            typeCheckingContext.temporaryIfBranchTypeInformation.pop();
             // GROOVY-6099: isolate assignment tracking
             restoreTypeBeforeConditional();
 
