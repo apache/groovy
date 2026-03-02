@@ -39,7 +39,7 @@ jobs:
         run: ./gradlew perf:performanceTests
         timeout-minutes: 60
       - name: Upload perf report
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: perf-reports
           path: subprojects/performance/build/*.csv
