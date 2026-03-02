@@ -18,15 +18,13 @@
  */
 package groovy.bugs;
 
-import groovy.test.GroovyTestCase;
-
 import java.util.Iterator;
 import java.util.List;
 
 /**
- * Base class for test cases
+ * Base class for test cases.
  */
-public abstract class TestSupport extends GroovyTestCase {
+public abstract class TestSupport {
 
     public String[] getMockArguments() {
         return new String[]{"a", "b", "c"};

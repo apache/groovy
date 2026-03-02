@@ -19,9 +19,11 @@
 package org.codehaus.groovy.runtime
 
 import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-class StaticPrintlnTest extends TestSupport {
+final class StaticPrintlnTest extends TestSupport {
 
+    @Test
     void testStaticPrint() {
         main(getMockArguments())
     }

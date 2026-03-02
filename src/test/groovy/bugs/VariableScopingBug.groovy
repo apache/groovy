@@ -18,35 +18,36 @@
  */
 package bugs
 
-import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-class VariableScopingBug extends TestSupport {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+final class VariableScopingBug {
+
+    @Test
     void testUndeclaredVariable() {
-        shouldFail(MissingPropertyException) {
-            def shell = new GroovyShell()
-            shell.evaluate("""
-                class SomeTest {
-                    void run() {
-                        for (z in 0..2) {
-                            def x = [1, 2, 3]
-                        }
+        shouldFail MissingPropertyException, '''
+            class SomeTest {
+                void run() {
+                    for (z in 0..2) {
+                        def x = [1, 2, 3]
+                    }
 
-                        for (t in 0..3) {
-                            for (y in x) { // previous x no longer be in scope
-                                println x
-                            }
+                    for (t in 0..3) {
+                        for (y in x) { // previous x no longer be in scope
+                            println x
                         }
                     }
                 }
-                new SomeTest().run()
-            """)
-        }
+            }
+            new SomeTest().run()
+        '''
     }
 
+    @Test
     void testVariableReuseAllowedInDifferentScopes() {
-        def shell = new GroovyShell()
-        shell.evaluate("""
+        assertScript '''
             for (z in 0..2) {
                 def x = [1, 2, 3]
             }
@@ -55,13 +56,13 @@ class VariableScopingBug extends TestSupport {
                 def x = 123
                 println x
             }
-        """)
+        '''
     }
 
     // GROOVY-5961
+    @Test
     void testVariableInAicInsideStaticMethod() {
-        def shell = new GroovyShell()
-        shell.evaluate("""
+        assertScript '''
             static foo() {
                 new LinkedList([1, 2]) {
                     int count
@@ -73,6 +74,6 @@ class VariableScopingBug extends TestSupport {
             assert l.count == 0
             assert l[0] == 1
             assert l.count == 1
-        """)
+        '''
     }
 }

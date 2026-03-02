@@ -18,18 +18,21 @@
  */
 package bugs
 
-import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-class DoubleSizeParametersBug extends TestSupport {
+import static groovy.test.GroovyAssert.assertScript
 
+final class DoubleSizeParametersBug {
+
+    @Test
     void testBug() {
-        assertScript """
+        assertScript '''
             def foo(double x, y) {
                 println "x: "+x
                 println "y: "+y
             }
 
             foo(10.0d, 0)
-        """
+        '''
     }
 }

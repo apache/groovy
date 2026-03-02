@@ -18,12 +18,13 @@
  */
 package bugs
 
-import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-class ClosureWithStaticVariablesBug extends TestSupport {
+final class ClosureWithStaticVariablesBug {
 
     static def y = [:]
 
+    @Test
     void testBug() {
         def c = { x ->
             return {
