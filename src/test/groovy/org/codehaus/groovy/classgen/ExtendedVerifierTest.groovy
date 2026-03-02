@@ -20,23 +20,28 @@ package org.codehaus.groovy.classgen
 
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
-import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.control.SourceUnit
 import org.junit.jupiter.api.Test
 
-import static org.codehaus.groovy.ast.ClassHelper.OBJECT_TYPE
+import java.lang.annotation.ElementType
+import java.lang.annotation.Target
+
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block
-import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
 final class ExtendedVerifierTest {
 
+    @Target(ElementType.TYPE_USE)
+    public @interface TypeAnno {}
+
     @Test
     void testNoTypeUseAnnotationsForVoidMethod() {
-        ClassNode cn = new ClassNode('DummyClass', ACC_PUBLIC, OBJECT_TYPE)
-        MethodNode mn = cn.addMethod("dummyMethod", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block())
-        mn.addAnnotation(ClassHelper.makeWithoutCaching('groovy.lang.Grapes'))
-        new ExtendedVerifier(new SourceUnit((String)'dummySU', null, null, null, null)).visitClass(cn)
+        def cn = new ClassNode('DummyClass', 0, ClassHelper.OBJECT_TYPE)
+        def mn = cn.addMethod('dummyMethod', 0, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block())
+        mn.addAnnotation(ClassHelper.make(TypeAnno))
+
+        new ExtendedVerifier(new SourceUnit('dummySU', null, null, null, null)).visitClass(cn)
+
         assert mn.returnType.annotations.isEmpty()
     }
 }
