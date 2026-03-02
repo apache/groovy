@@ -19,15 +19,13 @@
 package groovy.bugs;
 
 import groovy.test.GroovyTestCase;
-import org.junit.Ignore;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Base class for test cases
  */
-@Ignore("base class for tests")
 public abstract class TestSupport extends GroovyTestCase {
 
     public String[] getMockArguments() {
@@ -46,7 +44,7 @@ public abstract class TestSupport extends GroovyTestCase {
         return new int[]{1, 2, 3, 4, 5};
     }
 
-    public Iterator iterator() {
-        return Arrays.asList(getMockArguments()).iterator();
+    public Iterator<String> iterator() {
+        return List.of(getMockArguments()).iterator();
     }
 }

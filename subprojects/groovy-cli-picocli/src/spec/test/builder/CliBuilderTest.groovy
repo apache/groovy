@@ -22,22 +22,23 @@ import cli.CliBuilderTestCase
 import groovy.cli.TypedOption
 import groovy.cli.picocli.CliBuilder
 import groovy.transform.TypeChecked
+import org.junit.jupiter.api.Test
 
 import java.util.concurrent.TimeUnit
 
-// tag::mapOptionImports[]
-
 import static java.util.concurrent.TimeUnit.DAYS
 import static java.util.concurrent.TimeUnit.HOURS
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 // end::mapOptionImports[]
 
 // Core functionality we expect to remain the same for all implementations is tested in the base test case
 // here we also add any functionality specific to this implementation that we value highly
-class CliBuilderTest extends CliBuilderTestCase {
+final class CliBuilderTest extends CliBuilderTestCase {
 
-    String getImportCliBuilder() { 'import groovy.cli.picocli.CliBuilder\n' }
+    final String importCliBuilder = 'import groovy.cli.picocli.CliBuilder\n'
 
+    @Test
     void testAnnotationsInterfaceToStringWithUsage() {
         doTestAnnotationsInterfaceToString('usage', '''\
 Usage: groovy Greeter
@@ -48,6 +49,7 @@ Usage: groovy Greeter
 ''')
     }
 
+    @Test
     void testAnnotationsInterfaceToStringWithName() {
         doTestAnnotationsInterfaceToString('name', '''\
 Usage: groovy Greeter [-h] [-a=<audience>] [<remaining>...]
@@ -58,7 +60,7 @@ Usage: groovy Greeter [-h] [-a=<audience>] [<remaining>...]
 ''')
     }
 
-    @TypeChecked
+    @TypeChecked @Test
     void testTypeChecked_addingSingleHyphenForLongOptSupport() {
         def cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: true)
         TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
@@ -71,7 +73,7 @@ Usage: groovy Greeter [-h] [-a=<audience>] [<remaining>...]
         assert options.arguments() == ['and', 'some', 'more']
     }
 
-    @TypeChecked
+    @TypeChecked @Test
     void testTypeChecked_defaultOnlyDoubleHyphen() {
         def cli = new CliBuilder()
         TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
@@ -83,6 +85,7 @@ Usage: groovy Greeter [-h] [-a=<audience>] [<remaining>...]
         assert options.arguments() == ['-age', '21', 'and', 'some', 'more']
     }
 
+    @Test
     void testUsageMessageSpec() {
         // suppress ANSI escape codes to make this test pass on all environments
         System.setProperty("picocli.ansi", "false")
@@ -131,6 +134,7 @@ Footer 2
         assertEquals(expected.normalize(), baos.toString().normalize())
     }
 
+    @Test
     void testMapOption() {
         // tag::mapOption[]
         def cli = new CliBuilder()
@@ -145,6 +149,7 @@ Footer 2
         // end::mapOption[]
     }
 
+    @Test
     void testGroovyDocAntExample() {
         def cli = new CliBuilder(usage:'ant [options] [targets]',
                 header:'Options:')
@@ -174,6 +179,7 @@ Options:
         assertEquals(expected.normalize(), sw.toString().normalize())
     }
 
+    @Test
     void testGroovyDocCurlExample() {
         // suppress ANSI escape codes to make this test pass on all environments
         System.setProperty("picocli.ansi", "false")

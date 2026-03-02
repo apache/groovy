@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.util.concurrent.concurrentlinkedhashmap;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -27,19 +26,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * JUnit 5 tests for LinkedDeque class.
+ * Unit tests for {@link LinkedDeque}.
  */
 class LinkedDequeTest {
 
-    private LinkedDeque<TestNode> deque;
-
-    @BeforeEach
-    void setUp() {
-        deque = new LinkedDeque<>();
-    }
+    private LinkedDeque<TestNode> deque = new LinkedDeque<>();
 
     // Test node implementation
     static class TestNode implements Linked<TestNode> {
@@ -91,7 +90,7 @@ class LinkedDequeTest {
     void testAddFirst() {
         TestNode node = new TestNode("first");
         deque.addFirst(node);
-        
+
         assertFalse(deque.isEmpty());
         assertEquals(1, deque.size());
         assertSame(node, deque.peekFirst());
@@ -101,7 +100,7 @@ class LinkedDequeTest {
     void testAddLast() {
         TestNode node = new TestNode("last");
         deque.addLast(node);
-        
+
         assertFalse(deque.isEmpty());
         assertEquals(1, deque.size());
         assertSame(node, deque.peekLast());
@@ -236,7 +235,7 @@ class LinkedDequeTest {
         TestNode second = new TestNode("second");
         deque.addLast(first);
         deque.addLast(second);
-        
+
         assertSame(first, deque.pollFirst());
         assertEquals(1, deque.size());
         assertSame(second, deque.peekFirst());
@@ -248,7 +247,7 @@ class LinkedDequeTest {
         TestNode second = new TestNode("second");
         deque.addLast(first);
         deque.addLast(second);
-        
+
         assertSame(second, deque.pollLast());
         assertEquals(1, deque.size());
         assertSame(first, deque.peekLast());
@@ -283,7 +282,7 @@ class LinkedDequeTest {
         TestNode second = new TestNode("second");
         deque.addLast(first);
         deque.addLast(second);
-        
+
         assertSame(first, deque.removeFirst());
         assertEquals(1, deque.size());
     }
@@ -294,7 +293,7 @@ class LinkedDequeTest {
         TestNode second = new TestNode("second");
         deque.addLast(first);
         deque.addLast(second);
-        
+
         assertSame(second, deque.removeLast());
         assertEquals(1, deque.size());
     }
@@ -303,7 +302,7 @@ class LinkedDequeTest {
     void testRemoveObject() {
         TestNode node = new TestNode("to-remove");
         deque.addFirst(node);
-        
+
         assertTrue(deque.remove(node));
         assertTrue(deque.isEmpty());
     }
@@ -313,7 +312,7 @@ class LinkedDequeTest {
         TestNode node1 = new TestNode("in-deque");
         TestNode node2 = new TestNode("not-in-deque");
         deque.addFirst(node1);
-        
+
         assertFalse(deque.remove(node2));
         assertEquals(1, deque.size());
     }
@@ -327,7 +326,7 @@ class LinkedDequeTest {
     void testContains() {
         TestNode node = new TestNode("contained");
         deque.addFirst(node);
-        
+
         assertTrue(deque.contains(node));
     }
 
@@ -336,7 +335,7 @@ class LinkedDequeTest {
         TestNode node1 = new TestNode("in-deque");
         TestNode node2 = new TestNode("not-in-deque");
         deque.addFirst(node1);
-        
+
         assertFalse(deque.contains(node2));
     }
 
@@ -350,11 +349,11 @@ class LinkedDequeTest {
         deque.addLast(new TestNode("a"));
         deque.addLast(new TestNode("b"));
         deque.addLast(new TestNode("c"));
-        
+
         assertEquals(3, deque.size());
-        
+
         deque.clear();
-        
+
         assertTrue(deque.isEmpty());
         assertEquals(0, deque.size());
     }
@@ -363,7 +362,7 @@ class LinkedDequeTest {
     void testPush() {
         TestNode node = new TestNode("pushed");
         deque.push(node);
-        
+
         assertSame(node, deque.peekFirst());
     }
 
@@ -371,7 +370,7 @@ class LinkedDequeTest {
     void testPop() {
         TestNode node = new TestNode("popped");
         deque.push(node);
-        
+
         assertSame(node, deque.pop());
         assertTrue(deque.isEmpty());
     }
@@ -386,16 +385,16 @@ class LinkedDequeTest {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
         TestNode c = new TestNode("c");
-        
+
         deque.addLast(a);
         deque.addLast(b);
         deque.addLast(c);
-        
+
         List<String> values = new ArrayList<>();
         for (TestNode node : deque) {
             values.add(node.value);
         }
-        
+
         assertEquals(Arrays.asList("a", "b", "c"), values);
     }
 
@@ -415,10 +414,10 @@ class LinkedDequeTest {
     void testIteratorRemoveUnsupported() {
         TestNode node = new TestNode("test");
         deque.addFirst(node);
-        
+
         Iterator<TestNode> it = deque.iterator();
         it.next();
-        
+
         assertThrows(UnsupportedOperationException.class, it::remove);
     }
 
@@ -427,17 +426,17 @@ class LinkedDequeTest {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
         TestNode c = new TestNode("c");
-        
+
         deque.addLast(a);
         deque.addLast(b);
         deque.addLast(c);
-        
+
         List<String> values = new ArrayList<>();
         Iterator<TestNode> it = deque.descendingIterator();
         while (it.hasNext()) {
             values.add(it.next().value);
         }
-        
+
         assertEquals(Arrays.asList("c", "b", "a"), values);
     }
 
@@ -451,7 +450,7 @@ class LinkedDequeTest {
     void testRemoveFirstOccurrence() {
         TestNode node = new TestNode("target");
         deque.addFirst(node);
-        
+
         assertTrue(deque.removeFirstOccurrence(node));
         assertTrue(deque.isEmpty());
     }
@@ -461,7 +460,7 @@ class LinkedDequeTest {
         TestNode node1 = new TestNode("in");
         TestNode node2 = new TestNode("out");
         deque.addFirst(node1);
-        
+
         assertFalse(deque.removeFirstOccurrence(node2));
     }
 
@@ -469,7 +468,7 @@ class LinkedDequeTest {
     void testRemoveLastOccurrence() {
         TestNode node = new TestNode("target");
         deque.addLast(node);
-        
+
         assertTrue(deque.removeLastOccurrence(node));
         assertTrue(deque.isEmpty());
     }
@@ -479,11 +478,11 @@ class LinkedDequeTest {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
         TestNode c = new TestNode("c");
-        
+
         deque.addLast(a);
         deque.addLast(b);
         deque.addLast(c);
-        
+
         assertTrue(deque.removeAll(Arrays.asList(a, c)));
         assertEquals(1, deque.size());
         assertSame(b, deque.peekFirst());
@@ -499,13 +498,13 @@ class LinkedDequeTest {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
         TestNode c = new TestNode("c");
-        
+
         deque.addLast(a);
         deque.addLast(b);
         deque.addLast(c);
-        
+
         deque.moveToFront(c);
-        
+
         assertSame(c, deque.peekFirst());
         assertSame(b, deque.peekLast());
     }
@@ -514,12 +513,12 @@ class LinkedDequeTest {
     void testMoveToFrontAlreadyFirst() {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
-        
+
         deque.addLast(a);
         deque.addLast(b);
-        
+
         deque.moveToFront(a);
-        
+
         assertSame(a, deque.peekFirst());
         assertSame(b, deque.peekLast());
     }
@@ -529,13 +528,13 @@ class LinkedDequeTest {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
         TestNode c = new TestNode("c");
-        
+
         deque.addLast(a);
         deque.addLast(b);
         deque.addLast(c);
-        
+
         deque.moveToBack(a);
-        
+
         assertSame(b, deque.peekFirst());
         assertSame(a, deque.peekLast());
     }
@@ -544,12 +543,12 @@ class LinkedDequeTest {
     void testMoveToBackAlreadyLast() {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
-        
+
         deque.addLast(a);
         deque.addLast(b);
-        
+
         deque.moveToBack(b);
-        
+
         assertSame(a, deque.peekFirst());
         assertSame(b, deque.peekLast());
     }
@@ -559,22 +558,22 @@ class LinkedDequeTest {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
         TestNode c = new TestNode("c");
-        
+
         deque.addLast(a);
         deque.addLast(b);
         deque.addLast(c);
-        
+
         assertEquals(3, deque.size());
-        
+
         deque.removeFirst();
         assertEquals(2, deque.size());
         assertSame(b, deque.peekFirst());
-        
+
         deque.removeLast();
         assertEquals(1, deque.size());
         assertSame(b, deque.peekFirst());
         assertSame(b, deque.peekLast());
-        
+
         deque.remove(b);
         assertTrue(deque.isEmpty());
     }
@@ -583,7 +582,7 @@ class LinkedDequeTest {
     void testAddFirstDuplicateThrows() {
         TestNode node = new TestNode("dup");
         deque.addFirst(node);
-        
+
         assertThrows(IllegalArgumentException.class, () -> deque.addFirst(node));
     }
 
@@ -591,7 +590,7 @@ class LinkedDequeTest {
     void testAddLastDuplicateThrows() {
         TestNode node = new TestNode("dup");
         deque.addLast(node);
-        
+
         assertThrows(IllegalArgumentException.class, () -> deque.addLast(node));
     }
 
@@ -599,7 +598,7 @@ class LinkedDequeTest {
     void testSingleElement() {
         TestNode single = new TestNode("single");
         deque.addFirst(single);
-        
+
         assertSame(single, deque.peekFirst());
         assertSame(single, deque.peekLast());
         assertSame(deque.removeFirst(), deque.peekFirst() == null ? single : null);
@@ -610,13 +609,13 @@ class LinkedDequeTest {
         TestNode a = new TestNode("a");
         TestNode b = new TestNode("b");
         TestNode c = new TestNode("c");
-        
+
         deque.addLast(a);
         deque.addLast(b);
         deque.addLast(c);
-        
+
         assertTrue(deque.remove(b));
-        
+
         assertEquals(2, deque.size());
         assertSame(a, deque.peekFirst());
         assertSame(c, deque.peekLast());

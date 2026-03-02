@@ -20,15 +20,17 @@ package groovy.util;
 
 import org.custommonkey.xmlunit.Diff;
 import org.custommonkey.xmlunit.XMLUnit;
-import org.junit.Assert;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Helper class for checking XML tests.
  */
 public class XmlAssert {
+
     public static void assertXmlEquals(String expected, String actual) throws Exception {
         XMLUnit.setIgnoreWhitespace(true);
-        Diff diff = new Diff(expected, actual);
-        Assert.assertTrue(diff.toString(), diff.similar());
+        var diff = new Diff(expected, actual);
+        assertTrue(diff.similar(), diff::toString);
     }
 }

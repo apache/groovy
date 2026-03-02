@@ -18,7 +18,10 @@
  */
 package org.codehaus.groovy.ast.builder
 
-import org.junit.Assert
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertNull
+import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assertions.fail
 
 /**
  * Some useful AST assertion methods.
@@ -44,35 +47,35 @@ class AstAssert {
             },
             CastExpression : { expected, actual ->
                 assertSyntaxTree([expected.expression], [actual.expression])
-                Assert.assertEquals("Wrong type", expected.type, actual.type)
+                assertEquals(expected.type, actual.type, "Wrong type")
             },
             ClosureExpression : { expected, actual ->
                 assertSyntaxTree([expected.parameters], [actual.parameters])
                 assertSyntaxTree([expected.code], [actual.code])
             },
             ConstantExpression : { expected, actual ->
-                Assert.assertEquals("Wrong constant", expected.value, actual.value)
+                assertEquals(expected.value, actual.value, "Wrong constant")
             },
             ArrayExpression : { expected, actual ->
-                Assert.assertEquals("Wrong array type", expected.elementType, actual.elementType)
-                Assert.assertEquals("Wrong # ast nodes", expected.expressions.size(), actual.expressions.size())
+                assertEquals(expected.elementType, actual.elementType, "Wrong array type")
+                assertEquals(expected.expressions.size(), actual.expressions.size(), "Wrong node count")
                 expected.expressions.eachWithIndex { element, index ->
                     assertSyntaxTree([element], [actual.expressions[index]])
                 }
             },
             ListExpression : { expected, actual ->
-                Assert.assertEquals("Wrong # ast nodes", expected.expressions.size(), actual.expressions.size())
+                assertEquals(expected.expressions.size(), actual.expressions.size(), "Wrong node count")
                 expected.expressions.eachWithIndex { element, index ->
                     assertSyntaxTree([element], [actual.expressions[index]])
                 }
             },
             DeclarationExpression : { expected, actual ->
-                Assert.assertEquals("Wrong token", expected.operation.text, actual.operation.text)
+                assertEquals(expected.operation.text, actual.operation.text, "Wrong token")
                 assertSyntaxTree([expected.leftExpression], [actual.leftExpression])
                 assertSyntaxTree([expected.rightExpression], [actual.rightExpression])
             },
             VariableExpression : { expected, actual ->
-                Assert.assertEquals("Wrong variable", expected.variable, actual.variable)
+                assertEquals(expected.variable, actual.variable, "Wrong variable")
             },
             ReturnStatement : { expected, actual ->
                 assertSyntaxTree([expected.expression], [actual.expression])
@@ -91,19 +94,19 @@ class AstAssert {
             AnnotationNode : { expected, actual ->
                 assertSyntaxTree([expected.classNode], [actual.classNode])
                 //    Map<String, Expression>
-                Assert.assertEquals("Wrong keyset", expected.members.keySet(), actual.members.keySet())
+                assertEquals(expected.members.keySet(), actual.members.keySet(), "Wrong keyset")
 
-                Assert.assertEquals("Wrong # members", expected.members.size(), actual.members.size())
+                assertEquals(expected.members.size(), actual.members.size(), "Wrong member count")
                 expected.members.each { key, value ->
-                    Assert.assertTrue("Missing key $key", actual.members.containsKey(key))
+                    assertTrue(actual.members.containsKey(key), "Missing key $key")
                     assertSyntaxTree([expected.members[key]], [actual.members[key]])
                 }
             },
             ClassNode : { expected, actual ->
                 if (expected.superClass) {
-                    Assert.assertEquals("Wrong superClass type", expected.superClass.getName(), actual.superClass.getName())
+                    assertEquals(expected.superClass.getName(), actual.superClass.getName(), "Wrong superClass type")
                 } else {
-                    Assert.assertEquals("Wrong class type", expected.class.getName(), actual.class.getName())
+                    assertEquals(expected.class.getName(), actual.class.getName(), "Wrong class type")
                 }
                 assertSyntaxTree([expected.mixins], [actual.mixins])
 
@@ -125,14 +128,14 @@ class AstAssert {
                 assertSyntaxTree([expected.operation], [actual.operation])
             },
             Token : { expected, actual ->
-                Assert.assertEquals("Wrong token type", expected.type, actual.type)
-                Assert.assertEquals("Wrong token text", expected.text, actual.text)
+                assertEquals(expected.type, actual.type, "Wrong token type")
+                assertEquals(expected.text, actual.text, "Wrong token text")
             },
             Parameter : { expected, actual ->
                 assertSyntaxTree([expected.type], [actual.type])
                 assertSyntaxTree([expected.defaultValue], [actual.defaultValue])
-                Assert.assertEquals("Wrong parameter name", expected.name, actual.name)
-                Assert.assertEquals("Wrong 'hasDefaultValue'", expected.hasDefaultValue, actual.hasDefaultValue)
+                assertEquals(expected.name, actual.name, "Wrong parameter name")
+                assertEquals(expected.hasDefaultValue, actual.hasDefaultValue, "Wrong 'hasDefaultValue'")
             },
             ConstructorCallExpression : { expected, actual ->
                 assertSyntaxTree([expected.arguments], [actual.arguments])
@@ -165,8 +168,8 @@ class AstAssert {
                 assertSyntaxTree([expected.field], [actual.field])
             },
             FieldNode : { expected, actual ->
-                Assert.assertEquals("Wrong name", expected.name, actual.name)
-                Assert.assertEquals("Wrong modifiers", expected.modifiers, actual.modifiers)
+                assertEquals(expected.name, actual.name, "Wrong name")
+                assertEquals(expected.modifiers, actual.modifiers, "Wrong modifiers")
                 assertSyntaxTree([expected.type], [actual.type])
                 assertSyntaxTree([expected.owner], [actual.owner])
                 assertSyntaxTree([expected.initialValueExpression], [actual.initialValueExpression])
@@ -179,7 +182,7 @@ class AstAssert {
                 assertSyntaxTree([expected.valueExpression], [actual.valueExpression])
             },
             GStringExpression : { expected, actual ->
-                Assert.assertEquals("Wrong text", expected.verbatimText, actual.verbatimText)
+                assertEquals(expected.verbatimText, actual.verbatimText, "Wrong text")
                 assertSyntaxTree(expected.strings, actual.strings)
                 assertSyntaxTree(expected.values, actual.values)
             },
@@ -190,7 +193,7 @@ class AstAssert {
             RangeExpression : { expected, actual ->
                 assertSyntaxTree([expected.from], [actual.from])
                 assertSyntaxTree([expected.to], [actual.to])
-                Assert.assertEquals("Wrong inclusive", expected.inclusive, actual.inclusive)
+                assertEquals(expected.inclusive, actual.inclusive, "Wrong inclusive")
             },
             PropertyExpression : { expected, actual ->
                 assertSyntaxTree([expected.objectExpression], [actual.objectExpression])
@@ -209,7 +212,7 @@ class AstAssert {
                 // always successful
             },
             BreakStatement : { expected, actual ->
-                Assert.assertEquals("Wrong label", expected.label, actual.label)
+                assertEquals(expected.label, actual.label, "Wrong label")
             },
             AssertStatement : { expected, actual ->
                 assertSyntaxTree([expected.booleanExpression], [actual.booleanExpression])
@@ -232,7 +235,7 @@ class AstAssert {
                 assertSyntaxTree([expected.expression], [actual.expression])
             },
             StaticMethodCallExpression : { expected, actual ->
-                Assert.assertEquals("Wrong method", expected.method, actual.method)
+                assertEquals(expected.method, actual.method, "Wrong method")
                 assertSyntaxTree([expected.ownerType], [actual.ownerType])
                 assertSyntaxTree([expected.arguments], [actual.arguments])
             },
@@ -256,7 +259,7 @@ class AstAssert {
                 assertSyntaxTree([expected.loopBlock], [actual.loopBlock])
             },
             ContinueStatement : { expected, actual ->
-                Assert.assertEquals("Wrong label", expected.label, actual.label)
+                assertEquals(expected.label, actual.label, "Wrong label")
             },
             TernaryExpression : { expected, actual ->
                 assertSyntaxTree([expected.booleanExpression], [actual.booleanExpression])
@@ -269,16 +272,16 @@ class AstAssert {
                 assertSyntaxTree([expected.falseExpression], [actual.falseExpression])
             },
             PropertyNode : { expected, actual ->
-                Assert.assertEquals("Wrong name", expected.name, actual.name)
-                Assert.assertEquals("Wrong modifiers", expected.modifiers, actual.modifiers)
+                assertEquals(expected.name, actual.name, "Wrong name")
+                assertEquals(expected.modifiers, actual.modifiers, "Wrong modifiers")
                 assertSyntaxTree(expected.annotations, actual.annotations)
                 assertSyntaxTree([expected.field], [actual.field])
                 assertSyntaxTree([expected.getterBlock], [actual.getterBlock])
                 assertSyntaxTree([expected.setterBlock], [actual.setterBlock])
             },
             NullObject : { expected, actual ->
-                Assert.assertNull(expected)
-                Assert.assertNull(actual)
+                assertNull(expected)
+                assertNull(actual)
             },
             MethodNode : { expected, actual ->
                 assertSyntaxTree(expected.annotations, actual.annotations)
@@ -287,8 +290,8 @@ class AstAssert {
                 assertSyntaxTree(expected.parameters, actual.parameters)
                 assertSyntaxTree(expected.exceptions, actual.exceptions)
 
-                Assert.assertEquals("Wrong name", expected.name, actual.name)
-                Assert.assertEquals("Wrong modifiers", expected.modifiers, actual.modifiers)
+                assertEquals(expected.name, actual.name, "Wrong name")
+                assertEquals(expected.modifiers, actual.modifiers, "Wrong modifiers")
             },
             ConstructorNode : { expected, actual ->
                 assertSyntaxTree(expected.annotations, actual.annotations)
@@ -297,13 +300,13 @@ class AstAssert {
                 assertSyntaxTree(expected.parameters, actual.parameters)
                 assertSyntaxTree(expected.exceptions, actual.exceptions)
 
-                Assert.assertEquals("Wrong name", expected.name, actual.name)
-                Assert.assertEquals("Wrong modifiers", expected.modifiers, actual.modifiers)
+                assertEquals(expected.name, actual.name, "Wrong name")
+                assertEquals(expected.modifiers, actual.modifiers, "Wrong modifiers")
             },
             ImportNode : { expected, actual ->
                 assertSyntaxTree(expected.annotations, actual.annotations)
                 assertSyntaxTree([expected.type], [actual.type])
-                Assert.assertEquals("Wrong alias", expected.alias, actual.alias)
+                assertEquals(expected.alias, actual.alias, "Wrong alias")
             },
             RegexExpression : { expected, actual ->
                 assertSyntaxTree([expected.type], [actual.type])
@@ -321,8 +324,8 @@ class AstAssert {
                 assertSyntaxTree([expected.type], [actual.type])
                 assertSyntaxTree([expected.lowerBound], [actual.lowerBound])
                 assertSyntaxTree(expected.upperBounds, actual.upperBounds)
-                Assert.assertEquals("Wrong wildcard", expected.name, actual.name)
-                Assert.assertEquals("Wrong wildcard", expected.wildcard, actual.wildcard)
+                assertEquals(expected.name, actual.name, "Wrong wildcard")
+                assertEquals(expected.wildcard, actual.wildcard, "Wrong wildcard")
             },
             NamedArgumentListExpression : { expected, actual ->
                 assertSyntaxTree(expected.mapEntryExpressions, actual.mapEntryExpressions)
@@ -335,8 +338,8 @@ class AstAssert {
                 assertSyntaxTree(expected.annotations, actual.annotations)
                 assertSyntaxTree(expected.genericsTypes, actual.genericsTypes)
 
-                Assert.assertEquals("Wrong name", expected.name, actual.name)
-                Assert.assertEquals("Wrong modifiers", expected.modifiers, actual.modifiers)
+                assertEquals(expected.name, actual.name, "Wrong name")
+                assertEquals(expected.modifiers, actual.modifiers, "Wrong modifiers")
             },
             InnerClassNode : { expected, actual ->
                 assertSyntaxTree([expected.outerClass], [actual.outerClass])
@@ -347,8 +350,8 @@ class AstAssert {
                 assertSyntaxTree(expected.annotations, actual.annotations)
                 assertSyntaxTree(expected.genericsTypes, actual.genericsTypes)
 
-                Assert.assertEquals("Wrong name", expected.name, actual.name)
-                Assert.assertEquals("Wrong modifiers", expected.modifiers, actual.modifiers)
+                assertEquals(expected.name, actual.name, "Wrong name")
+                assertEquals(expected.modifiers, actual.modifiers, "Wrong modifiers")
             },
     ]
 
@@ -363,13 +366,13 @@ class AstAssert {
         if (expected == null && actual == null) return
 
         if (actual == null || expected == null || expected.size() != actual?.size()) {
-            Assert.fail("AST comparison failure. \nExpected $expected \nReceived $actual")
+            fail("AST comparison failure. \nExpected $expected \nReceived $actual")
         }
         expected.eachWithIndex { item, index ->
             if (item.getClass().isArray() && actual[index].getClass().isArray()) {
                 assertSyntaxTree(item, actual[index])
             } else {
-                Assert.assertEquals("Wrong type in AST Node", item.getClass(), actual[index].getClass())
+                assertEquals(item.getClass(), actual[index].getClass(), "Wrong type in AST Node")
 
                 Class itemType = item.getClass()
                 if (itemType.isAnonymousClass()) {
@@ -379,10 +382,9 @@ class AstAssert {
                     Closure assertion = ASSERTION_MAP.get(itemType.getSimpleName())
                     assertion(item, actual[index])
                 } else {
-                    Assert.fail("Unexpected type: ${itemType} Update the unit test!")
+                    fail("Unexpected type: ${itemType} Update the unit test!")
                 }
             }
         }
     }
-
 }

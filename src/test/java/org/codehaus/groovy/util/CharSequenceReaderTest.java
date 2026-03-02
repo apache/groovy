@@ -20,7 +20,10 @@ package org.codehaus.groovy.util;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link CharSequenceReader}.
@@ -29,99 +32,109 @@ class CharSequenceReaderTest {
 
     @Test
     void testReadSingleCharacter() {
-        CharSequenceReader reader = new CharSequenceReader("abc");
-        assertEquals('a', reader.read());
-        assertEquals('b', reader.read());
-        assertEquals('c', reader.read());
-        assertEquals(-1, reader.read());
+        try (var reader = new CharSequenceReader("abc")) {
+            assertEquals('a', reader.read());
+            assertEquals('b', reader.read());
+            assertEquals('c', reader.read());
+            assertEquals(-1, reader.read());
+        }
     }
 
     @Test
     void testReadIntoArray() {
-        CharSequenceReader reader = new CharSequenceReader("hello world");
-        char[] buffer = new char[5];
-        int count = reader.read(buffer, 0, 5);
-        assertEquals(5, count);
-        assertArrayEquals("hello".toCharArray(), buffer);
+        try (var reader = new CharSequenceReader("hello world")) {
+            char[] buffer = new char[5];
+            int count = reader.read(buffer, 0, 5);
+            assertEquals(5, count);
+            assertArrayEquals("hello".toCharArray(), buffer);
+        }
     }
 
     @Test
     void testReadIntoArrayWithOffset() {
-        CharSequenceReader reader = new CharSequenceReader("test");
-        char[] buffer = new char[10];
-        buffer[0] = 'x';
-        buffer[1] = 'y';
-        int count = reader.read(buffer, 2, 4);
-        assertEquals(4, count);
-        assertEquals('x', buffer[0]);
-        assertEquals('y', buffer[1]);
-        assertEquals('t', buffer[2]);
-        assertEquals('e', buffer[3]);
-        assertEquals('s', buffer[4]);
-        assertEquals('t', buffer[5]);
+        try (var reader = new CharSequenceReader("test")) {
+            char[] buffer = new char[10];
+            buffer[0] = 'x';
+            buffer[1] = 'y';
+            int count = reader.read(buffer, 2, 4);
+            assertEquals(4, count);
+            assertEquals('x', buffer[0]);
+            assertEquals('y', buffer[1]);
+            assertEquals('t', buffer[2]);
+            assertEquals('e', buffer[3]);
+            assertEquals('s', buffer[4]);
+            assertEquals('t', buffer[5]);
+        }
     }
 
     @Test
     void testReadBeyondEnd() {
-        CharSequenceReader reader = new CharSequenceReader("ab");
-        char[] buffer = new char[5];
-        int count = reader.read(buffer, 0, 5);
-        assertEquals(2, count);
-        assertEquals('a', buffer[0]);
-        assertEquals('b', buffer[1]);
+        try (var reader = new CharSequenceReader("ab")) {
+            char[] buffer = new char[5];
+            int count = reader.read(buffer, 0, 5);
+            assertEquals(2, count);
+            assertEquals('a', buffer[0]);
+            assertEquals('b', buffer[1]);
 
-        count = reader.read(buffer, 0, 5);
-        assertEquals(-1, count);
+            count = reader.read(buffer, 0, 5);
+            assertEquals(-1, count);
+        }
     }
 
     @Test
     void testMarkAndReset() {
-        CharSequenceReader reader = new CharSequenceReader("abcdef");
-        assertEquals('a', reader.read());
-        assertEquals('b', reader.read());
-        reader.mark(100);
-        assertEquals('c', reader.read());
-        assertEquals('d', reader.read());
-        reader.reset();
-        assertEquals('c', reader.read());
-        assertEquals('d', reader.read());
+        try (var reader = new CharSequenceReader("abcdef")) {
+            assertEquals('a', reader.read());
+            assertEquals('b', reader.read());
+            reader.mark(100);
+            assertEquals('c', reader.read());
+            assertEquals('d', reader.read());
+            reader.reset();
+            assertEquals('c', reader.read());
+            assertEquals('d', reader.read());
+        }
     }
 
     @Test
     void testMarkSupported() {
-        CharSequenceReader reader = new CharSequenceReader("test");
-        assertTrue(reader.markSupported());
+        try (var reader = new CharSequenceReader("test")) {
+            assertTrue(reader.markSupported());
+        }
     }
 
     @Test
     void testSkip() {
-        CharSequenceReader reader = new CharSequenceReader("abcdefgh");
-        assertEquals('a', reader.read());
-        long skipped = reader.skip(3);
-        assertEquals(3, skipped);
-        assertEquals('e', reader.read());
+        try (var reader = new CharSequenceReader("abcdefgh")) {
+            assertEquals('a', reader.read());
+            long skipped = reader.skip(3);
+            assertEquals(3, skipped);
+            assertEquals('e', reader.read());
+        }
     }
 
     @Test
     void testSkipBeyondEnd() {
-        CharSequenceReader reader = new CharSequenceReader("abc");
-        long skipped = reader.skip(10);
-        assertEquals(3, skipped);
-        assertEquals(-1, reader.read());
+        try (var reader = new CharSequenceReader("abc")) {
+            long skipped = reader.skip(10);
+            assertEquals(3, skipped);
+            assertEquals(-1, reader.read());
+        }
     }
 
     @Test
     void testSkipNegativeThrows() {
-        CharSequenceReader reader = new CharSequenceReader("test");
-        assertThrows(IllegalArgumentException.class, () -> reader.skip(-1));
+        try (var reader = new CharSequenceReader("test")) {
+            assertThrows(IllegalArgumentException.class, () -> reader.skip(-1));
+        }
     }
 
     @Test
     void testSkipAtEnd() {
-        CharSequenceReader reader = new CharSequenceReader("a");
-        reader.read();
-        long skipped = reader.skip(5);
-        assertEquals(-1, skipped);
+        try (var reader = new CharSequenceReader("a")) {
+            reader.read();
+            long skipped = reader.skip(5);
+            assertEquals(-1, skipped);
+        }
     }
 
     @Test
@@ -138,52 +151,59 @@ class CharSequenceReaderTest {
     @Test
     void testToString() {
         String input = "hello world";
-        CharSequenceReader reader = new CharSequenceReader(input);
-        assertEquals(input, reader.toString());
+        try (var reader = new CharSequenceReader(input)) {
+            assertEquals(input, reader.toString());
+        }
     }
 
     @Test
     void testNullInput() {
-        CharSequenceReader reader = new CharSequenceReader(null);
-        assertEquals(-1, reader.read());
-        assertEquals("", reader.toString());
+        try (var reader = new CharSequenceReader(null)) {
+            assertEquals(-1, reader.read());
+            assertEquals("", reader.toString());
+        }
     }
 
     @Test
     void testEmptyInput() {
-        CharSequenceReader reader = new CharSequenceReader("");
-        assertEquals(-1, reader.read());
+        try (var reader = new CharSequenceReader("")) {
+            assertEquals(-1, reader.read());
+        }
     }
 
     @Test
     void testReadArrayWithNullThrows() {
-        CharSequenceReader reader = new CharSequenceReader("test");
-        assertThrows(NullPointerException.class, () -> reader.read(null, 0, 1));
+        try (var reader = new CharSequenceReader("test")) {
+            assertThrows(NullPointerException.class, () -> reader.read(null, 0, 1));
+        }
     }
 
     @Test
     void testReadArrayWithInvalidBoundsThrows() {
-        CharSequenceReader reader = new CharSequenceReader("test");
-        char[] buffer = new char[5];
-        assertThrows(IndexOutOfBoundsException.class, () -> reader.read(buffer, -1, 1));
-        assertThrows(IndexOutOfBoundsException.class, () -> reader.read(buffer, 0, -1));
-        assertThrows(IndexOutOfBoundsException.class, () -> reader.read(buffer, 3, 5));
+        try (var reader = new CharSequenceReader("test")) {
+            char[] buffer = new char[5];
+            assertThrows(IndexOutOfBoundsException.class, () -> reader.read(buffer, -1, 1));
+            assertThrows(IndexOutOfBoundsException.class, () -> reader.read(buffer, 0, -1));
+            assertThrows(IndexOutOfBoundsException.class, () -> reader.read(buffer, 3, 5));
+        }
     }
 
     @Test
     void testStringBuilder() {
         StringBuilder sb = new StringBuilder("StringBuilder content");
-        CharSequenceReader reader = new CharSequenceReader(sb);
-        char[] buffer = new char[13];
-        reader.read(buffer, 0, 13);
-        assertEquals("StringBuilder", new String(buffer));
+        try (var reader = new CharSequenceReader(sb)) {
+            char[] buffer = new char[13];
+            reader.read(buffer, 0, 13);
+            assertEquals("StringBuilder", new String(buffer));
+        }
     }
 
     @Test
     void testZeroLengthRead() {
-        CharSequenceReader reader = new CharSequenceReader("test");
-        char[] buffer = new char[5];
-        int count = reader.read(buffer, 0, 0);
-        assertEquals(0, count);
+        try (var reader = new CharSequenceReader("test")) {
+            char[] buffer = new char[5];
+            int count = reader.read(buffer, 0, 0);
+            assertEquals(0, count);
+        }
     }
 }

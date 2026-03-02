@@ -20,8 +20,9 @@ package groovy.util
 
 import java.lang.reflect.Constructor
 
-public abstract class HeadlessTestSupport {
-    private static boolean headless;
+abstract class HeadlessTestSupport {
+
+    private static boolean headless
 
     /**
      * A boolean indicating if we are running in headless mode.
@@ -30,8 +31,8 @@ public abstract class HeadlessTestSupport {
      *
      * @return true if running in headless mode
      */
-    public static boolean isHeadless() {
-        return headless
+    static boolean isHeadless() {
+        headless
     }
 
     /**
@@ -39,20 +40,19 @@ public abstract class HeadlessTestSupport {
      *
      * @return true if running in headless mode
      */
-    public static boolean getHeadless() {
-        return isHeadless()
+    static boolean getHeadless() {
+        isHeadless()
     }
 
     static {
         try {
-            final Class jframe = Class.forName("javax.swing.JFrame")
-            final Constructor constructor = jframe.getConstructor([String] as Class[])
-            constructor.newInstance(["testing"] as String[])
+            Class jframe = Class.forName('javax.swing.JFrame')
+            Constructor constructor = jframe.getConstructor([String] as Class[])
+            constructor.newInstance(['testing'] as String[])
             headless = false
         } catch (Throwable t) {
             // any exception means headless
             headless = true
         }
     }
-
 }

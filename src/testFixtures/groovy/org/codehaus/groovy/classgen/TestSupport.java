@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.junit.Ignore;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.BeanInfo;
@@ -49,14 +48,13 @@ import java.security.PrivilegedAction;
 /**
  * Base class for test cases
  */
-@Ignore("base class for tests")
-public class TestSupport extends GroovyTestCase implements Opcodes {
+public abstract class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected static boolean DUMP_CLASS = false;
 
     final ClassLoader parentLoader = getClass().getClassLoader();
-    protected final GroovyClassLoader loader =
-            createClassLoader();
+
+    protected final GroovyClassLoader loader = createClassLoader();
 
     @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private GroovyClassLoader createClassLoader() {
@@ -66,6 +64,7 @@ public class TestSupport extends GroovyTestCase implements Opcodes {
     }
 
     final CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
+
     final ModuleNode module = new ModuleNode(unit);
 
     protected Class loadClass(ClassNode classNode) {
