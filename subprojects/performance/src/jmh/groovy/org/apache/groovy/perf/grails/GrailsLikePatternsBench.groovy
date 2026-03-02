@@ -18,8 +18,6 @@
  */
 package org.apache.groovy.perf.grails
 
-import groovy.lang.GroovySystem
-
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.infra.Blackhole
 
@@ -182,6 +180,10 @@ class GrailsLikePatternsBench {
     static class MarkupContext {
         StringBuilder buffer = new StringBuilder()
         int depth = 0
+
+        void tag(String name, Closure body) {
+            tag(name, [:], body)
+        }
 
         void tag(String name, Map attrs = [:], Closure body = null) {
             buffer.append('  ' * depth).append("<$name")
