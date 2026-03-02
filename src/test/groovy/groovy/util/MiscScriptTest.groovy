@@ -19,17 +19,20 @@
 package groovy.util
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
 /**
  * Miscellaneous tests for {@link groovy.lang.Script}.
  */
-public class MiscScriptTest extends CompilableTestSupport {
+final class MiscScriptTest extends CompilableTestSupport {
 
-    public void testEmptyScript() throws Exception {
-        assertScript("");
+    @Test
+    void testEmptyScript() {
+        assertScript("")
     }
 
     // GROOVY-6589
+    @Test
     void testShouldFailCompilation() {
         shouldNotCompile '''
             def run() {}

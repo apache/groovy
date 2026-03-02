@@ -19,20 +19,25 @@
 package gls.scope
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class NameResolvingTest extends CompilableTestSupport {
+final class NameResolvingTest extends CompilableTestSupport {
+
+    @Test
     void testVariableNameEqualsToAClassName() {
         Object String = ""
         assert String == ""
         assert String.class == java.lang.String
     }
 
+    @Test
     void testVariableNameEqualsCurrentClassName() {
         Object NameResolvingTest = ""
         assert NameResolvingTest == ""
         assert NameResolvingTest.class == java.lang.String.class
     }
 
+    @Test
     void testClassNoVariableInStaticMethod() {
         assertScript """
             static def foo() {
@@ -42,6 +47,7 @@ class NameResolvingTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testInAsDefAllowedInPackageNames() {
         shouldCompile """
             package as.in.def
@@ -49,12 +55,14 @@ class NameResolvingTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testAssignmentToNonLocalVariableWithSameNameAsClass() {
         shouldNotCompile """
             String = 1
         """
     }
 
+    @Test
     void testClassUsageInSuper() {
         shouldCompile """
             class A {A(x){}}
@@ -64,6 +72,7 @@ class NameResolvingTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testSuperClassVariableAccess() {
         assertScript """
             class U {

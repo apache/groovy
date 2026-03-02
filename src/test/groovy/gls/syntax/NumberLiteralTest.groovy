@@ -19,9 +19,11 @@
 package gls.syntax
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class NumberLiteralTest extends CompilableTestSupport {
+final class NumberLiteralTest extends CompilableTestSupport {
 
+    @Test
     void testLargeNumbersOverflowing() {
         shouldCompile '''
             int a = 0x80000000
@@ -34,6 +36,7 @@ class NumberLiteralTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testValidIntegerLiterals() {
         shouldCompile '''
              def a = 2147483647I
@@ -42,6 +45,7 @@ class NumberLiteralTest extends CompilableTestSupport {
          '''
     }
 
+    @Test
     void testValidLongLiterals() {
         shouldCompile '''
              def d = 9223372036854775807L
@@ -50,16 +54,17 @@ class NumberLiteralTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInvalidIntegerLiteral() {
         shouldNotCompile '''
             def n = 2147483648I
         '''
     }
 
+    @Test
     void testInvalidLongLiteral() {
         shouldNotCompile '''
             def n = 9223372036854775808L
         '''
     }
-
 }

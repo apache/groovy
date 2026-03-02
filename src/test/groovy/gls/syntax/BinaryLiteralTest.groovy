@@ -19,9 +19,11 @@
 package gls.syntax
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class BinaryLiteralTest extends CompilableTestSupport {
+final class BinaryLiteralTest extends CompilableTestSupport {
 
+    @Test
     void testSomeBinaryLiteralNumbers() {
         assertScript '''
             assert  0b0   ==  0
@@ -41,8 +43,6 @@ class BinaryLiteralTest extends CompilableTestSupport {
 
             int anInt = (int)0b1010000101000101
             assert anInt == 41285
-
         '''
     }
-
 }

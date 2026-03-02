@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy3596Bug extends CompilableTestSupport {
+final class Groovy3596Bug extends CompilableTestSupport {
+
+    @Test
     void testMapReferenceWithGenericsTypeParameters() {
         shouldCompile """
             interface TypeDescriptor3596 {}

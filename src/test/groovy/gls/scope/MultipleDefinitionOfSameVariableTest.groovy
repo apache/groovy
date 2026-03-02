@@ -19,9 +19,11 @@
 package gls.scope
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
+final class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
 
+    @Test
     void testInSameBlock() {
         shouldNotCompile '''
             def foo = 1
@@ -38,6 +40,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInSubBlocks() {
         shouldNotCompile '''
              def foo = 1
@@ -60,6 +63,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInNestedClosure() {
         shouldNotCompile '''
             def foo = 1
@@ -73,6 +77,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testBindingHiding() {
         assertScript '''
             foo = 1
@@ -83,6 +88,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testBindingAccessInMethod() {
         assertScript '''
             def methodUsingBinding() {
@@ -98,6 +104,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testMultipleOfSameName() {
         shouldNotCompile '''
             class DoubleField {
@@ -107,6 +114,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testPropertyField() {
         shouldCompile '''
             class A {
@@ -116,6 +124,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testPropertyFieldBothInit() {
         shouldNotCompile '''
             class A {
@@ -125,6 +134,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testFieldProperty() {
         shouldCompile '''
             class A {
@@ -134,6 +144,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testFieldPropertyBothInit() {
         shouldNotCompile '''
             class A {
@@ -143,6 +154,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testFieldPropertyProperty() {
         shouldNotCompile '''
             class A {
@@ -153,6 +165,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testPropertyFieldField() {
         shouldNotCompile '''
             class A {
@@ -163,6 +176,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testFieldAndPropertyWithInit() {
         assertScript '''
             class X {
@@ -178,6 +192,7 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testPropertyAndFieldWithInit() {
         assertScript '''
             class Y {
@@ -192,5 +207,4 @@ class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport {
             assert result == [5, 6]
         '''
     }
-
 }

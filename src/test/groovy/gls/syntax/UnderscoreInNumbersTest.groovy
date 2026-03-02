@@ -19,13 +19,15 @@
 package gls.syntax
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
 /**
  * Most of the below examples were taken from the Project Coin proposal here:
  * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
  */
-class UnderscoreInNumbersTest extends CompilableTestSupport {
+final class UnderscoreInNumbersTest extends CompilableTestSupport {
 
+    @Test
     void testUnderscore() {
         assertScript '''
             assert 1_2_3_4_5 == 12345
@@ -35,6 +37,7 @@ class UnderscoreInNumbersTest extends CompilableTestSupport {
     /**
      * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
      */
+    @Test
     void testExamplesShouldCompileFromProposal() {
         shouldCompile '''
             long creditCardNumber = 1234_5678_9012_3456L
@@ -55,6 +58,7 @@ class UnderscoreInNumbersTest extends CompilableTestSupport {
     /**
      * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
      */
+    @Test
     void testExampleFromProposalWithBinaryLiterals() {
         shouldCompile '''
             byte nybbles = 0b0010_0101
@@ -67,6 +71,7 @@ class UnderscoreInNumbersTest extends CompilableTestSupport {
      * Underscore must be placed between digits
      * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
      */
+    @Test
     void testPositionOfUnderscoresAndWhatsValidOrInvalid() {
         shouldCompile '''
             int x1 = _52;  // This is an identifier, not a numeric literal.
@@ -92,6 +97,7 @@ class UnderscoreInNumbersTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInvalidPlacementOfUnderscore() {
         shouldNotCompile ''' def i = 10101_ '''
         shouldNotCompile ''' def d = 10101_.0 '''

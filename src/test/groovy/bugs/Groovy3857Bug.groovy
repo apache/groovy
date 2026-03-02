@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy3857Bug extends CompilableTestSupport {
+final class Groovy3857Bug extends CompilableTestSupport {
+
+    @Test
     void testInterfaceDefWithGenericsFollowedByANewLine() {
         shouldCompile """
             public interface MyMy <T extends Object>

@@ -19,8 +19,12 @@
 package gls.syntax
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class ParsingTest extends CompilableTestSupport {
+final class ParsingTest extends CompilableTestSupport {
+
+    // GROOVY-2605
+    @Test
     void testExpressionParsingWithCastingInFrontOfAClosure() {
         int[] numbers = new int[3]
 
@@ -55,6 +59,7 @@ class ParsingTest extends CompilableTestSupport {
         assert val4.class.componentType == short
     }
 
+    @Test
     void testCastPrecedence_Groovy4421_Groovy5185() {
         def i = (int)1/(int)2
         assert i.class==BigDecimal
@@ -71,6 +76,7 @@ class ParsingTest extends CompilableTestSupport {
         assert 4294967294L == (long)someInt + someInt
     }
 
+    @Test
     void testExpressionParsingWithCastInFrontOfAMap() {
         shouldCompile """
             def m = (Map)[a:{ "foo"; println 'bar' }]

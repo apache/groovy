@@ -18,9 +18,13 @@
  */
 import gls.CompilableTestSupport
 import org.codehaus.groovy.control.CompilationFailedException
+import org.junit.jupiter.api.Test
 
-class SyntaxTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.shouldFail
 
+final class SyntaxTest extends CompilableTestSupport {
+
+    @Test
     void testOctalLiteral() {
         // tag::octal_literal_example[]
         int xInt = 077
@@ -43,6 +47,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::octal_literal_example[]
     }
 
+    @Test
     void testHexadecimalLiteral() {
         // tag::hexadecimal_literal_example[]
         int xInt = 0x77
@@ -68,6 +73,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::hexadecimal_literal_example[]
     }
 
+    @Test
     void testBinaryLiteral() {
         // tag::binary_literal_example[]
         int xInt = 0b10101111
@@ -90,6 +96,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::binary_literal_example[]
     }
 
+    @Test
     void testUnderscoreInNumber() {
         // tag::underscore_in_number_example[]
         long creditCardNumber = 1234_5678_9012_3456L
@@ -103,6 +110,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::underscore_in_number_example[]
     }
 
+    @Test
     void testNumberTypeSuffixes() {
         // tag::number_type_suffixes_example[]
         assert 42I == Integer.valueOf('42')
@@ -122,6 +130,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::number_type_suffixes_example[]
     }
 
+    @Test
     void testVariableStoreBooleanValue() {
         shouldCompile '''
             @groovy.transform.Field boolean booleanField
@@ -136,6 +145,7 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testValidIdentifiers() {
         // tag::valid_identifiers[]
         def name
@@ -145,6 +155,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::valid_identifiers[]
     }
 
+    @Test
     void testInvalidIdentifiers() {
         shouldNotCompile '''
             // tag::invalid_identifiers[]
@@ -155,6 +166,7 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAllKeywordsAreValidIdentifiersFollowingADot() {
         shouldCompile '''
         def foo = [:]
@@ -200,6 +212,7 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testShebangCommentLine() {
         def script = '''\
             // tag::shebang_comment_line[]
@@ -211,6 +224,7 @@ class SyntaxTest extends CompilableTestSupport {
         shouldCompile script.stripIndent().split('\n')[1..2].join('\n')
     }
 
+    @Test
     void testSingleLineComment() {
         // tag::single_line_comment[]
         // a standalone single line comment
@@ -218,6 +232,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::single_line_comment[]
     }
 
+    @Test
     void testMultilineComment() {
         // tag::multiline_comment[]
         /* a standalone multiline comment
@@ -228,6 +243,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::multiline_comment[]
     }
 
+    @Test
     void testGroovyDocComment() {
         shouldCompile '''
             // tag::groovydoc_comment[]
@@ -252,6 +268,7 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testQuotedIdentifier() {
         // tag::quoted_id[]
         def map = [:]
@@ -280,6 +297,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::quoted_id_with_all_strings[]
     }
 
+    @Test
     void testStrings() {
         // tag::string_0[]
         // end::string_0[]
@@ -305,12 +323,14 @@ class SyntaxTest extends CompilableTestSupport {
         // end::string_5[]
     }
 
+    @Test
     void testStringConcatenationWithPlus() {
         // tag::string_plus[]
         assert 'ab' == 'a' + 'b'
         // end::string_plus[]
     }
 
+    @Test
     void testGString() {
         // tag::gstring_1[]
         def name = 'Guillaume' // a plain string
@@ -357,6 +377,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::gstring_6[]
     }
 
+    @Test
     void testCharacters() {
         // tag::char[]
         char c1 = 'A' // <1>
@@ -370,6 +391,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::char[]
     }
 
+    @Test
     void testInterpolatingClosuresInGstrings() {
         // tag::closure_in_gstring_1[]
         def sParameterLessClosure = "1 + 2 == ${-> 3}" // <1>
@@ -393,6 +415,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::closure_in_gstring_2[]
     }
 
+    @Test
     void testGStringCoercerdToStringInMethodCallExpectingString() {
         assertScript '''
         // tag::java_gstring_interop_1[]
@@ -411,6 +434,7 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStringGStringHashCode() {
         // tag::gstring_hashcode_1[]
         assert "one: ${1}".hashCode() != "one: 1".hashCode()
@@ -424,6 +448,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::gstring_hashcode_2[]
     }
 
+    @Test
     void testTripleSingleQuotedString() {
         // tag::triple_single_0[]
         '''a triple-single-quoted string'''
@@ -454,6 +479,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::triple_single_3[]
     }
 
+    @Test
     void testTripleDoubleQuotedString() {
         // tag::triple_double_1[]
         def name = 'Groovy'
@@ -471,6 +497,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::triple_double_1[]
     }
 
+    @Test
     void testSlashyString() {
         // tag::slashy_1[]
         def fooPattern = /.*foo.*/
@@ -504,6 +531,7 @@ class SyntaxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDollarSlashyString() {
         // tag::dollar_slashy_1[]
         def name = "Guillaume"
@@ -536,6 +564,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::dollar_slashy_1[]
     }
 
+    @Test
     void testIntegralNumberDeclarations() {
         // tag::int_decl[]
         // primitive types
@@ -557,6 +586,7 @@ class SyntaxTest extends CompilableTestSupport {
         assert bi instanceof BigInteger
     }
 
+    @Test
     void testDecimalNumberDeclarations() {
         // tag::float_decl[]
         // primitive types
@@ -580,6 +610,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::float_exp[]
     }
 
+    @Test
     void testWideningIntegralValueTypes() {
         // positive values
         // tag::wide_int_positive[]
@@ -626,6 +657,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::wide_int_negative[]
     }
 
+    @Test
     void testNumberPower() {
         // tag::number_power[]
         // base and exponent are ints and the result can be represented by an Integer
@@ -668,6 +700,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::number_power[]
     }
 
+    @Test
     void testLists() {
         // tag::list_1[]
         def numbers = [1, 2, 3]         // <1>
@@ -720,6 +753,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::multi_dim_list[]
     }
 
+    @Test
     void testArrays() {
         // tag::array_1[]
         String[] arrStr = ['Ananas', 'Banana', 'Kiwi']  // <1>
@@ -751,6 +785,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::array_3[]
     }
 
+    @Test
     void testMaps() {
         // tag::map_def_access[]
         def colors = [red: '#FF0000', green: '#00FF00', blue: '#0000FF']   // <1>
@@ -796,6 +831,7 @@ class SyntaxTest extends CompilableTestSupport {
         // end::variable_key_2[]
     }
 
+    @Test
     void testReservedKeywords() {
         def rk = '''
         // tag::reserved_keywords[]
@@ -883,6 +919,7 @@ class SyntaxTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testContextualKeywords() {
         def ck = '''
         // tag::contextual_keywords[]
@@ -926,6 +963,7 @@ class SyntaxTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testOtherReservedWords() {
         def rw = '''
         // tag::reserved_words[]
@@ -966,7 +1004,6 @@ class SyntaxTest extends CompilableTestSupport {
                     def $it = true
                 """
             }
-
         }
     }
 }

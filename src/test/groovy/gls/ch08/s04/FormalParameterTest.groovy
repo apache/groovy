@@ -19,6 +19,7 @@
 package gls.ch08.s04
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
 /**
  * a formal parameter is a parameter to a method, this parameter must work
@@ -26,8 +27,9 @@ import gls.CompilableTestSupport
  * is not possible for formal parameters. The type is given through the
  * method signature.
  */
-class FormalParameterTest extends CompilableTestSupport {
+final class FormalParameterTest extends CompilableTestSupport {
 
+    @Test
     void testPrimitiveParameterAssignment() {
         // test int and long as they have different lengths on in the bytecode
         assert intMethod(1i, 2i) == 2i
@@ -80,6 +82,7 @@ class FormalParameterTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testVariableArity() {
         def l1 = dump(22, 'Ken', 'Barclay')
         def l2 = ["name: Ken age: 22", "name: Barclay age: 22"]
@@ -87,5 +90,4 @@ class FormalParameterTest extends CompilableTestSupport {
             assert it == l2[i]
         }
     }
-
 }

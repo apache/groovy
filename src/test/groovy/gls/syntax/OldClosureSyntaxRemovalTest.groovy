@@ -19,11 +19,14 @@
 package gls.syntax
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class OldClosureSyntaxRemovalTest extends CompilableTestSupport {
+final class OldClosureSyntaxRemovalTest extends CompilableTestSupport {
+
     def a = 2
     def b = 3
 
+    @Test
     void testOneParameter() {
         def newClosure = { a -> a }
         def oldClosure = { a | b }
@@ -34,6 +37,7 @@ class OldClosureSyntaxRemovalTest extends CompilableTestSupport {
         assert oldClosure(1) == (a | b)
     }
 
+    @Test
     void testMultipleParameters() {
         shouldNotCompile """
             c = {a,b|a+b}

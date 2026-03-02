@@ -19,15 +19,18 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy4151Bug extends CompilableTestSupport {
+final class Groovy4151Bug extends CompilableTestSupport {
+
+    @Test
     void testPrintThisInGString() {
-        shouldCompile """
+        shouldCompile '''
             class C4151 {
                 class S4151 {
                     S4151() { println "$this" }
                 }
             }
-        """
+        '''
     }
 }

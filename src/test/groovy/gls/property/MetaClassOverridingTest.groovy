@@ -19,9 +19,11 @@
 package gls.property
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class MetaClassOverridingTest extends CompilableTestSupport {
+final class MetaClassOverridingTest extends CompilableTestSupport {
 
+    @Test
     void testOverridingMetaClassProperty() {
         shouldCompile """
             class A {
@@ -52,7 +54,6 @@ class MetaClassOverridingTest extends CompilableTestSupport {
             class A {
                  private MetaClass metaClass
             }
-        """        
+        """
     }
-
 }

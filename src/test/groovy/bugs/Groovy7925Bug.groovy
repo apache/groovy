@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7925Bug extends CompilableTestSupport {
+final class Groovy7925Bug extends CompilableTestSupport {
+
+    @Test
     void testThisAndSuperOnLHS() {
         def message = shouldNotCompile '''
             super += true

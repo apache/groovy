@@ -18,19 +18,21 @@
  */
 package gls.scope;
 
-import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class ClassVariableHidingTest extends CompilableTestSupport {
+final class ClassVariableHidingTest {
 
     def foo = 1;
     def bar = 2;
 
+    @Test
     void testFooHiding() {
         assert foo == 1
         def foo = 5
         assert foo == 5
     }
 
+    @Test
     void testBarHiding() {
         assert bar == 2
         def bar = 5

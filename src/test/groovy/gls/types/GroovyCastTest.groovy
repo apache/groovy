@@ -19,8 +19,11 @@
 package gls.types
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class GroovyCastTest extends CompilableTestSupport {
+final class GroovyCastTest extends CompilableTestSupport {
+
+    @Test
     void testSAMVariable() {
         assertScript """
             interface SAM { def foo(); }
@@ -32,6 +35,7 @@ class GroovyCastTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testSAMProperty() {
         assertScript """
             interface SAM { def foo(); }
@@ -43,6 +47,7 @@ class GroovyCastTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testSAMAttribute() {
         assertScript """
             interface SAM { def foo(); }
@@ -58,6 +63,7 @@ class GroovyCastTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testSAMType() {
         assertScript """
             interface Foo {int foo()}
@@ -104,6 +110,7 @@ class GroovyCastTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testClosureShouldNotBeCoercedToRunnable() {
         assertScript '''
 Class foo(Runnable r) {

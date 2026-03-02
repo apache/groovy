@@ -20,8 +20,11 @@
 package groovy.transform.stc
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7880Bug extends CompilableTestSupport {
+final class Groovy7880Bug extends CompilableTestSupport {
+
+    @Test
     void testDiamondUseShouldNotCauseNPE() {
         shouldCompile '''
             @groovy.transform.CompileStatic

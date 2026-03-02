@@ -19,9 +19,13 @@
 package gls.scope
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class BlockScopeVisibilityTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.shouldFail
 
+final class BlockScopeVisibilityTest extends CompilableTestSupport {
+
+    @Test
     void testForLoopVariableNotVisibleOutside() {
         assertScript """
             i=1
@@ -30,6 +34,7 @@ class BlockScopeVisibilityTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testCatchParameterNotVisibleInOtherCatch() {
         shouldFail(MissingPropertyException) {
             try {
@@ -43,18 +48,19 @@ class BlockScopeVisibilityTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testInnerClosureCanAccessImplicitItOfOuterClosure() {
-        def c = { {-> it}}
+        def c = { {->it} }
         assert c(1)() == 1
     }
 
+    @Test
     void testForLoopStatement() {
         // this example requires not to put the declaration
         // into a block !
         if (false)
         int number = 1
 
-        shouldFail{ number }
+        shouldFail { number }
     }
-
 }

@@ -19,31 +19,36 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
-class Groovy6792Bug extends CompilableTestSupport {
+final class Groovy6792Bug extends CompilableTestSupport {
+
+    @Test
     void testMethodWithSpecialCharsInName() {
-        assertScript """
+        assertScript '''
             class Foo {
                 static ",{}()|!?foo@#\\\$%^&*-=]\\\\bar'\\""(){ Foo.name }
             }
             assert Foo.",{}()|!?foo@#\\\$%^&*-=]\\\\bar'\\""() == 'Foo'
-        """
+        '''
     }
 
+    @Test
     void testMethodWithInvalidName() {
         // currently groovy.compiler.strictNames is experimental
         System.setProperty('groovy.compiler.strictNames', 'true')
-        def message = shouldNotCompile """
+
+        def message = shouldNotCompile '''
             class Foo {
                 def "bar.baz"(){}
             }
-        """
+        '''
         assert message.contains("You are not allowed to have '.' in a method name")
     }
 
-    @Override
-    protected void tearDown() throws Exception {
-        super.tearDown()
-        System.setProperty('groovy.compiler.strictNames', 'false')
+    @AfterEach
+    void tearDown() {
+        System.clearProperty('groovy.compiler.strictNames')
     }
 }

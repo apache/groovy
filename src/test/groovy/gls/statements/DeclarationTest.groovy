@@ -20,10 +20,13 @@ package gls.statements
 
 import gls.CompilableTestSupport
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+import org.junit.jupiter.api.Test
 
-class DeclarationTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.shouldFail
 
+final class DeclarationTest extends CompilableTestSupport {
 
+    @Test
     void testSingleDeclarationInParenthesis() {
         shouldNotCompile """
             (def a=1).method()
@@ -33,19 +36,21 @@ class DeclarationTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testNullAssignmentToPrimitive() {
-        shouldFail(GroovyCastException, """
+        shouldFail GroovyCastException, """
             int x = null
-        """)
+        """
         assertScript """
             Integer x = null
         """
     }
 
+    @Test
     void testNullAssignmentToPrimitiveForSharedVariable() {
-        shouldFail(GroovyCastException, """
+        shouldFail GroovyCastException, """
             int i = null
             def c = {i}
-        """)
+        """
     }
 }

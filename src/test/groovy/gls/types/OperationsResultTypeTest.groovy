@@ -19,9 +19,11 @@
 package gls.types
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class OperationsResultTypeTest extends CompilableTestSupport {
+final class OperationsResultTypeTest extends CompilableTestSupport {
 
+    @Test
     void testDeclaredTypeIsKept() {
         assertScript """
             def list = [10,20,30]
@@ -35,6 +37,7 @@ class OperationsResultTypeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclaredTypeIsKeptForSharedVariable() {
         assertScript '''
             float myFloat = 40f

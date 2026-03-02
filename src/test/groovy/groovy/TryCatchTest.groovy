@@ -19,12 +19,15 @@
 package groovy
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class TryCatchTest extends CompilableTestSupport {
+final class TryCatchTest extends CompilableTestSupport {
 
     def exceptionCalled
     def finallyCalled
 
+    @Test
     void testTryCatch() {
         try {
             failingMethod()
@@ -40,6 +43,7 @@ class TryCatchTest extends CompilableTestSupport {
         assert finallyCalled, "should have invoked the finally clause"
     }
 
+    @Test
     void testStandaloneTryBlockShouldNotCompile() {
         shouldNotCompile """
             try {
@@ -48,6 +52,7 @@ class TryCatchTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testTryFinally() {
         Boolean touched = false;
 
@@ -60,6 +65,7 @@ class TryCatchTest extends CompilableTestSupport {
         assert touched, "finally not called with empty try"
     }
 
+    @Test
     void testWorkingMethod() {
         try {
             workingMethod()
@@ -96,11 +102,13 @@ class TryCatchTest extends CompilableTestSupport {
         assert finallyCalled, "should have invoked the finally clause"
     }
 
-    protected void setUp() {
+    @BeforeEach
+    void setUp() {
         exceptionCalled = false
         finallyCalled = false
     }
 
+    @Test
     void testTryWithReturnWithPrimitiveTypes() {
         assert intTry() == 1
         assert longTry() == 2
@@ -153,6 +161,7 @@ class TryCatchTest extends CompilableTestSupport {
         } finally {}
     }
 
+    @Test
     void testTryCatchWithUntyped() {
         try {
             throw new Exception();
@@ -163,6 +172,7 @@ class TryCatchTest extends CompilableTestSupport {
         assert false
     }
 
+    @Test
     void testTryCatchInConstructor() {
         // the super() call construction left an
         // element on the stack, causing an inconsistent

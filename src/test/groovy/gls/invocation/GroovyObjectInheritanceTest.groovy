@@ -19,8 +19,11 @@
 package gls.invocation
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class GroovyObjectInheritanceTest extends CompilableTestSupport {
+final class GroovyObjectInheritanceTest extends CompilableTestSupport {
+
+  @Test
   void testInheritanceWithGetProperty() {
     assertScript """
         class Foo {
@@ -40,6 +43,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
     """
   }
 
+  @Test
   void testInheritanceWithSetProperty() {
     assertScript """
         class Foo {
@@ -63,6 +67,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
     """
   }
 
+  @Test
   void testInheritanceWithInvokeMethod() {
     assertScript """
         class Foo {
@@ -82,6 +87,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
     """
   }
 
+  @Test
   void testMetaClassFieldInheritance() {
     assertScript """
         class Foo {}
@@ -91,6 +97,7 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
     """
   }
 
+  @Test
   void testStandardInheritance() {
     assertScript """
         class Foo{}

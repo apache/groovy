@@ -19,9 +19,11 @@
 package gls.scope
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class FinalAccessTest extends CompilableTestSupport {
+final class FinalAccessTest extends CompilableTestSupport {
 
+    @Test
     void testFinalField() {
         shouldNotCompile """
             class Person {
@@ -33,6 +35,7 @@ class FinalAccessTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticFinalField1() {
         shouldCompile """
             class G3911C1 {
@@ -48,6 +51,7 @@ class FinalAccessTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticFinalField2() {
         shouldNotCompile """
             class G3911C2 {

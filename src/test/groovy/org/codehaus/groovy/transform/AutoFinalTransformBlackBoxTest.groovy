@@ -21,12 +21,10 @@ package org.codehaus.groovy.transform
 import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
-import java.util.Map.Entry
-
 /**
  * Tests for the {@code @AutoFinal} AST transform.
  */
-class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
+final class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
 
     @Test
     void testAutoFinal_Closure() {
@@ -113,13 +111,12 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
         shouldCompile(script)
     }
 
-
     String autoFinalTestScript(
             final boolean hasAnnotation,
             final Map<String, Object> annotationParameters,
             final String classPart, final String scriptPart = '') {
         assert !hasAnnotation || (annotationParameters != null); assert classPart
-        final String annotationParametersTerm = annotationParameters ? "(${annotationParameters.collect { final Entry<String, Object> e -> "$e.key=$e.value" }.join(', ')})" : ''
+        final String annotationParametersTerm = annotationParameters ? "(${annotationParameters.collect { Map.Entry<String, Object> e -> "$e.key=$e.value" }.join(', ')})" : ''
         final String script = """
             import groovy.transform.AutoFinal
             import groovy.transform.ASTTest
@@ -152,16 +149,5 @@ class AutoFinalTransformBlackBoxTest extends CompilableTestSupport {
             println "Caused by........................................................................................."
             printStackTrace(inner)
         }
-    }
-
-    Throwable shouldThrow(final String script) {
-        try {
-            final GroovyClassLoader gcl = new GroovyClassLoader()
-            gcl.parseClass(script, getTestClassName())
-        }
-        catch (Throwable throwable) {
-            return throwable
-        }
-        throw new Exception("Script was expected to throw here!")
     }
 }

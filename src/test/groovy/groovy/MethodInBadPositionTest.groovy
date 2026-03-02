@@ -19,27 +19,31 @@
 package groovy
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class MethodInBadPositionTest extends CompilableTestSupport {
-    /** GROOVY-4215 */
+final class MethodInBadPositionTest extends CompilableTestSupport {
+
+    // GROOVY-4215
+    @Test
     void testMethodDefinitionInClosure() {
-        def msg = shouldNotCompile('''
+        def msg = shouldNotCompile '''
             { ->
                 def say(String msg) {
                   println(msg)
                 }
             }()
-        ''')
+        '''
         assert msg.contains('Method definition not expected here') || msg.contains("Unexpected input: '('")
     }
 
-    /** GROOVY-4215 */
+    // GROOVY-4215
+    @Test
     void testXMethodDefinitionInSwitch() {
-        def msg = shouldNotCompile('''
+        def msg = shouldNotCompile '''
             switch(1) {
                 case 1: def say(){}
             }
-        ''')
+        '''
         assert msg.contains('Method definition not expected here')  || msg.contains("Unexpected input: '('") || msg.contains("Unexpected input: 'switch(1)")
     }
 }

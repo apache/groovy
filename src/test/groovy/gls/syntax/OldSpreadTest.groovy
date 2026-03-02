@@ -19,13 +19,15 @@
 package gls.syntax
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class OldSpreadTest extends CompilableTestSupport {
+final class OldSpreadTest extends CompilableTestSupport {
 
+    @Test
     void testSpreadStatement() {
         // don't allow spread outside a method call
         shouldNotCompile """
-            *x       
+            *x
         """
     }
 }

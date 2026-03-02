@@ -19,9 +19,11 @@
 package gls.classes.methods
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class RepetitiveMethodTest extends CompilableTestSupport {
+final class RepetitiveMethodTest extends CompilableTestSupport {
 
+    @Test
     void testRepetitiveMethod() {
         def message = shouldNotCompile('''
             class A  {
@@ -32,6 +34,7 @@ class RepetitiveMethodTest extends CompilableTestSupport {
         assert message.contains('duplicates another method of the same signature')
     }
 
+    @Test
     void testRepetitiveMethodsAllowedForProperties() {
         shouldCompile '''
             class PropertyOverride {
@@ -49,6 +52,7 @@ class RepetitiveMethodTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testRepetitiveConstructor() {
         def message = shouldNotCompile('''
             class A {

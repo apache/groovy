@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy8595Bug extends CompilableTestSupport {
+final class Groovy8595Bug extends CompilableTestSupport {
+
+    @Test
     void testGroovy8595() {
         shouldCompile '''
             @groovy.transform.CompileStatic
@@ -41,6 +44,7 @@ class Groovy8595Bug extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testMethodCallInPropertyExpression() {
         shouldCompile '''
             @groovy.transform.CompileStatic

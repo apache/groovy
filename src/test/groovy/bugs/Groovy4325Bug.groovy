@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy4325Bug extends CompilableTestSupport {
+final class Groovy4325Bug extends CompilableTestSupport {
+
+    @Test
     void testMultipleDefaultCases() {
         shouldNotCompile """
             def foo() {
