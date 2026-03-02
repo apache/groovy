@@ -381,14 +381,6 @@ class ASTMatcher extends ContextualClassCodeVisitor {
             def iter = curAnnotations.iterator()
             for (AnnotationNode an : refAnnotations) {
                 AnnotationNode curNext = iter.next()
-
-                // skip built-in properties
-                if (an.builtIn) {
-                    if (!curNext.builtIn) {
-                        failIfNot(false)
-                    }
-                    continue
-                }
                 failIfNot(an.classNode == curNext.classNode)
                 def refEntrySet = an.members.entrySet()
                 def curEntrySet = curNext.members.entrySet()

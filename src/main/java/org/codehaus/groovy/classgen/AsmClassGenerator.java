@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.transform.Sealed;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -2085,10 +2084,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void visitAnnotations(final AnnotatedNode targetNode, final AnnotatedNode sourceNode, final Object visitor) {
         for (AnnotationNode an : sourceNode.getAnnotations()) {
-            // skip built-in properties
-            if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
-            if (an.getClassNode().getName().equals(Sealed.class.getName()) && sealedNative(sourceNode) && sealedSkipAnnotation(sourceNode)) continue;
+            if (an.getClassNode().equals(ClassHelper.SEALED_TYPE) && sealedNative(sourceNode) && sealedSkipAnnotation(sourceNode)) continue;
 
             maybeInnerClassEntry(an.getClassNode());
 
@@ -2100,7 +2097,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void visitTypeAnnotations(final ClassNode sourceNode, final Object visitor, final TypeReference typeRef, final String typePathStr, boolean typeUse) {
         for (AnnotationNode an : sourceNode.getTypeAnnotations()) {
-            if (an.isBuiltIn() || an.hasSourceRetention()) continue;
+            if (an.hasSourceRetention()) continue;
             if (typeUse && !an.isTargetAllowed(AnnotationNode.TYPE_USE_TARGET)) continue;
 
             AnnotationVisitor av = null;
@@ -2194,8 +2191,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void visitParameterAnnotations(final Parameter parameter, final int paramNumber, final MethodVisitor mv) {
         for (AnnotationNode an : parameter.getAnnotations()) {
-            // skip built-in properties
-            if (an.isBuiltIn() || an.hasSourceRetention()) continue;
+            if (an.hasSourceRetention()) continue;
 
             final String annotationDescriptor = BytecodeHelper.getTypeDescription(an.getClassNode());
             AnnotationVisitor av = mv.visitParameterAnnotation(paramNumber, annotationDescriptor, an.hasRuntimeRetention());
