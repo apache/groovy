@@ -43,36 +43,52 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.PrivilegedAction;
 
 /**
- * Base class for test cases
+ * Base class for test cases.
  */
 public abstract class TestSupport extends GroovyTestCase implements Opcodes {
 
-    protected static boolean DUMP_CLASS = false;
+    /**
+     * Asserts the script runs without any exceptions.
+     */
+    protected final void assertScript(String scriptText) throws Exception {
+        Class<?> scriptClass = loader.parseClass(doPrivileged(() ->
+            new GroovyCodeSource(scriptText, getTestClassName(), "/groovy/testSupport")
+        ));
+        Script script = InvokerHelper.createScript(scriptClass, new Binding());
+        script.run();
+    }
 
-    final ClassLoader parentLoader = getClass().getClassLoader();
-
-    protected final GroovyClassLoader loader = createClassLoader();
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private GroovyClassLoader createClassLoader() {
-        return java.security.AccessController.doPrivileged(
-                (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader)
+    protected final void assertScriptFile(String fileName) throws Exception {
+        Class<?> scriptClass = loader.parseClass(doPrivileged(() ->
+            new GroovyCodeSource(new File(fileName)))
         );
+        Script script = InvokerHelper.createScript(scriptClass, new Binding());
+        script.run();
     }
 
-    final CompileUnit unit = new CompileUnit(loader, new CompilerConfiguration());
-
-    final ModuleNode module = new ModuleNode(unit);
-
-    protected Class loadClass(ClassNode classNode) {
-        classNode.setModule(module);
-        return loader.defineClass(classNode, classNode.getName() + ".groovy", "groovy.testSupport");
+    protected final GroovyObject compile (String fileName) throws Exception {
+        Class<?> groovyClass = loader.parseClass(doPrivileged(() ->
+            new GroovyCodeSource(new File(fileName)))
+        );
+        GroovyObject groovyObject = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
+        assertNotNull(groovyObject);
+        return groovyObject;
     }
 
-    protected void assertSetProperty(Object bean, String property, Object newValue) throws Exception {
+    protected final void assertGetProperty(Object bean, String property, Object expected) throws Exception {
+        PropertyDescriptor descriptor = getDescriptor(bean, property);
+        Method method = descriptor.getReadMethod();
+        assertNotNull("has getter method", method);
+
+        Object[] args = {};
+        Object value = invokeMethod(bean, method, args);
+
+        assertEquals("property value", expected, value);
+    }
+
+    protected final void assertSetProperty(Object bean, String property, Object newValue) throws Exception {
         PropertyDescriptor descriptor = getDescriptor(bean, property);
         Method method = descriptor.getWriteMethod();
         assertNotNull("has setter method", method);
@@ -82,28 +98,42 @@ public abstract class TestSupport extends GroovyTestCase implements Opcodes {
         assertGetProperty(bean, property, newValue);
     }
 
-    protected void assertGetProperty(Object bean, String property, Object expected) throws Exception {
-        PropertyDescriptor descriptor = getDescriptor(bean, property);
-        Method method = descriptor.getReadMethod();
-        assertNotNull("has getter method", method);
-
-        Object[] args = { };
-        Object value = invokeMethod(bean, method, args);
-
-        assertEquals("property value", expected, value);
+    protected final void assertField(Class<?> clazz, String name, int modifiers, ClassNode type) throws Exception {
+        Field field = clazz.getDeclaredField(name);
+        assertNotNull("Found field called: " + name, field);
+        assertEquals("Name", name, field.getName());
+        assertEquals("Type", type.getName(), field.getType().getName());
+        assertEquals("Modifiers", modifiers, field.getModifiers());
     }
 
-    protected Object invokeMethod(Object bean, Method method, Object[] args) throws Exception {
-        try {
-            return method.invoke(bean, args);
-        }
-        catch (InvocationTargetException e) {
-            fail("InvocationTargetException: " + e.getTargetException());
-            return null;
-        }
+    protected final ExpressionStatement createPrintlnStatement(Expression expression) throws NoSuchFieldException {
+        FieldExpression systemDotOut = new FieldExpression(FieldNode.newStatic(System.class, "out"));
+        return new ExpressionStatement(new MethodCallExpression(systemDotOut, "println", expression));
     }
 
-    protected PropertyDescriptor getDescriptor(Object bean, String property) throws Exception {
+    //--------------------------------------------------------------------------
+
+    protected GroovyClassLoader loader;
+
+    protected void setUp() throws Exception {
+        ClassLoader parentLoader = getClass().getClassLoader();
+        loader = doPrivileged(() -> new GroovyClassLoader(parentLoader));
+    }
+
+    protected void tearDown() throws Exception {
+        loader.close();
+        loader = null;
+    }
+
+    protected final Class<?> loadClass(ClassNode classNode) {
+        var unit = new CompileUnit(loader, new CompilerConfiguration());
+        var module = new ModuleNode(unit);
+        classNode.setModule(module);
+
+        return loader.defineClass(classNode, classNode.getName() + ".groovy", "groovy.testSupport");
+    }
+
+    private PropertyDescriptor getDescriptor(Object bean, String property) throws Exception {
         BeanInfo info = Introspector.getBeanInfo(bean.getClass());
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
         for (PropertyDescriptor descriptor : descriptors) {
@@ -115,56 +145,18 @@ public abstract class TestSupport extends GroovyTestCase implements Opcodes {
         return null;
     }
 
-    protected void assertField(Class aClass, String name, int modifiers, ClassNode type) throws Exception {
-        Field field = aClass.getDeclaredField(name);
-        assertNotNull("Found field called: " + name, field);
-        assertEquals("Name", name, field.getName());
-        assertEquals("Type", type.getName(), field.getType().getName());
-        assertEquals("Modifiers", modifiers, field.getModifiers());
+    private Object invokeMethod(Object bean, Method method, Object[] args) throws Exception {
+        try {
+            return method.invoke(bean, args);
+        }
+        catch (InvocationTargetException e) {
+            fail("InvocationTargetException: " + e.getTargetException());
+            return null;
+        }
     }
 
-    protected ExpressionStatement createPrintlnStatement(Expression expression) throws NoSuchFieldException {
-        return new ExpressionStatement(
-                new MethodCallExpression(
-                        new FieldExpression(FieldNode.newStatic(System.class, "out")),
-                        "println",
-                        expression));
-    }
-
-    /**
-     * Asserts that the script runs without any exceptions
-     */
-    protected void assertScript(String text) throws Exception {
-        assertScript(text, getTestClassName());
-    }
-
-    protected void assertScript(final String text, final String scriptName) throws Exception {
-        log.info("About to execute script");
-        log.info(text);
-        GroovyCodeSource gcs = getCodeSource(text, scriptName);
-        Class<?> groovyClass = loader.parseClass(gcs);
-        Script script = InvokerHelper.createScript(groovyClass, new Binding());
-        script.run();
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private GroovyCodeSource getCodeSource(String text, String scriptName) {
-        return java.security.AccessController.doPrivileged(
-                (PrivilegedAction<GroovyCodeSource>) () -> new GroovyCodeSource(text, scriptName, "/groovy/testSupport")
-        );
-    }
-
-    protected void assertScriptFile(String fileName) throws Exception {
-        log.info("About to execute script: " + fileName);
-        Class<?> groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
-        Script script = InvokerHelper.createScript(groovyClass, new Binding());
-        script.run();
-    }
-
-    protected GroovyObject compile(String fileName) throws Exception {
-        Class<?> groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
-        GroovyObject object = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
-        assertNotNull(object);
-        return object;
+    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
+    private static <T> T doPrivileged(java.security.PrivilegedExceptionAction<T> action) throws Exception {
+        return java.security.AccessController.doPrivileged(action);
     }
 }

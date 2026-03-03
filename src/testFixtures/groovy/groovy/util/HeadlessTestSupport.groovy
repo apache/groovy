@@ -20,7 +20,9 @@ package groovy.util
 
 import java.lang.reflect.Constructor
 
-abstract class HeadlessTestSupport {
+final class HeadlessTestSupport {
+
+    private HeadlessTestSupport(){}
 
     private static boolean headless
 

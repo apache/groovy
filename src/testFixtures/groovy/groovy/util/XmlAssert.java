@@ -26,7 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Helper class for checking XML tests.
  */
-public class XmlAssert {
+public final class XmlAssert {
+
+    private XmlAssert() {}
 
     public static void assertXmlEquals(String expected, String actual) throws Exception {
         XMLUnit.setIgnoreWhitespace(true);

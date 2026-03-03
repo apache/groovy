@@ -26,7 +26,9 @@ import static org.junit.jupiter.api.Assertions.fail
 /**
  * Some useful AST assertion methods.
  */
-class AstAssert {
+final class AstAssert {
+
+    private AstAssert() {}
 
     /**
      * Support for new assertion types can be added by adding a Map<String, Closure> entry.
