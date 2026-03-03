@@ -18,11 +18,14 @@
  */
 package groovy.xml
 
+import org.junit.jupiter.api.Test
+
 /**
  * Test the use of GPath navigation with namespaces
  */
-class NamespaceNodeGPathTest extends TestXmlSupport {
+final class NamespaceNodeGPathTest extends TestXmlSupport {
 
+    @Test
     void testTree() {
         Node root = new XmlParser().parseText("""
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">

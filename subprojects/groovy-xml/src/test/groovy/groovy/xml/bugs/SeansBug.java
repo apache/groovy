@@ -19,17 +19,19 @@
 package groovy.xml.bugs;
 
 import groovy.lang.GroovyShell;
-import org.codehaus.groovy.classgen.TestSupport;
+import org.junit.jupiter.api.Test;
 
-public class SeansBug extends TestSupport {
+final class SeansBug {
 
-    public void testBug() throws Exception {
+    @Test
+    void testBug() throws Exception {
         String code = "for (i in 1..10) \n{\n  println(i)\n}";
         GroovyShell shell = new GroovyShell();
         shell.evaluate(code);
     }
 
-    public void testMarkupBug() throws Exception {
+    @Test
+    void testMarkupBug() throws Exception {
         String[] lines =
                 {
                         "package groovy.xml",

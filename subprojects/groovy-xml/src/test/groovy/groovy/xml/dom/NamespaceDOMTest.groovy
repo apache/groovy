@@ -23,10 +23,11 @@ import groovy.xml.DOMBuilder
 import groovy.xml.NamespaceBuilder
 import groovy.xml.TestXmlSupport
 import groovy.xml.XmlUtil
+import org.junit.jupiter.api.Test
 
 import static groovy.util.XmlAssert.assertXmlEquals
 
-class NamespaceDOMTest extends TestXmlSupport {
+final class NamespaceDOMTest extends TestXmlSupport {
 
     def expected1 = '''
         <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
@@ -60,6 +61,7 @@ class NamespaceDOMTest extends TestXmlSupport {
         </envelope>
     '''
 
+    @Test
     void testXsdSchemaWithBuilderHavingAutoPrefix() {
         def builder = DOMBuilder.newInstance()
         def xsd = NamespaceBuilder.newInstance(builder, 'http://www.w3.org/2001/XMLSchema', 'xsd')
@@ -79,6 +81,7 @@ class NamespaceDOMTest extends TestXmlSupport {
         assertXmlEquals(expected1, XmlUtil.serialize(root))
     }
 
+    @Test
     void testXsdSchemaWithBuilderHavingMultipleNamespaces() {
         def builder = DOMBuilder.newInstance()
         def multi = NamespaceBuilder.newInstance(builder)
@@ -87,6 +90,7 @@ class NamespaceDOMTest extends TestXmlSupport {
         checkXml(multi)
     }
 
+    @Test
     void testXsdSchemaWithBuilderHavingDeclareNamespace() {
         def builder = DOMBuilder.newInstance()
         def multi = NamespaceBuilder.newInstance(builder)

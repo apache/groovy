@@ -19,12 +19,14 @@
 package groovy.xml
 
 import groovy.namespace.QName
+import org.junit.jupiter.api.Test
 
 /**
  * Test the building of namespaced XML using GroovyMarkup
  */
-class NamespaceNodeTest extends TestXmlSupport {
+final class NamespaceNodeTest extends TestXmlSupport {
 
+    @Test
     void testNodeBuilderWithNamespace() {
         def n = new Namespace('http://foo/bar')
         def builder = NamespaceBuilder.newInstance(new NodeBuilder(), n.uri)
@@ -36,6 +38,7 @@ class NamespaceNodeTest extends TestXmlSupport {
         assert result[n.inner][1].text() == 'bar'
     }
 
+    @Test
     void testTree() {
         def builder = NodeBuilder.newInstance()
         def xmlns = new NamespaceBuilder(builder)
@@ -84,6 +87,7 @@ class NamespaceNodeTest extends TestXmlSupport {
         assert attrNode[0].@name == 'orderDate'
     }
 
+    @Test
     void testNodeBuilderWithImplicitNamespace() {
         def n = new Namespace('http://foo/bar')
         def builder = NamespaceBuilder.newInstance(new NodeBuilder(), n.uri)
@@ -107,6 +111,7 @@ class NamespaceNodeTest extends TestXmlSupport {
         assert actual == expected
     }
 
+    @Test
     void testNamespaceBuilderWithoutNamespace() {
         def builder = NamespaceBuilder.newInstance(new NodeBuilder())
         def result = builder.outer(id: "3") {

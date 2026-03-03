@@ -18,38 +18,32 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests some particular script features.
  */
-public class ScriptTest extends TestSupport {
+final class ScriptTest {
+
     /**
      * When a method is not found in the current script, checks that it's possible to call a method closure from the binding.
-     *
-     * @throws IOException
-     * @throws CompilationFailedException
-     * @throws IllegalAccessException
-     * @throws InstantiationException
      */
-    public void testInvokeMethodFallsThroughToMethodClosureInBinding() throws IOException, CompilationFailedException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+    @Test
+    void testInvokeMethodFallsThroughToMethodClosureInBinding() throws Exception {
         String text = "if (method() == 3) { println 'succeeded' }";
+        try (GroovyClassLoader loader = new GroovyClassLoader(Thread.currentThread().getContextClassLoader())) {
+            Class<?> clazz = loader.parseClass(new GroovyCodeSource(text, "groovy.script", "groovy.script"));
+            Script script = ((Script) clazz.getDeclaredConstructor().newInstance());
 
-        GroovyCodeSource codeSource = new GroovyCodeSource(text, "groovy.script", "groovy.script");
-        GroovyClassLoader loader = new GroovyClassLoader(Thread.currentThread().getContextClassLoader());
-        Class clazz = loader.parseClass(codeSource);
-        Script script = ((Script) clazz.getDeclaredConstructor().newInstance());
+            Binding binding = new Binding();
+            binding.setVariable("method", new MethodClosure(new Dummy(), "method"));
+            script.setBinding(binding);
 
-        Binding binding = new Binding();
-        binding.setVariable("method", new MethodClosure(new Dummy(), "method"));
-        script.setBinding(binding);
-
-        script.run();
+            script.run();
+        }
     }
 
     public static class Dummy {
@@ -60,11 +54,11 @@ public class ScriptTest extends TestSupport {
 
     /**
      * GROOVY-6582 : Script.invokeMethod bypasses getProperty when looking for closure-valued properties.
-     *
+     * <p>
      * Make sure that getProperty and invokeMethod are consistent.
-     *
      */
-    public void testGROOVY_6582() {
+    @Test
+    void testBaseScript() {
         String script = "" +
             "abstract class DeclaredBaseScript extends Script {\n" +
             "   def v = { it * 2 }\n" +
@@ -80,11 +74,11 @@ public class ScriptTest extends TestSupport {
     }
 
     // GROOVY-6344
-    public void testScriptNameMangling() {
+    @Test
+    void testScriptNameMangling() {
         String script = "this.getClass().getName()";
         GroovyShell shell = new GroovyShell();
         String name = (String) shell.evaluate(script,"a!b");
         assertEquals("a_b", name);
     }
-
 }

@@ -20,42 +20,50 @@ package groovy.tree;
 
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.classgen.TestSupport;
+import org.junit.jupiter.api.Test;
 
 import java.util.logging.Logger;
 
-public class NodePrinterTest extends TestSupport {
+final class NodePrinterTest extends TestSupport {
 
-    public void testTree() throws Exception {
+    @Test
+    void testTree() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/tree/TreeTest.groovy");
         object.invokeMethod("testTree", null);
     }
 
-    public void testVerboseTree() throws Exception {
+    @Test
+    void testVerboseTree() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/tree/VerboseTreeTest.groovy");
         object.invokeMethod("testTree", null);
     }
 
-    public void testSmallTree() throws Exception {
+    @Test
+    void testSmallTree() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/tree/SmallTreeTest.groovy");
         object.invokeMethod("testTree", null);
     }
 
-    public void testLittleClosure() throws Exception {
+    @Test
+    void testLittleClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/LittleClosureTest.groovy");
         object.invokeMethod("testClosure", null);
     }
 
-    public void testNestedClosureBug() throws Exception {
+    @Test
+    void testNestedClosureBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/tree/NestedClosureBugTest.groovy");
         object.invokeMethod("testNestedClosureBug", null);
     }
 
-    public void testClosureClassLoaderBug() throws Exception {
+    @Test
+    void testClosureClassLoaderBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/tree/ClosureClassLoaderBug.groovy");
         object.invokeMethod("testTree", null);
     }
 
-    public void testLogging() {
+    @Test
+    void testLogging() {
         Logger log = Logger.getLogger(getClass().getName());
         log.info("Logging using JDK 1.4 logging");
     }

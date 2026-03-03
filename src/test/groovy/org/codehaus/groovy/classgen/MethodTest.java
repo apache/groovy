@@ -18,16 +18,25 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.junit.jupiter.api.Test;
 
-public class MethodTest extends TestSupport {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-    public void testMethods() throws Exception {
+final class MethodTest extends TestSupport {
+
+    @Test
+    void testMethods() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
 
@@ -43,11 +52,11 @@ public class MethodTest extends TestSupport {
 
         classNode.addMethod(new MethodNode("c", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, emptyStatement));
 
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
+        Class<?> fooClass = loadClass(classNode);
+        assertTrue(fooClass != null, "Loaded a new class");
 
         Object bean = fooClass.getDeclaredConstructor().newInstance();
-        assertTrue("Created instance of class: " + bean, bean != null);
+        assertTrue(bean != null, "Created instance of class: " + bean);
 
         assertCallMethod(bean, "a", "calledA");
         assertCallMethod(bean, "b", "calledB");
@@ -56,11 +65,11 @@ public class MethodTest extends TestSupport {
         assertCallMethod(bean, "c", null);
     }
 
-    protected void assertCallMethod(Object object, String method, Object expected) {
+    private void assertCallMethod(Object object, String method, Object expected) {
         Object value = InvokerHelper.invokeMethod(object, method, new Object[0]);
-        assertEquals("Result of calling method: " + method + " on: " + object + " with empty list", expected, value);
+        assertEquals(expected, value, "Result of calling method: " + method + " on: " + object + " with empty list");
 
         value = InvokerHelper.invokeMethod(object, method, null);
-        assertEquals("Result of calling method: " + method + " on: " + object + " with null", expected, value);
+        assertEquals(expected, value, "Result of calling method: " + method + " on: " + object + " with null");
     }
 }

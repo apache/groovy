@@ -19,20 +19,24 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests using the GroovyObject API from Java on a groovy object
  */
-public class GetPropertyTest extends TestSupport {
+final class GetPropertyTest extends TestSupport {
 
-    public void testProperty() throws Exception {
+    @Test
+    void testProperty() throws Exception {
         GroovyObject object = compile("src/test/groovy/org/codehaus/groovy/classgen/MyBean.groovy");
         System.out.println("Got object: " + object);
 
         Object value = object.getProperty("name");
-        assertEquals("name property", "James", value);
+        assertEquals("James", value, "name property");
 
         object.setProperty("name", "Bob");
-        assertEquals("name property", "Bob", object.getProperty("name"));
+        assertEquals("Bob", object.getProperty("name"), "name property");
     }
 }

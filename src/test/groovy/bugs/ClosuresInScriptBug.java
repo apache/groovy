@@ -19,10 +19,12 @@
 package bugs;
 
 import org.codehaus.groovy.classgen.TestSupport;
+import org.junit.jupiter.api.Test;
 
-public class ClosuresInScriptBug extends TestSupport {
+final class ClosuresInScriptBug extends TestSupport {
 
-    public void testBug() throws Exception {
+    @Test
+    void testBug() throws Exception {
         assertScript("a = 1\n [2].each { a = it }\n assert a == 2");
     }
 }

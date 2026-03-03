@@ -23,7 +23,6 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyObject;
 import groovy.lang.Script;
-import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.FieldNode;
@@ -34,6 +33,9 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.BeanInfo;
@@ -44,17 +46,22 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * Base class for test cases.
  */
-public abstract class TestSupport extends GroovyTestCase implements Opcodes {
+public abstract class TestSupport implements Opcodes {
 
     /**
      * Asserts the script runs without any exceptions.
      */
     protected final void assertScript(String scriptText) throws Exception {
+        String scriptName = "TestScript" + testMethodName + (++testScriptCounter) + ".groovy";
         Class<?> scriptClass = loader.parseClass(doPrivileged(() ->
-            new GroovyCodeSource(scriptText, getTestClassName(), "/groovy/testSupport")
+            new GroovyCodeSource(scriptText, scriptName, "/groovy/testSupport")
         ));
         Script script = InvokerHelper.createScript(scriptClass, new Binding());
         script.run();
@@ -80,30 +87,29 @@ public abstract class TestSupport extends GroovyTestCase implements Opcodes {
     protected final void assertGetProperty(Object bean, String property, Object expected) throws Exception {
         PropertyDescriptor descriptor = getDescriptor(bean, property);
         Method method = descriptor.getReadMethod();
-        assertNotNull("has getter method", method);
+        assertNotNull(method, "has getter method");
 
         Object[] args = {};
         Object value = invokeMethod(bean, method, args);
-
-        assertEquals("property value", expected, value);
+        assertEquals(expected, value, "property value");
     }
 
     protected final void assertSetProperty(Object bean, String property, Object newValue) throws Exception {
         PropertyDescriptor descriptor = getDescriptor(bean, property);
         Method method = descriptor.getWriteMethod();
-        assertNotNull("has setter method", method);
+        assertNotNull(method, "has setter method");
         Object[] args = {newValue};
         Object value = invokeMethod(bean, method, args);
-        assertEquals("should return null", null, value);
+        assertEquals(null, value, "should return null");
         assertGetProperty(bean, property, newValue);
     }
 
     protected final void assertField(Class<?> clazz, String name, int modifiers, ClassNode type) throws Exception {
         Field field = clazz.getDeclaredField(name);
-        assertNotNull("Found field called: " + name, field);
-        assertEquals("Name", name, field.getName());
-        assertEquals("Type", type.getName(), field.getType().getName());
-        assertEquals("Modifiers", modifiers, field.getModifiers());
+        assertNotNull(field, "Found field called: " + name);
+        assertEquals(name, field.getName());
+        assertEquals(type.getName(), field.getType().getName());
+        assertEquals(modifiers, field.getModifiers());
     }
 
     protected final ExpressionStatement createPrintlnStatement(Expression expression) throws NoSuchFieldException {
@@ -113,14 +119,19 @@ public abstract class TestSupport extends GroovyTestCase implements Opcodes {
 
     //--------------------------------------------------------------------------
 
-    protected GroovyClassLoader loader;
+    private GroovyClassLoader loader;
+    private String testMethodName;
+    private int testScriptCounter;
 
-    protected void setUp() throws Exception {
+    @BeforeEach
+    void setUpTestCase(TestInfo testInfo) throws Exception {
         ClassLoader parentLoader = getClass().getClassLoader();
         loader = doPrivileged(() -> new GroovyClassLoader(parentLoader));
+        testMethodName = testInfo.getTestMethod().orElseThrow().getName();
     }
 
-    protected void tearDown() throws Exception {
+    @AfterEach
+    void tearDownTestCase() throws Exception {
         loader.close();
         loader = null;
     }
