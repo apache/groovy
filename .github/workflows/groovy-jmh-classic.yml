@@ -52,7 +52,7 @@ jobs:
              subprojects/performance/build/results/jmh/results-${{ matrix.suite }}.txt
 
       - name: Upload reports-jmh-classic-${{ matrix.suite }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: reports-jmh-classic-${{ matrix.suite }}
           path: subprojects/performance/build/results/jmh/
