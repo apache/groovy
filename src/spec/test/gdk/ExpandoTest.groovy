@@ -20,8 +20,8 @@ package gdk
 
 import org.junit.jupiter.api.Test
 
+final class ExpandoTest {
 
-class ExpandoTest {
     @Test
     void testExpandoAddProperty() {
         // tag::expando_property[]
@@ -43,5 +43,4 @@ class ExpandoTest {
         assert expando.say('Hi') == 'John says: Hi'
         // end::expando_method[]
     }
-
 }

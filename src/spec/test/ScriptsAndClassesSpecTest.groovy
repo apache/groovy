@@ -1,4 +1,3 @@
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -22,7 +21,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class ScriptsAndClassesSpecTest {
+final class ScriptsAndClassesSpecTest {
+
     @Test
     void testMainMethod() {
         assertScript '''
@@ -83,6 +83,8 @@ class ScriptsAndClassesSpecTest {
 
     @Test
     void testJep445Definition() {
+        def runScript = { scriptText -> new GroovyShell().run(scriptText, 'ScriptSnippet', new String[0]) }
+
         runScript '''
             // tag::jep445_barescript[]
             void main(args) {
@@ -159,9 +161,5 @@ class ScriptsAndClassesSpecTest {
             assert x+y == 3
             // end::script_with_untyped_variables[]
         '''
-    }
-
-    private static void runScript(String scriptText) {
-        new GroovyShell().run(scriptText, 'ScriptSnippet', [] as String[])
     }
 }

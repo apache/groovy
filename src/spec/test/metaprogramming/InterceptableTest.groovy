@@ -20,9 +20,8 @@ package metaprogramming
 
 import org.junit.jupiter.api.Test
 
-
 // tag::groovy_interceptable_test[]
-class InterceptableTest {
+final class InterceptableTest {
 
     @Test
     void testCheckInterception() {

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
-class JUnit4ExampleTests {
+final class JUnit4ExampleTests {
 
     @Test
     void indexOutOfBoundsAccess() {

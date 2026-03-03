@@ -22,12 +22,11 @@ import org.junit.jupiter.api.Test
 
 import java.beans.PropertyChangeListener
 
-class ObservableTest {
+final class ObservableTest {
 
     @Test
     void testObservableList() {
         // tag::observable_list[]
-
         def event                                       // <1>
         def listener = {
             if (it instanceof ObservableList.ElementEvent)  {  // <2>

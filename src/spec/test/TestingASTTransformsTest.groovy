@@ -17,13 +17,12 @@
  *  under the License.
  */
 
-
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-class TestingASTTransformsTest {
+final class TestingASTTransformsTest {
 
     @Test
     void testNotYetImplemented() {

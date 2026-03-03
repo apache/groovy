@@ -17,18 +17,16 @@
  *  under the License.
  */
 
-
 import org.codehaus.groovy.ast.ClassHelper
 import org.junit.jupiter.api.Test
-
-/**
- * Specification tests for the traits feature
- */
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-class TraitsSpecificationTest {
+/**
+ * Specification tests for the traits feature
+ */
+final class TraitsSpecificationTest {
 
     @Test
     void testTraitDeclaration() {

@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package metaprogramming
 
 import groovy.transform.CompileStatic
@@ -39,7 +38,7 @@ import java.lang.annotation.Target
 
 import static groovy.test.GroovyAssert.assertScript
 
-class ASTMatcherFilteringTest {
+final class ASTMatcherFilteringTest {
 
     @Test
     void testFilteringNodes() {

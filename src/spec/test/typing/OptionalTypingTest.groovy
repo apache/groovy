@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class OptionalTypingTest {
+final class OptionalTypingTest {
 
     @Test
     void testOptionalTypingInVariableDeclaration() {

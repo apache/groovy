@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for {@link CharSequenceReader}.
  */
-class CharSequenceReaderTest {
+final class CharSequenceReaderTest {
 
     @Test
     void testReadSingleCharacter() {

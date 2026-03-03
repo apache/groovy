@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class MethodPropertyMissingTest {
+final class MethodPropertyMissingTest {
 
     @Test
     void testMethodMissing() {
@@ -71,5 +70,4 @@ class MethodPropertyMissingTest {
             //end::property_missing_getter_setter[]
         '''
     }
-
 }

@@ -20,8 +20,7 @@ package testingguide
 
 import org.junit.jupiter.api.Test
 
-
-class GDKMethodTests {
+final class GDKMethodTests {
 
     // tag::combinations[]
     @Test

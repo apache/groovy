@@ -1,4 +1,3 @@
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -22,7 +21,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class SwingASTTransformsTest {
+final class SwingASTTransformsTest {
+
     @Test
     void testBindable() {
         assertScript '''// tag::bindable_on_class[]
@@ -322,5 +322,4 @@ p.age = 145
 assert changed == ['age'] as Set
 '''
     }
-
 }

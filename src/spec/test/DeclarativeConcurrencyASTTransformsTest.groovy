@@ -1,4 +1,3 @@
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -22,7 +21,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class DeclarativeConcurrencyASTTransformsTest {
+final class DeclarativeConcurrencyASTTransformsTest {
+
     @Test
     void testSynchronizedASTTransform() {
         assertScript '''

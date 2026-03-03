@@ -17,16 +17,14 @@
  *  under the License.
  */
 
-
-/**
- * Specification tests for records
- */
-
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class RecordSpecificationTest {
+/**
+ * Specification tests for records
+ */
+final class RecordSpecificationTest {
 
     @Test
     void testSimpleRecordKeyword() {

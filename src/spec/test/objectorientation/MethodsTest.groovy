@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-class MethodsTest {
+final class MethodsTest {
 
     @Test
     void testMethodDefinition() {
@@ -290,5 +290,4 @@ class MethodsTest {
             // end::multi_method_distance_interface_over_super[]
         '''
     }
-
 }

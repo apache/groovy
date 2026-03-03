@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package metaprogramming
 
 import groovy.transform.CompileDynamic
@@ -40,7 +39,7 @@ import java.lang.annotation.Target
 import static groovy.test.GroovyAssert.assertScript
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
 
-class MacroClassTest {
+final class MacroClassTest {
 
     @Test
     void testMacroClass() {

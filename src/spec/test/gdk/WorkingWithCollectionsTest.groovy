@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
+final class WorkingWithCollectionsTest {
 
-class WorkingWithCollectionsTest {
     @Test
     void testListLiterals() {
         // tag::list_literals[]

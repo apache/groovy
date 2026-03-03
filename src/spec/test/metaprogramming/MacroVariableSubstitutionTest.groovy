@@ -16,9 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package metaprogramming
-
 
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassHelper
@@ -44,7 +42,7 @@ import java.lang.annotation.Target
 import static groovy.test.GroovyAssert.assertScript
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
-class MacroVariableSubstitutionTest {
+final class MacroVariableSubstitutionTest {
 
     @Test
     void testVariableSubstitution() {

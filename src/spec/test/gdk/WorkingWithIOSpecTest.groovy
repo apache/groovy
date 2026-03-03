@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
-class WorkingWithIOSpecTest {
+final class WorkingWithIOSpecTest {
 
     private final static boolean unixlike =
             System.getProperty('os.name').contains('Linux') ||

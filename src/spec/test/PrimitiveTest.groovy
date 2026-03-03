@@ -1,7 +1,3 @@
-import org.junit.jupiter.api.Test
-
-import static groovy.test.GroovyAssert.assertScript
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -20,7 +16,12 @@ import static groovy.test.GroovyAssert.assertScript
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class PrimitiveTest {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class PrimitiveTest {
 
     @Test
     void testPrimitiveReferences() {

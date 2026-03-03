@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class TheGroovyTruthTest {
+final class TheGroovyTruthTest {
 
     @Test
     void testGroovyTruth() {

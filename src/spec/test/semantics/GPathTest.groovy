@@ -21,7 +21,7 @@ package semantics
 import groovy.xml.XmlSlurper
 import org.junit.jupiter.api.Test
 
-class GPathTest {
+final class GPathTest {
 
     //tag::gpath_on_reflection_1[]
     void aMethodFoo() { println "This is aMethodFoo." } // <0>
@@ -86,5 +86,4 @@ class GPathTest {
         assert root.level.sublevel[1].keyVal[0].key.text() == 'anotherKey' // <4>
         //end::gpath_on_xml_1[]
     }
-
 }

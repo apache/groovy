@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class ExpandoMetaClassTest {
+final class ExpandoMetaClassTest {
 
     @Test
     void testConstructors() {
@@ -263,7 +262,4 @@ class ExpandoMetaClassTest {
             // end::emc_interface[]
         '''
     }
-
-
-
 }

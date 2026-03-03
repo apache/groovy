@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package metaprogramming
 
 import org.codehaus.groovy.ast.ASTNode
@@ -42,7 +41,7 @@ import java.lang.annotation.Target
 import static groovy.test.GroovyAssert.assertScript
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC
 
-class MacroExpressionTest {
+final class MacroExpressionTest {
 
     @Test
     void testCreateExpressions() {

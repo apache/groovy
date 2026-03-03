@@ -17,14 +17,14 @@
  *  under the License.
  */
 
-
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
-class DelegatesToSpecTest {
+final class DelegatesToSpecTest {
+
     @Test
     void testEmailWithoutDelegatesTo() {
         assertScript '''

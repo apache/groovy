@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for {@link LinkedDeque}.
  */
-class LinkedDequeTest {
+final class LinkedDequeTest {
 
     private LinkedDeque<TestNode> deque = new LinkedDeque<>();
 

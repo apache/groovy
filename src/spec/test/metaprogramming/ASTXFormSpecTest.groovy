@@ -27,7 +27,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class ASTXFormSpecTest {
+final class ASTXFormSpecTest {
+
     @Test
     void testLocalTransform() {
         def gcl = new GroovyClassLoader()

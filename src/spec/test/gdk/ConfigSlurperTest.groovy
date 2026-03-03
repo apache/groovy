@@ -20,8 +20,8 @@ package gdk
 
 import org.junit.jupiter.api.Test
 
+final class ConfigSlurperTest {
 
-class ConfigSlurperTest {
     @Test
     void testWithArbitraryTypes() {
         // tag::arbitrary_types[]

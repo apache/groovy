@@ -22,8 +22,6 @@ package typing;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.transform.stc.AbstractTypeCheckingExtension;
-
-
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 
 public class PrecompiledJavaExtension extends AbstractTypeCheckingExtension {                   // <1>
@@ -41,6 +39,5 @@ public class PrecompiledJavaExtension extends AbstractTypeCheckingExtension {   
         }
         return false;
     }
-
 }
 // end::precompiled_java_extension[]

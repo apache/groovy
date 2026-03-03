@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNull
 import static org.junit.jupiter.api.Assertions.assertSame
 import static org.junit.jupiter.api.Assertions.assertTrue
 
-class GroovyTestCaseExampleTests {
+final class GroovyTestCaseExampleTests {
 
 /*  // tag::assertions[]
 class MyTestCase {
@@ -116,5 +116,4 @@ class MyTestCase {
         assert 1 == 2
     }
     // end::not_yet_implemented_ast[]
-
 }

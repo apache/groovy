@@ -47,7 +47,7 @@ import static org.codehaus.groovy.syntax.Types.PLUS_PLUS
 import static org.codehaus.groovy.syntax.Types.POWER
 import static org.codehaus.groovy.syntax.Types.REMAINDER
 
-class CustomizersTest {
+final class CustomizersTest {
 
     private CompilerConfiguration config;
     private GroovyShell shell;

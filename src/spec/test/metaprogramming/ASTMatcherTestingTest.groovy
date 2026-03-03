@@ -16,9 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package metaprogramming
-
 
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassNode
@@ -42,7 +40,7 @@ import java.lang.annotation.Target
 import static groovy.test.GroovyAssert.assertScript
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX
 
-class ASTMatcherTestingTest {
+final class ASTMatcherTestingTest {
 
     // tag::testexpression[]
     @Test

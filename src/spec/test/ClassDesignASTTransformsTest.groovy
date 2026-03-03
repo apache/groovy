@@ -17,12 +17,11 @@
  *  under the License.
  */
 
-
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class ClassDesignASTTransformsTest {
+final class ClassDesignASTTransformsTest {
 
     @Test
     void testDelegateTransformation() {
@@ -485,5 +484,4 @@ assert Factorial.factorial(50000).toString().size() == 213237 // Big number and 
 // end::tailrecursive[]
 '''
     }
-
 }

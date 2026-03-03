@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class StaticPropertyMissingAndMethodMissingTest {
+final class StaticPropertyMissingAndMethodMissingTest {
 
     @Test
     void testStaticMethodMissing() {

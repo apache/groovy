@@ -24,7 +24,8 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 @CompileStatic
-class BuilderSpecTest {
+final class BuilderSpecTest {
+
     @Test
     void testBuilderSupport() {
         assertScript '''

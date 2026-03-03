@@ -1,4 +1,3 @@
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -22,7 +21,8 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-class SaferScriptingASTTransformsTest {
+final class SaferScriptingASTTransformsTest {
+
     @Test
     void testThreadInterrupt() {
         assertScript '''import groovy.transform.ThreadInterrupt
@@ -294,6 +294,7 @@ assert Quotas.quotas['user'] < 0
 // end::conditionalinterrupt_injected[]
 '''
     }
+
     @Test
     void testConditionalInterruptThrown() {
         assertScript '''import groovy.transform.ConditionalInterrupt
@@ -352,5 +353,4 @@ assert Quotas.quotas['user'] == 'Quota exceeded'
 // end::conditionalinterrupt_thrown[]
 '''
     }
-
 }

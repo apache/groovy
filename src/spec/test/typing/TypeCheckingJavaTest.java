@@ -19,9 +19,11 @@
 package typing;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TypeCheckingJavaTest {
+final class TypeCheckingJavaTest {
+
     @Test
     public void testJavaMethodSelection() {
         // tag::java_method_selection_body[]

@@ -21,6 +21,7 @@ package testingguide
 import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 // tag::map_coercion[]
         class TranslationService {
@@ -57,7 +58,7 @@ import org.junit.jupiter.api.AfterEach
 
 // end::emc2[]
 
-class MockingExampleTests {
+final class MockingExampleTests {
 
     @AfterEach
     void tearDown() {
@@ -66,6 +67,7 @@ class MockingExampleTests {
         GroovySystem.metaClassRegistry.setMetaClass(Book, null)
     }
 
+    @Test
     void testMapCoercion() {
         // tag::map_coercion[]
         def service = [convert: { String key -> 'some text' }] as TranslationService
@@ -73,6 +75,7 @@ class MockingExampleTests {
         // end::map_coercion[]
     }
 
+    @Test
     void testClosureCoercion() {
         // tag::closure_coercion[]
         def service = { String key -> 'some text' } as TranslationService
@@ -80,6 +83,7 @@ class MockingExampleTests {
         // end::closure_coercion[]
     }
 
+    @Test
     void testSAMCoercion() {
         // tag::sam_coercion[]
         BaseService service = { -> println 'doing something' }
@@ -87,6 +91,7 @@ class MockingExampleTests {
         // end::sam_coercion[]
     }
 
+    @Test
     void testMockFor() {
         // tag::mockFor[]
         def mock = new MockFor(Person)      // <1>
@@ -101,6 +106,7 @@ class MockingExampleTests {
         // end::mockFor[]
     }
 
+    @Test
     void testStubFor() {
         // tag::stubFor[]
         def stub = new StubFor(Person)      // <1>
@@ -118,6 +124,7 @@ class MockingExampleTests {
         // end::stubFor[]
     }
 
+    @Test
     void testEMC() {
         // tag::emc[]
         String.metaClass.swapCase = {->
@@ -138,6 +145,7 @@ class MockingExampleTests {
         // end::emc4[]
     }
 
+    @Test
     void testEMCStaticMethod() {
         // tag::emc2[]
         Book.metaClass.static.create << { String title -> new Book(title:title) }
@@ -147,6 +155,7 @@ class MockingExampleTests {
         // end::emc2[]
     }
 
+    @Test
     void testEMCConstructor() {
         // tag::emc3[]
         Book.metaClass.constructor << { String title -> new Book(title:title) }
@@ -156,6 +165,7 @@ class MockingExampleTests {
         // end::emc3[]
     }
 
+    @Test
     void testEMCPerObject() {
         // tag::emc5[]
         def b = new Book(title: "The Stand")

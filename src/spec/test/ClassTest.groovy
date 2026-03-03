@@ -17,9 +17,14 @@
  *  under the License.
  */
 
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 final class ClassTest {
 
+    @Test
     void testClassDefinition() {
         assertScript '''
             // tag::class_definition[]
@@ -41,6 +46,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testInnerInstantiation() {
         assertScript '''
             // tag::inner_instantiation[]
@@ -59,6 +65,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testInnerClass() {
         assertScript '''
             // tag::inner_class[]
@@ -80,6 +87,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testInnerClass2() {
         assertScript '''
             // tag::inner_class2[]
@@ -101,6 +109,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testAnonymousInnerClass() {
         assertScript '''
             // tag::anonymous_inner_class[]
@@ -120,6 +129,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testAbstractClass() {
         assertScript '''
             // tag::abstract_class[]
@@ -137,6 +147,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testConstructorPositionalParameters() {
         assertScript '''
             // tag::constructor_positional_parameters[]
@@ -161,6 +172,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testConstructorNamedParameters() {
         assertScript '''
             // tag::constructor_named_parameters[]
@@ -179,6 +191,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testInterfaceDefinition() {
         assertScript '''
             // tag::interface_def_1[]
@@ -232,6 +245,7 @@ final class ClassTest {
         assert err.message.contains("The method 'greet' must be public as it is declared abstract in interface 'Greeter'")
     }
 
+    @Test
     void testFields() {
         assertScript '''
             // tag::field_declaration[]
@@ -267,6 +281,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testProperties() {
         assertScript '''
             // tag::properties_definition[]
@@ -379,6 +394,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testDefineAnnotation() {
         assertScript '''
             // tag::define_annotation[]
@@ -388,6 +404,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testAnnotationMembers() {
         assertScript '''
             // tag::ann_member_string[]
@@ -441,6 +458,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testApplyAnnotation() {
         assertScript '''
             @interface SomeAnnotation {
@@ -500,6 +518,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testAnnotationTarget() {
         assertScript '''
             // tag::ann_target[]
@@ -513,6 +532,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testAnnotationRetention() {
         assertScript '''
             // tag::ann_retention[]
@@ -526,6 +546,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testClosureAsAnnotationValue() {
         assertScript '''
             import java.lang.annotation.Retention
@@ -586,6 +607,7 @@ final class ClassTest {
         '''
     }
 
+    @Test
     void testAnnotationCollector() {
         assertScript '''import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -635,6 +657,7 @@ import java.lang.annotation.RetentionPolicy
         '''
     }
 
+    @Test
     void testAnnotationCollectorWithParams() {
         assertScript '''
             import java.lang.annotation.Retention
@@ -667,6 +690,7 @@ import java.lang.annotation.RetentionPolicy
         '''
     }
 
+    @Test
     void testAnnotationCollectorWithSameParamNames() {
         assertScript '''
 
@@ -732,6 +756,7 @@ import java.lang.annotation.Retention
         assert err.message =~ /Attribute 'value' should have type 'java.lang.String'; but found type 'int' in @Foo/
     }
 
+    @Test
     void testCustomProcessor() {
         assertScript '''import groovy.transform.AnnotationCollector
             import groovy.transform.CompileStatic

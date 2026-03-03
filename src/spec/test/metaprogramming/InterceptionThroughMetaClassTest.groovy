@@ -22,7 +22,7 @@ import groovy.xml.Entity
 import org.junit.jupiter.api.Test
 
 // tag::meta_class_interception[]
-class InterceptionThroughMetaClassTest {
+final class InterceptionThroughMetaClassTest {
 
     @Test
     void testPOJOMetaClassInterception() {
