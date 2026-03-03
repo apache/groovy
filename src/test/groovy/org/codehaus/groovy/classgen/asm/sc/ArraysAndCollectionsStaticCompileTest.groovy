@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ArraysAndCollectionsSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : arrays and collections.
  */
 final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsSTCTest implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldNotThrowVerifyError() {
         assertScript '''
             def al = new ArrayList<Double>()
@@ -34,6 +36,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-5654
+    @Test
     void testShouldNotThrowForbiddenAccessWithMapProperty() {
         assertScript '''
             Map<String, Integer> m = ['abcd': 1234]
@@ -43,6 +46,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-5988
+    @Test
     void testMapArraySetPropertyAssignment() {
         assertScript '''import static java.lang.reflect.Modifier.isPrivate
             Map<String, Object> props(Object o) {
@@ -62,6 +66,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-7656
+    @Test
     void testSpreadSafeMethodCallsOnListLiteralShouldNotCreateListTwice() {
         assertScript '''
             class Foo {
@@ -78,6 +83,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-7688
+    @Test
     void testSpreadSafeMethodCallReceiversWithSideEffectsShouldNotBeVisitedTwice() {
         assertScript '''
             class Foo {
@@ -93,6 +99,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     @Override
+    @Test
     void testMultiDimensionalArray4() {
         super.testMultiDimensionalArray4()
         String script = astTrees.values()[0][1]
@@ -102,6 +109,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-11309
+    @Test
     void testListLiteralToSetAssignmentSC() {
         for (t in ['LinkedHashSet','HashSet','Set']) {
             astTrees.clear()
@@ -118,6 +126,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-11309
+    @Test
     void testListLiteralToListAssignmentSC() {
         for (t in ['ArrayList','List','Collection','Iterable']) {
             astTrees.clear()
@@ -147,6 +156,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-10029
+    @Test
     void testCollectionToArrayAssignmentSC() {
         assertScript '''
             class C {
@@ -166,6 +176,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
         assert !out.contains('INVOKEDYNAMIC cast(Ljava/util/List;)') : 'dynamic cast should have been replaced by direct method call'
     }
 
+    @Test
     void testCollectionToObjectAssignmentSC() {
         assertScript '''
             def collectionOfI = [1,2,3]

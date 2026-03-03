@@ -16,7 +16,6 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.IOGMClosureParamTypeInferenceSTCTest
@@ -24,7 +23,5 @@ import groovy.transform.stc.IOGMClosureParamTypeInferenceSTCTest
 /**
  * Unit tests for static compilation: closure parameter type inference: IOGroovyMethods.
  */
-class IOGMClosureParamTypeInferenceStaticCompileTest extends IOGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
-
+final class IOGMClosureParamTypeInferenceStaticCompileTest extends IOGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 }
-

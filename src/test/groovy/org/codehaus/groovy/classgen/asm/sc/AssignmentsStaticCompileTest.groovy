@@ -19,13 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.STCAssignmentTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : assignments.
  */
 final class AssignmentsStaticCompileTest extends STCAssignmentTest implements StaticCompilationTestSupport {
 
-    @Override // GROOVY-8707
+    // GROOVY-8707
+    @Override @Test
     void testPlusEqualsOnProperty() {
         super.testPlusEqualsOnProperty()
         String bytecode = astTrees['C'][1]

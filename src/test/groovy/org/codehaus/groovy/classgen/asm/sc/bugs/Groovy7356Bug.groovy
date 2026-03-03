@@ -16,22 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
-
-
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7356Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7356Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldNotFailCompilationBecauseOfForEachAndTry() {
         assertScript '''
 
@@ -50,6 +43,7 @@ class Groovy7356Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testShouldNotFailCompilationBecauseOfForEachAndTryDirectArray() {
         assertScript '''
 

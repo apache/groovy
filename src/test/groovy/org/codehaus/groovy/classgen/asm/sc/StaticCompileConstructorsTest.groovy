@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ConstructorsSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation: constructors.
  */
 final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
 
+    @Test
     void testMapConstructorError() {
         assertScript '''
             class C {
@@ -45,6 +47,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
     }
 
     // GROOVY-11843
+    @Test
     void testMapConstructorOptimization() {
         assertScript '''
             class C {
@@ -58,6 +61,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert method.count('ACONST_NULL') == 0
     }
 
+    @Test
     void testPrivateConstructorFromClosure() {
         assertScript '''
             class C {
@@ -74,6 +78,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         '''
     }
 
+    @Test
     void testPrivateConstructorFromStaticInnerClass() {
         assertScript '''
             class Foo {
@@ -92,6 +97,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert bar.contains('INVOKESPECIAL Foo.<init> (Ljava/lang/String;)V')
     }
 
+    @Test
     void testPrivateConstructorFromAnonymousInnerClass() {
         assertScript '''
             class Foo {
@@ -112,7 +118,7 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
     }
 
     // GROOVY-11119, GROOVY-11451
-    @Override
+    @Override @Test
     void testMapStyleConstructorWithOverloadedSetterName() {
         super.testMapStyleConstructorWithOverloadedSetterName()
         String  asserts = astTrees.find{ it.key != 'C' }.value[1]

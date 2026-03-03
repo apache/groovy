@@ -19,13 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.UnaryOperatorSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : unary operators.
  */
-class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest implements StaticCompilationTestSupport {
+final class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest implements StaticCompilationTestSupport {
 
-    @Override
+    @Override @Test
     void testUnaryPlus_char() {
         assertScript '''
             char x = 1
@@ -33,7 +34,7 @@ class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest implements Sta
         '''
     }
 
-    @Override
+    @Override @Test
     void testUnaryMinus_char() {
         assertScript '''
             char x = 1
@@ -41,7 +42,7 @@ class UnaryOperatorStaticCompileTest extends UnaryOperatorSTCTest implements Sta
         '''
     }
 
-    @Override
+    @Override @Test
     void testBitwiseNegate_char() {
         assertScript '''
             char x = 1

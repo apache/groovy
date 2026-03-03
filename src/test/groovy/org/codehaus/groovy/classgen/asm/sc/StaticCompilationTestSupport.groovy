@@ -30,6 +30,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.jupiter.api.BeforeEach
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.util.CheckClassAdapter
 
@@ -46,11 +47,12 @@ import java.security.CodeSource
 @AutoFinal @SelfType(StaticTypeCheckingTestCase)
 trait StaticCompilationTestSupport {
 
-    Map<String, Tuple2<ClassNode, String>> astTrees
+    Map<String, Tuple2<ClassNode, String>> astTrees = new HashMap<>()
+
     CompilationUnit compilationUnit
 
-    void extraSetup() {
-        astTrees = new HashMap<>()
+    @BeforeEach
+    void setUpTestCase() {
         config = new CompilerConfiguration()
         config.addCompilationCustomizers(
                 new ImportCustomizer().tap {
@@ -75,12 +77,6 @@ trait StaticCompilationTestSupport {
         shell = new GroovyShell(loader, config)
     }
 
-    void tearDown() {
-        astTrees = null
-        compilationUnit = null
-        super.tearDown()
-    }
-
     void assertAndDump(String script) {
         try {
             assertScript(script)
@@ -89,7 +85,10 @@ trait StaticCompilationTestSupport {
         }
     }
 
+    //--------------------------------------------------------------------------
+
     static class CompilationUnitAwareGroovyClassLoader extends GroovyClassLoader {
+
         StaticCompilationTestSupport testCase
 
         CompilationUnitAwareGroovyClassLoader(
@@ -107,6 +106,7 @@ trait StaticCompilationTestSupport {
     }
 
     static class ASTTreeCollector extends CompilationCustomizer {
+
         StaticCompilationTestSupport testCase
 
         ASTTreeCollector(StaticCompilationTestSupport testCase) {

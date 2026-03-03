@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testPostfixPlusOnMap() {
         assertScript '''
             Map<String, Integer> frequencies = [a:0]
@@ -32,6 +34,7 @@ final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCo
         '''
     }
 
+    @Test
     void testPostfixPlusOnMapWithDefault() {
         assertScript '''
             Map<String, Integer> frequencies = [:]
@@ -41,6 +44,7 @@ final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCo
         '''
     }
 
+    @Test
     void testPrefixPlusOnMap() {
         assertScript '''
             Map<String, Integer> frequencies = [a:0]
@@ -50,6 +54,7 @@ final class Groovy6558Bug extends StaticTypeCheckingTestCase implements StaticCo
         '''
     }
 
+    @Test
     void testPrefixPlusOnMapWithDefault() {
         assertScript '''
             Map<String, Integer> frequencies = [:]

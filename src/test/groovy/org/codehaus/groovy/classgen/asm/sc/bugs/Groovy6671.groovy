@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy6671 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testGenericsInference() {
         assertScript '''
             interface Converter<I, O> {
@@ -62,6 +64,7 @@ final class Groovy6671 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
+    @Test
     void testGenericsInferenceWithPlaceholderNameClash() {
         assertScript '''
             interface Converter<F, T> {

@@ -18,11 +18,16 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
 /**
  * Unit tests for static type checking : unary operators.
  */
 class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testUnaryPlus_int() {
         assertScript '''
             int x = 1
@@ -30,6 +35,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_int() {
         assertScript '''
             int x = 1
@@ -37,6 +43,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_int() {
         assertScript '''
             int x = 1
@@ -46,6 +53,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_long() {
         assertScript '''
             long x = 1L
@@ -53,6 +61,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_long() {
         assertScript '''
             long x = 1L
@@ -61,6 +70,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9704
+    @Test
     void testBitwiseNegate_long() {
         assertScript '''
             long x = 1L
@@ -70,6 +80,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_short() {
         assertScript '''
             short x = 1
@@ -77,6 +88,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_short() {
         assertScript '''
             short x = 1
@@ -84,6 +96,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_short() {
         assertScript '''
             short x = 1
@@ -93,6 +106,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_byte() {
         assertScript '''
             byte x = 1
@@ -100,6 +114,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_byte() {
         assertScript '''
             byte x = 1
@@ -107,6 +122,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_byte() {
         assertScript '''
             byte x = 1
@@ -116,6 +132,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_char() {
         shouldFail MissingMethodException, '''
             char x = 1
@@ -123,6 +140,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_char() {
         shouldFail MissingMethodException, '''
             char x = 1
@@ -130,6 +148,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_char() {
         shouldFail MissingMethodException, '''
             char x = 1
@@ -139,6 +158,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_float() {
         assertScript '''
             float x = 1f
@@ -146,6 +166,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_float() {
         assertScript '''
             float x = 1f
@@ -153,6 +174,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_float() {
         shouldFail UnsupportedOperationException, '''
             float x = 1f
@@ -162,6 +184,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_double() {
         assertScript '''
             double x = 1d
@@ -169,6 +192,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_double() {
         assertScript '''
             double x = 1d
@@ -176,6 +200,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_double() {
         shouldFail UnsupportedOperationException, '''
             double x = 1d
@@ -185,6 +210,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_Integer() {
         assertScript '''
             Integer x = new Integer(1)
@@ -192,6 +218,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_Integer() {
         assertScript '''
             Integer x = new Integer(1)
@@ -199,6 +226,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_Integer() {
         assertScript '''
             Integer x = new Integer(1)
@@ -208,6 +236,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_Long() {
         assertScript '''
             Long x = new Long(1L)
@@ -215,6 +244,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_Long() {
         assertScript '''
             Long x = new Long(1L)
@@ -222,6 +252,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_Long() {
         assertScript '''
             Long x = new Long(1L)
@@ -231,6 +262,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_Short() {
         assertScript '''
             Short x = new Short((short)1)
@@ -238,6 +270,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_Short() {
         assertScript '''
             Short x = new Short((short)1)
@@ -245,6 +278,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_Short() {
         assertScript '''
             Short x = new Short((short)1)
@@ -254,6 +288,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_Byte() {
         assertScript '''
             Byte x = new Byte((byte)1)
@@ -261,6 +296,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_Byte() {
         assertScript '''
             Byte x = new Byte((byte)1)
@@ -268,6 +304,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_Byte() {
         assertScript '''
             Byte x = new Byte((byte)1)
@@ -277,6 +314,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_Character() {
         shouldFail MissingMethodException, '''
             Character x = new Character((char)1)
@@ -284,6 +322,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_Character() {
         shouldFail MissingMethodException, '''
             Character x = new Character((char)1)
@@ -291,6 +330,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_Character() {
         shouldFail MissingMethodException, '''
             Character x = new Character((char)1)
@@ -300,6 +340,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_Float() {
         assertScript '''
             Float x = new Float(1f)
@@ -307,6 +348,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_Float() {
         assertScript '''
             Float x = new Float(1f)
@@ -314,6 +356,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_Float() {
         shouldFail UnsupportedOperationException, '''
             Float x = new Float(1f)
@@ -323,6 +366,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testUnaryPlus_Double() {
         assertScript '''
             Double x = new Double(1d)
@@ -330,6 +374,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus_Double() {
         assertScript '''
             Double x = new Double(1d)
@@ -337,6 +382,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate_Double() {
         shouldFail UnsupportedOperationException, '''
             Double x = new Double(1d)
@@ -346,6 +392,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
     //
 
+    @Test
     void testIntXIntInferredType() {
         assertScript '''
             int x = 1
@@ -394,6 +441,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleXDoubleInferredType() {
         assertScript '''
             double x = 1
@@ -442,6 +490,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIntUnaryMinusInferredType() {
         assertScript '''
             int x = 1
@@ -452,6 +501,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShortUnaryMinusInferredType() {
         assertScript '''
             short x = 1
@@ -462,6 +512,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testByteUnaryMinusInferredType() {
         assertScript '''
             byte x = 1
@@ -472,6 +523,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testLongUnaryMinusInferredType() {
         assertScript '''
             long x = 1
@@ -482,6 +534,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFloatUnaryMinusInferredType() {
         assertScript '''
             float x = 1
@@ -492,6 +545,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleUnaryMinusInferredType() {
         assertScript '''
             double x = 1
@@ -503,6 +557,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5834
+    @Test
     void testCreatePatternInField() {
         assertScript '''
             class Sample {
@@ -516,6 +571,7 @@ class UnaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6223
+    @Test
     void testShouldNotRequireExplicitTypeDefinition() {
         assertScript '''
         def i = 0

@@ -20,11 +20,14 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Units tests for type checking extensions.
  */
-class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
+final class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
 
     private void setExtension(String name) {
         def cz = config.compilationCustomizers.find {
@@ -37,6 +40,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testSetupExtension() {
         extension = 'groovy/transform/stc/SetupTestExtension.groovy'
         assertScript '''
@@ -52,21 +56,21 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNonExistentExtension() {
         def extensionPath = 'groovy/transform/stc/NonExistentTestExtension.groovy'
         extension = extensionPath
 
         String errorMessage = "Static type checking extension '${extensionPath}' was not found on the classpath."
 
-        String message = shouldFail(MultipleCompilationErrorsException) {
-            assertScript '''
-                assert true
-            '''
-        }
+        String message = shouldFail shell, MultipleCompilationErrorsException, '''
+            assert true
+        '''
 
         assert message.contains(errorMessage)
     }
 
+    @Test
     void testFinishExtension() {
         extension = 'groovy/transform/stc/FinishTestExtension.groovy'
         assertScript '''
@@ -82,6 +86,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNewMethodAndIsGenerated() {
         extension = 'groovy/transform/stc/NewMethodAndIsGeneratedTestExtension.groovy'
         shouldFailWithMessages '''
@@ -90,6 +95,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Extension was executed properly'
     }
 
+    @Test
     void testUndefinedVariable() {
         extension = 'groovy/transform/stc/UndefinedVariableTestExtension.groovy'
         try {
@@ -101,6 +107,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testUndefinedVariableNoHandle() {
         extension = 'groovy/transform/stc/UndefinedVariableNoHandleTestExtension.groovy'
         shouldFailWithMessages '''
@@ -109,6 +116,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'The variable [foo] is undeclared'
     }
 
+    @Test
     void testMissingMethod() {
         extension = null
         shouldFailWithMessages '''
@@ -128,6 +136,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testMissingMethodWithLogic() {
         extension = null
         shouldFailWithMessages '''
@@ -149,6 +158,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testShouldSilenceTypeChecker() {
         extension = 'groovy/transform/stc/SilentTestExtension.groovy'
         assertScript '''import org.codehaus.groovy.runtime.typehandling.GroovyCastException
@@ -159,6 +169,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldChangeErrorPrefix() {
         extension = 'groovy/transform/stc/PrefixChangerTestExtension.groovy'
         shouldFailWithMessages '''
@@ -167,6 +178,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '[Custom] - Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testAfterMethodCallHook() {
         extension = 'groovy/transform/stc/SprintfExtension.groovy'
         shouldFailWithMessages '''
@@ -177,6 +189,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'For placeholder 1 [%d] expected \'int\' but was \'java.lang.String\''
     }
 
+    @Test
     void testBeforeMethodCallHook() {
         extension = 'groovy/transform/stc/UpperCaseMethodTest1Extension.groovy'
         shouldFailWithMessages '''
@@ -188,6 +201,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Calling a method which is all uppercase is not allowed'
     }
 
+    @Test
     void testBeforeMethodHook() {
         extension = 'groovy/transform/stc/UpperCaseMethodTest2Extension.groovy'
         shouldFailWithMessages '''
@@ -197,6 +211,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Defining method which is all uppercase is not allowed'
     }
 
+    @Test
     void testAfterMethodHook() {
         extension = 'groovy/transform/stc/UpperCaseMethodTest3Extension.groovy'
         shouldFailWithMessages '''
@@ -206,6 +221,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Defining method which is all uppercase is not allowed'
     }
 
+    @Test
     void testMethodSelection() {
         // first step checks that without extension, type checking works properly
         extension = null
@@ -226,6 +242,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnresolvedProperty() {
         extension = null
         shouldFailWithMessages '''
@@ -242,6 +259,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testUnresolvedAttribute() {
         extension = null
         shouldFailWithMessages '''
@@ -258,6 +276,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testScopeEnterScopeExit() {
         extension = 'groovy/transform/stc/ScopeEnterExitTestExtension.groovy'
         shouldFailWithMessages '''
@@ -271,6 +290,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Scope enter and exit behave correctly' // we're using shouldFail just to verify that the extension is ran
     }
 
+    @Test
     void testMatchingArguments() {
         extension = 'groovy/transform/stc/ArgumentsTestingTestExtension.groovy'
         shouldFailWithMessages '''
@@ -290,6 +310,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Method [three] with matching arguments found: 3'
     }
 
+    @Test
     void testFirstArgsMatches() {
         extension = 'groovy/transform/stc/FirstArgumentsTestingTestExtension.groovy'
         shouldFailWithMessages '''
@@ -304,6 +325,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Method [three] with matching arguments found: 3'
     }
 
+    @Test
     void testNthArgMatches() {
         extension = 'groovy/transform/stc/NthArgumentTestingTestExtension.groovy'
         shouldFailWithMessages '''
@@ -323,6 +345,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Method [three] with matching argument found: [2, class java.util.Date]'
     }
 
+    @Test
     void testBinaryOperatorNotFound() {
         extension = null
         shouldFailWithMessages '''
@@ -342,6 +365,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBinaryOperatorNotFound2() {
         extension = null
         shouldFailWithMessages '''
@@ -361,6 +385,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesTo() {
         String source = '''
             class Item {
@@ -382,6 +407,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         assertScript(source)
     }
 
+    @Test
     void testIsAnnotatedBy() {
         extension = null
         assertScript '''
@@ -399,6 +425,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBeforeAfterClass() {
         extension = 'groovy/transform/stc/BeforeAfterClassTestExtension.groovy'
         assertScript '''
@@ -419,6 +446,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testLookupClassNodeNotAvailableOnExtensionsClasspath() {
         extension = 'groovy/transform/stc/RobotMove.groovy'
         assertScript '''
@@ -436,6 +464,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotThrowNPE_Groovy6047() {
         extension = 'groovy/transform/stc/Groovy6047Extension.groovy'
         try {
@@ -448,6 +477,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testAmbiguousMethodCall() {
         // fail with error from type checker
         extension = null
@@ -459,16 +489,15 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         ''', 'Reference to method is ambiguous'
         // fail with error from runtime
         extension = 'groovy/transform/stc/AmbiguousMethods.groovy'
-        shouldFail {
-            assertScript '''
-                int foo(Integer x) { 1 }
-                int foo(String s) { 2 }
-                int foo(Date d) { 3 }
-                assert foo(null) == 2
-            '''
-        }
+        shouldFail shell, '''
+            int foo(Integer x) { 1 }
+            int foo(String s) { 2 }
+            int foo(Date d) { 3 }
+            assert foo(null) == 2
+        '''
     }
 
+    @Test
     void testIncompatibleAssignment() {
         String source = '''
             int x = 'x'
@@ -483,6 +512,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         assertScript source
     }
 
+    @Test
     void testIncompatibleReturnType() {
         String source = '''
             Date foo() { '1' }
@@ -498,6 +528,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8168
+    @Test
     void testIncompatibleReturnType2() {
         String source = '''
             @FunctionalInterface
@@ -518,6 +549,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         assertScript source
     }
 
+    @Test
     void testPrecompiledExtension() {
         extension = null
         assertScript '''
@@ -531,6 +563,7 @@ class TypeCheckingExtensionsTest extends StaticTypeCheckingTestCase {
         'Error thrown from extension'
     }
 
+    @Test
     void testPrecompiledExtensionNotExtendingTypeCheckingDSL() {
         extension = null
         assertScript '''

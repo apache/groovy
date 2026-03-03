@@ -19,13 +19,15 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
  */
 class MiscSTCTest extends StaticTypeCheckingTestCase {
 
-     void testFibonacci() {
+    @Test
+    void testFibonacci() {
          assertScript '''
             long sd = System.currentTimeMillis()
             int fib(int i) {
@@ -37,6 +39,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
          '''
      }
 
+    @Test
     void testGreeter() {
         assertScript '''
             class Greet {
@@ -55,6 +58,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureReturnTypeShouldNotBeTestedAgainstMethodReturnType() {
         assertScript '''
         void method() {
@@ -65,6 +69,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyOnClass() {
         assertScript '''
             Class clazz = String
@@ -72,12 +77,14 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDirectPropertyOnClass() {
         assertScript '''
             assert String.name=='java.lang.String'
         '''
     }
 
+    @Test
     void testMethodOnClass() {
         assertScript '''
             Class clazz = String
@@ -85,24 +92,28 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDirectMethodOnClass() {
         assertScript '''
             String.getDeclaredFields()
         '''
     }
 
+    @Test
     void testFieldsFromClass() {
         assertScript '''
             String.class.fields
         '''
     }
 
+    @Test
     void testDirectFieldsFromClass() {
         assertScript '''
             String.fields
         '''
     }
 
+    @Test
     void testMissingSetter() {
         shouldFailWithMessages '''
             class Foo {
@@ -113,6 +124,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot set read-only property: name'
     }
 
+    @Test
     void testMissingSetterThroughPath() {
         shouldFailWithMessages '''
             class Foo {
@@ -126,6 +138,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot set read-only property: name'
     }
 
+    @Test
     void testMissingSetterAndWith() {
         shouldFailWithMessages '''
             class Foo {
@@ -138,6 +151,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot set read-only property: name'
     }
 
+    @Test
     void testFindMethodFromSameClass() {
         assertScript '''
         class Foo {
@@ -152,6 +166,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallToSuperConstructor() {
         assertScript '''
             class MyException extends Exception {
@@ -161,6 +176,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallToThisConstructor() {
         assertScript '''
             class MyException extends Exception {
@@ -173,6 +189,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCompareEnumToNull() {
         assertScript '''
             enum MyEnum { a,b }
@@ -184,6 +201,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10197
+    @Test
     void testEnumMethodOverride() {
         assertScript '''
             enum E {
@@ -206,6 +224,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10845
+    @Test
     void testEnumConstructorChecks() {
         shouldFailWithMessages '''
             enum E {
@@ -256,6 +275,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMethodReturnTypeInferenceShouldNotWorkBecauseNotSameSourceUnit() {
         shouldFailWithMessages '''
             import groovy.transform.stc.MiscSTCTest.MiscSTCTestSupport as A
@@ -264,6 +284,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#toInteger()'
     }
 
+    @Test
     void testClassLiteralAsArgument() {
         assertScript '''
             void lookup(Class clazz) { }
@@ -272,6 +293,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5922
+    @Test
     void testUnwrapPrimitiveLongType() {
 
         assertScript '''
@@ -321,6 +343,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6165 && GROOVY-6196
+    @Test
     void testPropertyNameFromMethodName() {
         // too bad we're not using Spock!
 
@@ -348,6 +371,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         static def foo() { '123' }
     }
 
+    @Test
     void testTernaryParam() {
         assertScript '''
             Date ternaryParam(Object input) {
@@ -360,6 +384,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testTernaryLocalVar() {
         assertScript '''
             Date ternaryLocalVar(Object input) {
@@ -373,6 +398,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIfThenElseParam() {
         assertScript '''
             Date ifThenElseParam(Object input) {
@@ -389,6 +415,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIfThenElseLocalVar() {
         assertScript '''
             Date ifThenElseLocalVar(Object input) {
@@ -407,6 +434,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIfThenElseLocalVar2() {
         assertScript '''
             class FooBase {}
@@ -427,6 +455,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8325
+    @Test
     void testNumericCoercion() {
         assertScript '''
             class Foo {
@@ -444,6 +473,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNumericCoercionWithCustomNumber() {
         shouldFailWithMessages '''
             class CustomNumber extends Number {
@@ -465,6 +495,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8380
+    @Test
     void testBitOperatorsWithNumbers() {
         assertScript '''
             def method() {
@@ -486,6 +517,7 @@ class MiscSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8384
+    @Test
     void testIntdiv() {
         assertScript '''
             def method() {

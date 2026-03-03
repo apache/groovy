@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : explicit and implicit returns.
  */
 class ReturnsSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testVoidReturn() {
         shouldFailWithMessages '''
             void method() {
@@ -33,6 +36,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type void to variable of type int'
     }
 
+    @Test
     void testIncompatibleExplicitReturn() {
         shouldFailWithMessages '''
             String method() {
@@ -44,6 +48,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testIncompatibleExplicitReturn2() {
         shouldFailWithMessages '''
             int method() {
@@ -53,6 +58,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.lang.String for method returning int'
     }
 
+    @Test
     void testIncompatibleImplicitReturn2() {
         shouldFailWithMessages '''
             int method() {
@@ -62,6 +68,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.lang.String for method returning int'
     }
 
+    @Test
     void testIncompatibleImplicitReturn() {
         shouldFailWithMessages '''
             String method() {
@@ -73,6 +80,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testImplicitReturnFailureWithIfElse() {
         shouldFailWithMessages '''
             int method() {
@@ -86,6 +94,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.lang.String for method returning int'
     }
 
+    @Test
     void testImplicitReturnFailureWithIfElse2() {
         shouldFailWithMessages '''
             int method() {
@@ -99,6 +108,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.lang.String for method returning int'
     }
 
+    @Test
     void testImplicitReturnFailureWithIfElse3() {
         shouldFailWithMessages '''
             int method() {
@@ -113,6 +123,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.lang.String for method returning int' // second branch
     }
 
+    @Test
     void testImplicitReturnFailureWithSwitch() {
          shouldFailWithMessages '''
              int method(int x) {
@@ -131,6 +142,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
          'Cannot return value of type java.lang.String for method returning int'
     }
 
+    @Test
     void testImplicitReturnFailureWithSwitch2() {
         assertScript '''
             int method(int x) {
@@ -147,6 +159,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testWrongReturnType() {
         shouldFailWithMessages '''
             double greeting(String name) {
@@ -156,6 +169,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.lang.Object for method returning double'
     }
 
+    @Test
     void testRecursiveTypeInferrence() {
         assertScript '''
             def fib(int i) {
@@ -165,6 +179,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFindMethodWithInferredReturnType() {
         assertScript '''
             def square(int i) { i*i }
@@ -175,6 +190,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReturnTypeInferrenceInSingleClass() {
         assertScript '''
             class Foo {
@@ -187,6 +203,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testImplicitReturnToString1() {
         assertScript '''
             // automatic toString works
@@ -197,6 +214,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testImplicitReturnToString2() {
         shouldFailWithMessages '''
             String methodWithImplicitConversion() {
@@ -208,6 +226,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10079
+    @Test
     void testImplicitReturnToPrimitive() {
         assertScript '''
             int foo() {
@@ -232,6 +251,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10087
+    @Test
     void testImplicitReturnToWrapper() {
         assertScript '''
             Integer foo() {
@@ -259,6 +279,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11623
+    @Test
     void testImplicitReturnToArray() {
         assertScript '''
             int[] foo() {
@@ -315,6 +336,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5835
+    @Test
     void testReturnInClosureShouldNotBeConsideredAsReturnOfEnclosingMethod() {
         assertScript '''
             int enclosingMethod() {
@@ -324,6 +346,7 @@ class ReturnsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReturnTypeInferenceWithInheritance() {
         assertScript '''
             interface Greeter {

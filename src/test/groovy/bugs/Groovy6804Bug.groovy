@@ -18,30 +18,28 @@
  */
 package bugs
 
-import groovy.test.NotYetImplemented
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6804Bug extends StaticTypeCheckingTestCase {
+final class Groovy6804Bug extends StaticTypeCheckingTestCase {
 
+    @Test
     void testOverloadedMethod() {
         assertScript '''
             class Base<K extends Serializable, V> {
                 void delete(K key) {}
-
                 void delete(V value) {}
             }
-
-            class Foo extends Base<String, Integer> {}
-
-            public class Class1 {
+            class Foo extends Base<String, Integer> {
+            }
+            class Class1 {
                 Class1() {
-                    Foo foo = new Foo();
-
-                    foo.delete(1);
+                    Foo foo = new Foo()
+                    foo.delete(1)
                 }
             }
-            new Class1();
+
+            new Class1()
         '''
     }
-
 }

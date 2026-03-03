@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation: DGM method calls.
  */
-class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldOptimizeAsTypeToSimpleCast() {
         try {
             assertScript '''
@@ -37,6 +39,7 @@ class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase imple
         }
     }
 
+    @Test
     void testShouldOptimizeCharToLongAsTypeToSimpleCast() {
         try {
             assertScript '''
@@ -49,6 +52,7 @@ class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase imple
         }
     }
 
+    @Test
     void testShouldOptimizeLongToCharAsTypeToSimpleCast() {
         try {
             assertScript '''
@@ -61,6 +65,7 @@ class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase imple
         }
     }
 
+    @Test
     void testShouldOptimizeListLiteralToArrayCast() {
         try {
             assertScript '''
@@ -72,6 +77,7 @@ class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase imple
         }
     }
 
+    @Test
     void testShouldOptimizeListLiteralToArrayCastWithIncompatibleElementType() {
         try {
             assertScript '''
@@ -83,6 +89,7 @@ class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase imple
         }
     }
 
+    @Test
     void testShouldOptimizeListLiteralToArrayCastThroughParameter() {
         try {
             assertScript '''
@@ -97,4 +104,3 @@ class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase imple
         }
     }
 }
-

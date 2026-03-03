@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.FieldsAndPropertiesSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : fields and properties.
@@ -26,6 +27,7 @@ import groovy.transform.stc.FieldsAndPropertiesSTCTest
 final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-5561
+    @Test
     void testShouldNotThrowAccessForbidden() {
         assertScript '''
             class Test {
@@ -43,6 +45,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-5579
+    @Test
     void testUseSetterNotSetProperty() {
         assertScript '''
             Date d = new Date()
@@ -55,6 +58,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-5619
+    @Test
     void testUseDirectWriteFieldAccess() {
         assertScript '''
             class C {
@@ -80,6 +84,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert astTrees['D'][1].contains('PUTFIELD C.x')
     }
 
+    @Test
     void testUseDirectWriteStaticFieldAccess() {
         assertScript '''
             class C {
@@ -103,6 +108,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert astTrees['D'][1].contains('PUTSTATIC C.x')
     }
 
+    @Test
     void testUseSetterFieldAccess() {
         assertScript '''
             class C {
@@ -127,6 +133,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert astTrees['D'][1].contains('INVOKEVIRTUAL D.setX')
     }
 
+    @Test
     void testUseDirectWriteFieldAccessFromOutsideClass() {
         assertScript '''
             class C {
@@ -145,6 +152,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert astTrees['D'][1].contains('PUTFIELD C.x')
     }
 
+    @Test
     void testUseDirectWriteFieldAccessPrivateWithRuntimeClassBeingDifferent() {
         assertScript '''
             class C {
@@ -193,6 +201,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testReadFieldFromSameClass() {
         for (mod in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
             assertScript """
@@ -209,6 +218,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         }
     }
 
+    @Test
     void testWriteFieldFromSameClass() {
         for (mod in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
             assertScript """
@@ -226,6 +236,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         }
     }
 
+    @Test
     void testReadFieldFromSuperClass() {
         for (mod in ['public', 'protected', '@groovy.transform.PackageScope']) {
             assertScript """
@@ -245,6 +256,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-9791
+    @Test
     void testReadFieldFromSuperClass2() {
         assertScript '''
             package p
@@ -267,6 +279,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-9791
+    @Test
     void testReadFieldFromSuperClass3() {
         assertScript '''
             package p
@@ -288,6 +301,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert !d.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.getGroovyObjectProperty')
     }
 
+    @Test
     void testReadPropertyFromSuperClass() {
         for (mod in ['', 'public', 'private', 'protected', '@groovy.transform.PackageScope']) {
             assertScript """
@@ -308,6 +322,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         }
     }
 
+    @Test
     void testUseDirectReadFieldAccess() {
         assertScript '''
             class C {
@@ -332,6 +347,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert d.contains('GETFIELD C.x')
     }
 
+    @Test
     void testUseAttributeExternal() {
         assertScript '''
             class C {
@@ -350,6 +366,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testUseAttributeExternalSafe() {
         assertScript '''
             class C {
@@ -368,6 +385,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testUseAttributeExternalSafeWithNull() {
         assertScript '''
             class C {
@@ -384,6 +402,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testUseSetterExternal() {
         assertScript '''
             class C {
@@ -402,6 +421,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testUseAttributeExternalSpread() {
         assertScript '''
             class C {
@@ -420,6 +440,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testUseAttributeExternalSpreadSafeWithNull() {
         assertScript '''
             class C {
@@ -439,6 +460,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testUseAttributeExternalSpreadUsingSetter() {
         assertScript '''
             class C {
@@ -457,6 +479,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testUseAttributeExternalSpreadSafeWithNullUsingSetter() {
         assertScript '''
             class C {
@@ -477,6 +500,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-5649
+    @Test
     void testShouldNotThrowStackOverflowUsingThis() {
         new GroovyShell().evaluate '''
             class HaveOption {
@@ -492,6 +516,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testShouldNotThrowStackOverflow() {
         new GroovyShell().evaluate '''
             class HaveOption {
@@ -507,7 +532,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
-    @Override
+    @Override @Test
     void testPropertyWithMultipleSetters() {
         // we need to override the test because the AST is going to be changed
         assertScript '''
@@ -545,6 +570,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         '''
     }
 
+    @Test
     void testCallSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
         assertScript '''
             class C {
@@ -560,6 +586,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
         assert astTrees[typeName][1].contains('INVOKEVIRTUAL C.setOut (I)V')
     }
 
+    @Test
     void testCallMultiSetterAsPropertyWithinFinallyBlockShouldNotThrowVerifyError() {
         assertScript '''
             class C {
@@ -579,6 +606,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7698
+    @Test
     void testSafePropertyStyleSetterCalls() {
         assertScript '''
             class C {
@@ -594,6 +622,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-9700
+    @Test
     void testVariableAssignmentUsesDirectSetterCall() {
         assertScript '''
             import org.codehaus.groovy.transform.sc.ListOfExpressionsExpression
@@ -623,6 +652,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7705, GROOVY-10687
+    @Test
     void testPrivateFieldMutationInClosureUsesDirectAccess() {
         for (prefix in ['','this.','thisObject.','getThisObject().']) {
             assertScript """
@@ -644,6 +674,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7705, GROOVY-10687
+    @Test
     void testPrivateStaticFieldMutationInClosureUsesDirectAccess() {
         assertScript '''
             class Foo {
@@ -663,6 +694,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7705, GROOVY-10687
+    @Test
     void testPrivateFieldMutationInAICUsesDirectAccess() {
         assertScript '''
             class C {
@@ -681,6 +713,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7705, GROOVY-10687
+    @Test
     void testImplicitPrivateFieldMutationInAICUsesDirectAccess() {
         assertScript '''
             class C {
@@ -699,6 +732,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7705, GROOVY-10687
+    @Test
     void testPrivateStaticFieldMutationInAICUsesDirectAccess() {
         assertScript '''
             class C {
@@ -717,6 +751,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7705, GROOVY-10687
+    @Test
     void testMultiplePrivateFieldMutatorDirectAccess() {
         assertScript '''
             class C {
@@ -740,6 +775,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-7705, GROOVY-9385, GROOVY-10687
+    @Test
     void testPrivateFieldBridgeMethodsAreGeneratedAsNecessary() {
         assertScript '''
             class C {
@@ -773,6 +809,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-8369
+    @Test
     void testPropertyAccessOnEnumClass() {
         assertScript '''
             enum E { }
@@ -781,6 +818,7 @@ final class FieldsAndPropertiesStaticCompileTest extends FieldsAndPropertiesSTCT
     }
 
     // GROOVY-8753
+    @Test
     void testPrivateFieldWithPublicGetter() {
         assertScript '''
             class C {

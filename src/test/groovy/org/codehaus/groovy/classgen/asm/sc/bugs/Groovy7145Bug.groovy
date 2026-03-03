@@ -16,18 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7145Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7145Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldHandlerNullSafeOperatorOnPublicField() {
         assertScript '''
 class SafeNavigation {
@@ -45,6 +42,7 @@ class SafeNavigation {
 '''
     }
 
+    @Test
     void testShouldHandlerNullSafeOperatorOnPublicFieldOfPrimitiveType() {
         assertScript '''
 class SafeNavigation {
@@ -62,6 +60,7 @@ class SafeNavigation {
 '''
     }
 
+    @Test
     void testCorrectTypeForJVMAfterNavigation() {
         assertScript '''
 public class JavaTool {

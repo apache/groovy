@@ -18,16 +18,21 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : closure parameter type inference for {@link org.codehaus.groovy.runtime.StringGroovyMethods}.
  */
 class StringGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
+
+    @Test
     void testCollectReplacements() {
         assertScript '''
             assert "Groovy".collectReplacements { s -> s.equalsIgnoreCase('O') ? s.toUpperCase() : s } == 'GrOOvy'
         '''
     }
 
+    @Test
     void testDropWhile() {
         assertScript '''
             def text = "Groovy"
@@ -38,6 +43,7 @@ class StringGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCas
         '''
     }
 
+    @Test
     void testEachLine() {
         assertScript '''
         def text = """abc
@@ -49,6 +55,7 @@ ghi"""
 '''
     }
 
+    @Test
     void testEachLineWithStartValue() {
         assertScript '''
         def text = """abc
@@ -60,6 +67,7 @@ ghi"""
 '''
     }
 
+    @Test
     void testEachMatch() {
         shouldFailWithMessages '''
         'groovy'.eachMatch('(groo)(vy)') { groups ->
@@ -80,6 +88,7 @@ ghi"""
         '''
     }
 
+    @Test
     void testEachMatchWithPattern() {
         shouldFailWithMessages '''
         'groovy'.eachMatch(~'(groo)(vy)') { groups ->
@@ -100,6 +109,7 @@ ghi"""
         '''
     }
 
+    @Test
     void testFind() {
         checkFind("'foobarbaz'")
         checkFind('''"${'foobarbaz'}"''')
@@ -110,6 +120,7 @@ ghi"""
         assertScript 'assert ' + s + '.find("b(a)(r)") { full, a, r -> assert "BAR"=="B" + a.toUpperCase() + r.toUpperCase() }'
     }
 
+    @Test
     void testFindPattern() {
         checkFindPattern("'foobarbaz'")
         checkFindPattern('''"${'foobarbaz'}"''')
@@ -120,6 +131,7 @@ ghi"""
         assertScript 'assert ' + s + '.find(~"b(a)(r)") { full, a, r -> assert "BAR"=="B" + a.toUpperCase() + r.toUpperCase() }'
     }
 
+    @Test
     void testFindAll() {
         checkFindAll("'foobarbaz'")
         checkFindAll('''"${'foobarbaz'}"''')
@@ -130,6 +142,7 @@ ghi"""
         assertScript 'assert ' + s + '.findAll("b(a)([rz])") { full, a, rz -> assert "BA"=="B" + a.toUpperCase() }.size() == 2'
     }
 
+    @Test
     void testFindAllPattern() {
         checkFindAllPattern("'foobarbaz'")
         checkFindAllPattern('''"${'foobarbaz'}"''')
@@ -140,12 +153,14 @@ ghi"""
         assertScript 'assert ' + s + '.findAll(~"b(a)([rz])") { full, a, rz -> assert "BA"=="B" + a.toUpperCase() }.size() == 2'
     }
 
+    @Test
     void testReplaceAll() {
         assertScript '''
             assert 'foobarbaz'.replaceAll('b(ar|az)') { List<String> it -> it[1].toUpperCase() } == 'fooARAZ'
             assert 'foobarbaz'.replaceAll('b(ar|az)') { full, sub -> full.toUpperCase() } == 'fooBARBAZ'
         '''
     }
+    @Test
     void testReplaceAllWithPattern() {
         assertScript '''
             assert 'foobarbaz'.replaceAll(~'b(ar|az)') { List<String> it -> it[1].toUpperCase() } == 'fooARAZ\'
@@ -153,12 +168,14 @@ ghi"""
         '''
     }
 
+    @Test
     void testReplaceFirst() {
         assertScript '''
             assert 'foobarbaz'.replaceFirst('b(ar|az)') { List<String> it -> it[1].toUpperCase() } == 'fooARbaz'
             assert 'foobarbaz'.replaceFirst('b(ar|az)') { full, sub -> full.toUpperCase() } == 'fooBARbaz'
         '''
     }
+    @Test
     void testReplaceFirstWithPattern() {
         assertScript '''
             assert 'foobarbaz'.replaceFirst(~'b(ar|az)') { List<String> it -> it[1].toUpperCase() } == 'fooARbaz'
@@ -166,6 +183,7 @@ ghi"""
         '''
     }
 
+    @Test
     void testSplitEachLine() {
         assertScript '''
 def text="""a,c
@@ -175,6 +193,7 @@ text.splitEachLine('([,:])') { a -> println a[0].toUpperCase() }
 '''
     }
 
+    @Test
     void testTakeWhileOnCharSeq() {
         assertScript '''
             String foo(CharSequence cs) { cs.takeWhile { it.charAt(0) < (char) 'j' }}

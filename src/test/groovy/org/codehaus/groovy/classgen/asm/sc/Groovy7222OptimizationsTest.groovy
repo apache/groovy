@@ -31,9 +31,12 @@ import org.codehaus.groovy.syntax.Token
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.sc.StaticCompilationVisitor
 import org.codehaus.groovy.transform.sc.transformers.StaticCompilationTransformer
+import org.junit.jupiter.api.Test
 import org.objectweb.asm.Opcodes
 
-class Groovy7222OptimizationsTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport  {
+final class Groovy7222OptimizationsTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldOptimizeConstantInitialization() {
         def values = [
                 (short) 2,
@@ -81,9 +84,9 @@ class Groovy7222OptimizationsTest extends StaticTypeCheckingTestCase implements 
             def constantType = optimized.rightExpression.type
             assert varType == constantType
         }
-
     }
 
+    @Test
     void testShouldNotContainBigDecimalInBytecode() {
         try {
             assertScript '''
@@ -97,6 +100,7 @@ class Groovy7222OptimizationsTest extends StaticTypeCheckingTestCase implements 
         }
     }
 
+    @Test
     void testShouldNotThrowNPE() {
         assertScript '''
             @groovy.transform.CompileStatic

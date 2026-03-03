@@ -16,15 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy6733Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6733Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testClosureParamTypeInferenceShouldNotInterfereWithPowerOptimization() {
             assertScript '''
       def integers = [4,5]
@@ -33,5 +33,4 @@ class Groovy6733Bug extends StaticTypeCheckingTestCase implements StaticCompilat
     assert powers == [256, 3125]
     '''
     }
-
 }

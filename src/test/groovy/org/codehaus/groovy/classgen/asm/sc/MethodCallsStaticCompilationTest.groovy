@@ -20,23 +20,26 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.MethodCallsSTCTest
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.jupiter.api.Test
 
-public class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implements StaticCompilationTestSupport {
+import static groovy.test.GroovyAssert.shouldFail
 
+final class MethodCallsStaticCompilationTest extends MethodCallsSTCTest implements StaticCompilationTestSupport {
+
+    @Test
     void testReferenceToInaccessiblePrivateProperty() {
-        shouldFail(MultipleCompilationErrorsException) {
-            assertScript '''
-                class Main {
-                   static main(args) { Peer.xxx }
-                }
-                class Peer {
-                    private static int xxx = 666
-                }
-            '''
-        }
+        shouldFail shell, MultipleCompilationErrorsException, '''
+            class Main {
+               static main(args) { Peer.xxx }
+            }
+            class Peer {
+                private static int xxx = 666
+            }
+        '''
     }
 
     // GROOVY-7863
+    @Test
     void testDoublyNestedPrivateMethodAccess() {
         assertScript '''
             class Foo {

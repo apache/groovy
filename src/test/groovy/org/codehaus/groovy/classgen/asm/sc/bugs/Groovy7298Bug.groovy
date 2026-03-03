@@ -22,24 +22,24 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7298Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7298Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldNotThrowNPEInTypeResolver() {
-            assertScript '''
+        assertScript '''
+            public <T> T tryToExecuteWithFreePort(Closure<T> closure) {
+                [1].each {
+                    return executeLogicForAvailablePort(closure)
+                }
+            }
 
-public <T> T tryToExecuteWithFreePort(Closure<T> closure) {
-    [1].each {
-        return executeLogicForAvailablePort(closure)
-    }
-}
+            private <T> T executeLogicForAvailablePort(Closure<T> closure) {
+                return closure.call()
+            }
 
-private <T> T executeLogicForAvailablePort(Closure<T> closure) {
-    return closure.call()
-}
-
-executeLogicForAvailablePort {}
-
-
+            executeLogicForAvailablePort({->})
         '''
     }
 }

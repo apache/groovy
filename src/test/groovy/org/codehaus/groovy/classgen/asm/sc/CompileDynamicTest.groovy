@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.junit.jupiter.api.Test
 
 /**
  * Test case for {@link groovy.transform.CompileDynamic}.
@@ -27,14 +28,14 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 final class CompileDynamicTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     @Override
-    protected void setUp() {
-        super.setUp()
+    protected void configure() {
         def customizers = config.compilationCustomizers
         // ASTTransformationCustomizer(CompileStatic) only uses visitMethod
         customizers.removeAll { it instanceof ASTTransformationCustomizer }
         customizers[0].addImports('groovy.transform.CompileDynamic', 'groovy.transform.CompileStatic')
     }
 
+    @Test
     void testCompileDynamicMethod() {
         assertScript '''
             @CompileStatic
@@ -49,6 +50,7 @@ final class CompileDynamicTest extends StaticTypeCheckingTestCase implements Sta
     }
 
     // GROOVY-10457
+    @Test
     void testCompileDynamicConstructor() {
         assertScript '''
             @CompileStatic

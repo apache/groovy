@@ -16,13 +16,16 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package groovy.transform.stc
+
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : closure parameter type inference for {@link org.codehaus.groovy.runtime.IOGroovyMethods}.
  */
 class IOGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testEachByteOnInputStream() {
         assertScript '''
             byte[] array = 'Groovy'.getBytes('utf-8')
@@ -30,6 +33,7 @@ class IOGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachByteOnInputStreamWithBufferLen() {
         assertScript '''
             byte[] array = 'Groovy'.getBytes('utf-8')
@@ -37,6 +41,7 @@ class IOGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachLineOnInputStream() {
         assertScript '''
             int wc(InputStream is) {
@@ -90,6 +95,7 @@ baz"""
         '''
     }
 
+    @Test
     void testEachLineOnReader() {
         assertScript '''
             int wc(Reader is) {
@@ -123,6 +129,7 @@ baz"""
         '''
     }
 
+    @Test
     void testFilterLineOnInputStream() {
         assertScript '''
             def ls = String.format('%n')
@@ -165,6 +172,7 @@ baz"""
         '''
     }
 
+    @Test
     void testSplitEachLineOnInputStream() {
         assertScript '''def is = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes)
@@ -184,6 +192,7 @@ d,e,f""".bytes)
         '''
     }
 
+    @Test
     void testSplitEachLineOnReader() {
         assertScript '''def reader = new ByteArrayInputStream("""a,b,c
 d,e,f""".bytes).newReader()
@@ -219,6 +228,7 @@ d,e,f""".bytes).newReader()
         '''
     }
 
+    @Test
     void testTransformCharWithReader() {
         assertScript '''
             def reader = new ByteArrayInputStream("Groovy".bytes).newReader()
@@ -231,6 +241,7 @@ d,e,f""".bytes).newReader()
 '''
     }
 
+    @Test
     void testTransformLineWithReader() {
         assertScript '''
             def ls = String.format('%n')
@@ -244,6 +255,7 @@ d,e,f""".bytes).newReader()
 '''
     }
 
+    @Test
     void testWithFormatter() {
         assertScript '''
             def sb = new StringBuilder()
@@ -261,6 +273,7 @@ d,e,f""".bytes).newReader()
         '''
     }
 
+    @Test
     void testWithObjectOutputInputStream() {
         assertScript '''
             def baos = new ByteArrayOutputStream()
@@ -288,6 +301,7 @@ d,e,f""".bytes).newReader()
         '''
     }
 
+    @Test
     void testWithPrintWriter() {
         assertScript '''
             def baos = new ByteArrayOutputStream()
@@ -301,6 +315,7 @@ d,e,f""".bytes).newReader()
         '''
     }
 
+    @Test
     void testWithReader() {
         assertScript '''
             def is = new ByteArrayInputStream("Groovy".bytes)
@@ -328,6 +343,7 @@ d,e,f""".bytes).newReader()
         '''
     }
 
+    @Test
     void testWithStream() {
         assertScript '''
             InputStream is = [read: {123}] as InputStream
@@ -343,6 +359,7 @@ d,e,f""".bytes).newReader()
         '''
     }
 
+    @Test
     void testWithWriter() {
         assertScript '''
             def baos = new ByteArrayOutputStream()

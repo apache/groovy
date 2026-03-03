@@ -18,11 +18,16 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
 /**
  * Unit tests for static type checking : default groovy methods.
  */
 class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testEach() {
         assertScript '''
             ['a','b'].each { // DGM#each(Object, Closure)
@@ -37,6 +42,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStringToInteger() {
         assertScript '''
             String name = "123"
@@ -44,6 +50,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testVariousAssignmentsThenToInteger() {
         assertScript '''
             class A {
@@ -57,6 +64,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMethodsOnPrimitiveTypes() {
         assertScript '''
             1.times { it }
@@ -67,6 +75,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldAcceptMethodFromDefaultDateMethods() {
       assertScript '''
           def s = new Date()
@@ -76,6 +85,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5568, GROOVY-10815
+    @Test
     void testPropertySemantics1() {
         assertScript '''
             String test(InputStream input) {
@@ -103,6 +113,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10075
+    @Test
     void testPropertySemantics2() {
         // see org.codehaus.groovy.runtime.m12n.TestStringExtension
 
@@ -128,6 +139,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5584
+    @Test
     void testEachOnMap() {
         assertScript '''
             import org.codehaus.groovy.transform.stc.ExtensionMethodNode
@@ -147,6 +159,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6961
+    @Test
     void testCollectMany() {
         assertScript '''
             class ListCompilerAndReverser {
@@ -166,6 +179,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11073
+    @Test
     void testArrayMaxOverloadSelection() {
         assertScript '''import static org.codehaus.groovy.runtime.ArrayGroovyMethods.max
             double[][] array2d = [ new double[0], new double[1], new double[2] ]
@@ -182,6 +196,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7283
+    @Test
     void testArrayMinMaxSupportsOneAndTwoArgClosures() {
         assertScript '''
             Date now = new Date()
@@ -195,6 +210,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7283
+    @Test
     void testListWithDefault() {
         assertScript '''
             def list = [].withDefault{ it.longValue() }
@@ -207,6 +223,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7952
+    @Test
     void testIsGetterMethodAsProperty() {
         assertScript '''
             assert !'abc'.allWhitespace
@@ -214,6 +231,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7976
+    @Test
     void testSortMethodsWithComparatorAcceptingSubclass() {
         assertScript '''
             class SecondLetterComparator implements Comparator<? extends CharSequence> {
@@ -242,6 +260,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7976, GROOVY-7992
+    @Test
     void testSortMethodsWithComparatorAcceptingSuperclass() {
         assertScript '''
             List<Number> numbers = [2,1,3]
@@ -255,6 +274,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7992
+    @Test
     void testMaxWithComparatorAcceptingSuperclass() {
         assertScript '''
             List<Number> numbers = [1,2,3]
@@ -269,6 +289,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8205
+    @Test
     void testEachOnEnumValues() {
         assertScript '''
             enum Functions {
@@ -290,6 +311,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11070
+    @Test
     void testArrayGetAt1() {
         String array = 'int[] array = [0, 1, 2, 3]'
 
@@ -311,6 +333,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testArrayGetAt2() {
         assertScript '''
             Serializable m() {
@@ -321,6 +344,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testArrayPutAt1() {
         assertScript '''
             Serializable[] arr = ['abc']
@@ -333,6 +357,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testArrayPutAt2() {
         shouldFailWithMessages '''
             String[] arr = ['abc']
@@ -347,6 +372,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '#putAt(T[], int, U) with arguments [java.io.Serializable[], int, groovy.xml.XmlSlurper]'
     }
 
+    @Test
     void testListGetAtNext() {
         assertScript '''
             def list = [0, 1, 2, 3]
@@ -358,6 +384,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8840
+    @Test
     void testListGetAtGetAtNext() {
         assertScript '''
             def test() {
@@ -371,6 +398,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListGetAtGetAtNext2() {
         assertScript '''
             def test() {
@@ -383,6 +411,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListGetAtFirstNext() {
         assertScript '''
             def test() {
@@ -396,6 +425,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9420
+    @Test
     void testMapGetVsGetAt() {
         assertScript '''
             void check(String val) {
@@ -421,6 +451,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9529
+    @Test
     void testMapGetAtVsObjectGetAt() {
         assertScript '''
             interface X extends Map<Object, Object> {}
@@ -445,6 +476,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11596
+    @Test
     void testTapEveryTypeInference() {
         assertScript '''
             List<String> pets = ['canary', 'cat', 'cockroach']
@@ -454,6 +486,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6668, GROOVY-8212
+    @Test
     void testMapGetAtVsObjectGetAt2() {
         assertScript '''
             Map<String, String> map = [key:'val']
@@ -472,6 +505,7 @@ class DefaultGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6668, GROOVY-8212
+    @Test
     void testMapPutAtVsObjectPutAt() {
         assertScript '''
             Map<String, String> map = [:]

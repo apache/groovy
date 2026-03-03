@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : categories.
  */
-class CategoriesSTCTest extends StaticTypeCheckingTestCase {
+final class CategoriesSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testShouldNotAllowCategory() {
         shouldFailWithMessages '''import groovy.time.TimeCategory
             use(TimeCategory) {

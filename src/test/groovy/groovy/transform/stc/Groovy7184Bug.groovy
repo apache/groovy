@@ -18,7 +18,11 @@
  */
 package groovy.transform.stc
 
-class Groovy7184Bug extends StaticTypeCheckingTestCase {
+import org.junit.jupiter.api.Test
+
+final class Groovy7184Bug extends StaticTypeCheckingTestCase {
+
+    @Test
     void testShouldNotAllowDirectAssignmentToInterface() {
         shouldFailWithMessages '''
             interface Config {}
@@ -28,6 +32,7 @@ class Groovy7184Bug extends StaticTypeCheckingTestCase {
             }
 
             Config config = new ConfigObject()
-        ''', 'Cannot assign value of type groovy.util.ConfigObject to variable of type Config'
+        ''',
+        'Cannot assign value of type groovy.util.ConfigObject to variable of type Config'
     }
 }

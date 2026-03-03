@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : loops.
  */
 class LoopsSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testMethodCallInLoop() {
         for (type in ['int', 'def', 'var']) {
             assertScript """
@@ -36,6 +39,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5258
+    @Test
     void testMethodCallInLoopAndDefAndTwoFooMethods() {
         shouldFailWithMessages '''
             Date    foo(Integer x) { new Date() }
@@ -50,6 +54,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5258
+    @Test
     void testMethodCallInLoopAndDefAndTwoFooMethods2() {
         shouldFailWithMessages '''
             Date    foo(Integer x) { new Date() }
@@ -64,6 +69,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5258
+    @Test
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadType() {
         shouldFailWithMessages '''
             Double foo(Integer x) { x+1 }
@@ -79,6 +85,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5258
+    @Test
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection() {
         shouldFailWithMessages '''
             Double foo(Integer x) { x+1 }
@@ -95,6 +102,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5258
+    @Test
     void testMethodCallInLoopAndDefAndTwoFooMethodsAndOneWithBadTypeAndIndirection2() {
         shouldFailWithMessages '''
             Double foo(Integer x) { x+1 }
@@ -111,6 +119,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5587
+    @Test
     void testForInLoopOnMap1() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -139,6 +148,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6240
+    @Test
     void testForInLoopOnMap2() {
         assertScript '''
             Map<String, Integer> map = [foo: 123, bar: 456]
@@ -149,6 +159,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForInLoopOnMap3() {
         assertScript '''
             class MyMap extends LinkedHashMap<String,Integer> {
@@ -162,6 +173,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10179
+    @Test
     void testForInLoopOnMap4() {
         assertScript '''
             void test(args) {
@@ -176,6 +188,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8643
+    @Test
     void testForInLoopOnList() {
         assertScript '''
             List<String> list = null
@@ -186,6 +199,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8169
+    @Test
     void testForInLoopOnList2() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -203,6 +217,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8643
+    @Test
     void testForInLoopOnArray() {
         assertScript '''
             String[] strings = null
@@ -212,6 +227,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForInLoopOnArray2() {
         assertScript '''
             String[] strings = ['a','b','c']
@@ -222,6 +238,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10579
+    @Test
     void testForInLoopOnArray3() {
         assertScript '''
             int[] numbers = [1,2,3,4,5]
@@ -234,6 +251,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10476
+    @Test
     void testForInLoopOnStream() {
         assertScript '''
             def list = []
@@ -245,6 +263,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8882
+    @Test
     void testForInLoopOnString() {
         assertScript '''
             for (s in 'abc') assert s instanceof String
@@ -257,6 +276,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8487, GROOVY-10712
+    @Test
     void testForInLoopOnIterator() {
         assertScript '''
             def list = []
@@ -268,6 +288,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11335
+    @Test
     void testForInLoopOnCollection() {
         assertScript '''
             def whatever(Collection<String> coll) {
@@ -282,6 +303,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6123
+    @Test
     void testForInLoopOnEnumeration() {
         assertScript '''
             Vector<String> v = new Vector<>()
@@ -311,6 +333,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11597
+    @Test
     void testForInLoopOnAnEnumClass() {
         assertScript '''
             for (i, s in Thread.State) {
@@ -320,6 +343,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11305
+    @Test
     void testForInLoopOnNearlyIterable() {
         assertScript '''
             class C {
@@ -337,6 +361,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10651
+    @Test
     void testForInLoopOnRawTypeIterable() {
         assertScript '''
             void test(groovy.transform.stc.TreeNode node) {
@@ -348,6 +373,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10651
+    @Test
     void testForInLoopOnUnboundedIterable() {
         assertScript '''
             void test(groovy.transform.stc.TreeNode<?> node) {
@@ -358,6 +384,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotInferSoftReferenceAsElementType() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -378,6 +405,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5640
+    @Test
     void testShouldInferNodeElementTypeForIterableOfNodes() {
         assertScript '''
             class Node {
@@ -410,6 +438,7 @@ class LoopsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5641
+    @Test
     void testShouldInferLoopElementTypeWithUndeclaredType() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={

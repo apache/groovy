@@ -16,24 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7133Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7133Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldHandleArrayAsComponentType() {
         try {
             assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7133Support
-        def list = Groovy7133Support.list()
-        for (def ary : list) {
-            //assert ary.length == 1
-        }
-        '''
+                def list = Groovy7133Support.list()
+                for (def ary : list) {
+                    //assert ary.length == 1
+                }
+            '''
         } finally {
             println astTrees
         }

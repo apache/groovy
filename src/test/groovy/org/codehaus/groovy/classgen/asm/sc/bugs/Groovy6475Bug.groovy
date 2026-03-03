@@ -16,23 +16,21 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy6475Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6475Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldNotSayThatDiamondIsInUse() {
         assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.Groovy6475Bug.TypeReference
             TypeReference<String> tr = new TypeReference<String>() {}
         '''
     }
 
-    public abstract static class TypeReference<T>  {
-
+    abstract static class TypeReference<T> {
     }
-
 }

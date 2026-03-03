@@ -19,14 +19,16 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.DelegatesToSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Units tests aimed at testing the behaviour of {@link DelegatesTo} in combination
  * with static compilation.
  */
-class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticCompilationTestSupport {
+final class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-6953
+    @Test
     void testRatpackRegression1() {
         assertScript '''
             class MyHandlers  {
@@ -51,6 +53,7 @@ class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticC
     }
 
     // GROOVY-6955
+    @Test
     void testRatpackRegressionIfDelegateToJavaClass() {
         try {
             assertScript '''import org.codehaus.groovy.classgen.asm.sc.Groovy6955Support as GroovyContext
@@ -80,6 +83,7 @@ class DelegatesToStaticCompileTest extends DelegatesToSTCTest implements StaticC
     }
 
     // GROOVY-7597
+    @Test
     void testImplicitDelegateShouldNotBeCheckedAsTypeOfPropertyOwner() {
         try {
             assertScript '''

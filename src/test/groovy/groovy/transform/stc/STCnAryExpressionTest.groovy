@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : unary and binary expressions.
  */
 class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testBinaryStringPlus() {
         assertScript '''
             String str = 'a'
@@ -31,6 +34,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBinaryStringPlusInt() {
         assertScript '''
             String str = 'a'
@@ -39,6 +43,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBinaryObjectPlusInt() {
         shouldFailWithMessages '''
             def obj = new Object()
@@ -48,6 +53,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#plus(int)'
     }
 
+    @Test
     void testBinaryIntPlusObject() {
         shouldFailWithMessages '''
             def obj = new Object()
@@ -58,6 +64,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10818
+    @Test
     void testBinaryTimeDurationPlus() {
         assertScript '''import groovy.time.*
             TimeDuration td1 = new TimeDuration(0, 1, 20, 43, 0)
@@ -66,6 +73,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPrimitiveComparison() {
         assertScript '''
             1<2
@@ -84,6 +92,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBoxedTypeComparison() {
         assertScript '''
             1<new Integer(2)
@@ -102,6 +111,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOtherTypeComparison() {
         shouldFailWithMessages '''
             def that = new Object()
@@ -111,6 +121,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#compareTo'
     }
 
+    @Test
     void testShiftOnPrimitives() {
         assertScript '''
             1 << 8
@@ -123,6 +134,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShiftOnPrimitivesThroughVariables() {
         assertScript '''
             int x = 1
@@ -142,6 +154,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11375
+    @Test
     void testShiftOnPrimitivesVariableFlowType() {
         assertScript '''
             def x = "--"
@@ -152,6 +165,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11375
+    @Test
     void testPowerOnPrimitivesVariableFlowType() {
         assertScript '''
             def x = "--"
@@ -162,6 +176,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5644
+    @Test
     void testSpaceshipOperatorNoAmbiguousError() {
         assertScript '''
             Integer x = 3
@@ -171,6 +186,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6137, GROOVY-7473, GROOVY-10909
+    @Test
     void testInOperatorImplicitNullSafetyChecks() {
         assertScript '''
             class C {
@@ -190,6 +206,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10915
+    @Test
     void testInNotInAndUnaryNotOperatorConsistent() {
         assertScript '''
             class C {
@@ -205,6 +222,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7473
+    @Test
     void testInOperatorShouldEvaluateOperandsOnce() {
         assertScript '''
             import groovy.transform.Field
@@ -245,6 +263,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6137, GROOVY-7473, GROOVY-10383
+    @Test
     void testInOperatorShouldEvaluateOperandsOnce2() {
         assertScript '''
             import groovy.transform.Field
@@ -285,6 +304,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10394
+    @Test
     void testUfoOperatorShouldEvaluateOperandsOnce() {
         assertScript '''
             import groovy.transform.Field
@@ -300,6 +320,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testComparisonOperatorCheckWithIncompatibleTypesOkIfComparableNotImplemented() {
         shouldFailWithMessages '''
             [] < 1
@@ -307,6 +328,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.util.ArrayList#compareTo(int)'
     }
 
+    @Test
     void testComparisonOperatorCheckWithIncompatibleTypesFailsIfComparableImplemented() {
         shouldFailWithMessages '''
            'abc' < 1
@@ -314,6 +336,7 @@ class STCnAryExpressionTest extends StaticTypeCheckingTestCase {
         'Cannot call java.lang.String#compareTo(java.lang.String) with arguments [int]'
     }
 
+    @Test
     void testCompareToCallCheckWithIncompatibleTypesAlsoFailsIfComparableImplemented() {
         shouldFailWithMessages '''
            'abc'.compareTo(1)

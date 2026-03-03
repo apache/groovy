@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testGenericIdentityWithClosure() {
         assertScript '''
             static <T> T itself(T self) { self }
@@ -39,6 +41,7 @@ final class Groovy7325Bug extends StaticTypeCheckingTestCase implements StaticCo
         '''
     }
 
+    @Test
     void testShouldNotThrowIllegalAccessToProtectedData() {
         shouldFailWithMessages '''
             class C {

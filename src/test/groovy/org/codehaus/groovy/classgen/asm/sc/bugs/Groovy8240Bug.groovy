@@ -20,8 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy8240Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy8240Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testDefaultArguments() {
         assertScript '''
             class Bar {
@@ -38,6 +41,7 @@ class Groovy8240Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testDefaultArgumentsWith2Vararg() {
         assertScript '''
             class Bar {
@@ -54,6 +58,7 @@ class Groovy8240Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testDefaultArgumentsWithoutVararg() {
         assertScript '''
             class Bar {

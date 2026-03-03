@@ -19,12 +19,16 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Unit tests for static type checking : constructors.
  */
 class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testConstructFromList() {
         assertScript '''
             import java.awt.Dimension
@@ -34,6 +38,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testWrongNumberOfArguments() {
         // test that wrong number of arguments will fail
         shouldFailWithMessages '''
@@ -43,6 +48,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching constructor java.awt.Dimension(int)'
     }
 
+    @Test
     void testWrongNumberOfArgumentsWithDefaultConstructor() {
         shouldFailWithMessages '''
             class X {}
@@ -54,6 +60,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching constructor X(java.lang.String)'
     }
 
+    @Test
     void testCreateArrayWithDefaultConstructor() {
         assertScript '''
             String[] strings = ['a','b','c']
@@ -61,6 +68,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIncorrectArgumentTypes() {
         // test that wrong number of arguments will fail
         shouldFailWithMessages '''
@@ -70,6 +78,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching constructor java.awt.Dimension(java.lang.String, java.lang.String)'
     }
 
+    @Test
     void testConstructFromListAndVariables() {
         assertScript '''
             import java.awt.Dimension
@@ -81,6 +90,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testConstructFromListAndVariables2() {
         assertScript '''
             import java.awt.Dimension
@@ -91,6 +101,7 @@ class ConstructorsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testConstructFromVariable() {
         shouldFailWithMessages '''
             import java.awt.Dimension
@@ -101,6 +112,7 @@ import static groovy.test.GroovyAssert.shouldFail
         'Cannot assign value of type java.util.ArrayList<java.lang.Integer> to variable of type java.awt.Dimension'
     }
 
+    @Test
     void testConstructFromMap() {
         assertScript '''
             class A {
@@ -128,6 +140,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testConstructFromValuedMap1() {
         assertScript '''
             class A {
@@ -140,6 +153,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testConstructFromValuedMap2() {
         assertScript '''
             class A<B,C> {
@@ -152,6 +166,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testMapLiteral() {
         assertScript '''
             def m = [:]
@@ -183,6 +198,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-9603
+    @Test
     void testDoNotConstructFromValuedMap() {
         assertScript '''
             void test(Map<String, Object> map) {
@@ -206,6 +222,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testConstructFromCoercedMap() {
         assertScript '''
             class A {
@@ -227,6 +244,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testConstructWithNamedParams() {
         assertScript '''
             class A {
@@ -239,6 +257,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testConstructFromValuedMapAndMissingProperty() {
         shouldFailWithMessages '''
             class A {
@@ -250,6 +269,7 @@ import static groovy.test.GroovyAssert.shouldFail
         'No such property: z for class: A'
     }
 
+    @Test
     void testConstructWithNamedParamsAndMissingProperty() {
         shouldFailWithMessages '''
             class A {
@@ -261,6 +281,7 @@ import static groovy.test.GroovyAssert.shouldFail
         'No such property: z for class: A'
     }
 
+    @Test
     void testConstructFromValuedMapAndIncorrectTypes() {
         shouldFailWithMessages '''
             class A {
@@ -272,6 +293,7 @@ import static groovy.test.GroovyAssert.shouldFail
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testConstructFromValuedMapAndDynamicKey() {
         shouldFailWithMessages '''
             class A {
@@ -283,6 +305,7 @@ import static groovy.test.GroovyAssert.shouldFail
         'Dynamic keys in map-style constructors are unsupported'
     }
 
+    @Test
     void testConstructWithMapAndInheritance() {
         assertScript '''
             class A {
@@ -298,6 +321,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5231
+    @Test
     void testConstructorWithTupleConstructorAnnotation() {
         assertScript '''
         @groovy.transform.TupleConstructor
@@ -313,6 +337,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5531
+    @Test
     void testAccessToClosureVariableFromNamedParamConstructor() {
         // test using "str" as name
         assertScript '''
@@ -335,6 +360,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5530
+    @Test
     void testUseGStringInNamedParameter() {
         assertScript '''class User {
             String login
@@ -364,6 +390,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-9885
+    @Test
     void testUseGStringTernaryInNamedParameter() {
         assertScript '''
             @groovy.transform.ToString
@@ -380,6 +407,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5578
+    @Test
     void testConstructJavaBeanFromMap() {
         assertScript '''import groovy.transform.stc.MyBean
 
@@ -387,6 +415,7 @@ import static groovy.test.GroovyAssert.shouldFail
         assert bean.value == 'Cedric'
         '''
     }
+    @Test
     void testConstructJavaBeanFromMapAndSubclass() {
         assertScript '''import groovy.transform.stc.MyBean
         class MyBean2 extends MyBean<String> {
@@ -399,6 +428,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5698
+    @Test
     void testMapConstructorWithInterface() {
         assertScript '''class CustomServletOutputStream extends OutputStream {
                 OutputStream out
@@ -433,6 +463,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testMapConstructorShouldFail() {
         shouldFailWithMessages '''
             class Foo {
@@ -443,20 +474,24 @@ import static groovy.test.GroovyAssert.shouldFail
         'Cannot assign value of type java.io.OutputStream to variable of type java.io.ByteArrayOutputStream'
     }
 
+    @Test
     void testTypeCheckingInfoShouldNotBeAddedToConstructor() {
+        try (def loader = new GroovyClassLoader(this.class.classLoader, config)) {
+            Class fooClass = loader.parseClass '''
+                class Foo {
+                    @groovy.transform.TypeChecked
+                    Foo() {
+                    }
+                }
+            '''
 
-        Class fooClass = assertClass '''
-        class Foo {
-            @groovy.transform.TypeChecked
-            Foo() {}
+            def constructor = fooClass.getDeclaredConstructor()
+            assert constructor.declaredAnnotations.length == 0
         }
-        '''
-
-        def constructor = fooClass.getDeclaredConstructor()
-        assert constructor.declaredAnnotations.size() == 0
     }
 
     // GROOVY-6616
+    @Test
     void testConstructorsWithVarargsAndArrayParameters() {
         assertScript '''
             class MultipleConstructors {
@@ -477,6 +512,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-6929
+    @Test
     void testShouldNotThrowNPEDuringConstructorCallCheck() {
         assertScript '''
             class MyBean {
@@ -491,6 +527,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testMapStyleConstructorShouldNotCarrySetterInfoToOuterBinExp() {
         assertScript '''
             class Blah {
@@ -507,6 +544,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-7164
+    @Test
     void testMapStyleConstructorWhenSetterParamAndFieldHaveDifferentTypes() {
         assertScript '''
             class C {
@@ -525,6 +563,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-10787
+    @Test
     void testMapStyleConstructorWithParameterizedProperty() {
         assertScript '''
             abstract class A<X extends Serializable> {
@@ -543,6 +582,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11119
+    @Test
     void testMapStyleConstructorWithOverloadedSetterName() {
         assertScript '''import java.util.regex.Pattern
             class C {
@@ -561,6 +601,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11451
+    @Test
     void testMapStyleConstructorWithOverloadedSetterName2() {
         assertScript """import ${Pojo11451.canonicalName}
             new Pojo11451(id:'xyz')
@@ -568,6 +609,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11122
+    @Test
     void testMapStyleInnerClassConstructorWithinClosure() {
         assertScript '''
             class A {
@@ -586,6 +628,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-9422
+    @Test
     void testInnerClassConstructorCallWithinClosure() {
         assertScript '''
             class A {
@@ -605,6 +648,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11600
+    @Test
     void testInnerRecordConstructorCall() {
         assertScript '''
             class C {
@@ -621,6 +665,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11274
+    @Test
     void testPrivateDefaultConstructor() {
         shouldFailWithMessages '''
             class C {

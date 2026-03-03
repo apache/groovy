@@ -19,27 +19,28 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.RangesSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : ranges.
  */
-class RangesStaticCompileTest extends RangesSTCTest implements StaticCompilationTestSupport {
+final class RangesStaticCompileTest extends RangesSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-6482
+    @Test
     void testShouldReturnAnEmptyList() {
         assertScript '''
-def list = ["1", "2", "3", "4"]
-assert list[0..<0] == []
-'''
+            def list = ["1", "2", "3", "4"]
+            assert list[0..<0] == []
+        '''
     }
 
     // GROOVY-6480
+    @Test
     void testShouldNotThrowClassCastExceptionAtRuntime() {
         assertScript '''
-def list = ["1", "2", "3", "4"] as String[]
-assert list[0..<0] == []
-'''
+            def list = ["1", "2", "3", "4"] as String[]
+            assert list[0..<0] == []
+        '''
     }
-
 }
-

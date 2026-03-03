@@ -19,14 +19,16 @@
 package typing
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * This unit test contains both assertScript and new GroovyShell().evaluate
  * calls. It is important *not* to replace the evaluate calls with assertScript, or the semantics
  * of the tests would be very different!
  */
-class TypeCheckingTest extends StaticTypeCheckingTestCase {
+final class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testIntroduction() {
         new GroovyShell().evaluate '''
         // tag::stc_intro_magic[]
@@ -43,6 +45,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testTypeCheckedAnnotation() {
         def shell = new GroovyShell()
         shell.evaluate '''
@@ -65,6 +68,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testTypeCheckingAssignmentRules() {
         assertScript '''
             // tag::stc_assign_equals[]
@@ -232,6 +236,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGroovyConstructors() {
         assertScript '''
             // tag::stc_ctor_point_classic[]
@@ -261,6 +266,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         ''', 'No such property: age for class: Person'
     }
 
+    @Test
     void testMatchArgumentsWithParameters() {
         assertScript '''
             // tag::stc_argparam_equals[]
@@ -382,6 +388,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
 
     }
 
+    @Test
     void testNoMatchingMethodError() {
         new GroovyShell().parse '''
             // tag::method_not_type_checked[]
@@ -404,6 +411,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         ''','Cannot find matching method MyService#printLine(java.lang.String)'
     }
 
+    @Test
     void testDuckTypingShouldFailWithTypeChecked() {
         shouldFailWithMessages '''
             // tag::ducktyping_failure[]
@@ -426,6 +434,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#quack()'
     }
 
+    @Test
     void testTypeInference() {
         assertScript '''
         // tag::simple_var_type_inference[]
@@ -441,6 +450,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.String#upper()'
     }
 
+    @Test
     void testCollectionLiteralInference() {
         assertScript '''
         @ASTTest(phase=INSTRUCTION_SELECTION,value={
@@ -533,6 +543,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testTypeInferenceFieldVsLocalVariable() {
         shouldFailWithMessages '''
             // tag::typeinference_field_vs_local_variable[]
@@ -560,6 +571,7 @@ class TypeCheckingTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    @Test
     void testLeastUpperBound() {
         assertScript '''import org.codehaus.groovy.ast.ClassHelper
 
@@ -603,6 +615,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         '''
     }
 
+    @Test
     void testLUBInferenceInCombinationWithMethodCall() {
         shouldFailWithMessages '''
             // tag::least_upper_bound_collection_inference[]
@@ -629,6 +642,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         'Cannot find matching method (Greeter & Salute','#exit()'
     }
 
+    @Test
     void testInstanceOfInference() {
         assertScript '''
             // tag::instanceof_inference[]
@@ -654,6 +668,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         '''
     }
 
+    @Test
     void testFlowTyping() {
         new GroovyShell().evaluate '''
             // tag::flowtyping_basics[]
@@ -677,6 +692,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         ''', 'toUpperCase'
     }
 
+    @Test
     void testFlowTypingTypeConstraints() {
         shouldFailWithMessages '''
             // tag::flowtyping_typeconstraints[]
@@ -692,6 +708,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         'Cannot assign value of type java.lang.String to variable of type java.util.List'
     }
 
+    @Test
     void testFlowTypingTypeConstraints2() {
         shouldFailWithMessages '''
             // tag::flowtyping_typeconstraints_failure[]
@@ -725,6 +742,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         '''
     }
 
+    @Test
     void testFlowTypingMethodSelectionGroovy() {
         new GroovyShell().evaluate '''
             // tag::groovy_method_selection[]
@@ -738,6 +756,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         '''
     }
 
+    @Test
     void testIfElse() {
         shouldFailWithMessages '''
             // tag::flow_lub_ifelse_header[]
@@ -763,6 +782,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         ''','Cannot find matching method Top#methodFromBottom()'
     }
 
+    @Test
     void testClosureSharedVariable(){
         assertScript '''
             // tag::closure_shared_variable_definition[]
@@ -802,6 +822,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
             ''','Cannot find matching method Top#methodFromBottom()'
     }
 
+    @Test
     void testClosureReturnTypeInference() {
         assertScript '''
             // tag::closure_return_type_inf[]
@@ -817,6 +838,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         '''
     }
 
+    @Test
     void testShouldNotRelyOnMethodReturnTypeInference() {
         shouldFailWithMessages '''import groovy.transform.TypeChecked
             // tag::method_return_type_matters[]
@@ -835,6 +857,7 @@ import static org.codehaus.groovy.ast.tools.WideningCategories.lowestUpperBound 
         ''', 'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    @Test
     void testClosureParameterTypeInference() {
         shouldFailWithMessages '''
         // tag::cl_pt_failure[]
@@ -945,6 +968,7 @@ import groovy.transform.stc.FirstParam
         '''
     }
 
+    @Test
     void testSkip() {
         def shell = new GroovyShell()
         shell.evaluate '''
@@ -987,4 +1011,3 @@ import groovy.transform.stc.FirstParam
             '''
     }
 }
-

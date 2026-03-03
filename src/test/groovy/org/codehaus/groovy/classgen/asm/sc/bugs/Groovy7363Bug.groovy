@@ -20,8 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7363Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7363Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testCascadingGenericTypes() {
         assertScript """import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7363Support
             Groovy7363Support.ABC a = new Groovy7363Support.ABC()

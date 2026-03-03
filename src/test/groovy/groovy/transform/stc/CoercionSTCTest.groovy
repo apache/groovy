@@ -19,6 +19,9 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Unit tests for static type checking : coercions.
@@ -32,18 +35,21 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         )
     }
 
+    @Test
     void testCastIntToShort() {
         assertScript '''
             short s = (short) 0
         '''
     }
 
+    @Test
     void testCastIntToFloat() {
         assertScript '''
             float f = (float) 1
         '''
     }
 
+    @Test
     void testCastCompatibleType() {
         assertScript '''
             String s = 'Hello'
@@ -51,6 +57,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastIncompatibleType() {
         shouldFailWithMessages '''
             String s = 'Hello'
@@ -59,6 +66,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Inconvertible types: cannot cast java.lang.String to java.util.Set'
     }
 
+    @Test
     void testCastIncompatibleTypeWithFlowType() {
         shouldFailWithMessages '''
             def s = 'Hello'
@@ -68,6 +76,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Inconvertible types: cannot cast java.lang.Integer to java.util.Set'
     }
 
+    @Test
     void testCastStringToChar() {
         assertScript '''
             def c = (char) 'a'
@@ -75,6 +84,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastCharToByte() {
         assertScript '''
             void foo(char c) {
@@ -83,6 +93,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastCharToInt() {
         assertScript '''
             void foo(char c) {
@@ -91,6 +102,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastStringLongerThan1ToChar() {
         shouldFailWithMessages '''
             def c = (char) 'aa'
@@ -99,6 +111,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6577
+    @Test
     void testCastNullToBoolean() {
         assertScript '''
             boolean b = (boolean) null
@@ -106,6 +119,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastNullToPrimitive() {
         // boolean tested above and void cannot appear in cast expression
         for (type in ['byte','char','double','float','int','long','short']) {
@@ -116,6 +130,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testCastNullToCharacter() {
         assertScript '''
             def c = (Character) null
@@ -123,6 +138,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastStringToCharacter() {
         assertScript '''
             def c = (Character) 'a'
@@ -131,6 +147,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastStringLongerThan1ToCharacter() {
         shouldFailWithMessages '''
             def c = (Character) 'aa'
@@ -138,6 +155,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Inconvertible types: cannot cast java.lang.String to java.lang.Character'
     }
 
+    @Test
     void testCastArray1() {
         assertScript '''
             (String[]) ['a','b','c'].toArray(new String[0])
@@ -147,6 +165,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastArray2() {
         assertScript '''
             (Object[]) new String[0]
@@ -156,6 +175,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastArray3() {
         assertScript '''
             (Object[][]) new String[0][]
@@ -165,6 +185,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastArrayIncompatible1() {
         shouldFailWithMessages '''
             String[] src = ['a','b','c']
@@ -173,6 +194,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
     }
 
+    @Test
     void testCastArrayIncompatible2() {
         shouldFailWithMessages '''
             (Set[]) ['a','b','c'].toArray(new String[3])
@@ -180,6 +202,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
     }
 
+    @Test
     void testCastArrayIncompatible3() {
         shouldFailWithMessages '''
             (Set[]) ['a','b','c'].toArray(String[]::new)
@@ -187,6 +210,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Inconvertible types: cannot cast java.lang.String[] to java.util.Set[]'
     }
 
+    @Test
     void testCastArrayIncompatible4() {
         shouldFailWithMessages '''
             (String[]) new String[0][]
@@ -195,6 +219,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11371
+    @Test
     void testCastArrayIncompatible5() {
         for (type in ['byte','char','double','float','int','long','short']) {
             shouldFailWithMessages """
@@ -204,6 +229,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testCastObjectToSubclass() {
         assertScript '''
             Object o = null
@@ -211,6 +237,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastObjectToInterface() {
         assertScript '''
             List<Object> m(object) {
@@ -226,6 +253,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastInterfaceToSubclass() {
         assertScript '''
             interface A {
@@ -240,6 +268,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastInterfaceToSubclass2() {
         shouldFailWithMessages '''
             interface I {
@@ -257,6 +286,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
 
     //--------------------------------------------------------------------------
 
+    @Test
     void testCoerceToArray() {
         assertScript '''
             try {
@@ -275,6 +305,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6802
+    @Test
     void testCoerceToBool1() {
         assertScript '''
             boolean b = [new Object()]
@@ -302,6 +333,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCoerceToBool2() {
         assertScript '''
             Boolean b = [new Object()]
@@ -329,6 +361,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCoerceToClass() {
         assertScript '''
             Class c = 'java.lang.String'
@@ -347,6 +380,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6803
+    @Test
     void testCoerceToString() {
         assertScript '''
             String s = ['x']
@@ -362,6 +396,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCoerceIncompatibleType() {
         // If the user uses explicit type coercion, there's nothing we can do
         assertScript '''
@@ -370,6 +405,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCoerceToFunctionalInterface1() {
         String sam = '@FunctionalInterface interface SAM { def foo() }'
 
@@ -413,6 +449,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10254
+    @Test
     void testCoerceToFunctionalInterface2() {
         assertScript '''
             @FunctionalInterface
@@ -428,6 +465,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9991, GROOVY-10277
+    @Test
     void testCoerceToFunctionalInterface3() {
         assertScript '''
             Consumer<Number>  c = { it }
@@ -475,6 +513,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type java.util.ArrayList<java.lang.String> for lambda expecting java.lang.Number'
     }
 
+    @Test
     void testCoerceToFunctionalInterface4() {
         assertScript '''
             interface I { def m() }
@@ -539,6 +578,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7927
+    @Test
     void testCoerceToFunctionalInterface5() {
         assertScript '''
             interface SAM<T,R> { R accept(T t); }
@@ -547,6 +587,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCoerceToFunctionalInterface6() {
         assertScript '''
             interface SAM { def foo() }
@@ -561,6 +602,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCoerceToFunctionalInterface7() {
         assertScript '''
             interface SAM { def foo() }
@@ -573,6 +615,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7003
+    @Test
     void testCoerceToFunctionalInterface8() {
         assertScript '''import java.beans.*
             class C {
@@ -589,6 +632,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8045
+    @Test
     void testCoerceToFunctionalInterface9() {
         assertScript '''
             def f(Supplier<Integer>... suppliers) {
@@ -600,6 +644,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8168
+    @Test
     void testCoerceToFunctionalInterface10() {
         String sam = '''
             @FunctionalInterface
@@ -621,6 +666,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8427
+    @Test
     void testCoerceToFunctionalInterface11() {
         assertScript '''
             def <T> void m(T a, Consumer<T> c) {
@@ -638,6 +684,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9079
+    @Test
     void testCoerceToFunctionalInterface12() {
         assertScript '''import java.util.concurrent.Callable
             Callable<String> c = { -> return 'foo' }
@@ -646,6 +693,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10128, GROOVY-10306
+    @Test
     void testCoerceToFunctionalInterface13() {
         assertScript '''
             Function<String, Number> x = { s ->
@@ -671,6 +719,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10792
+    @Test
     void testCoerceToFunctionalInterface14() {
         assertScript '''
             @Grab('org.awaitility:awaitility-groovy:4.2.0')
@@ -682,6 +731,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10905
+    @Test
     void testCoerceToFunctionalInterface15() {
         assertScript '''
             def method(IntUnaryOperator unary) { '1a' }
@@ -703,6 +753,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11051
+    @Test
     void testCoerceToFunctionalInterface16() {
         assertScript '''import java.util.concurrent.atomic.AtomicReference
             def opt = new AtomicReference<Object>(null)
@@ -712,6 +763,7 @@ class CoercionSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11079
+    @Test
     void testCoerceToFunctionalInterface17() {
         assertScript '''
             @Grab('io.vavr:vavr:0.10.4')
@@ -740,6 +792,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11083
+    @Test
     void testCoerceToFunctionalInterface18() {
         shouldFailWithMessages '''
             void setFoo(Consumer<Number> c) {}
@@ -751,6 +804,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11085
+    @Test
     void testCoerceToFunctionalInterface19() {
         for (type in ['','long','Long']) {
             assertScript """
@@ -763,6 +817,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11092
+    @Test
     void testCoerceToFunctionalInterface20() {
         for (spec in ['one, two','String one, String two','CharSequence one, Object two']) {
             assertScript """
@@ -794,6 +849,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11092, GROOVY-8499
+    @Test
     void testCoerceToFunctionalInterface21() {
         assertScript '''
             def result = ['ab'.chars,'12'.chars].combinations().stream().map((l,n) -> "$l$n").toList()

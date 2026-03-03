@@ -21,6 +21,7 @@ package groovy.transform.stc
 import groovy.transform.PackageScope
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking : fields and properties.
@@ -34,6 +35,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         )
     }
 
+    @Test
     void testAssignFieldValue() {
         assertScript '''
             class C { int x }
@@ -48,6 +50,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testAssignFinalFieldValue() {
         assertScript '''
             class C {
@@ -102,6 +105,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignFinalFieldValue2() {
         shouldFailWithMessages '''
             int[] array = []
@@ -141,6 +145,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method C#setX(<unknown parameter type>).'
     }
 
+    @Test
     void testInferenceFromFieldType() {
         assertScript '''
             class C {
@@ -152,6 +157,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignFieldValueWithAttributeNotation() {
         assertScript '''
             class C {
@@ -162,6 +168,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignFieldValueWithWrongTypeAndAttributeNotation() {
          shouldFailWithMessages '''
              class C {
@@ -173,6 +180,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
          'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testInferenceFromAttributeType() {
         assertScript '''
             class C {
@@ -184,6 +192,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldComplainAboutMissingProperty() {
         shouldFailWithMessages '''
             Object o = new Object()
@@ -192,6 +201,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: x for class: java.lang.Object'
     }
 
+    @Test
     void testShouldComplainAboutMissingProperty2() {
         shouldFailWithMessages '''
             class C {
@@ -203,6 +213,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11319
+    @Test
     void testShouldComplainAboutMissingProperty3() {
         shouldFailWithMessages '''
             class C {
@@ -219,6 +230,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11319
+    @Test
     void testShouldComplainAboutMissingProperty4() {
         shouldFailWithMessages '''
             class C {
@@ -236,6 +248,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: x for class: C'
     }
 
+    @Test
     void testShouldComplainAboutMissingProperty5() {
         shouldFailWithMessages '''
             class C {
@@ -251,6 +264,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such property: x for class: D'
     }
 
+    @Test
     void testShouldComplainAboutMissingAttribute() {
         shouldFailWithMessages '''
             Object o = new Object()
@@ -259,6 +273,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such attribute: x for class: java.lang.Object'
     }
 
+    @Test
     void testShouldComplainAboutMissingAttribute2() {
         shouldFailWithMessages '''
             class C {
@@ -269,6 +284,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such attribute: x for class: C'
     }
 
+    @Test
     void testShouldComplainAboutMissingAttribute3() {
         shouldFailWithMessages '''
             class C {
@@ -280,6 +296,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such attribute: x for class: C'
     }
 
+    @Test
     void testShouldComplainAboutMissingAttribute4() {
         shouldFailWithMessages '''
             class C {
@@ -291,6 +308,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'No such attribute: x for class: C'
     }
 
+    @Test
     void testShouldComplainAboutMissingAttribute5() {
         shouldFailWithMessages '''
             class C {
@@ -306,6 +324,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot access field: x of class: C'
     }
 
+    @Test
     void testPropertyWithInheritance() {
         assertScript '''
             class C {
@@ -320,6 +339,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyTypeWithInheritance() {
         shouldFailWithMessages '''
             class C {
@@ -333,6 +353,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testPropertyWithInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class C extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
@@ -342,6 +363,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyWithInheritanceFromAnotherSourceUnit2() {
         shouldFailWithMessages '''
             class C extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass {
@@ -352,6 +374,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testPropertyWithSuperInheritanceFromAnotherSourceUnit() {
         assertScript '''
             class C extends groovy.transform.stc.FieldsAndPropertiesSTCTest.BaseClass2 {
@@ -362,6 +385,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9955
+    @Test
     void testStaticPropertyWithInheritanceFromAnotherSourceUnit() {
         assertScript """import ${Public.canonicalName}
             assert Public.answer == 42
@@ -376,6 +400,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10695
+    @Test
     void testStaticPropertyOfSelfType() {
         for (qual in ['', 'this.', 'C.']) {
             assertScript """
@@ -393,6 +418,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testDateProperties() {
         assertScript '''
             Date d = new Date()
@@ -401,6 +427,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGetterForProperty() {
         assertScript '''
             class C {
@@ -412,6 +439,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5232
+    @Test
     void testSetterForProperty() {
         assertScript '''
             class Person {
@@ -427,6 +455,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5443
+    @Test
     void testFieldInitShouldPass() {
         assertScript '''
             class C {
@@ -437,6 +466,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5443
+    @Test
     void testFieldInitShouldNotPassBecauseOfIncompatibleTypes() {
         shouldFailWithMessages '''
             class C {
@@ -448,6 +478,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5443, GROOVY-10277
+    @Test
     void testFieldInitShouldNotPassBecauseOfIncompatibleTypesWithClosure() {
         shouldFailWithMessages '''
             class C {
@@ -467,6 +498,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9882
+    @Test
     void testFieldInitShouldPassForCompatibleTypesWithClosure() {
         assertScript '''
             class C {
@@ -476,6 +508,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureParameterMismatch() {
         shouldFailWithMessages '''
             class C {
@@ -493,6 +526,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5585
+    @Test
     void testClassPropertyOnInterface() {
         assertScript '''
             Class test(Serializable arg) {
@@ -511,6 +545,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10380
+    @Test
     void testGetterUsingPropertyNotation() {
         assertScript '''
             class C {
@@ -522,6 +557,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSetterUsingPropertyNotation() {
         assertScript '''
             class C {
@@ -534,6 +570,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSetterUsingPropertyNotation2() {
         assertScript '''
             interface FooAware { void setFoo(String arg) }
@@ -549,6 +586,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11372
+    @Test
     void testSetterUsingPropertyNotation3() {
         assertScript '''
             def baos = new ByteArrayOutputStream()
@@ -558,6 +596,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListDotProperty1() {
         assertScript '''class Elem { int value }
             List<Elem> list = new LinkedList<Elem>()
@@ -577,6 +616,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListDotProperty2() {
         assertScript '''
             class C { int x }
@@ -601,6 +641,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5700
+    @Test
     void testMapPropertyAccess1() {
         assertScript '''
             def map = [key: 123]
@@ -613,6 +654,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8788
+    @Test
     void testMapPropertyAccess2() {
         assertScript '''
             def map = [key: 123]
@@ -625,6 +667,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5988
+    @Test
     void testMapPropertyAccess3() {
         assertScript '''
             String key = 'name'
@@ -639,6 +682,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5797
+    @Test
     void testMapPropertyAccess4() {
         assertScript '''
             def test(Map foo) {
@@ -650,6 +694,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11367, GROOVY-11369, GROOVY-11372, GROOVY-11384
+    @Test
     void testMapPropertyAccess5() {
         assertScript '''
             def map = [:]
@@ -721,6 +766,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8074
+    @Test
     void testMapPropertyAccess6() {
         assertScript '''
             class C extends HashMap {
@@ -746,6 +792,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5001, GROOVY-5491, GROOVY-6144
+    @Test
     void testMapPropertyAccess7() {
         String types = '''
             class A { }
@@ -780,6 +827,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5517
+    @Test
     void testMapPropertyAccess8() {
         String type = '''
             @groovy.transform.stc.POJO
@@ -815,6 +863,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11367
+    @Test
     void testMapPropertyAccess9() {
         for (mode in ['','static']) {
             assertScript """
@@ -868,6 +917,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11403
+    @Test
     void testMapPropertyAccess10() {
         for (mode in ['','static']) {
             assertScript """
@@ -925,6 +975,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11402, GROOVY-11403
+    @Test
     void testMapPropertyAccess11() {
         for (mode in ['','static']) {
             assertScript """
@@ -982,6 +1033,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11403
+    @Test
     void testMapPropertyAccess12() {
         for (mode in ['','static']) {
             assertScript """
@@ -1030,6 +1082,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11403
+    @Test
     void testMapPropertyAccess13() {
         for (mode in ['','static']) {
             assertScript """
@@ -1161,6 +1214,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11368
+    @Test
     void testMapPropertyAccess14() {
         String type = '''
             class M implements Map<String,String> {
@@ -1186,6 +1240,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11367
+    @Test
     void testMapPropertyAccess15() {
         String map = "def map = new ${MapType.name}()"
         assertScript map + '''
@@ -1207,6 +1262,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11387
+    @Test
     void testMapPropertyAccess16() {
         assertScript '''
             def map = new HashMap<String,String>()
@@ -1229,6 +1285,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11387
+    @Test
     void testMapPropertyAccess17() {
         assertScript '''
             class HttpHeaders extends HashMap<String,List<String>> {
@@ -1243,6 +1300,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11401
+    @Test
     void testMapPropertyAccess18() {
         assertScript '''
             class C {
@@ -1261,6 +1319,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testTypeCheckerDoesNotThinkPropertyIsReadOnly() {
         assertScript '''
             // a base class defining a read-only property
@@ -1285,6 +1344,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5779
+    @Test
     void testShouldNotUseNonStaticProperty() {
         assertScript '''import java.awt.Color
             Color c = Color.red // should not be interpreted as Color.getRed()
@@ -1292,6 +1352,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5725
+    @Test
     void testAccessFieldDefinedInInterface() {
         assertScript '''
             class C implements groovy.transform.stc.FieldsAndPropertiesSTCTest.InterfaceWithField {
@@ -1303,6 +1364,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOuterPropertyAccess1() {
         assertScript '''
             class Outer {
@@ -1319,6 +1381,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOuterPropertyAccess2() {
         assertScript '''
             class Outer {
@@ -1336,6 +1399,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10414
+    @Test
     void testOuterPropertyAccess3() {
         assertScript '''
             class Outer {
@@ -1354,6 +1418,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8050
+    @Test
     void testOuterPropertyAccess4() {
         shouldFailWithMessages '''
             class Outer {
@@ -1368,6 +1433,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8050
+    @Test
     void testOuterPropertyAccess5() {
         shouldFailWithMessages '''
             class Outer {
@@ -1382,6 +1448,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9598
+    @Test
     void testOuterPropertyAccess6() {
         shouldFailWithMessages '''
             class Outer {
@@ -1398,6 +1465,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'The variable [p] is undeclared.'
     }
 
+    @Test
     void testOuterPropertyAccess7() {
         shouldFailWithMessages '''
             class Outer {
@@ -1415,6 +1483,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7024
+    @Test
     void testOuterPropertyAccess8() {
         assertScript '''
             class Outer {
@@ -1431,6 +1500,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOuterPropertyAccess9() {
         assertScript '''
             class Outer {
@@ -1447,6 +1517,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOuterPropertyAccess10() {
         assertScript '''
             class Outer {
@@ -1462,6 +1533,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11199
+    @Test
     void testOuterPropertyAccess11() {
         assertScript '''
             class Outer {
@@ -1477,6 +1549,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10981, GROOVY-10985, GROOVY-11412
+    @Test
     void testOuterPropertyAccess12() {
         for (propertySource in [
                 'def get(String name){if(name=="VALUE")return 2}',
@@ -1524,6 +1597,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11029
+    @Test
     void testSuperPropertyAccess1() {
         assertScript '''
             class C {
@@ -1545,6 +1619,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSuperPropertyAccess2() {
         assertScript '''
             abstract class A implements java.util.function.IntSupplier {
@@ -1566,6 +1641,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9562
+    @Test
     void testSuperPropertyAccess3() {
         assertScript '''
             abstract class A {
@@ -1590,6 +1666,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10981
+    @Test
     void testSuperPropertyAccess4() {
         for (mode in ['', 'public', 'private', 'protected', '@PackageScope']) {
             assertScript """
@@ -1613,6 +1690,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11005
+    @Test
     void testSuperPropertyAccess5() {
         File parentDir = File.createTempDir()
         config.with {
@@ -1648,6 +1726,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testPrivateFieldAccessInClosure1() {
         assertScript '''
             class C {
@@ -1661,6 +1740,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPrivateFieldAccessInClosure2() {
         assertScript '''
             class C {
@@ -1675,6 +1755,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9683
+    @Test
     void testPrivateFieldAccessInClosure3() {
         assertScript '''
             class C {
@@ -1690,6 +1771,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9695
+    @Test
     void testPrivateFieldAccessInClosure4() {
         assertScript '''
             class C {
@@ -1712,6 +1794,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9768
+    @Test
     void testPrivateFieldAccessInClosure5() {
         assertScript '''import groovy.transform.stc.FirstParam
             class C {
@@ -1738,6 +1821,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11144
+    @Test
     void testPrivateFieldAccessInClosure6() {
         assertScript '''
             abstract class A {
@@ -1754,6 +1838,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11198
+    @Test
     void testPrivateFieldAccessInEnumInit() {
         for (mode in ['public', 'private', 'protected', '@PackageScope']) {
             assertScript """
@@ -1773,6 +1858,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11358
+    @Test
     void testPrivateFieldAccessOfAbstract() {
         shouldFailWithMessages '''
             abstract class A {
@@ -1800,6 +1886,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5737
+    @Test
     void testGeneratedFieldAccessInClosure() {
         assertScript '''
             @groovy.util.logging.Log
@@ -1813,6 +1900,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6277
+    @Test
     void testPublicFieldVersusPrivateGetter() {
         assertScript '''
             class C {
@@ -1827,6 +1915,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9973
+    @Test
     void testPrivateFieldVersusPublicGetter() {
         assertScript '''
             class C {
@@ -1842,6 +1931,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11381
+    @Test
     void testPrivateFieldVersusPublicGetterOnInterface() {
         assertScript '''
             interface I {
@@ -1856,6 +1946,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPrivateFieldVersusPublicSetterOnInterface() {
         assertScript '''
             interface I {
@@ -1884,6 +1975,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testProtectedAccessorFromSamePackage() {
         assertScript '''
             class C {
@@ -1901,6 +1993,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6610, GROOVY-11483
+    @Test
     void testUnqualifiedStaticFieldAccessBeforeThis() {
         for (mode in ['public', 'protected', '@PackageScope', 'private']) {
             assertScript """
@@ -1924,6 +2017,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7890
+    @Test
     void testNonStaticPropertyAndStaticMethodClosure() {
         shouldFailWithMessages '''
             class C {
@@ -1952,6 +2046,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5872
+    @Test
     void testAssignNullToFieldWithGenericsShouldNotThrowError() {
         assertScript '''
             class C {
@@ -1961,6 +2056,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSetterInWith() {
         assertScript '''
             class C {
@@ -1976,6 +2072,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSetterInWithUsingPropertyNotation() {
         assertScript '''
             class C {
@@ -1991,6 +2088,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSetterInWithUsingPropertyNotationAndClosureSharedVariable() {
         assertScript '''
             class C {
@@ -2010,6 +2108,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9653
+    @Test
     void testSetterInWithUsingPropertyNotation_DelegateAndOwnerHaveSetter() {
         assertScript '''
             class C {
@@ -2030,6 +2129,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6230
+    @Test
     void testAttributeWithGetterOfDifferentType() {
         assertScript '''import java.awt.Dimension
             def d = new Dimension(800,600)
@@ -2045,6 +2145,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6489
+    @Test
     void testShouldNotThrowUnmatchedGenericsError() {
         assertScript '''
             public class Foo {
@@ -2067,6 +2168,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldFailWithIncompatibleGenericTypes() {
         shouldFailWithMessages '''
             public class Foo {
@@ -2094,6 +2196,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible generic argument types. Cannot assign java.util.ArrayList<java.lang.Integer> to: java.util.List<java.lang.String>'
     }
 
+    @Test
     void testAICAsStaticProperty() {
         assertScript '''
             class Foo {
@@ -2103,6 +2206,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyWithMultipleSetters() {
         assertScript '''
             import org.codehaus.groovy.ast.expr.*
@@ -2149,6 +2253,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9893
+    @Test
     void testPropertyWithMultipleSetters2() {
         assertScript '''
             abstract class A { String which
@@ -2165,6 +2270,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9893
+    @Test
     void testPropertyWithMultipleSetters3() {
         assertScript '''
             interface I {
@@ -2182,6 +2288,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9893
+    @Test
     void testPropertyWithMultipleSetters4() {
         assertScript '''
             trait T { String which
@@ -2197,6 +2304,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyAssignmentAsExpression() {
         assertScript '''
             class C {
@@ -2208,6 +2316,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyAssignmentInSubClassAndMultiSetter() {
         10.times {
             assertScript '''
@@ -2233,6 +2342,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testPropertyAssignmentInSubClassAndMultiSetterThroughDelegation() {
         10.times {
             assertScript '''
@@ -2253,6 +2363,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testShouldAcceptPropertyAssignmentEvenIfSetterOnlyBecauseOfSpecialType() {
         assertScript '''
             class BooleanSetterOnly {
@@ -2278,6 +2389,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6590
+    @Test
     void testShouldFindStaticPropertyOnPrimitiveType() {
         assertScript '''
             int i=1
@@ -2291,6 +2403,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9855
+    @Test
     void testShouldInlineStringConcatInTypeAnnotation() {
         assertScript '''
             @SuppressWarnings(C.PREFIX + 'checked') // not 'un'.plus('checked')
@@ -2301,6 +2414,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testImplicitPropertyOfDelegateShouldNotPreferField() {
         assertScript '''
             Calendar.instance.with {
@@ -2309,6 +2423,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyStyleSetterArgShouldBeCheckedAgainstParamType() {
         shouldFailWithMessages '''
             class Foo {
@@ -2347,6 +2462,7 @@ class FieldsAndPropertiesSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPropertyStyleGetterUsageShouldBeCheckedAgainstReturnType() {
         shouldFailWithMessages '''
             class Foo {

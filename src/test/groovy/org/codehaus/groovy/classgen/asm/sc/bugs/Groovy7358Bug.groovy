@@ -16,29 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7358Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
-        void testShouldHandleContinuePropertyInOptimizedLoop() {
+final class Groovy7358Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
+    void testShouldHandleContinuePropertyInOptimizedLoop() {
         assertScript '''
-
             private int foo(String[] arr) {
                int counter=0
                for (String s in arr) {
@@ -50,7 +38,6 @@ class Groovy7358Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             }
 
             assert foo(['a','b','c'] as String[])==3
-
         '''
     }
 }

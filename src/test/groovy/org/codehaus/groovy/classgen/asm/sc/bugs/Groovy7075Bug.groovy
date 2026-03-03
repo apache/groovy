@@ -16,17 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7075Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7075Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldNotLooseSafeNavigationFlag() {
             assertScript '''interface Y extends YParent {}
-
 interface YParent {
     Integer getValue()
 }
@@ -37,6 +37,7 @@ assert v == null
         '''
     }
 
+    @Test
     void testShouldNotLooseSaveNavigationFlagWithDGM() {
         assertScript '''
             URL url = null

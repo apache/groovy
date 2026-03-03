@@ -20,10 +20,12 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy7333 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     // GROOVY-7333
+    @Test
     void testIncorrectInstanceOfInference1() {
         assertScript '''
             int len(byte[] arr) { arr.length }
@@ -37,6 +39,7 @@ final class Groovy7333 extends StaticTypeCheckingTestCase implements StaticCompi
     }
 
     // GROOVY-9769
+    @Test
     void testIncorrectInstanceOfInference2() {
         assertScript '''
             interface A {

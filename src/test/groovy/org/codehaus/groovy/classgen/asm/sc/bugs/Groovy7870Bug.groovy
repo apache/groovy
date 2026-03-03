@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testLineNumberOnImplicitReturnsWithLeftShift() {
         assertScript '''
             def test() {
@@ -38,6 +40,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testLineNumberOnImplicitReturnsWithRightShift() {
         assertScript '''
             def test() {
@@ -53,6 +56,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testLineNumberOnImplicitReturnsWithRightShiftUnsigned() {
         assertScript '''
             def test() {
@@ -68,6 +72,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testLineNumberOnImplicitReturnsWithCompareTo() {
         assertScript '''
             def test(org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.Thrower o) {
@@ -83,6 +88,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testLineNumberOnImplicitReturnsWithIn() {
         assertScript '''
             def test() {
@@ -98,6 +104,7 @@ class Groovy7870Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testLineNumberOnImplicitReturnsWithEquals() {
         assertScript '''
             def test(org.codehaus.groovy.classgen.asm.sc.bugs.Groovy7870Bug.Thrower o) {

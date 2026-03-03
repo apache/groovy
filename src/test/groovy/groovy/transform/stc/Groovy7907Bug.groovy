@@ -18,7 +18,11 @@
  */
 package groovy.transform.stc
 
-class Groovy7907Bug extends StaticTypeCheckingTestCase {
+import org.junit.jupiter.api.Test
+
+final class Groovy7907Bug extends StaticTypeCheckingTestCase {
+
+    @Test
     void testPlaceholdersInPrecompiledBinariesShouldBeHonored() {
         assertScript '''
             import groovy.transform.stc.*

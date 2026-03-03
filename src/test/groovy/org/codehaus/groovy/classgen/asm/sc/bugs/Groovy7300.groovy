@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testUseSuperToBypassOverride1() {
         assertScript '''
             abstract class A {
@@ -37,6 +39,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
+    @Test
     void testUseSuperToBypassOverride2() {
         assertScript '''
             abstract class A {
@@ -51,6 +54,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
+    @Test
     void testUseSuperToBypassOverride3() {
         assertScript '''
             abstract class A {
@@ -65,6 +69,7 @@ final class Groovy7300 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
+    @Test
     void testUseSuperToBypassOverride4() {
         shouldFailWithMessages '''
             abstract class A {

@@ -16,18 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7169Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7169Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldNotThrowIllegalAccessException() {
         assertScript '''
              Number[] ary
@@ -37,6 +34,7 @@ class Groovy7169Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testShouldAllowStoringNullInArray() {
         assertScript '''
              Number[] ary

@@ -20,16 +20,17 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.junit.jupiter.api.Test
 
 final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
     @Override
-    protected void setUp() {
-        super.setUp()
+    protected void configure() {
         def customizers = config.compilationCustomizers
         customizers.removeAll { it instanceof ASTTransformationCustomizer }
     }
 
+    @Test
     void testDynamicMethodCall() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -44,6 +45,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicMethodCallInsideClosure() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -59,6 +61,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicMethodCallWithCheckedArgument() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -73,6 +76,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicMethodCallOnField() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -90,6 +94,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicProperty() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -106,6 +111,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicPropertyMixedWithCheckedMethodCall() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -126,6 +132,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicPropertyAsArgumentToCheckedMethodCall() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -146,6 +153,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicVariable() {
         shell.setVariable('myVariable', 123)
         assertScript '''
@@ -157,6 +165,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicVariableMixedWithCheckedMethodCall() {
         shell.setVariable('myVariable', 123)
         assertScript '''
@@ -169,6 +178,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicVariableAsArgumentToCheckedMethodCall() {
         shell.setVariable('myVariable', 123)
         assertScript '''
@@ -186,6 +196,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testMetaClassUsage() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode.groovy')
@@ -204,6 +215,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicClassMethod1() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
@@ -219,6 +231,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicClassMethod2() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
@@ -235,6 +248,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
     }
 
     // GROOVY-11817
+    @Test
     void testDynamicClassMethod3() {
         assertScript '''
             @CompileStatic(extensions='groovy/transform/sc/MixedMode2.groovy')
@@ -251,6 +265,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicBuilder() {
         assertScript '''import groovy.xml.MarkupBuilder
             @CompileStatic(extensions='groovy/transform/sc/MixedModeDynamicBuilder.groovy')
@@ -274,6 +289,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testDynamicClassWithStaticConstructorAndInitialization() {
         shouldFailWithMessages '''
             class A {
@@ -288,6 +304,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         'Cannot statically compile constructor implicitly including non-static elements from fields, properties or initializers'
     }
 
+    @Test
     void testSCClosureCanAccessPrivateFieldsOfNonSCEnclosingClass() {
         assertScript '''
             class Test {
@@ -302,6 +319,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testSCClosureCanAccessPrivateMethodsOfNonSCEnclosingClass() {
         assertScript '''
             class Test {
@@ -316,6 +334,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testSCInnerClassCanAccessPrivateFieldsOfNonSCOuterClass() {
         assertScript '''
             class Test {
@@ -330,6 +349,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testSCInnerClassCanAccessPrivateMethodsOfNonSCOuterClass() {
         assertScript '''
             class Test {
@@ -357,6 +377,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testSCAICCanAccessPrivateFieldsOfNonSCOuterClass() {
         assertScript '''
             class Test {
@@ -372,6 +393,7 @@ final class MixedModeStaticCompilationTest extends StaticTypeCheckingTestCase im
         '''
     }
 
+    @Test
     void testSCAICCanAccessPrivateMethodsOfNonSCOuterClass() {
         assertScript '''
             class Test {

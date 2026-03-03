@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.GroovyTestCase
 import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
@@ -27,18 +26,21 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInfo
 
 /**
  * Support class for static type checking test cases.
  */
 @AutoFinal @CompileStatic
-abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
+abstract class StaticTypeCheckingTestCase {
+
     protected CompilerConfiguration config
     protected GroovyShell shell
 
-    @Override
-    protected void setUp() {
-        super.setUp()
+    @BeforeEach
+    void setUpTestCase() {
         config = new CompilerConfiguration()
         def imports = new ImportCustomizer()
         imports.addImports(
@@ -54,32 +56,31 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
         )
         config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked), imports)
         configure()
-        shell = new GroovyShell(config)
-        extraSetup()
-    }
 
-    protected void extraSetup() {}
+        shell = new GroovyShell(config)
+    }
 
     protected void configure() {}
 
-    @Override
-    protected void tearDown() {
-        super.tearDown()
-        shell = null
-        config = null
+    //--------------------------------------------------------------------------
+
+    private String testMethodName
+    private int testScriptCounter
+
+    @BeforeEach
+    void setUpTestName(TestInfo testInfo) {
+        testMethodName = testInfo.getTestMethod().orElseThrow().getName()
     }
 
-    @Override
-    protected void assertScript(String script) {
+    protected final String getTestClassName() {
+        "TestScript" + testMethodName + (++testScriptCounter) + ".groovy"
+    }
+
+    protected final Object assertScript(String script) {
         shell.evaluate(script, getTestClassName())
     }
 
-    protected Class assertClass(String classCode) {
-        GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
-        loader.parseClass(classCode)
-    }
-
-    protected void shouldFailWithMessages(String code, String... messages) {
+    protected final void shouldFailWithMessages(String code, String... messages) {
         boolean success = false
         try {
             shell.evaluate(code, getTestClassName())
@@ -90,12 +91,12 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
                 }
             }
             if (success && mce.errorCollector.errorCount > messages.length) {
-                throw new AssertionError("Expected error messages were found, but compiler threw additional errors : $mce")
+                Assertions.fail("Expected error messages were found, but compiler threw additional errors : $mce")
             }
             if (!success) {
-                throw new AssertionError("Not all expected error messages were found, compiler threw these errors : $mce")
+                Assertions.fail("Not all expected error messages were found, compiler threw these errors : $mce")
             }
         }
-        if (!success) throw new AssertionError("Test passed but should have failed with messages [$messages]")
+        if (!success) Assertions.fail("Test passed but should have failed with messages [$messages]")
     }
 }

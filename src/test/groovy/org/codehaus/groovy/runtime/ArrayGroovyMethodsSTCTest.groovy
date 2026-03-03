@@ -19,11 +19,14 @@
 package org.codehaus.groovy.runtime
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 /**
  * STC Tests for ArrayGroovyMethods
  */
-class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
+final class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testAnyForBooleanArray() {
         assertScript '''
         boolean[] array = [true]
@@ -31,6 +34,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAnyForByteArray() {
         assertScript '''
         byte[] array = [0, 1, 2]
@@ -38,6 +42,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAnyForCharArray() {
         assertScript '''
         char[] array = 'abc'.chars
@@ -45,6 +50,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAnyForShortArray() {
         assertScript '''
         short[] array = [0, 1, 2]
@@ -52,6 +58,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAnyForIntArray() {
         assertScript '''
         int[] array = [0, 1, 2]
@@ -59,6 +66,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAnyForLongArray() {
         assertScript '''
         long[] array = [0L, 1L, 2L]
@@ -66,6 +74,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAnyForFloatArray() {
         assertScript '''
         float[] array = [0.0f, 1.0f, 2.0f]
@@ -73,13 +82,15 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAnyForDoubleArray() {
         assertScript '''
         double[] array = [0.0d, 1.0d, 2.0d]
         assert array.any{ 0.0d == it.doubleValue() }
         '''
     }
-/*
+
+    @Disabled @Test
     void testEachForBooleanArray() {
         assertScript '''
         boolean[] array = [false, true, false]
@@ -89,6 +100,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Disabled @Test
     void testEachForByteArray() {
         assertScript '''
         byte[] array = [0, 1, 2]
@@ -98,6 +110,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Disabled @Test
     void testEachForCharArray() {
         assertScript '''
         char[] array = 'abc'.chars
@@ -107,6 +120,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Disabled @Test
     void testEachForShortArray() {
         assertScript '''
         short[] array = [0, 1, 2]
@@ -116,6 +130,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Disabled @Test
     void testEachForIntArray() {
         assertScript '''
         int[] array = [0, 1, 2]
@@ -125,6 +140,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Disabled @Test
     void testEachForLongArray() {
         assertScript '''
         long[] array = [0L, 1L, 2L]
@@ -134,6 +150,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Disabled @Test
     void testEachForFloatArray() {
         assertScript '''
         float[] array = [0f, 1f, 2f]
@@ -143,6 +160,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Disabled @Test
     void testEachForDoubleArray() {
         assertScript '''
         double[] array = [0d, 1d, 2d]
@@ -151,7 +169,8 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         assert result == '0.01.02.0'
         '''
     }
-*/
+
+    @Test
     void testEachWithIndexForBooleanArray() {
         assertScript '''
         boolean[] array = [false, true, false]
@@ -161,6 +180,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachWithIndexForByteArray() {
         assertScript '''
         byte[] array = [7, 8, 9]
@@ -170,6 +190,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachWithIndexForCharArray() {
         assertScript '''
         char[] array = 'abc'.chars
@@ -179,6 +200,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachWithIndexForShortArray() {
         assertScript '''
         short[] array = [7, 8, 9]
@@ -188,6 +210,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachWithIndexForIntArray() {
         assertScript '''
         int[] array = [7, 8, 9]
@@ -197,6 +220,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachWithIndexForLongArray() {
         assertScript '''
         long[] array = [7L, 8L, 9L]
@@ -206,6 +230,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachWithIndexForFloatArray() {
         assertScript '''
         float[] array = [0f, 1f, 2f]
@@ -215,6 +240,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEachWithIndexForDoubleArray() {
         assertScript '''
         double[] array = [0d, 1d, 2d]
@@ -224,6 +250,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForBooleanArray() {
         assertScript '''
         boolean[] array = [false, true, true]
@@ -233,6 +260,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForByteArray() {
         assertScript '''
         byte[] array = [0, 1, 2]
@@ -242,6 +270,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForCharArray() {
         assertScript '''
         char[] array = 'abc'.chars
@@ -251,6 +280,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForShortArray() {
         assertScript '''
         short[] array = [0, 1, 2]
@@ -260,6 +290,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForIntArray() {
         assertScript '''
         int[] array = [0, 1, 2]
@@ -269,6 +300,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForLongArray() {
         assertScript '''
         long[] array = [0L, 1L, 2L]
@@ -278,6 +310,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForFloatArray() {
         assertScript '''
         float[] array = [0f, 1f, 2f]
@@ -287,6 +320,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReverseEachForDoubleArray() {
         assertScript '''
         double[] array = [0d, 1d, 2d]
@@ -296,6 +330,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAsBooleanForNullBooleanArray() {
         assertScript '''
         @groovy.transform.CompileStatic
@@ -308,6 +343,7 @@ class ArrayGroovyMethodsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAsBooleanForNullByteArray() {
         assertScript '''
         @groovy.transform.CompileStatic

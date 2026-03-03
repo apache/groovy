@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : closures.
  */
 class ClosuresSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testCallClosure1() {
         assertScript '''
             def c = { return 'foo' }
@@ -30,6 +33,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallClosure2() {
         assertScript '''
             def c = { -> return 'foo' }
@@ -38,6 +42,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11394
+    @Test
     void testCallClosure3() {
         shouldFailWithMessages '''
             def c = { -> }
@@ -46,6 +51,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call closure that accepts [] with [java.lang.String]'
     }
 
+    @Test
     void testCallClosure4() {
         assertScript '''
             def c = { int a, int b -> a + b }
@@ -53,6 +59,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallClosure5() {
         shouldFailWithMessages '''
             def c = { int a, int b -> a + b }
@@ -61,6 +68,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call closure that accepts [int, int] with [java.lang.String, java.lang.String]'
     }
 
+    @Test
     void testCallClosure6() {
         assertScript '''
             def result = { int a, int b -> a + b }(5, 7)
@@ -68,6 +76,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallClosure7() {
         shouldFailWithMessages '''
             { int a, int b -> a + b }('5', 7)
@@ -76,6 +85,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6365
+    @Test
     void testCallClosure8() {
         assertScript '''
             def c = { Object[] args -> args.length }
@@ -84,6 +94,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10071
+    @Test
     void testCallClosure9() {
         assertScript '''
             def c = { ... zeroOrMore -> return 'foo' + zeroOrMore }
@@ -94,6 +105,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10072
+    @Test
     void testCallClosure10() {
         assertScript '''
             def c = { p = 'foo' -> return p }
@@ -103,6 +115,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10072
+    @Test
     void testCallClosure11() {
         assertScript '''
             def c = { Number n, Number total = 41 -> total += n }
@@ -111,6 +124,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10072
+    @Test
     void testCallClosure12() {
         shouldFailWithMessages '''
             def c = { Number n, Number total = new Date() -> total += n }
@@ -119,6 +133,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10636
+    @Test
     void testCallClosure13() {
         assertScript '''
             def f(Closure<Number>... closures) {
@@ -130,6 +145,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10636
+    @Test
     void testCallClosure14() {
         shouldFailWithMessages '''
             def f(Closure<Number>... closures) {
@@ -140,6 +156,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11023
+    @Test
     void testCallClosure15() {
         assertScript '''
             def c = { p, q = p.toString() -> '' + p + q }
@@ -149,6 +166,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11394
+    @Test
     void testCallClosure16() {
         assertScript '''
             def c = { Object[] arr, opt = null -> Arrays.toString(arr) + opt }
@@ -162,6 +180,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11400
+    @Test
     void testCallClosure17() {
         assertScript '''
             def c = { p -> p }
@@ -180,6 +199,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11448
+    @Test
     void testCallClosure18() {
         assertScript '''
             def c = { int x = 0, int[] y = new int[0] -> return x }
@@ -189,6 +209,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5705
+    @Test
     void testCallClosure19() {
         assertScript '''
             class Foo {
@@ -213,6 +234,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11366
+    @Test
     void testCallClosure20() {
         assertScript '''
             class Bar {
@@ -230,6 +252,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5881
+    @Test
     void testCallClosure21() {
         assertScript '''
             Map<Integer, Closure<Integer>> m = [1: { int i -> i }, 2: Closure.IDENTITY]
@@ -245,6 +268,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6324
+    @Test
     void testCallClosure22() {
         assertScript '''
             class Car { Closure<String> model }
@@ -253,6 +277,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureReturnTypeInference1() {
         assertScript '''
             def c = { int a, int b -> return a + b }
@@ -261,12 +286,14 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureReturnTypeInference2() {
         assertScript '''
             int total = { int a, int b -> return a + b }(2, 3)
         '''
     }
 
+    @Test
     void testClosureReturnTypeInference3() {
         shouldFailWithMessages '''
             def c = { int x ->
@@ -282,6 +309,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9907
+    @Test
     void testClosureReturnTypeInference4() {
         assertScript '''
             Integer foo(x) {
@@ -296,6 +324,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9971
+    @Test
     void testClosureReturnTypeInference5() {
         assertScript '''
             def m(Closure<String> c) {
@@ -311,6 +340,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10082, GROOVY-10277
+    @Test
     void testClosureReturnTypeInference6() {
         assertScript '''
             class A {}
@@ -328,6 +358,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10091, GROOVY-10277
+    @Test
     void testClosureReturnTypeInference7() {
         shouldFailWithMessages '''
             class A<T> {}
@@ -344,6 +375,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10792
+    @Test
     void testClosureReturnTypeInference8() {
         shouldFailWithMessages '''
             void proc(Closure<Boolean> c) {
@@ -359,6 +391,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7713, GROOVY-8202
+    @Test
     void testClosureReturnTypeInference9() {
         assertScript '''
             void proc() {
@@ -412,6 +445,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5145
+    @Test
     void testCollect1() {
         assertScript '''
             List<String> strings = [1,2,3].collect { it.toString() }
@@ -419,6 +453,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5145
+    @Test
     void testCollect2() {
         assertScript '''
             class StringClosure extends Closure<String> {
@@ -430,6 +465,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11685
+    @Test
     void testCollect3() {
         assertScript '''
             List<Number> test(List<String> strings) {
@@ -446,6 +482,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testWithIntReturnType() {
         assertScript '''
             class Test {
@@ -459,6 +496,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testWithLongReturnType() {
         assertScript '''
             class Test {
@@ -472,6 +510,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testWithStringReturnType() {
         assertScript '''
             class Test {
@@ -484,6 +523,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5907
+    @Test
     void testWithGenericReturnType() {
         assertScript '''
             class Test {
@@ -495,6 +535,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testWithNestedMemberAccess() {
         assertScript '''
             class Foo {
@@ -534,6 +575,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureSharedVariable1() {
         assertScript '''
             def x = '123';
@@ -542,6 +584,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureSharedVariable2() {
         shouldFailWithMessages '''
             def x = '123';
@@ -552,6 +595,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5874
+    @Test
     void testClosureSharedVariable3() {
         shouldFailWithMessages '''
             def sum = 0
@@ -562,6 +606,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9516
+    @Test
     void testClosureSharedVariable4() {
         shouldFailWithMessages '''
             class A {}
@@ -579,6 +624,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10356
+    @Test
     void testClosureSharedVariable5() {
         assertScript '''
             interface A {
@@ -593,6 +639,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11471
+    @Test
     void testClosureSharedVariable6() {
         assertScript '''
             def x = 1
@@ -606,6 +653,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10052
+    @Test
     void testClosureSharedVariable7() {
         assertScript '''
             String x
@@ -618,6 +666,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10052
+    @Test
     void testClosureSharedVariable8() {
         assertScript '''
             def x
@@ -630,6 +679,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10052
+    @Test
     void testNotClosureSharedVariable() {
         assertScript '''
             String x = Optional.of('x').orElseThrow{ new Exception() }
@@ -642,6 +692,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testRecurseClosureCallAsMethod() {
         assertScript '''
             Closure<Integer> cl
@@ -649,6 +700,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFibClosureCallAsMethod() {
         assertScript '''
             Closure<Integer> fib
@@ -657,6 +709,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFibClosureCallAsMethodFromWithinClass() {
         assertScript '''
             class Fibonacci {
@@ -670,6 +723,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureRecursionWithoutClosureTypeArgument() {
         shouldFailWithMessages '''
             Closure fib
@@ -678,6 +732,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#plus(java.lang.Object)'
     }
 
+    @Test
     void testClosureRecursionWithDef() {
         shouldFailWithMessages '''
             def fib
@@ -688,6 +743,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#call(int)'
     }
 
+    @Test
     void testClosureRecursionWithClosureTypeArgument() {
         assertScript '''
             Closure<Integer> fib
@@ -695,6 +751,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testClosureMemoizeWithClosureTypeArgument() {
         assertScript '''
             Closure<Integer> fib
@@ -705,6 +762,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5639
+    @Test
     void testShouldNotThrowClosureSharedVariableError() {
         assertScript '''
             Closure<Void> c = {
@@ -718,6 +776,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // from Grails
+    @Test
     void testShouldNotThrowClosureSharedVariableError2() {
         assertScript '''
             class AntPathMatcher {
@@ -738,6 +797,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5693
+    @Test
     void testClosureArgumentCheckWithFlowTyping() {
         assertScript '''
             Closure a = { int i ->
@@ -760,6 +820,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10221
+    @Test
     void testClosureArgumentCheckWithFlowTyping2() {
         assertScript '''
             class C<T1, T2 extends T1> {
@@ -774,6 +835,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6219, GROOVY-10277
+    @Test
     void testClosureReturnDoesNotMatchTarget() {
         shouldFailWithMessages '''
             void printMessage(Closure<String> messageProvider) {
@@ -787,6 +849,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type int for closure expecting java.lang.String'
     }
 
+    @Test
     void testSAMsInMethodSelection1() {
         assertScript '''
             interface MySAM {
@@ -801,6 +864,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6189, GROOVY-9852
+    @Test
     void testSAMsInMethodSelection2() {
         // overloads with classes implemented by Closure
         [
@@ -828,6 +892,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9881
+    @Test
     void testSAMsInMethodSelection3() {
         // Closure implements both and Runnable is "closer"
         assertScript '''
@@ -841,6 +906,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSAMsInMethodSelection4() {
         shouldFailWithMessages '''
             interface One { void m() }
@@ -854,6 +920,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         'Reference to method is ambiguous. Cannot choose between'
     }
 
+    @Test
     void testSAMsInMethodSelection5() {
         for (spec in ['','x,y ->']) {
             shouldFailWithMessages """
@@ -869,6 +936,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testSAMsInMethodSelection6() {
         for (spec in ['->','x ->']) {
             assertScript """
@@ -885,6 +953,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11258
+    @Test
     void testSAMsInMethodSelection7() {
         assertScript '''import java.util.function.Function
         // org.assertj.core.api.iterable.ThrowingExtractor
@@ -902,6 +971,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11397
+    @Test
     void testSAMsInMethodSelection8() {
         assertScript '''
             interface Action<T> { void run(T t) }
@@ -916,6 +986,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11681
+    @Test
     void testSAMsInMethodSelection9() {
         assertScript '''
             def executor = java.util.concurrent.Executors.newSingleThreadExecutor()
@@ -931,6 +1002,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6238
+    @Test
     void testDirectMethodCallOnClosureExpression() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION,value={
@@ -946,6 +1018,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6343
+    @Test
     void testAccessStaticFieldFromNestedClosure() {
         assertScript '''
             class C {
@@ -965,6 +1038,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11840
+    @Test
     void testAccessStaticFieldFromNestedClosure2() {
         assertScript '''
             class C {
@@ -985,6 +1059,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11360
+    @Test
     void testLexicalScopeVersusGetDynamicProperty() {
         config.warningLevel = org.codehaus.groovy.control.messages.WarningMessage.POSSIBLE_ERRORS
         config.targetDirectory = File.createTempDir()
@@ -1034,6 +1109,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7701
+    @Test
     void testOwnerVersusDelegate() {
         assertScript '''
             class Foo {
@@ -1064,6 +1140,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9089
+    @Test
     void testOwnerVersusDelegateFromNestedClosure() {
         String declarations = '''
             class A {
@@ -1102,6 +1179,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9558
+    @Test
     void testPutAtClosureDelegateProperty() {
         assertScript '''
             def config = new org.codehaus.groovy.control.CompilerConfiguration()
@@ -1113,6 +1191,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11393
+    @Test
     void testClassClosureDelegateProperty() {
         String foo = '''
             class Foo {
@@ -1143,6 +1222,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5470, GROOVY-6091, GROOVY-9604, GROOVY-11399
+    @Test
     void testClosureThisObjectDelegateOwnerAccessor() {
         for (meth in ['getThisObject()', 'getDelegate()', 'getOwner()']) {
             assertScript """
@@ -1208,6 +1288,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5470, GROOVY-6091, GROOVY-9604, GROOVY-11399
+    @Test
     void testClosureThisObjectDelegateOwnerProperty() {
         for (prop in ['thisObject', 'delegate', 'owner']) {
             assertScript """
@@ -1259,6 +1340,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9652
+    @Test
     void testDelegatePropertyAndCharCompareOptimization() {
         ['String', 'Character', 'char'].each { type ->
             assertScript """
@@ -1290,6 +1372,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testTypeCheckingOfClosureInMapConstructorCalls() {
         shouldFailWithMessages '''
             class Foo {
@@ -1320,6 +1403,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10602
+    @Test
     void testMethodAndClosureParametersDefaultArguments() {
         assertScript '''import java.util.function.*
             String test(Closure one = { p ->
@@ -1337,6 +1421,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11386
+    @Test
     void testClosurePropertyPrecedence() {
         assertScript '''
             String x = { -> metaClass }()
@@ -1358,6 +1443,7 @@ class ClosuresSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9604
+    @Test
     void testClosureResolveStrategy() {
         assertScript '''
             class C {

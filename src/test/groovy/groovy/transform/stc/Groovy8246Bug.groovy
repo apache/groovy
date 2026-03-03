@@ -16,10 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package groovy.transform.stc
 
-class Groovy8246Bug extends StaticTypeCheckingTestCase {
+import org.junit.jupiter.api.Test
+
+final class Groovy8246Bug extends StaticTypeCheckingTestCase {
+
+    @Test
     void testClosureWithImplicitParamNoInferrableArguments() {
         assertScript '''
             def runnable(Runnable r) {

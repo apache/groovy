@@ -19,12 +19,16 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Unit tests for static type checking : arrays and collections.
  */
 class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testArrayAccess() {
         assertScript '''
             String[] strings = ['a','b','c']
@@ -33,6 +37,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testArrayLength() {
         assertScript '''
             String[] strings = ['a','b','c']
@@ -41,6 +46,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testArrayElementTypeInference() {
         shouldFailWithMessages '''
             String[] strings = ['a','b','c']
@@ -50,6 +56,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9985, GROOVY-9994
+    @Test
     void testWrongComponentTypeInArrayInitializer() {
         shouldFailWithMessages '''
             new int['a']
@@ -73,6 +80,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10111
+    @Test
     void testBoundedComponentTypeInArrayInitializer() {
         assertScript '''
             class C<X, Y> {
@@ -83,6 +91,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testConvertibleTypesInArrayInitializer() {
         assertScript '''
             def strings = new String[]{1,(long)2,(short)3}
@@ -91,6 +100,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignValueInArrayWithCorrectType() {
         assertScript '''
             int[] array = [1, 2, 3]
@@ -98,6 +108,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignValueInArrayWithWrongType() {
         shouldFailWithMessages '''
             int[] array = [1, 2, 3]
@@ -112,6 +123,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
+    @Test
     void testMultiDimensionalArray1() {
         assertScript '''
             int[][] array = new int[1][]
@@ -119,6 +131,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultiDimensionalArray2() {
         shouldFailWithMessages '''
             int[][] array = new Object[1][]
@@ -126,6 +139,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object[][] to variable of type int[][]'
     }
 
+    @Test
     void testMultiDimensionalArray3() {
         assertScript '''
             int[][] array = new int[1][]
@@ -146,6 +160,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5683, GROOVY-8566
+    @Test
     void testMultiDimensionalArray4() {
         assertScript '''
             int[][] arrays = [ [], [1], [2,3] ]
@@ -160,6 +175,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8566
+    @Test
     void testMultiDimensionalArray5() {
         assertScript '''
             int[]     a   = [1,2,3]
@@ -187,6 +203,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8551
+    @Test
     void testMultiDimensionalArray6() {
         assertScript '''
             def a   = new int[]    {1,2,3}
@@ -233,6 +250,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForLoopWithArrayAndUntypedVariable() {
         assertScript '''
             String[] array = ['1','2','3']
@@ -240,6 +258,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForLoopWithArrayAndWrongVariableType() {
         shouldFailWithMessages '''
             String[] array = ['1','2','3']
@@ -248,6 +267,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
 
+    @Test
     void testJava5StyleForLoopWithArray() {
         assertScript '''
             String[] array = ['1','2','3']
@@ -255,6 +275,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testJava5StyleForLoopWithArrayAndIncompatibleType() {
         shouldFailWithMessages '''
             String[] array = ['1','2','3']
@@ -263,6 +284,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot loop with element of type int with collection of type java.lang.String[]'
     }
 
+    @Test
     void testForEachLoopOnString() {
         assertScript '''
             String name = 'Guillaume'
@@ -272,6 +294,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSliceInference() {
         assertScript '''
             List<String> foos = ['aa','bb','cc']
@@ -322,6 +345,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListStarProperty() {
         assertScript '''
             List list = ['a','b','c']
@@ -352,6 +376,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListStarMethod() {
         assertScript '''
             List list = ['a','b','c']
@@ -386,6 +411,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11453
+    @Test
     void testListStarWithNull() {
         assertScript '''
             List<String> strings = null
@@ -394,6 +420,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListStarWithMethodReturningVoid() {
         assertScript '''
             class C { void m() {} }
@@ -403,6 +430,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListStarWithMethodWithNullInList() {
         assertScript '''
             List<String> strings = ['a',(String)null,'C']
@@ -412,6 +440,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7442
+    @Test
     void testSpreadSafeMethodCallWithinAssert() {
         assertScript '''
             def myMethod(String a, String b) {
@@ -422,6 +451,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInlineMap() {
         assertScript '''
             Map map = [a:1, b:2]
@@ -437,12 +467,14 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCollectMethodCallOnList() {
         assertScript '''
             [1,2,3].collect { it.toString() }
         '''
     }
 
+    @Test
     void testForInLoop() {
         assertScript '''
             class A {
@@ -455,6 +487,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForInLoopWithDefaultListType() {
         assertScript '''
             class A {
@@ -467,12 +500,14 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForInLoopWithRange() {
         assertScript '''
             for (int i in 1..10) { i * 2 }
         '''
     }
 
+    @Test
     void testForInLoopWithRangeUsingVariable() {
         assertScript '''
             int n = 10
@@ -485,6 +520,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForInLoopWithRangeUsingComputedBound() {
         assertScript '''
             int n = 10
@@ -497,6 +533,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testForInLoopWithRangeUsingListOfInts() {
         assertScript '''
             int n = 10
@@ -509,6 +546,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIsCaseArray() {
         assertScript '''
             def accept = new Integer[]{1}
@@ -518,6 +556,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10239
+    @Test
     void testIsNotCaseArray() {
         assertScript '''
             def reject = new Integer[]{1}
@@ -526,6 +565,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIsCaseCollection() {
         assertScript '''
             def accept = [1]
@@ -535,6 +575,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10239
+    @Test
     void testIsNotCaseCollection() {
         assertScript '''
             def reject = [1]
@@ -544,6 +585,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6575
+    @Test
     void testShouldNotAllowArrayAssignment1() {
         shouldFailWithMessages '''
             Object o
@@ -553,6 +595,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5177
+    @Test
     void testShouldNotAllowArrayAssignment2() {
         shouldFailWithMessages '''
             class Foo {
@@ -567,6 +610,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8984
+    @Test
     void testShouldNotAllowArrayAssignment3() {
         shouldFailWithMessages '''
             List<String> m() { }
@@ -609,6 +653,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11371
+    @Test
     void testShouldNotAllowArrayAssignment4() {
         shouldFailWithMessages '''
             int[] array = new Integer[]{1}
@@ -628,6 +673,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testShouldAllowArrayAssignment1() {
         assertScript '''
             Object[] a = new String[]{'a','b','c'}
@@ -660,6 +706,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8983
+    @Test
     void testShouldAllowArrayAssignment2() {
         assertScript '''
             List<String> m() { ['foo'] }
@@ -713,6 +760,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8983
+    @Test
     void testShouldAllowArrayAssignment3() {
         assertScript '''
             List<String> m() { ['foo'] }
@@ -727,6 +775,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9517
+    @Test
     void testShouldAllowArrayAssignment4() {
         assertScript '''
             void test(File directory) {
@@ -741,6 +790,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8983
+    @Test
     void testShouldAllowArrayAssignment5() {
         assertScript '''
             class C {
@@ -761,6 +811,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7506
+    @Test
     void testShouldAllowArrayAssignment6() {
         String pogo = '''
             class C {
@@ -793,6 +844,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11659
+    @Test
     void testShouldAllowArrayAssignment7() {
         assertScript '''
             Integer[] objects = 1..10
@@ -806,6 +858,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11070
+    @Test
     void testNumberArrayGet() {
         String array = 'int[] array = [0, 1, 2, 3]'
 
@@ -827,6 +880,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testObjectArrayGet() {
         assertScript '''
             Object[] arr = [new Object()]
@@ -839,6 +893,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStringArrayGet() {
         assertScript '''
             String[] arr = ['abc']
@@ -851,6 +906,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testObjectArrayPut() {
         assertScript '''
             Object[] arr = [null]
@@ -870,6 +926,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStringArrayPut() {
         assertScript '''
             String[] arr = ['abc']
@@ -889,6 +946,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInferredTypeWithListAndFind() {
         assertScript '''
             List<Integer> list = [1, 2, 3, 4]
@@ -906,6 +964,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5573
+    @Test
     void testArrayNewInstance() {
         assertScript '''import java.lang.reflect.Array
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -918,6 +977,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10319
+    @Test
     void testArrayClone() {
         assertScript '''
             package p // must be in package for protected method check
@@ -938,6 +998,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5793
+    @Test
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArray() {
         assertScript '''
             Integer[] m() {
@@ -948,6 +1009,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotForceAsTypeWhenListOfNullAssignedToArrayUnlessPrimitive() {
         shouldFailWithMessages '''
             int[] m() {
@@ -959,6 +1021,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6131
+    @Test
     void testCollectionPutAt() {
         shouldFailWithMessages '''
             void addToCollection(Collection coll, int index, value) {
@@ -970,6 +1033,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11621
+    @Test
     void testListPutAt() {
         assertScript '''
             def list = ['a', 'b', 'c']
@@ -988,6 +1052,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11621
+    @Test
     void testMapPutAt() {
         assertScript '''
             def map = [a: 'foo', b: 'bar', c: 'baz']
@@ -1009,6 +1074,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6266
+    @Test
     void testMapGenerics() {
         assertScript '''
             Map<String, List<List>> map = new HashMap<>()
@@ -1018,6 +1084,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6311
+    @Test
     void testSetSpread() {
         assertScript '''
             class Inner {Set<String> strings}
@@ -1031,6 +1098,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8033
+    @Test
     void testSetSpreadPropertyInStaticContext() {
         assertScript '''
             class Foo {
@@ -1045,6 +1113,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10599, GROOVY-11060
+    @Test
     void testListExpressionWithSpreadExpression() {
         assertScript '''
             void test(List<String> list) {
@@ -1082,6 +1151,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11572
+    @Test
     void testListExpressionWithSpreadOnNonIterable() {
         def err = shouldFail '''
             def list = [0,*1]
@@ -1090,6 +1160,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6241
+    @Test
     void testAsImmutable() {
         assertScript '''
             List<Integer> list = [1,2,3]
@@ -1102,6 +1173,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAsUnmodifiable() {
         assertScript '''
             List<Integer> list = [1,2,3]
@@ -1114,6 +1186,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListPlusEquals() {
         assertScript '''
             List<String> list = ['a','b']
@@ -1129,6 +1202,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6350
+    @Test
     void testListPlusList() {
         [['[]','Collections.emptyList()'], ['[]','Collections.emptyList()']].eachCombination { lhs, rhs ->
             assertScript """
@@ -1139,6 +1213,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7122
+    @Test
     void testIterableLoop() {
         assertScript '''
             int countIt(Iterable<Integer> list) {
@@ -1152,6 +1227,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAbstractTypeInitializedByListLiteral() {
         shouldFailWithMessages '''
             abstract class A {
@@ -1163,6 +1239,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.util.ArrayList<java.lang.Integer> to variable of type A'
     }
 
+    @Test
     void testConcreteTypeInitializedByListLiteral() {
         assertScript '''
             class C {
@@ -1177,6 +1254,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6912
+    @Test
     void testArrayListTypeInitializedByListLiteral() {
         assertScript '''
             ArrayList list = []
@@ -1209,6 +1287,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6912
+    @Test
     void testSetDerivativesInitializedByListLiteral() {
         assertScript '''
             LinkedHashSet set = [1,2,3]
@@ -1239,6 +1318,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible generic argument types. Cannot assign java.util.LinkedHashSet<java.lang.Integer> to: java.util.LinkedHashSet<java.lang.String>'
     }
 
+    @Test
     void testCollectionTypesInitializedByListLiteral1() {
         assertScript '''
             Set<String> set = []
@@ -1258,6 +1338,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10002
+    @Test
     void testCollectionTypesInitializedByListLiteral2() {
         assertScript '''
             Set<String> set = ['foo', 'bar', 'foo']
@@ -1275,6 +1356,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10002
+    @Test
     void testCollectionTypesInitializedByListLiteral3() {
         shouldFailWithMessages '''
             List<String> list = ['a','b',3]
@@ -1313,6 +1395,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7128
+    @Test
     void testCollectionTypesInitializedByListLiteral4() {
         assertScript '''
             Collection<Number> collection = [1,2,3]
@@ -1334,6 +1417,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11028
+    @Test
     void testCollectionTypesInitializedByListLiteral5() {
         assertScript '''
             Collection<Integer> collection = [].withDefault { 1 }
@@ -1356,6 +1440,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8001, GROOVY-11028, GROOVY-11080
+    @Test
     void testMapWithTypeArgumentsInitializedByMapLiteral() {
         for (spec in ['CharSequence,Integer', 'String,Number', 'CharSequence,Number']) {
             assertScript """
@@ -1398,6 +1483,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8136
+    @Test
     void testInterfaceThatExtendsMapInitializedByMapLiteral() {
         shouldFailWithMessages '''
             interface MVM<K, V> extends Map<K, List<V>> { }
@@ -1407,6 +1493,7 @@ class ArraysAndCollectionsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8136
+    @Test
     void testAbstractClassThatImplementsMapInitializedByMapLiteral() {
         shouldFailWithMessages '''
             abstract class MVM<K, V> implements Map<K, List<V>> { }

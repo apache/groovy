@@ -20,7 +20,9 @@ package groovy.transform.stc
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
+import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder.withConfig
 
 /**
@@ -39,6 +41,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testMethodCallOnInstance() {
         assertScript '''
             A a = new A()
@@ -46,6 +49,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBestChoiceMethodCallOnInstance() {
         assertScript '''
             A a = new A()
@@ -53,6 +57,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMissingInstanceMethod() {
         shouldFailWithMessages '''
             A a = new A()
@@ -61,6 +66,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method'
     }
 
+    @Test
     void testMethodCallOnInstanceWithVarArgs() {
         assertScript '''
             A a = new A()
@@ -68,6 +74,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMethodCallOnInstanceWithVarArgs2() {
         assertScript '''
             A a = new A()
@@ -76,6 +83,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodCall() {
         assertScript '''
             String echo = A.echo 'echo'
@@ -83,6 +91,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMissingStaticMethod() {
         shouldFailWithMessages '''
             A.missing 'echo'
@@ -90,6 +99,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method'
     }
 
+    @Test
     void testStaticMethodWithVarArgs() {
         assertScript '''
             int mul = A.mul([1,2,3] as int[])
@@ -97,6 +107,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodWithVarArgs2() {
         assertScript '''
             int mul = A.mul(1,2,3)
@@ -104,6 +115,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodCallThroughInstance() {
         assertScript '''
             A a = new A()
@@ -112,6 +124,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodCallWithInheritance() {
         assertScript '''
             String echo = B.echo 'echo'
@@ -120,6 +133,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11694
+    @Test
     void testStaticMethodCallWithInheritance2() {
         assertScript '''
             class D extends C {
@@ -129,6 +143,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodCallOnJDK() {
         assertScript '''
             int[] arr = [3,2,1]
@@ -137,6 +152,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodCallOnJDK2() {
         assertScript '''
             String[] arr = ['3','2','1']
@@ -145,6 +161,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodCallOnJDK3() {
         assertScript '''
             List arr = ['3','2','1']
@@ -153,6 +170,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStaticMethodCallOnJDK4() {
         assertScript '''
             List<String> arr = ['3','2','1']
@@ -161,6 +179,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPlusStaticMethodCall() {
         assertScript '''
             static int foo() { 1 }
@@ -168,6 +187,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testExplicitTargetMethodWithCast() {
         assertScript '''
             String foo(String str) { 'STRING' }
@@ -177,6 +197,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGenericMethodCall() {
         assertScript '''
             C c = new C()
@@ -185,6 +206,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGenericMethodCallWithVarArg() {
         assertScript '''
             C c = new C()
@@ -192,6 +214,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGenericMethodCallWithVarArgAndSingleArg() {
         assertScript '''
             C c = new C()
@@ -199,6 +222,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGenericMethodCallWithVarArgAndNoArg() {
         assertScript '''
             C c = new C()
@@ -206,6 +230,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGenericMethodCall2() {
         assertScript '''
             B c = new B<String>()
@@ -214,6 +239,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGenericMethodCall3() {
         shouldFailWithMessages '''
             B c = new B<Integer>()
@@ -224,6 +250,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8909
+    @Test
     void testGenericMethodCall4() {
         assertScript '''
             void m(List<Object> list) {
@@ -241,6 +268,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7106, GROOVY-7274, GROOVY-9844
+    @Test
     void testGenericMethodCall5() {
         assertScript '''
             void m(Map<CharSequence,Number> map) {
@@ -266,6 +294,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNullSafeCall() {
         assertScript '''
             String str = null
@@ -273,6 +302,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallToSuper() {
         assertScript '''
             class Foo {
@@ -287,6 +317,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10897
+    @Test
     void testCallToSuper2() {
         assertScript '''
             interface A10897 {
@@ -311,6 +342,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10494
+    @Test
     void testCallToSuperDefault() {
         assertScript '''
             interface I<T> {
@@ -342,6 +374,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10922
+    @Test
     void testCallToSuperGenerated() {
         assertScript '''
             interface Foo {
@@ -367,6 +400,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMethodCallFromSuperOwner() {
         assertScript '''
             class Child extends groovy.transform.stc.MethodCallsSTCTest.GroovyPage {
@@ -380,6 +414,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallToPrivateInnerClassMethod() {
         assertScript '''
             class Outer {
@@ -391,6 +426,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallToPrivateOuterClassMethod() {
         assertScript '''
             class Outer {
@@ -403,6 +439,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallToPrivateInnerClassConstant() {
         assertScript '''
             class Outer {
@@ -414,6 +451,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallToPrivateOuterClassConstant() {
         assertScript '''
             class Outer {
@@ -426,20 +464,20 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testReferenceToInaccessiblePrivateMethod() {
-        shouldFail(MultipleCompilationErrorsException) {
-            assertScript '''
-                class Main {
-                    static main(args) { Peer.foo() }
-                }
-                class Peer {
-                    private static void foo() {}
-                }
-            '''
-        }
+        shouldFail shell, MultipleCompilationErrorsException, '''
+            class Main {
+                static main(args) { Peer.foo() }
+            }
+            class Peer {
+                private static void foo() {}
+            }
+        '''
     }
 
     // GROOVY-6647
+    @Test
     void testReferenceToInaccessiblePrivateConstructor() {
         shouldFailWithMessages '''
             class Main {
@@ -454,6 +492,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8509
+    @Test
     void testCallProtectedFromClassInSamePackage() {
         assertScript '''
             class Foo {
@@ -470,6 +509,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7862
+    @Test
     void testCallProtectedMethodFromInnerClassInSeparatePackage() {
         assertScript '''
             import groovy.transform.stc.MethodCallsSTCTest.BaseWithProtected as Foo
@@ -489,6 +529,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7063
+    @Test
     void testCallProtectedMethodFromSubclassClosureInDifferentPackage() {
         assertScript '''
             import groovy.transform.stc.MethodCallsSTCTest.BaseWithProtected as Foo
@@ -507,6 +548,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7264
+    @Test
     void testCallProtectedMethodWithGenericTypes() {
         assertScript '''
             class Foo<T> {
@@ -528,8 +570,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5175
+    @Test
     void testCallMethodAcceptingArrayWithNull() {
-        assertClass '''
+        assertScript '''
             class Main {
                 def bar(String[] s) {
                 }
@@ -537,12 +580,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     bar(null)
                 }
             }
+
+            new Main()
         '''
     }
 
     // GROOVY-5175
+    @Test
     void testCallMethodWithNull() {
-        assertClass '''
+        assertScript '''
             class Main {
                 def bar(Date date) {
                 }
@@ -550,12 +596,15 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     bar(null)
                 }
             }
+
+            new Main()
         '''
     }
 
     // GROOVY-5175
+    @Test
     void testCallMethodWithNullAndAnotherParameter() {
-        assertClass '''
+        assertScript '''
             class Main {
                 def bar(Date date1, Date date2) {
                 }
@@ -563,10 +612,13 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     bar(null, new Date())
                 }
             }
+
+            new Main()
         '''
     }
 
     // GROOVY-5175
+    @Test
     void testAmbiguousCallMethodWithNullAndAnotherParameter() {
         shouldFailWithMessages '''
             class Main {
@@ -583,8 +635,9 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5175
+    @Test
     void testDisambiguateCallMethodWithNullAndAnotherParameter() {
-        assertClass '''
+        assertScript '''
             class Main {
                 def bar(Date date1, Date date2) {
                 }
@@ -594,9 +647,12 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
                     bar((Date)null, new Date())
                 }
             }
+
+            new Main()
         '''
     }
 
+    @Test
     void testMethodCallWithDefaultParams() {
         assertScript '''
             class Support {
@@ -609,6 +665,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226
+    @Test
     void testMethodCallArgumentUsingInstanceOf() {
         assertScript '''
             void foo(String str) { }
@@ -619,6 +676,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldFindStaticMethod() {
         assertScript '''
             static String foo(String s) {
@@ -628,6 +686,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldFailWithNoMatchingMethod() {
         shouldFailWithMessages '''
             static String foo(String s) {
@@ -645,6 +704,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226
+    @Test
     void testShouldNotFailWithExplicitCasts() {
         assertScript '''
             static String foo(String s) {
@@ -669,6 +729,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226
+    @Test
     void testShouldNotFailWithInstanceOfChecks() {
         assertScript '''
             static String foo(String s) {
@@ -693,6 +754,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226
+    @Test
     void testShouldNotFailWithInstanceOfChecks2() {
         assertScript '''
             static String foo(String s) {
@@ -717,6 +779,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226
+    @Test
     void testShouldFailWithMultiplePossibleMethods() {
         shouldFailWithMessages '''
             static String foo(String s) {
@@ -738,6 +801,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226
+    @Test
     void testShouldFailWithMultiplePossibleMethods2() {
         shouldFailWithMessages '''
             static String foo(String s) {
@@ -759,6 +823,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5703
+    @Test
     void testShouldNotConvertStringToStringArray() {
         assertScript '''
             int printMsgs(String ... msgs) {
@@ -773,6 +838,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5780
+    @Test
     void testShouldNotConvertGStringToStringArray() {
         assertScript '''
             int printMsgs(String ... msgs) {
@@ -787,6 +853,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11371
+    @Test
     void testShouldNotConvertIntegerArrayToIntArray() {
         shouldFailWithMessages '''
             def test(int[] ints) {
@@ -797,6 +864,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method','test(java.lang.Integer[])'
     }
 
+    @Test
     void testSAMWithExplicitParameter1() {
         assertScript '''
             public interface SAM {
@@ -816,6 +884,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8241
+    @Test
     void testSAMWithExplicitParameter2() {
         assertScript '''
             static boolean foo(java.util.function.Predicate<? super String> p) {
@@ -827,6 +896,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7061
+    @Test
     void testSAMWithExplicitParameter3() {
         assertScript '''
             List<Integer> nums = [1, 2, 3, -2, -5, 6]
@@ -835,6 +905,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7061
+    @Test
     void testSAMWithExplicitParameter4() {
         assertScript '''
             def foo(List<String> strings) {
@@ -846,6 +917,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226, GROOVY-11290
+    @Test
     void testShouldFailBecauseVariableIsReassigned() {
         String foo = 'def foo(CharSequence cs) { }'
 
@@ -885,6 +957,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226, GROOVY-11290
+    @Test
     void testShouldNotFailEvenIfVariableIsReassigned() {
         String foobar = 'def foo(int i) { }\ndef bar(CharSequence cs) { }'
 
@@ -913,6 +986,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226, GROOVY-11290
+    @Test
     void testShouldNotFailEvenIfVariableIsReassignedAndMultipleInstanceOf() {
         assertScript '''
             def foo(int i) { 'int' }
@@ -928,6 +1002,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOneDefaultParam() {
         assertScript '''
             String m(String val = 'hello') {
@@ -938,6 +1013,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOneDefaultParamWithWrongArgType() {
         shouldFailWithMessages '''
             String m(String val = 'hello') {
@@ -948,6 +1024,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '#m(int)'
     }
 
+    @Test
     void testOneDefaultParamAndOneWithout() {
         assertScript '''
             String m(String val = 'hello', int append) {
@@ -958,6 +1035,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOneDefaultParamAndOneWithoutWithWrongArgType() {
         shouldFailWithMessages '''
             String m(String val = 'hello', int append) {
@@ -968,6 +1046,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'm(java.lang.String, java.lang.Object)'
     }
 
+    @Test
     void testMultipleDefaultArgs() {
         assertScript '''
             String m(String first = 'first', String second, String third = 'third') {
@@ -977,6 +1056,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleDefaultArgsWithMixedTypes() {
         assertScript '''
             String m(String first = 'first', int second, String third = 'third') {
@@ -988,6 +1068,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleDefaultArgsWithMixedTypesAndTooManyArgs() {
         shouldFailWithMessages '''
             String m(String first = 'first', int second, String third = 'third') {
@@ -998,6 +1079,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '#m(java.lang.String, int, java.lang.String, java.lang.String)'
     }
 
+    @Test
     void testMultipleDefaultArgsWithMixedTypesAndWrongType() {
         shouldFailWithMessages '''
             String m(String first = 'first', int second, String third = 'third') {
@@ -1008,6 +1090,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '#m(java.lang.String)'
     }
 
+    @Test
     void testShouldNotFailWithAmbiguousMethodSelection() {
         assertScript '''
             StringBuffer sb = new StringBuffer()
@@ -1016,6 +1099,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10362
+    @Test
     void testShouldNotFailWithAmbiguousMethodSelection2() {
         assertScript '''
             interface I1<T, U, V extends T> {
@@ -1038,6 +1122,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldBeAbleToCallMethodUsingDoubleWithDoubleFloatLongIntShortOrByte() {
         assertScript '''
             double square(double x) { x*x }
@@ -1050,6 +1135,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotBeAbleToCallMethodUsingFloatWithDouble() {
         shouldFailWithMessages '''
             float square(float x) { x*x }
@@ -1058,6 +1144,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '#square(double)'
     }
 
+    @Test
     void testShouldNotBeAbleToCallMethodUsingLongWithFloatOrDouble() {
         shouldFailWithMessages '''
             float square(long x) { x*x }
@@ -1067,6 +1154,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '#square(double)', '#square(float)'
     }
 
+    @Test
     void testShouldNotAllowMethodCallFromStaticInitializer() {
         shouldFailWithMessages '''
             class Foo {
@@ -1080,6 +1168,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Non-static method Foo#instanceMethod cannot be called from static context'
     }
 
+    @Test
     void testShouldNotAllowMethodCallFromStaticMethod() {
         shouldFailWithMessages '''
             class Foo {
@@ -1093,6 +1182,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Non-static method Foo#instanceMethod cannot be called from static context'
     }
 
+    @Test
     void testShouldNotAllowMethodCallFromStaticField() {
         shouldFailWithMessages '''
             class Foo {
@@ -1105,6 +1195,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5495
+    @Test
     void testShouldFindMethodFromSuperInterface() {
         assertScript '''
             class ClassUnderTest {
@@ -1126,12 +1217,14 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotBeAmbiguousCall() {
         assertScript '''
             (0..10).find { int x -> x < 5 }
         '''
     }
 
+    @Test
     void testEqualsCalledOnInterface() {
         assertScript '''
             Serializable ser = (Serializable) new Integer(1)
@@ -1154,6 +1247,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5534
+    @Test
     void testSafeDereference() {
         assertScript '''
             def foo() {
@@ -1165,6 +1259,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5540
+    @Test
     void testChoosePublicMethodInHierarchy() {
         assertScript '''import groovy.transform.stc.MethodCallsSTCTest.Child2
             class Foo {
@@ -1182,6 +1277,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5580
+    @Test
     void testGetNameAsPropertyFromSuperInterface() {
         assertScript '''
             interface Upper { String getName() }
@@ -1193,6 +1289,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGetNameAsPropertyFromSuperInterfaceUsingConcreteImpl() {
         assertScript '''
             interface Upper { String getName() }
@@ -1205,6 +1302,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGetNameAsPropertyFromSuperInterfaceUsingConcreteImplSubclass() {
         assertScript '''
             interface Upper { String getName() }
@@ -1218,6 +1316,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIsGetterAsPropertyFromSuperInterface() {
         assertScript '''
             interface Upper { boolean isBar() }
@@ -1229,6 +1328,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImpl() {
         assertScript '''
             interface Upper { boolean isBar() }
@@ -1241,6 +1341,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIsGetterAsPropertyFromSuperInterfaceUsingConcreteImplSubclass() {
         assertScript '''
             interface Upper { boolean isBar() }
@@ -1255,6 +1356,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5580: getName variant
+    @Test
     void testGetNameFromSuperInterface() {
         assertScript '''
             interface Upper { String getName() }
@@ -1266,6 +1368,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGetNameFromSuperInterfaceViaConcreteType1() {
         assertScript '''
             interface Upper { String getName() }
@@ -1278,6 +1381,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGetNameFromSuperInterfaceViaConcreteType2() {
         assertScript '''
             interface Upper { String getName() }
@@ -1291,6 +1395,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSpreadArgsRestrictedInNonStaticMethodCall() {
         // GROOVY-10597
         assertScript '''
@@ -1331,6 +1436,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method '
     }
 
+    @Test
     void testSpreadArgsRestrictedInStaticMethodCall() {
         // GROOVY-10597
         assertScript '''
@@ -1362,6 +1468,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method '
     }
 
+    @Test
     void testSpreadArgsRestrictedInConstructorCall() {
         // GROOVY-10597
         assertScript '''
@@ -1394,6 +1501,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'The spread operator cannot be used as argument of method or closure calls with static type checking because the number of arguments cannot be determined at compile time'
     }
 
+    @Test
     void testSpreadArgsRestrictedInClosureCall() {
         // GROOVY-10597
         assertScript '''
@@ -1421,6 +1529,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8488
+    @Test
     void testBigDecimalLiteralArgument() {
         assertScript '''
             def m1(double d) { Double.valueOf(d) }
@@ -1456,6 +1565,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method Foo#m2(java.math.BigInteger)'
     }
 
+    @Test
     void testBoxingShouldCostMore() {
         assertScript '''
             int foo(int x) { 1 }
@@ -1479,6 +1589,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5645
+    @Test
     void testSuperCallWithVargs() {
         assertScript '''
             class Base {
@@ -1495,6 +1606,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testVargsSelection1() {
         assertScript '''
             int foo(int x, Object... args) { 1 }
@@ -1505,6 +1617,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testVargsSelection2() {
         assertScript '''
             int sum(int x) { 1 }
@@ -1515,6 +1628,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testVargsSelection3() {
         assertScript '''
             int sum(int x) { 1 }
@@ -1526,6 +1640,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6147
+    @Test
     void testVargsSelection4() {
         assertScript '''
             int select(Object a, String s) { 1 }
@@ -1543,6 +1658,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6195
+    @Test
     void testVargsSelection5() {
         assertScript '''
             def list = ['a', 'b', 'c']
@@ -1552,6 +1668,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6235
+    @Test
     void testVargsSelection6() {
         assertScript '''import org.codehaus.groovy.classgen.asm.sc.support.Groovy6235SupportSub as Support
             def b = new Support()
@@ -1562,6 +1679,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6646
+    @Test
     void testVargsSelection7() {
         assertScript '''
             def foo(Class... cs) { "Classes" }
@@ -1580,6 +1698,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8737
+    @Test
     void testVargsSelection8() {
         String methods = '''
             String m(String key, Object[] args) {
@@ -1616,6 +1735,7 @@ class MethodCallsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11053
+    @Test
     void testVargsSelection9() {
         assertScript '''
             @Grab('org.apache.commons:commons-lang3:3.11')
@@ -1632,6 +1752,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5525
+    @Test
     void testShouldFindArraysCopyOf() {
         assertScript '''
             class CopyOf {
@@ -1644,6 +1765,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5702
+    @Test
     void testShouldFindInterfaceMethod() {
         assertScript '''
             interface OtherCloseable {
@@ -1662,6 +1784,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testShouldFindInheritedInterfaceMethod() {
         assertScript '''
             interface Top { void foo() }
@@ -1674,6 +1797,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testShouldFindInheritedInterfaceMethod2() {
         assertScript '''
             interface Top { int foo(int i) }
@@ -1686,6 +1810,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testShouldFindInheritedInterfaceMethod3() {
         assertScript '''
             interface Top { int foo(int i) }
@@ -1698,6 +1823,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testShouldFindInheritedInterfaceMethod4() {
         assertScript '''
             interface Top { int foo(int i) }
@@ -1715,6 +1841,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testShouldFindInheritedInterfaceMethod5() {
         assertScript '''
             interface Top { int foo(int i) }
@@ -1733,6 +1860,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-9890
+    @Test
     void testShouldFindInheritedInterfaceDefaultMethod() {
         assertScript '''
             class Impl implements bugs.groovy9890.Face {
@@ -1750,6 +1878,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-9890
+    @Test
     void testShouldFindInheritedInterfaceDefaultMethodJava() {
         assertScript '''
             void test() {
@@ -1761,6 +1890,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5743
+    @Test
     void testClosureAsParameter() {
         assertScript '''
             Integer a( String s, Closure<Integer> b ) {
@@ -1772,6 +1902,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5743
+    @Test
     void testClosureAsParameterWithDefaultValue() {
         assertScript '''
             Integer a( String s, Closure<Integer> b = {String it -> it.length()}) {
@@ -1783,6 +1914,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5712
+    @Test
     void testClassForNameVsCharsetForName() {
         assertScript '''import java.nio.charset.Charset
             Charset charset = Charset.forName('UTF-8')
@@ -1791,6 +1923,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-10939
+    @Test
     void testClassHashCodeVsObjectHashCode() {
         assertScript '''
             int h = this.getClass().hashCode()
@@ -1798,6 +1931,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-10341
+    @Test
     void testCallAbstractSuperMethod() {
         shouldFailWithMessages '''
             abstract class Foo {
@@ -1814,6 +1948,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5810
+    @Test
     void testCallStaticSuperMethod() {
         assertScript '''
             class Top {
@@ -1833,6 +1968,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testShouldFindSetProperty() {
         assertScript '''
             class Foo {
@@ -1848,6 +1984,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5888
+    @Test
     void testStaticContext1() {
         assertScript '''
             class Foo {
@@ -1858,6 +1995,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11195
+    @Test
     void testStaticContext2() {
         assertScript '''
             class Foo {
@@ -1868,6 +2006,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-10720
+    @Test
     void testOverloadedMethodWithArray() {
         assertScript '''
             Double[] array = new Double[1]
@@ -1877,6 +2016,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-5883, GROOVY-6270
+    @Test
     void testClosureUpperBound() {
         assertScript '''
             class Test<T> {
@@ -1900,6 +2040,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-6569, GROOVY-6528
+    @Test
     void testMoreExplicitErrorMessageOnStaticMethodNotFound() {
         shouldFailWithMessages '''
             Double.isFiniteMissing(2.0d)
@@ -1913,6 +2054,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-6776
+    @Test
     void testPrimtiveParameterAndNullArgument() {
         shouldFailWithMessages '''
             def foo(int i){}
@@ -1925,6 +2067,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-6751
+    @Test
     void testMethodInBothInterfaceAndSuperclass1() {
         assertScript '''
             interface Face {
@@ -1943,6 +2086,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11341
+    @Test
     void testMethodInBothInterfaceAndSuperclass2() {
         File parentDir = File.createTempDir()
         config.with {
@@ -1991,6 +2135,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-11341, GROOVY-11746
+    @Test
     void testInterfaceExtensionMethodIsCovariant() {
         assertScript '''
             class Thing extends Tuple {
@@ -2014,6 +2159,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-7987
+    @Test
     void testNonStaticMethodViaStaticReceiver() {
         shouldFailWithMessages '''
             class Foo {
@@ -2025,6 +2171,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-7813
+    @Test
     void testNonStaticOuterMethodCannotBeCalledFromStaticClass() {
         shouldFailWithMessages '''
             class Foo {
@@ -2037,6 +2184,7 @@ import static groovy.test.GroovyAssert.shouldFail
         'Cannot find matching method Foo$Bar#m()'
     }
 
+    @Test
     void testStaticOuterMethodCanBeCalledFromStaticClass() {
         assertScript '''
             class Foo {
@@ -2051,6 +2199,7 @@ import static groovy.test.GroovyAssert.shouldFail
         '''
     }
 
+    @Test
     void testInheritedMethodCanBeCalledFromStaticClass() {
         assertScript '''
             class Foo {
@@ -2069,6 +2218,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     // GROOVY-8445
+    @Test
     void testClosureToFunctionalInterface() {
         assertScript '''
             class Main {
@@ -2095,7 +2245,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     static class MyMethodCallTestClass2<T> extends MyMethodCallTestClass {
-        T[] identity(T... args) { args }
+        @SafeVarargs final T[] identity(T[] args) { args }
     }
 
     static class MyMethodCallTestClass3 extends MyMethodCallTestClass2<String> {
