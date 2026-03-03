@@ -203,7 +203,7 @@ class MetaclassVariationBench {
         bh.consume(sum)
     }
 
-    /** Calling dynamic finders injected via static metaclass. */
+    /** Injection + invocation of dynamic finders via static metaclass (models per-request GORM cost). */
     @Benchmark
     void dynamicFinderCalls(Blackhole bh) {
         // Inject dynamic finders
@@ -222,7 +222,7 @@ class MetaclassVariationBench {
         }
     }
 
-    /** Mixed compiled method calls and dynamic finder calls. */
+    /** Mixed compiled method calls and dynamic finder injection + invocation (models per-request GORM cost). */
     @Benchmark
     void mixedCompiledAndDynamicFinders(Blackhole bh) {
         DomainEntity.metaClass.static.findByName = { String n ->

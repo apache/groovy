@@ -103,6 +103,7 @@ class GrailsWorkloadBench {
     List<Employee> employees
     List<Project> projects
     List<Task> tasks
+    int invalidationCounter
 
     @Setup(Level.Iteration)
     void setup() {
@@ -430,7 +431,7 @@ class GrailsWorkloadBench {
     @Benchmark
     void fullAnalysisWithInvalidation(Blackhole bh) {
         // Ongoing framework metaclass activity
-        PluginConfig.metaClass."preRequest${System.nanoTime() % 3}" = { -> 'init' }
+        PluginConfig.metaClass."preRequest${invalidationCounter++ % 3}" = { -> 'init' }
 
         // Employee analysis
         def activeEmps = employees.findAll { it.isActive }
@@ -444,7 +445,7 @@ class GrailsWorkloadBench {
         }
 
         // Mid-request metaclass change
-        PluginConfig.metaClass."midRequest${System.nanoTime() % 3}" = { -> 'lazy' }
+        PluginConfig.metaClass."midRequest${invalidationCounter++ % 3}" = { -> 'lazy' }
 
         // Project metrics
         def projectSummary = projects.collect { proj ->
