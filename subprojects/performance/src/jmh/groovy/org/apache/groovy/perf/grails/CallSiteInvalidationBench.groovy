@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.perf.grails
 
-import groovy.lang.ExpandoMetaClass
 import groovy.lang.GroovySystem
 
 import org.openjdk.jmh.annotations.*
