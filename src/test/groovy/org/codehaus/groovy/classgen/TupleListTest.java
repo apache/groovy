@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 final class TupleListTest extends TestSupport {
 

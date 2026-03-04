@@ -27,6 +27,9 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Modifier;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
 
 final class PropertyTest extends TestSupport {
 

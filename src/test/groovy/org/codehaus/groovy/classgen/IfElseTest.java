@@ -37,6 +37,8 @@ import org.codehaus.groovy.syntax.Token;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 final class IfElseTest extends TestSupport {
 

@@ -35,7 +35,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.objectweb.asm.Opcodes;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
@@ -52,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Base class for test cases.
  */
-public abstract class TestSupport implements Opcodes {
+public abstract class TestSupport {
 
     /**
      * Asserts the script runs without any exceptions.
