@@ -22,6 +22,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.Test
 
 final class Groovy10303 {
+
     @Test
     void testCompileStackClearNPE() {
         CompilerConfiguration config = new CompilerConfiguration()

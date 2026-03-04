@@ -88,27 +88,32 @@ final class Groovy7222OptimizationsTest extends StaticTypeCheckingTestCase imple
 
     @Test
     void testShouldNotContainBigDecimalInBytecode() {
-        try {
-            assertScript '''
-                double d = 2.5 // forgot to add the 'd' so normally implies new BigDecimal
-            '''
-        } finally {
-            def bytecode = astTrees.entrySet().find { it.key =~ /BigDecimal/ }.value[1]
-            assert bytecode.contains('LDC 2.5')
-            assert bytecode.contains('DSTORE')
-            assert !bytecode.contains('java/math/BigDecimal')
-        }
+        assertScript '''
+            class C {
+                void m() {
+                    double d = 2.5 // forgot to add the 'd' so normally implies new BigDecimal
+                }
+            }
+
+            new C().m()
+        '''
+
+        String bytecode = astTrees['C'][1]
+        bytecode = bytecode.substring(bytecode.indexOf('m()V'))
+
+        assert bytecode.contains('LDC 2.5D')
+        assert bytecode.contains('DSTORE 1')
+        assert !bytecode.contains('java/math/BigDecimal')
     }
 
     @Test
     void testShouldNotThrowNPE() {
         assertScript '''
-            @groovy.transform.CompileStatic
-            void foo() {
-              Double d = null
+            void m() {
+                Double d = null
             }
 
-            foo()
+            m()
         '''
     }
 }

@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class CastWhenUsingClosuresBug {
+final class CastWhenUsingClosuresBug {
 
     @Test
     void testBug() {

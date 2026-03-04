@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class ForLoopBug {
+final class ForLoopBug {
 
     @Test
     void testBug() {
@@ -82,5 +81,4 @@ class ForLoopBug {
             }
         """
     }
-
 }

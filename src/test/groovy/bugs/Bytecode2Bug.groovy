@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class Bytecode2Bug {
+final class Bytecode2Bug {
 
     Integer count = 0
 

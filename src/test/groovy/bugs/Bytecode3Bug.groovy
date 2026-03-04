@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class Bytecode3Bug {
+final class Bytecode3Bug {
 
     def count
 

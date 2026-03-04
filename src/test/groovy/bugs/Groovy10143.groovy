@@ -25,6 +25,7 @@ import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.junit.jupiter.api.Test
 
 final class Groovy10143 {
+
     @Test
     void testTraitsAndTypes() {
         def config = new CompilerConfiguration(targetDirectory: File.createTempDir())

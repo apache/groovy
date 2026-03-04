@@ -20,37 +20,22 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- *  Verifies that the Groovy parser can accept quoted methods.
- */
-
-class Groovy1462_Bug {
+final class Groovy1617 {
 
     @Test
-    void testShort() {
-        def smn = new StringMethodName()
-        assert smn.foo0() == 'foo0'
-        assert smn.'foo0'() == 'foo0'
-        assert smn.foo1() == 'foo1'
-        assert smn.'foo1'() == 'foo1'
-        assert smn.foo2() == 2
-        assert smn.foo3() == 3
-        assert smn.foo4(3) == 12
-        assert smn.foo5 == 'foo5'
-        assert !smn.fooFalse()
-        assert smn.fooDef() == null
+    void testCoerceStringIntoStringArray() {
+        def expected = ["G","r","o","o","v","y"] as String[]
+        def actual = "Groovy" as String[]
+        assert expected == actual
     }
 
-}
-
-class StringMethodName {
-    def foo0() {'foo0'} // control
-    def 'foo1'() {'foo1'}
-    public Integer 'foo2'() {2}
-    public int 'foo3'() {3}
-    Integer 'foo4'(x) { x * 4}
-    public def 'getFoo5'() {'foo5'}
-    private boolean 'fooFalse'() {false}
-    public def 'fooDef'() {}
+    @Test
+    void testCoerceGStringIntoStringArray() {
+        def expected = ["G","r","o","o","v","y"] as String[]
+        def a = "Gro"
+        def b = "ovy"
+        // previously returned ["Groovy"]
+        def actual = "$a$b" as String[]
+        assert expected == actual
+    }
 }

@@ -20,22 +20,28 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+/**
+ * Test to fix the Jira issues GROOVY-1018 and GROOVY-732.
+ * Access to a static field member by a class name:
+ *      ClassName.fieldName or ClassName.@fieldName.
+ */
+final class Groovy1018 {
 
-class Groovy1617_Bug {
-   @Test
-   void testCoerceStringIntoStringArray() {
-      def expected = ["G","r","o","o","v","y"] as String[]
-      def actual = "Groovy" as String[]
-      assert expected == actual
-   }
+    public static Object Class = 'bar'
 
-   @Test
-   void testCoerceGStringIntoStringArray() {
-      def expected = ["G","r","o","o","v","y"] as String[]
-      def a = "Gro"
-      def b = "ovy"
-      // previously returned ["Groovy"]
-      def actual = "$a$b" as String[]
-      assert expected == actual
-   }
+    // GROOVY-1018
+    @Test
+    void testGetPublicStaticField() {
+        Groovy1018.Class = 'bar'
+        def a = new Groovy1018()
+        assert a.Class == 'bar' && a.@Class == 'bar'
+        assert Groovy1018.Class == 'bar' && Groovy1018.@Class == 'bar'
+    }
+
+    // GROOVY-732
+    @Test
+    void testSetPublicStaticField() {
+        Groovy1018.Class = 'bar-'
+        assert Groovy1018.Class == 'bar-' && Groovy1018.@Class == 'bar-'
+    }
 }

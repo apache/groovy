@@ -20,31 +20,22 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
- * Test to fix the Jira issues GROOVY-1018 and GROOVY-732.
- * Access to a static field member by a class name:
- *      ClassName.fieldName or ClassName.@fieldName.
+ *  Verifies that DefaultGroovyMethods.transformLine(Reader, Writer, Closure)
+ *  actually writes its output.
  */
+final class Groovy1081 {
 
-class Groovy1018_Bug {
-
-    public static Object Class = "bar"
-
-    // GROOVY-1018
     @Test
-    void testGetPublicStaticField() {
-        Groovy1018_Bug.Class = 'bar'
-        def a = new Groovy1018_Bug()
-        assert a.Class == "bar" && a.@Class == "bar"
-        assert Groovy1018_Bug.Class == "bar" && Groovy1018_Bug.@Class == "bar"
-    }
+    void testShort() {
+         def reader = new StringReader('abc')
+        def writer = new StringWriter()
 
-    // GROOVY-732
-    @Test
-    void testSetPublicStaticField() {
-        Groovy1018_Bug.Class = 'bar-'
-        assert Groovy1018_Bug.Class == "bar-" && Groovy1018_Bug.@Class == "bar-"
-    }
+        reader.transformLine(writer) { it }
 
+        // Implementation was creating a BufferedWriter, but not flushing it
+        assertTrue(writer.toString().startsWith('abc'))
+    }
 }

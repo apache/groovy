@@ -20,11 +20,10 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
 /**
- * A little performance test
+ * A little performance test.
  */
-class BenchmarkBug {
+final class BenchmarkBug {
 
     @Test
     void testPerformance() {

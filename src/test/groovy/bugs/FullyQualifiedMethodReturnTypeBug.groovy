@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class FullyQualifiedMethodReturnTypeBug {
+final class FullyQualifiedMethodReturnTypeBug {
 
     @Test
     void testBug() {
@@ -34,5 +31,4 @@ class FullyQualifiedMethodReturnTypeBug {
     java.lang.String foo() {
         return "hey"
     }
-
 }

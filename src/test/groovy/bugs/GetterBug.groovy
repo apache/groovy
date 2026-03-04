@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class GetterBug {
+final class GetterBug {
 
     String foo
     def bar
@@ -37,7 +34,7 @@ class GetterBug {
 
     void setFoo(String foo) {
         this.foo = foo
-       }
+    }
 
     @Test
     void testTypedGetterAndSetter() {
@@ -63,7 +60,6 @@ class GetterBug {
         this.bar = bar
     }
 
-
     @Test
     void testUntypedGetterAndSetter() {
         def value = getBar()
@@ -76,5 +72,4 @@ class GetterBug {
 
         assert value == "Bob"
     }
-
 }

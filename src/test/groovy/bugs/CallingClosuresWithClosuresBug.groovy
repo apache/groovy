@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class CallingClosuresWithClosuresBug {
+final class CallingClosuresWithClosuresBug {
 
     @Test
     void testBug() {

@@ -21,7 +21,7 @@ package bugs
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.junit.jupiter.api.Test
 
-class ConstructorBug {
+final class ConstructorBug {
 
     @Test
     void testBug() {
@@ -41,8 +41,8 @@ class ConstructorBug {
         assert test.foo == null
         */
 
-//foo = new type('hello')
         /*
+        foo = new type('hello')
         */
         mytest = new TestDerived("Hello")
         assert mytest.foo == "Hello"

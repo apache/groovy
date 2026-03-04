@@ -22,17 +22,17 @@ import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertNull
 
+final class Groovy1593 {
 
-class Groovy1593 {
-   @Test
-   void testPropertyAccessInSubClassOfHashMap() {
-      def subclass = new SubClassOfHashMap()
-      // any of the following caused a MPE previously
-      assertNull subclass.property
-      subclass.property = "value"
-      assert "value" == subclass.property
-   }
+    @Test
+    void testPropertyAccessInSubClassOfHashMap() {
+        def subclass = new SubClassOfHashMap()
+        // any of the following caused a MPE previously
+        assertNull subclass.property
+        subclass.property = "value"
+        assert "value" == subclass.property
+    }
 
+    static class SubClassOfHashMap extends HashMap {
+    }
 }
-
-class SubClassOfHashMap extends HashMap {}

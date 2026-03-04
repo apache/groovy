@@ -21,11 +21,10 @@ package bugs
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class CustomMetaClassTest {
+final class CustomMetaClassTest {
 
     @BeforeEach
     void setUp() {
-
         ExpandoMetaClass.disableGlobally()
 
         def reg = GroovySystem.metaClassRegistry
@@ -134,16 +133,14 @@ class CustomMetaClassTest {
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
     }
 
-}
+    static class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass {
+        MyDelegatingMetaClass(final Class a_class) {
+            super(a_class);
+            initialize()
+        }
 
-class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass {
-    MyDelegatingMetaClass(final Class a_class) {
-        super(a_class);
-        initialize()
+        public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments) {
+            return "changed ${super.invokeMethod(a_object, a_methodName, a_arguments)}"
+        }
     }
-
-    public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments) {
-        return "changed ${super.invokeMethod(a_object, a_methodName, a_arguments)}"
-    }
 }
-

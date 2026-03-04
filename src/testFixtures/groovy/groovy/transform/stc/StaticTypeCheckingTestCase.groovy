@@ -28,7 +28,6 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.TestInfo
 
 /**
  * Support class for static type checking test cases.
@@ -64,26 +63,25 @@ abstract class StaticTypeCheckingTestCase {
 
     //--------------------------------------------------------------------------
 
-    private String testMethodName
-    private int testScriptCounter
-
-    @BeforeEach
-    void setUpTestName(TestInfo testInfo) {
-        testMethodName = testInfo.getTestMethod().orElseThrow().getName()
-    }
-
-    protected final String getTestClassName() {
-        "TestScript" + testMethodName + (++testScriptCounter) + ".groovy"
+    private static String getTestScriptName() {
+        String uuid = UUID.randomUUID()
+        new StringBuilder('TestScript')
+            .append(uuid,  0,  8)
+            .append(uuid,  9, 13)
+            .append(uuid, 14, 18)
+            .append(uuid, 19, 23)
+            .append(uuid, 24, 36)
+            .append('.groovy')
     }
 
     protected final Object assertScript(String script) {
-        shell.evaluate(script, getTestClassName())
+        shell.evaluate(script, getTestScriptName())
     }
 
-    protected final void shouldFailWithMessages(String code, String... messages) {
+    protected final void shouldFailWithMessages(String script, String... messages) {
         boolean success = false
         try {
-            shell.evaluate(code, getTestClassName())
+            shell.evaluate(script, getTestScriptName())
         } catch (MultipleCompilationErrorsException mce) {
             success = messages.every { message ->
                 mce.errorCollector.errors.any {

@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
-
-class AmbiguousListOrMethodTest {
+final class AmbiguousListOrMethodTest {
 
     @Test
     void testLocalVariableVersion() {
@@ -62,9 +61,8 @@ class AmbiguousListOrMethodTest {
         assert e[""] == 1
     }
 
-}
-
-class Example {
-    def getAt(String a, String b) {return 2}
-    def getAt(String a) {return 1}
+    static class Example {
+        def getAt(String a, String b) {return 2}
+        def getAt(String a) {return 1}
+    }
 }

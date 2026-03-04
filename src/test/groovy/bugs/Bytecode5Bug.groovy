@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class Bytecode5Bug {
+final class Bytecode5Bug {
 
     @Test
     void testUsingLocalVar() {

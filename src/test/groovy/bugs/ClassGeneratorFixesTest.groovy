@@ -20,10 +20,9 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class ClassGeneratorFixesTest {
 
-
-class ClassGeneratorFixesTest {
-    def count = 0;
+    def count = 0
 
     def pf(int p) {
         int i = p
@@ -95,10 +94,8 @@ class ClassGeneratorFixesTest {
 
     @Test
     void testBooleanValue() { // groovy-385
-            /** @todo
-            boolean value
-            */
-        }
-
+        /* TODO
+        boolean value
+        */
+    }
 }
-

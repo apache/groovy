@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy11265 {
+
     @Test
     void testDefaultMethodWithLambdaReturn() {
         assertScript '''import java.util.function.Function

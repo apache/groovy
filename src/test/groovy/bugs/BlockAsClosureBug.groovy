@@ -20,8 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-class BlockAsClosureBug {
+final class BlockAsClosureBug {
 
     @Test
     void testBug() {

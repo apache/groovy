@@ -22,8 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
-
-class ChristofsPropertyBug {
+final class ChristofsPropertyBug {
 
     def mixedCaseProperty
 

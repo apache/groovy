@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy10199 {
+
     @Test
     void testTransformClasspath() {
         def shell = new GroovyShell()

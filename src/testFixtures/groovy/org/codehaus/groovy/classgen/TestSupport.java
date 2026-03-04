@@ -35,7 +35,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestInfo;
 import org.objectweb.asm.Opcodes;
 
 import java.beans.BeanInfo;
@@ -59,7 +58,15 @@ public abstract class TestSupport implements Opcodes {
      * Asserts the script runs without any exceptions.
      */
     protected final void assertScript(String scriptText) throws Exception {
-        String scriptName = "TestScript" + testMethodName + (++testScriptCounter) + ".groovy";
+        String id = java.util.UUID.randomUUID().toString();
+        String scriptName = new StringBuilder("TestScript")
+            .append(id,  0,  8)
+            .append(id,  9, 13)
+            .append(id, 14, 18)
+            .append(id, 19, 23)
+            .append(id, 24, 36)
+            .append(".groovy")
+            .toString();
         Class<?> scriptClass = loader.parseClass(doPrivileged(() ->
             new GroovyCodeSource(scriptText, scriptName, "/groovy/testSupport")
         ));
@@ -120,14 +127,11 @@ public abstract class TestSupport implements Opcodes {
     //--------------------------------------------------------------------------
 
     private GroovyClassLoader loader;
-    private String testMethodName;
-    private int testScriptCounter;
 
     @BeforeEach
-    void setUpTestCase(TestInfo testInfo) throws Exception {
+    void setUpTestCase() throws Exception {
         ClassLoader parentLoader = getClass().getClassLoader();
         loader = doPrivileged(() -> new GroovyClassLoader(parentLoader));
-        testMethodName = testInfo.getTestMethod().orElseThrow().getName();
     }
 
     @AfterEach

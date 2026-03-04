@@ -20,8 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-class BadScriptNameBug {
+final class BadScriptNameBug {
 
     @Test
     void testBug() {

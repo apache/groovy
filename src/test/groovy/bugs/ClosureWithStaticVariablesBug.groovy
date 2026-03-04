@@ -42,8 +42,8 @@ final class ClosureWithStaticVariablesBug {
         def answer = c2()
         assert answer == 6
     }
-}
 
-class Cheese {
-    public static z = [:]
+    static class Cheese {
+        public static z = [:]
+    }
 }

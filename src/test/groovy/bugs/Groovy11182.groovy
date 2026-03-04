@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy11182 {
+
     @Test
     void testVariadicPrimitiveArray() {
         assertScript '''

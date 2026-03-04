@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class ClosureWithBitwiseDefaultParamTest {
 
-class ClosureWithBitwiseDefaultParamTest {
     @Test
     void testAmbiguousStuff() {
         def c = { x, y = 1 | 2, z = 0->

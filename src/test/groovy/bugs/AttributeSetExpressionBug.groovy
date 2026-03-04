@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class AttributeSetExpressionBug {
 
-class AttributeSetExpressionBug {
     @Test
     void testAttributeSetAccess() {
         def a = new HasStaticFieldSomeClass()
@@ -30,16 +30,16 @@ class AttributeSetExpressionBug {
         assert a.name == "gettter"
 
         new HasStaticFieldSomeClass().@name = "changed bar"
-        assert( HasStaticFieldSomeClass.class.@name == "changed bar" )
+        assert HasStaticFieldSomeClass.class.@name == "changed bar"
 
         HasStaticFieldSomeClass.class.@name = "changed static bar"
-        assert( HasStaticFieldSomeClass.class.@name == "changed static bar" )
+        assert HasStaticFieldSomeClass.class.@name == "changed static bar"
     }
-}
 
-class HasStaticFieldSomeClass {
-    static String name = "bar"
-    static String getName() {
-        return "gettter"
+    static class HasStaticFieldSomeClass {
+        static String name = "bar"
+            static String getName() {
+            return "gettter"
+        }
     }
 }

@@ -20,7 +20,6 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
 /**
  * GROOVY-1059
  *
@@ -34,17 +33,16 @@ import org.junit.jupiter.api.Test
  *
  *    have the same meaning.
  */
-
-class Groovy1059_Bug {
+final class Groovy1059 {
 
     @Test
     void testClosureAsAttribute() {
         def x = new Groovy1059Foo()
 
-        assert "I am a Method" == x.say()
-        assert "I am a Method" == x.@say2()
-        assert "I am a Closure" == (x.@say)()
-        assert "I am a Closure" == x.@say()
+        assert 'I am a Method' == x.say()
+        assert 'I am a Method' == x.@say2()
+        assert 'I am a Closure' == (x.@say)()
+        assert 'I am a Closure' == x.@say()
         assert x.@say() == (x.@say)()
         assert x.@say() == x.@say.call()
         assert x.@say() == x.@say.doCall()
@@ -52,14 +50,14 @@ class Groovy1059_Bug {
         assert x.@say2() == x.say()
     }
 
-}
+    static class Groovy1059Foo {
 
-class Groovy1059Foo {
+        public say = { it -> return 'I am a Closure' }
 
-    def public say = { it -> return "I am a Closure" }
-    def public say2 = this.&say
+        public say2 = this.&say
 
-    public Object say() {
-       return "I am a Method"
+        public Object say() {
+            return 'I am a Method'
+        }
     }
 }

@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy1407 {
 
-class Groovy1407_Bug {
    @Test
    void testGPathOnMultiKeyMap(){
       // each key is a two-element String list

@@ -22,48 +22,42 @@ import groovy.test.GroovyAssert
 import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.TestInfo
-
-import java.util.concurrent.atomic.AtomicInteger
 
 import static org.junit.jupiter.api.Assertions.fail
 
 @AutoFinal @CompileStatic
 abstract class CompilableTestSupport {
 
-    String methodName
-
-    @BeforeEach
-    final void setUpTestCase(TestInfo testInfo) {
-        methodName = testInfo.getTestMethod().orElseThrow().getName()
-    }
-
-    private static final AtomicInteger scriptFileNameCounter = new AtomicInteger(0)
-
-    private String getTestClassName() {
-        "TestScript${getMethodName()}${scriptFileNameCounter.getAndIncrement()}.groovy"
+    private static String getTestScriptName() {
+        String uuid = UUID.randomUUID()
+        new StringBuilder('TestScript')
+            .append(uuid,  0,  8)
+            .append(uuid,  9, 13)
+            .append(uuid, 14, 18)
+            .append(uuid, 19, 23)
+            .append(uuid, 24, 36)
+            .append('.groovy')
     }
 
     //--------------------------------------------------------------------------
 
-    protected final Object assertScript(String script) {
-        new GroovyShell().evaluate(script, testClassName)
+    protected static Object assertScript(String script) {
+        new GroovyShell().evaluate(script,testScriptName)
     }
 
-    protected final String shouldFail(String script) {
+    protected static String shouldFail(String script) {
         GroovyAssert.shouldFail(script).getMessage()
     }
 
-    protected final void shouldCompile(String script) {
+    protected static void shouldCompile(String script) {
         try (def gcl = new GroovyClassLoader()) {
-            gcl.parseClass(script, testClassName)
+            gcl.parseClass(script,testScriptName)
         }
     }
 
-    protected final String shouldNotCompile(String script) {
+    protected static String shouldNotCompile(String script) {
         try (def gcl = new GroovyClassLoader()) {
-            gcl.parseClass(script, testClassName)
+            gcl.parseClass(script,testScriptName)
         } catch (CompilationFailedException ex) {
             return ex.message
         }

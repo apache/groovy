@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class Bytecode7Bug {
+final class Bytecode7Bug {
 
     @Test
     void testDuplicateVariables() {

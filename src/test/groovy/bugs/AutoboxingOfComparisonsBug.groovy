@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class AutoboxingOfComparisonsBug {
 
-class AutoboxingOfComparisonsBug {
     @Test
     void testBug() {
         def y = true

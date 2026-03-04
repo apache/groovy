@@ -20,10 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class BytecodeBug {
+final class BytecodeBug {
 
     @Test
     void testTedsBytecodeBug() {

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy11272 {
+
     @Test
     void testSerialVersionUID_1() {
         assertScript '''

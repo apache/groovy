@@ -20,25 +20,27 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.assertTrue
-
-
-/**
- *  Verifies that DefaultGroovyMethods.transformLine(Reader, Writer, Closure)
- *  actually writes its output.
- */
-
-class Groovy1081_Bug {
+final class Groovy1706 {
 
     @Test
-    void testShort() {
-         def reader = new StringReader('abc')
-        def writer = new StringWriter()
-
-        reader.transformLine(writer) { it }
-
-        // Implementation was creating a BufferedWriter, but not flushing it
-        assertTrue(writer.toString().startsWith('abc'))
+    void testStaticMethodIsCalledFromSubclass() {
+        // disclaimer: static methods shouldn't be
+        // called on instances
+        Groovy1706A a = new Groovy1706A()
+        Groovy1706B b = new Groovy1706B()
+        assert "A" == a.doit()
+        assert "B" == b.doit()
     }
 
+    @Test
+    void testStaticMethodIsCalledInCorrectInstance() {
+        // disclaimer: static methods shouldn't be
+        // called on instances
+        Groovy1706A i = new Groovy1706B()
+        assert "B" == i.doit()
+        // in Java the answer would be "A"
+    }
+
+    static class Groovy1706A { static doit() { "A" } }
+    static class Groovy1706B extends Groovy1706A { static doit() { "B" } }
 }

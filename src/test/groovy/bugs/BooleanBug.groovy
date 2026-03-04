@@ -22,10 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-/**
- */
-class BooleanBug {
+final class BooleanBug {
 
     @Test
     void testBug() {
@@ -57,9 +54,8 @@ class BooleanBug {
         """
     }
 
-}
-
-class BooleanBean {
-    String name
-    boolean foo
+    static class BooleanBean {
+        String name
+        boolean foo
+    }
 }

@@ -20,27 +20,34 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+/**
+ *  Verifies that the Groovy parser can accept quoted methods.
+ */
+final class Groovy1462 {
 
-class Groovy1706_Bug {
-   @Test
-   void testStaticMethodIsCalledFromSubclass() {
-      // disclaimer: static methods shouldn't be
-      // called on instances
-      Groovy1706A a = new Groovy1706A()
-      Groovy1706B b = new Groovy1706B()
-      assert "A" == a.doit()
-      assert "B" == b.doit()
-   }
+    @Test
+    void testShort() {
+        def smn = new StringMethodName()
+        assert smn.foo0() == 'foo0'
+        assert smn.'foo0'() == 'foo0'
+        assert smn.foo1() == 'foo1'
+        assert smn.'foo1'() == 'foo1'
+        assert smn.foo2() == 2
+        assert smn.foo3() == 3
+        assert smn.foo4(3) == 12
+        assert smn.foo5 == 'foo5'
+        assert !smn.fooFalse()
+        assert smn.fooDef() == null
+    }
 
-   @Test
-   void testStaticMethodIsCalledInCorrectInstance() {
-      // disclaimer: static methods shouldn't be
-      // called on instances
-      Groovy1706A i = new Groovy1706B()
-      assert "B" == i.doit()
-      // in Java the answer would be "A"
-   }
+    static class StringMethodName {
+        def foo0() {'foo0'} // control
+        def 'foo1'() {'foo1'}
+        public Integer 'foo2'() {2}
+        public int 'foo3'() {3}
+        Integer 'foo4'(x) { x * 4}
+        public def 'getFoo5'() {'foo5'}
+        private boolean 'fooFalse'() {false}
+        public def 'fooDef'() {}
+    }
 }
-
-class Groovy1706A { static doit() { "A" } }
-class Groovy1706B extends Groovy1706A { static doit() { "B" } }

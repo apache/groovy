@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class ByteIndexBug {
 
-class ByteIndexBug {
     // TODO: this tests a string with 128 nulls - is that what is intended?
     @Test
     void testBug() {

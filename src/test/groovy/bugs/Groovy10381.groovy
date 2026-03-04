@@ -26,6 +26,7 @@ import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy10381 {
+
     @Test
     void testDuplicateDefaultMethodsFromGroovyClasses_implements0() {
         assertScript '''

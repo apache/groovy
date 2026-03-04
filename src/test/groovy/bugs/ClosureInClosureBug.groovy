@@ -20,7 +20,6 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
 /**
  * Bug illustrating the nested closures variable scope visibility issue.
  * l.each is ClosureInClosureBug$1 and it.each is ClosureInClosureBug$2
@@ -32,7 +31,7 @@ import org.junit.jupiter.api.Test
  *
  * @authour Guillaume Laforge
  */
-class ClosureInClosureBug {
+final class ClosureInClosureBug {
 
     @Test
     void testInvisibleVariable() {

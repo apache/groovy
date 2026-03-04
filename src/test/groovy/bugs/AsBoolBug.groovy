@@ -25,8 +25,7 @@ import org.junit.jupiter.api.Test
  * Test to fix the Jira issues GROOVY-810 and GROOVY-811.
  * Test of "string as Boolean" against the issue GROOVY-812.
  */
-
-public class AsBoolBug {
+final class AsBoolBug {
 
     @Test
     void testMapAsBool() {

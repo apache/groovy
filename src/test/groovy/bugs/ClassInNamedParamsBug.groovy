@@ -20,8 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-class ClassInNamedParamsBug {
+final class ClassInNamedParamsBug {
 
     @Test
     void testBug() {

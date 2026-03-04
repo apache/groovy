@@ -22,6 +22,7 @@ import org.codehaus.groovy.tools.ErrorReporter
 import org.junit.jupiter.api.Test
 
 final class Groovy10676 {
+
     @Test
     void test() {
         try {

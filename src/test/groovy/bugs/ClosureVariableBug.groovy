@@ -22,10 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-/**
- */
-class ClosureVariableBug {
+final class ClosureVariableBug {
 
     @Test
     void testClosurePassingBug() {

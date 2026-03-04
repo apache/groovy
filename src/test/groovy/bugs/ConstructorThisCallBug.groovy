@@ -77,9 +77,8 @@ final class ConstructorThisCallBug {
         '''
     }
 
-    //
-
-    @Test // GROOVY-7014
+    // GROOVY-7014
+    @Test
     void testThisCallingInstanceMethod() {
         def err = shouldFail '''
             class Base {
@@ -131,7 +130,8 @@ final class ConstructorThisCallBug {
 
     //
 
-    @Test // GROOVY-994
+    // GROOVY-994
+    @Test
     void testCallA() {
         assert new ConstructorCallA("foo").toString() == 'foo'
         assert new ConstructorCallA(9).toString() == '81'

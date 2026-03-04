@@ -22,10 +22,7 @@ import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.fail
 
-
-/**
- */
-class AssignmentInsideExpressionBug {
+final class AssignmentInsideExpressionBug {
 
     @Test
     void testBug() {
