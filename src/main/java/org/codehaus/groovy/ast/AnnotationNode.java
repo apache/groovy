@@ -22,7 +22,12 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -49,8 +54,6 @@ public class AnnotationNode extends ASTNode {
 
     private final ClassNode classNode;
     private Map<String, Expression> members;
-    private int allowedTargets = 0x4FF; // GROOVY-11838: JLS 9.6.4.1
-    private boolean runtimeRetention = false, sourceRetention = false, /*explicit*/ classRetention = false;
 
     public AnnotationNode(final ClassNode type) {
         classNode = requireNonNull(type);
@@ -77,38 +80,20 @@ public class AnnotationNode extends ASTNode {
         }
     }
 
-    public void setAllowedTargets(final int bitmap) {
-        allowedTargets = bitmap;
+    @Deprecated(since = "6.0.0")
+    public void setAllowedTargets(final int ignored) {
     }
 
-    /**
-     * Sets the internal flag if the current annotation has <code>RetentionPolicy.RUNTIME</code>.
-     *
-     * @param value if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.RUNTIME</code>.
-     */
-    public void setRuntimeRetention(final boolean value) {
-        runtimeRetention = value;
+    @Deprecated(since = "6.0.0")
+    public void setClassRetention(final boolean ignored) {
     }
 
-    /**
-     * Sets the internal flag if the current annotation has <code>RetentionPolicy.SOURCE</code>.
-     *
-     * @param value if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.SOURCE</code>.
-     */
-    public void setSourceRetention(final boolean value) {
-        sourceRetention = value;
+    @Deprecated(since = "6.0.0")
+    public void setSourceRetention(final boolean ignored) {
     }
 
-    /**
-     * Sets the internal flag if the current annotation has an explicit <code>RetentionPolicy.CLASS</code>.
-     *
-     * @param value if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.CLASS</code>.
-     */
-    public void setClassRetention(final boolean value) {
-        classRetention = value;
+    @Deprecated(since = "6.0.0")
+    public void setRuntimeRetention(final boolean ignored) {
     }
 
     //--------------------------------------------------------------------------
@@ -137,37 +122,92 @@ public class AnnotationNode extends ASTNode {
     }
 
     public boolean isTargetAllowed(final int target) {
-        return (this.allowedTargets & target) == target;
+        if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
+            throw new IllegalStateException("cannot check target at this time");
+
+        // GROOVY-6526: check class for @Target
+        int allowedTargets = classNode.redirect().getNodeMetaData(Target.class, (k) -> {
+            for (AnnotationNode an : classNode.getAnnotations()) {
+                if ("java.lang.annotation.Target".equals(an.getClassNode().getName())
+                        && an.getMember("value") instanceof ListExpression list) {
+                    int bits = 0;
+                    for (Expression e : list.getExpressions()) {
+                        if (e instanceof PropertyExpression item) {
+                            String name = item.getPropertyAsString();
+                            bits |= switch (ElementType.valueOf(name)) {
+                                case TYPE             -> TYPE_TARGET;
+                                case FIELD            -> FIELD_TARGET;
+                                case METHOD           -> METHOD_TARGET;
+                                case PARAMETER        -> PARAMETER_TARGET;
+                                case CONSTRUCTOR      -> CONSTRUCTOR_TARGET;
+                                case LOCAL_VARIABLE   -> LOCAL_VARIABLE_TARGET;
+                                case ANNOTATION_TYPE  -> ANNOTATION_TARGET;
+                                case PACKAGE          -> PACKAGE_TARGET;
+                                case TYPE_PARAMETER   -> TYPE_PARAMETER_TARGET;
+                                case TYPE_USE         -> TYPE_USE_TARGET;
+                                case MODULE           -> TYPE_TARGET; //TODO
+                                case RECORD_COMPONENT -> RECORD_COMPONENT_TARGET;
+                                default -> throw new GroovyBugError("unsupported Target " + name);
+                            };
+                        }
+                    }
+                    return bits;
+                }
+            }
+            return 0x4FF; // GROOVY-11838: JLS 9.6.4.1
+        });
+
+        return (target & allowedTargets) == target;
+    }
+
+    private RetentionPolicy getRetentionPolicy() {
+        if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
+            throw new IllegalStateException("cannot check retention at this time");
+
+        // GROOVY-6526: check class for @Retention
+        return classNode.redirect().getNodeMetaData(Retention.class, (k) -> {
+            for (AnnotationNode an : classNode.getAnnotations()) {
+                if ("java.lang.annotation.Retention".equals(an.getClassNode().getName())) {
+                    if (an.getMember("value") instanceof PropertyExpression pe) {
+                        return RetentionPolicy.valueOf(pe.getPropertyAsString());
+                    }
+                    break;
+                }
+            }
+            return null;
+        });
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.RUNTIME</code>.
-     * @return <tt>true</tt> if the annotation should be visible at runtime,
+     *
+     * @return <tt>true</tt> if the annotation should be visible at runtime;
      *         <tt>false</tt> otherwise
      */
     public boolean hasRuntimeRetention() {
-        return this.runtimeRetention;
+        return RetentionPolicy.RUNTIME.equals(getRetentionPolicy());
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.SOURCE</code>.
-     * @return <tt>true</tt> if the annotation is only allowed in sources
+     *
+     * @return <tt>true</tt> if the annotation is only allowed in sources;
      *         <tt>false</tt> otherwise
      */
     public boolean hasSourceRetention() {
-        return this.sourceRetention;
+        return RetentionPolicy.SOURCE.equals(getRetentionPolicy());
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.CLASS</code>.
-     * This is the default when no <code>RetentionPolicy</code> annotations are present.
+     * This is the default when no <code>Retention</code> annotation is present.
      *
-     * @return <tt>true</tt> if the annotation is written in the bytecode, but not visible at runtime
+     * @return <tt>true</tt> if the annotation is written in the bytecode but not visible at runtime;
      *         <tt>false</tt> otherwise
      */
     public boolean hasClassRetention() {
-        if (!runtimeRetention && !sourceRetention) return true;
-        return this.classRetention;
+        RetentionPolicy retentionPolicy = getRetentionPolicy();
+        return retentionPolicy == null || retentionPolicy.equals(RetentionPolicy.CLASS);
     }
 
     @Override
@@ -205,17 +245,17 @@ public class AnnotationNode extends ASTNode {
     }
 
     public static String targetToName(final int target) {
+        if ((target & 1) == 1) return "TYPE"; // GROOVY-7151
         return switch (target) {
-            case TYPE_TARGET -> "TYPE";
-            case CONSTRUCTOR_TARGET -> "CONSTRUCTOR";
-            case METHOD_TARGET -> "METHOD";
-            case FIELD_TARGET -> "FIELD";
-            case PARAMETER_TARGET -> "PARAMETER";
-            case LOCAL_VARIABLE_TARGET -> "LOCAL_VARIABLE";
-            case ANNOTATION_TARGET -> "ANNOTATION";
-            case PACKAGE_TARGET -> "PACKAGE";
-            case TYPE_PARAMETER_TARGET -> "TYPE_PARAMETER";
-            case TYPE_USE_TARGET -> "TYPE_USE";
+            case CONSTRUCTOR_TARGET      -> "CONSTRUCTOR";
+            case METHOD_TARGET           -> "METHOD";
+            case FIELD_TARGET            -> "FIELD";
+            case PARAMETER_TARGET        -> "PARAMETER";
+            case LOCAL_VARIABLE_TARGET   -> "LOCAL_VARIABLE";
+            case ANNOTATION_TARGET       -> "ANNOTATION";
+            case PACKAGE_TARGET          -> "PACKAGE";
+            case TYPE_PARAMETER_TARGET   -> "TYPE_PARAMETER";
+            case TYPE_USE_TARGET         -> "TYPE_USE";
             case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
             default -> "unknown target";
         };

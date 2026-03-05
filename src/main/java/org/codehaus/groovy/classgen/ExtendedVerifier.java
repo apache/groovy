@@ -35,7 +35,6 @@ import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.AnnotationConstantsVisitor;
@@ -43,7 +42,6 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.annotation.Retention;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,13 +65,11 @@ import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
 import static org.codehaus.groovy.ast.ClassHelper.DEPRECATED_TYPE;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveVoid;
-import static org.codehaus.groovy.ast.ClassHelper.makeCached;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.listX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.ParameterUtils.parametersEqual;
-import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.evaluateExpression;
 
 /**
  * A specialized Groovy AST visitor meant to perform additional verifications upon the
@@ -377,6 +373,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                         addError("Cannot specify duplicate annotation on the same member. Explicit " + repeatable.getName() + " found when creating implicit container for " + entry.getKey(), node);
                     }
                     AnnotationNode collector = new AnnotationNode(repeatable);
+/*
                     if (repeatee.hasClassRetention()) {
                         collector.setClassRetention(true);
                     } else if (repeatee.hasRuntimeRetention()) {
@@ -398,6 +395,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                             }
                         }
                     }
+*/
                     collector.addMember("value", listX(entry.getValue().stream().map(AnnotationConstantExpression::new).collect(toList())));
                     node.getAnnotations().removeAll(entry.getValue());
                     node.addAnnotation(collector);
