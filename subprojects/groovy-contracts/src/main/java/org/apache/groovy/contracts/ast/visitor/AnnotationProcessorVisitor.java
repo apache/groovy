@@ -199,8 +199,6 @@ public class AnnotationProcessorVisitor extends BaseVisitor {
         if (!AnnotationUtils.hasAnnotationOfType(methodNode, annotationNode.getClassNode().getName())) {
             AnnotationNode markerAnnotation = new AnnotationNode(annotationNode.getClassNode());
             replaceCondition(markerAnnotation, valueExpression);
-            markerAnnotation.setRuntimeRetention(true);
-            markerAnnotation.setSourceRetention(false);
             methodNode.addAnnotation(markerAnnotation);
         }
     }

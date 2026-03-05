@@ -372,31 +372,12 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
                     if (nonSourceAnnotations.containsKey(repeatable.getName())) {
                         addError("Cannot specify duplicate annotation on the same member. Explicit " + repeatable.getName() + " found when creating implicit container for " + entry.getKey(), node);
                     }
-                    AnnotationNode collector = new AnnotationNode(repeatable);
-/*
-                    if (repeatee.hasClassRetention()) {
-                        collector.setClassRetention(true);
-                    } else if (repeatee.hasRuntimeRetention()) {
-                        collector.setRuntimeRetention(true);
-                    } else { // load retention policy from annotation definition
-                        List<AnnotationNode> retention = repeatable.getAnnotations(makeCached(Retention.class));
-                        if (!retention.isEmpty()) {
-                            Object policy;
-                            Expression value = retention.get(0).getMember("value");
-                            if (value instanceof PropertyExpression) {
-                                policy = ((PropertyExpression) value).getPropertyAsString();
-                            } else { // NOTE: it is risky to evaluate the expression from repeatable's source this way:
-                                policy = evaluateExpression(value, source.getConfiguration(), source.getClassLoader());
-                            }
-                            if ("CLASS".equals(policy)) {
-                                collector.setClassRetention(true);
-                            } else if ("RUNTIME".equals(policy)) {
-                                collector.setRuntimeRetention(true);
-                            }
-                        }
-                    }
-*/
+                    var collector = new AnnotationNode(repeatable);
+                    assert collector.hasClassRetention() == repeatee.hasClassRetention();
+                    assert collector.hasSourceRetention() == repeatee.hasSourceRetention();
+                    assert collector.hasRuntimeRetention() == repeatee.hasRuntimeRetention();
                     collector.addMember("value", listX(entry.getValue().stream().map(AnnotationConstantExpression::new).collect(toList())));
+
                     node.getAnnotations().removeAll(entry.getValue());
                     node.addAnnotation(collector);
                 }
