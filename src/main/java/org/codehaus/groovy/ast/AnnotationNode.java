@@ -126,7 +126,7 @@ public class AnnotationNode extends ASTNode {
             throw new IllegalStateException("cannot check target at this time");
 
         // GROOVY-6526: check class for @Target
-        int allowedTargets = classNode.getNodeMetaData(Target.class, (k) -> {
+        int allowedTargets = classNode.redirect().getNodeMetaData(Target.class, (k) -> {
             for (AnnotationNode an : classNode.getAnnotations()) {
                 if ("java.lang.annotation.Target".equals(an.getClassNode().getName())
                         && an.getMember("value") instanceof ListExpression list) {
@@ -165,7 +165,7 @@ public class AnnotationNode extends ASTNode {
             throw new IllegalStateException("cannot check retention at this time");
 
         // GROOVY-6526: check class for @Retention
-        return classNode.getNodeMetaData(Retention.class, (k) -> {
+        return classNode.redirect().getNodeMetaData(Retention.class, (k) -> {
             for (AnnotationNode an : classNode.getAnnotations()) {
                 if ("java.lang.annotation.Retention".equals(an.getClassNode().getName())) {
                     if (an.getMember("value") instanceof PropertyExpression pe) {
@@ -245,17 +245,17 @@ public class AnnotationNode extends ASTNode {
     }
 
     public static String targetToName(final int target) {
+        if ((target & 1) == 1) return "TYPE"; // GROOVY-7151
         return switch (target) {
-            case TYPE_TARGET -> "TYPE";
-            case CONSTRUCTOR_TARGET -> "CONSTRUCTOR";
-            case METHOD_TARGET -> "METHOD";
-            case FIELD_TARGET -> "FIELD";
-            case PARAMETER_TARGET -> "PARAMETER";
-            case LOCAL_VARIABLE_TARGET -> "LOCAL_VARIABLE";
-            case ANNOTATION_TARGET -> "ANNOTATION";
-            case PACKAGE_TARGET -> "PACKAGE";
-            case TYPE_PARAMETER_TARGET -> "TYPE_PARAMETER";
-            case TYPE_USE_TARGET -> "TYPE_USE";
+            case CONSTRUCTOR_TARGET      -> "CONSTRUCTOR";
+            case METHOD_TARGET           -> "METHOD";
+            case FIELD_TARGET            -> "FIELD";
+            case PARAMETER_TARGET        -> "PARAMETER";
+            case LOCAL_VARIABLE_TARGET   -> "LOCAL_VARIABLE";
+            case ANNOTATION_TARGET       -> "ANNOTATION";
+            case PACKAGE_TARGET          -> "PACKAGE";
+            case TYPE_PARAMETER_TARGET   -> "TYPE_PARAMETER";
+            case TYPE_USE_TARGET         -> "TYPE_USE";
             case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
             default -> "unknown target";
         };
