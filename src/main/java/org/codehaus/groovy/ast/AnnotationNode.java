@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -52,7 +54,6 @@ public class AnnotationNode extends ASTNode {
 
     private final ClassNode classNode;
     private Map<String, Expression> members;
-    private boolean runtimeRetention = false, sourceRetention = false, /*explicit*/ classRetention = false;
 
     public AnnotationNode(final ClassNode type) {
         classNode = requireNonNull(type);
@@ -83,34 +84,16 @@ public class AnnotationNode extends ASTNode {
     public void setAllowedTargets(final int ignored) {
     }
 
-    /**
-     * Sets the internal flag if the current annotation has <code>RetentionPolicy.RUNTIME</code>.
-     *
-     * @param value if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.RUNTIME</code>.
-     */
-    public void setRuntimeRetention(final boolean value) {
-        runtimeRetention = value;
+    @Deprecated(since = "6.0.0")
+    public void setClassRetention(final boolean ignored) {
     }
 
-    /**
-     * Sets the internal flag if the current annotation has <code>RetentionPolicy.SOURCE</code>.
-     *
-     * @param value if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.SOURCE</code>.
-     */
-    public void setSourceRetention(final boolean value) {
-        sourceRetention = value;
+    @Deprecated(since = "6.0.0")
+    public void setSourceRetention(final boolean ignored) {
     }
 
-    /**
-     * Sets the internal flag if the current annotation has an explicit <code>RetentionPolicy.CLASS</code>.
-     *
-     * @param value if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.CLASS</code>.
-     */
-    public void setClassRetention(final boolean value) {
-        classRetention = value;
+    @Deprecated(since = "6.0.0")
+    public void setRuntimeRetention(final boolean ignored) {
     }
 
     //--------------------------------------------------------------------------
@@ -177,6 +160,24 @@ public class AnnotationNode extends ASTNode {
         return (target & allowedTargets) == target;
     }
 
+    private RetentionPolicy getRetentionPolicy() {
+        if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
+            throw new IllegalStateException("cannot check retention at this time");
+
+        // GROOVY-6526: check class for @Retention
+        return classNode.getNodeMetaData(Retention.class, (k) -> {
+            for (AnnotationNode an : classNode.getAnnotations()) {
+                if ("java.lang.annotation.Retention".equals(an.getClassNode().getName())) {
+                    if (an.getMember("value") instanceof PropertyExpression pe) {
+                        return RetentionPolicy.valueOf(pe.getPropertyAsString());
+                    }
+                    break;
+                }
+            }
+            return null;
+        });
+    }
+
     /**
      * Flag corresponding to <code>RetentionPolicy.RUNTIME</code>.
      *
@@ -184,7 +185,7 @@ public class AnnotationNode extends ASTNode {
      *         <tt>false</tt> otherwise
      */
     public boolean hasRuntimeRetention() {
-        return this.runtimeRetention;
+        return RetentionPolicy.RUNTIME.equals(getRetentionPolicy());
     }
 
     /**
@@ -194,7 +195,7 @@ public class AnnotationNode extends ASTNode {
      *         <tt>false</tt> otherwise
      */
     public boolean hasSourceRetention() {
-        return this.sourceRetention;
+        return RetentionPolicy.SOURCE.equals(getRetentionPolicy());
     }
 
     /**
@@ -205,8 +206,8 @@ public class AnnotationNode extends ASTNode {
      *         <tt>false</tt> otherwise
      */
     public boolean hasClassRetention() {
-        if (!runtimeRetention && !sourceRetention) return true;
-        return this.classRetention;
+        RetentionPolicy retentionPolicy = getRetentionPolicy();
+        return retentionPolicy == null || retentionPolicy.equals(RetentionPolicy.CLASS);
     }
 
     @Override

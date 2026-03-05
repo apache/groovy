@@ -70,6 +70,42 @@ final class AnnotationNodeTest {
     }
 
     @Test
+    void testRetentionPolicy1() {
+        def node = new AnnotationNode(ClassHelper.make(gls.annotations.HasExplicitClassRetention))
+
+        assertTrue (node.hasClassRetention())
+        assertFalse(node.hasSourceRetention())
+        assertFalse(node.hasRuntimeRetention())
+    }
+
+    @Test
+    void testRetentionPolicy2() {
+        def node = new AnnotationNode(ClassHelper.OVERRIDE_TYPE)
+
+            assertFalse(node.hasClassRetention())
+            assertTrue (node.hasSourceRetention())
+            assertFalse(node.hasRuntimeRetention())
+    }
+
+    @Test
+    void testRetentionPolicy3() {
+        def node = new AnnotationNode(ClassHelper.DEPRECATED_TYPE)
+
+        assertFalse(node.hasClassRetention())
+        assertFalse(node.hasSourceRetention())
+        assertTrue (node.hasRuntimeRetention())
+    }
+
+    @Test
+    void testRetentionPolicy4() {
+        def node = new AnnotationNode(new ClassNode("A", 0x2000, ClassHelper.Annotation_TYPE))
+
+        assertTrue (node.hasClassRetention())
+        assertFalse(node.hasSourceRetention())
+        assertFalse(node.hasRuntimeRetention())
+    }
+
+    @Test
     void testGetText() {
         def node = new AnnotationNode(ClassHelper.OVERRIDE_TYPE)
 

@@ -118,22 +118,6 @@ public class Java8 implements VMPlugin {
         }
     }
 
-    private static void setRetentionPolicy(final RetentionPolicy value, final AnnotationNode node) {
-        switch (value) {
-          case RUNTIME:
-            node.setRuntimeRetention(true);
-            break;
-          case SOURCE:
-            node.setSourceRetention(true);
-            break;
-          case CLASS:
-            node.setClassRetention(true);
-            break;
-          default:
-            throw new GroovyBugError("unsupported Retention " + value);
-        }
-    }
-
     //--------------------------------------------------------------------------
 
     @Override
@@ -269,27 +253,19 @@ public class Java8 implements VMPlugin {
     }
 
     private void configureAnnotation(final AnnotationNode node, final Annotation annotation) {
-        Class<?> type = annotation.annotationType();
-        if (type == Retention.class) {
-            Retention r = (Retention) annotation;
-            RetentionPolicy value = r.value();
-            setRetentionPolicy(value, node);
-            node.setMember("value", new PropertyExpression(
-                    new ClassExpression(ClassHelper.makeWithoutCaching(RetentionPolicy.class, false)),
-                    value.toString()));
-        } else if (type == Target.class) {
-            Target t = (Target) annotation;
-            ElementType[] elements = t.value();
-            ListExpression elementExprs = new ListExpression();
-            for (ElementType element : elements) {
-                elementExprs.addExpression(new PropertyExpression(
-                        new ClassExpression(ClassHelper.ELEMENT_TYPE_TYPE), element.name()));
+        if (annotation instanceof Retention r) {
+            final ClassNode retentionPolicy = ClassHelper.makeWithoutCaching(RetentionPolicy.class, false);
+            node.setMember("value", new PropertyExpression(new ClassExpression(retentionPolicy), r.value().toString()));
+        } else if (annotation instanceof Target t) {
+            var elementExprs = new ListExpression();
+            for (ElementType elementTypes : t.value()) {
+                elementExprs.addExpression(new PropertyExpression(new ClassExpression(ClassHelper.ELEMENT_TYPE_TYPE), elementTypes.name()));
             }
             node.setMember("value", elementExprs);
         } else {
             Method[] declaredMethods;
             try {
-                declaredMethods = type.getDeclaredMethods();
+                declaredMethods = annotation.annotationType().getDeclaredMethods();
             } catch (SecurityException se) {
                 declaredMethods = EMPTY_METHOD_ARRAY;
             }
@@ -298,7 +274,6 @@ public class Java8 implements VMPlugin {
                     Object value = declaredMethod.invoke(annotation);
                     Expression valueExpression = toAnnotationValueExpression(value);
                     if (valueExpression != null) node.setMember(declaredMethod.getName(), valueExpression);
-
                 } catch (IllegalAccessException | InvocationTargetException ignore) {
                 }
             }
@@ -339,15 +314,6 @@ public class Java8 implements VMPlugin {
         }
 
         return null;
-    }
-
-    @Override
-    public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode node) {
-        if ("java.lang.annotation.Retention".equals(definition.getClassNode().getName())
-                 && definition.getMember("value") instanceof PropertyExpression value) {
-            var policy = RetentionPolicy.valueOf(value.getPropertyAsString());
-            setRetentionPolicy(policy, node);
-        }
     }
 
     @Override
