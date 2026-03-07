@@ -848,17 +848,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-7971, GROOVY-8965, GROOVY-10096, GROOVY-10702, et al.
             if (op == LOGICAL_OR) typeCheckingContext.pushTemporaryTypeInfo();
 
+            ClassNode lType;
             leftExpression.visit(this);
-            ClassNode lType = getType(leftExpression);
-            var setterInfo  = removeSetterInfo(leftExpression);
-            if (setterInfo != null) { assert op != LOGICAL_OR ;
+            var setterInfo = removeSetterInfo(leftExpression);
+            if (setterInfo != null) { assert op != LOGICAL_OR;
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
+                lType = getType(leftExpression); // GROOVY-11870
             } else {
                 if (op == EQUAL) {
                     lType = getOriginalDeclarationType(leftExpression);
                     applyTargetType(lType, rightExpression);
+                } else {
+                    lType = getType(leftExpression);
                 }
                 if (op != LOGICAL_OR) {
                     rightExpression.visit(this);
