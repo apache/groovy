@@ -1,0 +1,902 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Async/Await
+:jdk: https://docs.oracle.com/en/java/javase/21/docs/api
+
+[[async-await]]
+== Introduction
+
+Groovy provides native `async`/`await` support as a language-level feature, enabling developers to write
+asynchronous code in a sequential, readable style. Inspired by similar constructs in JavaScript, C#, Kotlin,
+Swift, and Go,
+Groovy's async/await integrates seamlessly with the JVM concurrency model while maintaining Groovy's hallmark
+conciseness and expressiveness.
+
+Key capabilities include:
+
+* **`async` methods** — declare methods that execute asynchronously and return an `Awaitable`
+* **`await` expressions** — suspend execution until an asynchronous result is available
+* **Async closures and lambdas** — create reusable asynchronous functions
+* **`for await`** — iterate over asynchronous data sources
+* **`yield return`** — produce asynchronous streams (generators)
+* **`defer`** — schedule Go-style cleanup actions that run when the method completes
+* **Framework integration** — built-in adapters for `CompletableFuture`, `Future`, and `Flow.Publisher`;
+extensible to RxJava, Reactor, and Spring via the adapter registry
+
+On JDK 21+, async methods automatically leverage
+{jdk}/java.base/java/lang/Thread.html#ofVirtual()[virtual threads] for optimal scalability.
+
+[[async-methods]]
+== Async Methods
+
+An `async` method executes its body asynchronously and returns a
+`groovy.concurrent.Awaitable` — a promise-like abstraction analogous to C#'s `Task<T>` or JavaScript's
+`Promise<T>`.
+
+=== Basic Declaration
+
+Add the `async` modifier before the method's return type (or `def`):
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_method_basic,indent=0]
+----
+
+The caller receives an `Awaitable` immediately; the method body runs on a separate thread.
+Calling `get()` blocks until the result is available.
+
+=== Typed Return Values
+
+Async methods support explicit return types. The compiler wraps the declared type inside `Awaitable` automatically:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_method_typed,indent=0]
+----
+
+=== Void Methods
+
+Even `async void` methods return an `Awaitable<Void>`, allowing callers to wait for completion:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_method_void,indent=0]
+----
+
+=== Static Methods
+
+The `async` modifier works with static methods:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_method_static,indent=0]
+----
+
+=== Script-Level Methods
+
+Async methods can be defined directly in Groovy scripts:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_script,indent=0]
+----
+
+[[await-expression]]
+== The `await` Expression
+
+The `await` keyword suspends execution of the enclosing async method until the given asynchronous
+operation completes, then returns its result. It unwraps the value from an `Awaitable`,
+`CompletableFuture`, `CompletionStage`, `Future`, or any type registered with the adapter system.
+
+=== Basic Usage
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_basic,indent=0]
+----
+
+=== Awaiting CompletableFuture
+
+Groovy's `await` works directly with `java.util.concurrent.CompletableFuture`:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_completable_future,indent=0]
+----
+
+=== Combining Multiple Awaits
+
+Multiple `await` expressions can appear in a single method:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_arithmetic,indent=0]
+----
+
+=== Parenthesized Form
+
+Both `await expr` and `await(expr)` are valid syntax:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_parenthesized,indent=0]
+----
+
+[NOTE]
+====
+The parenthesized form `await(expr)` is recommended when `await` is used in complex expressions
+(e.g., `await(f1) + await(f2)`) to avoid potential ambiguities.
+====
+
+[[async-closures-lambdas]]
+== Async Closures and Lambdas
+
+The `async` keyword can precede a closure or lambda expression to create a reusable
+asynchronous function. The result is a `Closure` that, when invoked, returns an `Awaitable`.
+
+[IMPORTANT]
+====
+`async { ... }` creates a _closure_, not an immediately executing task. You must explicitly
+invoke the closure (e.g., `asyncTask()`) to start asynchronous execution.
+This is analogous to defining an `async function` in JavaScript without calling it.
+====
+
+=== No-Argument Closure
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_closure_basic,indent=0]
+----
+
+=== Parameterized Closure
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_closure_params,indent=0]
+----
+
+=== Multiple Parameters
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_closure_multi_params,indent=0]
+----
+
+=== Closures in Collections
+
+Async closures are first-class values and can be stored in data structures:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_closure_collection,indent=0]
+----
+
+=== Lambda Syntax
+
+The `async` keyword also works with Groovy's lambda syntax:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_lambda,indent=0]
+----
+
+[[for-await]]
+== `for await` — Async Iteration
+
+The `for await` loop iterates over asynchronous data sources (`AsyncStream`, `Flow.Publisher`, `Iterable`).
+Each element is resolved asynchronously before the loop body executes. This is analogous to JavaScript's
+`for await...of` and C#'s `await foreach`.
+
+=== Basic Iteration
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=for_await_basic,indent=0]
+----
+
+=== Transformation
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=for_await_transform,indent=0]
+----
+
+=== Early Termination
+
+Standard flow control (`return`, `break`) works inside `for await`:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=for_await_break,indent=0]
+----
+
+=== Colon Notation
+
+`for await` supports both `in` and `:` notation:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=for_await_colon,indent=0]
+----
+
+[[yield-return]]
+== `yield return` — Async Generators
+
+The `yield return` statement enables async methods to produce a stream of values lazily.
+A method containing `yield return` returns an `AsyncStream<T>` instead of a regular `Awaitable<T>`.
+This is analogous to C#'s `yield return` within `IAsyncEnumerable<T>` and JavaScript's `async function*`
+generators.
+
+The producer (generator) and consumer (`for await` loop) coordinate via a
+`SynchronousQueue`, providing natural back-pressure: the producer blocks on each `yield return`
+until the consumer is ready for the next value.
+
+=== Basic Generator
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=yield_return_basic,indent=0]
+----
+
+=== Generator with Loop
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=yield_return_loop,indent=0]
+----
+
+=== Filtered Generator
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=yield_return_filter,indent=0]
+----
+
+=== Combining `yield return` with `await`
+
+Async generators can perform asynchronous operations between yielding values:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=yield_return_with_await,indent=0]
+----
+
+[[defer]]
+== `defer` — Go-Style Cleanup
+
+The `defer` keyword schedules a block of code to execute when the enclosing async method
+completes, regardless of whether it succeeds or throws an exception. Multiple deferred blocks
+execute in _last-in, first-out_ (LIFO) order, exactly as in
+https://go.dev/blog/defer-panic-and-recover[Go's `defer` statement].
+
+=== Basic Usage
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=defer_basic,indent=0]
+----
+
+=== Guaranteed Execution on Exception
+
+Deferred blocks always execute, even when the method throws an exception:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=defer_exception,indent=0]
+----
+
+=== Resource Cleanup Pattern
+
+`defer` is ideal for resource management — acquire a resource, immediately defer its release:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=defer_resource_cleanup,indent=0]
+----
+
+[TIP]
+====
+When an exception occurs in a deferred block and the enclosing method has also thrown,
+the deferred exception is _suppressed_ (attached via `addSuppressed()`) so that the original
+exception remains the primary failure.
+====
+
+[[exception-handling]]
+== Exception Handling
+
+Groovy's async/await provides transparent exception propagation. Exceptions thrown inside
+an async method are captured by the `Awaitable` and re-thrown when the caller invokes `await`.
+The original exception type, message, and stack trace are preserved — wrapper types such as
+`CompletionException` and `ExecutionException` are automatically unwrapped.
+
+=== Exception Transparency
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=exception_transparency,indent=0]
+----
+
+Standard `try`/`catch` blocks work naturally with `await`, catching the original exception type
+(not a wrapper). This is the same transparency guarantee provided by C#'s `await` and
+JavaScript's `await`.
+
+=== Handling Failures from Multiple Tasks
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=exception_multiple_tasks,indent=0]
+----
+
+[[utility-methods]]
+== Combinators
+
+The `groovy.concurrent.Awaitable` interface provides static combinator methods for common async
+coordination patterns, analogous to JavaScript's `Promise.all()` / `Promise.any()` /
+`Promise.allSettled()`, C#'s `Task.WhenAll()` / `Task.WhenAny()`, and Kotlin's coroutine
+coordination helpers.
+
+=== `all` — Parallel Execution
+
+Wait for all tasks to complete and collect their results. Fails fast on the first error:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_all,indent=0]
+----
+
+=== `any` — Race Pattern
+
+Return the result of the first task to complete:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_any,indent=0]
+----
+
+=== `allSettled` — Inspect All Outcomes
+
+Wait for all tasks to complete, collecting both successes and failures. Never throws —
+each result is wrapped in an `AwaitResult` with `isSuccess()`, `isFailure()`, `value`, and `error` properties:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=await_all_settled,indent=0]
+----
+
+=== Continuation Helpers
+
+Use `thenAccept`, `whenComplete`, and `handle` when you want continuation-style
+composition rather than a direct `await`. This is especially useful at API boundaries
+where you want to attach logging, recovery, or side effects without immediately
+blocking for the result.
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=continuation_helpers,indent=0]
+----
+
+=== `delay` — Non-Blocking Pause
+
+Create an awaitable timer (analogous to JavaScript's `setTimeout` wrapped in a `Promise`):
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=delay_example,indent=0]
+----
+
+=== `timeout` / `timeoutOr` — Non-Blocking Deadlines
+
+Apply a deadline without blocking the calling thread. `Awaitable.timeout(...)`
+fails with `TimeoutException`, while `Awaitable.timeoutOr(...)` completes with a
+fallback value. The instance forms `orTimeout(...)` and `completeOnTimeout(...)`
+provide the same capability on an existing awaitable.
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=timeout_combinators,indent=0]
+----
+
+[[flow-publisher]]
+== `Flow.Publisher` Integration
+
+Groovy's await system has built-in support for
+{jdk}/java.base/java/util/concurrent/Flow.Publisher.html[`java.util.concurrent.Flow.Publisher`],
+enabling seamless consumption of reactive streams. The internal buffer is bounded (capacity 256)
+to prevent unbounded memory growth with fast publishers.
+
+=== Awaiting a Single Value
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=flow_publisher_await,indent=0]
+----
+
+=== Iterating with `for await`
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=flow_publisher_for_await,indent=0]
+----
+
+[NOTE]
+====
+`for await` closes the adapted stream from a compiler-generated `finally` block.
+For `Flow.Publisher` sources, this means an early `break`, `return`, or exception
+cancels the upstream subscription rather than leaving it running in the background.
+This is conceptually similar to JavaScript async iterators' `return()`, C#'s
+`await foreach` disposal, and Swift's `AsyncSequence` early-exit cleanup.
+====
+
+[[adapter-registry]]
+== Adapter Registry
+
+The `groovy.concurrent.AwaitableAdapterRegistry` allows extending `await` to support additional
+asynchronous types from third-party frameworks. Built-in adapters handle:
+
+* `groovy.concurrent.Awaitable` (native Groovy promise)
+* `java.util.concurrent.CompletableFuture` and `CompletionStage`
+* `java.util.concurrent.Future`
+* `java.util.concurrent.Flow.Publisher`
+
+=== Registering a Custom Adapter
+
+Implement the `AwaitableAdapter` interface and register it with the registry. The `register()`
+method returns an `AutoCloseable` handle for deregistration:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=adapter_registration,indent=0]
+----
+
+=== Framework Integration
+
+With appropriate adapters registered, `await` works transparently with any async type.
+Adapter implementations for frameworks such as RxJava 3, Project Reactor, and Spring
+should delegate to the framework's native blocking or conversion methods:
+
+* **RxJava 3**: `Single.blockingGet()`, `Observable.blockingIterable()` (for `AsyncStream`)
+* **Reactor**: `Mono.block()`, `Flux.toIterable()` (for `AsyncStream`)
+* **Spring**: Return `Awaitable` from `@Async` service methods; adapt `ListenableFuture` via `toCompletableFuture()`
+
+Adapters can also be discovered automatically via `java.util.ServiceLoader` by registering them
+in `META-INF/services/groovy.concurrent.AwaitableAdapter`.
+
+[[async-annotation]]
+== `@Async` Annotation
+
+As an alternative to the `async` keyword modifier, the `@Async` annotation provides the same
+functionality in a more traditional Java-style declaration:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_annotation,indent=0]
+----
+
+The `async` keyword modifier is the preferred form. The `@Async` annotation is useful when
+interoperating with tools or frameworks that rely on annotation processing. Both forms
+produce identical compiled bytecode.
+
+[[executor-configuration]]
+== Executor Configuration
+
+=== Default Behavior
+
+On **JDK 21+**, async methods run on
+{jdk}/java.base/java/lang/Thread.html#ofVirtual()[virtual threads]
+for optimal scalability.
+On **JDK 17–20**, a cached thread pool is used (up to 256 threads by default, configurable
+via the `groovy.async.parallelism` system property). When all threads are busy, the submitting
+thread executes the task directly (caller-runs policy), providing natural back-pressure instead
+of rejecting the task.
+
+=== Custom Executor
+
+Override the default executor via `Awaitable.setExecutor()`:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=custom_executor,indent=0]
+----
+
+Pass `null` to restore the default executor.
+
+[[patterns]]
+== Common Patterns
+
+=== Parallel Web Requests
+
+Launch multiple I/O tasks concurrently and collect all results:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=parallel_pattern,indent=0]
+----
+
+=== Retry with Exponential Backoff
+
+Automatically retry a transient failure with increasing delays:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=retry_pattern,indent=0]
+----
+
+=== Timeout
+
+Use `Awaitable.timeout()` (or the instance form `orTimeout()`) to apply a
+deadline without dropping back to manual race logic:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=timeout_pattern,indent=0]
+----
+
+[[cancellation]]
+=== Cancellation
+
+An `Awaitable` can be cancelled via the `cancel()` method. Once cancelled, any subsequent
+`await` on the task throws a `java.util.concurrent.CancellationException`:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=cancellation,indent=0]
+----
+
+[NOTE]
+====
+Cancellation sets the `Awaitable` state to cancelled but does _not_ reliably interrupt the
+underlying thread (a limitation of `CompletableFuture`). For cooperative cancellation in
+long-running async bodies, check `Thread.currentThread().isInterrupted()` periodically.
+====
+
+[[best-practices]]
+== Best Practices
+
+[[async-all-the-way]]
+=== Asynchrony Is Viral — `await` All the Way
+
+Once a method becomes `async`, its callers should also be `async`. Partially async call chains
+— where an intermediate layer blocks with `.get()` — waste threads and risk pool starvation:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=sync_over_async,indent=0]
+----
+
+[[prefer-awaitable-of]]
+=== Prefer `Awaitable.of()` for Pre-Computed Data
+
+When the result is already known, use `Awaitable.of(value)` (equivalent to C#'s
+`Task.FromResult` and JavaScript's `Promise.resolve`) to avoid spawning a thread.
+Use `Awaitable.failed(error)` for pre-computed error results:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=awaitable_of,indent=0]
+----
+
+[[prefer-await-over-then]]
+=== Prefer `await` over `.then()` / `.thenCompose()`
+
+Sequential `await` calls read like synchronous code and provide better stack traces
+than chained `.then()` / `.thenCompose()`:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=prefer_await_over_then,indent=0]
+----
+
+[[async-caching]]
+=== Async Lazy Caching
+
+Store `Awaitable` values in a `ConcurrentHashMap` so that only the first request triggers the
+async operation, and subsequent requests await the same cached result:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=async_caching,indent=0]
+----
+
+[[static-factory-pattern]]
+=== Static Factory for Async Construction
+
+When a class requires asynchronous initialization, use a static `async` factory
+method instead of blocking in the constructor:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=static_factory,indent=0]
+----
+
+[[fire-and-forget]]
+=== Fire-and-Forget Safely
+
+Always capture the `Awaitable` returned by async methods. Uncaptured awaitables may
+lose exceptions silently:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=fire_and_forget,indent=0]
+----
+
+[[implementation-details]]
+== Implementation Notes
+
+This section provides architectural context for Groovy language maintainers and advanced users.
+
+[[implementation-strategy]]
+=== Thread-Based vs State Machine
+
+Languages like C#, Kotlin, and Swift transform async workflows into compiler-managed
+state machines or coroutine frames. Each suspension point becomes resumable state,
+allowing the runtime to suspend the logical task without blocking an OS thread.
+JavaScript takes a different route again, relying on an event loop plus promise
+microtasks.
+
+Groovy takes a different approach: each `async` method body runs on its **own thread**
+(a virtual thread on JDK 21+, or a pooled platform thread on JDK 17–20). The `await`
+keyword blocks the running thread until the awaited result is available.
+
+On JDK 21+, virtual threads make this blocking essentially free — the JVM automatically
+parks the virtual thread and releases the underlying carrier thread, achieving the same
+practical efficiency as a state machine. The thread-based approach has several advantages:
+
+* **Simpler debugging** — stack traces show the complete call chain rather than
+  fragmented state machine frames
+* **Full language support** — all control-flow constructs (`try`/`catch`, loops,
+  `switch`, closures) work naturally inside async methods without special compiler handling
+* **Minimal compiler changes** — no need to rewrite control flow into a switch-based
+  state machine, keeping the implementation maintainable
+* **Natural blocking semantics** — existing blocking APIs (I/O, JDBC, etc.) work
+  transparently inside `async` methods without explicit wrapping
+
+On JDK 17–20, the thread pool is bounded (default 256 threads) with a caller-runs policy
+for back-pressure, ensuring stable performance even without virtual threads.
+
+[[architecture]]
+=== Architecture Overview
+
+The async/await feature is implemented across three layers:
+
+**Grammar layer** (`GroovyLexer.g4`, `GroovyParser.g4`): Defines `async`, `await`, `defer` as contextual
+keywords, along with parser rules for `for await`, `yield return`, and `defer` statements.
+
+**AST transformation layer** (`AstBuilder`, `AsyncASTTransformation`, `AsyncTransformHelper`):
+The `AstBuilder` converts parse trees into AST nodes, rewriting `async` method bodies into calls
+to `AsyncSupport` static methods. The `@Async` annotation is processed by `AsyncASTTransformation`,
+which delegates to the same `AsyncTransformHelper` utility class. This shared helper ensures
+consistent code generation for both the keyword and annotation forms.
+
+**Runtime layer** (`AsyncSupport`, `GroovyPromise`, `AsyncStreamGenerator`,
+`AwaitableAdapterRegistry`): `AsyncSupport` is the central runtime class containing static
+methods for `await`, `async`, `defer`, `yield return`, timeout composition, stream cleanup,
+and combinators. `GroovyPromise` wraps
+`CompletableFuture` to implement the `Awaitable` interface, decoupling the public API from the
+JDK implementation. `AsyncStreamGenerator` implements the producer/consumer pattern for async
+generators using a `SynchronousQueue`. `AwaitableAdapterRegistry` provides the SPI extension
+point for third-party async type support.
+
+[[thread-safety]]
+=== Thread Safety
+
+All runtime components employ lock-free or minimal-contention synchronization:
+
+* `AsyncSupport.defaultExecutor` — `volatile` field for safe non-synchronized reads
+* `AwaitableAdapterRegistry.ADAPTERS` — `CopyOnWriteArrayList` for lock-free iteration during adapter lookup
+* `AwaitableAdapterRegistry.blockingExecutor` — `volatile` field
+* `AsyncStreamGenerator.current` — `volatile` field for producer/consumer visibility
+* `AsyncStreamGenerator` close state — `AtomicBoolean` + `AtomicReference<Thread>` for prompt,
+  idempotent close/cancellation signalling
+* `Flow.Publisher` adaptation — `AtomicReference<Subscription>` plus close-aware queue signalling
+* Defer scopes — per-task `ArrayDeque`, no cross-thread sharing
+* `DELAY_SCHEDULER` — single daemon thread for non-blocking timer operations
+
+[[cross-language-comparison]]
+== Cross-Language Comparison
+
+The following table compares Groovy's async/await with the corresponding features in
+JavaScript, C#, Kotlin, and Swift, for developers familiar with those languages.
+
+[cols="2,3,3,3,3,3"]
+|===
+| Feature | Groovy | JavaScript | C# | Kotlin | Swift
+
+| **Async declaration**
+| `async foo() { }` / `async returnType foo() { }`
+| `async function foo() { }`
+| `async Task<T> Foo() { }`
+| `suspend fun foo(): T`
+| `func foo() async throws -> T`
+
+| **Await expression**
+| `await expr` / `await(expr)`
+| `await expr`
+| `await expr`
+| `deferred.await()` / suspend call
+| `try await expr`
+
+| **Return type**
+| `Awaitable<T>`
+| `Promise<T>`
+| `Task<T>` / `ValueTask<T>`
+| `Deferred<T>` / suspended `T`
+| `Task<T, Error>` / `async` function returns `T`
+
+| **Async closure/lambda**
+| `async { \-> body }` / `async () \-> { body }`
+| `async () \=> body`
+| `async () \=> body`
+| `scope.async { body }`
+| `Task { body }`
+
+| **Async iteration**
+| `for await (x in src) { }`
+| `for await (x of src) { }`
+| `await foreach (x in src) { }`
+| _(manual via `Flow`, `Channel`, or `Flow.collect`)_
+| `for try await x in seq`
+
+| **Async generator**
+| `yield return expr`
+| `yield expr` (in `async function*`)
+| `yield return expr` (in `IAsyncEnumerable<T>`)
+| `flow { emit(x) }` / channel producers
+| `AsyncStream { continuation.yield(x) }`
+
+| **Deferred cleanup**
+| `defer { cleanup }`
+| _(none; use `try`/`finally`)_
+| `await using` / `try`/`finally`
+| `try`/`finally` / `use`
+| `defer`
+
+| **Wait all**
+| `Awaitable.all(a, b, c)`
+| `Promise.all([a, b, c])`
+| `Task.WhenAll(a, b, c)`
+| `awaitAll(a, b, c)`
+| `async let` / `withTaskGroup`
+
+| **Wait any**
+| `Awaitable.any(a, b, c)`
+| `Promise.any([a, b, c])`
+| `Task.WhenAny(a, b, c)`
+| `select {}` / manual race
+| `TaskGroup.next()`
+
+| **Wait all settled**
+| `Awaitable.allSettled(a, b, c)`
+| `Promise.allSettled([a, b, c])`
+| _(manual; no built-in equivalent)_
+| _(manual; typically `runCatching`)_
+| _(manual; typically `Result`)_
+
+| **Pre-computed result**
+| `Awaitable.of(value)`
+| `Promise.resolve(value)`
+| `Task.FromResult(value)`
+| `CompletableDeferred(value)` / `async { value }`
+| `Task { value }`
+
+| **Pre-computed error**
+| `Awaitable.failed(error)`
+| `Promise.reject(error)`
+| `Task.FromException(ex)`
+| `CompletableDeferred<T>().completeExceptionally(ex)`
+| `Task { throw error }`
+
+| **Delay**
+| `Awaitable.delay(ms)`
+| `new Promise(r => setTimeout(r, ms))`
+| `Task.Delay(ms)`
+| `delay(ms)`
+| `Task.sleep(for:)`
+
+| **Timeout**
+| `Awaitable.timeout(task, ms)` / `task.orTimeout(ms)`
+| `Promise.race([...])` / `AbortSignal.timeout()`
+| `task.WaitAsync(timeout)` / `CancelAfter`
+| `withTimeout(ms) { ... }`
+| _(manual race with `TaskGroup` / sleep)_
+
+| **Cancellation**
+| `awaitable.cancel()`
+| `AbortController.abort()`
+| `CancellationToken`
+| `Job.cancel()`
+| `Task.cancel()`
+
+| **Executor/scheduler**
+| `Awaitable.setExecutor(exec)`
+| _(event loop; not configurable)_
+| `TaskScheduler`
+| `CoroutineDispatcher`
+| task priority / executor chosen by runtime
+
+| **Third-party support**
+| `AwaitableAdapterRegistry` SPI
+| _(native `thenable` protocol)_
+| Custom awaiters via `GetAwaiter()`
+| coroutine adapters / bridges
+| `AsyncSequence` / `Task` interop patterns
+
+| **Annotation form**
+| `@Async`
+| _(none)_
+| _(none; attribute-driven async not supported)_
+| _(none)_
+| _(none)_
+
+| **Implementation**
+| Thread-per-task (virtual threads on JDK 21+)
+| Event loop + microtask queue
+| State machine (compiled IL transformation)
+| Coroutine state machine
+| Compiler-generated async state machine
+|===
+
+[[summary]]
+== Summary
+
+[cols="2,5"]
+|===
+| Feature | Syntax
+
+| Async method
+| `async returnType methodName(params) { ... }`
+
+| Async closure
+| `def fn = async { params -> body }; await(fn(args))`
+
+| Async lambda
+| `def fn = async (params) -> { body }; await(fn(args))`
+
+| Await expression
+| `await expr` or `await(expr)`
+
+| For await
+| `for await (item in source) { ... }` or `for await (item : source) { ... }`
+
+| Yield return
+| `yield return expr` (inside async methods)
+
+| Defer
+| `defer { cleanup code }`
+
+| Parallel wait
+| `await Awaitable.all(a, b, c)`
+
+| Race
+| `await Awaitable.any(a, b)`
+
+| All settled
+| `await Awaitable.allSettled(a, b, c)`
+
+| Delay
+| `Awaitable.delay(millis)`
+
+| Pre-computed result
+| `Awaitable.of(value)` / `Awaitable.failed(error)`
+
+| Annotation form
+| `@Async def methodName() { ... }`
+|===
