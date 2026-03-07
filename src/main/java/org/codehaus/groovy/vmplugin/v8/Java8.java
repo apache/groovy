@@ -20,7 +20,6 @@ package org.codehaus.groovy.vmplugin.v8;
 
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
-import org.apache.groovy.util.Maps;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -70,9 +69,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.security.Permission;
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Java 8 based functions.
@@ -118,22 +115,6 @@ public class Java8 implements VMPlugin {
             return ClassHelper.make(c);
         } else {
             return ClassHelper.makeWithoutCaching(c, false);
-        }
-    }
-
-    private static void setRetentionPolicy(final RetentionPolicy value, final AnnotationNode node) {
-        switch (value) {
-          case RUNTIME:
-            node.setRuntimeRetention(true);
-            break;
-          case SOURCE:
-            node.setSourceRetention(true);
-            break;
-          case CLASS:
-            node.setClassRetention(true);
-            break;
-          default:
-            throw new GroovyBugError("unsupported Retention " + value);
         }
     }
 
@@ -272,27 +253,19 @@ public class Java8 implements VMPlugin {
     }
 
     private void configureAnnotation(final AnnotationNode node, final Annotation annotation) {
-        Class<?> type = annotation.annotationType();
-        if (type == Retention.class) {
-            Retention r = (Retention) annotation;
-            RetentionPolicy value = r.value();
-            setRetentionPolicy(value, node);
-            node.setMember("value", new PropertyExpression(
-                    new ClassExpression(ClassHelper.makeWithoutCaching(RetentionPolicy.class, false)),
-                    value.toString()));
-        } else if (type == Target.class) {
-            Target t = (Target) annotation;
-            ElementType[] elements = t.value();
-            ListExpression elementExprs = new ListExpression();
-            for (ElementType element : elements) {
-                elementExprs.addExpression(new PropertyExpression(
-                        new ClassExpression(ClassHelper.ELEMENT_TYPE_TYPE), element.name()));
+        if (annotation instanceof Retention r) {
+            final ClassNode retentionPolicy = ClassHelper.makeWithoutCaching(RetentionPolicy.class, false);
+            node.setMember("value", new PropertyExpression(new ClassExpression(retentionPolicy), r.value().toString()));
+        } else if (annotation instanceof Target t) {
+            var elementExprs = new ListExpression();
+            for (ElementType elementTypes : t.value()) {
+                elementExprs.addExpression(new PropertyExpression(new ClassExpression(ClassHelper.ELEMENT_TYPE_TYPE), elementTypes.name()));
             }
             node.setMember("value", elementExprs);
         } else {
             Method[] declaredMethods;
             try {
-                declaredMethods = type.getDeclaredMethods();
+                declaredMethods = annotation.annotationType().getDeclaredMethods();
             } catch (SecurityException se) {
                 declaredMethods = EMPTY_METHOD_ARRAY;
             }
@@ -301,7 +274,6 @@ public class Java8 implements VMPlugin {
                     Object value = declaredMethod.invoke(annotation);
                     Expression valueExpression = toAnnotationValueExpression(value);
                     if (valueExpression != null) node.setMember(declaredMethod.getName(), valueExpression);
-
                 } catch (IllegalAccessException | InvocationTargetException ignore) {
                 }
             }
@@ -342,47 +314,6 @@ public class Java8 implements VMPlugin {
         }
 
         return null;
-    }
-
-    //
-
-    protected final Map<ElementType, Integer> elementTypeToTarget = new EnumMap<>(Maps.of(
-        ElementType.TYPE,            AnnotationNode.TYPE_TARGET,
-        ElementType.FIELD,           AnnotationNode.FIELD_TARGET,
-        ElementType.METHOD,          AnnotationNode.METHOD_TARGET,
-        ElementType.PARAMETER,       AnnotationNode.PARAMETER_TARGET,
-        ElementType.CONSTRUCTOR,     AnnotationNode.CONSTRUCTOR_TARGET,
-        ElementType.LOCAL_VARIABLE,  AnnotationNode.LOCAL_VARIABLE_TARGET,
-        ElementType.ANNOTATION_TYPE, AnnotationNode.ANNOTATION_TARGET,
-        ElementType.PACKAGE,         AnnotationNode.PACKAGE_TARGET,
-        ElementType.TYPE_PARAMETER,  AnnotationNode.TYPE_PARAMETER_TARGET,
-        ElementType.TYPE_USE,        AnnotationNode.TYPE_USE_TARGET
-    ));
-
-    @Override
-    public void configureAnnotationNodeFromDefinition(final AnnotationNode definition, final AnnotationNode node) {
-        switch (definition.getClassNode().getName()) {
-          case "java.lang.annotation.Retention":
-            if (definition.getMember("value") instanceof PropertyExpression value) {
-                var policy = RetentionPolicy.valueOf(value.getPropertyAsString());
-                setRetentionPolicy(policy, node);
-            }
-            break;
-          case "java.lang.annotation.Target":
-            if (definition.getMember("value") instanceof ListExpression list) {
-                int targets = 0;
-                for (Expression e : list.getExpressions()) {
-                    if (e instanceof PropertyExpression item) {
-                        String name = item.getPropertyAsString();
-                        ElementType type = ElementType.valueOf(name);
-                        Integer target = elementTypeToTarget.get(type);
-                        if (target == null) throw new GroovyBugError("unsupported Target " + type);
-                        targets |= target;
-                    }
-                }
-                node.setAllowedTargets(targets);
-            }
-        }
     }
 
     @Override

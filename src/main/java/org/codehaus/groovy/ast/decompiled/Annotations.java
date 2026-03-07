@@ -143,8 +143,7 @@ class Annotations {
         }
 
         @Override
-        public boolean isTargetAllowed(int target) {
-            lazyInit();
+        public boolean isTargetAllowed(final int target) {
             return super.isTargetAllowed(target);
         }
 

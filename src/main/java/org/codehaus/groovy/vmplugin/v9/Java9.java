@@ -56,14 +56,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.lang.annotation.ElementType.MODULE;
-import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
-
 public class Java9 extends Java8 {
-
-    {
-        elementTypeToTarget.put(MODULE, TYPE_TARGET); // TODO Add MODULE_TARGET?
-    }
 
     @Override
     public int getVersion() {

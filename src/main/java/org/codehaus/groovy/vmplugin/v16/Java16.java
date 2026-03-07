@@ -20,13 +20,11 @@ package org.codehaus.groovy.vmplugin.v16;
 
 import groovy.lang.GroovyRuntimeException;
 import org.apache.groovy.lang.annotation.Incubating;
-import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.RecordComponentNode;
 import org.codehaus.groovy.vmplugin.v10.Java10;
 
-import java.lang.annotation.ElementType;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -36,10 +34,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Java16 extends Java10 {
-
-    {
-        elementTypeToTarget.put(ElementType.RECORD_COMPONENT, AnnotationNode.RECORD_COMPONENT_TARGET);
-    }
 
     @Override
     public int getVersion() {
