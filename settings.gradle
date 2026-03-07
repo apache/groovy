@@ -69,6 +69,8 @@ def subprojects = [
         'groovy-macro',
         'groovy-macro-library',
         'groovy-nio',
+        'groovy-reactor',
+        'groovy-rxjava',
         'groovy-servlet',
         'groovy-sql',
         'groovy-swing',
