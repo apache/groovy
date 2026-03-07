@@ -122,6 +122,8 @@ dependencies {
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
+    testImplementation "io.reactivex.rxjava3:rxjava:${versions.rxjava3}"
+    testImplementation "io.projectreactor:reactor-core:${versions.reactor}"
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest
