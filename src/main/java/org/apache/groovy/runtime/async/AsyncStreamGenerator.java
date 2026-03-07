@@ -175,6 +175,21 @@ public class AsyncStreamGenerator<T> implements AsyncStream<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Blocks the calling (consumer) thread on the {@link SynchronousQueue} until
+     * the producer offers the next element, a completion sentinel, or an error.
+     * If the stream has been {@linkplain #close() closed}, returns
+     * {@code Awaitable.of(false)} immediately without blocking.
+     * <p>
+     * The consumer thread is registered via {@code consumerThread} during the
+     * blocking call so that {@link #close()} can interrupt it if needed.
+     *
+     * @return an {@code Awaitable<Boolean>} that resolves to {@code true} if a
+     *         new element is available via {@link #getCurrent()}, or {@code false}
+     *         if the stream is exhausted or closed
+     */
     @Override
     @SuppressWarnings("unchecked")
     public Awaitable<Boolean> moveNext() {
@@ -208,6 +223,15 @@ public class AsyncStreamGenerator<T> implements AsyncStream<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the most recently consumed element. The value is updated each time
+     * {@link #moveNext()} returns {@code true}.
+     *
+     * @return the current element, or {@code null} before the first successful
+     *         {@code moveNext()} call
+     */
     @Override
     public T getCurrent() {
         return current;

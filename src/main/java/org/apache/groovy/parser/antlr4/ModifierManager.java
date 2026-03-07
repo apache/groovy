@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ABSTRACT;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.ASYNC;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.FINAL;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.NATIVE;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.STATIC;
@@ -47,7 +48,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.VOLATILE;
  */
 class ModifierManager {
     private static final Map<Class, List<Integer>> INVALID_MODIFIERS_MAP = Maps.of(
-            ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE),
+            ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE, ASYNC),
             MethodNode.class, Arrays.asList(VOLATILE/*, TRANSIENT*/) // Transient is left open for properties for legacy reasons but should be removed before ClassCompletionVerifier runs (CLASSGEN)
     );
     private AstBuilder astBuilder;

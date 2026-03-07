@@ -1677,6 +1677,41 @@ class AsyncAwaitSyntaxTest {
         '''
     }
 
+    @Test
+    void testAsyncOnClassDeclarationFails() {
+        shouldFail '''
+            async class Svc {}
+        '''
+    }
+
+    @Test
+    void testAsyncOnFieldDeclarationFails() {
+        shouldFail '''
+            class Svc {
+                async int x = 42
+            }
+        '''
+    }
+
+    @Test
+    void testAsyncOnLocalVariableFails() {
+        shouldFail '''
+            def foo() {
+                async int x = 42
+            }
+        '''
+    }
+
+    @Test
+    void testAsyncOnConstructorFails() {
+        shouldFail '''
+            class Svc {
+                @groovy.transform.Async
+                Svc() {}
+            }
+        '''
+    }
+
     // =====================================================================
     // 7. 'yield return' — async generator (C#-style async streams)
     // =====================================================================

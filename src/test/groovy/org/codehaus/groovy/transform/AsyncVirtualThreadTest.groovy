@@ -146,15 +146,17 @@ final class AsyncVirtualThreadTest {
         assertScript '''
             import groovy.concurrent.Awaitable
             import java.util.concurrent.Executors
+            import java.util.concurrent.ExecutorService
             import java.util.concurrent.atomic.AtomicReference
 
             def savedExecutor = Awaitable.getExecutor()
+            ExecutorService customPool = Executors.newFixedThreadPool(2, { r ->
+                def t = new Thread(r)
+                t.setName("custom-async-" + t.getId())
+                t.setDaemon(true)
+                t
+            })
             try {
-                def customPool = Executors.newFixedThreadPool(2, { r ->
-                    def t = new Thread(r)
-                    t.setName("custom-async-" + t.getId())
-                    t
-                })
                 Awaitable.setExecutor(customPool)
 
                 def asyncName = async {
@@ -165,6 +167,7 @@ final class AsyncVirtualThreadTest {
                 assert threadName.startsWith("custom-async-")
             } finally {
                 Awaitable.setExecutor(savedExecutor)
+                customPool.shutdownNow()
             }
         '''
     }
@@ -174,20 +177,26 @@ final class AsyncVirtualThreadTest {
         assertScript '''
             import groovy.concurrent.Awaitable
             import java.util.concurrent.Executors
+            import java.util.concurrent.ExecutorService
 
             def originalExecutor = Awaitable.getExecutor()
             // Set a custom executor
-            Awaitable.setExecutor(Executors.newSingleThreadExecutor())
-            assert Awaitable.getExecutor() != originalExecutor
-            // Reset to null — should restore default
-            Awaitable.setExecutor(null)
-            def restored = Awaitable.getExecutor()
-            assert restored != null
-            // Verify it works
-            def task = async { 42 }; def awaitable = task()
-            assert await(awaitable) == 42
-            // Restore original
-            Awaitable.setExecutor(originalExecutor)
+            ExecutorService tempPool = Executors.newSingleThreadExecutor()
+            try {
+                Awaitable.setExecutor(tempPool)
+                assert Awaitable.getExecutor() != originalExecutor
+                // Reset to null — should restore default
+                Awaitable.setExecutor(null)
+                def restored = Awaitable.getExecutor()
+                assert restored != null
+                // Verify it works
+                def task = async { 42 }; def awaitable = task()
+                assert await(awaitable) == 42
+                // Restore original
+                Awaitable.setExecutor(originalExecutor)
+            } finally {
+                tempPool.shutdownNow()
+            }
         '''
     }
 
@@ -196,12 +205,14 @@ final class AsyncVirtualThreadTest {
         assertScript '''
             import groovy.transform.Async
             import java.util.concurrent.Executor
+            import java.util.concurrent.ExecutorService
             import java.util.concurrent.Executors
 
             class CustomExecutorService {
-                static Executor myPool = Executors.newFixedThreadPool(1, { r ->
+                static ExecutorService myPool = Executors.newFixedThreadPool(1, { r ->
                     def t = new Thread(r)
                     t.setName("my-pool-thread")
+                    t.setDaemon(true)
                     t
                 })
 
@@ -211,9 +222,13 @@ final class AsyncVirtualThreadTest {
                 }
             }
 
-            def svc = new CustomExecutorService()
-            def result = svc.doWork().get()
-            assert result.startsWith("my-pool-thread")
+            try {
+                def svc = new CustomExecutorService()
+                def result = svc.doWork().get()
+                assert result.startsWith("my-pool-thread")
+            } finally {
+                CustomExecutorService.myPool.shutdownNow()
+            }
         '''
     }
 

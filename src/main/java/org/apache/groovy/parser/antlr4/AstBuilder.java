@@ -1285,6 +1285,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException("only sealed type declarations should have `permits` clause", ctx);
         }
 
+        if (modifierManager.containsAny(ASYNC)) {
+            throw createParsingFailedException("modifier `async` is not allowed for type declarations", modifierManager.get(ASYNC).get());
+        }
+
         int modifiers = modifierManager.getClassModifiersOpValue();
 
         boolean syntheticPublic = ((modifiers & Opcodes.ACC_SYNTHETIC) != 0);
@@ -2012,6 +2016,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
                         this,
                         asBoolean(ctx.modifiers()) ? this.visitModifiers(ctx.modifiers()) : Collections.emptyList()
                 );
+
+        if (modifierManager.containsAny(ASYNC)) {
+            throw createParsingFailedException("modifier `async` is not allowed for variable declarations", modifierManager.get(ASYNC).get());
+        }
 
         if (asBoolean(ctx.typeNamePairs())) { // e.g. def (int a, int b) = [1, 2]
             return this.createMultiAssignmentDeclarationListStatement(ctx, modifierManager);

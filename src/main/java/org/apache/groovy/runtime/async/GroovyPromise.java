@@ -47,6 +47,12 @@ public class GroovyPromise<T> implements Awaitable<T> {
 
     private final CompletableFuture<T> future;
 
+    /**
+     * Creates a new {@code GroovyPromise} wrapping the given {@link CompletableFuture}.
+     *
+     * @param future the backing future; must not be {@code null}
+     * @throws NullPointerException if {@code future} is {@code null}
+     */
     public GroovyPromise(CompletableFuture<T> future) {
         this.future = Objects.requireNonNull(future, "future must not be null");
     }
@@ -58,6 +64,13 @@ public class GroovyPromise<T> implements Awaitable<T> {
         return new GroovyPromise<>(future);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Waits if necessary for the computation to complete, then retrieves its result.
+     * If the future was cancelled, the original {@link CancellationException} is
+     * unwrapped from the JDK 23+ wrapper for cross-version consistency.
+     */
     @Override
     public T get() throws InterruptedException, ExecutionException {
         try {
@@ -67,6 +80,12 @@ public class GroovyPromise<T> implements Awaitable<T> {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Waits at most the given time for the computation to complete.
+     * Unwraps JDK 23+ {@link CancellationException} wrappers for consistency.
+     */
     @Override
     public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         try {
@@ -76,6 +95,7 @@ public class GroovyPromise<T> implements Awaitable<T> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isDone() {
         return future.isDone();
@@ -98,26 +118,47 @@ public class GroovyPromise<T> implements Awaitable<T> {
         return future.cancel(true);
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isCancelled() {
         return future.isCancelled();
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isCompletedExceptionally() {
         return future.isCompletedExceptionally();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns a new {@code GroovyPromise} whose result is obtained by applying
+     * the given function to this promise's result.
+     */
     @Override
     public <U> Awaitable<U> then(Function<? super T, ? extends U> fn) {
         return new GroovyPromise<>(future.thenApply(fn));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns a new {@code GroovyPromise} that is the result of composing this
+     * promise with the async function, enabling flat-mapping of awaitables.
+     */
     @Override
     public <U> Awaitable<U> thenCompose(Function<? super T, ? extends Awaitable<U>> fn) {
         return new GroovyPromise<>(future.thenCompose(t -> fn.apply(t).toCompletableFuture()));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns a new {@code GroovyPromise} that handles exceptions thrown by this promise.
+     * The throwable passed to the handler is deeply unwrapped to strip JDK
+     * wrapper layers ({@code CompletionException}, {@code ExecutionException}).
+     */
     @Override
     public Awaitable<T> exceptionally(Function<Throwable, ? extends T> fn) {
         return new GroovyPromise<>(future.exceptionally(t -> {
@@ -127,6 +168,11 @@ public class GroovyPromise<T> implements Awaitable<T> {
         }));
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the underlying {@link CompletableFuture} for interop with JDK APIs.
+     */
     @Override
     public CompletableFuture<T> toCompletableFuture() {
         return future;
@@ -143,6 +189,11 @@ public class GroovyPromise<T> implements Awaitable<T> {
         return cause instanceof CancellationException ce ? ce : exception;
     }
 
+    /**
+     * Returns a human-readable representation showing the promise state:
+     * {@code GroovyPromise{pending}}, {@code GroovyPromise{completed}}, or
+     * {@code GroovyPromise{failed}}.
+     */
     @Override
     public String toString() {
         if (future.isDone()) {
