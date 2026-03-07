@@ -848,17 +848,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return;
             }
 
+            ClassNode lType;
             leftExpression.visit(this);
-            ClassNode lType = getType(leftExpression);
-            var setterInfo  = removeSetterInfo(leftExpression);
+            var setterInfo = removeSetterInfo(leftExpression);
             if (setterInfo != null) {
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
+                lType = getType(leftExpression); // GROOVY-11870
             } else {
                 if (op == EQUAL) {
                     lType = getOriginalDeclarationType(leftExpression);
                     applyTargetType(lType, rightExpression);
+                } else {
+                    lType = getType(leftExpression);
                 }
                 rightExpression.visit(this);
             }

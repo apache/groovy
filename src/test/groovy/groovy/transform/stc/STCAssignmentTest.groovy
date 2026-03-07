@@ -611,6 +611,29 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11870
+    void testForLoopWithAssignment3() {
+        assertScript '''
+            class Pogo {
+                private List<Long> x
+                List<Long> getList() { x }
+                void setList(List<Long> list) { x = list }
+            }
+
+            void proc(List<Pogo> pogos) {
+                for (pogo in pogos) {
+                    pogo.list = [] // Cannot assign ArrayList<Object> to: List<Long>
+                    def item = 42L
+                    pogo.list.add(item)
+                }
+            }
+
+            def pogo = new Pogo()
+            proc([ pogo ])
+            assert pogo.list[0] == 42L
+        '''
+    }
+
     void testWhileLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
