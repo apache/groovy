@@ -1,0 +1,334 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Project Reactor Integration
+
+The `groovy-reactor` module provides seamless integration between
+https://projectreactor.io/[Project Reactor] and Groovy's native
+`async`/`await` system. Adding this module to the classpath enables
+`await` on `Mono` and `for await` on `Flux` — no manual adapter
+registration or boilerplate is required.
+
+[[reactor-getting-started]]
+== Getting Started
+
+Add `groovy-reactor` as a dependency alongside Groovy:
+
+.Gradle
+[source,groovy,subs="attributes"]
+----
+dependencies {
+    implementation "org.apache.groovy:groovy-reactor:{groovy-full-version}"
+}
+----
+
+.Maven
+[source,xml,subs="attributes"]
+----
+<dependency>
+    <groupId>org.apache.groovy</groupId>
+    <artifactId>groovy-reactor</artifactId>
+    <version>{groovy-full-version}</version>
+</dependency>
+----
+
+Once on the classpath, the `ReactorAwaitableAdapter` is auto-discovered
+via `java.util.ServiceLoader` at class-initialization time. No `@Import`,
+no `register()` call, no configuration file — it just works:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=serviceloader_discovery,indent=0]
+----
+
+[[reactor-type-mapping]]
+== Type Mapping
+
+The adapter maps Reactor types to Groovy's async abstractions as follows:
+
+[cols="1,1,3"]
+|===
+| Reactor Type | Groovy Abstraction | Description
+
+| `Mono<T>`
+| `Awaitable<T>`
+| Single-value asynchronous result. An empty `Mono` resolves to `null`.
+
+| `Flux<T>`
+| `AsyncStream<T>`
+| Multi-value asynchronous sequence for use with `for await` loops.
+|===
+
+=== Choosing the Boundary
+
+Use Reactor where Reactor already expresses the boundary of your application well, and
+use Groovy's async syntax where sequential orchestration is easier to read and maintain.
+
+[cols="1,3"]
+|===
+| If your code is... | Prefer...
+
+| exposing a Reactor-first API to Spring WebFlux, repositories, or other Reactor code
+| keep `Mono` / `Flux` in the public signature and compose with Reactor operators
+
+| orchestrating several async calls in service or application logic
+| `await mono` or `for await (item in flux)` inside Groovy async methods so the control flow stays linear
+
+| moving gradually from Reactor APIs into Groovy-native abstractions
+| `Awaitable.from(mono)` or `AsyncStream.from(flux)` at the point where you want a Groovy-facing contract
+|===
+
+[[reactor-await-mono]]
+== Awaiting a `Mono`
+
+A `Mono` represents a single asynchronous value — the Reactor equivalent
+of a `CompletableFuture`. With `groovy-reactor` on the classpath, `await`
+works directly:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=await_mono_basic,indent=0]
+----
+
+=== Operators
+
+Reactor's rich operator library is fully supported. Apply `map`, `filter`,
+`flatMap`, or any other operator _before_ passing the `Mono` to `await`:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=await_mono_map,indent=0]
+----
+
+Operators can also be chained to build complex pipelines:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=await_mono_chain,indent=0]
+----
+
+=== Empty Mono
+
+An empty `Mono` (e.g., `Mono.empty()`) resolves to `null` — consistent
+with Groovy's null-safe design philosophy:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=await_mono_empty,indent=0]
+----
+
+=== Error Handling
+
+If a `Mono` signals an error, the exception is propagated through `await`
+and can be caught with a standard `try`/`catch` block:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=await_mono_error,indent=0]
+----
+
+=== Deferred Execution
+
+`Mono.defer` creates a cold source that is subscribed only when awaited.
+This is useful for retry logic or conditional execution:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=await_mono_deferred,indent=0]
+----
+
+[[reactor-awaitable-api]]
+== Working with the `Awaitable` API
+
+Once a `Mono` is converted to an `Awaitable`, all of Groovy's `Awaitable`
+combinators and inspection methods become available.
+
+=== Explicit Conversion
+
+Use `Awaitable.from(mono)` to obtain an `Awaitable` without immediately
+blocking:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=mono_to_awaitable_api,indent=0]
+----
+
+=== `then` — Chaining Transformations
+
+The `then` combinator applies a function to the resolved value and returns
+a new `Awaitable`:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=mono_awaitable_then,indent=0]
+----
+
+=== `exceptionally` — Error Recovery
+
+The `exceptionally` combinator provides a fallback value when the upstream
+`Mono` fails:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=mono_awaitable_exceptionally,indent=0]
+----
+
+=== Parallel Combinators
+
+`Awaitable.all` waits for multiple `Mono` values to complete and collects
+their results:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=reactor_awaitable_all,indent=0]
+----
+
+`Awaitable.allSettled` waits for all to settle (succeed or fail) and
+returns `AwaitResult` objects for inspection:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=reactor_awaitable_allsettled,indent=0]
+----
+
+[[reactor-for-await-flux]]
+== Iterating a `Flux` with `for await`
+
+A `Flux` represents a multi-value asynchronous sequence. With
+`groovy-reactor`, it works naturally with Groovy's `for await` loop:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=for_await_flux_basic,indent=0]
+----
+
+=== Operators
+
+Apply Reactor operators to shape the `Flux` before iterating:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=for_await_flux_operators,indent=0]
+----
+
+=== Empty Flux
+
+An empty `Flux` results in zero iterations — the loop body is never
+entered:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=for_await_flux_empty,indent=0]
+----
+
+=== Programmatic Generation
+
+`Flux.generate` creates a stateful source that emits values on demand.
+Combined with `for await`, this enables pull-based streaming:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=for_await_flux_generate,indent=0]
+----
+
+=== Async Processing Inside the Loop
+
+The body of a `for await` loop is an async context, so `await` can be
+used inside the loop for per-element async processing:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=for_await_flux_async_processing,indent=0]
+----
+
+=== Resource Cleanup with `defer`
+
+`defer` blocks run when the enclosing async method completes, regardless
+of whether the `for await` loop finishes normally or is interrupted:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=for_await_flux_defer_cleanup,indent=0]
+----
+
+[[reactor-async-methods]]
+== Async Methods with Reactor
+
+Reactor types can be used inside async methods or returned from them.
+This is useful when writing service layers that combine Reactor-based
+clients with Groovy async logic:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=async_method_reactor,indent=0]
+----
+
+[[reactor-spring-webflux]]
+== Spring WebFlux Integration
+
+`groovy-reactor` enables natural interaction with Spring WebFlux
+controllers and reactive repositories. Since WebFlux returns `Mono` and
+`Flux`, adding `groovy-reactor` to a Spring Boot project lets you
+keep WebFlux-facing signatures in Reactor types while still using Groovy async
+syntax inside the implementation where it improves readability:
+
+=== Awaiting a `Mono` Response
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=spring_webflux_mono,indent=0]
+----
+
+=== Iterating a `Flux` Response
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=spring_webflux_flux,indent=0]
+----
+
+[[reactor-cf-interop]]
+== CompletableFuture Interop
+
+Reactor's `Mono` can be combined with standard `CompletableFuture` values
+in the same `await` expression or combinator call, enabling gradual
+migration between the two styles:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/reactor/ReactorDocSpecTest.groovy[tags=reactor_cf_interop,indent=0]
+----
+
+[[reactor-internals]]
+== Operational Notes
+
+For day-to-day application code, the important guarantees are:
+
+* adding `groovy-reactor` to the classpath is enough for discovery — no manual adapter registration is required;
+* `await mono` preserves Reactor's single-result semantics: values resolve normally, empty monos resolve to `null`, and errors propagate as exceptions;
+* `for await (item in flux)` lets the consumer drive the pace of iteration, which keeps streaming code easy to read and naturally bounded;
+* leaving a `for await` loop early closes the adapted stream, so upstream work is not left running accidentally.
+
+[TIP]
+====
+Stay in Reactor operators when you are still shaping a reactive pipeline. Switch to
+`await` or `for await` at the point where imperative orchestration becomes clearer than
+continued operator chaining.
+====

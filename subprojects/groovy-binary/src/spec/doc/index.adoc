@@ -114,6 +114,10 @@ include::../../../../../subprojects/groovy-yaml/src/spec/doc/yaml-userguide.adoc
 
 include::../../../../../subprojects/groovy-toml/src/spec/doc/toml-userguide.adoc[leveloffset=+2]
 
+include::../../../../../subprojects/groovy-reactor/src/spec/doc/reactor-userguide.adoc[leveloffset=+2]
+
+include::../../../../../subprojects/groovy-rxjava/src/spec/doc/rxjava-userguide.adoc[leveloffset=+2]
+
 include::../../../../../subprojects/groovy-typecheckers/src/spec/doc/typecheckers.adoc[leveloffset=+2]
 
 include::../../../../../subprojects/groovy-contracts/src/spec/doc/contracts-userguide.adoc[leveloffset=+2]
