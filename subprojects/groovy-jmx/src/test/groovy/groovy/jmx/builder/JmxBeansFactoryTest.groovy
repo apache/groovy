@@ -18,16 +18,23 @@
  */
 package groovy.jmx.builder
 
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class JmxBeansFactoryTest {
-    def builder
+final class JmxBeansFactoryTest {
+
+    private JmxBuilder builder
 
     @BeforeEach
     void setUp() {
         builder = new JmxBuilder()
-        builder.registerFactory("beans", new JmxBeansFactory())
+        builder.registerFactory('beans', new JmxBeansFactory())
+        try {
+            builder.getMBeanServer()
+        } catch (e) {
+            Assumptions.abort(e.getMessage())
+        }
     }
 
     @Test
@@ -45,35 +52,38 @@ class JmxBeansFactoryTest {
 
         def attribs = map.attributes
         assert attribs.Something
-        assert attribs.Something.type == "java.lang.String"
+        assert attribs.Something.type == 'java.lang.String'
 
         assert attribs.SomethingElse
-        assert attribs.SomethingElse.type == "int"
+        assert attribs.SomethingElse.type == 'int'
 
         assert attribs.Available
-        assert attribs.Available.type == "boolean"
+        assert attribs.Available.type == 'boolean'
 
-        // test MockEmbeddedObject map
+        // test BaseEmbeddedClass map
         map = maps[1]
         assert map.attributes
         assert map.attributes.Id
-        assert map.attributes.Id.type == "int"
+        assert map.attributes.Id.type == 'int'
 
         assert map.attributes.Name
-        assert map.attributes.Name.type == "java.lang.String"
+        assert map.attributes.Name.type == 'java.lang.String'
 
         assert map.attributes.Location
-        assert map.attributes.Location.type == "java.lang.Object"
+        assert map.attributes.Location.type == 'java.lang.Object'
 
         assert map.attributes.Available
-        assert map.attributes.Available.type == "boolean"
+        assert map.attributes.Available.type == 'boolean'
     }
 
     @Test
     void testMBeanClass() {
         def object = new MockSimpleObject()
         def maps = builder.beans([object])
+
         assert maps
+        assert maps.size() == 1
+
         def map = maps[0]
         assert map.isMBean
         assert map.target
@@ -83,4 +93,3 @@ class JmxBeansFactoryTest {
         assert !map.operations
     }
 }
-
