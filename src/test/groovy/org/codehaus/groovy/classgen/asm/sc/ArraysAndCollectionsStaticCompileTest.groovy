@@ -20,6 +20,8 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ArraysAndCollectionsSTCTest
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 /**
  * Unit tests for static compilation : arrays and collections.
@@ -98,8 +100,7 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
         assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
     }
 
-    @Override
-    @Test
+    @Override @Test
     void testMultiDimensionalArray4() {
         super.testMultiDimensionalArray4()
         String script = astTrees.values()[0][1]
@@ -109,50 +110,48 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     }
 
     // GROOVY-11309
-    @Test
-    void testListLiteralToSetAssignmentSC() {
-        for (t in ['LinkedHashSet','HashSet','Set']) {
-            astTrees.clear()
-            assertScript """
-                $t <String> set = []
-                assert set.isEmpty()
-                assert set.size() == 0
-                assert set instanceof LinkedHashSet
-            """
-            String script = astTrees.values()[0][1]
-            assert script.contains('LinkedHashSet.<init> ()V')
-            assert !script.contains('ScriptBytecodeAdapter.createList')
-        }
+    @ParameterizedTest
+    @ValueSource(strings=['LinkedHashSet','HashSet','Set'])
+    void testListLiteralToSetAssignmentSC(String t) {
+        assertScript """
+            $t <String> set = []
+            assert set.isEmpty()
+            assert set.size() == 0
+            assert set instanceof LinkedHashSet
+        """
+        String script = astTrees.values()[0][1]
+        assert script.contains('LinkedHashSet.<init> ()V')
+        assert !script.contains('ScriptBytecodeAdapter.createList')
     }
 
     // GROOVY-11309
-    @Test
-    void testListLiteralToListAssignmentSC() {
-        for (t in ['ArrayList','List','Collection','Iterable']) {
-            astTrees.clear()
-            assertScript """
-                $t <String> list = []
-                assert list.isEmpty()
-                assert list.size() == 0
-                assert list instanceof ArrayList
-            """
-            String script = astTrees.values()[0][1]
-            assert script.contains('ArrayList.<init> ()V')
-            assert !script.contains('ScriptBytecodeAdapter.createList')
-        }
+    @ParameterizedTest
+    @ValueSource(strings=['ArrayList','List','Collection','Iterable'])
+    void testListLiteralToListAssignmentSC(String t) {
+        assertScript """
+            $t <String> list = []
+            assert list.isEmpty()
+            assert list.size() == 0
+            assert list instanceof ArrayList
+        """
+        String script = astTrees.values()[0][1]
+        assert script.contains('ArrayList.<init> ()V')
+        assert !script.contains('ScriptBytecodeAdapter.createList')
+    }
 
-        for (t in ['Object','Cloneable','Serializable','RandomAccess']) {
-            astTrees.clear()
-            assertScript """
-                $t list = []
-                assert list.isEmpty()
-                assert list.size() == 0
-                assert list instanceof ArrayList
-            """
-            String script = astTrees.values()[0][1]
-            assert script.contains('ArrayList.<init> ()V')
-            assert !script.contains('ScriptBytecodeAdapter.createList')
-        }
+    // GROOVY-11309
+    @ParameterizedTest
+    @ValueSource(strings=['Object','Cloneable','Serializable','RandomAccess'])
+    void testListLiteralToOtherAssignmentSC(String t) {
+        assertScript """
+            $t list = []
+            assert list.isEmpty()
+            assert list.size() == 0
+            assert list instanceof ArrayList
+        """
+        String script = astTrees.values()[0][1]
+        assert script.contains('ArrayList.<init> ()V')
+        assert !script.contains('ScriptBytecodeAdapter.createList')
     }
 
     // GROOVY-10029
