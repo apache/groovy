@@ -18,12 +18,19 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import java.beans.PropertyChangeEvent
 import java.beans.PropertyChangeListener
 
-class ObservableSetTests extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertNull
+import static org.junit.jupiter.api.Assertions.assertTrue
+
+class ObservableSetTests {
+    @Test
     void testFireEvent_add_withoutTest() {
         def set = new ObservableSet()
         def contentListener = new SampleSetPropertyChangeListener()
@@ -51,6 +58,7 @@ class ObservableSetTests extends GroovyTestCase {
         assertEquals(value2, contentListener.event.newValue)
     }
 
+    @Test
     void testFireEvent_remove() {
         def set = new ObservableSet()
         def contentListener = new SampleSetPropertyChangeListener()
@@ -102,6 +110,7 @@ class ObservableSetTests extends GroovyTestCase {
         assertEquals(0i, sizeListener.event.newValue)
     }
 
+    @Test
     void testFireEvent_clear() {
         def set = new ObservableSet()
         def contentListener = new SampleSetPropertyChangeListener()
@@ -135,6 +144,7 @@ class ObservableSetTests extends GroovyTestCase {
         assertEquals(0i, sizeListener.event.newValue)
     }
 
+    @Test
     void testFireEvent_addAll() {
         def set = new ObservableSet()
         def contentListener = new SampleSetPropertyChangeListener()
@@ -167,6 +177,7 @@ class ObservableSetTests extends GroovyTestCase {
         assert 2i == sizeListener.event.newValue
     }
 
+    @Test
     void testFireEvent_removeAll() {
         def set = new ObservableSet()
         def contentListener = new SampleSetPropertyChangeListener()
@@ -199,6 +210,7 @@ class ObservableSetTests extends GroovyTestCase {
         assertEquals(1i, sizeListener.event.newValue)
     }
 
+    @Test
     void testFireEvent_retainAll() {
         def set = new ObservableSet()
         def contentListener = new SampleSetPropertyChangeListener()
@@ -234,6 +246,7 @@ class ObservableSetTests extends GroovyTestCase {
         assertEquals(1i, sizeListener.event.newValue)
     }
 
+    @Test
     void testFireEvent_withTest() {
         def set = new ObservableSet({ !(it instanceof String) })
         def contentListener = new SampleSetPropertyChangeListener()
@@ -252,12 +265,14 @@ class ObservableSetTests extends GroovyTestCase {
         assertNull(contentListener.event)
     }
 
+    @Test
     void testSort_Groovy4937() {
         def set = [3, 2, 1] as ObservableSet
         set = set.sort()
         assert set == [1, 2, 3]
     }
 
+    @Test
     void testRetainAllBugGroovy4699() {
         def set = new ObservableSet(['test', 'test2'] as Set)
         def contentListener = new SampleSetPropertyChangeListener()

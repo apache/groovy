@@ -18,11 +18,12 @@
  */
 package metaprogramming
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 // tag::groovy_interceptable_test[]
-class InterceptableTest extends GroovyTestCase {
+final class InterceptableTest {
 
+    @Test
     void testCheckInterception() {
         def interception = new Interception()
 

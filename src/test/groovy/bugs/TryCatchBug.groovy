@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class TryCatchBug extends GroovyTestCase {
 
+class TryCatchBug {
+
+    @Test
     void testBug() {
         try {
             println("Hello")

@@ -57,7 +57,18 @@ public class EncodingGroovyMethods {
      * @since 1.5.1
      */
     public static Writable encodeBase64(Byte[] data, final boolean chunked) {
-        return encodeBase64(DefaultTypeTransformation.convertToByteArray(data), chunked);
+        return encodeBase64(toPrimitiveByteArray(data), chunked);
+    }
+
+    private static byte[] toPrimitiveByteArray(Byte[] data) {
+        if (data == null) return null;
+
+        byte[] result = new byte[data.length];
+        for (int i = 0; i < data.length; i++) {
+            Byte b = data[i];
+            result[i] = b == null ? 0 : b;
+        }
+        return result;
     }
 
     /**
@@ -70,7 +81,7 @@ public class EncodingGroovyMethods {
      * @since 1.0
      */
     public static Writable encodeBase64(Byte[] data) {
-        return encodeBase64(DefaultTypeTransformation.convertToByteArray(data), false);
+        return encodeBase64(toPrimitiveByteArray(data), false);
     }
 
     /**
@@ -192,7 +203,7 @@ public class EncodingGroovyMethods {
      * @since 2.5.0
      */
     public static Writable encodeBase64Url(Byte[] data, boolean pad) {
-        return encodeBase64Url(DefaultTypeTransformation.convertToByteArray(data), pad);
+        return encodeBase64Url(toPrimitiveByteArray(data), pad);
     }
 
     /**
@@ -299,7 +310,7 @@ public class EncodingGroovyMethods {
      * @see Integer#toHexString(int)
      */
     public static Writable encodeHex(final Byte[] data) {
-        return encodeHex(DefaultTypeTransformation.convertToByteArray(data));
+        return encodeHex(toPrimitiveByteArray(data));
     }
 
     /**

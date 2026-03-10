@@ -19,82 +19,70 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation: DGM method calls.
  */
-class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class StaticCompileCastOptimizationTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldOptimizeAsTypeToSimpleCast() {
-        try {
-            assertScript '''
-                int x = 2
-                long y = x as long // asType, where it could be a cast
-            '''
-        } finally {
-            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
-            assert bytecode.contains('I2L')
-        }
+        assertScript '''
+            int x = 2
+            long y = x as long // asType, where it could be a cast
+        '''
+        String bytecode = astTrees.values()[0][1]
+        assert bytecode.contains('I2L')
     }
 
+    @Test
     void testShouldOptimizeCharToLongAsTypeToSimpleCast() {
-        try {
-            assertScript '''
-                char x = 2
-                long y = x as long // asType, where it could be a cast
-            '''
-        } finally {
-            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
-            assert bytecode.contains('I2L')
-        }
+        assertScript '''
+            char x = 2
+            long y = x as long // asType, where it could be a cast
+        '''
+        String bytecode = astTrees.values()[0][1]
+        assert bytecode.contains('I2L')
     }
 
+    @Test
     void testShouldOptimizeLongToCharAsTypeToSimpleCast() {
-        try {
-            assertScript '''
-                long x = 2L
-                char y = x as char // asType, where it could be a cast
-            '''
-        } finally {
-            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
-            assert bytecode.contains('L2I') && bytecode.contains('I2C')
-        }
+        assertScript '''
+            long x = 2L
+            char y = x as char // asType, where it could be a cast
+        '''
+        String bytecode = astTrees.values()[0][1]
+        assert bytecode.contains('L2I') && bytecode.contains('I2C')
     }
 
+    @Test
     void testShouldOptimizeListLiteralToArrayCast() {
-        try {
-            assertScript '''
-                def x = ['a','b','c'] as String[]
-            '''
-        } finally {
-            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
-            assert bytecode.contains('ANEWARRAY java/lang/String')
-        }
+        assertScript '''
+            def x = ['a','b','c'] as String[]
+        '''
+        String bytecode = astTrees.values()[0][1]
+        assert bytecode.contains('ANEWARRAY java/lang/String')
     }
 
+    @Test
     void testShouldOptimizeListLiteralToArrayCastWithIncompatibleElementType() {
-        try {
-            assertScript '''
-                def x = ['a','b',new Date()] as String[]
-            '''
-        } finally {
-            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
-            assert bytecode.contains('ANEWARRAY java/lang/String')
-        }
+        assertScript '''
+            def x = ['a','b',new Date()] as String[]
+        '''
+        String bytecode = astTrees.values()[0][1]
+        assert bytecode.contains('ANEWARRAY java/lang/String')
     }
 
+    @Test
     void testShouldOptimizeListLiteralToArrayCastThroughParameter() {
-        try {
-            assertScript '''
-                int foo(String[] args) {
-                    args.length
-                }
-                assert foo(['a','b',new Date()] as String[]) == 3
-            '''
-        } finally {
-            def bytecode = astTrees.entrySet().find { it.key =~ /ShouldOptimize/ }.value[1]
-            assert bytecode.contains('ANEWARRAY java/lang/String')
-        }
+        assertScript '''
+            int foo(String[] args) {
+                args.length
+            }
+            assert foo(['a','b',new Date()] as String[]) == 3
+        '''
+        String bytecode = astTrees.values()[0][1]
+        assert bytecode.contains('ANEWARRAY java/lang/String')
     }
 }
-

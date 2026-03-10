@@ -18,7 +18,11 @@
  */
 package org.codehaus.groovy.classgen.asm
 
-class PrintlnLoadsAConstantTest extends AbstractBytecodeTestCase {
+import org.junit.jupiter.api.Test
+
+final class PrintlnLoadsAConstantTest extends AbstractBytecodeTestCase {
+
+    @Test
     void testPrintln() {
         assert compile(''' println "true" ''').hasSequence(['LDC "true"'])
     }

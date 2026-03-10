@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.LoopsSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : loops.
@@ -26,6 +27,7 @@ import groovy.transform.stc.LoopsSTCTest
 final class LoopsStaticCompileTest extends LoopsSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-10477
+    @Test
     void testForInLoopOnArray() {
         super.testForInLoopOnArray()
         def bytecode = astTrees.values()[0][1]

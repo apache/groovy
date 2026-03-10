@@ -18,13 +18,17 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class DoubleOperationsTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
+
+
+class DoubleOperationsTest {
 
     def x
     def y
 
+    @Test
     void testPlus() {
         x = 2.1d + 2.1d
         assert x == 4.2d
@@ -42,6 +46,7 @@ class DoubleOperationsTest extends GroovyTestCase {
         assert z == 16.4d
     }
 
+    @Test
     void testMinus() {
         x = 6d - 2.2d
         assert x == 3.8d
@@ -53,6 +58,7 @@ class DoubleOperationsTest extends GroovyTestCase {
         assert y == 2.8d
     }
 
+    @Test
     void testMultiply() {
         x = 3d * 2.0d
         assert x == 6.0d
@@ -66,6 +72,7 @@ class DoubleOperationsTest extends GroovyTestCase {
         assert y == 12.0d
     }
 
+    @Test
     void testDivide() {
         x = 80.0d / 4d
         assert x == 20.0d, "x = " + x
@@ -77,6 +84,7 @@ class DoubleOperationsTest extends GroovyTestCase {
         assert y == 10.0d, "y = " + y
     }
 
+    @Test
     void testMod() {
         x = 100d.mod(3)
         assert x == 1d
@@ -89,6 +97,7 @@ class DoubleOperationsTest extends GroovyTestCase {
         assert y == 1d
     }
 
+    @Test
     void testRemainder() {
         x = 100d % 3
         assert x == 1d
@@ -101,6 +110,7 @@ class DoubleOperationsTest extends GroovyTestCase {
         assert y == -2d
     }
 
+    @Test
     void testMethodNotFound() {
         try {
             println(Math.sin("foo", 7));
@@ -109,6 +119,7 @@ class DoubleOperationsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCoerce() {
         def xyz = Math.sin(1.1);
         assert xyz instanceof Double;

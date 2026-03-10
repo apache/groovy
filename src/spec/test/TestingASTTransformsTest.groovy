@@ -16,13 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import groovy.test.GroovyTestCase
 
-class TestingASTTransformsTest extends GroovyTestCase {
+import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
+
+final class TestingASTTransformsTest {
+
+    @Test
     void testNotYetImplemented() {
         assertScript '''// tag::notyetimplemented[]
-import groovy.test.GroovyTestCase
 import groovy.test.NotYetImplemented
 
 class Maths {
@@ -31,7 +35,7 @@ class Maths {
     }
 }
 
-class MathsTest extends GroovyTestCase {
+class MathsTest {
     @NotYetImplemented
     void testFib() {
         def dataTable = [
@@ -53,6 +57,7 @@ class MathsTest extends GroovyTestCase {
 new MathsTest().testFib()'''
     }
 
+    @Test
     void testASTTest() {
         def err = shouldFail '''// tag::asttest_basic[]
 import groovy.transform.ASTTest
@@ -67,9 +72,10 @@ class Person {
 // end::asttest_basic[]
 def p = new Person()
 '''
-        assert err =~ /ASTTest phase must be at least SEMANTIC_ANALYSIS/
+        assert err.message =~ /ASTTest phase must be at least SEMANTIC_ANALYSIS/
     }
 
+    @Test
     void testASTTestWithPackageScope() {
         assertScript '''
 // tag::asttest_packagescope[]
@@ -93,6 +99,7 @@ def p = new Person()
 '''
     }
 
+    @Test
     void testASTTestWithForLoop() {
         assertScript '''
 // tag::asttest_forloop[]
@@ -124,6 +131,7 @@ def p = new Something()
 '''
     }
 
+    @Test
     void testDumpASTTransforms() {
         assertScript '''
 // tag::dump_ast_xforms[]
@@ -156,6 +164,7 @@ Foo
 '''
     }
 
+    @Test
     void testVariableMemorize() {
         assertScript '''
 // tag::memorize_in_binding[]

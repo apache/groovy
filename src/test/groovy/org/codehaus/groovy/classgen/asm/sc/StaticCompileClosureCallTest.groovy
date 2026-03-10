@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for static compilation: checks that closures are called properly.
  */
 final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testShouldCallClosure() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -38,6 +40,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testShouldCallClosureWithOneArg() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -51,6 +54,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testShouldCallClosureWithTwoArgs() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -64,6 +68,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testShouldCallClosureWithThreeArgs() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -77,6 +82,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         clazz.newInstance().run()
     }
 
+    @Test
     void testStaticCompilationOfClosures() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -116,6 +122,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testWriteSharedVariableInClosure() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -129,6 +136,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         clazz.newInstance().main()
     }
 
+    @Test
     void testCallPrivateMethodFromClosure() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -145,6 +153,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testCallStaticPrivateMethodFromClosure() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -161,6 +170,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testCallMethodWithinClosure() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -174,6 +184,7 @@ final class StaticCompileClosureCallTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-6199
+    @Test
     void testCallClassMethodFromNestedClosure() {
         assertScript '''
             class MyClass {

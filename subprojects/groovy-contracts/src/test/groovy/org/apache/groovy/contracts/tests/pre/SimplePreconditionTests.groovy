@@ -21,7 +21,9 @@ package org.apache.groovy.contracts.tests.pre
 import org.apache.groovy.contracts.ClassInvariantViolation
 import org.apache.groovy.contracts.PreconditionViolation
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.Test
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 class SimplePreconditionTests extends BaseTestClass {
 
@@ -367,26 +369,28 @@ class Account
         create_instance_of(source, ['test', 'test'])
     }
 
-    @Test(expected = PreconditionViolation.class)
+    @Test
     void requires_on_constructor_with_params_properties_same_name() {
+        assertThrows(PreconditionViolation) {
 
-        def source = """
-                        import groovy.contracts.*
+            def source = """
+                            import groovy.contracts.*
 
-                            class A {
+                                class A {
 
-                                String a
-                                String b
+                                    String a
+                                    String b
 
-                                @Requires({ a && b })
-                                A(String a, String b) {
-                                    this.a = a
-                                    this.b = b
+                                    @Requires({ a && b })
+                                    A(String a, String b) {
+                                        this.a = a
+                                        this.b = b
+                                    }
                                 }
-                            }
-                     """
+                         """
 
-        create_instance_of(source, ['test', ''])
+            create_instance_of(source, ['test', ''])
+        }
     }
 
     @Test
@@ -497,20 +501,22 @@ class Account
         a.m()
     }
 
-    @Test(expected = PreconditionViolation.class)
+    @Test
     void requires_on_private_methods() {
+        assertThrows(PreconditionViolation) {
 
-        def source = """
-                import groovy.contracts.*
+            def source = """
+                    import groovy.contracts.*
 
-                    class A {
+                        class A {
 
-                        @Requires({ a != null })
-                        private def m(def a) {}
-                    }
-             """
+                            @Requires({ a != null })
+                            private def m(def a) {}
+                        }
+                 """
 
-        def a = create_instance_of(source)
-        a.m(null)
+            def a = create_instance_of(source)
+            a.m(null)
+        }
     }
 }

@@ -18,14 +18,20 @@
  */
 package gls.syntax
 
-import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Most of the below examples were taken from the Project Coin proposal here:
  * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
  */
-class UnderscoreInNumbersTest extends CompilableTestSupport {
+final class UnderscoreInNumbersTest {
 
+    @Test
     void testUnderscore() {
         assertScript '''
             assert 1_2_3_4_5 == 12345
@@ -35,8 +41,9 @@ class UnderscoreInNumbersTest extends CompilableTestSupport {
     /**
      * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
      */
-    void testExamplesShouldCompileFromProposal() {
-        shouldCompile '''
+    @Test
+    void testExamplesFromProposalShouldCompile() {
+        assertScript '''
             long creditCardNumber = 1234_5678_9012_3456L
             long socialSecurityNumbers = 999_99_9999L
             float monetaryAmount = 12_345_132.12
@@ -55,46 +62,51 @@ class UnderscoreInNumbersTest extends CompilableTestSupport {
     /**
      * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
      */
+    @Test
     void testExampleFromProposalWithBinaryLiterals() {
-        shouldCompile '''
+        assertScript '''
             byte nybbles = 0b0010_0101
             long bytes = 0b11010010_01101001_10010100_10010010
             int weirdBitfields = 0b000_10_101
         '''
     }
 
+    @Test
+    void testLeadingUnderscore() {
+        def binding = new Binding(_52: 42)
+        // This is an identifier, not a numeric literal.
+        new GroovyShell(binding).evaluate('int x1 = _52; assert x1 == 42')
+    }
+
     /**
      * Underscore must be placed between digits
      * http://mail.openjdk.java.net/pipermail/coin-dev/2009-April/001628.html
      */
-    void testPositionOfUnderscoresAndWhatsValidOrInvalid() {
-        shouldCompile '''
-            int x1 = _52;  // This is an identifier, not a numeric literal.
-            int x2 = 5_2;  // OK. (Decimal literal)
-            int x3 = 5_______2; // OK. (Decimal literal.)
-
-            int x6 = 0x5_2;  // OK. (Hexadecimal literal)
-
-            int x7 = 0_52;   // OK. (Octal literal)
-            int x8 = 05_2;   // OK. (Octal literal)
-        '''
-
-        shouldNotCompile '''
-            int x2 = 52_;  // Illegal. (Underscores must always be between digits)
-
-            int x4 = 0_x52;  // Illegal. Can't put underscores in the "0x" radix prefix.
-            int x5 = 0x_52;  // Illegal. (Underscores must always be between digits)
-
-            int x6 = 0x52_;  // Illegal. (Underscores must always be between digits)
-            int x6 = 0x_;    // Illegal. (Not valid with the underscore removed)
-
-            int x9 = 052_;   // Illegal. (Underscores must always be between digits)
-        '''
+    @ParameterizedTest
+    @ValueSource(strings=[
+        'int x2 = 5_2;       assert x2==52', // OK. (Decimal literal)
+        'int x3 = 5_______2; assert x3==52', // OK. (Decimal literal.)
+        'int x6 = 0x5_2;     assert x6==82', // OK. (Hexadecimal literal)
+        'int x7 = 0_52;      assert x7==42', // OK. (Octal literal)
+        'int x8 = 05_2;      assert x8==42', // OK. (Octal literal)
+    ])
+    void testValidPlacementOfUnderscore(String declaration) {
+        assertScript(declaration)
     }
 
-    void testInvalidPlacementOfUnderscore() {
-        shouldNotCompile ''' def i = 10101_ '''
-        shouldNotCompile ''' def d = 10101_.0 '''
-        shouldNotCompile ''' def d = 10101.0_ '''
+    @ParameterizedTest
+    @ValueSource(strings=[
+        'def i = 10101_'  , // Illegal: Underscores must always be between digits
+        'def d = 10101_.0', // Illegal: Underscores must always be between digits
+        'def d = 10101.0_', // Illegal: Underscores must always be between digits
+        'int x2 = 52_;'   , // Illegal: Underscores must always be between digits
+        'int x4 = 0_x52;' , // Illegal: Can't put underscores in the "0x" radix prefix
+        'int x5 = 0x_52;' , // Illegal: Underscores must always be between digits
+        'int x6 = 0x52_;' , // Illegal: Underscores must always be between digits
+        'int x6 = 0x_;'   , // Illegal: Not valid with the underscore removed
+        'int x9 = 052_;'  , // Illegal: Underscores must always be between digits
+    ])
+    void testInvalidPlacementOfUnderscore(String declaration) {
+        shouldFail(declaration)
     }
 }

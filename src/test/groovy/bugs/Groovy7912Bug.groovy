@@ -18,17 +18,19 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import static java.util.Collections.EMPTY_LIST
 import static java.util.Collections.emptyList
 
-class Groovy7912Bug extends GroovyTestCase {
+class Groovy7912Bug {
+    @Test
     void testClosureWithStaticImportProperty() {
         Closure closure = { List list = EMPTY_LIST -> list.size() }
         assert closure() == 0
     }
 
+    @Test
     void testClosureWithStaticImportMethod() {
         Closure closure = { List list = emptyList() -> list.size() }
         assert closure() == 0

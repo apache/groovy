@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class PrefixTest extends GroovyTestCase {
 
+class PrefixTest {
+
+    @Test
     void testIntegerPrefix() {
         def x = 1
 
@@ -33,6 +35,7 @@ class PrefixTest extends GroovyTestCase {
         assert ++x == 3
     }
 
+    @Test
     void testDoublePrefix() {
         def x = 1.2
         def y = ++x
@@ -43,6 +46,7 @@ class PrefixTest extends GroovyTestCase {
         assert x == 3.2
     }
 
+    @Test
     void testStringPrefix() {
         def x = "bbc"
         ++x
@@ -58,6 +62,7 @@ class PrefixTest extends GroovyTestCase {
         assert y == "bbd"
     }
 
+    @Test
     void testArrayPrefix() {
         int[] i = [1]
 
@@ -69,18 +74,21 @@ class PrefixTest extends GroovyTestCase {
         assert i[0] == 0
     }
 
+    @Test
     void testConstantPostFix() {
         assert 2 == ++1
     }
 
     def valueReturned() { 0 }
 
+    @Test
     void testFunctionPostfix() {
         def z = ++(valueReturned())
 
         assert z == 1
     }
 
+    @Test
     void testPrefixAndPostfix() {
         def u = 0
 

@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4247Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
+
+
+class Groovy4247Bug {
+    @Test
     void testNewFileRenameToMethod() {
         def file = new File('blah_blah')
 

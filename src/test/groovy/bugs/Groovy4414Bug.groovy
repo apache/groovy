@@ -18,10 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.InvokerHelper
 
-class Groovy4414Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+class Groovy4414Bug {
     public void testUnaryMinus() {
         assertEquals(-1,    InvokerHelper.unaryMinus(1)); // relying here on boxing for Integer
         assertEquals(-1l,   InvokerHelper.unaryMinus(1l));

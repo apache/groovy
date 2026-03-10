@@ -18,10 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3410Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+
+class Groovy3410Bug {
+
+    @Test
     void testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields() {
         assertScript """
             class Groovy3405N1 {

@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : ternary operator.
  */
 class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testByteByte() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -32,6 +35,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShortShort() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -41,6 +45,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIntInt() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -50,6 +55,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testLongLong() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -59,6 +65,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFloatFloat() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -68,6 +75,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleDouble() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -77,6 +85,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBoolBool() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -86,6 +95,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleFloat() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -96,6 +106,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11014
+    @Test
     void testBoxedDoubleInt() {
         assertScript '''
             void test(Double d) {
@@ -111,6 +122,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleFloatOneIsBoxed() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -127,6 +139,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8965
+    @Test
     void testDoubleFloatBothAreBoxed() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -136,6 +149,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleDoubleBothAreBoxed() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -146,6 +160,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8029
+    @Test
     void testListLiteralAndListCoerce() {
         assertScript '''
             List<String> getStrings(List<Object> list) {
@@ -157,6 +172,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10330
+    @Test
     void testTypeParameterTypeParameter1() {
         assertScript '''
             class C<T> {
@@ -179,6 +195,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10363
+    @Test
     void testTypeParameterTypeParameter2() {
         assertScript '''
             def <X extends java.util.function.Supplier<Number>> X m(X x, X y) {
@@ -190,6 +207,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10688
+    @Test
     void testTypeParameterTypeParameter3() {
         assertScript '''
             class A<T,U> {
@@ -204,6 +222,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10271
+    @Test
     void testFunctionalInterfaceTarget1() {
         ['true', 'false'].each { flag ->
             assertScript """import java.util.function.Supplier
@@ -217,6 +236,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10272
+    @Test
     void testFunctionalInterfaceTarget2() {
         assertScript '''
             import java.util.function.Function
@@ -235,6 +255,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10701
+    @Test
     void testFunctionalInterfaceTarget3() {
         for (type in ['Function<T,T>', 'UnaryOperator<T>']) {
             assertScript """import java.util.function.*
@@ -253,6 +274,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10357
+    @Test
     void testAbstractMethodDefault() {
         assertScript '''
             import java.util.function.Function
@@ -272,6 +294,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10358
+    @Test
     void testCommonInterface1() {
         assertScript '''
             interface I {
@@ -297,6 +320,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10603
+    @Test
     void testCommonInterface2() {
         assertScript '''
             interface I {}
@@ -311,6 +335,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCommonInterface3() {
         assertScript '''import static java.util.concurrent.ConcurrentHashMap.*
             Set<Integer> integers = false ? new HashSet<>() : newKeySet()
@@ -318,6 +343,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10130
+    @Test
     void testInstanceofGuard() {
         assertScript '''
             class A {
@@ -332,6 +358,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5523
+    @Test
     void testNull1() {
         assertScript '''
             def findFile() {
@@ -362,6 +389,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNull2() {
         assertScript '''
             def test(String str) {
@@ -377,6 +405,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5734
+    @Test
     void testNull3() {
         assertScript '''
             Integer test() { false ? null : 42 }
@@ -386,6 +415,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10095
+    @Test
     void testNull4() {
         assertScript '''
             float x = false ? 1.0 : null
@@ -393,6 +423,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10226
+    @Test
     void testNull5() {
         assertScript '''
             class A<T> {
@@ -406,6 +437,7 @@ class TernaryOperatorSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10158
+    @Test
     void testNull6() {
         assertScript '''
             class A<T> {

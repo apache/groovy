@@ -19,38 +19,45 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests dynamically compiling and running a new class
  */
-public class RunGroovyTest extends TestSupport {
+final class RunGroovyTest extends TestSupport {
 
-    public void testArrayBug() throws Exception {
+    @Test
+    void testArrayBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/ToArrayBugTest.groovy");
         object.invokeMethod("testToArrayBug", null);
     }
 
-    public void testPostfix() throws Exception {
+    @Test
+    void testPostfix() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/PostfixTest.groovy");
         object.invokeMethod("testIntegerPostfix", null);
     }
 
-    public void testMap() throws Exception {
+    @Test
+    void testMap() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/MapTest.groovy");
         object.invokeMethod("testMap", null);
     }
 
-    public void testClosure() throws Exception {
+    @Test
+    void testClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/ClosureMethodTest.groovy");
         object.invokeMethod("testListCollect", null);
     }
 
-    public void testClosureWithDefaultParam() throws Exception {
+    @Test
+    void testClosureWithDefaultParam() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/ClosureWithDefaultParamTest.groovy");
         object.invokeMethod("methodWithDefaultParam", null);
     }
 
-    public void testOptionalReturn() throws Exception {
+    @Test
+    void testOptionalReturn() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/OptionalReturnTest.groovy");
         object.invokeMethod("testSingleExpression", null);
         object.invokeMethod("testLastExpressionIsSimple", null);

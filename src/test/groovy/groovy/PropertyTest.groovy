@@ -315,8 +315,8 @@ final class PropertyTest {
     // GROOVY-10456
     @Test
     void testEmptyPropertyAccessForObject() {
-        assertScript '''
-            import static groovy.test.GroovyAssert.shouldFail
+        assertScript '''            import static groovy.test.GroovyAssert.shouldFail
+
 
             shouldFail(MissingPropertyException) {
                 o = new Object()
@@ -828,24 +828,6 @@ final class PropertyTest {
             import static Constants.*
 
             assert Pi.toString().startsWith('3')
-        '''
-    }
-
-    // GROOVY-9618
-    @Test
-    void testPropertyAndStaticUppercaseFieldPriority() {
-        assertScript '''
-            class A {
-                public static X = 1
-                static getX() { 2 }
-                static class B { }
-            }
-            class C extends A.B {
-                def test() {
-                    X
-                }
-            }
-            assert new C().test() == 2
         '''
     }
 

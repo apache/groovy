@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for the @Generated annotation.

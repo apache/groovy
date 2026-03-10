@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4129Bug extends GroovyTestCase {
+
+class Groovy4129Bug {
+    @Test
     void testImplicitThisPassingInObjInitBlock() {
         new GroovyShell().parse """
             class Test4129 {

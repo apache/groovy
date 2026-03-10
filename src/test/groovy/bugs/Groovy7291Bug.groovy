@@ -18,10 +18,15 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7291Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
+
+class Groovy7291Bug {
+
+    @Test
     void testPrimitiveDouble() {
         assertScript '''
             double a
@@ -34,6 +39,7 @@ class Groovy7291Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDouble() {
         shouldFail(NullPointerException,
         '''
@@ -45,6 +51,7 @@ class Groovy7291Bug extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testPrimitiveDeclarationHasDefaultValueInClosure() {
         assertScript '''
             boolean z
@@ -69,6 +76,7 @@ class Groovy7291Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testWrapperDeclarationIsNullInClosure() {
         assertScript '''
             Boolean z

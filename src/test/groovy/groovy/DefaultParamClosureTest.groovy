@@ -18,12 +18,16 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class DefaultParamClosureTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+
+class DefaultParamClosureTest {
+
+    @Test
     void testDefaultParameters() {
-        // Default parameters working for closures 
+        // Default parameters working for closures
     def doSomething = { a, b = 'defB', c = 'defC' ->
             return a + "-" + b + "-" + c
         }
@@ -40,6 +44,7 @@ class DefaultParamClosureTest extends GroovyTestCase {
         shouldFail { doSomething() }
     }
 
+    @Test
     void testDefaultTypedParameters() {
     // Handle typed parameters
     def doTypedSomething = { String a = 'defA', String b = 'defB', String c = 'defC' ->

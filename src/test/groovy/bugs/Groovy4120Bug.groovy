@@ -18,10 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.jupiter.api.Test
 
-class Groovy4120Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
+
+class Groovy4120Bug {
+    @Test
     void testInitCallOnNonStaticInnerClassWOEnclosingInstance() {
         try {
             new GroovyShell().parse """
@@ -42,6 +45,7 @@ class Groovy4120Bug extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInitCallOnNonStaticInnerClassWithEnclosingInstance() {
         new GroovyShell().parse """
             class Test4120B {

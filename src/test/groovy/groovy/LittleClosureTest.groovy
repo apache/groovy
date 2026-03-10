@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class LittleClosureTest extends GroovyTestCase {
 
+class LittleClosureTest {
+
+    @Test
     void testClosure() {
         def block = {x-> return x > 5}
     }

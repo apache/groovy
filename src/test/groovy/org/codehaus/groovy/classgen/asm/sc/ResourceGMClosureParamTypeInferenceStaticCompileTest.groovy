@@ -23,7 +23,5 @@ import groovy.transform.stc.ResourceGMClosureParamTypeInferenceSTCTest
 /**
  * Unit tests for static compilation: closure parameter type inference: {@link org.codehaus.groovy.runtime.ResourceGroovyMethods}.
  */
-class ResourceGMClosureParamTypeInferenceStaticCompileTest extends ResourceGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
-
+final class ResourceGMClosureParamTypeInferenceStaticCompileTest extends ResourceGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 }
-

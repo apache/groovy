@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy8066Bug extends CompilableTestSupport {
+final class Groovy8066Bug extends CompilableTestSupport {
+
+    @Test
     void testTraitWithProtectedFieldShouldGiveCompileError() {
         def message = shouldNotCompile """
             trait Foo {

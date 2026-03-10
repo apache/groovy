@@ -18,11 +18,12 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy9966 {
+
     @Test
     void testWhenStarsAlign() {
         shouldFail MissingPropertyException, '''

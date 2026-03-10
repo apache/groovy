@@ -19,10 +19,10 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GroovyShell;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class InterfaceConversionMapTest {
 
@@ -30,8 +30,8 @@ public final class InterfaceConversionMapTest {
     public void testMapToProxy() {
         final Map map = (Map) new GroovyShell().evaluate("[x: {10}, y: {20}]");
         final SomeInterface si = DefaultGroovyMethods.asType(map, SomeInterface.class);
-        Assert.assertEquals(20, si.y());
-        Assert.assertEquals(10, si.x());
+        assertEquals(20, si.y());
+        assertEquals(10, si.x());
     }
 
     public interface SomeInterface {

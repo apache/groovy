@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -193,7 +193,7 @@ final class ImmutableTransformTest {
             @Immutable class Simple {}
             new Simple(missing:'Name')
         '''
-        assert err =~ 'No such property: missing for class: Simple'
+        assert err.message =~ 'No such property: missing for class: Simple'
     }
 
     @Test

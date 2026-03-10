@@ -18,24 +18,28 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class OptionalReturnTest extends GroovyTestCase {
+
+class OptionalReturnTest {
 
     def y
 
+    @Test
     void testSingleExpression() {
         def value = foo()
 
         assert value == 'fooReturn'
     }
 
+    @Test
     void testLastExpressionIsSimple() {
         def value = bar()
 
         assert value == 'barReturn'
     }
 
+    @Test
     void testLastExpressionIsBooleanExpression() {
         def value = foo2()
 
@@ -46,6 +50,7 @@ class OptionalReturnTest extends GroovyTestCase {
         assert value == false
     }
 
+    @Test
     void testLastExpressionIsAssignment() {
         def value = assign()
 
@@ -56,12 +61,14 @@ class OptionalReturnTest extends GroovyTestCase {
         assert value == 'assignFieldReturn'
     }
 
+    @Test
     void testLastExpressionIsMethodCall() {
         def value = methodCall()
 
         assert value == 'fooReturn'
     }
 
+    @Test
     void testEmptyExpression() {
         def value = nullReturn()
 
@@ -70,12 +77,14 @@ class OptionalReturnTest extends GroovyTestCase {
 
     //  now this is not a compile time error in jsr-03
 
+    @Test
     void testVoidMethod() {
         def value = voidMethod()
 
         assert value == null
     }
 
+    @Test
     void testNonAssignmentLastExpressions() {
         def value = lastIsAssert()
 

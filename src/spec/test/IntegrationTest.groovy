@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +16,14 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class IntegrationTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class IntegrationTest {
+
+    @Test
     void testEval() {
         assertScript '''// tag::eval_me[]
 import groovy.util.Eval
@@ -37,6 +42,7 @@ assert Eval.xyz(4, 5, 6, 'x*y+z') == 26     // <4>
 '''
     }
 
+    @Test
     void testGroovyShell() {
         assertScript '''// tag::groovyshell_simple[]
 def shell = new GroovyShell()                           // <1>
@@ -121,6 +127,7 @@ assert b1 != b2
 '''
     }
 
+    @Test
     void testGroovyShellCustomScript() {
         assertScript '''// tag::custom_script_imports[]
 import org.codehaus.groovy.control.CompilerConfiguration
@@ -149,6 +156,7 @@ assert script.run() == 'Hello, Michel!'
 '''
     }
 
+    @Test
     void testGroovyClassLoader() {
         assertScript '''// tag::gcl[]
 import groovy.lang.GroovyClassLoader
@@ -163,6 +171,8 @@ o.doIt()                                                                    // <
 
         assertScript '''// tag::gcl_distinct_classes[]
 import groovy.lang.GroovyClassLoader
+import org.junit.jupiter.api.Test
+import static groovy.test.GroovyAssert.*
 
 def gcl = new GroovyClassLoader()
 def clazz1 = gcl.parseClass('class Foo { }')                                // <1>
@@ -188,6 +198,7 @@ file.delete()
 '''
     }
 
+    @Test
     void testGroovyScriptEngine() {
         assertScript '''def tmpDir = File.createTempDir("reloading", "gse")
 
@@ -245,5 +256,4 @@ try {
 }
 '''
     }
-
 }

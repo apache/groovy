@@ -18,14 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class Groovy252_Bug extends GroovyTestCase {
+class Groovy252_Bug {
 
     def count = 0
 
+    @Test
     void testBug() {
         def value = f()
         assert value == null

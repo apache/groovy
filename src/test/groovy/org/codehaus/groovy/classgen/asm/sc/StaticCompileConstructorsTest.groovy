@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ConstructorsSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation: constructors.
  */
-class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
+final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements StaticCompilationTestSupport {
 
+    @Test
     void testMapConstructorError() {
         assertScript '''
             class C {
@@ -40,11 +42,26 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
             class Person {
                 String name
             }
-
             C.test()
         '''
     }
 
+    // GROOVY-11843
+    @Test
+    void testMapConstructorOptimization() {
+        assertScript '''
+            class C {
+                int i, j, k
+            }
+            new C(i:1, j:2, k:3)
+        '''
+        String script = astTrees.find{ it.key != 'C' }.value[1]
+        Number offset = script.indexOf('run()Ljava/lang/Object;')
+        String method = script.substring(offset, script.indexOf('\n' + System.lineSeparator(), offset) + 1)
+        assert method.count('ACONST_NULL') == 0
+    }
+
+    @Test
     void testPrivateConstructorFromClosure() {
         assertScript '''
             class C {
@@ -61,6 +78,7 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
         '''
     }
 
+    @Test
     void testPrivateConstructorFromStaticInnerClass() {
         assertScript '''
             class Foo {
@@ -79,6 +97,7 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
         assert bar.contains('INVOKESPECIAL Foo.<init> (Ljava/lang/String;)V')
     }
 
+    @Test
     void testPrivateConstructorFromAnonymousInnerClass() {
         assertScript '''
             class Foo {
@@ -99,7 +118,7 @@ class StaticCompileConstructorsTest extends ConstructorsSTCTest implements Stati
     }
 
     // GROOVY-11119, GROOVY-11451
-    @Override
+    @Override @Test
     void testMapStyleConstructorWithOverloadedSetterName() {
         super.testMapStyleConstructorWithOverloadedSetterName()
         String  asserts = astTrees.find{ it.key != 'C' }.value[1]

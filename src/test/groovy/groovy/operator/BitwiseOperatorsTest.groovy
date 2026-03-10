@@ -18,13 +18,15 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test Bitwise Operations
  */
-class BitwiseOperatorsTest extends GroovyTestCase {
+class BitwiseOperatorsTest {
 
+    @Test
     void testBitwiseShift() {
         def a = 4
         def b = -4
@@ -42,6 +44,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert b >>> 2 == 0x3FFFFFFF
     }
 
+    @Test
     void testBitwiseShiftEQUAL() {
         def a = 4
         a <<= 1
@@ -71,6 +74,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert b == 0x3FFFFFFE
     }
 
+    @Test
     void testBitwiseAnd() {
 
         def a = 13
@@ -81,6 +85,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert (b & 7) == 3 // 0xFFFFFFF3 & 0x00000007
     }
 
+    @Test
     void testBitwiseAndOperatorPrecedence() {
         def a = 13
         assert (a & 3) == 1 // 0x0000000D & 0x00000003
@@ -90,6 +95,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert (b & 7) == 3 // 0xFFFFFFF3 & 0x00000007
     }
 
+    @Test
     void testBitwiseAndEqual() {
         def a = 13
         a &= 3
@@ -103,6 +109,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert b == 3 // 0x00000003 & 0x00000007
     }
 
+    @Test
     void testBitwiseOr() {
         def a = 13
         assert (a | 8) == 13 // 0x0000000D | 0x00000008
@@ -112,6 +119,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert (b | 16) == -13 // 0xFFFFFFF3 | 0x00000010
     }
 
+    @Test
     void testBitwiseOrOperatorPrecedence() {
         def a = 13
         assert (a | 8) == 13 // 0x0000000D | 0x00000008
@@ -121,6 +129,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert (b | 16) == -13 // 0xFFFFFFF3 | 0x00000010
     }
 
+    @Test
     void testBitwiseOrEqual() {
         def a = 13
         a |= 2
@@ -134,6 +143,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert b == -5 // 0xFFFFFFFB | 0x00000001
     }
 
+    @Test
     void testBitwiseXor() {
         def a = 13
         assert (a ^ 10) == 7 // 0x0000000D ^ 0x0000000A = 0x000000007
@@ -143,6 +153,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert (b ^ 15) == -4 // 0xFFFFFFF3 ^ 0x0000000F = 0xFFFFFFFC
     }
 
+    @Test
     void testBitwiseXorOperatorPrecedence() {
         def a = 13
         assert (a ^ 10) == 7 // 0x0000000D ^ 0x0000000A = 0x000000007
@@ -152,6 +163,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert (b ^ 15) == -4 // 0xFFFFFFF3 ^ 0x0000000F = 0xFFFFFFFC
     }
 
+    @Test
     void testBitwiseXorEqual() {
         def a = 13
         a ^= 8
@@ -165,6 +177,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert b == -21 // 0xFFFFFFFB ^ 0x00000010 = 0xFFFFFFEB
     }
 
+    @Test
     void testBitwiseOrInClosure() {
         def c1 = { x, y -> return x | y }
         assert c1(14, 5) == 15 // 0x0000000E | 0x00000005 = 0x0000000F
@@ -175,6 +188,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert c2(0x0D, 0xFE) == 255 // 0x0000000D | 0x000000FE = 0x000000FF
     }
 
+    @Test
     void testAmbiguityOfBitwiseOr() {
         def c1 = { x, y -> return x | y }
         assert c1(14, 5) == 15 // 0x0000000E | 0x00000005 = 0x0000000F
@@ -232,6 +246,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert d14() == 0x03
     }
 
+    @Test
     void testBitwiseNegation() {
         assert ~1 == -2 // ~0x00000001 = 0xFFFFFFFE
         assert ~-1 == 0 // ~0xFFFFFFFF = 0x00000000
@@ -242,6 +257,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert -~a == 14 // -~0x0000000D = -0xFFFFFFF2 = 0x0000000E
     }
 
+    @Test
     void testBitwiseNegationType() {
         def x = ~7
         assert x.class == java.lang.Integer
@@ -253,6 +269,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert z.class == java.util.regex.Pattern
     }
 
+    @Test
     void testBitwiseNegationTypeCallFunction() {
         // integer test
         assert neg(2).class == java.lang.Integer
@@ -278,6 +295,7 @@ class BitwiseOperatorsTest extends GroovyTestCase {
         assert neg("foo") instanceof java.util.regex.Pattern
     }
 
+    @Test
     void testCorrectAutoboxing() {
         // test that the first parameter is boxed correctly, if not then this test
         // will possibly produce a verify error

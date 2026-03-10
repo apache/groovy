@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.apache.groovy.ast.tools.ClassNodeUtils.addGeneratedMethod;
-import static org.codehaus.groovy.ast.ClassHelper.long_TYPE;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callThisX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
@@ -171,7 +170,6 @@ public class ClosureWriter {
             closureClass = createClosureClass(expression, modifiers);
             closureClasses.put(expression, closureClass);
             controller.getAcg().addInnerClass(closureClass);
-            closureClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
             closureClass.putNodeMetaData(WriterControllerFactory.class, (WriterControllerFactory) x -> controller);
         }
         return closureClass;
@@ -217,13 +215,13 @@ public class ClosureWriter {
         else if (ClassHelper.isPrimitiveType(returnType)) returnType = ClassHelper.getWrapper(returnType);
         else if (GenericsUtils.hasUnresolvedGenerics(returnType)) returnType = GenericsUtils.nonGeneric(returnType);
 
-        InnerClassNode answer = new InnerClassNode(classNode, name, modifiers, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
+        var answer = new InnerClassNode(classNode, name, modifiers, ClassHelper.CLOSURE_TYPE.getPlainNodeReference());
+        answer.addInterface(ClassHelper.GENERATED_CLOSURE_Type.getPlainNodeReference());
         answer.setEnclosingMethod(enclosingMethod);
         answer.setScriptBody(controller.isInScriptBody());
         answer.setSourcePosition(expression);
         answer.setStaticClass(controller.isStaticMethod() || classNode.isStaticClass());
         answer.setSynthetic(true);
-        answer.setUsingGenerics(rootClass.isUsingGenerics());
 
         {
             MethodNode doCall = answer.addMethod("doCall", ACC_PUBLIC, returnType, parameters, ClassNode.EMPTY_ARRAY, expression.getCode());
@@ -231,14 +229,24 @@ public class ClosureWriter {
             VariableScope varScope = expression.getVariableScope();
             if (varScope == null) {
                 throw new RuntimeException("Must have a VariableScope by now for expression: " + expression + " class: " + name);
-            } else {
-                doCall.setVariableScope(varScope.copy());
             }
+            doCall.setVariableScope(varScope.copy());
+
+            new CodeVisitorSupport() {
+                @Override
+                public void visitConstructorCallExpression(final ConstructorCallExpression cce) {
+                    if (cce.isUsingAnonymousInnerClass()) { // GROOVY-11846
+                        cce.getType().setEnclosingMethod(doCall);
+                    }
+                    super.visitConstructorCallExpression(cce);
+                }
+            }
+            .visit(expression.getCode());
         }
 
         if (parameters.length > 1 || (parameters.length == 1 && (isNotObjectOrObjectArray(parameters[0].getType())
                 || !parameters[0].getAnnotations().isEmpty() || !parameters[0].getType().getTypeAnnotations().isEmpty()))) { // GROOVY-11311
-            MethodNode call = new MethodNode(
+            var call = new MethodNode(
                     "call",
                     ACC_PUBLIC,
                     returnType,
@@ -266,7 +274,7 @@ public class ClosureWriter {
         //      https://docs.oracle.com/en/java/javase/21/docs/specs/serialization/class.html#stream-unique-identifiers
         // As we could see, it's too complex for closures.
         long serialVersionUID = hash(classNode.getName());
-        classNode.addFieldFirst("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, long_TYPE, constX(serialVersionUID, true));
+        classNode.addFieldFirst("serialVersionUID", ACC_PRIVATE | ACC_STATIC | ACC_FINAL, ClassHelper.long_TYPE, constX(serialVersionUID, true));
     }
 
     private static long hash(String str) {

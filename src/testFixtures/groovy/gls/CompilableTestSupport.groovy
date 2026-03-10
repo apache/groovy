@@ -18,26 +18,49 @@
  */
 package gls
 
-import groovy.test.GroovyTestCase
+import groovy.test.GroovyAssert
 import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
 
-@AutoFinal @CompileStatic
-abstract class CompilableTestSupport extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.fail
 
-    protected String shouldNotCompile(String script) {
+@AutoFinal @CompileStatic
+abstract class CompilableTestSupport {
+
+    private static String getTestScriptName() {
+        String uuid = UUID.randomUUID()
+        new StringBuilder('TestScript')
+            .append(uuid,  0,  8)
+            .append(uuid,  9, 13)
+            .append(uuid, 14, 18)
+            .append(uuid, 19, 23)
+            .append(uuid, 24, 36)
+            .append('.groovy')
+    }
+
+    //--------------------------------------------------------------------------
+
+    protected static Object assertScript(String script) {
+        new GroovyShell().evaluate(script,testScriptName)
+    }
+
+    protected static String shouldFail(String script) {
+        GroovyAssert.shouldFail(script).getMessage()
+    }
+
+    protected static void shouldCompile(String script) {
         try (def gcl = new GroovyClassLoader()) {
-            gcl.parseClass(script, testClassName)
+            gcl.parseClass(script,testScriptName)
+        }
+    }
+
+    protected static String shouldNotCompile(String script) {
+        try (def gcl = new GroovyClassLoader()) {
+            gcl.parseClass(script,testScriptName)
         } catch (CompilationFailedException ex) {
             return ex.message
         }
         fail('the compilation succeeded but should have failed')
-    }
-
-    protected void shouldCompile(final String script) {
-        try (def gcl = new GroovyClassLoader()) {
-            gcl.parseClass(script, testClassName)
-        }
     }
 }

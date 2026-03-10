@@ -18,8 +18,9 @@
  */
 package org.apache.groovy.xml.tools
 
-import groovy.test.GroovyTestCase
 import groovy.test.StringTestUtil
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.w3c.dom.Document
 import org.xml.sax.InputSource
 import org.xml.sax.SAXException
@@ -27,7 +28,9 @@ import org.xml.sax.SAXException
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 
-class DomToGroovyTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertTrue
+
+class DomToGroovyTest {
 
     private static final String TEST_XML_1 =
         "<a href='http://groovy.codehaus.org'>Groovy</a>"
@@ -88,12 +91,14 @@ class DomToGroovyTest extends GroovyTestCase {
     protected DomToGroovy converter
     protected File dir = new File("build/generated-groovyxml")
 
+    @Test
     void testConversion() {
         convert("test1.xml", "test1.groovy")
         convert("po.xsd", "poSchema.groovy")
         convert("swing.xml", "swing.groovy")
     }
 
+    @Test
     void testConversionFormat() {
         checkConversion(TEST_XML_1, EXPECTED_BUILDER_SCRIPT_1)
         checkConversion(TEST_XML_2, EXPECTED_BUILDER_SCRIPT_2)
@@ -125,11 +130,12 @@ class DomToGroovyTest extends GroovyTestCase {
 
     private Document parse(String name) throws SAXException, IOException {
         URL resource = getClass().getResource(name)
-        assertTrue("Could not find resource: " + name, resource != null)
+        assertTrue(resource != null, "Could not find resource: " + name)
         return builder.parse(new InputSource(resource.toString()))
     }
 
-    protected void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance()
         factory.setNamespaceAware(true)
         builder = factory.newDocumentBuilder()

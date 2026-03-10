@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy8405Bug extends CompilableTestSupport {
+final class Groovy8405Bug extends CompilableTestSupport {
+
+    @Test
     void test() {
         assertScript '''
             import groovy.transform.CompileStatic
@@ -45,8 +48,6 @@ class Groovy8405Bug extends CompilableTestSupport {
                     assert 'hi' == string
                 }
             }
-
         '''
     }
-
 }

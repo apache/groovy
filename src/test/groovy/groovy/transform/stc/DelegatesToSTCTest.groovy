@@ -19,6 +19,7 @@
 package groovy.transform.stc
 
 import org.codehaus.groovy.control.customizers.ImportCustomizer
+import org.junit.jupiter.api.Test
 
 /**
  * Units tests aimed at testing the behavior of {@link DelegatesTo} in combination
@@ -33,6 +34,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         )
     }
 
+    @Test
     void testShouldChooseMethodFromOwner() {
         assertScript '''
             class Delegate {
@@ -62,6 +64,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldChooseMethodFromDelegate() {
         assertScript '''
             class Delegate {
@@ -92,6 +95,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldAcceptMethodCall() {
         assertScript '''
             class ExecSpec {
@@ -115,6 +119,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallMethodFromOwner() {
         assertScript '''
             class Xml {
@@ -131,6 +136,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEmbeddedWithAndShadowing() {
         assertScript '''
             class A {
@@ -151,6 +157,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEmbeddedWithAndShadowing2() {
         assertScript '''
             class A {
@@ -171,6 +178,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEmbeddedWithAndShadowing3() {
         assertScript '''
             class A {
@@ -197,6 +205,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testEmbeddedWithAndShadowing4() {
         assertScript '''
             class A {
@@ -223,6 +232,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldDelegateToParameter() {
         assertScript '''
             class Foo {
@@ -241,6 +251,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldDelegateToParameterUsingExplicitId() {
         assertScript '''
             class Foo {
@@ -259,6 +270,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldFailDelegateToParameterUsingWrongId() {
         shouldFailWithMessages '''
             class Foo {
@@ -278,6 +290,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method'
     }
 
+    @Test
     void testShouldFailDelegateToParameterIfNoTargetSpecified() {
         shouldFailWithMessages '''\
             class Foo {
@@ -297,6 +310,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method'
     }
 
+    @Test
     void testDelegatesToWithSetter() {
         assertScript '''
             class Item {
@@ -320,6 +334,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToWithSetterUsedAsProperty() {
         assertScript '''
             class Item {
@@ -343,6 +358,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToWithSetterUsedAsPropertyAndErrorInPropertyName() {
         shouldFailWithMessages '''
             class Item {
@@ -367,6 +383,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '[Static type checking] - The variable [y] is undeclared.'
     }
 
+    @Test
     void testDelegatesToWithSetterUsedAsPropertyAndWith() {
         assertScript '''
             class Item {
@@ -393,6 +410,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6022
+    @Test
     void testDelegatesToVariadicParameter() {
         assertScript '''
             def m(@DelegatesTo.Target target, @DelegatesTo(strategy=DELEGATE_FIRST) Closure... closures) {
@@ -438,6 +456,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6055
+    @Test
     void testDelegatesToInStaticContext() {
         assertScript '''
             class Person {
@@ -449,6 +468,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToInStaticContext2() {
         assertScript '''
             class QueryBuilder {
@@ -463,6 +483,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6021
+    @Test
     void testShouldEnsureLastIsRecognizedAndCompiledProperly() {
         assertScript '''
             def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = DELEGATE_FIRST) Closure cl) {
@@ -479,6 +500,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6091
+    @Test
     void testExplicitUseOfDelegateProperty() {
         assertScript '''
             def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy = DELEGATE_FIRST) Closure cl) {
@@ -495,6 +517,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6091
+    @Test
     void testExplicitUseOfDelegateMethod() {
         assertScript '''
             def with(@DelegatesTo.Target Object target, @DelegatesTo(strategy=DELEGATE_FIRST) Closure cl) {
@@ -510,6 +533,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToGenericTypeArgument() {
         assertScript '''
             public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
@@ -525,6 +549,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToGenericTypeArgumentAndActualArgumentNotUsingGenerics() {
         assertScript '''
             @groovy.transform.InheritConstructors
@@ -544,6 +569,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToGenericTypeArgumentWithMissingGenerics() {
         shouldFailWithMessages '''
             public Object map(@DelegatesTo.Target List target, @DelegatesTo(genericTypeIndex=0) Closure cl) {
@@ -558,6 +584,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         'Cannot use @DelegatesTo(genericTypeIndex=0) with a type that doesn\'t use generics', 'Cannot find matching method'
     }
 
+    @Test
     void testDelegatesToGenericTypeArgumentOutOfBounds() {
         shouldFailWithMessages '''
             def <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=1) Closure cl) {
@@ -572,6 +599,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         'Index of generic type @DelegatesTo(genericTypeIndex=1) greater than those of the selected type', 'Cannot find matching method'
     }
 
+    @Test
     void testDelegatesToGenericTypeArgumentWithNegativeIndex() {
         shouldFailWithMessages '''
             public <T> Object map(@DelegatesTo.Target List<T> target, @DelegatesTo(genericTypeIndex=-1) Closure cl) {
@@ -586,6 +614,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         'Index of generic type @DelegatesTo(genericTypeIndex=-1) lower than those of the selected type', 'Cannot find matching method'
     }
 
+    @Test
     void testDelegatesToGenericTypeArgumentUsingMap() {
         assertScript '''
             public <K,V> void transform(@DelegatesTo.Target Map<K, V> map, @DelegatesTo(genericTypeIndex = 1) Closure<?> closure) {
@@ -602,6 +631,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToGenericTypeArgumentUsingMapAndWrongIndex() {
         shouldFailWithMessages '''
             public <K,V> void transform(@DelegatesTo.Target Map<K, V> map, @DelegatesTo(genericTypeIndex = 0) Closure<?> cl) {
@@ -620,6 +650,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6165
+    @Test
     void testDelegatesToGenericArgumentTypeAndTypo() {
         /*
          * Because the Parrot parser provides more accurate node position information,
@@ -655,6 +686,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6323, GROOVY-6325, GROOVY-6332
+    @Test
     void testStaticContextAndProperty() {
         assertScript '''
             class MyCar {
@@ -727,6 +759,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5998
+    @Test
     void testSubscriptOperatorOnPropertiesWithBuilder() {
         assertScript '''
             class DatasourceBuilder {
@@ -742,6 +775,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToWithType1() {
         assertScript '''
             trait Configurable<Type> {
@@ -780,6 +814,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11168
+    @Test
     void testDelegatesToWithType2() {
         assertScript '''
             def <T> T m(@DelegatesTo(type='T', strategy=DELEGATE_FIRST) Closure cl) {
@@ -794,6 +829,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDelegatesToWithType3() {
         assertScript '''
             def <T> boolean evalAsSet(List<T> list, @DelegatesTo(type='Set<T>') Closure<Boolean> cl) {
@@ -808,6 +844,7 @@ class DelegatesToSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7996
+    @Test
     void testErrorForMismatchedClosureResolveStrategy() {
         shouldFailWithMessages '''
             class Foo {

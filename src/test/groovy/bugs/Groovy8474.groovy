@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -345,7 +345,7 @@ final class Groovy8474 {
                 }
             }
         '''
-        //assert err =~ 'Cannot access private field'
+        //assert err.message =~ 'Cannot access private field'
     }
 
     @Test
@@ -363,7 +363,7 @@ final class Groovy8474 {
                 }
             }
         '''
-        //assert err =~ 'Cannot access private field'
+        //assert err.message =~ 'Cannot access private field'
     }
 
     @Test
@@ -381,7 +381,7 @@ final class Groovy8474 {
                 }
             }
         '''
-        //assert err =~ 'Cannot access private field'
+        //assert err.message =~ 'Cannot access private field'
     }
 
     @Test
@@ -404,7 +404,7 @@ final class Groovy8474 {
                 }
             }
         '''
-        //assert err =~ 'Cannot access private field'
+        //assert err.message =~ 'Cannot access private field'
     }
 
     @Test

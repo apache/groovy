@@ -18,17 +18,19 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Demonstrates the use of the default named parameter in a closure
  */
-class ClosureWithDefaultParamTest extends GroovyTestCase {
+class ClosureWithDefaultParamTest {
 
     void methodWithDefaultParam(example = 'default') {
         assert 'default' == example
     }
 
+    @Test
     void testListCollect() {
         def list = [1, 2, 3, 4]
         def answer = list.collect { it * 2 }
@@ -39,6 +41,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert answer == expected
     }
 
+    @Test
     void testMapCollect() {
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
         def answer = map.collect { it.key + it.value }
@@ -54,6 +57,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert answer.get(3) == 12
     }
 
+    @Test
     void testListFind() {
         def list = ["a", "b", "c"]
         def answer = list.find { it == "b" }
@@ -63,6 +67,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert answer == null
     }
 
+    @Test
     void testMapFind() {
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
         def answer = map.find { it.value == 6 }
@@ -74,6 +79,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert answer == null
     }
 
+    @Test
     void testListFindAll() {
         def list = [20, 5, 40, 2]
         def answer = list.findAll { it < 10 }
@@ -82,6 +88,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert answer == [5, 2]
     }
 
+    @Test
     void testMapFindAll() {
         def map = [1: 2, 2: 4, 3: 6, 4: 8]
         def answer = map.findAll { it.value > 5 }
@@ -99,6 +106,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert values == [6, 8]
     }
 
+    @Test
     void testListEach() {
         def count = 0
 
@@ -112,6 +120,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert count == 20
     }
 
+    @Test
     void testMapEach() {
         def count = 0
 
@@ -121,33 +130,39 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert count == 20
     }
 
+    @Test
     void testListEvery() {
         assert [1, 2, 3, 4].every { it < 5 }
         assert [1, 2, 7, 4].every { it < 5 } == false
     }
 
+    @Test
     void testListAny() {
         assert [1, 2, 3, 4].any { it < 5 }
         assert [1, 2, 3, 4].any { it > 3 }
         assert [1, 2, 3, 4].any { it > 5 } == false
     }
 
+    @Test
     void testJoin() {
         def value = [1, 2, 3].join('-')
         assert value == "1-2-3"
     }
 
+    @Test
     void testListReverse() {
         def value = [1, 2, 3, 4].reverse()
         assert value == [4, 3, 2, 1]
     }
 
+    @Test
     void testEachLine() {
         def file = new File("src/test/groovy/groovy/Bar.groovy")
 
         file.eachLine { assert it != null }
     }
 
+    @Test
     void testReadLines() {
         def file = new File("src/test/groovy/groovy/Bar.groovy")
 
@@ -157,6 +172,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert lines.size() > 0
     }
 
+    @Test
     void testEachFile() {
         def file = new File("src/test/groovy/groovy")
 

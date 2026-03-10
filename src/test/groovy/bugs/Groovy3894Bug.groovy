@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3894Bug extends GroovyTestCase {
+
+class Groovy3894Bug {
+    @Test
     void testInfinityToBigDecimalConversion() {
         BigDecimal x = 999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
         assert x ** 5 == Double.POSITIVE_INFINITY

@@ -18,10 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7995Bug extends GroovyTestCase{
+import static groovy.test.GroovyAssert.assertScript
 
+
+class Groovy7995Bug{
+
+    @Test
     void testClosureShortSyntaxCallFromOtherClosure(){
         assertScript('''
             @groovy.transform.CompileStatic

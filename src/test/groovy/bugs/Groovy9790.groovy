@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -81,6 +81,6 @@ final class Groovy9790 {
 
             test()
         '''
-        assert err =~ /Expected type int for lambda parameter: s/
+        assert err.message =~ /Expected type int for lambda parameter: s/
     }
 }

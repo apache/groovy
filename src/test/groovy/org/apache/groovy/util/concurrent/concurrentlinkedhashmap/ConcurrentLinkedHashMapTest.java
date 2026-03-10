@@ -19,14 +19,14 @@
 
 package org.apache.groovy.util.concurrent.concurrentlinkedhashmap;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class ConcurrentLinkedHashMapTest {
     @Test

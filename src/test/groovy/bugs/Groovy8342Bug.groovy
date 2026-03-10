@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy8342Bug extends CompilableTestSupport {
+final class Groovy8342Bug extends CompilableTestSupport {
+
+    @Test
     void testCorrectHandlingForArrayOfGenericType() {
         shouldCompile '''
             @groovy.transform.CompileStatic

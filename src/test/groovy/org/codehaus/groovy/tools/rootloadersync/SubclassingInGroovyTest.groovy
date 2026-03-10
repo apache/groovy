@@ -18,11 +18,9 @@
  */
 package org.codehaus.groovy.tools.rootloadersync
 
-import groovy.test.GroovyTestCase
-
 import static junit.framework.Assert.assertEquals
 
-public class SubclassingInGroovyTest extends GroovyTestCase{
+public class SubclassingInGroovyTest{
 
    public void testSubclass() {
       OtherConcreteJavaSubclass unrelatedInstance = new OtherConcreteJavaSubclass();

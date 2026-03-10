@@ -19,9 +19,11 @@
 package bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6786Bug extends StaticTypeCheckingTestCase {
+final class Groovy6786Bug extends StaticTypeCheckingTestCase {
 
+    @Test
     void testGenericAddAll() {
         assertScript '''
             public class Class1<ENTITY> {
@@ -45,6 +47,7 @@ class Groovy6786Bug extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGuavaCacheBuilderLikeGenerics() {
         assertScript '''
             class Class1 {
@@ -72,6 +75,7 @@ class Groovy6786Bug extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOverrideGenericMethod() {
         assertScript '''
             abstract class AbstractManager <T> {
@@ -92,6 +96,7 @@ class Groovy6786Bug extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIfWithInstanceOfAndAnotherConditionAfter() {
         assertScript '''
             class Class1 {

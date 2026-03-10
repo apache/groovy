@@ -1240,14 +1240,11 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     public String genEncodingString(CharSequence chars) {
         try {
-            switch(HASH_ALGORITHM) {
-                case "md5":
-                    return EncodingGroovyMethods.md5(chars);
-                case "sha256":
-                    return EncodingGroovyMethods.sha256(chars);
-                default:
-                    throw new IllegalStateException("Unknown hash algorithm");
-            }
+            return switch (HASH_ALGORITHM) {
+                case "md5" -> EncodingGroovyMethods.md5(chars);
+                case "sha256" -> EncodingGroovyMethods.sha256(chars);
+                default -> throw new IllegalStateException("Unknown hash algorithm");
+            };
         } catch (NoSuchAlgorithmException e) {
             throw new GroovyRuntimeException(e);
         }

@@ -18,20 +18,27 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
-class MetaClassCachingBug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-    protected void tearDown() {
+
+class MetaClassCachingBug {
+
+    @AfterEach
+    void tearDown() {
         String.metaClass = null
     }
 
+    @Test
     void testOne() {
         StringMocker.mockString("test")
         def collaborator = new MyCollaborator()
         assertEquals "test", collaborator.getDummy("testOne")
     }
 
+    @Test
     void testTwo() {
         StringMocker.mockString("dog")
         def collaborator = new MyCollaborator()

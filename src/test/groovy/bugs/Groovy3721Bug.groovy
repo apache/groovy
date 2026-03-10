@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy3721Bug extends CompilableTestSupport {
+final class Groovy3721Bug extends CompilableTestSupport {
+
+    @Test
     void testCompilationWithDuplicateJavaBeanProperties() {
         shouldNotCompile """
             class Foo3721V1 {

@@ -2685,7 +2685,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.8.2
      */
     public static URL toURL(CharSequence self) throws MalformedURLException {
-        return new URL(self.toString());
+        try {
+            return toURI(self.toString()).toURL();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -2697,7 +2701,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static URL toURL(String self) throws MalformedURLException {
-        return new URL(self);
+        try {
+            return toURI(self).toURL();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

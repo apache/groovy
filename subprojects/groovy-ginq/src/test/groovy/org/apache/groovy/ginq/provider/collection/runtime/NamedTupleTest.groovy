@@ -20,7 +20,7 @@ package org.apache.groovy.ginq.provider.collection.runtime
 
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -39,7 +39,7 @@ class NamedTupleTest {
             new NamedTuple([1, 2, 3], ['a', 'a', 'c'])
         '''
 
-        assert err.toString().contains('names should be unique')
+        assert err.message.toString().contains('names should be unique')
     }
 
     @Test
@@ -50,6 +50,6 @@ class NamedTupleTest {
             new NamedTuple([1, 2, 3], ['a', 'b'])
         '''
 
-        assert err.toString().contains('elements(size: 3) and names(size: 2) should have the same size')
+        assert err.message.toString().contains('elements(size: 3) and names(size: 2) should have the same size')
     }
 }

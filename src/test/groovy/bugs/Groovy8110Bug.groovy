@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy8110Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class Groovy8110Bug {
+    @Test
     void testListenerListWithArrayParam() {
         assertScript '''
             import groovy.beans.ListenerList

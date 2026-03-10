@@ -18,10 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class CurlyBracketLayoutTest extends GroovyTestCase
+import static org.junit.jupiter.api.Assertions.fail
+
+
+class CurlyBracketLayoutTest
 {
+    @Test
     void testBracketPlacement()
     {
         def foo = "abc"

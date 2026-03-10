@@ -18,10 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ArrayTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
+
+class ArrayTest {
+
+    @Test
     void testFixedSize() {
         def array = new String[10]
         assert array.size() == 10
@@ -29,6 +34,7 @@ class ArrayTest extends GroovyTestCase {
         assert array[0] == "Hello"
     }
 
+    @Test
     void testArrayWithInitializer() {
         String[] array = ["nice", "cheese", "gromit"]
         assert array.size() == 3
@@ -37,11 +43,13 @@ class ArrayTest extends GroovyTestCase {
         assert array[2] == "gromit"
     }
 
+    @Test
     void testCharArrayCreate() {
         def array = new char[3]
         assert array.size() == 3
     }
 
+    @Test
     void testCharArrayAssignToElement() {
         char[] ca = new char[1]
 
@@ -80,6 +88,7 @@ class ArrayTest extends GroovyTestCase {
         assert ca[0] == 'z'
     }
 
+    @Test
     void testCharArrayWithInitializer() {
         def bar = 'c'
         char[] array = ['a', 'b', "$bar"]
@@ -89,11 +98,13 @@ class ArrayTest extends GroovyTestCase {
         assert array[2] == 'c'
     }
 
+    @Test
     void testByteArrayCreate() {
         def array = new byte[100]
         assert array.size() == 100;
     }
 
+    @Test
     void testByteArrayWithInitializer() {
         byte[] array = [0, 1, 2, 3]
         assert array.size() == 4
@@ -103,6 +114,7 @@ class ArrayTest extends GroovyTestCase {
         assert array[3] == 3
     }
 
+    @Test
     void testByteArrayWithInitializerAndAssignmentOfNumber() {
         byte[] array = [2, 4]
         assert array.size() == 2
@@ -120,6 +132,7 @@ class ArrayTest extends GroovyTestCase {
         assert array[1] == 67
     }
 
+    @Test
     void testEachByteForByteArray() {
         byte[] array1 = [2, 4]
         def sum = 0
@@ -131,11 +144,13 @@ class ArrayTest extends GroovyTestCase {
         assert result == 8
     }
 
+    @Test
     void testDoubleArrayCreate() {
         def array = new double[3]
         assert array.size() == 3
     }
 
+    @Test
     void testDoubleArrayWithInitializer() {
         double[] array = [1.3, 3.14, 2.7]
         assert array.size() == 3
@@ -144,11 +159,13 @@ class ArrayTest extends GroovyTestCase {
         assert array[2] == 2.7
     }
 
+    @Test
     void testIntArrayCreate() {
         def array = new int[5]
         assert array.size() == 5
     }
 
+    @Test
     void testIntArrayWithInitializer() {
         int[] array = [42, -5, 360]
         assert array.size() == 3
@@ -157,6 +174,7 @@ class ArrayTest extends GroovyTestCase {
         assert array[2] == 360
     }
 
+    @Test
     void testArrayDeclaration() {
         String[] array = ["a", "b", "c"]
         assert array.class == String[].class
@@ -166,6 +184,7 @@ class ArrayTest extends GroovyTestCase {
         assert array[2] == "c"
     }
 
+    @Test
     void testArrayAssignmentShouldHonorInheritance() {
         String[] array = ["a", "b", "c"]
         Object[] other = array
@@ -173,6 +192,7 @@ class ArrayTest extends GroovyTestCase {
         assert other.hashCode() == array.hashCode()
     }
 
+    @Test
     void testSimpleArrayEquals() {
         Integer[] arr1 = [1, 2, 3, 4]
         Integer[] arr2 = [1, 2, 3, 4]
@@ -197,6 +217,7 @@ class ArrayTest extends GroovyTestCase {
         assert bools1 == [true, true, false] as boolean[]
     }
 
+    @Test
     void testComplexArrayEquals() {
         def a = [1, 2] as Integer[]
         def b = [1, 2]
@@ -220,6 +241,7 @@ class ArrayTest extends GroovyTestCase {
         assert boolsA == boolsB
     }
 
+    @Test
     void testNumberWrapperArrayAssignToElement() {
         Byte[] bytes = [1, 2]
         bytes[0] = (byte) 20
@@ -243,6 +265,7 @@ class ArrayTest extends GroovyTestCase {
         assertEquals 50, doubles[1]
     }
 
+    @Test
     void testCharacterArrayElementAssignments() {
         Character[] ca = new Character[1]
 
@@ -265,6 +288,7 @@ class ArrayTest extends GroovyTestCase {
         assert ca[0] == 'z'
     }
 
+    @Test
     void testAssignmentOfSingleCharStringToNumberArrays() {
         def x = 'x'
         def gx = "$x"
@@ -402,36 +426,42 @@ class ArrayTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testFlattenArray() {
         def orig = "onetwo".toList().toArray()
         def flat = orig.flatten()
         assert flat == ["o", "n", "e", "t", "w", "o"]
     }
 
+    @Test
     void testFlattenArrayOfLists() {
         def orig = ["one".toList(), "two".toList()] as Object[]
         def flat = orig.flatten()
         assert flat == ["o", "n", "e", "t", "w", "o"]
     }
 
+    @Test
     void testFlattenArrayOfArrays() {
         def orig = ["one".toList().toArray(), "two".toList().toArray()] as Object[]
         def flat = orig.flatten()
         assert flat == ["o", "n", "e", "t", "w", "o"]
     }
 
+    @Test
     void testFlattenPrimitiveArray() {
         def orig = [1, 2, 3] as int[]
         def flat = orig.flatten()
         assert flat == [1, 2, 3]
     }
 
+    @Test
     void testFlattenArrayOfPrimitiveArrays() {
         def orig = [[1, 2, 3] as int[], [4, 5, 6] as int[]] as int[][]
         def flat = orig.flatten()
         assert flat == [1, 2, 3, 4, 5, 6]
     }
 
+    @Test
     void testGroovy5402ArrayPlus() {
         Integer[] a = [ 1, 2, 3 ]
         Integer[] b = [ 3, 4, 5 ]
@@ -452,9 +482,10 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void doSomething(long[] values){
-         values[1] += 5 
+         values[1] += 5
     }
 
+    @Test
     void testLongArrayIncrement() {
         long[] l = [1l,0l]
         doSomething(l)
@@ -462,6 +493,7 @@ class ArrayTest extends GroovyTestCase {
         assert l[1]==5
     }
 
+    @Test
     void testJoin() {
         def a1 = [false, true] as boolean[]
         def a2 = [1 as byte, 2 as byte] as byte[]
@@ -482,6 +514,7 @@ class ArrayTest extends GroovyTestCase {
         assert "1, 2" == a8.join(", ")
     }
 
+    @Test
     void testSum() {
         def a1 = [1, 2, 3] as byte[]
         def a2 = [1, 2, 3] as short[]

@@ -18,11 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-import java.lang.reflect.*
+import java.lang.reflect.Modifier
 
-class Groovy3726Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertFalse
+
+class Groovy3726Bug {
+    @Test
     void testVolatilePropertiesResultingInBridgeMethods() {
         def scriptStr, clazz, fooGetter, fooSetter
         GroovyClassLoader cl = new GroovyClassLoader();
@@ -43,6 +46,7 @@ class Groovy3726Bug extends GroovyTestCase {
         assertFalse Modifier.isVolatile(fooSetter.modifiers)
     }
 
+    @Test
     void testTransientPropertiesResultingInVarArgsMethods() {
         def scriptStr, clazz, barGetter, barSetter
         GroovyClassLoader cl = new GroovyClassLoader();

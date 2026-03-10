@@ -18,9 +18,12 @@
  */
 package gls.invocation
 
-import gls.CompilableTestSupport;
+import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class MethodDeclarationTest  extends CompilableTestSupport {
+final class MethodDeclarationTest  extends CompilableTestSupport {
+
+    @Test
     void testDuplicateMethod() {
         shouldNotCompile """
             class A {

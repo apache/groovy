@@ -18,12 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class NestedClosureBug extends GroovyTestCase {
+class NestedClosureBug {
 
+    @Test
     void testBug() {
         def a = 123
         getValues().each {

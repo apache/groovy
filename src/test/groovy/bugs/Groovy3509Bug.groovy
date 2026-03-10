@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3509Bug extends GroovyTestCase {
 
+class Groovy3509Bug {
+
+    @Test
     void testGPathInconcistency() {
         def data = [
                 [a: null],
@@ -45,6 +47,7 @@ class Groovy3509Bug extends GroovyTestCase {
         assert data.a.b.c.sum() == 3
     }
 
+    @Test
     void testOriginalCase() {
         // initialize structure
         def root = new Root()

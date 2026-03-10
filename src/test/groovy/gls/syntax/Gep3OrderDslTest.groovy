@@ -18,24 +18,23 @@
  */
 package gls.syntax
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 
-class Gep3OrderDslTest extends GroovyTestCase {
-    @Override
-    protected void setUp() {
-        super.setUp()
+class Gep3OrderDslTest {
+    @BeforeEach
+    void setUp() {
 
         // syntax for 200.shares
         Integer.metaClass.getShares = { -> delegate }
     }
 
-    @Override
-    protected void tearDown() {
+    @AfterEach
+    void tearDown() {
         // remove the getShares method by restoring the original metaclass for Integer
         Integer.metaClass = null
 
-        super.tearDown()
     }
 
     void testDsl() {

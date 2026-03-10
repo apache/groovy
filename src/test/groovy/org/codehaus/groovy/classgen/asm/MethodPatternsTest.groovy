@@ -18,12 +18,16 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.junit.jupiter.api.Test
+
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+import static org.junit.jupiter.api.Assumptions.assumeFalse
 
-class MethodPatternsTest extends AbstractBytecodeTestCase {
+final class MethodPatternsTest extends AbstractBytecodeTestCase {
 
-    void testUnoptimizedIfWithNestedOptimizedLoop(){
-        if (config.indyEnabled) return;
+    @Test
+    void testUnoptimizedIfWithNestedOptimizedLoop() {
+        assumeFalse(config.indyEnabled)
         // in this example the if block contains statements that will not be optimized
         // but we still want to optimize the for loops, which can.
         // The test will check there is an optimized bytecode sequence for the loops.
@@ -88,8 +92,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
 
     // make a test for native compilation of the ackerman function
     // and ensure the nested call is optimized
+    @Test
     void testAckerman() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile(method: 'A', '''
             int A(int x, int y) {
                 if (x == 0) return y+1
@@ -138,8 +143,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testForLoopSettingArray() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile('''
             int n = 10
             int[] x = new int[n]
@@ -176,8 +182,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testArrayIncrement() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile('''
             int n = 10
             int[] x = new int[n]
@@ -226,8 +233,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testForLoopSettingArrayWithOperatorUsedInAssignmentAndArrayRHS() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile('''
             int n = 10
             int[] x = new int[n]
@@ -266,8 +274,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testRightShiftUnsignedWithLongArgument() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile(method: "hashCode", '''
             class X{
                 long _tagReservationDate
@@ -296,8 +305,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testObjectArraySet() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile(method: "foo", '''
             class X {
                 void foo() {
@@ -311,8 +321,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testBooleanArraySet() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile(method: "foo", '''
             class X{
                 void foo() {
@@ -326,8 +337,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testArray() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         def methods = [
             "short"     :   [1, "sArraySet ([SIS)V", "sArrayGet ([SI)S"],
             "int"       :   [1, "intArraySet ([III)V", "intArrayGet ([II)I"],
@@ -379,12 +391,13 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
             }
             clos.call(b)
             assert b.v == 3
-            assert a[3] == 8        
+            assert a[3] == 8
         """
     }
 
+    @Test
     void testFib() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile(method: "fib", """
             int fib(int i) {
                 i < 2 ? 1 : fib(i - 2) + fib(i - 1)
@@ -423,8 +436,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         assert !seq.contains("isOrig")
     }
 
+    @Test
     void testNoBoxUnbox() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile(method: "someCode", """
             public boolean someCall() {
                 return true;
@@ -432,7 +446,7 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
 
             public boolean someCode() {
                 boolean val = someCall()
-            }        
+            }
         """).hasSequence([
             'ALOAD',
             'INVOKEVIRTUAL script.someCall ()Z',
@@ -442,8 +456,9 @@ class MethodPatternsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testDiv() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         def types = [
             "byte", "short", "int", "long", "double", "float"]
         types.each {type ->

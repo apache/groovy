@@ -173,15 +173,10 @@ public abstract class BaseJsonParser implements JsonParser {
     }
 
     protected static boolean isDecimalChar(int currentChar) {
-        switch (currentChar) {
-            case MINUS:
-            case PLUS:
-            case LETTER_E:
-            case LETTER_BIG_E:
-            case DECIMAL_POINT:
-                return true;
-        }
-        return false;
+        return switch (currentChar) {
+            case MINUS, PLUS, LETTER_E, LETTER_BIG_E, DECIMAL_POINT -> true;
+            default -> false;
+        };
     }
 
     protected static boolean isDelimiter(int c) {

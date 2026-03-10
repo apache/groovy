@@ -108,34 +108,20 @@ public enum JsonTokenType {
      * @return the possible token type found
      */
     public static JsonTokenType startingWith(char c) {
-        switch (c) {
-            case '{': return OPEN_CURLY;
-            case '}': return CLOSE_CURLY;
-            case '[': return OPEN_BRACKET;
-            case ']': return CLOSE_BRACKET;
-            case ',': return COMMA;
-            case ':': return COLON;
-
-            case 't': return TRUE;
-            case 'f': return FALSE;
-            case 'n': return NULL;
-
-            case '"': return STRING;
-
-            case '-':
-            case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
-                return NUMBER;
-        }
-        return null;
+        return switch (c) {
+            case '{' -> OPEN_CURLY;
+            case '}' -> CLOSE_CURLY;
+            case '[' -> OPEN_BRACKET;
+            case ']' -> CLOSE_BRACKET;
+            case ',' -> COMMA;
+            case ':' -> COLON;
+            case 't' -> TRUE;
+            case 'f' -> FALSE;
+            case 'n' -> NULL;
+            case '"' -> STRING;
+            case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> NUMBER;
+            default -> null;
+        };
     }
 
     public String getLabel() {

@@ -18,9 +18,10 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class Groovy9911 {
+
     @Test
     void testTupleEqualityWithNonComparableElements() {
         assert Tuple.tuple(1, [2]) == Tuple.tuple(1, [2])

@@ -19,10 +19,10 @@
 package org.apache.groovy.contracts.tests.other
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertTrue
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 class MissingLineNumberTests extends BaseTestClass {
 
@@ -76,9 +76,9 @@ class MissingLineNumberTests extends BaseTestClass {
 
             println errorline
 
-            assertTrue "error line must not be empty", errorline.size() > 0
+            assertTrue(errorline.size() > 0, "error line must not be empty")
 
-            assertFalse "line number of assertion must not be missing", errorline.endsWith("(MissingLineNumber.groovy)")
+            assertFalse(errorline.endsWith("(MissingLineNumber.groovy)"), "line number of assertion must not be missing")
         }
     }
 
@@ -109,9 +109,9 @@ class MissingLineNumberTests extends BaseTestClass {
 
             println errorline
 
-            assertTrue "error line must not be empty", errorline.size() > 0
+            assertTrue(errorline.size() > 0, "error line must not be empty")
 
-            assertFalse "line number of assertion must not be missing", errorline.endsWith("(MissingLineNumber.groovy)")
+            assertFalse(errorline.endsWith("(MissingLineNumber.groovy)"), "line number of assertion must not be missing")
         }
     }
 }

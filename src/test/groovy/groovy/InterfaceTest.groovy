@@ -18,6 +18,7 @@
  */
 package groovy
 
+import org.junit.jupiter.api.RepeatedTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -218,6 +219,179 @@ final class InterfaceTest {
         '''
     }
 
+    @Test
+    void testPublicStaticInterfaceConstant1() {
+        String interfaces = '''
+            interface A {
+                String FOO = 'A'
+            }
+            interface B {
+                String FOO = 'B'
+            }
+        '''
+        assertScript interfaces + '''
+            class C implements A, B {
+                def m() {
+                    FOO
+                }
+            }
+            assert new C().m() == 'B'
+        '''
+        assertScript interfaces + '''
+            class C implements B, A {
+                def m() {
+                    FOO
+                }
+            }
+            assert new C().m() == 'B'
+        '''
+    }
+
+    @Test
+    void testPublicStaticInterfaceConstant2() {
+        String interfaces = '''
+            interface A {
+                String FOO = 'A'
+            }
+            interface B {
+                String FOO = 'B'
+            }
+            interface X extends B { }
+        '''
+        assertScript interfaces + '''
+            class C implements A, X {
+                def m() {
+                    FOO
+                }
+            }
+            assert new C().m() == 'B'
+        '''
+        assertScript interfaces + '''
+            class C implements X, A {
+                def m() {
+                    FOO
+                }
+            }
+            assert new C().m() == 'B'
+        '''
+    }
+
+    // GROOVY-5272
+    @RepeatedTest(10)
+    void testPublicStaticInterfaceConstant3() {
+        assertScript '''
+            interface A {
+                String FOO = 'A'
+            }
+            interface B extends A {
+                String FOO = 'B'
+            }
+
+            assert A.FOO != B.FOO // was non-deterministic
+        '''
+    }
+
+    // GROOVY-5272
+    @RepeatedTest(10)
+    void testPublicStaticInterfaceConstant4() {
+        assertScript '''
+            interface B {
+                String FOO = 'B'
+            }
+            interface A extends B {
+                String FOO = 'A'
+            }
+
+            assert A.FOO != B.FOO // was non-deterministic
+        '''
+    }
+
+    // GROOVY-5272
+    @RepeatedTest(10)
+    void testPublicStaticInterfaceConstant5() {
+        assertScript '''
+            interface A {
+                String FOO = 'A'
+            }
+            interface B extends A {
+                String FOO = 'B'
+            }
+            interface C extends A {
+                String FOO = 'C'
+            }
+            class X implements B, C {
+            }
+
+            assert X.FOO == 'C'
+        '''
+    }
+
+    @Test
+    void testConstantInSuperInterfaceNoExpando() {
+        assertScript '''
+            interface Foo {
+                String FOO = 'FOO'
+            }
+            interface Bar extends Foo {
+            }
+
+            assert Bar.FOO == 'FOO'
+        '''
+    }
+
+    @Test
+    void testConstantInSuperInterfaceYesExpando() {
+        assertScript '''
+            interface Foo {
+                String FOO = 'FOO'
+            }
+            interface Bar extends Foo {
+            }
+
+            ExpandoMetaClass.enableGlobally()
+            try {
+                assert Bar.FOO == 'FOO'
+            } finally {
+                ExpandoMetaClass.disableGlobally()
+            }
+        '''
+    }
+
+    @Test
+    void testConstantInSuperSuperInterfaceNoExpando() {
+        assertScript '''
+            interface Foo {
+                String FOO = 'FOO'
+            }
+            interface Bar extends Foo {
+            }
+            class Baz implements Bar {
+            }
+
+            assert Baz.FOO == 'FOO'
+        '''
+    }
+
+    @Test
+    void testConstantInSuperSuperInterfaceYesExpando() {
+        assertScript '''
+            interface Foo {
+                String FOO = 'FOO'
+            }
+            interface Bar extends Foo {
+            }
+            class Baz implements Bar {
+            }
+
+            ExpandoMetaClass.enableGlobally()
+            try {
+                assert Baz.FOO == 'FOO'
+            } finally {
+                ExpandoMetaClass.disableGlobally()
+            }
+        '''
+    }
+
     // GROOVY-11758, GROOVY-11830
     @ParameterizedTest
     @ValueSource(strings=['protected final','protected','@PackageScope','private'])
@@ -234,7 +408,7 @@ final class InterfaceTest {
         """
         spec = spec.split()[0]
         if (spec == '@PackageScope') spec = 'package-private'
-        assert err =~ /$spec method m\(\) from B cannot shadow the public method in A/
+        assert err.message =~ /$spec method m\(\) from B cannot shadow the public method in A/
     }
 
     // GROOVY-11753

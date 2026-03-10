@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy3817Bug extends CompilableTestSupport {
+final class Groovy3817Bug extends CompilableTestSupport {
+
+    @Test
     void testUsageOfRangeExpressionJustAfterTryCatch() {
         shouldCompile """
             try { println "nix" }

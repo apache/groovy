@@ -19,10 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+import static org.junit.jupiter.api.Assumptions.assumeFalse
 
-class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
+final class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
+
+    @Test
     void testShouldCompileArrayLengthStatically() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -37,8 +41,9 @@ class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
         assert obj.m([4,5,6] as Object[]) == 3
     }
 
+    @Test
     void testArrayGet1() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         // this test is done with indy in another tests case
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -51,11 +56,11 @@ class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
         )
         def obj = clazz.newInstance()
         assert obj.m([4,5,6] as int[]) == 4
-
     }
 
+    @Test
     void testArraySet1() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         // this test is done with indy in another tests case
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -70,6 +75,5 @@ class StaticCompileArrayLengthAndGet extends AbstractBytecodeTestCase {
         int[] arr = [1,2,3]
         obj.m(arr)
         assert arr[0] == 666
-
     }
 }

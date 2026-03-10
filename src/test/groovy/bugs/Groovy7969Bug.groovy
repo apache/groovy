@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7969Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class Groovy7969Bug {
+    @Test
     void testBindablePropertySettersHaveValidModifiersForMethod() {
         assertScript """
             import groovy.beans.Bindable

@@ -18,12 +18,15 @@
  */
 package cli
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-abstract class CliBuilderTestCase extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
-    abstract String getImportCliBuilder()
+abstract class CliBuilderTestCase {
 
+    protected abstract String getImportCliBuilder()
+
+    @Test
     void testAnnotationsInterface() {
         assertScript """
         import cli.GreeterI
@@ -43,6 +46,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testAnnotationsClass() {
         assertScript """
         import cli.GreeterC
@@ -79,8 +83,8 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testParseScript() {
-        def argz = '--audience Groovologist foo'.split()
         new GroovyShell().run("""
             $importCliBuilder
             // tag::annotationScript[]
@@ -95,9 +99,10 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
             assert audience == 'Groovologist'
             assert remaining == ['foo']
             // end::annotationScript[]
-        """, 'TestScript.groovy', argz)
+        """, 'TestScript.groovy', '--audience Groovologist foo'.split())
     }
 
+    @Test
     void testWithArgument() {
         assertScript """
         $importCliBuilder
@@ -124,6 +129,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testMultipleArgsAndOptionalValueSeparator() {
         assertScript """
         $importCliBuilder
@@ -158,6 +164,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testWithArgumentInterface() {
         assertScript """
         import cli.WithArgsI
@@ -179,6 +186,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testMultipleArgsAndOptionalValueSeparatorInterface() {
         assertScript """
         import cli.ValSepI
@@ -209,6 +217,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testType() {
         assertScript """
         import java.math.RoundingMode
@@ -241,6 +250,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testTypeMultiple() {
         assertScript """
         $importCliBuilder
@@ -258,6 +268,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testConvert() {
         assertScript """
         $importCliBuilder
@@ -277,6 +288,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testConvertInterface() {
         assertScript """
         import cli.WithConvertI
@@ -294,6 +306,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testDefaultValue() {
         assertScript """
         $importCliBuilder
@@ -317,6 +330,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testDefaultValueInterface() {
         assertScript """
         $importCliBuilder
@@ -335,6 +349,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testTypeCheckedInterfaceRunner() {
         assertScript """
         $importCliBuilder
@@ -356,6 +371,7 @@ abstract class CliBuilderTestCase extends GroovyTestCase {
         """
     }
 
+    @Test
     void testTypeCheckedRunner() {
         assertScript """
         $importCliBuilder

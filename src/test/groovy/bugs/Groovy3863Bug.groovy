@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3863Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy3863Bug {
+    @Test
     void testClassNameAccessInMainMethod() {
         assertScript """
             class Foo3863 {

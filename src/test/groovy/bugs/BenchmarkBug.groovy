@@ -18,13 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 /**
- * A little performance test
+ * A little performance test.
  */
-class BenchmarkBug extends GroovyTestCase {
+final class BenchmarkBug {
 
+    @Test
     void testPerformance() {
         def start = System.currentTimeMillis()
 

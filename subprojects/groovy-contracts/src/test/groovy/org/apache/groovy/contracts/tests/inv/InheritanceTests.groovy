@@ -18,9 +18,11 @@
  */
 package org.apache.groovy.contracts.tests.inv
 
-import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.Test
 import org.apache.groovy.contracts.ClassInvariantViolation
+import org.apache.groovy.contracts.tests.basic.BaseTestClass
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 class InheritanceTests extends BaseTestClass {
 
@@ -394,23 +396,25 @@ class Account {
         c.newInstance().sources()
     }
 
-    @Test(expected = ClassInvariantViolation)
+    @Test
     void separate_class_invariant() {
-        def c = add_class_to_classpath """
-            package tests
+        assertThrows(ClassInvariantViolation) {
+            def c = add_class_to_classpath """
+                package tests
 
-            import groovy.contracts.*
+                import groovy.contracts.*
 
-            @Invariant({
-                i_never_null: i != null
-                j_never_null: j != null
-            })
-            class Test {
-                private def i
-                private def j
-            }
-            """
+                @Invariant({
+                    i_never_null: i != null
+                    j_never_null: j != null
+                })
+                class Test {
+                    private def i
+                    private def j
+                }
+                """
 
-        c.newInstance()
+            c.newInstance()
+        }
     }
 }

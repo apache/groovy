@@ -19,13 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.STCnAryExpressionTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking : n-ary operators
  */
-class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implements StaticCompilationTestSupport {
+final class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implements StaticCompilationTestSupport {
 
     // GROOVY-10395
+    @Test
     void testUfoOperatorShouldRedirectForPrimitives() {
         assertScript '''
             int test(boolean a, boolean b) {
@@ -41,6 +43,7 @@ class NaryExpressionTestStaticCompileTest extends STCnAryExpressionTest implemen
     }
 
     // GROOVY-10909
+    @Test
     void testMultipleNotExpressionOptimization() {
         assertScript '''
             def item = "", list = []

@@ -18,10 +18,15 @@
  */
 
 package groovy.transform.stc
+
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : closure parameter type inference for {@link org.codehaus.groovy.runtime.SocketGroovyMethods}.
  */
 class SocketGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
+
+    @Test
     void testAccept() {
         assertScript '''
             void foo(ServerSocket s) {
@@ -40,6 +45,7 @@ class SocketGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCas
         '''
     }
 
+    @Test
     void testWithObjectStreams() {
         assertScript '''
             Socket s = null
@@ -49,6 +55,7 @@ class SocketGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCas
         '''
     }
 
+    @Test
     void testWithStreams() {
         assertScript '''
             Socket s = null

@@ -18,15 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test to fix the Jira issues GROOVY-810 and GROOVY-811.
  * Test of "string as Boolean" against the issue GROOVY-812.
  */
+final class AsBoolBug {
 
-public class AsBoolBug extends GroovyTestCase {
-
+    @Test
     void testMapAsBool() {
         def a = ["A":123]
         assert a as Boolean == true
@@ -34,6 +35,7 @@ public class AsBoolBug extends GroovyTestCase {
         assert a as Boolean == false
     }
 
+    @Test
     void testListAsBool() {
         def b = [123]
         assert b as Boolean == true
@@ -51,6 +53,7 @@ public class AsBoolBug extends GroovyTestCase {
     // it has already been decided to handle string-to-boolean conversions
     // differently. Commented out temporarily on 10 May 2005.
     // This is a test case against GROOVY-812
+    @Test
     void testStringAsBool() {
         def c = "false"
         assert c as Boolean == true

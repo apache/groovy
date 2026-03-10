@@ -18,22 +18,30 @@
  */
 package groovy.jmx.builder
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import javax.management.MBeanServerConnection
 import javax.management.ObjectName
 
-class JmxBeanFactoryTest extends GroovyTestCase {
-    def builder
-    MBeanServerConnection server
+final class JmxBeanFactoryTest {
 
+    private JmxBuilder builder
+    private MBeanServerConnection server
+
+    @BeforeEach
     void setUp() {
-        super.setUp()
         builder = new JmxBuilder()
-        server = builder.getMBeanServer()
-        builder.registerFactory("bean", new JmxBeanFactory())
+        builder.registerFactory('bean', new JmxBeanFactory())
+        try {
+            server = builder.getMBeanServer()
+        } catch (e) {
+            Assumptions.abort(e.getMessage())
+        }
     }
 
+    @Test
     void testMetaMapValidity() {
         def object = new MockManagedObject()
         def metaMap = builder.bean(object)
@@ -43,6 +51,7 @@ class JmxBeanFactoryTest extends GroovyTestCase {
         assert metaMap.jmxName.toString() == "jmx.builder:type=ExportedObject,name=${object.class.canonicalName}@${object.hashCode()}"
     }
 
+    @Test
     void testImplicitMetaMap() {
         def object = new MockManagedObject()
         def objName = "jmx.builder:type=ExportedObject,name=${object.class.canonicalName}@${object.hashCode()}"
@@ -53,6 +62,7 @@ class JmxBeanFactoryTest extends GroovyTestCase {
         assert map.jmxName.toString() == objName
     }
 
+    @Test
     void testEmbeddedBeanGeneration() {
         def object = new MockManagedGroovyObject()
         def map = builder.bean(object)
@@ -62,18 +72,19 @@ class JmxBeanFactoryTest extends GroovyTestCase {
         assert map.target == object
         assert map.name == object.class.canonicalName
 
-        assert map.jmxName == new ObjectName("jmx.builder:type=EmbeddedObject")
+        assert map.jmxName == new ObjectName('jmx.builder:type=EmbeddedObject')
         assert map.attributes.Id
-        assert map.attributes.Id.type == "int"
+        assert map.attributes.Id.type == 'int'
 
         assert map.attributes.Location
-        assert map.attributes.Location.type == "java.lang.Object"
+        assert map.attributes.Location.type == 'java.lang.Object'
     }
 
+    @Test
     void testAttributeMethodListeners() {
         def object = new MockManagedGroovyObject()
-        def map = builder.bean(target: object, name: "jmx.builder:type=ExplicitObject",
-                attributes: ["Id": [onChange: {-> Hello}]]
+        def map = builder.bean(target: object, name: 'jmx.builder:type=ExplicitObject',
+                attributes: ['Id': [onChange: {-> Hello}]]
         )
 
         assert map
@@ -81,6 +92,7 @@ class JmxBeanFactoryTest extends GroovyTestCase {
         assert map.attributes.Id.methodListener
     }
 
+    @Test
     void testMBeanClass() {
         def object = new MockSimpleObject()
         def map = builder.bean(object)

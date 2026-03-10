@@ -18,10 +18,14 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class UnaryMinusOperatorTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+
+class UnaryMinusOperatorTest {
+
+    @Test
     void testUnaryMinus() {
         def value = -1
 
@@ -34,6 +38,7 @@ class UnaryMinusOperatorTest extends GroovyTestCase {
         assert y == 1
     }
 
+    @Test
     void testBug() {
         def a = 1
         def b = -a
@@ -41,6 +46,7 @@ class UnaryMinusOperatorTest extends GroovyTestCase {
         assert b == -1
     }
 
+    @Test
     void testShellBug() {
         assertScript("""
 def a = 1

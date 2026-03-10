@@ -18,14 +18,18 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.fail
+
 
 /**
  * test to ensure that overriding getter doesn't throw a NPE on access
  */
-class OverridePropertyGetterTest extends GroovyTestCase {
+class OverridePropertyGetterTest {
     def cheese
 
+    @Test
     void testSimpleMethodParameterAccess() {
         def o = new OverridePropertyGetterTest(cheese: 'Edam')
         def p = new OverridePropertyGetterTest(cheese: 'Cheddar')

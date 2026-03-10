@@ -24,7 +24,5 @@ import groovy.transform.stc.StringGMClosureParamTypeInferenceSTCTest
 /**
  * Unit tests for static compilation: closure parameter type inference: StringGroovyMethods.
  */
-class StringGMClosureParamTypeInferenceStaticCompileTest extends StringGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
-
+final class StringGMClosureParamTypeInferenceStaticCompileTest extends StringGMClosureParamTypeInferenceSTCTest implements StaticCompilationTestSupport {
 }
-

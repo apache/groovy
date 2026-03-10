@@ -16,10 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package metaprogramming
 
-import groovy.test.GroovyTestCase
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
@@ -31,16 +29,19 @@ import org.codehaus.groovy.macro.transform.MacroClass
 import org.codehaus.groovy.transform.AbstractASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
+import org.junit.jupiter.api.Test
 
 import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
 
+import static groovy.test.GroovyAssert.assertScript
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX
 
-class MacroClassTest extends GroovyTestCase {
+final class MacroClassTest {
 
+    @Test
     void testMacroClass() {
         assertScript '''
         package metaprogramming

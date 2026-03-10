@@ -21,14 +21,16 @@ package org.codehaus.groovy.transform
 import groovy.test.GroovyShellTestCase
 import groovy.transform.AutoClone
 import groovy.transform.AutoExternalize
+import groovy.transform.Canonical
 import groovy.transform.CompileStatic
 import groovy.transform.EqualsAndHashCode
+import groovy.transform.ToString
 import groovy.transform.TupleConstructor
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
-import static groovy.transform.AutoCloneStyle.*
-import groovy.transform.ToString
-import groovy.transform.Canonical
+import static groovy.transform.AutoCloneStyle.COPY_CONSTRUCTOR
+import static groovy.transform.AutoCloneStyle.SERIALIZATION
+import static groovy.transform.AutoCloneStyle.SIMPLE
 
 class CanonicalComponentsTransformTest extends GroovyShellTestCase {
 

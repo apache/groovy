@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy6564Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldNotRequireIntermediateVariableToPass() {
         assertScript '''
             class Stream<T> implements Iterable<T> {
@@ -48,6 +50,7 @@ final class Groovy6564Bug extends StaticTypeCheckingTestCase implements StaticCo
         '''
     }
 
+    @Test
     void testShouldNotRequireIntermediateVariableToPassWithEachParamInference() {
         assertScript '''
             class Stream<T> implements Iterable<T> {

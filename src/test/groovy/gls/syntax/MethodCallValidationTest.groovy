@@ -18,14 +18,18 @@
  */
 package gls.syntax
 
-class MethodCallValidationTest extends gls.CompilableTestSupport {
+import org.junit.jupiter.api.Test
 
+final class MethodCallValidationTest extends gls.CompilableTestSupport {
+
+    @Test
     void testDeclarationInMethodCall() {
         shouldNotCompile """
             foo(String a)
         """
     }
 
+    @Test
     void testDuplicateNamedParameters() {
         shouldNotCompile """
             def closure = { println it }

@@ -18,12 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class ToStringBug extends GroovyTestCase {
+class ToStringBug {
 
+    @Test
     void testBug() {
         def value = toString()
         assert value != null

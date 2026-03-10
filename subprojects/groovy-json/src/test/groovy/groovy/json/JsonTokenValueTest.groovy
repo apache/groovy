@@ -18,7 +18,7 @@
  */
 package groovy.json
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import static groovy.json.JsonTokenType.FALSE
 import static groovy.json.JsonTokenType.NULL
@@ -26,9 +26,11 @@ import static groovy.json.JsonTokenType.NUMBER
 import static groovy.json.JsonTokenType.OPEN_CURLY
 import static groovy.json.JsonTokenType.STRING
 import static groovy.json.JsonTokenType.TRUE
+import static groovy.test.GroovyAssert.shouldFail
 
-class JsonTokenValueTest extends GroovyTestCase {
+class JsonTokenValueTest {
 
+    @Test
     void testValues() {
         assert new JsonToken(type: STRING, text: '""').value == ""
         assert new JsonToken(type: STRING, text: '"abc"').value == "abc"
@@ -62,6 +64,7 @@ class JsonTokenValueTest extends GroovyTestCase {
         assert new JsonToken(type: NUMBER, text: '123456.123456789').value == 123456.123456789
     }
 
+    @Test
     void testWeirdTheoricalValue() {
         shouldFail { assert new JsonToken(type: NUMBER, text: '1234xyz').value }
         shouldFail { new JsonToken(type: OPEN_CURLY, text: '{').value }

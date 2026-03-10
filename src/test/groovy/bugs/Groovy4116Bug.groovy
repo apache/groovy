@@ -18,10 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
-final class Groovy4116Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy4116Bug {
 
     void testAnInterfaceMethodNotImplementedPublic() {
         def err = shouldFail MultipleCompilationErrorsException, '''
@@ -32,7 +33,7 @@ final class Groovy4116Bug extends GroovyTestCase {
                 def foo()
             }
         '''
-        assert err =~ /The method foo should be public as it implements the corresponding method from interface I4116/
+        assert err.message =~ /The method foo should be public as it implements the corresponding method from interface I4116/
     }
 
     void testAnInterfaceMethodNotImplementedPublicV2SuperClassInterface() {
@@ -46,6 +47,6 @@ final class Groovy4116Bug extends GroovyTestCase {
                 def foo()
             }
         '''
-        assert err =~ /The method foo should be public as it implements the corresponding method from interface I4116/
+        assert err.message =~ /The method foo should be public as it implements the corresponding method from interface I4116/
     }
 }

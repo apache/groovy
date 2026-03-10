@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class DollarEscapingTest extends GroovyTestCase {
 
+class DollarEscapingTest {
+
+    @Test
     void testEscaping() {
         def foo = "hello \${foo}"
 

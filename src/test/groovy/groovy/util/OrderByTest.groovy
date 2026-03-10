@@ -18,14 +18,15 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
-/** 
+import org.junit.jupiter.api.Test
+
+/**
  * Tests OrderBy
  */
-class OrderByTest extends GroovyTestCase {
+class OrderByTest {
 
+    @Test
     void testSortByOneField() {
         def people = buildPeople()
 
@@ -38,6 +39,7 @@ class OrderByTest extends GroovyTestCase {
         assert (0..3).collect{ sorted.get(it).get('@name') } == ['Bob', 'Chris', 'James', 'Joe']
     }
 
+    @Test
     void testSortByMultipleFields() {
         def people = buildPeople()
         def order = new OrderBy([{it.get('@location')}, {it.get('@cheese')}])
@@ -56,6 +58,7 @@ class OrderByTest extends GroovyTestCase {
         tree.children()
     }
 
+    @Test
     void testSortByMultipleFieldsWithComparable() {
         def bob = new TestPerson(first: 'Bob', last: 'Barker', age: '10')
         def bobby = new TestPerson(first: 'Bob', last: 'Barker', age: '20')

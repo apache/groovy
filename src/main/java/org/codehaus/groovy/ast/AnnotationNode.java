@@ -19,15 +19,19 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.StringJoiner;
 
 import static java.util.Objects.requireNonNull;
 
@@ -35,29 +39,64 @@ import static java.util.Objects.requireNonNull;
  * Represents an annotation which can be attached to interfaces, classes, methods, fields, parameters, and other places.
  */
 public class AnnotationNode extends ASTNode {
-    public static final int CONSTRUCTOR_TARGET = 1 << 1;
-    public static final int METHOD_TARGET = 1 << 2;
-    public static final int FIELD_TARGET = 1 << 3;
-    public static final int PARAMETER_TARGET =  1 << 4;
-    public static final int LOCAL_VARIABLE_TARGET = 1 << 5;
-    public static final int ANNOTATION_TARGET = 1 << 6;
-    public static final int PACKAGE_TARGET = 1 << 7;
-    public static final int TYPE_PARAMETER_TARGET = 1 << 8;
-    public static final int TYPE_USE_TARGET = 1 << 9;
+
+    public static final int CONSTRUCTOR_TARGET      = 1 << 1;
+    public static final int METHOD_TARGET           = 1 << 2;
+    public static final int FIELD_TARGET            = 1 << 3;
+    public static final int PARAMETER_TARGET        = 1 << 4;
+    public static final int LOCAL_VARIABLE_TARGET   = 1 << 5;
+    public static final int ANNOTATION_TARGET       = 1 << 6;
+    public static final int PACKAGE_TARGET          = 1 << 7;
+    public static final int TYPE_PARAMETER_TARGET   = 1 << 8;
+    public static final int TYPE_USE_TARGET         = 1 << 9;
     public static final int RECORD_COMPONENT_TARGET = 1 << 10;
-    public static final int TYPE_TARGET = 1 + ANNOTATION_TARGET;    //GROOVY-7151
-    private static final int ALL_TARGETS = TYPE_TARGET | CONSTRUCTOR_TARGET | METHOD_TARGET
-            | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET
-            | PACKAGE_TARGET | TYPE_PARAMETER_TARGET | TYPE_USE_TARGET | RECORD_COMPONENT_TARGET;
+    public static final int TYPE_TARGET             = ANNOTATION_TARGET | 1; // GROOVY-7151
 
     private final ClassNode classNode;
     private Map<String, Expression> members;
-    private boolean runtimeRetention = false, sourceRetention = false, /* explicit */ classRetention = false;
-    private int allowedTargets = ALL_TARGETS;
 
-    public AnnotationNode(ClassNode classNode) {
-        this.classNode = requireNonNull(classNode);
+    public AnnotationNode(final ClassNode type) {
+        classNode = requireNonNull(type);
     }
+
+    public void addMember(final String name, final Expression value) {
+        ensureMembers();
+        Expression oldValue = members.get(name);
+        if (oldValue == null) {
+            members.put(name, value);
+        } else {
+            throw new GroovyBugError(String.format("Annotation member %s has already been added", name));
+        }
+    }
+
+    public void setMember(final String name, final Expression value) {
+        ensureMembers();
+        members.put(name, value);
+    }
+
+    private void ensureMembers() {
+        if (members == null) {
+            members = new LinkedHashMap<>();
+        }
+    }
+
+    @Deprecated(since = "6.0.0")
+    public void setAllowedTargets(final int ignored) {
+    }
+
+    @Deprecated(since = "6.0.0")
+    public void setClassRetention(final boolean ignored) {
+    }
+
+    @Deprecated(since = "6.0.0")
+    public void setSourceRetention(final boolean ignored) {
+    }
+
+    @Deprecated(since = "6.0.0")
+    public void setRuntimeRetention(final boolean ignored) {
+    }
+
+    //--------------------------------------------------------------------------
 
     public ClassNode getClassNode() {
         return classNode;
@@ -70,135 +109,105 @@ public class AnnotationNode extends ASTNode {
         return members;
     }
 
-    public Expression getMember(String name) {
+    public Expression getMember(final String name) {
         if (members == null) {
             return null;
         }
         return members.get(name);
     }
 
-    private void assertMembers() {
-        if (members == null) {
-             members = new LinkedHashMap<>();
-        }
-    }
-
-    public void addMember(String name, Expression value) {
-        assertMembers();
-        Expression oldValue = members.get(name);
-        if (oldValue == null) {
-            members.put(name, value);
-        }
-        else {
-            throw new GroovyBugError(String.format("Annotation member %s has already been added", name));
-        }
-    }
-
-    public void setMember(String name, Expression value) {
-        assertMembers();
-        members.put(name, value);
-    }
-
-    public boolean isBuiltIn(){
+    @Deprecated(since = "6.0.0")
+    public boolean isBuiltIn() {
         return false;
+    }
+
+    public boolean isTargetAllowed(final int target) {
+        if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
+            throw new IllegalStateException("cannot check target at this time");
+
+        // GROOVY-6526: check class for @Target
+        int allowedTargets = classNode.redirect().getNodeMetaData(Target.class, (k) -> {
+            for (AnnotationNode an : classNode.getAnnotations()) {
+                if ("java.lang.annotation.Target".equals(an.getClassNode().getName())
+                        && an.getMember("value") instanceof ListExpression list) {
+                    int bits = 0;
+                    for (Expression e : list.getExpressions()) {
+                        if (e instanceof PropertyExpression item) {
+                            String name = item.getPropertyAsString();
+                            bits |= switch (ElementType.valueOf(name)) {
+                                case TYPE             -> TYPE_TARGET;
+                                case FIELD            -> FIELD_TARGET;
+                                case METHOD           -> METHOD_TARGET;
+                                case PARAMETER        -> PARAMETER_TARGET;
+                                case CONSTRUCTOR      -> CONSTRUCTOR_TARGET;
+                                case LOCAL_VARIABLE   -> LOCAL_VARIABLE_TARGET;
+                                case ANNOTATION_TYPE  -> ANNOTATION_TARGET;
+                                case PACKAGE          -> PACKAGE_TARGET;
+                                case TYPE_PARAMETER   -> TYPE_PARAMETER_TARGET;
+                                case TYPE_USE         -> TYPE_USE_TARGET;
+                                case MODULE           -> TYPE_TARGET; //TODO
+                                case RECORD_COMPONENT -> RECORD_COMPONENT_TARGET;
+                                default -> throw new GroovyBugError("unsupported Target " + name);
+                            };
+                        }
+                    }
+                    return bits;
+                }
+            }
+            return 0x4FF; // GROOVY-11838: JLS 9.6.4.1
+        });
+
+        return (target & allowedTargets) == target;
+    }
+
+    private RetentionPolicy getRetentionPolicy() {
+        if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
+            throw new IllegalStateException("cannot check retention at this time");
+
+        // GROOVY-6526: check class for @Retention
+        return classNode.redirect().getNodeMetaData(Retention.class, (k) -> {
+            for (AnnotationNode an : classNode.getAnnotations()) {
+                if ("java.lang.annotation.Retention".equals(an.getClassNode().getName())) {
+                    if (an.getMember("value") instanceof PropertyExpression pe) {
+                        return RetentionPolicy.valueOf(pe.getPropertyAsString());
+                    }
+                    break;
+                }
+            }
+            return null;
+        });
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.RUNTIME</code>.
-     * @return <tt>true</tt> if the annotation should be visible at runtime,
+     *
+     * @return <tt>true</tt> if the annotation should be visible at runtime;
      *         <tt>false</tt> otherwise
      */
     public boolean hasRuntimeRetention() {
-        return this.runtimeRetention;
-    }
-
-    /**
-     * Sets the internal flag if the current annotation has
-     * <code>RetentionPolicy.SOURCE</code>.
-     *
-     * @param flag if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.RUNTIME</code>.
-     */
-    public void setRuntimeRetention(boolean flag) {
-        this.runtimeRetention = flag;
+        return RetentionPolicy.RUNTIME.equals(getRetentionPolicy());
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.SOURCE</code>.
-     * @return <tt>true</tt> if the annotation is only allowed in sources
+     *
+     * @return <tt>true</tt> if the annotation is only allowed in sources;
      *         <tt>false</tt> otherwise
      */
     public boolean hasSourceRetention() {
-        return this.sourceRetention;
-    }
-
-    /**
-     * Sets the internal flag if the current annotation has <code>RetentionPolicy.SOURCE</code>.
-     *
-     * @param flag if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.SOURCE</code>.
-     */
-    public void setSourceRetention(boolean flag) {
-        this.sourceRetention = flag;
+        return RetentionPolicy.SOURCE.equals(getRetentionPolicy());
     }
 
     /**
      * Flag corresponding to <code>RetentionPolicy.CLASS</code>.
-     * This is the default when no <code>RetentionPolicy</code> annotations are present.
+     * This is the default when no <code>Retention</code> annotation is present.
      *
-     * @return <tt>true</tt> if the annotation is written in the bytecode, but not visible at runtime
+     * @return <tt>true</tt> if the annotation is written in the bytecode but not visible at runtime;
      *         <tt>false</tt> otherwise
      */
     public boolean hasClassRetention() {
-        if (!runtimeRetention && !sourceRetention) return true;
-        return this.classRetention;
-    }
-
-    /**
-     * Sets the internal flag if the current annotation has an explicit <code>RetentionPolicy.CLASS</code>.
-     *
-     * @param flag if <tt>true</tt> then current annotation is marked as having
-     *     <code>RetentionPolicy.CLASS</code>.
-     */
-    public void setClassRetention(boolean flag) {
-        this.classRetention = flag;
-    }
-
-    public void setAllowedTargets(int bitmap) {
-        this.allowedTargets = bitmap;
-    }
-
-    public boolean isTargetAllowed(int target) {
-        return (this.allowedTargets & target) == target;
-    }
-
-    public static String targetToName(int target) {
-        switch(target) {
-            case TYPE_TARGET:
-                return "TYPE";
-            case CONSTRUCTOR_TARGET:
-                return "CONSTRUCTOR";
-            case METHOD_TARGET:
-                return "METHOD";
-            case FIELD_TARGET:
-                return "FIELD";
-            case PARAMETER_TARGET:
-                return "PARAMETER";
-            case LOCAL_VARIABLE_TARGET:
-                return "LOCAL_VARIABLE";
-            case ANNOTATION_TARGET:
-                return "ANNOTATION";
-            case PACKAGE_TARGET:
-                return "PACKAGE";
-            case TYPE_PARAMETER_TARGET:
-                return "TYPE_PARAMETER";
-            case TYPE_USE_TARGET:
-                return "TYPE_USE";
-            case RECORD_COMPONENT_TARGET:
-                return "RECORD_COMPONENT";
-            default:
-                return "unknown target";
-        }
+        RetentionPolicy retentionPolicy = getRetentionPolicy();
+        return retentionPolicy == null || retentionPolicy.equals(RetentionPolicy.CLASS);
     }
 
     @Override
@@ -208,26 +217,47 @@ public class AnnotationNode extends ASTNode {
 
     @Override
     public String getText() {
-        StringBuilder memberText = new StringBuilder();
+        String text = "@" + classNode.getName();
         if (members != null) {
-            boolean first = true;
-            for (Map.Entry<String, Expression> next : members.entrySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    memberText.append(", ");
-                }
-                Expression value = next.getValue();
-                String text;
-                if (value instanceof ListExpression) {
-                    List result = ((ListExpression) value).getExpressions().stream().map(exp -> { return exp instanceof AnnotationConstantExpression ? ((ASTNode)((AnnotationConstantExpression)exp).getValue()).getText() : exp.getText(); }).collect(Collectors.toList());
-                    text = result.toString();
-                } else {
-                    text = value.getText();
-                }
-                memberText.append(next.getKey()).append(": ").append(text);
+            var memberText = new StringJoiner(", ", "(", ")");
+            for (Map.Entry<String,Expression> entry : members.entrySet()) {
+                memberText.add(entry.getKey() + "=" + getText(entry.getValue()));
             }
+            text += memberText;
         }
-        return "@" + classNode.getText() + "(" + memberText + ")";
+        return text;
+    }
+
+    private static String getText(final Expression e) {
+        String text;
+        if (e instanceof ConstantExpression ce && ce.getValue() instanceof String string) {
+            text = '"' + string + '"';
+        } else if (e instanceof ListExpression list) {
+            var listText = new StringJoiner(", ", "[", "]");
+            for (var item : list.getExpressions()) {
+                listText.add(getText(item));
+            }
+            text = listText.toString();
+        } else {
+            text = e.getText();
+        }
+        return text;
+    }
+
+    public static String targetToName(final int target) {
+        if ((target & 1) == 1) return "TYPE"; // GROOVY-7151
+        return switch (target) {
+            case CONSTRUCTOR_TARGET      -> "CONSTRUCTOR";
+            case METHOD_TARGET           -> "METHOD";
+            case FIELD_TARGET            -> "FIELD";
+            case PARAMETER_TARGET        -> "PARAMETER";
+            case LOCAL_VARIABLE_TARGET   -> "LOCAL_VARIABLE";
+            case ANNOTATION_TARGET       -> "ANNOTATION";
+            case PACKAGE_TARGET          -> "PACKAGE";
+            case TYPE_PARAMETER_TARGET   -> "TYPE_PARAMETER";
+            case TYPE_USE_TARGET         -> "TYPE_USE";
+            case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
+            default -> "unknown target";
+        };
     }
 }

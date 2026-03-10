@@ -18,26 +18,30 @@
  */
 package groovy
 
-import static groovy.API.*
-import static groovy.Container5087.*
-import static groovy.Foo4964.*
-import static groovy.Outer1.*
+import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+
+import static groovy.API.arrayMethod
+import static groovy.API.noArrayMethod
+import static groovy.Container5087.getHolder
+import static groovy.Container5087.setHolder
+import static groovy.Outer1.Inner1
 import static groovy.Outer2.Inner2
 import static groovy.Outer2.Inner2 as InnerAlias2
-import static groovy.StaticImportChild.*
+import static groovy.StaticImportChild.cmethod
+import static groovy.StaticImportChild.getCfield
+import static groovy.StaticImportParent.getPfield
+import static groovy.StaticImportParent.pmethod
 import static groovy.StaticImportTarget.x
-import static groovy.StaticImportTarget.z
 import static java.lang.Boolean.FALSE as F
-import static java.lang.Math.*
+import static java.lang.Math.PI
+import static java.lang.Math.cos
 import static java.text.DateFormat.MEDIUM
 import static java.text.DateFormat.MEDIUM as M
 import static java.util.Calendar.getInstance as now
-import static java.util.jar.Attributes.*
+import static java.util.jar.Attributes.Name
 import static java.util.jar.Attributes.Name as AttrName
-import static java.util.regex.Pattern.*
-import static junit.framework.Assert.format
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods as DGM
+import static java.util.regex.Pattern.MULTILINE
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 final class StaticImportTest extends groovy.test.GroovyTestCase {
 
@@ -94,7 +98,7 @@ final class StaticImportTest extends groovy.test.GroovyTestCase {
     void testAssertEqualsFromJUnit() {
         double[] values = [3.9999, 4.0001, 0.00021, 0.00019]
         assertEquals(values[0], values[1], values[2])
-        shouldFail(junit.framework.AssertionFailedError) {
+        shouldFail(org.opentest4j.AssertionFailedError) {
             assertEquals(values[0], values[1], values[3])
         }
     }

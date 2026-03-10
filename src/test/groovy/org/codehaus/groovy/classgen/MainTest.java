@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyShell;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 
-public class MainTest extends TestSupport {
+final class MainTest {
 
-    public void testMainMethod() throws Exception {
+    @Test
+    void testMainMethod() throws Exception {
         GroovyShell shell = new GroovyShell();
         shell.run(new File("src/test/groovy/groovy/SampleMain.groovy"), new String[]{"A", "B", "C"});
     }

@@ -18,16 +18,20 @@
  */
 package org.codehaus.groovy.runtime.typehandling
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.fail
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 import static org.codehaus.groovy.runtime.typehandling.NumberMath.getMath
 
 /**
  * Basic NumberMath test.
  * @see org.codehaus.groovy.runtime.typehandling.NumberMath
  */
-class NumberMathTest extends GroovyTestCase {
+class NumberMathTest {
 
+    @Test
     void testPromotions() {
         def C = '1'.toCharacter()
         def B = new Byte("1")
@@ -93,6 +97,7 @@ class NumberMathTest extends GroovyTestCase {
         assert BD / BD instanceof BigDecimal
     }
 
+    @Test
     void testOperations() {
         def I1 = new Integer(1)
         def I2 = new Integer(2)
@@ -114,9 +119,9 @@ class NumberMathTest extends GroovyTestCase {
         assert I1 / I2 instanceof BigDecimal
         assert I1 / I2 == new BigDecimal("0.5")
         assert F1 / F2 instanceof Double
-        assertEquals F1 / F2, 0.5, 0.0000000001
+        assertEquals((double)(F1 / F2), 0.5d, 0.0000000001d)
         assert D1 / D2 instanceof Double
-        assertEquals D1 / D2, 0.5, 0.0000000001
+        assertEquals((double)(D1 / D2), 0.5d, 0.0000000001d)
 
         assert I1.intdiv(I2) instanceof Integer
         assert I1.intdiv(I2) == 0
@@ -162,6 +167,7 @@ class NumberMathTest extends GroovyTestCase {
         assert BBD1 + BBD2 == new BigDecimal("0.123456789012345678")
     }
 
+    @Test
     void testUnsupportedIntDivision() {
         try {
             1.0.intdiv(3)
@@ -206,6 +212,7 @@ class NumberMathTest extends GroovyTestCase {
         String toString() { return Double.toString(floatValue()) }
     }
 
+    @Test
     void testGetMathCustom() {
         assert getMath(1G) == BigIntegerMath.INSTANCE;
         assert getMath(1.0G) == BigDecimalMath.INSTANCE;
@@ -227,17 +234,20 @@ class NumberMathTest extends GroovyTestCase {
         assert getMath(25, num) == BigDecimalMath.INSTANCE;
     }
 
+    @Test
     void testGetMath() {
         assert 20 == new Short("10") << 1
         assert 2 == new Byte("1") << 1
     }
 
+    @Test
     void testLongDivAssign() {
         long d = 100L
         d /= 33L
         assert d.class == Long.class
     }
 
+    @Test
     void testIntegerPlusCastException() {
         shouldFail(ClassCastException) {
             Integer i = 12

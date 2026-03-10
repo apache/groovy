@@ -18,15 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.control.CompilerConfiguration
-import org.codehaus.groovy.control.ParserPluginFactory
+
+import org.junit.jupiter.api.Test
 
 /**
  * Test for the multi-catch exception from JDK 7 (Project Coin)
  */
-class MultiCatchTest extends GroovyTestCase {
+class MultiCatchTest {
 
+    @Test
     void testDynamicCatch() {
         def catched = false
         try {
@@ -37,6 +37,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testRegularCatch() {
         def catched = false
         try {
@@ -47,6 +48,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testRegularCatchWithFinalModifier() {
         def catched = false
         try {
@@ -57,6 +59,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testRegularCatchWithFinalModifierAndDynamicType() {
         def catched = false
         try {
@@ -67,6 +70,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testRegularCatchWithFinalModifierWithoutType() {
         def catched = false
         try {
@@ -77,6 +81,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testMultipleCatchJavaStyle() {
         def catched = false
         try {
@@ -89,6 +94,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testMultipleCatchGroovyStyle1() {
         def catched = false
         try {
@@ -99,6 +105,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testMultipleCatchGroovyStyle2() {
         def catched = false
         try {
@@ -109,6 +116,7 @@ class MultiCatchTest extends GroovyTestCase {
         assert catched
     }
 
+    @Test
     void testMultipleCatchGroovyStyle3() {
         def catched = false
         try {

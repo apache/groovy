@@ -18,11 +18,15 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation
+import org.junit.jupiter.api.Test
 
-class Groovy3511Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assertions.fail
+
+class Groovy3511Bug {
     final SHOULD_HAVE_FAILED = "The conversion above should have failed"
+    @Test
     void testExceptionMessageStringToNumberConversion() {
         try {
             Double test = "Hello"

@@ -19,59 +19,69 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
+import org.junit.jupiter.api.Test;
 
-public class RunClosureTest extends TestSupport {
+final class RunClosureTest extends TestSupport {
 
-    public void testClosure() throws Exception {
+    @Test
+    void testClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/ClosureUsingOuterVariablesTest.groovy");
         object.invokeMethod("testExampleUseOfClosureScopesUsingEach", null);
     }
 
-    public void testStaticClosureBug() throws Exception {
+    @Test
+    void testStaticClosureBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/StaticClosurePropertyBug.groovy");
         object.invokeMethod("testCallStaticClosure", null);
     }
 
-    public void testZoharsBug() throws Exception {
+    @Test
+    void testZoharsBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/ZoharsBug.groovy");
         object.invokeMethod("testBug", null);
     }
 
-    public void testBytecodeBug() throws Exception {
+    @Test
+    void testBytecodeBug() throws Exception {
         GroovyObject object = compile("src/test//groovy/bugs/BytecodeBug.groovy");
         object.invokeMethod("testTedsBytecodeBug", null);
     }
 
-    public void testBytecode2Bug() throws Exception {
+    @Test
+    void testBytecode2Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode2Bug.groovy");
         object.invokeMethod("testTedsBytecodeBug", null);
     }
 
-    public void testBytecode3Bug() throws Exception {
+    @Test
+    void testBytecode3Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode3Bug.groovy");
         //object.invokeMethod("testInject", null);
         object.invokeMethod("testIncrementPropertyInclosure", null);
     }
 
-    public void testBytecode4Bug() throws Exception {
+    @Test
+    void testBytecode4Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode4Bug.groovy");
         object.invokeMethod("testInject", null);
         object.invokeMethod("testUsingProperty", null);
     }
 
-    public void testBytecode5Bug() throws Exception {
+    @Test
+    void testBytecode5Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode5Bug.groovy");
         object.invokeMethod("testUsingLocalVar", null);
     }
 
-    public void testBytecode6Bug() throws Exception {
+    @Test
+    void testBytecode6Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode6Bug.groovy");
         object.invokeMethod("testPreFixReturn", null);
     }
 
-    public void testPropertyTest() throws Exception {
+    @Test
+    void testPropertyTest() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/PropertyTest.groovy");
         object.invokeMethod("testNormalPropertyGettersAndSetters", null);
     }
-
 }

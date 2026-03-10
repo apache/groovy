@@ -21,7 +21,7 @@ package org.codehaus.groovy.transform
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -237,7 +237,7 @@ final class BuilderTransformTest {
                 CookBook.builder().recipes([35, 42]).build()
             }
         '''
-        assert err =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
+        assert err.message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
     }
 
     @Test
@@ -263,7 +263,7 @@ final class BuilderTransformTest {
                 new CookBook(CookBook.createInitializer().recipes([35, 42]))
             }
         '''
-        assert err =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
+        assert err.message =~ /.*Cannot call.*recipes.*java.util.List\s?<java.lang.String>.*with arguments.*java.util.(Array)?List\s?<java.lang.Integer>.*/
     }
 
     @Test
@@ -441,8 +441,7 @@ final class BuilderTransformTest {
 
     @Test
     void testExternalBuilderWithCanonicalAndExcludes() {
-        assertScript shell, '''
-            import static groovy.test.GroovyAssert.shouldFail
+        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
 
             @Canonical(excludes='born')
             class Person {
@@ -526,7 +525,7 @@ final class BuilderTransformTest {
             }
         '''
         assert err.message.contains('[Static type checking] - Cannot call Person#<init>')
-        assert err =~ /.*SET.*SET.*UNSET.*/
+        assert err.message =~ /.*SET.*SET.*UNSET.*/
     }
 
     @Test
@@ -667,7 +666,7 @@ final class BuilderTransformTest {
             }
         '''
         assert err.message.contains('[Static type checking] - Cannot call Person#<init>')
-        assert err =~ /.*SET.*SET.*UNSET.*/
+        assert err.message =~ /.*SET.*SET.*UNSET.*/
     }
 
     @Test // GROOVY-7501

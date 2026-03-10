@@ -19,8 +19,11 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 final class Groovy10034 extends AbstractBytecodeTestCase {
+
+    @Test
     void testObjectArrayParam() {
         def result = compile method:'test', '''
             @groovy.transform.CompileStatic
@@ -28,8 +31,14 @@ final class Groovy10034 extends AbstractBytecodeTestCase {
                 ["x"].toArray(new String[0])
             }
         '''
-        int offset = result.indexOf('ANEWARRAY java/lang/String', result.indexOf('--BEGIN--'))
-        assert result.hasStrictSequence(['ANEWARRAY java/lang/String','INVOKEVIRTUAL java/util/ArrayList.toArray'], offset)
-        // there should be no 'INVOKEDYNAMIC cast' instruction here: ^
+        int offset = result.indexOf('INVOKESTATIC', result.indexOf('--BEGIN--'))
+        assert result.hasStrictSequence([
+            'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.createList',
+            'CHECKCAST java/util/ArrayList', // not 'INVOKEDYNAMIC cast'
+            'ICONST_0',
+            'ANEWARRAY java/lang/String',
+            // no 'INVOKEDYNAMIC cast' to Object[]
+            'INVOKEVIRTUAL java/util/ArrayList.toArray'
+        ], offset)
     }
 }

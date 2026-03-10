@@ -18,7 +18,13 @@
  */
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -28,10 +34,16 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
+import org.junit.jupiter.api.Test;
 
-public class IfElseTest extends TestSupport {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
-    public void testLoop() throws Exception {
+final class IfElseTest extends TestSupport {
+
+    @Test
+    void testLoop() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
@@ -59,19 +71,17 @@ public class IfElseTest extends TestSupport {
         IfStatement statement = new IfStatement(expression, trueStatement, falseStatement);
         classNode.addMethod(new MethodNode("ifDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, statement));
 
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
+        Class<?> fooClass = loadClass(classNode);
+        assertTrue(fooClass != null, "Loaded a new class");
 
         Object bean = fooClass.getDeclaredConstructor().newInstance();
-        assertTrue("Managed to create bean", bean != null);
+        assertTrue(bean != null, "Managed to create bean");
 
         assertSetProperty(bean, "bar", "abc");
 
         System.out.println("################ Now about to invoke method");
 
-        Object[] array = {
-        };
-
+        Object[] array = {};
         InvokerHelper.invokeMethod(bean, "ifDemo", array);
 
         System.out.println("################ Done");

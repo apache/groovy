@@ -18,12 +18,15 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : anonymous inner classes.
  */
 class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5565
+    @Test
     void testShouldNotThrowNPE() {
         assertScript '''
             Serializable s = new Serializable() { List things = [] }
@@ -35,6 +38,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignmentOfAICFromInterface() {
         assertScript '''
             Runnable r = new Runnable() {
@@ -44,6 +48,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignmentOfAICFromAbstractClass() {
         assertScript '''
             abstract class Foo { abstract String item() }
@@ -54,6 +59,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignmentOfAICFromAbstractClassAndInterface() {
         assertScript '''
             abstract class Foo  implements Runnable { abstract String item() }
@@ -66,6 +72,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallMethodUsingAIC() {
         assertScript '''
             abstract class Foo { abstract String item() }
@@ -79,6 +86,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallMethodUsingAICImplementingInterface() {
         assertScript '''
             abstract class Foo implements Runnable { abstract String item() }
@@ -94,6 +102,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAICReferencingOuterMethod() {
         assertScript '''
             class Outer {
@@ -113,6 +122,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6882
+    @Test
     void testAICReferencingOuterMethodOverride() {
         assertScript '''
             class B {
@@ -140,6 +150,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5566
+    @Test
     void testAICReferencingOuterLocalVariable() {
         assertScript '''
             def foo() {
@@ -154,6 +165,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAICInAICInStaticMethod() {
         assertScript '''
             class A {
@@ -174,28 +186,31 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6904
+    @Test
     void testAICInClosure() {
         assertScript '''
-            interface X {
+            interface A {
                 def m()
             }
-
-            class A {
-                Object pm = "pm"
-                def bar(Closure<? extends X> x) {x().m()}
+            class C {
+                def bar(Closure<? extends A> closure) {
+                    closure().m()
+                }
                 def foo() {
                     bar { ->
-                        return new X() {
-                            def m() { pm }
+                        return new A() {
+                            def m() { p }
                         }
                     }
                 }
+                final String p = 'p'
             }
-            def a = new A()
-            assert a.foo() == "pm"
+
+            assert new C().foo() == 'p'
         '''
     }
 
+    @Test
     void testAICWithGenerics() {
         assertScript '''
             Comparator<Integer> comp = new Comparator<Integer>(){
@@ -208,6 +223,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5728
+    @Test
     void testPrivateConstructorAndPublicStaticFactory() {
         assertScript '''
             abstract class A {
@@ -224,6 +240,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPrivateFieldAccess() {
         assertScript '''
             class C {
@@ -242,6 +259,7 @@ class AnonymousInnerClassSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7994
+    @Test
     void testOuterPropertyAccess() {
         String other = '''
             class Other {

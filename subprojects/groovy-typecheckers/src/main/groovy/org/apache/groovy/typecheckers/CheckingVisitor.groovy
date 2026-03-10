@@ -18,6 +18,7 @@
  */
 package org.apache.groovy.typecheckers
 
+import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport
 import org.codehaus.groovy.ast.FieldNode
@@ -27,10 +28,15 @@ import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.control.SourceUnit
 
-@CompileStatic
-@SuppressWarnings('Instanceof')
+@AutoFinal @CompileStatic
 class CheckingVisitor extends ClassCodeVisitorSupport {
-    protected final Map<Expression, Expression> localConstVars = new HashMap<>()
+
+    @Override
+    protected SourceUnit getSourceUnit() {
+        null
+    }
+
+    protected final Map<Expression,Expression> localConstVars = [:]
 
     protected Expression findConstExp(Expression exp, Class type) {
         if (exp instanceof ConstantExpression && type.isAssignableFrom(exp.value.getClass())) {
@@ -48,16 +54,11 @@ class CheckingVisitor extends ClassCodeVisitorSupport {
         null
     }
 
-    @Override
-    protected SourceUnit getSourceUnit() {
-        null
-    }
-
-    static Variable findTargetVariable(final VariableExpression ve) {
-        Variable accessedVariable = ve.accessedVariable
+    protected Variable findTargetVariable(VariableExpression ve) {
+        def accessedVariable = ve.accessedVariable
         if (accessedVariable != null && accessedVariable != ve) {
             if (accessedVariable instanceof VariableExpression) {
-                return findTargetVariable((VariableExpression) accessedVariable)
+                return findTargetVariable(accessedVariable)
             }
             return accessedVariable
         }

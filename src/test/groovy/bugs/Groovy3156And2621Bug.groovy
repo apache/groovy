@@ -18,14 +18,17 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3156And2621Bug extends GroovyTestCase {
+
+class Groovy3156And2621Bug {
+    @Test
     void testMethodNameResolutionInANestedClosure() {
         assert m() == 'method'
         assert c1() == 'method'
     }
 
+    @Test
     void testSimilarNamesForMethodAndLocalWithLocalAsMethodArgument() {
         failingExecute()
     }

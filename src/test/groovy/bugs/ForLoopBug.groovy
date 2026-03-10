@@ -18,10 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ForLoopBug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+final class ForLoopBug {
+
+    @Test
     void testBug() {
         assertScript """
             def list = []
@@ -34,6 +37,7 @@ class ForLoopBug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testSeansBug() {
         assertScript """
             for (i in 1..10) {
@@ -42,6 +46,7 @@ class ForLoopBug extends GroovyTestCase {
         """
     }
 
+    @Test
     void testNormalMethod() {
         def list = []
         def a = 1
@@ -52,6 +57,7 @@ class ForLoopBug extends GroovyTestCase {
         assert list == [1, 2, 3, 4, 5]
     }
 
+    @Test
     void testBytecodeGenBug() {
         def a = 1
         def b = 5
@@ -64,6 +70,7 @@ class ForLoopBug extends GroovyTestCase {
         assert a == 5
     }
 
+    @Test
     void testVisibility() {
         assertScript """
             def array = [ true, true, true ];
@@ -74,5 +81,4 @@ class ForLoopBug extends GroovyTestCase {
             }
         """
     }
-
 }

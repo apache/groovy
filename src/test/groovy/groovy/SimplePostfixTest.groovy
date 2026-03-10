@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SimplePostfixTest extends GroovyTestCase {
 
+class SimplePostfixTest {
+
+    @Test
     void testPostfix() {
         def x = 1
         ++x

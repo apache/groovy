@@ -18,17 +18,15 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import groovy.test.GroovyTestCase
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyEngine
-import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.jline.console.CommandRegistry
 import org.jline.console.Printer
 
 /**
  * Support for testing commands from {@link GroovyCommands}.
  */
-abstract class GroovyCommandTestSupport extends GroovyTestCase {
+abstract class GroovyCommandTestSupport {
     protected GroovyEngine engine = new GroovyEngine() {
         def getLoader() {
             classLoader

@@ -18,10 +18,16 @@
  */
 package org.codehaus.groovy.tools
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class LoaderConfigurationTest extends GroovyTestCase {
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 
+import static groovy.test.GroovyAssert.shouldFail
+
+class LoaderConfigurationTest {
+
+    @Test
     void testComment() {
         def txt = "# I am a comment"
 
@@ -32,6 +38,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls.length == 0
     }
 
+    @Test
     void testNormalPath() {
         // generate a load instruction with a valid path
         def file = new File(".")
@@ -45,6 +52,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls[0].sameFile(file.toURI().toURL())
     }
 
+    @Test
     void testNonExistingPath() {
         // generate a load instruction with a non-existing path
         def file = getNonExistingFile(new File("."))
@@ -58,6 +66,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls.length == 0
     }
 
+    @Test
     void testExistingProperty() {
         def txt = 'load ${java.home}'
 
@@ -71,6 +80,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert url1.sameFile(url2)
     }
 
+    @Test
     void testPropertyDefinition() {
         System.setProperty('myprop', 'baz')
         def txt = 'property foo1=bar\nproperty foo2=${myprop}\nproperty foo3=!{myprop}'
@@ -83,6 +93,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert System.getProperty('foo3') == 'baz'
     }
 
+    @Test
     void testNonExistingProperty() {
         String name = getNonExistingPropertyName("foo")
 
@@ -103,6 +114,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls.length == 0
     }
 
+    @Test
     void testSlashCorrection() {
         def prop = getNonExistingPropertyName("nope")
         System.setProperty(prop,'/')
@@ -137,5 +149,344 @@ class LoaderConfigurationTest extends GroovyTestCase {
             number++
         }
         return base
+    }
+
+    // --- Merged from LoaderConfigurationJUnit5Test ---
+
+    @Test
+    void testNewConfigurationHasNoClassPath() {
+        def config = new LoaderConfiguration()
+        assert config.getClassPathUrls().length == 0
+    }
+
+    @Test
+    void testNewConfigurationHasNoMainClass() {
+        def config = new LoaderConfiguration()
+        assert config.getMainClass() == null
+    }
+
+    @Test
+    void testNewConfigurationHasNoGrabUrls() {
+        def config = new LoaderConfiguration()
+        assert config.getGrabUrls().isEmpty()
+    }
+
+    @Test
+    void testSetMainClass() {
+        def config = new LoaderConfiguration()
+        config.setMainClass("com.example.Main")
+        assert "com.example.Main" == config.getMainClass()
+    }
+
+    @Test
+    void testSetMainClassDisablesRequireMain() {
+        def config = new LoaderConfiguration()
+        config.setMainClass("com.example.Main")
+        def configContent = "# just a comment\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        assert "com.example.Main" == config.getMainClass()
+    }
+
+    @Test
+    void testSetRequireMainFalse() {
+        def config = new LoaderConfiguration()
+        config.setRequireMain(false)
+        def configContent = "# just a comment\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        assert config.getMainClass() == null
+    }
+
+    @Test
+    void testRequireMainTrueThrowsWithoutMain() {
+        def config = new LoaderConfiguration()
+        def configContent = "# just a comment\n"
+        shouldFail(IOException) {
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        }
+    }
+
+    @Test
+    void testConfigureWithMainIs() {
+        def config = new LoaderConfiguration()
+        def configContent = "main is com.example.Main\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        assert "com.example.Main" == config.getMainClass()
+    }
+
+    @Test
+    void testConfigureDuplicateMainThrows() {
+        def config = new LoaderConfiguration()
+        def configContent = "main is com.example.Main\nmain is com.example.Other\n"
+        shouldFail(IOException) {
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        }
+    }
+
+    @Test
+    void testConfigureIgnoresComments() {
+        def config = new LoaderConfiguration()
+        def configContent = "# this is a comment\nmain is com.example.Main\n# another comment\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        assert "com.example.Main" == config.getMainClass()
+    }
+
+    @Test
+    void testConfigureIgnoresEmptyLines() {
+        def config = new LoaderConfiguration()
+        def configContent = "\n\nmain is com.example.Main\n\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        assert "com.example.Main" == config.getMainClass()
+    }
+
+    @Test
+    void testConfigureWithLoadExistingFile() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def jarFile = new File(tempDir, "test.jar")
+            jarFile.createNewFile()
+
+            def config = new LoaderConfiguration()
+            def configContent = "main is com.example.Main\nload " + jarFile.getAbsolutePath() + "\n"
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+
+            def urls = config.getClassPathUrls()
+            assert 1 == urls.length
+            assert urls[0].toString().contains("test.jar")
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testConfigureWithLoadNonExistingFile() {
+        def config = new LoaderConfiguration()
+        def configContent = "main is com.example.Main\nload /non/existent/path.jar\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+
+        assert 0 == config.getClassPathUrls().length
+    }
+
+    @Test
+    void testConfigureWithGrab() {
+        def config = new LoaderConfiguration()
+        def configContent = "main is com.example.Main\ngrab org.example:lib:1.0\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+
+        assert 1 == config.getGrabUrls().size()
+        assert "org.example:lib:1.0" == config.getGrabUrls().get(0)
+    }
+
+    @Test
+    void testConfigureWithInvalidLineThrows() {
+        def config = new LoaderConfiguration()
+        def configContent = "main is com.example.Main\ninvalid line here\n"
+        shouldFail(IOException) {
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        }
+    }
+
+    @Test
+    void testAddFileWithExistingFile() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def jarFile = new File(tempDir, "test.jar")
+            jarFile.createNewFile()
+
+            def config = new LoaderConfiguration()
+            config.addFile(jarFile)
+
+            def urls = config.getClassPathUrls()
+            assert 1 == urls.length
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testAddFileWithNonExistingFile() {
+        def config = new LoaderConfiguration()
+        config.addFile(new File("/non/existent/file.jar"))
+        assert 0 == config.getClassPathUrls().length
+    }
+
+    @Test
+    void testAddFileWithNullFile() {
+        def config = new LoaderConfiguration()
+        config.addFile((File) null)
+        assert 0 == config.getClassPathUrls().length
+    }
+
+    @Test
+    void testAddFileWithFilename() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def jarFile = new File(tempDir, "test.jar")
+            jarFile.createNewFile()
+
+            def config = new LoaderConfiguration()
+            config.addFile(jarFile.getAbsolutePath())
+
+            def urls = config.getClassPathUrls()
+            assert 1 == urls.length
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testAddFileWithNullFilename() {
+        def config = new LoaderConfiguration()
+        config.addFile((String) null)
+        assert 0 == config.getClassPathUrls().length
+    }
+
+    @Test
+    void testAddClassPath() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def jarFile1 = new File(tempDir, "test1.jar")
+            def jarFile2 = new File(tempDir, "test2.jar")
+            jarFile1.createNewFile()
+            jarFile2.createNewFile()
+
+            def config = new LoaderConfiguration()
+            def classpath = jarFile1.getAbsolutePath() + File.pathSeparator + jarFile2.getAbsolutePath()
+            config.addClassPath(classpath)
+
+            def urls = config.getClassPathUrls()
+            assert 2 == urls.length
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testAddClassPathWithWildcard() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def dir = new File(tempDir, "lib")
+            dir.mkdirs()
+            new File(dir, "a.jar").createNewFile()
+            new File(dir, "b.jar").createNewFile()
+            new File(dir, "not-a-jar.txt").createNewFile()
+
+            def config = new LoaderConfiguration()
+            config.addClassPath(dir.getAbsolutePath() + "/*")
+
+            def urls = config.getClassPathUrls()
+            assert 2 == urls.length // only .jar files
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testConfigureWithPropertyExpansion() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def jarFile = new File(tempDir, "test.jar")
+            jarFile.createNewFile()
+
+            System.setProperty("test.loader.path", tempDir.getAbsolutePath())
+
+            def config = new LoaderConfiguration()
+            def configContent = "main is com.example.Main\nload \${test.loader.path}/test.jar\n"
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+
+            def urls = config.getClassPathUrls()
+            assert 1 == urls.length
+        } finally {
+            System.clearProperty("test.loader.path")
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testConfigureWithMissingOptionalProperty() {
+        def config = new LoaderConfiguration()
+        def configContent = "main is com.example.Main\nload \${nonexistent.property}/test.jar\n"
+        config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+
+        assert 0 == config.getClassPathUrls().length
+    }
+
+    @Test
+    void testConfigureWithMissingRequiredPropertyThrows() {
+        def config = new LoaderConfiguration()
+        def configContent = "main is com.example.Main\nload !{nonexistent.required.property}/test.jar\n"
+        shouldFail(IllegalArgumentException) {
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+        }
+    }
+
+    @Test
+    void testConfigureWithWildcardLoad() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def dir = new File(tempDir, "libs")
+            dir.mkdirs()
+            new File(dir, "a.jar").createNewFile()
+            new File(dir, "b.jar").createNewFile()
+
+            def config = new LoaderConfiguration()
+            def configContent = "main is com.example.Main\nload " + dir.getAbsolutePath() + "/*.jar\n"
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+
+            def urls = config.getClassPathUrls()
+            assert 2 == urls.length
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testConfigureWithRecursiveWildcard() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def dir = new File(tempDir, "libs")
+            def subdir = new File(dir, "subdir")
+            subdir.mkdirs()
+            new File(dir, "a.jar").createNewFile()
+            new File(subdir, "b.jar").createNewFile()
+
+            def config = new LoaderConfiguration()
+            def configContent = "main is com.example.Main\nload " + dir.getAbsolutePath() + "/**/*.jar\n"
+            config.configure(new ByteArrayInputStream(configContent.getBytes(StandardCharsets.UTF_8)))
+
+            def urls = config.getClassPathUrls()
+            assert 1 == urls.length // Only b.jar in subdir matches
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testAddMultipleFiles() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def config = new LoaderConfiguration()
+            for (int i = 0; i < 5; i++) {
+                def jarFile = new File(tempDir, "test" + i + ".jar")
+                jarFile.createNewFile()
+                config.addFile(jarFile)
+            }
+
+            assert 5 == config.getClassPathUrls().length
+        } finally {
+            tempDir.deleteDir()
+        }
+    }
+
+    @Test
+    void testAddDirectory() {
+        def tempDir = Files.createTempDirectory("loaderConfigTest").toFile()
+        try {
+            def config = new LoaderConfiguration()
+            config.addFile(tempDir)
+
+            assert 1 == config.getClassPathUrls().length
+        } finally {
+            tempDir.deleteDir()
+        }
     }
 }

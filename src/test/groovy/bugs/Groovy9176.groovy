@@ -20,7 +20,7 @@ package bugs
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -41,6 +41,6 @@ final class Groovy9176 {
             }
         '''
 
-        assert err =~ / The return type of java.util.regex.Pattern getTitle\(\) in Test is incompatible with java.lang.String in Pojo\n\. At \[9:17\] /
+        assert err.message =~ / The return type of java.util.regex.Pattern getTitle\(\) in Test is incompatible with java.lang.String in Pojo\n\. At \[9:17\] /
     }
 }

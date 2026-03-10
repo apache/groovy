@@ -19,8 +19,11 @@
 package gls.types
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class BooleanExpressionConversionTest extends CompilableTestSupport {
+final class BooleanExpressionConversionTest extends CompilableTestSupport {
+
+    @Test
     void testInt() {
         assertScript """
             boolean foo(int i){
@@ -33,6 +36,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testLong() {
         assertScript """
             boolean foo(long i){
@@ -45,6 +49,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testFloat() {
         assertScript """
             boolean foo(float i){
@@ -57,6 +62,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDouble() {
         assertScript """
             boolean foo(double i){
@@ -69,6 +75,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testChar() {
         assertScript """
             boolean foo(char i){
@@ -81,6 +88,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testByte() {
         assertScript """
             boolean foo(byte i){
@@ -93,6 +101,7 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testShort() {
         assertScript """
             boolean foo(short i){
@@ -104,5 +113,4 @@ class BooleanExpressionConversionTest extends CompilableTestSupport {
             assert foo((short)256)
         """
     }
-
 }

@@ -18,7 +18,10 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
 
 /**
  * <code>[2, 3].toSpreadList() equals to *[2, 3]</code> <br><br>
@@ -27,8 +30,9 @@ import groovy.test.GroovyTestCase
  *        assert [1, *[2, 3], 4] == [1, 2, 3, 4]
  * </pre>
  */
-class SpreadListOperatorTest extends GroovyTestCase {
+class SpreadListOperatorTest {
 
+    @Test
     void testSpreadingInList() {
         println([1, *[222, 333], 456])
 
@@ -39,6 +43,7 @@ class SpreadListOperatorTest extends GroovyTestCase {
         assert [*y] == y
     }
 
+    @Test
     void testSpreadingRange() {
         def r = 1..10
 
@@ -47,6 +52,7 @@ class SpreadListOperatorTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testSpreadingInMethodParameters() {
         assert sum(1, *[2, 3], 4) == 10
         assert sum(*[10, 20, 30, 40]) == 100
@@ -64,6 +70,7 @@ class SpreadListOperatorTest extends GroovyTestCase {
         assert sum(*x, *x) == "fooBar-fooBar-"
     }
 
+    @Test
     void testSliceWithSpread() {
         def result = (1..5)[1..3]
         assert result == [2, 3, 4]
@@ -75,6 +82,7 @@ class SpreadListOperatorTest extends GroovyTestCase {
         assert result == [2, 3, 4, 1]
     }
 
+    @Test
     void testSettingViaSpreadWithinIndex() {
         def orig = 'a'..'f'
 
@@ -94,21 +102,22 @@ class SpreadListOperatorTest extends GroovyTestCase {
             def items = [1, 2, 3, 4]
             items[*new Date()]
         '''
-        assert message.contains('Cannot spread the type java.util.Date')
+        assert message.message.contains('Cannot spread the type java.util.Date')
 
         message = shouldFail IllegalArgumentException, '''
             def items = [1, 2, 3, 4]
             def map = [a: 1]
             items[*map]
         '''
-        assert message.contains('Cannot spread the type java.util.LinkedHashMap')
-        assert message.contains('did you mean to use the spread-map operator instead?')
+        assert message.message.contains('Cannot spread the type java.util.LinkedHashMap')
+        assert message.message.contains('did you mean to use the spread-map operator instead?')
     }
 
     def sum(a, b, c, d) {
         return a + b + c + d
     }
 
+    @Test
     void testSpreadingInClosureParameters() {
         def twice = { it * 2 }
         assert twice(3) == 6

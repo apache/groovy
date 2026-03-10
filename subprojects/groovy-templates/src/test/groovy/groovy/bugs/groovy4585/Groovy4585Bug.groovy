@@ -18,9 +18,7 @@
  */
 package groovy.bugs.groovy4585
 
-import groovy.test.GroovyTestCase
-
-class Groovy4585Bug extends GroovyTestCase {
+class Groovy4585Bug {
     void test() {
         def engineForBuildXml = new groovy.text.SimpleTemplateEngine(false)
         engineForBuildXml.setEscapeBackslash(true)

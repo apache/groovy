@@ -19,8 +19,11 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
-class StaticCompileInnerClassTest extends AbstractBytecodeTestCase {
+final class StaticCompileInnerClassTest extends AbstractBytecodeTestCase {
+
+    @Test
     void testStaticCompileCallToOwnerField() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -35,9 +38,9 @@ class StaticCompileInnerClassTest extends AbstractBytecodeTestCase {
             assert c.foo() == '/tmp'
         ''')
         clazz.newInstance().main()
-
     }
 
+    @Test
     void testStaticCompileCallToOwnerMethod() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -53,11 +56,10 @@ class StaticCompileInnerClassTest extends AbstractBytecodeTestCase {
             assert c.foo() == '/tmp'
         ''')
         clazz.newInstance().main()
-
     }
 
+    @Test
     void testStaticCompileCallToOwnerPrivateMethod() {
-
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
             class Config {
@@ -78,6 +80,7 @@ class StaticCompileInnerClassTest extends AbstractBytecodeTestCase {
         )*/
     }
 
+    @Test
     void testAccessPrivateMemberFromAnotherInnerClass() {
         assertScript '''
             @groovy.transform.CompileStatic

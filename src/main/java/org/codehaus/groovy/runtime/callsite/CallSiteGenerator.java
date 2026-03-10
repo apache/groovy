@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime.callsite;
 
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
+import org.codehaus.groovy.classgen.asm.util.TypeUtil;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -89,9 +90,12 @@ public class CallSiteGenerator {
         mv.visitMethodInsn(invokeMethodCode, type, cachedMethod.getName(), descriptor, useInterface);
 
         // produce result
-        BytecodeHelper.box(mv, cachedMethod.getReturnType());
-        if (cachedMethod.getReturnType() == void.class) {
+        Class<?> returnType = cachedMethod.getReturnType();
+        if (returnType == void.class) {
             mv.visitInsn(Opcodes.ACONST_NULL);
+        } else if (returnType.isPrimitive()) {
+            Class<?> wrapperType = TypeUtil.autoboxType(returnType);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, BytecodeHelper.getClassInternalName(wrapperType), "valueOf", "(" + BytecodeHelper.getTypeDescription(returnType) + ")" + BytecodeHelper.getTypeDescription(wrapperType), false);
         }
 
         // return

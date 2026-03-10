@@ -20,27 +20,21 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
-
-import java.io.File;
+import org.junit.jupiter.api.Test;
 
 /**
- * Tests dynamically compiling a new class
+ * Tests dynamically compiling a new class.
  */
-public class GroovyClassLoaderTest extends TestSupport {
+final class GroovyClassLoaderTest extends TestSupport {
 
-    public void testCompile() throws Exception {
-        Class groovyClass = loader.parseClass(new File("src/test/groovy/org/codehaus/groovy/classgen/Main.groovy"));
-
-        System.out.println("Invoking main...");
-
-        GroovyObject object = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
-
-        assertTrue(object != null);
+    @Test
+    void testCompile() throws Exception {
+        GroovyObject object = compile("src/test/groovy/org/codehaus/groovy/classgen/Main.groovy");
 
         MetaClass metaClass = object.getMetaClass();
         System.out.println("Metaclass: " + metaClass);
 
-        Class type = object.getClass();
+        Class<?> type = object.getClass();
         System.out.println("Type: " + type);
 
         // invoke via metaclass

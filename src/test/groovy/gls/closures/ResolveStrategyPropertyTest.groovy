@@ -18,12 +18,14 @@
  */
 package gls.closures
 
-import groovy.test.GroovyTestCase
 import groovy.transform.CompileStatic
+import org.junit.jupiter.api.Test
 
 import static groovy.lang.Closure.*
+import static groovy.test.GroovyAssert.shouldFail
 
-class ResolveStrategyPropertyTest extends GroovyTestCase {
+class ResolveStrategyPropertyTest {
+    @Test
     void testDynamicSettingOfResolveStrategy() {
         new ClassRSPT().with {
             assert run(OWNER_ONLY) == 1234
@@ -61,6 +63,7 @@ class ResolveStrategyPropertyTest extends GroovyTestCase {
     }
 
     @CompileStatic
+    @Test
     void testStaticCases() {
         new ClassRSPT().with {
             // cases with explicit casting fall back to dynamic behavior for that term

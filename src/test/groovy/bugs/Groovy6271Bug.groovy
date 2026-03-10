@@ -20,8 +20,9 @@ package bugs
 
 import gls.CompilableTestSupport
 import groovy.test.NotYetImplemented
+import org.junit.jupiter.api.Test
 
-class Groovy6271Bug extends CompilableTestSupport {
+final class Groovy6271Bug extends CompilableTestSupport {
 
     /*
 org.codehaus.groovy.control.MultipleCompilationErrorsException: startup failed:
@@ -37,7 +38,7 @@ TestScripttestTraitWithCompileStaticAndCoercedClosure0.groovy: 33: [Static type 
 
 2 errors
      */
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void testGroovy6271Bug() {
         shouldCompile '''
             @Grab('org.functionaljava:functionaljava:3.1')

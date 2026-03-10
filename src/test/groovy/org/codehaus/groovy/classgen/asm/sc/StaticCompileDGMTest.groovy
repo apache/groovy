@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.DefaultGroovyMethodsSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation: default groovy methods.
@@ -26,6 +27,7 @@ import groovy.transform.stc.DefaultGroovyMethodsSTCTest
 final class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-10238
+    @Test
     void testMapWithDefault() {
         assertScript '''
             import groovy.transform.*
@@ -46,6 +48,7 @@ final class StaticCompileDGMTest extends DefaultGroovyMethodsSTCTest implements 
         '''
     }
 
+    @Test
     void testThreadDotStart() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={

@@ -20,5 +20,8 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.STCExtensionMethodsTest
 
-class StaticCompileExtensionMethodsTest extends STCExtensionMethodsTest implements StaticCompilationTestSupport {
+/**
+ * Unit tests for static compilation : extension methods.
+ */
+final class StaticCompileExtensionMethodsTest extends STCExtensionMethodsTest implements StaticCompilationTestSupport {
 }

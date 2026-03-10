@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ClosureDefaultParameterTest extends GroovyTestCase {
 
+class ClosureDefaultParameterTest {
+
+    @Test
     void testClosureWithDefaultParams() {
 
         def block = {a = 123, b = 456 -> "$a $b".toString() }
@@ -39,6 +41,7 @@ class ClosureDefaultParameterTest extends GroovyTestCase {
         assert block2(456, "def") == "456 def"
     }
 
+    @Test
     void testClosureWithDefaultParamFromOuterScope() {
         def y = 555
         def boo = {x = y -> x}

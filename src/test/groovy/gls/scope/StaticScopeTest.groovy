@@ -19,9 +19,13 @@
 package gls.scope
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class StaticScopeTest extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.shouldFail
 
+final class StaticScopeTest extends CompilableTestSupport {
+
+    @Test
     void testNormalStaticScopeInScript() {
         shouldNotCompile """
         static foo() {
@@ -36,6 +40,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticImportInclass() {
         assertScript """
         import static java.lang.Math.*
@@ -45,6 +50,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticMethodInConstructor() {
         assertScript """
         class B {
@@ -59,6 +65,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticMethodInSpecialConstructorCall() {
         assertScript """
         class A {
@@ -84,6 +91,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticImportProperty() {
         assertScript """
         import static A.*
@@ -94,6 +102,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testNormalStaticScopeInClass() {
         assertScript """
         class A {
@@ -116,6 +125,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testClosureInStaticScope() {
         shouldCompile """
         5.times { foo=2 }
@@ -126,6 +136,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testScriptMethodCall() {
         assertScript """
         import static java.util.Calendar.getInstance as now
@@ -145,6 +156,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testFullyQualifiedClassName() {
         assertScript """
         static foo() {java.lang.Integer}
@@ -160,6 +172,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticPropertyInit() {
         // GROOVY-1910
         assertScript """
@@ -182,6 +195,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testSpecialConstructorAccess() {
         shouldCompile """
         class A{ A(x){} }
@@ -221,16 +235,18 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testStaticMethodAccessingDynamicField() {
         shouldFail MissingMethodException, """
             class A {
                 def x = { }
                 static foo() { x() }
-            } 
+            }
             A.foo()
         """
     }
 
+    @Test
     void testStaticThisWithClass() {
         assertScript """
             static foo(){this}
@@ -244,6 +260,7 @@ class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testConstructorParameterDefault() {
         shouldNotCompile """
             class Child {

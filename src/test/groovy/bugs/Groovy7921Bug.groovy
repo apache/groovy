@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7921Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy7921Bug {
+    @Test
     void testShouldBeAbleToAssignThisInsideCategoryAnnotatedClass() {
         assertScript '''
             @Category(Integer)

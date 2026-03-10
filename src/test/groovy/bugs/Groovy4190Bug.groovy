@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy4190Bug extends CompilableTestSupport {
+final class Groovy4190Bug extends CompilableTestSupport {
+
+    @Test
     void testGenericsUsageInMethodCall() {
         shouldCompile """
             class Test4190<E> {
@@ -39,6 +42,7 @@ class Groovy4190Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testGenericsUsageInMethodCall2() {
         shouldCompile """
             class Test4190V2<K,V> {

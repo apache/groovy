@@ -18,10 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class LocalVariableTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+
+class LocalVariableTest {
+
+    @Test
     void testAssert() {
         def x = "abc"
 
@@ -33,6 +37,7 @@ class LocalVariableTest extends GroovyTestCase {
         assert x.equals("abc")
     }
 
+    @Test
     void testUnknownVariable() {
 
         shouldFail {

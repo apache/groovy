@@ -19,6 +19,7 @@
 package gls.annotations.closures
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
@@ -30,6 +31,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         def answer() { 42 }
     }
 
+    @Test
     void testGep3InClosure() {
         shouldCompile '''
             @interface Bar{Class value();}
@@ -40,6 +42,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAllowedAsValueForAnnotationElementOfTypeClass() {
         shouldCompile '''
             import gls.annotations.closures.AnnWithClassElement
@@ -50,7 +53,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
     }
 
     // TODO: two compile errors instead of one, odd error message
-
+    @Test
     void testNotAllowedAsValueForAnnotationElementOfOtherType() {
         shouldNotCompile '''
             import gls.annotations.closures.AnnWithStringElement
@@ -60,16 +63,19 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testIsCompiledToPublicClass() {
         def closureClass = ClassWithAnnClosure.getAnnotation(AnnWithClassElement).elem()
         assert Modifier.isPublic(closureClass.modifiers)
     }
 
+    @Test
     void testDefaultValueIsCompiledToPublicClass() {
         def closureClass = ClosureAsDefaultValue.getAnnotation(AnnWithDefaultValue).elem()
         assert Modifier.isPublic(closureClass.modifiers)
     }
 
+    @Test
     void testCanBeUsedAsDefaultValue() {
         def closureClass = ClosureAsDefaultValue.getAnnotation(AnnWithDefaultValue).elem()
         def closure = closureClass.newInstance(null, null)
@@ -77,6 +83,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closure.call() == 3
     }
 
+    @Test
     void testCanBeNested() {
         def closureClass = NestedClosure.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
@@ -84,6 +91,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closure.call(9) == 9
     }
 
+    @Test
     void testWorksOnInnerClass() {
         def closureClass = ClassWithAnnClosure.InnerClassWithAnnClosure.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
@@ -91,6 +99,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closure.call() == 3
     }
 
+    @Test
     void testWorksOnNestedClass() {
         def closureClass = ClassWithAnnClosure.NestedClassWithAnnClosure.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
@@ -98,6 +107,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closure.call() == 3
     }
 
+    @Test
     void testWorksOnNestedAnnotation() {
         def closureClass = NestedAnnotation.getAnnotation(AnnWithNestedAnn).elem().elem()
         def closure = closureClass.newInstance(null, null)
@@ -105,6 +115,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closure.call() == 3
     }
 
+    @Test
     void testWorksOnNestedAnnotationWithDefaultValue() {
         def closureClass = NestedAnnotationWithDefault.getAnnotation(AnnWithNestedAnnWithDefault).elem().elem()
         def closure = closureClass.newInstance(null, null)
@@ -112,6 +123,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closure.call() == 3
     }
 
+    @Test
     void testWorksOnAnnotationWithArray() {
         def closureClasses = ClassWithAnnArrayClosure.getAnnotation(AnnWithClassArrayElement).elem()
         assert closureClasses?.size() == 2
@@ -119,6 +131,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closureClasses[1].newInstance(null, null)() == 5
     }
 
+    @Test
     void testMayContainGString() {
         def closureClass = ClosureWithGString.getAnnotation(AnnWithClassElement).elem()
         def closure = closureClass.newInstance(null, null)
@@ -126,6 +139,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         assert closure.call([1, 2, 3]) == "list has 3 elements"
     }
 
+    @Test
     void testDoesNoHarmOnAnnotationWithSourceRetention() {
         shouldCompile '''
             import java.lang.annotation.*
@@ -140,6 +154,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDoesNoHarmOnAnnotationWithClassRetention() {
         shouldCompile '''
             import java.lang.annotation.*
@@ -155,6 +170,7 @@ final class AnnotationClosureTest extends CompilableTestSupport {
     }
 
     // GROOVY-7033
+    @Test
     void testAnnotationOnAnonymousInnerClassMethod() {
         assertScript '''
             import java.lang.annotation.*

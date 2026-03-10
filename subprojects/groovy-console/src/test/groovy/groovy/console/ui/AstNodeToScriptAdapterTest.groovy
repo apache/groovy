@@ -18,7 +18,6 @@
  */
 package groovy.console.ui
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.VariableScope
 import org.codehaus.groovy.ast.expr.BooleanExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
@@ -38,7 +37,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt
  * an object. Normally, this is bad form. However, the class under test is meant to display
  * toString() forms in a user interface. So in this case it is appropriate.
  */
-final class AstNodeToScriptAdapterTest extends GroovyTestCase {
+final class AstNodeToScriptAdapterTest {
 
     private static String compileToScript(String script, CompilePhase phase = CompilePhase.SEMANTIC_ANALYSIS) {
         new AstNodeToScriptAdapter().compileToScript(script, phase.phaseNumber)
@@ -625,6 +624,7 @@ final class AstNodeToScriptAdapterTest extends GroovyTestCase {
     void testAtImmutableClassWithProperties() {
         String script = '''
             import groovy.transform.Immutable
+import org.junit.jupiter.api.Test
             @Immutable class Event {
                 String title
                 Date when

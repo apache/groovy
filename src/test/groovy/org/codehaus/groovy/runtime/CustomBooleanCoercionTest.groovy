@@ -18,7 +18,8 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test the customization of the Groovy truth, aka. boolean coercion.
@@ -28,8 +29,9 @@ import groovy.test.GroovyTestCase
  * <p>
  * The test also checks it's possible to override the behaviour of pre-existing boolean coercion.
  */
-class CustomBooleanCoercionTest extends GroovyTestCase {
+class CustomBooleanCoercionTest {
 
+    @Test
     void testPredefinedGroovyTruth() {
         // null is false
         def nullVar = null
@@ -80,11 +82,13 @@ class CustomBooleanCoercionTest extends GroovyTestCase {
     /**
      * A Predicate instance should coerce to the same boolean as the one in the value property of the instance
      */
+    @Test
     void testCustomAsBooleanMethod() {
         assert new Predicate(value: true)
         assert !new Predicate(value: false)
     }
 
+    @Test
     void testOverrideAsBooleanMethodWithACategory() {
         use (BoolCategory) {
             assert !new Predicate(value: true)
@@ -92,6 +96,7 @@ class CustomBooleanCoercionTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOverrideAsBooleanMethodWithEMC() {
         try {
             Predicate.metaClass.asBoolean = { -> true }
@@ -102,6 +107,7 @@ class CustomBooleanCoercionTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testOverrideStringAsBooleanThroughEMC() {
         try {
             String.metaClass.asBoolean = { -> true }

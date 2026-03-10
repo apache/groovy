@@ -21,10 +21,11 @@
 
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy770_Bug extends GroovyTestCase {
+class Groovy770_Bug {
 
+    @Test
     void testBug() {
         def a = new Pair(sym:"x")
         def b = new Pair(sym:"y")
@@ -43,8 +44,6 @@ class Groovy770_Bug extends GroovyTestCase {
         assert l1 - l2 == [a]
     }
 }
-
-import java.util.*
 
 class Pair {
   String sym

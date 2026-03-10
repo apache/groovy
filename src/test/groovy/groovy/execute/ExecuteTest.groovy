@@ -18,11 +18,12 @@
  */
 package groovy.execute
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 /**
  *  Cross platform tests for the DGM#execute() family of methods.
  */
-final class ExecuteTest extends GroovyTestCase {
+final class ExecuteTest {
 
     private String getCmd() {
         def cmd = "ls -l"
@@ -32,6 +33,7 @@ final class ExecuteTest extends GroovyTestCase {
         return cmd
     }
 
+    @Test
     void testExecuteCommandLineProcessUsingAString() {
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
@@ -43,6 +45,7 @@ final class ExecuteTest extends GroovyTestCase {
         assert value == 0
     }
 
+    @Test
     void testExecuteCommandLineProcessUsingAStringArray() {
         def cmdArray = cmd.split(' ')
         StringBuffer sbout = new StringBuffer()
@@ -55,6 +58,7 @@ final class ExecuteTest extends GroovyTestCase {
         assert value == 0
     }
 
+    @Test
     void testExecuteCommandLineProcessUsingAList() {
         List<String> cmdList = Arrays.asList(cmd.split(' '))
         StringBuffer sbout = new StringBuffer()
@@ -67,6 +71,7 @@ final class ExecuteTest extends GroovyTestCase {
         assert value == 0
     }
 
+    @Test
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
         List<String> javaArgs = [System.getProperty('java.home') + "/bin/java",
                 "-classpath",
@@ -105,6 +110,7 @@ final class ExecuteTest extends GroovyTestCase {
         assert value != 0 // should have been killed
     }
 
+    @Test
     void testExecuteCommandLineUnderWorkingDirectory() {
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
@@ -116,6 +122,7 @@ final class ExecuteTest extends GroovyTestCase {
         assert value == 0
     }
 
+    @Test
     void testExecuteCommandLineWithEnvironmentProperties() {
         List<String> java = [
                 System.getProperty('java.home') + '/bin/java',
@@ -137,6 +144,7 @@ final class ExecuteTest extends GroovyTestCase {
     }
 
     // GROOVY-9392
+    @Test
     void testExecuteCommandLineProcessWithGroovySystemClassLoader() {
         List<String> java = [
                 System.getProperty('java.home') + '/bin/java',

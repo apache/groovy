@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy3989Bug extends CompilableTestSupport {
+final class Groovy3989Bug extends CompilableTestSupport {
+
+    @Test
     void testOverridingFinalMethods() {
         shouldNotCompile """
             class A {

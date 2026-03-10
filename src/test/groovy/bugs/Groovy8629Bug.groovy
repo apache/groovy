@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-public class Groovy8629Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+public class Groovy8629Bug {
+    @Test
     void testNestedMethodCallInConstructor() {
         assertScript '''
         import groovy.transform.CompileStatic

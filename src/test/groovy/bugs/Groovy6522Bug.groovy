@@ -18,11 +18,15 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6522Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy6522Bug {
     // this is a non-regression test that makes sure
     // that the fix for 6522 doesn't introduce breaking changes
+    @Test
     void testDelegateShouldOverrideField() {
         assertScript '''
 class Delegate {

@@ -18,12 +18,15 @@
  */
 package groovy.xml
 
+import org.junit.jupiter.api.Test
+
 /**
  * This test uses the concise syntax to test the generation
  * of SAX events using GroovyMarkup
  */
-class SAXTest extends TestXmlSupport {
+final class SAXTest extends TestXmlSupport {
 
+    @Test
     void testSmallTree() {
         def b = createSAXBuilder()
 
@@ -34,6 +37,7 @@ class SAXTest extends TestXmlSupport {
         }
     }
 
+    @Test
     void testTree() {
         def b = createSAXBuilder()
 
@@ -42,12 +46,12 @@ class SAXTest extends TestXmlSupport {
             elem2('hello2')
             nestedElem(x:'abc', y:'def') {
                 child(z:'def')
-                child2()  
+                child2()
             }
 
             nestedElem2(z:'zzz') {
                 child(z:'def')
-                child2("hello")  
+                child2("hello")
             }
         }
     }

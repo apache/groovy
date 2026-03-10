@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,9 +16,16 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class ClosuresSpecTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class ClosuresSpecTest {
+
     static void sink(Closure cl) {}
 
+    @Test
     void testClosureSyntax() {
         sink
                 // tag::closure_syntax_1[]
@@ -61,6 +66,7 @@ class ClosuresSpecTest extends GroovyTestCase {
                 // end::closure_syntax_6[]
     }
 
+    @Test
     void testAssignClosureToAVariable() {
         // tag::closure_is_an_instance_of_Closure[]
         def listener = { e -> println "Clicked on $e.source" }      // <1>
@@ -72,6 +78,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::closure_is_an_instance_of_Closure[]
     }
 
+    @Test
     void testCallClosure() {
         // tag::closure_call_1[]
         def code = { 123 }
@@ -94,6 +101,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::closure_call_2[]
     }
 
+    @Test
     void testClosureParameters() {
         // tag::closure_param_declaration[]
         def closureWithOneArg = { str -> str.toUpperCase() }
@@ -116,6 +124,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::closure_param_declaration[]
     }
 
+    @Test
     void testImplicitIt() {
         assertScript '''
         // tag::implicit_it[]
@@ -146,6 +155,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testClosureVargs() {
         // tag::closure_vargs[]
         def concat1 = { String... args -> args.join('') }           // <1>
@@ -161,6 +171,7 @@ class ClosuresSpecTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testThisObject() {
         assertScript '''
         // tag::closure_this[]
@@ -217,6 +228,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testOwner() {
         assertScript '''
         // tag::closure_owner[]
@@ -253,6 +265,7 @@ class ClosuresSpecTest extends GroovyTestCase {
 '''
     }
 
+    @Test
     void testClosureDelegate() {
         assertScript '''
         // tag::delegate_is_owner[]
@@ -306,6 +319,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDelegationStrategy() {
         assertScript '''
                 // tag::delegation_strategy_intro[]
@@ -320,6 +334,7 @@ class ClosuresSpecTest extends GroovyTestCase {
             '''
     }
 
+    @Test
     void testOwnerFirst() {
         assertScript '''
             // tag::closure_owner_first[]
@@ -349,6 +364,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDelegateOnly() {
         assertScript '''
             // tag::delegate_only[]
@@ -383,6 +399,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDelegateOnlyPropertyMissing() {
         assertScript '''
             // tag::delegate_only_prop_missing[]
@@ -408,6 +425,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testGStringEager() {
         // tag::gstring_eager_intro[]
         def x = 1
@@ -424,6 +442,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         assert gs == 'x = 1'
     }
 
+    @Test
     void testGStringLazy() {
         // tag::gstring_lazy[]
         def x = 1
@@ -435,6 +454,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::gstring_lazy[]
     }
 
+    @Test
     void testGStringWithMutation() {
         assertScript '''
             // tag::gstring_mutation[]
@@ -455,6 +475,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testGStringWithoutMutation() {
         assertScript '''
             // tag::gstring_no_mutation[]
@@ -474,6 +495,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testLeftCurry() {
         // tag::left_curry[]
         def nCopies = { int n, String str -> str*n }    // <1>
@@ -483,6 +505,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::left_curry[]
     }
 
+    @Test
     void testRightCurry() {
         // tag::right_curry[]
         def nCopies = { int n, String str -> str*n }    // <1>
@@ -492,6 +515,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::right_curry[]
     }
 
+    @Test
     void testNCurry() {
         // tag::ncurry[]
         def volume = { double l, double w, double h -> l*w*h }      // <1>
@@ -502,6 +526,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::ncurry[]
     }
 
+    @Test
     void testMemoize() {
         // tag::naive_fib[]
         def fib
@@ -514,6 +539,7 @@ class ClosuresSpecTest extends GroovyTestCase {
         // end::memoized_fib[]
     }
 
+    @Test
     void testComposition() {
         // tag::closure_composition[]
         def plus2  = { it + 2 }
@@ -533,6 +559,7 @@ class ClosuresSpecTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testTrampoline() {
         // tag::trampoline[]
         def factorial

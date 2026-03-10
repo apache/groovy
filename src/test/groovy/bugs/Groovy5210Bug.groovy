@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy5210Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy5210Bug {
+    @Test
     void testAssignPrimitiveArrayToSet() {
         assertScript '''
             int[] array = [1,2,3] as int[]
@@ -28,6 +32,7 @@ class Groovy5210Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testConvertPrimitiveArrayToSet() {
         assertScript '''
             int[] array = [1,2,3] as int[]

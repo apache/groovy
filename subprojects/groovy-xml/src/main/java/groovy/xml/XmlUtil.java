@@ -442,19 +442,14 @@ public class XmlUtil {
     public static String escapeXml(String orig) {
         return StringGroovyMethods.collectReplacements(orig, new Closure<String>(null) {
             public String doCall(Character arg) {
-                switch (arg) {
-                    case '&':
-                        return "&amp;";
-                    case '<':
-                        return "&lt;";
-                    case '>':
-                        return "&gt;";
-                    case '"':
-                        return "&quot;";
-                    case '\'':
-                        return "&apos;";
-                }
-                return null;
+                return switch (arg) {
+                    case '&' -> "&amp;";
+                    case '<' -> "&lt;";
+                    case '>' -> "&gt;";
+                    case '"' -> "&quot;";
+                    case '\'' -> "&apos;";
+                    default -> null;
+                };
             }
         });
     }

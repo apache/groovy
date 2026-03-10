@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 
 import static java.util.Objects.requireNonNull;
@@ -32,24 +33,68 @@ import static java.util.Objects.requireNonNull;
  */
 public class ForStatement extends Statement implements LoopingStatement {
 
-    public static final Parameter FOR_LOOP_DUMMY = new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter");
+    private static final Parameter DUMMY_VALUE_VARIABLE = new Parameter(ClassHelper.OBJECT_TYPE, "forLoopDummyParameter");
+    @Deprecated(since = "6.0.0")
+    public static final Parameter FOR_LOOP_DUMMY = DUMMY_VALUE_VARIABLE;
 
     private final Parameter indexVariable, valueVariable;
     private Expression collectionExpression;
     private Statement loopBlock;
 
     /**
+     * A constructor of for-in loops (possibly with an optional index variable).
+     * An example with an index variable:
+     * <pre>
+     * for (int idx, int i in 10..12) {
+     *   println "$idx $i"
+     * }
+     * </pre>
+     *
      * @since 5.0.0
      */
     public ForStatement(final Parameter indexVariable, final Parameter valueVariable, final Expression collectionExpression, final Statement loopBlock) {
-        this.indexVariable = indexVariable; // optional component
+        this.indexVariable = indexVariable; // null implies no index variable
         this.valueVariable = requireNonNull(valueVariable);
         setCollectionExpression(collectionExpression);
         setLoopBlock(loopBlock);
     }
 
-    public ForStatement(final Parameter variable, final Expression collectionExpression, final Statement loopBlock) {
-        this(null, variable, collectionExpression, loopBlock);
+    /**
+     * A constructor of for-in loops without an index variable.
+     * Variants using Java-style ":" or the Groovy reserved word "in" are equivalent:
+     * <pre>
+     * for (int i : 0..2) {
+     *   println i
+     * }
+     * for (int j in 5..7) {
+     *   println j
+     * }
+     * </pre>
+     *
+     * @since 5.0.0
+     */
+    public ForStatement(final Parameter valueVariable, final Expression collectionExpression, final Statement loopBlock) {
+        this(null, valueVariable, collectionExpression, loopBlock);
+    }
+
+    /**
+     * A constructor of classic (C-style) for loops.
+     * <pre>
+     * for (int i = 20; i &lt; 23; i++) {
+     *   println i
+     * }
+     * </pre>
+     * Also handles multi-assignment for loops.
+     * <pre>
+     * for (def (String i, int j) = ['a', 30]; j &lt; 33; i++, j++) {
+     *   println "$i $j"
+     * }
+     * </pre>
+     *
+     * @since 6.0.0
+     */
+    public ForStatement(final ClosureListExpression closureListExpression, final Statement loopBlock) {
+        this(DUMMY_VALUE_VARIABLE, closureListExpression, loopBlock);
     }
 
     public void setCollectionExpression(final Expression collectionExpression) {
@@ -64,6 +109,8 @@ public class ForStatement extends Statement implements LoopingStatement {
     //--------------------------------------------------------------------------
 
     /**
+     * Retrieves the index variable of for-in loops with an index variable or null in other cases.
+     *
      * @since 5.0.0
      */
     public Parameter getIndexVariable() {
@@ -71,10 +118,12 @@ public class ForStatement extends Statement implements LoopingStatement {
     }
 
     /**
+     * Retrieves the value variable of for-in loops or null for a classic for loop.
+     *
      * @since 5.0.0
      */
     public Parameter getValueVariable() {
-        return valueVariable != FOR_LOOP_DUMMY ? valueVariable : null;
+        return valueVariable != DUMMY_VALUE_VARIABLE ? valueVariable : null;
     }
 
     @Deprecated(since = "5.0.0")
@@ -87,6 +136,10 @@ public class ForStatement extends Statement implements LoopingStatement {
         return valueVariable.getType();
     }
 
+    /**
+     * Retrieves the collection expression of a for loop.
+     * Will be an instance of {@link ClosureListExpression} for a classic for loop.
+     */
     public Expression getCollectionExpression() {
         return collectionExpression;
     }

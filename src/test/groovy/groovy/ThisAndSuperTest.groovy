@@ -235,7 +235,7 @@ final class ThisAndSuperTest {
             }
             new C().test()
         '''
-        assert err =~ /No signature of method: whatever for class: java\.lang\.Object is applicable for argument types: \(\) values: \[\]/
+        assert err.message =~ /No signature of method: whatever for class: java\.lang\.Object is applicable for argument types: \(\) values: \[\]/
     }
 
     // GROOVY-9615
@@ -254,7 +254,7 @@ final class ThisAndSuperTest {
             }
             new Outer.Inner(new Outer()).test()
         '''
-        assert err =~ /No signature of method: whatever for class: java\.lang\.Object is applicable for argument types: \(\) values: \[\]/
+        assert err.message =~ /No signature of method: whatever for class: java\.lang\.Object is applicable for argument types: \(\) values: \[\]/
     }
 
     // GROOVY-6001
@@ -476,7 +476,7 @@ final class ThisAndSuperTest {
             new C().m()
         '''
 
-        assert err =~ /No such field: x for class: A/
+        assert err.message =~ /No such field: x for class: A/
     }
 
     // GROOVY-8999
@@ -495,7 +495,7 @@ final class ThisAndSuperTest {
             new C().m()
         '''
 
-        assert err =~ /No such field: x for class: A/
+        assert err.message =~ /No such field: x for class: A/
     }
 
     // GROOVY-1729

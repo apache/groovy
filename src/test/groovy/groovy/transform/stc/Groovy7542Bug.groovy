@@ -16,10 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package groovy.transform.stc
 
-class Groovy7542Bug extends StaticTypeCheckingTestCase {
+import org.junit.jupiter.api.Test
+
+final class Groovy7542Bug extends StaticTypeCheckingTestCase {
+
+    @Test
     void testShiftOperators() {
         assert [20].collect { it >> 2 } == [5]
         assert [20].collect { it >>> 2 } == [5]

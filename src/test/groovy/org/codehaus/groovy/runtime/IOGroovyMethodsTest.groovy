@@ -19,10 +19,13 @@
 package org.codehaus.groovy.runtime
 
 import groovy.test.GroovyAssert
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class IOGroovyMethodsTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+class IOGroovyMethodsTest {
+
+    @Test
     void testWithAutoCloseable() {
         def closeable = new DummyAutoCloseable()
         def closeableParam = null
@@ -35,6 +38,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
         assert closeable.closed
     }
 
+    @Test
     void testWithAutoCloseableDoesNotSuppressException() {
         def closeable = new DummyAutoCloseable(new Exception('close exception'))
         def throwable = GroovyAssert.shouldFail(UnsupportedOperationException) {
@@ -47,6 +51,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
         assert throwable.suppressed.find { it.message == 'close exception' }
     }
 
+    @Test
     void testWithAutoCloseableAndException() {
         def closeable = new DummyAutoCloseable(new Exception('close exception'))
         def result = null
@@ -56,9 +61,10 @@ class IOGroovyMethodsTest extends GroovyTestCase {
             }
         }
         assert result == 123
-        assert message == 'close exception'
+        assert message.message == 'close exception'
     }
 
+    @Test
     void testWithCloseable() {
         def closeable = new DummyCloseable()
         def closeableParam = null
@@ -71,6 +77,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
         assert closeable.closed
     }
 
+    @Test
     void testWithCloseableDoesNotSuppressException() {
         def closeable = new DummyCloseable(new IOException('close ioexception'))
         def throwable = GroovyAssert.shouldFail(Exception) {
@@ -83,6 +90,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
         assert throwable.suppressed.find { it.message == 'close ioexception' }
     }
 
+    @Test
     void testWithCloseableAndException() {
         def closeable = new DummyCloseable(new IOException('close ioexception'))
         def result = null
@@ -92,7 +100,7 @@ class IOGroovyMethodsTest extends GroovyTestCase {
             }
         }
         assert result == 123
-        assert message == 'close ioexception'
+        assert message.message == 'close ioexception'
     }
 
     // --------------------------------------------------------------------

@@ -19,9 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy4356Bug extends CompilableTestSupport {
+final class Groovy4356Bug extends CompilableTestSupport {
 
+    @Test
     void testDeclareGenericPropertyInNestedClassWithGenericTypeAtNestedLevel() {
         shouldCompile """
             class OuterS1<T1> {
@@ -33,6 +35,7 @@ class Groovy4356Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclareGenericParameterInStaticMethodWithMethodLevelGenericType() {
         shouldCompile """
             class TestS2 {
@@ -41,6 +44,7 @@ class Groovy4356Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclareGenericLocalVarInStaticMethodWithMethodLevelGenericType() {
         shouldCompile """
             class TestS3 {
@@ -51,6 +55,7 @@ class Groovy4356Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclareGenericPropertyOfInnerClassWithGenericTypeAtOuterLevel() {
         shouldCompile """
             class Outer<T4> {
@@ -62,6 +67,7 @@ class Groovy4356Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclareGenericPropertyOfNestedClassWithGenericTypeAtOuterLevel() {
         shouldNotCompile """
             class Outer<T5> {
@@ -73,6 +79,7 @@ class Groovy4356Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclareGenericStaticPropertyOfClassWithGenericType() {
         shouldNotCompile """
             class Test1<T6> {
@@ -81,6 +88,7 @@ class Groovy4356Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclareGenericParameterInStaticMethodOfClassWithGenericType() {
         shouldNotCompile """
             class Test2<T7> {
@@ -89,6 +97,7 @@ class Groovy4356Bug extends CompilableTestSupport {
         """
     }
 
+    @Test
     void testDeclareGenericLocalVarInStaticMethodOfClassWithGenericType() {
         shouldNotCompile """
             class Test3<T8> {

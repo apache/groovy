@@ -18,14 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * NullObject has no asBoolean() method,
  * making null.asBoolean() return true instead of false.
  */
-class NullAsBooleanCoercionTest extends GroovyTestCase {
+class NullAsBooleanCoercionTest {
 
+    @Test
     void testNullBooleanCoercion() {
 
         assert !null

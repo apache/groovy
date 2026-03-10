@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy6841Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy6841Bug {
+    @Test
     void testShouldNotThrowNPEduringCompilation() {
         assertScript '''
 @groovy.transform.InheritConstructors

@@ -16,16 +16,15 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7039Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7039Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testAccessToPublicStaticFieldOfInterfaceFromClass() {
         assertScript '''
             interface Intf {
@@ -37,10 +36,10 @@ class Groovy7039Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             int truth() { A.TRUTH }
 
             assert truth() == 42
-
         '''
     }
 
+    @Test
     void testAccessToPublicStaticFieldOfInterfaceFromSubClass() {
         assertScript '''
             interface Intf {
@@ -53,10 +52,10 @@ class Groovy7039Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             int truth() { B.TRUTH }
 
             assert truth() == 42
-
         '''
     }
 
+    @Test
     void testAccessToPublicStaticFieldOfInterfaceFromSuperInterface() {
         assertScript '''
             interface Intf {
@@ -70,7 +69,6 @@ class Groovy7039Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             int truth() { B.TRUTH }
 
             assert truth() == 42
-
         '''
     }
 }

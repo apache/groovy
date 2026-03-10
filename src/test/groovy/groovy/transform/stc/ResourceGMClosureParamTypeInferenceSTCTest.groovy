@@ -18,10 +18,15 @@
  */
 
 package groovy.transform.stc
+
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : closure parameter type inference for {@link org.codehaus.groovy.runtime.ResourceGroovyMethods}.
  */
 class ResourceGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestCase {
+
+    @Test
     void testEachByte() {
         assertScript '''
             File tmp = File.createTempFile('foo','tmp')
@@ -81,6 +86,7 @@ class ResourceGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestC
         '''
     }
 
+    @Test
     void testEachDirXYZ() {
         assertScript '''
             File tmp = File.createTempDir()
@@ -101,6 +107,8 @@ class ResourceGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestC
 
         '''
     }
+
+    @Test
     void testEachFileXYZ() {
         assertScript '''import groovy.io.FileType
             File tmp = File.createTempDir()
@@ -130,6 +138,7 @@ class ResourceGMClosureParamTypeInferenceSTCTest extends StaticTypeCheckingTestC
         '''
     }
 
+    @Test
     void testEachLineWithFile() {
         assertScript '''
         File src = File.createTempFile("test","tmp")
@@ -167,6 +176,7 @@ line3"""
         }'''
     }
 
+    @Test
     void testEachLineWithURL() {
         assertScript '''
         File src = File.createTempFile("test","tmp")
@@ -204,6 +214,7 @@ line3"""
         }'''
     }
 
+    @Test
     void testFilterLineOnFile() {
         assertScript '''
         File src = File.createTempFile("test","tmp")
@@ -236,6 +247,7 @@ line3"""
 
     }
 
+    @Test
     void testFilterLineOnURL() {
         assertScript '''
         File src = File.createTempFile("test","tmp")
@@ -268,6 +280,7 @@ line3"""
 
     }
 
+    @Test
     void testSplitEachLineOnFile() {
         assertScript '''
         File src = File.createTempFile("test","tmp")
@@ -307,6 +320,7 @@ c;C"""
 
     }
 
+    @Test
     void testSplitEachLineOnURL() {
         assertScript '''
         File src = File.createTempFile("test","tmp")
@@ -346,6 +360,7 @@ c;C"""
 
     }
 
+    @Test
     void testTraverse() {
         assertScript '''import groovy.io.FileType
             File tmp = File.createTempDir()
@@ -363,10 +378,10 @@ c;C"""
             } finally{
                 tmp.deleteDir()
             }
-
         '''
     }
 
+    @Test
     void testWithDataInputOutputStream() {
         assertScript '''
             def tmp = File.createTempFile('test','tmp')
@@ -386,6 +401,7 @@ c;C"""
         '''
     }
 
+    @Test
     void testWithInputOutputStream() {
         assertScript '''
             def tmp = File.createTempFile('test','tmp')
@@ -407,6 +423,7 @@ c;C"""
         '''
     }
 
+    @Test
     void testWithObjectInputOutputStream() {
         assertScript '''
             def tmp = File.createTempFile('test','tmp')
@@ -428,6 +445,7 @@ c;C"""
         '''
     }
 
+    @Test
     void testWithPrintWriter() {
         assertScript '''
             def tmp = File.createTempFile('test','tmp')
@@ -444,10 +462,10 @@ c;C"""
             } finally {
                 tmp.delete()
             }
-
-'''
+        '''
     }
 
+    @Test
     void testWithReaderWriter() {
         assertScript '''
             def tmp = File.createTempFile('test','tmp')
@@ -488,8 +506,7 @@ c;C"""
             } finally {
                 tmp.delete()
             }
-
-'''
+        '''
 
         assertScript '''
             def tmp = File.createTempFile('test','tmp')
@@ -530,8 +547,6 @@ c;C"""
             } finally {
                 tmp.delete()
             }
-
-'''
+        '''
     }
-
 }

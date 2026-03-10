@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy6533Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6533Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
      void testSelectedMethodShouldBeTheSameWithAndWithoutWildcard() {
          assertScript '''
 class ShowMcStatic {
@@ -42,6 +44,7 @@ assert mcByStatic.theClass==String
 assert mcByStatic2.theClass==String'''
      }
 
+     @Test
      void testSelectedMethodShouldBeTheSameWithAndWithoutWildcardUsingMethodCall() {
          assertScript '''
 class ShowMcStatic {

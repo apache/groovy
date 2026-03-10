@@ -18,25 +18,27 @@
  */
 package groovy.jmx.builder
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import javax.management.ObjectName
 import javax.management.modelmbean.ModelMBeanInfo
 
-class JmxBeanInfoManagerTest extends GroovyTestCase {
+class JmxBeanInfoManagerTest {
     def defaultDomain
     def defaultType
     def defaultObjectName
     def object
 
+    @BeforeEach
     void setUp() {
-        super.setUp()
         object = new MockManagedObject()
         defaultDomain = "jmx.builder"
         defaultType = "ExportedObject"
         defaultObjectName = "${defaultDomain}:type=${defaultType},name=${object.class.canonicalName}@${object.hashCode()}"
     }
 
+    @Test
     void testGetDefaultJmxObjectName() {
         def name = JmxBeanInfoManager.buildDefaultObjectName(defaultDomain, defaultType, object)
         assert name instanceof ObjectName
@@ -44,6 +46,7 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
         assert name.toString() == expectedName
     }
 
+    @Test
     void testGetDefaultMBeanMap() {
         Map m = JmxMetaMapBuilder.buildObjectMapFrom(object)
         assert m
@@ -54,6 +57,7 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
         assert m.attributes.size() == 3
     }
 
+    @Test
     void testGetModelMBeanInfoFromMap() {
         def object = new MockManagedObject()
         Map m = JmxMetaMapBuilder.buildObjectMapFrom(object)

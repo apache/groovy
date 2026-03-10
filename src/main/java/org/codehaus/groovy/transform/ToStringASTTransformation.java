@@ -216,14 +216,14 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
     }
 
     private static Expression calculateToStringStatements(ClassNode cNode, boolean includeSuper, boolean includeFields, boolean includeSuperFields, List<String> excludes, final List<String> includes, boolean includeNames, boolean ignoreNulls, boolean includePackage, boolean includeSuperProperties, boolean allProperties, BlockStatement body, boolean allNames, boolean pojo, String[] delims, boolean useGetter) {
-        // def _result = new StringBuilder()
-        final Expression result = localVarX("_result");
+        // StringBuilder _result = new StringBuilder()
+        final Expression result = localVarX("_result", STRINGBUILDER_TYPE);
         body.addStatement(declS(result, ctorX(STRINGBUILDER_TYPE)));
         List<ToStringElement> elements = new ArrayList<>();
 
-        // def $toStringFirst = true
-        final VariableExpression first = localVarX("$toStringFirst");
-        body.addStatement(declS(first, constX(Boolean.TRUE)));
+        // boolean $toStringFirst = true
+        final VariableExpression first = localVarX("$toStringFirst", ClassHelper.boolean_TYPE);
+        body.addStatement(declS(first, ConstantExpression.PRIM_TRUE));
 
         if (cNode.isEnum()) {
             // <enum_name>(
@@ -301,7 +301,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
         // if ($toStringFirst) $toStringFirst = false else result.append(", ")
         body.addStatement(ifElseS(
                 first,
-                assignS(first, ConstantExpression.FALSE),
+                assignS(first, ConstantExpression.PRIM_FALSE),
                 appendS(result, constX(delims[3]))));
     }
 

@@ -18,14 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SynchronizedBytecodeBug extends GroovyTestCase {
+
+class SynchronizedBytecodeBug {
 
     /**
      * Groovy's bytecode associated with synchronized(foo) construct used to generate invalid bytecode
      * This test method shows that the standard wait()/notify() works.
      */
+    @Test
     void testSynchronized() {
         Integer foo = 0
 
@@ -46,6 +48,7 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
 
     /* more tests to ensure a monitor exit is done at the right place */
 
+    @Test
     void testBreakInSynchronized() {
         Object lock = new Object()
         while (true) {
@@ -56,6 +59,7 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
         checkNotHavingAMonitor(lock)
     }
 
+    @Test
     void testContinueInSynchronized() {
         Object lock = new Object()
         boolean b = true
@@ -68,6 +72,7 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
         checkNotHavingAMonitor(lock)
     }
 
+    @Test
     void testReturnInSynchronized() {
         Object lock = new Object()
         methodWithReturn(lock)
@@ -80,6 +85,7 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
         }
     }
 
+    @Test
     void testBreakInClosureWithSynchronized() {
         Object lock = new Object()
         def c = {
@@ -94,6 +100,7 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
         checkNotHavingAMonitor(lock)
     }
 
+    @Test
     void testContinueInClosureWithSynchronized() {
         Object lock = new Object()
         def c = {
@@ -111,6 +118,7 @@ class SynchronizedBytecodeBug extends GroovyTestCase {
     }
 
     // GROOVY-4159
+    @Test
     void testExceptionInSynchronized() {
         def obj = 1
         try {

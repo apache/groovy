@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,9 +16,15 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class CodeGenerationASTTransformsTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class CodeGenerationASTTransformsTest {
 
     // specification tests for the @ToString AST transformation
+    @Test
     void testToString() {
         assertScript '''
 // tag::tostring_import[]
@@ -253,6 +257,7 @@ assert p.toString() == 'acme.Person(Jack)'
     }
 
 
+    @Test
     void testEqualsAndHashCode() {
         assertScript '''
 // tag::equalshashcode[]
@@ -427,6 +432,7 @@ assert System.currentTimeMillis() - start < SlowHashCode.SLEEP_PERIOD
 '''
     }
 
+    @Test
     void testTupleConstructor() {
         assertScript '''
 // tag::tupleconstructor_simple[]
@@ -817,6 +823,7 @@ shouldFail {
 '''
     }
 
+    @Test
     void testMapConstructor() {
         assertScript '''
 // tag::mapconstructor_simple[]
@@ -847,6 +854,7 @@ public Person(Map args) {
 */
     }
 
+    @Test
     void testCanonical() {
         assertScript '''
 // tag::canonical_simple[]
@@ -912,6 +920,7 @@ assert p1.hashCode() == p2.hashCode()  // Effect of @EqualsAndHashCode(excludes=
 '''
     }
 
+    @Test
     void testInheritConstructors() {
         assertScript '''
 // tag::inheritconstructors_simple[]
@@ -969,6 +978,7 @@ assert Child.constructors[0].parameterAnnotations[0][0].annotationType().name ==
 '''
     }
 
+    @Test
     void testIndexedProperty() {
         assertScript '''
 import groovy.transform.IndexedProperty
@@ -989,6 +999,7 @@ assert bean.someList == [123]
 '''
     }
 
+    @Test
     void testLazy() {
         assertScript '''
 // tag::lazy_simple[]
@@ -1041,6 +1052,7 @@ assert bean.@$myField == ['a','b','c']
 '''
     }
 
+    @Test
     void testNewify() {
         assertScript '''
 class Tree {
@@ -1083,6 +1095,7 @@ def builder = new TreeBuilder()
 '''
     }
 
+    @Test
     void testCategoryTransformation() {
         assertScript '''
 // tag::oldstyle_category[]
@@ -1110,6 +1123,7 @@ use (TripleCategory) {
 '''
     }
 
+    @Test
     void testSortable() {
         assertScript '''
 // tag::sortable_simple[]
@@ -1294,6 +1308,7 @@ assert finalists.sort()*.name == ['CoCo', 'Venus', 'Serena', 'Mirjana']
         '''
     }
 
+    @Test
     void testBuilderSimple() {
         assertScript '''
 // tag::builder_simple[]
@@ -1347,6 +1362,7 @@ assert "$p.first $p.last" == 'Johnny Depp'
         '''
     }
 
+    @Test
     void testBuilderExternal() {
         assertScript '''
 // tag::builder_external_buildee[]
@@ -1415,6 +1431,7 @@ assert "$p.first $p.last" == 'Johnny Depp'
         '''
     }
 
+    @Test
     void testBuilderDefault() {
         assertScript '''
 // tag::builder_default[]
@@ -1488,6 +1505,7 @@ assert Person.builder().first("Johnny").last('Depp').born(1963).build().toString
         '''
     }
 
+    @Test
     void testBuilderInitializer() {
         assertScript '''
 // tag::builder_initializer[]
@@ -1539,6 +1557,7 @@ createFirstLastBorn()
         '''
     }
 
+    @Test
     void testAutoImplement() {
         assertScript '''
 // tag::autoimplement_default[]
@@ -1578,13 +1597,13 @@ class MyNames implements Closeable extends AbstractList<String> {
 
         assertScript '''
 import groovy.transform.AutoImplement
+import static groovy.test.GroovyAssert.shouldFail
 // tag::autoimplement_exception[]
 @AutoImplement(exception=IOException)
 class MyWriter extends Writer { }
 // end::autoimplement_exception[]
 
 // tag::autoimplement_exception_usage[]
-import static groovy.test.GroovyAssert.shouldFail
 
 shouldFail(IOException) {
   new MyWriter().flush()
@@ -1614,12 +1633,12 @@ class MyWriter extends Writer {
 
         assertScript '''
 import groovy.transform.AutoImplement
+import static groovy.test.GroovyAssert.shouldFail
 // tag::autoimplement_exceptionmsg[]
 @AutoImplement(exception=UnsupportedOperationException, message='Not supported by MyIterator')
 class MyIterator implements Iterator<String> { }
 // end::autoimplement_exceptionmsg[]
 
-import static groovy.test.GroovyAssert.shouldFail
 // tag::autoimplement_exceptionmsg_usage[]
 def ex = shouldFail(UnsupportedOperationException) {
      new MyIterator().hasNext()
@@ -1646,6 +1665,7 @@ class MyIterator implements Iterator<String> {
 
         assertScript '''
 import groovy.transform.AutoImplement
+import static groovy.test.GroovyAssert.shouldFail
 // tag::autoimplement_code[]
 @AutoImplement(code = { throw new UnsupportedOperationException('Should never be called but was called on ' + new Date()) })
 class EmptyIterator implements Iterator<String> {
@@ -1653,7 +1673,6 @@ class EmptyIterator implements Iterator<String> {
 }
 // end::autoimplement_code[]
 
-import static groovy.test.GroovyAssert.shouldFail
 // tag::autoimplement_code_usage[]
 def ex = shouldFail(UnsupportedOperationException) {
      new EmptyIterator().next()
@@ -1679,6 +1698,7 @@ class EmptyIterator implements java.util.Iterator<String> {
         '''
     }
 
+    @Test
     void testNullCheck() {
         assertScript '''
  import groovy.transform.NullCheck

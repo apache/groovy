@@ -18,8 +18,12 @@
  */
 package groovy.transform.stc
 
-class RangesSTCTest extends StaticTypeCheckingTestCase{
+import org.junit.jupiter.api.Test
+
+class RangesSTCTest extends StaticTypeCheckingTestCase {
+
     // GROOVY-5699
+    @Test
     void testIntRangeInference() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -35,6 +39,7 @@ class RangesSTCTest extends StaticTypeCheckingTestCase{
     }
 
     // GROOVY-6124
+    @Test
     void testInferrenceOfIntRange() {
         assertScript '''
             String[] args = ['a','b','c','d']
@@ -55,7 +60,7 @@ class RangesSTCTest extends StaticTypeCheckingTestCase{
         '''
     }
 
-    // GROOVY-
+    @Test
     void testInferenceOfBigIntRange() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION,value={
@@ -68,5 +73,4 @@ class RangesSTCTest extends StaticTypeCheckingTestCase{
             range.each { BigInteger bi -> println bi}
         '''
     }
-
 }

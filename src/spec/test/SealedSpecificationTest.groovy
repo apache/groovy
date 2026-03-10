@@ -17,13 +17,16 @@
  *  under the License.
  */
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 /**
  * Specification tests for the traits feature
  */
-class SealedSpecificationTest extends GroovyTestCase {
+final class SealedSpecificationTest {
 
+    @Test
     void testSealedADT() {
         assertScript '''
 // tag::sealed_ADT[]
@@ -44,6 +47,7 @@ assert tree.toString() == 'Node(42, Node(0, Empty, Empty), Empty)'
 '''
     }
 
+    @Test
     void testSealedRecordADT() {
         assertScript '''
 // tag::sealedRecord_ADT[]
@@ -59,6 +63,7 @@ assert threePlusNegOne.toString() == 'PlusExpr[e1=ConstExpr[i=3], e2=NegExpr[e=C
 '''
     }
 
+    @Test
     void testSimpleSealedHierarchyInterfaces() {
         assertScript '''
 import groovy.transform.Sealed
@@ -84,6 +89,7 @@ assert [new Circle(), new Square()]*.class.name == ['Circle', 'Square']
 '''
     }
 
+    @Test
     void testSimpleSealedHierarchyClasses() {
         assertScript '''
 import groovy.transform.Sealed
@@ -125,6 +131,7 @@ assert [new Circle(), new Square(), new Hexagon()]*.class.name == ['Circle', 'Sq
 '''
     }
 
+    @Test
     void testEnum() {
         assertScript '''
 // tag::weather_enum[]
@@ -135,9 +142,12 @@ assert forecast.toString() == '[Rainy, Sunny, Cloudy]'
 '''
     }
 
+    @Test
     void testSealedWeather() {
         assertScript '''
 import groovy.transform.*
+import org.junit.jupiter.api.Test
+import static groovy.test.GroovyAssert.*
 
 // tag::weather_sealed[]
 sealed abstract class Weather { }

@@ -19,7 +19,7 @@
 package bugs
 
 import org.codehaus.groovy.control.CompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.codehaus.groovy.control.Phases.CLASS_GENERATION
@@ -85,7 +85,7 @@ final class Groovy9074 {
             def err = shouldFail {
                 compile CLASS_GENERATION
             }
-            assert err =~ 'Cannot assign value of type java.lang.Object to variable of type Type'
+            assert err.message =~ 'Cannot assign value of type java.lang.Object to variable of type Type'
         }
     }
 }

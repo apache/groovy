@@ -40,7 +40,6 @@ import org.codehaus.groovy.classgen.asm.CallSiteWriter;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.MethodCallerMultiAdapter;
 import org.codehaus.groovy.classgen.asm.OperandStack;
-import org.codehaus.groovy.classgen.asm.VariableSlotLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys;
@@ -49,7 +48,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
@@ -85,7 +83,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.isOrImplements;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.nullX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.propX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.transform.sc.StaticCompilationVisitor.ARRAYLIST_CLASSNODE;
@@ -198,7 +195,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         if (isClassReceiver[0]) {
             if (makeGetPropertyWithGetter(receiver, CLASS_Type, propertyName, safe, implicitThis)) return;
         }
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
         if (!isStaticProperty && isOrImplements(receiverType, LIST_TYPE)) {
             writeListDotProperty(receiver, propertyName, safe);
@@ -326,36 +322,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         compileStack.removeVar(list);
     }
 
-    private boolean makeGetPrivateFieldWithBridgeMethod(final Expression receiver, final ClassNode receiverType, final String fieldName, final boolean safe, final boolean implicitThis) {
-        FieldNode field = receiverType.getField(fieldName);
-        if (field != null) {
-            ClassNode classNode = controller.getClassNode();
-            if (field.isPrivate() && !receiverType.equals(classNode)
-                    && StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)) {
-                Map<String, MethodNode> accessors = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_ACCESSORS);
-                if (accessors != null) {
-                    MethodNode methodNode = accessors.get(fieldName);
-                    if (methodNode != null) {
-                        Expression thisObject;
-                        if (field.isStatic()) {
-                            thisObject = nullX();
-                        } else if (!isThisExpression(receiver)) {
-                            thisObject = receiver;
-                        } else { // GROOVY-7304, GROOVY-9771, GROOVY-9872
-                            thisObject = propX(classX(receiverType), "this");
-                        }
-
-                        MethodCallExpression call = callX(classX(receiverType), methodNode.getName(), thisObject);
-                        call.setMethodTarget(methodNode);
-                        call.visit(controller.getAcg());
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     @Override
     public void makeGroovyObjectGetPropertySite(final Expression receiver, final String propertyName, final boolean safe, final boolean implicitThis) {
         ClassNode receiverType;
@@ -400,7 +366,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
         }
 
         if (makeGetField(receiver, receiverType, propertyName, safe, implicitThis)) return;
-        if (makeGetPrivateFieldWithBridgeMethod(receiver, receiverType, propertyName, safe, implicitThis)) return;
 
         if (isMapDotProperty) {
             writeMapDotProperty(receiver, propertyName, safe);
@@ -737,35 +702,6 @@ public class StaticTypesCallSiteWriter extends CallSiteWriter {
             ClassNode receiverType = getPropertyOwnerType(objectExpression, isClassReceiver);
             if (adapter == AsmClassGenerator.setField || adapter == AsmClassGenerator.setGroovyObjectField) {
                 if (setField(expression, objectExpression, receiverType, name)) return;
-            }
-            if (isThisExpression(objectExpression)) {
-                ClassNode classNode = controller.getClassNode();
-                FieldNode fieldNode = receiverType.getField(name);
-                if (fieldNode != null && fieldNode.isPrivate() && !receiverType.equals(classNode)
-                        && StaticInvocationWriter.isPrivateBridgeMethodsCallAllowed(receiverType, classNode)) {
-                    Map<String, MethodNode> mutators = receiverType.redirect().getNodeMetaData(StaticCompilationMetadataKeys.PRIVATE_FIELDS_MUTATORS);
-                    if (mutators != null) {
-                        MethodNode methodNode = mutators.get(name);
-                        if (methodNode != null) {
-                            ClassNode rhsType = operandStack.getTopOperand();
-                            int i = compileStack.defineTemporaryVariable("$rhs", rhsType, true);
-                            VariableSlotLoader rhsValue = new VariableSlotLoader(rhsType, i, operandStack);
-
-                            MethodCallExpression call = callX(classX(receiverType), methodNode.getName(), args(fieldNode.isStatic() ? nullX() : objectExpression, rhsValue));
-                            call.setImplicitThis(false);
-                            call.setMethodTarget(methodNode);
-                            // NOTE: safe and spreadSafe cannot be mapped to "FieldOwner.pfaccess$00(receiver, value)"
-                            call.visit(controller.getAcg());
-
-                            // GROOVY-9892: assuming that the mutator method has a return value, make sure the operand
-                            // stack is not polluted with the result of the method call
-                            operandStack.pop();
-
-                            compileStack.removeVar(i);
-                            return;
-                        }
-                    }
-                }
             }
             // GROOVY-6954, GROOVY-11376: for map types, replace "map.foo = ..."
             // with "map.put('foo', ...)" if no public field exists

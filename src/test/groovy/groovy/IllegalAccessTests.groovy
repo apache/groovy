@@ -19,7 +19,7 @@
 package groovy
 
 import groovy.transform.PackageScope
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import java.awt.Font
 import java.lang.annotation.RetentionPolicy

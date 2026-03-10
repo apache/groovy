@@ -74,7 +74,7 @@ final class InstanceofTest {
         def err = shouldFail '''
             def x = ([] instanceof List<String>)
         '''
-        assert err =~ 'Cannot perform instanceof check against parameterized type List<String>'
+        assert err.message =~ 'Cannot perform instanceof check against parameterized type List<String>'
     }
 
     // GROOVY-11229
@@ -116,7 +116,7 @@ final class InstanceofTest {
                 s
             }
         '''
-        assert err =~ /No such property: s/
+        assert err.message =~ /No such property: s/
 
         def shell = GroovyShell.withConfig {
             ast groovy.transform.TypeChecked
@@ -128,7 +128,7 @@ final class InstanceofTest {
             }
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 5, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 5, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345
@@ -136,7 +136,7 @@ final class InstanceofTest {
                 i.toString()
             }
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 4, column 17/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 4, column 17/
 
         err = shouldFail shell, '''
             Number n = 12345
@@ -145,7 +145,7 @@ final class InstanceofTest {
             }
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 6, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 6, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345
@@ -154,7 +154,7 @@ final class InstanceofTest {
             } while (n instanceof Integer i)
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 6, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 6, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345
@@ -162,7 +162,7 @@ final class InstanceofTest {
                 i.toString()
             } while (n instanceof Integer i && (n = i.doubleValue()))
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 4, column 17/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 4, column 17/
 
         err = shouldFail shell, '''
             Number n = 12345
@@ -174,28 +174,28 @@ final class InstanceofTest {
             }
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 9, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 9, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345
             return (n instanceof Integer i && i.intValue() == 12345)
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345
             assert (n instanceof Integer i && i.intValue() == 12345)
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345
             print(n instanceof Integer i && i.doubleValue())
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345;
@@ -204,14 +204,14 @@ final class InstanceofTest {
             }
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 6, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 6, column 13/
 
         err = shouldFail shell, '''
             Number n = 12345
             boolean b = (n instanceof Integer i && i.intValue())
             i.toString()
         '''
-        assert err =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
+        assert err.message =~ /The variable .i. is undeclared\.\s+@ line 4, column 13/
     }
 
     // GROOVY-11828

@@ -18,14 +18,14 @@
  */
 package builder
 
-import org.junit.After
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 final class FileTreeBuilderTest {
 
     File tmpDir
 
-    @After
+    @AfterEach
     void tearDown() {
         tmpDir.deleteDir()
     }

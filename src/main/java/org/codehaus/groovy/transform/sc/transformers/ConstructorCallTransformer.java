@@ -34,7 +34,6 @@ import org.codehaus.groovy.classgen.BytecodeExpression;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.classgen.asm.CompileStack;
 import org.codehaus.groovy.classgen.asm.OperandStack;
-import org.codehaus.groovy.classgen.asm.WriterController;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport;
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -130,9 +129,8 @@ public class ConstructorCallTransformer {
 
         @Override
         public void visit(final MethodVisitor mv) {
-            WriterController controller = acg.getController();
-            CompileStack compileStack = controller.getCompileStack();
-            OperandStack operandStack = controller.getOperandStack();
+            CompileStack compileStack = acg.getController().getCompileStack();
+            OperandStack operandStack = acg.getController().getOperandStack();
 
             ClassNode ctorType = getType();
             // create temporary variable to store new object instance
@@ -149,6 +147,8 @@ public class ConstructorCallTransformer {
             mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             mv.visitVarInsn(ASTORE, tmpObj);
 
+            int mark = operandStack.getStackLength();
+
             // process property initializers
             for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
                 Expression keyExpression = entryExpression.getKeyExpression();
@@ -163,9 +163,11 @@ public class ConstructorCallTransformer {
                 Expression setExpression = staticCompilationTransformer.transform(
                         assignX(varExpression, valExpression) // tmp.key = value
                 );
+                setExpression.putNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE, Boolean.TRUE);
                 setExpression.setSourcePosition(entryExpression);
                 setExpression.visit(acg);
-                operandStack.pop();
+
+                operandStack.popDownTo(mark);
             }
 
             // result object

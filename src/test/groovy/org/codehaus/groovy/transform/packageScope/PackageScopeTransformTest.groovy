@@ -19,7 +19,7 @@
 package org.codehaus.groovy.transform.packageScope
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -93,8 +93,8 @@ final class PackageScopeTransformTest {
         assertScript '''
             import groovy.transform.PackageScope
             import static java.lang.reflect.Modifier.*
-            import static groovy.test.GroovyAssert.shouldFail
             import static groovy.transform.PackageScopeTarget.*
+            import static groovy.test.GroovyAssert.shouldFail
 
             @PackageScope(FIELDS) class C {
                 C() {}
@@ -126,7 +126,6 @@ final class PackageScopeTransformTest {
         assertScript '''
             import groovy.transform.PackageScope
             import static java.lang.reflect.Modifier.*
-            import static groovy.test.GroovyAssert.shouldFail
             import static groovy.transform.PackageScopeTarget.*
 
             @PackageScope(METHODS) class C {
@@ -156,7 +155,6 @@ final class PackageScopeTransformTest {
         assertScript '''
             import groovy.transform.PackageScope
             import static java.lang.reflect.Modifier.*
-            import static groovy.test.GroovyAssert.shouldFail
             import static groovy.transform.PackageScopeTarget.*
 
             @PackageScope([CLASS, CONSTRUCTORS, METHODS]) class C {
@@ -191,7 +189,7 @@ final class PackageScopeTransformTest {
             import groovy.transform.PackageScope
 
             @CompileStatic
-            class Test {
+            class Outer {
                 @PackageScope static final String S = 'S'
                 protected static final String T = 'T'
                 private static final String U = 'U'
@@ -202,7 +200,7 @@ final class PackageScopeTransformTest {
                 }
             }
 
-            assert new Test.Inner().method() == 'STU'
+            assert new Outer.Inner().method() == 'STU'
         '''
     }
 }

@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class FinallyTest extends GroovyTestCase {
 
+class FinallyTest {
+
+    @Test
     void testBreakInTry() {
         def called = false
         while (true) {
@@ -34,6 +36,7 @@ class FinallyTest extends GroovyTestCase {
         assert called, "finally block was not called"
     }
 
+    @Test
     void testBreakInFinally() {
         def called = false
         while (true) {
@@ -49,6 +52,7 @@ class FinallyTest extends GroovyTestCase {
         assert called, "finally block was not called"
     }
 
+    @Test
     void testContinueInTry() {
         def called = false
         boolean b = true
@@ -63,6 +67,7 @@ class FinallyTest extends GroovyTestCase {
         assert called, "finally block was not called"
     }
 
+    @Test
     void testContinueInFinally() {
         def called = false
         boolean b = true
@@ -80,6 +85,7 @@ class FinallyTest extends GroovyTestCase {
         assert called, "finally block was not called"
     }
 
+    @Test
     void testReturn() {
         def map = methodWithReturnInTry()
         assert map.called, "finally block was not called"
@@ -104,6 +110,7 @@ class FinallyTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testStackeFinally() {
         def calls = methodWithStackedFinally()
         if (calls == 12) {
@@ -147,6 +154,7 @@ class FinallyTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMultipleReturn() {
         assert multipleReturn() == 3
     }

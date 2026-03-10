@@ -19,10 +19,12 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
+import org.junit.jupiter.api.Test;
 
-public class ConstructorTest extends TestSupport {
+final class ConstructorTest extends TestSupport {
 
-    public void testConstructor() throws Exception {
+    @Test
+    void testConstructor() throws Exception {
         GroovyObject object = compile("src/test/groovy/groovy/NewExpressionTest.groovy");
         object.invokeMethod("testNewInstance", null);
     }

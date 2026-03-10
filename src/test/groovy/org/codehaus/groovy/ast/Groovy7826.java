@@ -20,7 +20,7 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyShell;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public final class Groovy7826 {
 

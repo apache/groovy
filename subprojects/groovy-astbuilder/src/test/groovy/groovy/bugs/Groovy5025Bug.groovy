@@ -18,9 +18,13 @@
  */
 package groovy.bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy5025Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
+
+
+class Groovy5025Bug {
+    @Test
     void testDisableAstBuilder() {
         def config = new org.codehaus.groovy.control.CompilerConfiguration()
         config.disabledGlobalASTTransformations = ['org.apache.groovy.ast.builder.AstBuilderTransformation']

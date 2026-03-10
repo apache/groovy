@@ -19,9 +19,11 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 final class Groovy10314 extends AbstractBytecodeTestCase {
 
+    @Test
     void testTryFinallyWhereAllPathsReturn() {
         def result = compile method:'test', '''
             def test() {

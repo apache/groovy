@@ -21,9 +21,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy6650 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldChooseVargsMethod() {
         assertScript '''
             import org.codehaus.groovy.ast.MethodNode
@@ -40,6 +42,7 @@ final class Groovy6650 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
+    @Test
     void testShouldNotThrowAmbiguousSelectionError() {
         assertScript '''
             import org.codehaus.groovy.ast.ClassNode

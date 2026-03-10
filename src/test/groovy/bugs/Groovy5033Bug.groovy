@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy5033Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy5033Bug {
+    @Test
     void testAnnotationsOnAdditionalMethodsCreatedForOptionalParams() {
         assertScript """
             class MyService5033 {

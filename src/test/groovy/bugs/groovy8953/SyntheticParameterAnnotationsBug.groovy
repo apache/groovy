@@ -18,16 +18,19 @@
  */
 package bugs.groovy8953
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SyntheticParameterAnnotationsBug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class SyntheticParameterAnnotationsBug {
+
+    @Test
     void testEnumConstructorWithSyntheticParamUsageWithAsmResolvingDisabled() {
         assertScript '''
             import org.codehaus.groovy.control.CompilerConfiguration
-
             def script = "assert bugs.groovy8953.Enum8953.A.value == 'value'"
-            def config = new CompilerConfiguration()
-            config.optimizationOptions.asmResolving = false
+            def config = new CompilerConfiguration(optimizationOptions: [asmResolving: false])
+
             new GroovyShell(config).evaluate(script, "bug8953_dummyName.groovy")
         '''
     }

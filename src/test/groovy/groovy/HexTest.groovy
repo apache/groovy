@@ -18,13 +18,17 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
 
 /**
  * Test cases for encodeHex methods in DefaultGroovyMethods
  */
-class HexTest extends GroovyTestCase {
+class HexTest {
 
+    @Test
     void testEncodeHex() {
         // test with some arbitrary bytes
         def testBytes = [0x00, 0x01, 0x0f, 0xa0, 0x11, 0xf0, 0x00, 0xff] as byte[]
@@ -46,6 +50,7 @@ class HexTest extends GroovyTestCase {
         assert testByteObjects.encodeHex().toString() == "00010fa011f000ff"
     }
 
+    @Test
     void testDecodeHex() {
         // test with empty string
         def bytes = "".decodeHex()
@@ -55,7 +60,7 @@ class HexTest extends GroovyTestCase {
         // test with odd number of characters
         assert "odd number of characters in hex string" == shouldFail(NumberFormatException) {
             "abcdefg".decodeHex()
-        }
+        }.message
 
         // test with invalid characters
         shouldFail(NumberFormatException) {
@@ -74,6 +79,7 @@ class HexTest extends GroovyTestCase {
         assert bytes[1] == (byte) 10
     }
 
+    @Test
     void testEncodeAndDecode() {
         // test with an arbitrary string
         def testString = "00010fa011f000ff"

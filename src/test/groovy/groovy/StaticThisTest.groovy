@@ -19,9 +19,11 @@
 package groovy
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class StaticThisTest extends CompilableTestSupport {
+final class StaticThisTest extends CompilableTestSupport {
 
+    @Test
     void testThisFail() {
         staticMethod()
     }
@@ -36,6 +38,7 @@ class StaticThisTest extends CompilableTestSupport {
         assert s.name.endsWith("CompilableTestSupport")
     }
 
+    @Test
     void testThisPropertyInStaticMethodShouldNotCompile() {
         shouldNotCompile """
             class A {
@@ -47,6 +50,7 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    @Test
     void testSuperPropertyInStaticMethodShouldNotCompile() {
         try {
             assertScript """
@@ -63,6 +67,7 @@ class StaticThisTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testQualifiedThisShouldBeNested() {
         shouldNotCompile """
             class A {
@@ -73,6 +78,7 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    @Test
     void testQualifiedSuperShouldBeNested() {
         shouldNotCompile """
             class A {
@@ -83,6 +89,7 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    @Test
     void testQualifiedThisShouldReferenceOuterClass() {
         shouldNotCompile """
             class A {
@@ -95,6 +102,7 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    @Test
     void testQualifiedSuperShouldReferenceOuterClass() {
         shouldNotCompile """
             class A {
@@ -107,6 +115,7 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    @Test
     void testQualifiedThisForNestedClassShouldNotBeStaticContext() {
         shouldNotCompile """
             class A {
@@ -119,6 +128,7 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    @Test
     void testQualifiedSuperForNestedClassShouldNotBeStaticContext() {
         shouldNotCompile """
             class A {
@@ -134,6 +144,7 @@ class StaticThisTest extends CompilableTestSupport {
     /**
      * GROOVY-7047: Static inner class crashes compiler when it references parent's this
      */
+    @Test
     void testParentThisShouldNotBeReferredInsideStaticClass() {
         shouldNotCompile """
             class Foo {
@@ -143,5 +154,4 @@ class StaticThisTest extends CompilableTestSupport {
             }
         """
     }
-
 }

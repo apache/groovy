@@ -17,13 +17,10 @@
  *  under the License.
  */
 package groovy.lang
-
-import groovy.test.GroovyTestCase
-
 /**
  * GROOVY-4305: Make groovy.lang.Reference implement Serializable
  */
-class ReferenceSerializationTest extends GroovyTestCase implements Serializable {
+class ReferenceSerializationTest implements Serializable {
 
     private static final long serialVersionUID = 10L
 

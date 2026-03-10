@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3723Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy3723Bug {
+    @Test
     void testEMCPropertyAccessWitGetPropertySetProperty() {
         assertScript """
             class Dummy3723 {}

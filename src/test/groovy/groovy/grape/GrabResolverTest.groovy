@@ -21,10 +21,10 @@ package groovy.grape
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.AfterClass
-import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.Test
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -34,12 +34,12 @@ final class GrabResolverTest {
 
     private static String originalGrapeRoot
 
-    @BeforeClass
+    @BeforeAll
     static void setUpTestSuite() {
         originalGrapeRoot = System.getProperty('grape.root')
     }
 
-    @Before @CompileDynamic
+    @BeforeEach @CompileDynamic
     void setUp() {
         Grape.@instance = null // isolate each test
 
@@ -56,7 +56,7 @@ final class GrabResolverTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     static void tearDownTestSuite() {
         if (originalGrapeRoot == null) {
             System.clearProperty('grape.root')

@@ -18,10 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class PlusEqualsTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+
+class PlusEqualsTest {
+
+    @Test
     void testIntegerPlusEquals() {
         def x = 1
         def y = 2
@@ -34,6 +39,7 @@ class PlusEqualsTest extends GroovyTestCase {
         assert y == 12
     }
 
+    @Test
     void testCharacterPlusEquals() {
         Character x = 1
         Character y = 2
@@ -46,6 +52,7 @@ class PlusEqualsTest extends GroovyTestCase {
         assert y == 12
     }
 
+    @Test
     void testNumberPlusEquals() {
         def x = 1.2
         def y = 2
@@ -58,6 +65,7 @@ class PlusEqualsTest extends GroovyTestCase {
         assert y == 12.1
     }
 
+    @Test
     void testStringPlusEquals() {
         def x = "bbc"
         def y = 2
@@ -71,15 +79,16 @@ class PlusEqualsTest extends GroovyTestCase {
         assert foo == "nice cheese gromit"
     }
 
+    @Test
     void testSortedSetPlusEquals() {
         def sortedSet = new TreeSet()
         sortedSet += 'abc'
-        assertTrue 'sortedSet should have been a SortedSet',
-                   sortedSet instanceof SortedSet
+        assertTrue sortedSet instanceof SortedSet,
+                   'sortedSet should have been a SortedSet'
         sortedSet += ['def', 'ghi']
-        assertTrue 'sortedSet should have been a SortedSet',
-                   sortedSet instanceof SortedSet
-        assertEquals 'sortedSet had wrong number of elements',
-                     3, sortedSet.size()
+        assertTrue sortedSet instanceof SortedSet,
+                   'sortedSet should have been a SortedSet'
+        assertEquals 3, sortedSet.size(),
+                     'sortedSet had wrong number of elements'
     }
 }

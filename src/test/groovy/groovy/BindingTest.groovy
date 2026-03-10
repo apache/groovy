@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class BindingTest extends GroovyTestCase {
 
+class BindingTest {
+
+    @Test
     void testProperties() {
         def b = new Binding()
         b.setVariable("foo", 123)
@@ -39,6 +41,7 @@ class BindingTest extends GroovyTestCase {
         assert b["a.b.c"] == 'abc'
     }
 
+    @Test
     void testHasVariable() {
         def b = new Binding()
         assert !b.hasVariable("dummy")

@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.MiscSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking : miscellaneous tests.
  */
-class MiscStaticCompileTest extends MiscSTCTest implements StaticCompilationTestSupport {
+final class MiscStaticCompileTest extends MiscSTCTest implements StaticCompilationTestSupport {
 
+    @Test
     void testEachFileRecurse() {
         assertScript '''import groovy.io.FileType
             File dir = File.createTempDir()

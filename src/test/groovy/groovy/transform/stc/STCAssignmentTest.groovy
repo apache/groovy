@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : assignments.
  */
 class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testAssignmentFailure1() {
         shouldFailWithMessages '''
             int i = new Object()
@@ -30,6 +33,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
+    @Test
     void testAssignmentFailure2() {
         shouldFailWithMessages '''
             Set s = new Object()
@@ -37,6 +41,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type java.util.Set'
     }
 
+    @Test
     void testAssignmentFailure3() {
         shouldFailWithMessages '''
             Set s = new Integer(2)
@@ -44,6 +49,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Integer to variable of type java.util.Set'
     }
 
+    @Test
     void testAssignmentFailure4() {
         shouldFailWithMessages '''
             def o = new Object()
@@ -52,6 +58,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type int'
     }
 
+    @Test
     void testAssignmentFailure5() {
         shouldFailWithMessages '''
             def o = new Object()
@@ -60,6 +67,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type java.util.Set'
     }
 
+    @Test
     void testAssignmentFailure6() {
         shouldFailWithMessages '''
             int i = 2
@@ -69,6 +77,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11289
+    @Test
     void testAssignmentFailure7() {
         shouldFailWithMessages '''
             class C {
@@ -80,6 +89,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type java.util.regex.Matcher or java.util.regex.Pattern'
     }
 
+    @Test
     void testAssignmentToEnum() {
         assertScript '''
             enum MyEnum { a, b, c }
@@ -95,18 +105,21 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type int to variable of type MyEnum'
     }
 
+    @Test
     void testAssignmentToClass() {
         assertScript '''
             Class c = 'java.lang.String'
         '''
     }
 
+    @Test
     void testAssignmentToString() {
         assertScript '''
             String s = new Object()
         '''
     }
 
+    @Test
     void testAssignmentToNumbers() {
         for (type in ['byte','short','int','long','float','double',
             'java.lang.Byte','java.lang.Short','java.lang.Integer',
@@ -131,6 +144,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testAssignmentToBoolean() {
         assertScript '''
             boolean b = new Object()
@@ -138,6 +152,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignmentToBoolean2() {
         assertScript '''
             Boolean b = new Object()
@@ -145,6 +160,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignmentToInterface() {
         assertScript '''
             Comparable<String> x = 'x'
@@ -157,6 +173,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10744
+    @Test
     void testAssignmentToSerializable() {
         // Number implements Serializable
         assertScript '''
@@ -177,6 +194,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6577
+    @Test
     void testAssignNullToBoolean() {
         assertScript '''
             boolean b = null
@@ -185,6 +203,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11371
+    @Test
     void testAssignNullToPrimitive() {
         for (type in ['byte','char','double','float','int','long','short']) {
             shouldFailWithMessages """
@@ -194,6 +213,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testAssignNullToCharacter() {
         assertScript '''
             Character c = null
@@ -202,6 +222,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10359
+    @Test
     void testAssignNumberToChar() {
         assertScript '''
             char c = 0
@@ -213,6 +234,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Integer to variable of type char'
     }
 
+    @Test
     void testAssignStringToChar() {
         assertScript '''
             char c = 'a'
@@ -220,6 +242,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignStringToCharacter() {
         assertScript '''
             Character c = 'a'
@@ -228,6 +251,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignStringLongerThan1CharToChar() {
         shouldFailWithMessages '''
             char c = 'aa'
@@ -235,6 +259,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type char'
     }
 
+    @Test
     void testAssignStringLongerThan1CharToCharacter() {
         shouldFailWithMessages '''
             Character c = 'aa'
@@ -242,12 +267,14 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type java.lang.Character'
     }
 
+    @Test
     void testPossibleLossOfPrecision1() {
         assertScript '''
             byte b = 127
         '''
     }
 
+    @Test
     void testPossibleLossOfPrecision2() {
         shouldFailWithMessages '''
             byte b = 128 // will not fit in a byte
@@ -255,12 +282,14 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from int to byte'
     }
 
+    @Test
     void testPossibleLossOfPrecision3() {
         assertScript '''
             short s = 128
         '''
     }
 
+    @Test
     void testPossibleLossOfPrecision4() {
         shouldFailWithMessages '''
             short s = 32768 // will not fit in a short
@@ -268,24 +297,28 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from int to short'
     }
 
+    @Test
     void testPossibleLossOfPrecision5() {
         assertScript '''
             int i = 32768L // mark it as a long, but it fits into an int
         '''
     }
 
+    @Test
     void testPossibleLossOfPrecision6() {
         assertScript '''
             int i = 32768f // mark it as a float, but it fits into an int
         '''
     }
 
+    @Test
     void testPossibleLossOfPrecision7() {
         assertScript '''
             int i = 32768d // mark it as a double, but it fits into an int
         '''
     }
 
+    @Test
     void testPossibleLossOfPrecision8() {
         shouldFailWithMessages '''
             int i = 32768.1d
@@ -293,6 +326,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from double to int'
     }
 
+    @Test
     void testPossibleLossOfPrecision9() {
         shouldFailWithMessages '''
             int i = Long.MAX_VALUE
@@ -300,6 +334,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Possible loss of precision from long to int'
     }
 
+    @Test
     void testPossibleLossOfPrecision10() {
         assertScript '''
             byte  b = 0L
@@ -311,6 +346,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
 
     //--------------------------------------------------------------------------
 
+    @Test
     void testPlusEqualsOnInt() {
         assertScript '''
             int i = 0
@@ -318,6 +354,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMinusEqualsOnInt() {
         assertScript '''
             int i = 0
@@ -325,6 +362,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testIntPlusEqualsObject() {
         shouldFailWithMessages '''
             int i = 0
@@ -333,6 +371,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Integer#plus(java.lang.Object)'
     }
 
+    @Test
     void testIntMinusEqualsObject() {
         shouldFailWithMessages '''
             int i = 0
@@ -342,6 +381,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11563
+    @Test
     void testNumberPlusEqualsString() {
         shouldFailWithMessages '''
         Number n = 0
@@ -350,6 +390,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type java.lang.Number'
     }
 
+    @Test
     void testStringPlusEqualsString() {
         assertScript '''
             String s = 'prefix'
@@ -357,6 +398,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPlusEqualsOnProperty() {
         assertScript '''
             class C {
@@ -371,6 +413,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5746
+    @Test
     void testPlusEqualsAndSubscript() {
         assertScript '''
             import groovy.transform.Field
@@ -386,6 +429,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9385
+    @Test
     void testPlusEqualsOnPrivateField() {
         assertScript '''
             class C {
@@ -402,6 +446,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9385
+    @Test
     void testPrefixPlusPlusOnPrivateField() {
         assertScript '''
             class C {
@@ -418,6 +463,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9385
+    @Test
     void testPostfixPlusPlusOnPrivateField() {
         assertScript '''
             class C {
@@ -433,6 +479,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testTernaryOperatorAssignmentShouldFailBecauseOfIncompatibleGenericTypes() {
         shouldFailWithMessages '''
             List<Integer> foo = true ? new LinkedList<String>() : new LinkedList<Integer>()
@@ -440,6 +487,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Incompatible generic argument types. Cannot assign java.util.LinkedList<? extends java.io.Serializable & java.lang.Comparable','> to: java.util.List<java.lang.Integer>'
     }
 
+    @Test
     void testIfElseBranch() {
         shouldFailWithMessages '''
             def x
@@ -454,6 +502,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
+    @Test
     void testIfElseBranchParameter() {
         shouldFailWithMessages '''
             def foo(x) {
@@ -470,6 +519,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#toInteger()'
     }
 
+    @Test
     void testIfOnly() {
         shouldFailWithMessages '''
             def x = '123'
@@ -482,6 +532,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.io.Serializable#toInteger()'
     }
 
+    @Test
     void testIfOnlyParameter() {
         shouldFailWithMessages '''
             def foo(x) {
@@ -497,6 +548,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#toInteger()'
     }
 
+    @Test
     void testIfWithCommonInterface() {
         assertScript '''
             interface I {
@@ -519,6 +571,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5502
+    @Test
     void testIfElseWithCommonSuperclass() {
         for (val in ['null', 'new A()', 'new B()', 'new C()'/*TODO:, 'new Object()'*/]) {
             assertScript """
@@ -542,6 +595,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9786
+    @Test
     void testIfElseIfWithCommonInterface() {
         for (it in ['I', 'def', 'var', 'Object']) {
             assertScript """
@@ -569,6 +623,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11450
+    @Test
     void testIfElseIfInNestedBlock() {
         shouldFailWithMessages '''
             class C {
@@ -589,6 +644,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#m()'
     }
 
+    @Test
     void testForLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
@@ -601,6 +657,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11353
+    @Test
     void testForLoopWithAssignment2() {
         assertScript '''
             def x = null // Cannot cast object 'null' to class 'int'
@@ -611,6 +668,31 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11870
+    @Test
+    void testForLoopWithAssignment3() {
+        assertScript '''
+            class Pogo {
+                private List<Long> x
+                List<Long> getList() { x }
+                void setList(List<Long> list) { x = list }
+            }
+
+            void proc(List<Pogo> pogos) {
+                for (pogo in pogos) {
+                    pogo.list = [] // Cannot assign ArrayList<Object> to: List<Long>
+                    def item = 42L
+                    pogo.list.add(item)
+                }
+            }
+
+            def pogo = new Pogo()
+            proc([ pogo ])
+            assert pogo.list[0] == 42L
+        '''
+    }
+
+    @Test
     void testWhileLoopWithAssignment() {
         shouldFailWithMessages '''
             def x = '123'
@@ -623,6 +705,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11474
+    @Test
     void testWhileLoopWithAssignment2() {
         shouldFailWithMessages '''
             def i = 0
@@ -635,6 +718,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type (java.io.Serializable & java.lang.Comparable',') to variable of type java.lang.Integer'
     }
 
+    @Test
     void testTernaryWithNestedAssignment() {
         shouldFailWithMessages '''
             def x = '123'
@@ -645,6 +729,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11457
+    @Test
     void testTryCatchFinallyWithAssignment() {
         assertScript '''
             def x = (Appendable) null
@@ -673,6 +758,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Object to variable of type java.lang.Appendable'
     }
 
+    @Test
     void testFloatSub() {
         assertScript '''
             float x = 1.0f
@@ -681,6 +767,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleMinusInt() {
         assertScript '''
             double m() {
@@ -692,6 +779,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoubleMinusFloat() {
         assertScript '''
             double m() {
@@ -703,6 +791,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigDecimalSub() {
         assertScript '''
             BigDecimal m() {
@@ -715,6 +804,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigDecimalMinusDouble() {
         assertScript '''
             BigDecimal m() {
@@ -727,6 +817,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFloatSum() {
         assertScript '''
             float x = 1.0f
@@ -735,6 +826,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoublePlusInt() {
         assertScript '''
             double m() {
@@ -746,6 +838,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDoublePlusFloat() {
         assertScript '''
             double m() {
@@ -757,6 +850,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigDecimalSum() {
         assertScript '''
             BigDecimal m() {
@@ -769,6 +863,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigDecimalPlusDouble() {
         assertScript '''
             BigDecimal m() {
@@ -781,6 +876,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigIntegerAssignment() {
         assertScript '''
             BigInteger bigInt = 6666666666666666666666666666666666666
@@ -789,6 +885,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigIntegerSum() {
         assertScript '''
             BigInteger a = 6666666666666666666666666666666666666
@@ -799,6 +896,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigIntegerSub() {
         assertScript '''
             BigInteger a = 6666666666666666666666666666666666666
@@ -809,6 +907,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigIntegerMult() {
         assertScript '''
             BigInteger a = 6666666666666666666666666666666666666
@@ -819,6 +918,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testBigIntegerMultDouble() {
        assertScript '''
             BigInteger a = 333
@@ -836,6 +936,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.math.BigDecimal to variable of type java.math.BigInteger'
     }
 
+    @Test
     void testBigIntegerMultInteger() {
         assertScript '''
             BigInteger a = 333
@@ -847,6 +948,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6435
+    @Test
     void testBigDecAndBigIntSubclass() {
         assertScript '''
             class MyDecimal extends BigDecimal {
@@ -861,6 +963,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPostfixOnInt() {
         assertScript '''
             int i = 0
@@ -872,6 +975,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPostfixOnDate() {
         assertScript '''
             Date d = new Date()
@@ -884,6 +988,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9389
+    @Test
     void testPostfixOnNumber() {
         assertScript '''
             class Pogo {
@@ -904,6 +1009,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.Integer to variable of type java.lang.Character'
     }
 
+    @Test
     void testPostfixOnObject() {
         shouldFailWithMessages '''
             Object o = new Object()
@@ -917,6 +1023,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#previous()'
     }
 
+    @Test
     void testPrefixOnInt() {
         assertScript '''
             int i = 0
@@ -928,6 +1035,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPrefixOnDate() {
         assertScript '''
             Date d = new Date()
@@ -939,6 +1047,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testPrefixOnObject() {
         shouldFailWithMessages '''
             Object o = new Object()
@@ -953,6 +1062,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5535, GROOVY-10623
+    @Test
     void testAssignToNullInsideIf() {
         ['Date', 'def', 'var'].each {
             assertScript """
@@ -971,6 +1081,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10294
+    @Test
     void testAssignToNullInsideIf2() {
         assertScript '''
             CharSequence test() {
@@ -985,6 +1096,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10308
+    @Test
     void testAssignToNullAfterCall() {
         assertScript '''
             class C<T> {
@@ -998,6 +1110,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10623
+    @Test
     void testAssignToNullAfterInit() {
         assertScript '''
             class C {
@@ -1009,6 +1122,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5798
+    @Test
     void testShouldNotThrowConversionError() {
         assertScript '''
             char m( int v ) {
@@ -1021,6 +1135,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7015
+    @Test
     void testAssingmentToSuperclassFieldWithDifferingGenerics() {
         assertScript '''
             class Base {}
@@ -1042,6 +1157,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8157
+    @Test
     void testFlowTypingAfterParameterAssignment() {
         assertScript '''
             class A {}
@@ -1056,6 +1172,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8220
+    @Test
     void testFlowTypingParameterTempTypeAssignmentTracking1() {
         assertScript '''
             class Foo {
@@ -1074,6 +1191,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8237
+    @Test
     void testFlowTypingParameterTempTypeAssignmentTracking2() {
         assertScript '''
             class Foo {
@@ -1088,6 +1206,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFlowTypingParameterTempTypeAssignmentTracking3() {
         assertScript '''
             class M {
@@ -1112,6 +1231,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     //--------------------------------------------------------------------------
 
     // GROOVY-10419
+    @Test
     void testElvisAssignmentAndSetter1() {
         assertScript '''
             class C {
@@ -1131,6 +1251,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10628
+    @Test
     void testElvisAssignmentAndSetter2() {
         assertScript '''
             class C {
@@ -1143,6 +1264,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testElvisAssignmentMismatched() {
         shouldFailWithMessages '''
             class C {
@@ -1153,6 +1275,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.io.Serializable to variable of type java.lang.Number'
     }
 
+    @Test
     void testMultipleAssignment1() {
         assertScript '''
             def (x,y) = [1,2]
@@ -1161,6 +1284,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleAssignmentWithExplicitTypes() {
         assertScript '''
             int x
@@ -1171,6 +1295,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleAssignmentWithIncompatibleTypes() {
         shouldFailWithMessages '''
             List x
@@ -1180,6 +1305,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type int to variable of type java.util.List'
     }
 
+    @Test
     void testMultipleAssignmentWithoutEnoughArgs() {
         shouldFailWithMessages '''
             int x
@@ -1189,6 +1315,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         'Incorrect number of values. Expected:2 Was:1'
     }
 
+    @Test
     void testMultipleAssignmentTooManyArgs() {
         assertScript '''
             int x
@@ -1199,6 +1326,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleAssignmentFromVariable() {
         shouldFailWithMessages '''
             def list = [1,2,3]
@@ -1208,6 +1336,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8223, GROOVY-8887, GROOVY-10063
+    @Test
     void testMultipleAssignmentFromTupleTypes() {
         assertScript '''
             def (String string) = Tuple.tuple('answer')
@@ -1307,6 +1436,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultiAssign() {
         assertScript '''
             def m() {
@@ -1318,6 +1448,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10953
+    @Test
     void testMultiAssign2() {
         assertScript '''
             def m() {
@@ -1333,6 +1464,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10943
+    @Test
     void testMultiAssignUnderscorePlaceholder1() {
         assertScript '''
             def m() {
@@ -1344,6 +1476,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10943
+    @Test
     void testMultiAssignUnderscorePlaceholder2() {
         shouldFailWithMessages '''
             def m() {
@@ -1357,6 +1490,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10943
+    @Test
     void testClosureUnderscorePlaceholder() {
         shouldFailWithMessages '''
             def m() {
@@ -1369,6 +1503,7 @@ class STCAssignmentTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10943
+    @Test
     void testLambdaUnderscorePlaceholder() {
         shouldFailWithMessages '''
             def m() {

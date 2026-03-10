@@ -18,12 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class LocalPropertyTest extends GroovyTestCase {
+
+class LocalPropertyTest {
 
     def x
 
+    @Test
     void testNormalPropertyAccess() {
         x = "abc"
 
@@ -31,6 +33,7 @@ class LocalPropertyTest extends GroovyTestCase {
         assert x != "def"
     }
 
+    @Test
     void testPropertyWithThis() {
         this.x = "abc"
 

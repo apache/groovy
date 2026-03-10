@@ -71,8 +71,8 @@ dependencies {
 
 tasks.withType(AbstractCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:deprecation'
 //    options.compilerArgs << '-Xlint:unchecked'
-//    options.compilerArgs << '-Xlint:deprecation'
 //    options.compilerArgs << '-Xlint:-options'
 }
 

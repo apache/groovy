@@ -16,25 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
-
-
-
 package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7364Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7364Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testGenericReturnTypeInferenceWithMethodHavingDefaultParams() {
         assertScript '''
+            public <T> T f(T value, int param = 0) {
+                value
+            }
 
-                public <T> T f(T value, int param = 0) {
-                    value
-                }
-
-                def s = f('42')
-                s.length()
+            def s = f('42')
+            s.length()
         '''
     }
 }

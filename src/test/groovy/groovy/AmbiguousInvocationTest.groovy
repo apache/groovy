@@ -18,20 +18,22 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
- * to prove GROOVY-467 is no longer an issue    
+ * to prove GROOVY-467 is no longer an issue
  */
-class AmbiguousInvocationTest extends GroovyTestCase {
+class AmbiguousInvocationTest {
     def dummy1, dummy2
 
+    @BeforeEach
     void setUp() {
-        super.setUp()
         dummy1 = new groovy.DummyMethodsJava()
         dummy2 = new groovy.DummyMethodsGroovy()
     }
 
+    @Test
     void testAmbiguousInvocationWithFloats() {
         assert "float args" == dummy1.foo("bar", 1.0f, 2.0f)
         assert "float args" == dummy1.foo("bar", (float) 1, (float) 2)
@@ -41,6 +43,7 @@ class AmbiguousInvocationTest extends GroovyTestCase {
         assert "float args" == dummy2.foo("bar", (Float) 1, (Float) 2)
     }
 
+    @Test
     void testAmbiguousInvocationWithInts() {
         assert "int args" == dummy1.foo("bar", 1, 2)
         assert "int args" == dummy1.foo("bar", (int) 1, (int) 2)
@@ -49,4 +52,4 @@ class AmbiguousInvocationTest extends GroovyTestCase {
         assert "int args" == dummy2.foo("bar", (int) 1, (int) 2)
         assert "int args" == dummy2.foo("bar", (Integer) 1, (Integer) 2)
     }
-} 
+}

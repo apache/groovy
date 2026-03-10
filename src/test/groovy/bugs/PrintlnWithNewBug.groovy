@@ -19,10 +19,11 @@
 package bugs
 
 import groovy.Foo
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class PrintlnWithNewBug extends GroovyTestCase {
+class PrintlnWithNewBug {
 
+    @Test
     void testBug() {
         println(new Foo(name:'abc'))
         println new Foo(name:'def')

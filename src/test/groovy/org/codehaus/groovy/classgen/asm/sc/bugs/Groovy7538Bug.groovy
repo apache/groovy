@@ -20,20 +20,25 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7538Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7538Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testFluentSubTypeToSuperType() {
         assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7538Support
             Groovy7538Support.assertThat("true").isNotEmpty().isNotEqualTo("false")
         '''
     }
 
+    @Test
     void testFluentSuperTypeToSubType() {
         assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7538Support
             Groovy7538Support.assertThat("true").isNotEqualTo("false").isNotEmpty()
         '''
     }
 
+    @Test
     void testIndependentAssertions() {
         assertScript '''import org.codehaus.groovy.classgen.asm.sc.bugs.support.Groovy7538Support
             Groovy7538Support.assertThat("true").isNotEmpty()

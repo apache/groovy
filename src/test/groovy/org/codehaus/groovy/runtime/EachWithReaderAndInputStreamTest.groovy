@@ -18,12 +18,13 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test .each with Reader and InputStream
  */
-class EachWithReaderAndInputStreamTest extends GroovyTestCase {
+class EachWithReaderAndInputStreamTest {
     /**
      * The following instances are used in testing the file operations
      */
@@ -54,6 +55,7 @@ and not one punctuation mark
         assert file.exists() == false
     }
 
+    @Test
     void testEachForStringBufferInputStream() {
         def ist = new StringBufferInputStream(multiLineVal)
         def readVal = ""
@@ -63,6 +65,7 @@ and not one punctuation mark
         assert readVal == multiLineVal
     }
 
+    @Test
     void testEachForStringReader() {
         def ir = new StringReader(multiLineVal)
         def readVal = ""
@@ -70,6 +73,7 @@ and not one punctuation mark
         assert readVal == multiLineVal
     }
 
+    @Test
     void testEachForFileWithInputStream() {
         setUpFile()
         def readVal = ""
@@ -80,6 +84,7 @@ and not one punctuation mark
         assert readVal == multiLineVal
     }
 
+    @Test
     void testEachForFileWithReader() {
         setUpFile()
         def readVal = ""

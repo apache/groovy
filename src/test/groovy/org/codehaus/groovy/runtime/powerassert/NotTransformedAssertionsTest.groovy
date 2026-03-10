@@ -18,15 +18,16 @@
  */
 package org.codehaus.groovy.runtime.powerassert
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.*
+import static org.codehaus.groovy.runtime.powerassert.AssertionTestUtil.isNotTransformed
 
 /**
  * Tests that certain kinds of assertions are not transformed.
  */
-final class NotTransformedAssertionsTest extends GroovyTestCase {
+final class NotTransformedAssertionsTest {
 
+    @Test
     void testAssertsWithMessage() {
         // no way to check whether this assertion has been transformed or not,
         // but at least make sure it doesn't fail

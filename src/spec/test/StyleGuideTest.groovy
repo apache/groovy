@@ -16,10 +16,12 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import gls.CompilableTestSupport
 
-class StyleGuideTest extends CompilableTestSupport {
+import org.junit.jupiter.api.Test
 
+final class StyleGuideTest {
+
+    @Test
     void testDataStructures() {
         // tag::data_structures[]
         def list = [1, 4, 6, 9]

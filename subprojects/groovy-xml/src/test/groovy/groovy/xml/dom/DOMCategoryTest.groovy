@@ -18,19 +18,20 @@
  */
 package groovy.xml.dom
 
-import groovy.test.GroovyTestCase
 import groovy.xml.DOMBuilder
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
 import groovy.xml.TraversalTestSupport
 import groovy.xml.XmlUtil
+import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static javax.xml.xpath.XPathConstants.BOOLEAN
 import static javax.xml.xpath.XPathConstants.NODE
 import static javax.xml.xpath.XPathConstants.NODESET
 import static javax.xml.xpath.XPathConstants.NUMBER
 
-class DOMCategoryTest extends GroovyTestCase {
+class DOMCategoryTest {
 
     def getRoot = { xml ->
         def reader = new StringReader(xml)
@@ -38,6 +39,7 @@ class DOMCategoryTest extends GroovyTestCase {
         doc.documentElement
     }
 
+    @Test
     void testReplacementsAndAdditions() {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkReplaceNode(getRoot)
@@ -46,6 +48,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testMixedMarkup() {
         use(DOMCategory) {
             MixedMarkupTestSupport.checkMixedMarkup(getRoot)
@@ -53,6 +56,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testElement() {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
@@ -65,6 +69,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testAttribute() {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkAttribute(getRoot)
@@ -73,6 +78,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIndices() {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkNegativeIndices(getRoot)
@@ -80,6 +86,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testNavigation() {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkChildren(getRoot)
@@ -88,6 +95,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testTraversal() {
         use(DOMCategory) {
             TraversalTestSupport.checkDepthFirst(getRoot)
@@ -95,6 +103,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testGetOnMapWithDomCategory() {
         Map ids = [:]
         ids.put("try", "sample1")
@@ -109,6 +118,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testGetOnNonNodesWithDomCategory() {
         def myFoo = new Foo()
         assert myFoo.get("bar") == 3
@@ -118,6 +128,7 @@ class DOMCategoryTest extends GroovyTestCase {
     }
 
     /** Test for GROOVY-3109 */
+    @Test
     void testAccessToUnknownPropertyInAScriptWithDomCategory() {
         assertScript """
             import groovy.xml.dom.DOMCategory
@@ -134,6 +145,7 @@ class DOMCategoryTest extends GroovyTestCase {
     }
 
     /** Test for GROOVY-3109 */
+    @Test
     void testAccessToUnknownPropertyInAClassWithDomCategory() {
         assertScript """
             import groovy.xml.dom.DOMCategory
@@ -156,6 +168,7 @@ class DOMCategoryTest extends GroovyTestCase {
         """
     }
 
+    @Test
     void testXPathWithDomCategory() {
         def reader = new StringReader('<a><b>B1</b><b>B2</b><c a1="4" a2="true">C</c></a>')
         def root = DOMBuilder.parse(reader).documentElement
@@ -170,6 +183,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testDomCategoryNameWithNodes() {
         def reader = new StringReader('<a><b>B1</b><b>B2</b></a>')
         def a = DOMBuilder.parse(reader).documentElement
@@ -182,6 +196,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testReplaceNode() {
         def readerOld = new StringReader('<root><old/></root>')
         def oldDoc = DOMBuilder.parse(readerOld)

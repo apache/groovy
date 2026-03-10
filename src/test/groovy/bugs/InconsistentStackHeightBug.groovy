@@ -18,12 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class InconsistentStackHeightBug extends GroovyTestCase {
+class InconsistentStackHeightBug {
 
+    @Test
     void testBug() {
         def server = 0
         def tmp = server + 1
@@ -33,6 +35,7 @@ class InconsistentStackHeightBug extends GroovyTestCase {
         }
     }
 
+    @Test
     void testBug2() {
         def server = 0
         def tmp = server == 2
@@ -42,6 +45,7 @@ class InconsistentStackHeightBug extends GroovyTestCase {
         }
     }
 
+    @Test
     void testBug3() {
         def server = 0
         def foo = server

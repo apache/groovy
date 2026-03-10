@@ -19,9 +19,11 @@
 package gls.syntax
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class OldPropertySyntaxRemovalTest extends CompilableTestSupport {
+final class OldPropertySyntaxRemovalTest extends CompilableTestSupport {
 
+    @Test
     void testMultipleParameters() {
         shouldNotCompile """
             class C {

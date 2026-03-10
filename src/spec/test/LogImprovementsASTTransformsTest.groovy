@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,8 +16,14 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class LogImprovementsASTTransformsTest extends GroovyTestCase {
 
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class LogImprovementsASTTransformsTest {
+
+    @Test
     void testLogASTTransformation() {
         assertScript '''
 // tag::log_spec[]
@@ -55,6 +59,7 @@ g.greet()
 '''
     }
 
+    @Test
     void testCommonsASTTransformation() {
         assertScript '''
 // tag::commons_spec[]
@@ -89,6 +94,7 @@ g.greet()
 '''
     }
 
+    @Test
     void testLog4jASTTransformation() {
         assertScript '''
 // tag::log4j_spec[]
@@ -122,6 +128,7 @@ g.greet()
 '''
     }
 
+    @Test
     void testLog4j2ASTTransformation() {
                 assertScript '''
     // tag::log4j2_spec[]
@@ -157,6 +164,7 @@ g.greet()
     '''
     }
 
+    @Test
     void testSlf4jASTTransformation() {
         assertScript '''
 // tag::slf4j_spec[]
@@ -191,5 +199,4 @@ def g = new Greeter()
 g.greet()
 '''
     }
-
 }

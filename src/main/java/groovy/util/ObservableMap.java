@@ -325,21 +325,14 @@ public class ObservableMap implements Map {
         public static final Object newValue = new Object[0];
 
         public static ChangeType resolve(int ordinal) {
-            switch (ordinal) {
-                case 0:
-                    return ADDED;
-                case 2:
-                    return REMOVED;
-                case 3:
-                    return CLEARED;
-                case 4:
-                    return MULTI;
-                case 5:
-                    return NONE;
-                case 1:
-                default:
-                    return UPDATED;
-            }
+            return switch (ordinal) {
+                case 0 -> ADDED;
+                case 2 -> REMOVED;
+                case 3 -> CLEARED;
+                case 4 -> MULTI;
+                case 5 -> NONE;
+                default -> UPDATED;
+            };
         }
     }
 

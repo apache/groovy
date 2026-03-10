@@ -18,12 +18,16 @@
  */
 package gls.invocation
 
-final class MethodSelectionTest extends gls.CompilableTestSupport {
+import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
+
+final class MethodSelectionTest extends CompilableTestSupport {
 
     /**
      * This test ensures Groovy can choose a method based on interfaces.
      * Choosing such an interface should not be hidden by subclasses.
      */
+    @Test
     void testMostSpecificInterface() {
         assertScript '''
             interface A{}
@@ -58,6 +62,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         '''
     }
 
+    @Test
     void testMostGeneralForNull() {
         // we use the same signatures with different method orders,
         // because we want to catch method ordering bugs
@@ -97,6 +102,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         '''
     }
 
+    @Test
     void testMethodSelectionException() {
         assertScript '''
             import org.codehaus.groovy.runtime.metaclass.MethodSelectionException as MSE
@@ -116,6 +122,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
     }
 
     // GROOVY-2719
+    @Test
     void testMethodSelectionWithInterfaceVargsMethod() {
         assertScript '''
             public class Thing {}
@@ -129,6 +136,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
     }
 
     // GROOVY-2698
+    @Test
     void testComplexInterfaceInheritance() {
         assertScript '''
             import javax.swing.*
@@ -151,6 +159,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         '''
     }
 
+    @Test
     void testNullUsageForPrimitivesWithExplicitNull() {
         [byte,int,short,float,double,boolean,char].each { type ->
             assertScript """
@@ -169,6 +178,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         }
     }
 
+    @Test
     void testNullUsageForPrimitivesWithImplicitNull() {
         [byte,int,short,float,double,boolean,char].each { type ->
             assertScript """
@@ -187,6 +197,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         }
     }
 
+    @Test
     void testNullUsageForPrimitivesAndOverloading() {
         [byte,int,short,float,double].each { type ->
             assertScript """
@@ -199,7 +210,8 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         }
     }
 
-    void testPrivateMethodSelectionFromClosure(){
+    @Test
+    void testPrivateMethodSelectionFromClosure() {
         assertScript '''
             class I1 {
                 private foo() {1}
@@ -216,7 +228,8 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         '''
     }
 
-    void testCachingForNullAndPrimitive(){
+    @Test
+    void testCachingForNullAndPrimitive() {
         assertScript '''
             boolean shaky(boolean defaultValue) {false}
             shaky(false)
@@ -269,6 +282,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         '''
     }
 
+    @Test
     void testCallWithExendedBigDecimal() {
         assertScript '''
             BigDecimal f (BigDecimal x) {
@@ -286,6 +300,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
     }
 
     // GROOVY-6431
+    @Test
     void testBigDecAndBigIntSubClass() {
         assertScript'''
             class MyDecimal extends BigDecimal {
@@ -307,6 +322,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVargsClass() {
         assertScript '''
             interface Parent {}
@@ -326,6 +342,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
     }
 
     // GROOVY-5812
+    @Test
     void testDirectMethodCall() {
         assertScript '''
             private String[] getStringArrayDirectly() { ["string_00", "string_01"] }
@@ -343,6 +360,7 @@ final class MethodSelectionTest extends gls.CompilableTestSupport {
     }
 
     // GROOVY-6189, GROOVY-9852
+    @Test
     void testSAMs() {
         // simple direct case
         assertScript '''

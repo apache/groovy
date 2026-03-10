@@ -23,7 +23,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 
 /**
- * Represents a throw statement
+ * Represents a throw statement.
  */
 public class ThrowStatement extends Statement {
 
@@ -37,10 +37,6 @@ public class ThrowStatement extends Statement {
         return expression;
     }
 
-    @Override
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitThrowStatement(this);
-    }
     public void setExpression(Expression expression) {
         this.expression = expression;
     }
@@ -50,4 +46,8 @@ public class ThrowStatement extends Statement {
         return "throw " + expression.getText();
     }
 
+    @Override
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitThrowStatement(this);
+    }
 }

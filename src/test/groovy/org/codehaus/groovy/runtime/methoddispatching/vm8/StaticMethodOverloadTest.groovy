@@ -18,14 +18,17 @@
  */
 package org.codehaus.groovy.runtime.methoddispatching.vm8
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StaticMethodOverloadTest extends GroovyTestCase {
+
+class StaticMethodOverloadTest {
+    @Test
     void testOneStaticMethod() {
         assert FooOne.foo() == "FooOne.foo()"
         assert BarOne.foo() == "BarOne.foo()"
     }
 
+    @Test
     void testTwoStaticMethods() {
         assert FooTwo.foo() == "FooTwo.foo()"
         assert FooTwo.foo(0) == "FooTwo.foo(0)"
@@ -33,6 +36,7 @@ class StaticMethodOverloadTest extends GroovyTestCase {
         assert BarTwo.foo(0) == "BarTwo.foo(0)"
     }
 
+    @Test
     void testMoreThanTwoStaticMethods() {
         assert FooThree.foo() == "FooThree.foo()"
         assert FooThree.foo(0) == "FooThree.foo(0)"

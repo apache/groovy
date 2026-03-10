@@ -18,11 +18,16 @@
  */
 package groovy.xml
 
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+
 /**
  * This test uses GroovyMarkup with writers other than System.out
  */
-class MarkupWithWriterTest extends TestXmlSupport {
+final class MarkupWithWriterTest extends TestXmlSupport {
 
+    @Test
     void testSmallTreeWithStringWriter() {
         def writer = new java.io.StringWriter()
         def b = new MarkupBuilder(writer)
@@ -39,6 +44,7 @@ class MarkupWithWriterTest extends TestXmlSupport {
                 "</root1>", writer.toString()
     }
 
+    @Test
     void testWriterUseInScriptFile() {
         assertScriptFile 'src/test/groovy/groovy/xml/UseMarkupWithWriterScript.groovy'
     }

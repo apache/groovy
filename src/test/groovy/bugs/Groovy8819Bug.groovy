@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy8819Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class Groovy8819Bug {
+    @Test
     void testAccessStaticFieldInThisConstructor() {
         assertScript '''
             class Parent {
@@ -36,6 +39,7 @@ class Groovy8819Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAccessStaticFieldInThisConstructorCS() {
         assertScript '''
             import groovy.transform.CompileStatic

@@ -24,37 +24,26 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.concurrent.CountDownLatch;
 
-public class ScriptLauncher extends Thread
-{
-    Class scriptClass;
+class ScriptLauncher extends Thread {
 
-    Script script;
+    private final Class<?> scriptClass;
+    private final int numIter;
+    private final CountDownLatch latch;
 
-    int numIter;
-
-    CountDownLatch latch;
-    public final long[] tids;
-
-    public ScriptLauncher(Class scriptClass, int numIter, CountDownLatch latch, long[] tids)
-    {
-        this.tids = tids;
+    ScriptLauncher(final Class<?> scriptClass, final int numIter, final CountDownLatch latch) {
         this.scriptClass = scriptClass;
         this.numIter = numIter;
         this.latch = latch;
-
     }
 
-    public void run()
-    {
-        final long id = Thread.currentThread().getId();
+    private Script script;
 
+    @Override
+    public void run() {
         // run the script numIter times
-        for (int i = 0; i < numIter; i++)
-        {
-            org.codehaus.groovy.benchmarks.vm5.b2394.Builder builder = new org.codehaus.groovy.benchmarks.vm5.b2394.Builder();
-
+        for (int i = 0; i < numIter; i += 1) {
             Binding binding = new Binding();
-            binding.setVariable("builder", builder);
+            binding.setVariable("builder", new org.codehaus.groovy.benchmarks.vm5.b2394.Builder());
 
             script = InvokerHelper.createScript(scriptClass, binding);
 

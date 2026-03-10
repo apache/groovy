@@ -20,7 +20,6 @@ package org.codehaus.groovy.control.customizers
 
 import groovy.transform.AutoFinal
 import groovy.transform.CompilationUnitAware
-import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.AnnotationNode
@@ -49,7 +48,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
  * Creating a customizer with the {@link ASTTransformationCustomizer#ASTTransformationCustomizer(Class)
  * class constructor} will trigger an AST transformation for
  * each class node of a source unit. However, you cannot pass parameters to the annotation so the default values
- * will be used. Writing :
+ * will be used. Writing:
  * <pre>
  *     def configuration = new CompilerConfiguration()
  *     configuration.addCompilationCustomizers(new ASTTransformationCustomizer(Log))
@@ -60,8 +59,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.propX
  *        }""")
  * </pre>
  *
- * is equivalent to :
- *
+ * is equivalent to:
  * <pre>
  *     def shell = new GroovyShell()
  *     shell.evaluate("""
@@ -195,10 +193,6 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
         this.annotationParameters = annotationParams
     }
 
-    void setCompilationUnit(CompilationUnit unit) {
-        compilationUnit = unit
-    }
-
     @SuppressWarnings('ClassForName')
     private static Class<ASTTransformation> findASTTransformationClass(Class<? extends Annotation> anAnnotationClass, ClassLoader transformationClassLoader) {
         GroovyASTTransformationClass annotation = anAnnotationClass.getAnnotation(GroovyASTTransformationClass)
@@ -257,53 +251,69 @@ class ASTTransformationCustomizer extends CompilationCustomizer implements Compi
      * }.expression[0]
      * customizer.annotationParameters = [value: expression]</pre>
      *
-     * @param params the annotation parameters
-     *
      * @since 1.8.1
      */
-    @CompileDynamic
-    void setAnnotationParameters(Map<String, Object> params) {
-        if (annotationNode == null || params == null || params.isEmpty()) return
-        params.each { name, value ->
-            if (!annotationNode.classNode.getMethod(name)) {
+    void setAnnotationParameters(Map<String, Object> parameters) {
+        if (!annotationNode) return
+        for (entry in parameters) {
+            String name = entry.getKey()
+            if (annotationNode.classNode.getMethod(name) == null) {
                 throw new IllegalArgumentException("${annotationNode.classNode.name} does not accept any [$name] parameter")
             }
-            if (value instanceof Closure) {
-                throw new IllegalArgumentException('Direct usage of closure is not supported by the AST compilation customizer. Please use ClosureExpression instead.')
-            }
-
-            Expression valueExpression
-
-            if (value instanceof Expression) {
-                valueExpression = value
-                // avoid NPEs due to missing source code
-                value.lineNumber = 0; value.lastLineNumber = 0
-            } else if (value instanceof Class) {
-                valueExpression = classX(value)
-            } else if (value instanceof Enum) {
-                valueExpression = propX(classX(ClassHelper.make(value.getClass())), value.toString())
-            } else if (value instanceof List || value.getClass().isArray()) {
-                valueExpression = listX(value.collect { it instanceof Class ? classX(it) : constX(it) })
-            } else {
-                valueExpression = constX(value)
-            }
-
-            annotationNode.addMember(name, valueExpression)
+            annotationNode.addMember(name, toExpression(entry.getValue()))
         }
     }
 
+    private static Expression toExpression(Object value) {
+        if (value instanceof Expression) {
+            // avoid exceptions due to missing source code
+            value.lineNumber = 0; value.lastLineNumber = 0
+            return value
+        }
+
+        if (value instanceof Closure) {
+            throw new IllegalArgumentException('Direct usage of closure is not supported by the AST compilation customizer. Please use ClosureExpression instead.')
+        }
+
+        if (value instanceof Class) {
+            return classX(value)
+        }
+
+        if (value instanceof Enum) {
+            return propX(classX(value.getClass()), value.toString())
+        }
+
+        if (value instanceof List) {
+            return listX(value.collect(this.&toExpression)) // GROOVY-11865
+        }
+
+        if (value.getClass().isArray()) {
+            def array = value as Object[]
+            return listX(array.collect(this.&toExpression)) // GROOVY-11865
+        }
+
+        return constX(value, true)
+    }
+
+    //--------------------------------------------------------------------------
+
     @Override
-    void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-        if (transformation instanceof CompilationUnitAware) {
-            ((CompilationUnitAware) transformation).compilationUnit = compilationUnit
+    void setCompilationUnit(CompilationUnit compilationUnit) {
+        this.compilationUnit = compilationUnit
+    }
+
+    @Override
+    void call(SourceUnit sourceUnit, GeneratorContext context, ClassNode classNode) {
+        if (transformation instanceof CompilationUnitAware unitAware) {
+            unitAware.compilationUnit = compilationUnit
         }
         if (annotationNode != null) {
-            // this is a local ast transformation which is applied on every class node
             annotationNode.sourcePosition = classNode
-            transformation.visit([annotationNode, classNode] as ASTNode[], source)
-        } else {
+            // this is a local ast transformation which is applied on every class node
+            transformation.visit(new ASTNode[]{annotationNode, classNode}, sourceUnit)
+        } else if (!applied) {
             // this is a global AST transformation
-            if (!applied) transformation.visit(null, source)
+            transformation.visit(null, sourceUnit)
         }
         applied = true
     }

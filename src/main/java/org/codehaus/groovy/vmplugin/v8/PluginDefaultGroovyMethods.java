@@ -274,13 +274,10 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 5.0.0
      */
     public static <T> T getAt(final Optional<T> self, final int index) {
-        switch (index) {
-          case  0:
-          case -1:
-            return self.orElse(null);
-          default:
-            throw new IndexOutOfBoundsException("" + index);
-        }
+        return switch (index) {
+            case 0, -1 -> self.orElse(null);
+            default -> throw new IndexOutOfBoundsException("" + index);
+        };
     }
 
     /**

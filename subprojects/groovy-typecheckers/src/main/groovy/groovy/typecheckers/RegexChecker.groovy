@@ -25,12 +25,14 @@ import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.expr.BinaryExpression
 import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
+import org.codehaus.groovy.ast.expr.ClassExpression
 import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.DeclarationExpression
 import org.codehaus.groovy.ast.expr.Expression
 import org.codehaus.groovy.ast.expr.MethodCall
 import org.codehaus.groovy.ast.expr.MethodCallExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
+import org.codehaus.groovy.ast.expr.VariableExpression
 import org.codehaus.groovy.syntax.Types
 import org.codehaus.groovy.transform.stc.GroovyTypeCheckingExtensionSupport
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
@@ -100,14 +102,15 @@ import static org.codehaus.groovy.transform.stc.StaticTypeCheckingSupport.checkC
  */
 @Incubating
 class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
-    private static final String REGEX_GROUP_COUNT = RegexChecker.simpleName + '_INFERRED_GROUP_COUNT'
-    private static final String REGEX_MATCHER_RESULT_TYPE = RegexChecker.simpleName + '_MATCHER_RESULT_INFERRED_TYPE'
+
     private static final ClassNode MATCHER_TYPE = ClassHelper.make(Matcher)
+    private static final String REGEX_GROUP_COUNT = RegexChecker.getSimpleName() + '_INFERRED_GROUP_COUNT'
+    private static final String REGEX_MATCHER_RESULT_TYPE = RegexChecker.getSimpleName() + '_MATCHER_RESULT_INFERRED_TYPE'
 
     @Override
     Object run() {
         beforeVisitMethod { MethodNode method ->
-            def visitor = new CheckingVisitor() {
+            method.code.visit(new CheckingVisitor() {
                 @Override
                 void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
                     super.visitBitwiseNegationExpression(expression)
@@ -122,7 +125,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         def exp = findConstExp(expression.rightExpression, String)
                         checkRegex(exp, expression)
                     } else if (expression.operation.type == Types.LEFT_SQUARE_BRACKET) {
-                        if (isVariableExpression(expression.leftExpression)) {
+                        if (expression.leftExpression instanceof VariableExpression) {
                             def var = findTargetVariable(expression.leftExpression)
                             def groupCount = var?.getNodeMetaData(REGEX_GROUP_COUNT)
                             if (groupCount != null) {
@@ -140,7 +143,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 @Override
                 void visitMethodCallExpression(MethodCallExpression call) {
                     super.visitMethodCallExpression(call)
-                    if (isClassExpression(call.objectExpression)) {
+                    if (call.objectExpression instanceof ClassExpression) {
                         checkPatternMethod(call, call.objectExpression.type)
                     } else if (isPattern(call.receiver) && call.methodAsString == 'matcher') {
                         def var = findTargetVariable(call.receiver)
@@ -169,7 +172,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                 void visitDeclarationExpression(DeclarationExpression decl) {
                     super.visitDeclarationExpression(decl)
                     if (decl.variableExpression != null) {
-                        if (isConstantExpression(decl.rightExpression)) {
+                        if (decl.rightExpression instanceof ConstantExpression) {
                             localConstVars.put(decl.variableExpression, decl.rightExpression)
                         }
                         def groupCount = decl.rightExpression.getNodeMetaData(REGEX_GROUP_COUNT)
@@ -178,15 +181,13 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         }
                     }
                 }
-
-            }
-            method.code.visit(visitor)
+            })
         }
 
         incompatibleAssignment { lhsType, rhsType, expr ->
-            if (isBinaryExpression(expr) && isAssignment(expr.operation.type)) {
+            if (expr instanceof BinaryExpression && isAssignment(expr.operation.type)) {
                 def from = expr.rightExpression
-                if (isBinaryExpression(from) && from.operation.type == Types.LEFT_SQUARE_BRACKET && getType(from.leftExpression) == MATCHER_TYPE) {
+                if (from instanceof BinaryExpression && from.operation.type == Types.LEFT_SQUARE_BRACKET && getType(from.leftExpression) == MATCHER_TYPE) {
                     ClassNode inferred = from.getNodeMetaData(REGEX_MATCHER_RESULT_TYPE)
                     if (inferred) {
                         handled = true
@@ -200,9 +201,9 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             }
         }
 
-        methodNotFound { receiverType, name, argList, argTypes, call ->
+        methodNotFound { receiverType, name, argList, argTypes, MethodCall call ->
             def receiver = call.receiver
-            if (isBinaryExpression(receiver) && receiver.operation.type == Types.LEFT_SQUARE_BRACKET && getType(receiver.leftExpression) == MATCHER_TYPE) {
+            if (receiver instanceof BinaryExpression && receiver.operation.type == Types.LEFT_SQUARE_BRACKET && getType(receiver.leftExpression) == MATCHER_TYPE) {
                 ClassNode inferred = receiver.getNodeMetaData(REGEX_MATCHER_RESULT_TYPE)
                 if (inferred) {
                     makeDynamic(call, inferred)
@@ -211,12 +212,12 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
         }
 
         afterVisitMethod { MethodNode method ->
-            def visitor = new CheckingVisitor() {
+            method.code.visit(new CheckingVisitor() {
                 @Override
                 void visitDeclarationExpression(DeclarationExpression decl) {
                     super.visitDeclarationExpression(decl)
                     if (decl.variableExpression != null) {
-                        if (isConstantExpression(decl.rightExpression)) {
+                        if (decl.rightExpression instanceof ConstantExpression) {
                             localConstVars.put(decl.variableExpression, decl.rightExpression)
                         }
                         def groupCount = decl.rightExpression.getNodeMetaData(REGEX_GROUP_COUNT)
@@ -236,7 +237,7 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         }
                     }
                     super.visitMethodCallExpression(call)
-                    if (isVariableExpression(call.objectExpression) && call.methodAsString == 'group' && isMatcher(call.receiver) && call.arguments.expressions) {
+                    if (call.objectExpression instanceof VariableExpression && call.methodAsString == 'group' && isMatcher(call.receiver) && call.arguments.expressions) {
                         def var = findTargetVariable(call.receiver)
                         def maxCnt = var?.getNodeMetaData(REGEX_GROUP_COUNT)
                         if (maxCnt != null) {
@@ -261,21 +262,22 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
                         }
                     }
                 }
-            }
-            method.code.visit(visitor)
+            })
         }
     }
 
-    private boolean isMatcher(Expression obj) {
-        obj.type == MATCHER_TYPE ||
-                obj.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == MATCHER_TYPE ||
-                obj.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == MATCHER_TYPE
+    //--------------------------------------------------------------------------
+
+    private boolean isMatcher(Expression exp) {
+        exp.type == MATCHER_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == MATCHER_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == MATCHER_TYPE
     }
 
-    private boolean isPattern(Expression obj) {
-        obj.type == PATTERN_TYPE ||
-                obj.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == PATTERN_TYPE ||
-                obj.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == PATTERN_TYPE
+    private boolean isPattern(Expression exp) {
+        exp.type == PATTERN_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_TYPE) == PATTERN_TYPE
+            || exp.getNodeMetaData(StaticTypesMarker.INFERRED_RETURN_TYPE) == PATTERN_TYPE
     }
 
     private void checkRegex(ConstantExpression regex, Expression target) {
@@ -290,5 +292,4 @@ class RegexChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
             addStaticTypeError('Bad regex' + additional + ex.message, target)
         }
     }
-
 }

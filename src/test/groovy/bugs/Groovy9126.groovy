@@ -19,12 +19,12 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class Groovy9126 extends AbstractBytecodeTestCase {
 
     @Test
-    void testUnreachableBytecode() {
+    void testUnreachableBytecode1() {
         assert compile(method:'nonVoidMethod', '''@groovy.transform.CompileStatic
             int nonVoidMethod() {
                 1 * 1

@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation: null test optimizations.
  */
 final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testShouldUseIfNull1() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -35,6 +37,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasStrictSequence(['IFNULL'])
     }
 
+    @Test
     void testShouldUseIfNull2() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -45,6 +48,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasStrictSequence(['IFNULL'])
     }
 
+    @Test
     void testShouldUseIfNonNull1() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -55,6 +59,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasStrictSequence(['IFNONNULL'])
     }
 
+    @Test
     void testShouldUseIfNonNull2() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -65,6 +70,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasStrictSequence(['IFNONNULL'])
     }
 
+    @Test
     void testPrimitiveWithNullShouldBeOptimized1() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -75,6 +81,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasStrictSequence(['ICONST_0', 'POP'])
     }
 
+    @Test
     void testPrimitiveWithNullShouldBeOptimized2() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -85,6 +92,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert bytecode.hasStrictSequence(['ICONST_0', 'POP'])
     }
 
+    @Test
     void testOptimizeGroovyTruthForPrimitiveBoolean1() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -101,6 +109,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testOptimizeGroovyTruthForPrimitiveBoolean2() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -123,6 +132,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testOptimizeGroovyTruthForPrimitiveBoolean3() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -139,6 +149,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testOptimizeGroovyTruthForNonPrimitiveBoolean() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -161,6 +172,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testOptimizeGroovyTruthForPrimitiveNumberType() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -183,6 +195,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testNoGroovyTruthOptimizationForObject() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -203,6 +216,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testNoGroovyTruthOptimizationForString() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -223,6 +237,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testGroovyTruthOptimizationForFinalClass() {
         def bytecode = compile(method:'m', '''
             final class A {
@@ -246,6 +261,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert !bytecode.hasSequence(['INVOKEDYNAMIC cast(LA;)Z'])
     }
 
+    @Test
     void testGroovyTruthOptimizationForPrivateInnerClass() {
         def bytecode = compile(method:'m', '''
             class A {
@@ -271,6 +287,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         assert !bytecode.hasSequence(['INVOKEDYNAMIC cast(LA$B;)Z'])
     }
 
+    @Test
     void testNoGroovyTruthOptimizationForPublicInnerClass() {
         def bytecode = compile(method:'m', '''
             class A {
@@ -296,6 +313,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
     }
 
     // GROOVY-10711
+    @Test
     void testNoGroovyTruthOptimizationIfProvidesAsBoolean() {
         def bytecode = compile(method:'m', '''
             @groovy.transform.CompileStatic
@@ -323,6 +341,7 @@ final class StaticCompileNullCompareOptimizationTest extends AbstractBytecodeTes
         ])
     }
 
+    @Test
     void testCompare() {
         assertScript '''
             class Pogo {

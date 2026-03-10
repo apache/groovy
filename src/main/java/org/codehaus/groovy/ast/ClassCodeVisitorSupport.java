@@ -59,10 +59,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
 
     protected final void visitAnnotations(Iterable<AnnotationNode> nodes) {
         for (AnnotationNode node : nodes) {
-            // skip built-in properties
-            if (!node.isBuiltIn()) {
-                visitAnnotation(node);
-            }
+            visitAnnotation(node);
         }
     }
 
@@ -215,7 +212,9 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitForLoop(ForStatement statement) {
         visitStatement(statement);
-        visitAnnotations(statement.getVariable());
+        if (statement.getValueVariable() != null) {
+            visitAnnotations(statement.getValueVariable());
+        }
         super.visitForLoop(statement);
     }
 

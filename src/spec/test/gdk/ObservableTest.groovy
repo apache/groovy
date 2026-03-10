@@ -18,15 +18,15 @@
  */
 package gdk
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import java.beans.PropertyChangeListener
 
-class ObservableTest extends GroovyTestCase {
+final class ObservableTest {
 
+    @Test
     void testObservableList() {
         // tag::observable_list[]
-
         def event                                       // <1>
         def listener = {
             if (it instanceof ObservableList.ElementEvent)  {  // <2>
@@ -50,6 +50,7 @@ class ObservableTest extends GroovyTestCase {
         // end::observable_list[]
     }
 
+    @Test
     void testObservableListAndClear() {
         // tag::observable_list_clear[]
         def event

@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class RodsBug extends GroovyTestCase {
 
+class RodsBug {
+
+    @Test
     void testBug() {
         doTest(true)
         /*
@@ -33,6 +35,7 @@ class RodsBug extends GroovyTestCase {
          */
     }
 
+    @Test
     void testBug2() {
         def x = 1
         if (x > 0) {

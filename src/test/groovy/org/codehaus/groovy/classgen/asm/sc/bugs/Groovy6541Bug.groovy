@@ -22,9 +22,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy6541Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6541Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldCompileGetAtWithBoxedInteger() {
         assertScript '''class Foo {
     String getAt(int i) {
@@ -39,6 +41,8 @@ for (i in 1..2) {
 }
     '''
     }
+
+    @Test
     void testShouldCompileGetAtWithPrimitiveInteger() {
         assertScript '''class Foo {
     String getAt(Integer i) {
@@ -54,6 +58,7 @@ for (i in 1..2) {
     '''
     }
 
+    @Test
     void testShouldCompilePutAtWithBoxedInteger() {
         assertScript '''class Foo {
     String getAt(int i) {
@@ -72,6 +77,8 @@ for (i in 1..2) {
 }
     '''
     }
+
+    @Test
     void testShouldCompilePutAtWithPrimitiveInteger() {
         assertScript '''class Foo {
     String getAt(Integer i) {

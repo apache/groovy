@@ -18,8 +18,12 @@
  */
 package gls.sizelimits
 
-class StringSizeTest extends gls.CompilableTestSupport {
+import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
+final class StringSizeTest extends CompilableTestSupport {
+
+  @Test
   void testNormalString() {
     def string = "x"*65535
 
@@ -32,8 +36,9 @@ class StringSizeTest extends gls.CompilableTestSupport {
     """
   }
 
+  @Test
   void testGString() {
-    def string = "x"*65534 
+    def string = "x"*65534
     // not 65535, because we use one additional space
     // in the gstring test script
 

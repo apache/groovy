@@ -18,8 +18,12 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.StringBufferWriter
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * Test for the Interceptor Interface usage as implemented by the
@@ -28,18 +32,20 @@ import org.codehaus.groovy.runtime.StringBufferWriter
  * <p>
  * As a side effect, the {@code ProxyMetaClass} is also partly tested.
  */
-final class InterceptorTest extends GroovyTestCase {
+final class InterceptorTest {
 
     private final Interceptor interceptor = new TracingInterceptor() // class under test
     private final String interceptable = 'Interceptable String' // the object to observe
     private final ProxyMetaClass proxy = ProxyMetaClass.getInstance(interceptable.class)
     private final StringBuffer log = new StringBuffer('\n')
 
+    @BeforeEach
     void setUp() {
         interceptor.writer = new StringBufferWriter(log)
         proxy.interceptor = interceptor
     }
 
+    @Test
     void testSimpleInterception() {
         proxy.use {
             assertEquals 20, interceptable.size()
@@ -56,6 +62,7 @@ after  java.lang.String.startsWith(java.lang.String, java.lang.Integer)
 """, log.toString())
     }
 
+    @Test
     void testNoInterceptionWithNullInterceptor() {
         proxy.setInterceptor(null)
         proxy.use {
@@ -63,6 +70,7 @@ after  java.lang.String.startsWith(java.lang.String, java.lang.Integer)
         }
     }
 
+    @Test
     void testConstructorInterception() {
         proxy.use {
             new String('some string')
@@ -73,6 +81,7 @@ after  java.lang.String.ctor(java.lang.String)
 """, log.toString())
     }
 
+    @Test
     void testStaticMethodInterception() {
         proxy.use {
             assertEquals 'true', String.valueOf(true)
@@ -83,6 +92,7 @@ after  java.lang.String.valueOf(java.lang.Boolean)
 """, log.toString())
     }
 
+    @Test
     void testInterceptionOfGroovyClasses() {
         def slicer = new groovy.mock.example.CheeseSlicer()
         def proxy = ProxyMetaClass.getInstance(slicer.class)
@@ -96,11 +106,13 @@ after  groovy.mock.example.CheeseSlicer.coffeeBreak(java.lang.String)
 """, log.toString())
     }
 
+    @Test
     void testProxyMetaClassUseMethodShouldReturnTheResultOfClosure() {
         assertTrue proxy.use { true }
     }
 
     // GROOVY-10009
+    @Test
     void testNullArgumentToMethodCall() {
         interceptable.metaClass = proxy
         interceptable.equals(null)

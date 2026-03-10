@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.transform
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -67,6 +67,6 @@ final class AutoCloneTransformTest {
                 String surName
             }
         '''
-        assert err =~ /Error during @AutoClone processing: 'excludes' property 'sirName' does not exist./
+        assert err.message =~ /Error during @AutoClone processing: 'excludes' property 'sirName' does not exist./
     }
 }

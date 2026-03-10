@@ -19,13 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ClosuresSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation: closures.
  */
-class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompilationTestSupport {
+final class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-5584
+    @Test
     void testEachOnMapClosure() {
         assertScript '''
             def test() {
@@ -38,6 +40,7 @@ class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompila
     }
 
     // GROOVY-5811
+    @Test
     void testClosureExceptionUnwrap() {
         assertScript '''
             @groovy.transform.InheritConstructors
@@ -64,6 +67,7 @@ class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompila
     }
 
     // GROOVY-6522
+    @Test
     void testShouldCallClosure() {
         assertScript '''
             class Sample {
@@ -106,6 +110,7 @@ class ClosuresStaticCompileTest extends ClosuresSTCTest implements StaticCompila
         '''
     }
 
+    @Test
     void testMethodVersusPropertyOnCompoundAssignmentTarget() {
         assertScript '''
             import org.codehaus.groovy.ast.expr.*

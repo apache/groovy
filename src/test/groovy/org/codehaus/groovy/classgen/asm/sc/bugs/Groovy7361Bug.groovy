@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldNotThrowVerifyError() {
         assertScript '''
             class A {
@@ -41,6 +43,7 @@ final class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCo
         '''
     }
 
+    @Test
     void testShouldNotThrowClassCastException() {
         assertScript '''
             class A {
@@ -60,6 +63,7 @@ final class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCo
     }
 
     // GROOVY-9699
+    @Test
     void testShouldNotEmitErrorForSubscriptPrivateAccess() {
         assertScript '''
             class A {
@@ -89,6 +93,7 @@ final class Groovy7361Bug extends StaticTypeCheckingTestCase implements StaticCo
     }
 
     // GROOVY-9771
+    @Test
     void testShouldNotThrowClassCastExceptionForSubscriptPrivateAccess() {
         assertScript '''
             class C {

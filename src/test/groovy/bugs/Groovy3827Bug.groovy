@@ -18,10 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.jupiter.api.Test
 
-class Groovy3827Bug extends GroovyTestCase {
+class Groovy3827Bug {
+    @Test
     void testDuplicateCompilationErrorOnProperty() {
         GroovyClassLoader cl = new GroovyClassLoader();
 

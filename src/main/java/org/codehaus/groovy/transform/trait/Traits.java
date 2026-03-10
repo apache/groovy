@@ -34,7 +34,6 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.tools.GenericsUtils;
 import org.codehaus.groovy.classgen.asm.BytecodeHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.objectweb.asm.Opcodes;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -46,12 +45,21 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.objectweb.asm.Opcodes.ACC_ABSTRACT;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
+import static org.objectweb.asm.Opcodes.ACC_TRANSIENT;
+
 /**
  * A collection of utility methods used to deal with traits.
  *
  * @since 2.3.0
  */
 public abstract class Traits {
+
     public static final ClassNode IMPLEMENTED_CLASSNODE = ClassHelper.make(Implemented.class);
     public static final ClassNode TRAITBRIDGE_CLASSNODE = ClassHelper.make(TraitBridge.class);
     public static final Class<Trait> TRAIT_CLASS = Trait.class;
@@ -79,7 +87,7 @@ public abstract class Traits {
 //            (a ? hex('80') : 0) + (b ? hex('10') : 0) + (c ? hex('8') : 0) + (d ? hex('2') : hex('1'))
 //    }.sort()
     static final List<Integer> FIELD_PREFIXES = Arrays.asList(1, 2, 9, 10, 17, 18, 25, 26, 129, 130, 137, 138, 145, 146, 153, 154);
-    static final int FIELD_PREFIX_MASK = Opcodes.ACC_PRIVATE | Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL | Opcodes.ACC_TRANSIENT;
+    static final int FIELD_PREFIX_MASK = ACC_PRIVATE | ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_TRANSIENT;
     static final String SUPER_TRAIT_METHOD_PREFIX = "trait$super$";
 
     static String fieldHelperClassName(final ClassNode traitNode) {
@@ -129,11 +137,10 @@ public abstract class Traits {
         ClassNode helperClassNode = null;
         ClassNode fieldHelperClassNode = null;
         ClassNode staticFieldHelperClassNode = null;
-        var innerClasses = trait.redirect().getInnerClasses();
-        if (innerClasses != null && innerClasses.hasNext() ) {
-            // trait declared in same unit
-            do {
-                ClassNode icn = innerClasses.next();
+
+        if (trait.isPrimaryClassNode()) { // GROOVY-11743
+            var ici = trait.redirect().getInnerClasses();
+            while (ici.hasNext()) { ClassNode icn = ici.next();
                 if (icn.getName().endsWith(Traits.TRAIT_HELPER)) {
                     helperClassNode = icn;
                 } else if (icn.getName().endsWith(Traits.FIELD_HELPER)) {
@@ -141,30 +148,39 @@ public abstract class Traits {
                 } else if (icn.getName().endsWith(Traits.STATIC_FIELD_HELPER)) {
                     staticFieldHelperClassNode = icn;
                 }
-            } while (innerClasses.hasNext());
-        } else if (!trait.isPrimaryClassNode()) { // GROOVY-11743
-            // precompiled trait
+            }
+        } else { // pre-compiled trait
             try {
-                String helperClassName = Traits.helperClassName(trait);
                 ClassLoader classLoader = trait.getTypeClass().getClassLoader();
-                helperClassNode = ClassHelper.make(Class.forName(helperClassName, false, classLoader));
+                helperClassNode = ClassHelper.make(classLoader.loadClass(Traits.helperClassName(trait)));
                 try {
                     fieldHelperClassNode = ClassHelper.make(classLoader.loadClass(Traits.fieldHelperClassName(trait)));
                     staticFieldHelperClassNode = ClassHelper.make(classLoader.loadClass(Traits.staticFieldHelperClassName(trait)));
                 } catch (ClassNotFoundException e) {
-                    // not a problem, the field helpers may be absent
+                    // field helper(s) may be absent
                 }
             } catch (ClassNotFoundException e) {
                 throw new GroovyBugError("Couldn't find trait helper classes on compile classpath!", e);
             }
         }
+
         GenericsType[] typeArguments = trait.getGenericsTypes();
         if (helperClassNode != null) {
             helperClassNode = GenericsUtils.makeClassSafe0(helperClassNode, typeArguments);
+        } else { // GROOVY-7909: stub helper
+            helperClassNode = new ClassNode(
+                Traits.helperClassName(trait),
+                ACC_PUBLIC | ACC_STATIC | ACC_ABSTRACT | ACC_SYNTHETIC,
+                ClassHelper.OBJECT_TYPE
+            ){{
+                isPrimaryNode = false;
+                setGenericsTypes(typeArguments);
+            }};
         }
         if (fieldHelperClassNode != null) {
             fieldHelperClassNode = GenericsUtils.makeClassSafe0(fieldHelperClassNode, typeArguments);
         }
+
         return new TraitHelpersTuple(helperClassNode, fieldHelperClassNode, staticFieldHelperClassNode);
     }
 

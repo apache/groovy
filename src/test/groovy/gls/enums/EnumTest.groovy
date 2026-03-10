@@ -19,35 +19,43 @@
 package gls.enums
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests various properties of enums.
  */
-class EnumTest extends CompilableTestSupport {
+final class EnumTest extends CompilableTestSupport {
 
+    @Test
     void testValues() {
         assert UsCoin.values().size() == 4
         assert UsCoin.values().toList().sum{ it.value } == 41
     }
 
+    @Test
     void testNext() {
         def coin = UsCoin.penny
         def coins = [coin++, coin++, coin++, coin++, coin]
         assert coins == [UsCoin.penny, UsCoin.nickel, UsCoin.dime, UsCoin.quarter, UsCoin.penny]
     }
 
+    @Test
     void testPrevious() {
         def coin = UsCoin.quarter
         def coins = [coin--, coin--, coin--, coin--, coin]
         assert coins == [UsCoin.quarter, UsCoin.dime, UsCoin.nickel, UsCoin.penny, UsCoin.quarter]
     }
 
+    @Test
     void testRange() {
         def coinRange1 = UsCoin.penny..UsCoin.dime
         assert (UsCoin.nickel in coinRange1)
         assert !(UsCoin.quarter in coinRange1)
     }
 
+    @Test
     void testMinValue() {
         assert UsCoin.MIN_VALUE == UsCoin.penny
         shouldFail(MissingPropertyException) {
@@ -55,6 +63,7 @@ class EnumTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testMaxValue() {
         assert UsCoin.MAX_VALUE == UsCoin.quarter
         shouldFail(MissingPropertyException) {
@@ -62,6 +71,7 @@ class EnumTest extends CompilableTestSupport {
         }
     }
 
+    @Test
     void testComparators() {
         assert UsCoin.nickel <=> UsCoin.penny  ==  1
         assert UsCoin.nickel <=> UsCoin.nickel ==  0
@@ -72,6 +82,7 @@ class EnumTest extends CompilableTestSupport {
         assert UsCoin.nickel >=  UsCoin.nickel
     }
 
+    @Test
     void testStepWithRange() {
         def coinRange2 = UsCoin.nickel..UsCoin.quarter
         def coins = coinRange2.toList()
@@ -92,6 +103,7 @@ class EnumTest extends CompilableTestSupport {
         assert coins == [UsCoin.quarter]
     }
 
+    @Test
     void testStepWithReverseRange() {
         def coinRange2 = UsCoin.quarter..UsCoin.nickel
         def coins = coinRange2.toList()
@@ -112,6 +124,7 @@ class EnumTest extends CompilableTestSupport {
         assert coins == [UsCoin.nickel]
     }
 
+    @Test
     void testEnumWithSingleListInConstructor() {
         assertScript '''
             enum ListEnum1 {
@@ -137,6 +150,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3214
+    @Test
     void testSingleListDoesNoInfluenceMaps() {
         // the fix for GROOVY-2933 caused map["taku"] to become map[(["take])] instead
         assertScript '''
@@ -154,6 +168,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3276
+    @Test
     void testMutipleValuesDontGetWronglyWrappedInList() {
         // the fix for GROOVY-3214 caused multiple values passed in an enum const to get wrapped in an extra ListExpression
         assertScript '''
@@ -174,6 +189,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3161
+    @Test
     void testStaticEnumFieldWithEnumValues() {
         def allColors = GroovyColors3161.ALL_COLORS
         assert allColors.size() == 3
@@ -183,6 +199,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-7025
+    @Test
     void testStaticEnumFieldFromInit() {
         def err = shouldNotCompile '''
             enum E {
@@ -230,6 +247,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3283
+    @Test
     void testImportStaticMoreThanOneEnum() {
         assertScript '''
             enum Foo3283 { A,B }
@@ -244,6 +262,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3284
+    @Test
     void testCallBehaviorOnEnum() {
         // test the usage in a non-script class first
         for (f in Foo3284) {
@@ -276,6 +295,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3483
+    @Test
     void testClassResolutionForInnerEnumsWithPackageName() {
         assertScript '''
             package familie
@@ -297,6 +317,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3110
+    @Test
     void testInnerEnumUsedInDefiningClassWithUnqualifiedEnumNameUsed() {
         assertScript '''
             class C {
@@ -321,6 +342,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-11198
+    @Test
     void testInnerEnumInitWithUnqualifiedOuterClassField() {
         assertScript '''
             class C {
@@ -338,13 +360,33 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
+    void testInnerEnumInitWithUnqualifiedOuterClassValue() {
+        assertScript '''
+            class C {
+                private static int ONE() { 1 }
+                enum E {
+                    FOO(1 + ONE())
+                    final value
+                    E(value) {
+                        this.value = value
+                    }
+                }
+            }
+
+            assert C.E.FOO.value == 2
+        '''
+    }
+
     // GROOVY-3693
+    @Test
     void testStaticFieldInitValuesInAStaticBlock() {
         // trigger enum class load to test it - asserts are present in the enum
         GroovyColors3693.r
     }
 
     // GROOVY-2443
+    @Test
     void testCustomMethodOnEnum() {
         assertScript '''
             enum Day {
@@ -358,6 +400,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3985
+    @Test
     void testEnumConstantSubClassINITMethodOverrideINITOfEnumClass() {
         try {
             // cause loading of enum that causes its fields to be set and
@@ -369,6 +412,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3996
+    @Test
     void testEnumStaticInitWithAFieldUsingEnumValues() {
         assertScript '''
             enum Color3996 {
@@ -384,6 +428,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3986
+    @Test
     void testEnumWithTopLevelNoBracketsMethodCall() {
         assertScript '''
             enum Color3986 {
@@ -396,6 +441,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-3047
+    @Test
     void testEnumConstantSeparators() {
         shouldCompile '''
             enum Foo0 { X }
@@ -433,6 +479,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-4268
+    @Test
     void testEnumWithSingleValueAndClassField() {
         shouldCompile '''
             enum EnumWithSingleValueAndClassField {
@@ -443,6 +490,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-4444
+    @Test
     void testConstructorChainingInEnum() {
         assertScript '''
             enum Foo4444 {
@@ -474,6 +522,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-6065
+    @Test
     void testOverridingMethodsWithExplicitConstructor() {
         assertScript '''
             enum Country {
@@ -490,6 +539,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-6747
+    @Test
     void testOverridingMethodsWithExplicitConstructor2() {
         assertScript '''
             enum Codes {
@@ -514,6 +564,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-4641
+    @Test
     void testAbstractMethodOverriding() {
         assertScript '''
             enum Day {
@@ -550,6 +601,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-5756
+    @Test
     void testInnerClosureDefinitions() {
         assertScript '''
             enum E {
@@ -572,6 +624,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-4794
+    @Test
     void testLenientTypeDefinitions() {
         assertScript '''
             enum E {
@@ -588,6 +641,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-4485
+    @Test
     void testNamedArgs() {
         assertScript '''
             enum ExportFormat {
@@ -608,6 +662,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-6250
+    @Test
     void testGenericMethodOverriding() {
         assertScript '''
             interface IVisitor<InputType, OutputType> {
@@ -632,6 +687,7 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVargsConstructor() {
         assertScript '''
             enum Test {
@@ -647,6 +703,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-7342
+    @Test
     void testLastEnumValueIsAnnotatedWithoutTrailingComma() {
         assertScript '''
             import java.lang.annotation.ElementType;
@@ -669,6 +726,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-7773
+    @Test
     void testEnumWithPropertiesAndDanglingComma() {
         assertScript '''
             enum UsState {
@@ -684,6 +742,7 @@ class EnumTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testEnumConstantsTakePrecedenceOverClassProperties() {
         assertScript '''
             @Deprecated
@@ -696,6 +755,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-6747
+    @Test
     void testEnumConstructorHasPrivateModifier() {
         assertScript '''
             enum Foo {
@@ -707,6 +767,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-8360
+    @Test
     void testNestedEnumHasStaticModifier() {
         assertScript '''
             class Foo {
@@ -723,6 +784,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-8360
+    @Test
     void testDeeplyNestedEnumHasStaticModifier() {
         assertScript '''
             class Foo {
@@ -741,6 +803,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-8360
+    @Test
     void testNestedEnumHasStaticModifierSC() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -762,6 +825,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-8360
+    @Test
     void testDeeplyNestedEnumHasStaticModifierSC() {
         assertScript '''
             @groovy.transform.CompileStatic
@@ -785,6 +849,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-9523
+    @Test
     void testEnumConstMethodCallsAnEnumPrivateMethod() {
         assertScript '''
             class Foo {
@@ -808,6 +873,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-7024
+    @Test
     void testEnumConstructorCallsOuterClassStaticMethod() {
         assertScript '''
             class Outer {
@@ -828,6 +894,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-10811
+    @Test
     void testIllegalModifiers() {
         for (mod in ['','public','@groovy.transform.PackageScope']) {
             shouldCompile """
@@ -861,6 +928,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-10811
+    @Test
     void testConstructorCheck() {
         shouldNotCompile '''
             enum E {
@@ -880,6 +948,7 @@ class EnumTest extends CompilableTestSupport {
     }
 
     // GROOVY-10811
+    @Test
     void testSuperCtorCall() {
         shouldNotCompile '''
             enum E {

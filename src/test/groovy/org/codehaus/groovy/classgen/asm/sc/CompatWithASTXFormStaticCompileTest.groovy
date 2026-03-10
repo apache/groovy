@@ -19,13 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests which checks compatibility of various AST xforms with the
  * {@link groovy.transform.CompileStatic} annotation.
  */
-class CompatWithASTXFormStaticCompileTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class CompatWithASTXFormStaticCompileTest extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldNotThrowArrayIndexOutOfBoundsError() {
         assertScript '''import groovy.transform.Immutable
                 @Immutable
@@ -36,5 +38,4 @@ class CompatWithASTXFormStaticCompileTest extends StaticTypeCheckingTestCase imp
                 new MyClass(myList:[])
         '''
     }
-
 }

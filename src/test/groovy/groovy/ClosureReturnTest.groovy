@@ -18,13 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Tests Closures in Groovy
  */
-class ClosureReturnTest extends GroovyTestCase {
+class ClosureReturnTest {
 
+    @Test
     void testReturnValues() {
         def block = { x -> return x > 5 }
 
@@ -35,6 +37,7 @@ class ClosureReturnTest extends GroovyTestCase {
         assert value == false
     }
 
+    @Test
     void testReturnValueUsingFunction() {
         def block = { x -> return someFunction(x) }
 

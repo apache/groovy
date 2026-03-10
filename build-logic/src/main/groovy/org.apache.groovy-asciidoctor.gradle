@@ -90,15 +90,14 @@ asciidoctor {
 asciidoctorj {
     jrubyVersion = versions.jruby
     version = versions.asciidoctorj
-    def vers = versions.groovy
     resolutionStrategy {
         it.disableDependencyVerification()
     }
     def baseUrls = [
-        jdk: 'https://docs.oracle.com/en/java/javase/11/docs/api/index.html',
-        gjdk: "https://docs.groovy-lang.org/${vers}/html/groovy-jdk/index.html",
-        gapi: "https://docs.groovy-lang.org/${vers}/html/gapi/index.html",
-        gapid: "https://docs.groovy-lang.org/${vers}/html/gapi/",
+        jdk  : "https://docs.oracle.com/en/java/javase/${17}/docs/api/index.html",
+        gjdk : "https://docs.groovy-lang.org/${versions.groovy}/html/groovy-jdk/index.html",
+        gapi : "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/index.html",
+        gapid: "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/",
     ]
     for (def entry : baseUrls.entrySet()) {
         def macroName = entry.key

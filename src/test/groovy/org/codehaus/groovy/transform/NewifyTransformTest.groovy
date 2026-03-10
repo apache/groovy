@@ -20,6 +20,8 @@ package org.codehaus.groovy.transform
 
 import groovy.test.GroovyShellTestCase
 
+import static org.junit.jupiter.api.Assertions.assertEquals
+
 /**
  * Tests for the {@code @Newify} AST transform.
  */

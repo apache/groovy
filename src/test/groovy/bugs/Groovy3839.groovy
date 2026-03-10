@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -61,7 +61,7 @@ final class Groovy3839 {
             class G3839V3 {}
             new G3839V3()
         '''
-        assert err =~ '@GroovyASTTransformationClass in bugs.G3839A3 does not specify any transform class names or types'
+        assert err.message =~ '@GroovyASTTransformationClass in bugs.G3839A3 does not specify any transform class names or types'
     }
 
     @Test
@@ -73,6 +73,6 @@ final class Groovy3839 {
             class G3839V4 {}
             new G3839V4()
         '''
-        assert err =~ '@GroovyASTTransformationClass in bugs.G3839A4 should specify transforms by name or by type, not by both'
+        assert err.message =~ '@GroovyASTTransformationClass in bugs.G3839A4 should specify transforms by name or by type, not by both'
     }
 }

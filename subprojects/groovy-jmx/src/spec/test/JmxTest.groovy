@@ -17,9 +17,11 @@
  *  under the License.
  */
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class JmxTest extends CompilableTestSupport {
+final class JmxTest extends CompilableTestSupport {
 
+    @Test
     void testIntroduction() {
         shouldCompile '''
             import groovy.jmx.GroovyMBean
@@ -46,6 +48,7 @@ class JmxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testTheJvm() {
         shouldCompile '''
             // tag::the_jvm[]
@@ -129,6 +132,7 @@ class JmxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testTomcat() {
         shouldCompile '''
             @Grab('org.jfree:jfreechart:1.5.0')
@@ -180,6 +184,7 @@ class JmxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testWebLogic() {
         shouldCompile '''
             // tag::weblogic[]
@@ -210,6 +215,7 @@ class JmxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSpringClasses() {
         shouldCompile '''
             @Grab('org.springframework:spring-context:5.2.8.RELEASE')
@@ -261,6 +267,7 @@ class JmxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSpringUsage() {
         shouldCompile '''
             @Grab('org.springframework:spring-context:5.2.8.RELEASE')
@@ -298,6 +305,7 @@ class JmxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testTroubleshooting() {
         shouldCompile '''
             import javax.management.remote.*
@@ -315,6 +323,7 @@ class JmxTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testJmxBuilder() {
         shouldCompile '''
             @Grab('org.codehaus.groovy:groovy-jmx:2.1.6')

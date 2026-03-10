@@ -1,5 +1,3 @@
-import groovy.test.GroovyTestCase
-
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -18,7 +16,14 @@ import groovy.test.GroovyTestCase
  *  specific language governing permissions and limitations
  *  under the License.
  */
-class ScriptsAndClassesSpecTest extends GroovyTestCase {
+
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
+final class ScriptsAndClassesSpecTest {
+
+    @Test
     void testMainMethod() {
         assertScript '''
             // tag::groovy_class_with_main_method[]
@@ -76,7 +81,10 @@ class ScriptsAndClassesSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testJep445Definition() {
+        def runScript = { scriptText -> new GroovyShell().run(scriptText, 'ScriptSnippet', new String[0]) }
+
         runScript '''
             // tag::jep445_barescript[]
             void main(args) {
@@ -99,6 +107,7 @@ class ScriptsAndClassesSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMethodDefinition() {
         assertScript '''
             // tag::method_in_script[]
@@ -136,6 +145,7 @@ class ScriptsAndClassesSpecTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testScriptVariables() {
         assertScript '''
             // tag::script_with_variables[]
@@ -151,9 +161,5 @@ class ScriptsAndClassesSpecTest extends GroovyTestCase {
             assert x+y == 3
             // end::script_with_untyped_variables[]
         '''
-    }
-
-    private static void runScript(String scriptText) {
-        new GroovyShell().run(scriptText, 'ScriptSnippet', [] as String[])
     }
 }

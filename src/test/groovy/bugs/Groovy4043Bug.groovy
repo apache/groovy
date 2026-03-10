@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy4043Bug extends CompilableTestSupport {
+final class Groovy4043Bug extends CompilableTestSupport {
+
+    @Test
     void testResolveInnerClsDefByAParent() {
         shouldCompile """
             class A4043 {

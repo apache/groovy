@@ -49,7 +49,7 @@ public interface MetaClass extends MetaObjectProtocol {
      * @param isCallToSuper Whether the method is a call to a super class method
      * @param fromInsideClass Whether the call was invoked from the inside or the outside of the class
      *
-     * @return The return value of the method
+     * @return The method's return value.
      */
      Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass);
 
@@ -66,7 +66,7 @@ public interface MetaClass extends MetaObjectProtocol {
      * @param isCallToSuper Whether the call is to a super class property
      * @param fromInsideClass ??
      *
-     * @return The properties value
+     * @return The property's value.
      */
      Object getProperty(Class sender, Object receiver, String property, boolean isCallToSuper, boolean fromInsideClass);
 

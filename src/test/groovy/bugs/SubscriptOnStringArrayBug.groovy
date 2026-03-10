@@ -19,22 +19,25 @@
 package bugs
 
 import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-class SubscriptOnStringArrayBug extends TestSupport {
+final class SubscriptOnStringArrayBug extends TestSupport {
 
+    @Test
     void testArraySubscript() {
         def array = getMockArguments()
 
-        assert array[1] == "b"
+        assert array[1] == 'b'
 
-        array[0] = "d"
+        array[0] = 'd'
 
-        assert array[0] == "d"
+        assert array[0] == 'd'
     }
 
+    @Test
     void testRobsTestCase() {
-        def array = "one two three".split(" ")
+        def array = 'one two three'.split(' ')
 
-        assert array[1] == "two"
+        assert array[1] == 'two'
     }
 }

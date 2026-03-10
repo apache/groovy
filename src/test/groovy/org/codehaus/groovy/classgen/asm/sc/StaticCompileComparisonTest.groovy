@@ -19,8 +19,11 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
-class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
+final class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
+
+    @Test
     void testCompareInts() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -33,6 +36,7 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
         )
     }
 
+    @Test
     void testCompareDoubles() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -45,6 +49,7 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
         )
     }
 
+    @Test
     void testCompareDoubleWithInt() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -57,6 +62,7 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
         )
     }
 
+    @Test
     void testCompareArrayLen() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -69,6 +75,7 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
         )
     }
 
+    @Test
     void testCompareArrayLenUsingIf() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -85,6 +92,7 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
         )
     }
 
+    @Test
     void testIdentityCompare() {
         def bytecode = compile([method:'m'],'''
             @groovy.transform.CompileStatic
@@ -98,6 +106,4 @@ class StaticCompileComparisonTest extends AbstractBytecodeTestCase {
         )
         clazz.newInstance().main()
     }
-
-
 }

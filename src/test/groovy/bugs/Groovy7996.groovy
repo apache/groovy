@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -55,7 +55,7 @@ final class Groovy7996 {
             new Bar().doStuff()
         '''
 
-        assert err =~ /Cannot find matching method java.lang.Object#isEmpty\(\)/
+        assert err.message =~ /Cannot find matching method java.lang.Object#isEmpty\(\)/
     }
 
     @Test

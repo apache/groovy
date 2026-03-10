@@ -16,10 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-
 package groovy.transform.stc
 
-class Groovy7774Bug extends StaticTypeCheckingTestCase {
+import org.junit.jupiter.api.Test
+
+final class Groovy7774Bug extends StaticTypeCheckingTestCase {
+
+    @Test
     void testCollectionAddAllShouldHonorInheritance() {
         assertScript '''
             class X{}
@@ -40,6 +43,7 @@ class Groovy7774Bug extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMapPutAllShouldHonorInheritance() {
         assertScript '''
             class X{}

@@ -19,46 +19,46 @@
 package org.apache.groovy.contracts.tests.doc
 
 import org.apache.groovy.contracts.tests.basic.BaseTestClass
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assert.assertEquals
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 class RootClassExampleTests extends BaseTestClass {
 
-    def source = ''' 
+    def source = '''
 @Contracted
 package tests
 
 import groovy.contracts.*
 
-@Invariant({ field1 > 0 })                            
-class RootClass {                                     
+@Invariant({ field1 > 0 })
+class RootClass {
 
   // made field protected due to groovy compilation bug
-  protected Integer field1              
+  protected Integer field1
   private Integer field2
-  private Integer field3                                                                 
+  private Integer field3
 
-  private Date dateField1                   
+  private Date dateField1
 
-  Integer property1                                                            
+  Integer property1
 
-  RootClass(final Integer attribute)  {                
-    field1 = attribute                                                           
-  }                                                  
+  RootClass(final Integer attribute)  {
+    field1 = attribute
+  }
 
   @Requires({ paramAttribute1 > 1 && paramAttribute2 > 1 })
   void some_operation(final Integer paramAttribute1, final Integer paramAttribute2)  {
     this.field1 = paramAttribute1
     this.field2 = paramAttribute2
-  }                                                                                                            
+  }
 
-  @Ensures({ field1 == paramAttribute1 })                     
+  @Ensures({ field1 == paramAttribute1 })
   void some_operation2(final Integer paramAttribute1)  {
     field1 = paramAttribute1
-  }                                   
+  }
 
-  @Ensures({ old -> old.field1 != paramAttribute1 })            
+  @Ensures({ old -> old.field1 != paramAttribute1 })
   void some_operation3(final Integer paramAttribute1)  {
     field1 = paramAttribute1
   }
@@ -66,7 +66,7 @@ class RootClass {
   @Ensures({ result -> result == paramAttribute1 + paramAttribute2 })
   def int some_operation4(final Integer paramAttribute1, final Integer paramAttribute2)  {
     return paramAttribute1 + paramAttribute2
-  }               
+  }
 
   @Ensures({ result -> result == field3 })
   def int some_operation5(final Integer paramAttribute1, final Integer paramAttribute2)  {
@@ -77,28 +77,28 @@ class RootClass {
   @Ensures({ old, result -> old.field1 != field1 && old.field2 != field2 && field3 == result })
   def some_operation6(def param1, def param2)  {
     field1 = param1
-    field2 = param2                                                       
-    field3 = param1 + param2                                                        
+    field2 = param2
+    field3 = param1 + param2
     return field3
-  }                                                                        
+  }
 
   @Ensures({ result, old -> old.field1 != field1 && old.field2 != field2 && field3 == result })
   def some_operation7(def param1, def param2)  {
     field1 = param1
     field2 = param2
-    field3 = param1 + param2                                                                                                       
+    field3 = param1 + param2
     return field3
-  }                             
+  }
 
-  @Ensures({ result -> result == param1 })                           
-  def some_operation8(def param1)  {                                                                                            
+  @Ensures({ result -> result == param1 })
+  def some_operation8(def param1)  {
     param1
   }
 
   @Ensures({ result -> result == param1 + param2})
   def some_operation9(def param1, def param2)  {
     param1 + param2
-  }                                                  
+  }
 
   @Ensures({ old -> old.dateField1 != param1 && dateField1 == param1 })
   void some_operation10(def param1)  {

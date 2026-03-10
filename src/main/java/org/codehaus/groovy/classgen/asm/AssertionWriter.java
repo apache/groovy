@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm;
 
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -27,6 +28,7 @@ import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.runtime.powerassert.SourceText;
 import org.codehaus.groovy.runtime.powerassert.SourceTextNotAvailableException;
+import org.codehaus.groovy.runtime.powerassert.ValueRecorder;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -47,6 +49,9 @@ import static org.objectweb.asm.Opcodes.NEW;
 import static org.objectweb.asm.Opcodes.POP;
 
 public class AssertionWriter {
+
+    private static final ClassNode STRING_BUILDER_TYPE = ClassHelper.make(StringBuilder.class);
+    private static final ClassNode VALUE_RECORDER_TYPE = ClassHelper.make(ValueRecorder.class);
 
     private static class AssertionTracker {
         int recorderIndex;
@@ -96,8 +101,8 @@ public class AssertionWriter {
             mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/powerassert/ValueRecorder");
             mv.visitInsn(DUP);
             mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/powerassert/ValueRecorder", "<init>", "()V", false);
-            operandStack.push(ClassHelper.OBJECT_TYPE); // TODO: maybe use more specialized type here
-            assertionTracker.recorderIndex = compileStack.defineTemporaryVariable("recorder", true);
+            operandStack.push(VALUE_RECORDER_TYPE);
+            assertionTracker.recorderIndex = compileStack.defineTemporaryVariable("recorder", VALUE_RECORDER_TYPE, true);
             Label tryStart = new Label(), tryEnd = new Label();
             mv.visitLabel(tryStart);
 
@@ -175,8 +180,8 @@ public class AssertionWriter {
             mv.visitInsn(DUP);
             mv.visitLdcInsn(expressionText + ". Values: ");
             mv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
-            operandStack.push(ClassHelper.OBJECT_TYPE); // TODO: maybe use more special type StringBuilder here
-            int tempIndex = compileStack.defineTemporaryVariable("assert", true);
+            operandStack.push(STRING_BUILDER_TYPE);
+            int tempIndex = compileStack.defineTemporaryVariable("assert", STRING_BUILDER_TYPE, true);
 
             boolean first = true;
             for (String name : names) {

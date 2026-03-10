@@ -99,8 +99,8 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
         private final Binding binding = new Binding([:].withDefault { null })
 
         @Override
-        void call(final SourceUnit source) {
-            if (source == sourceUnit) {
+        void call(final SourceUnit unit) {
+            if (unit == sourceUnit) {
                 test()
             }
         }
@@ -112,6 +112,8 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
             }
             sb = sb[testClosure.columnNumber..<sb.length()]
             String testSource = sb[0..<sb.lastIndexOf('}')]
+
+            def compilationUnit = ASTTestTransformation.this.@compilationUnit
 
             binding['node'] = astNode
             binding['sourceUnit'] = sourceUnit
@@ -140,7 +142,7 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
         }
     }
 
-    static class LabelFinder extends ClassCodeVisitorSupport {
+    private static class LabelFinder extends ClassCodeVisitorSupport {
 
         static List<Statement> lookup(final MethodNode node, final String label) {
             LabelFinder finder = new LabelFinder(label, null)

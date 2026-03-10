@@ -18,60 +18,72 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ConfigObjectTest extends GroovyTestCase {
 
+class ConfigObjectTest {
+
+    @Test
     void test_isSet_Returns_true_for_Boolean_option_with_value_true() {
         def config = new ConfigSlurper().parse('foo { booleanTrue=true }')
         assert config.foo.isSet('booleanTrue')
     }
 
+    @Test
     void test_isSet_Returns_true_for_Boolean_option_with_value_false() {
         def config = new ConfigSlurper().parse('foo { booleanFalse=false }')
         assert config.foo.isSet('booleanFalse')
     }
 
+    @Test
     void test_isSet_Returns_true_for_nonempty_String_option() {
         def config = new ConfigSlurper().parse('foo { string="hello" }')
         assert config.foo.isSet('string')
     }
 
+    @Test
     void test_isSet_Returns_true_for_empty_String_option() {
         def config = new ConfigSlurper().parse("foo { emptyString='' }")
         assert config.foo.isSet('emptyString')
     }
 
+    @Test
     void test_isSet_Returns_true_for_nonempty_List_option() {
         def config = new ConfigSlurper().parse("foo { list=['a', 'b'] }")
         assert config.foo.isSet('list')
     }
 
+    @Test
     void test_isSet_Returns_true_for_empty_List_option() {
         def config = new ConfigSlurper().parse('foo { emptyList=[] }')
         assert config.foo.isSet('emptyList')
     }
 
+    @Test
     void test_isSet_Returns_true_for_nonempty_nested_block() {
         ConfigObject config = new ConfigSlurper().parse('foo { nestedBlock { setting=true } }')
         assert config.foo.isSet('nestedBlock')
     }
 
+    @Test
     void test_isSet_Returns_false_for_nonexisting_option() {
         def config = new ConfigSlurper().parse('foo { }')
         assert config.foo.isSet('nonexisting') == false
     }
 
+    @Test
     void test_isSet_Returns_false_for_unset_option() {
         def config = new ConfigSlurper().parse('foo { unset }')
         assert config.foo.isSet('unset') == false
     }
 
+    @Test
     void test_isSet_Returns_false_for_empty_nested_block() {
         def config = new ConfigSlurper().parse('foo { emptyNestedBlock { } }')
         assert config.foo.isSet('emptyNestedBlock') == false
     }
 
+    @Test
     void test_prettyPrint() {
         def configString = '''\
 development {

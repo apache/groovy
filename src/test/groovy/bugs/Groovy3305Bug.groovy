@@ -18,9 +18,7 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
-
-class Groovy3305Bug extends GroovyTestCase {
+class Groovy3305Bug {
     def void testSingleListExpandingToMultipleArgs() {
         assert foo1([1, "A"]) == "1,A"
         assert foo2([BigDecimal.ZERO, "B"]) == "0,B"

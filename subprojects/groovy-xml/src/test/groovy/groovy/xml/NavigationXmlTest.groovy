@@ -18,14 +18,16 @@
  */
 package groovy.xml
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Simple test of tree walking for XML
  *
  * @see groovy.tree.NavigationNodeTest
  */
-class NavigationXmlTest extends GroovyTestCase {
+class NavigationXmlTest {
+    @Test
     void testPrePostOrder() {
         def root = createTreeFromXmlParser()
         def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
@@ -41,6 +43,7 @@ class NavigationXmlTest extends GroovyTestCase {
         (0..3).each{ assert actual[it] == expected[it] }
     }
 
+    @Test
     void testPrePostOrderWithClosure() {
         def root = createTreeFromXmlParser()
         def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
@@ -58,6 +61,7 @@ class NavigationXmlTest extends GroovyTestCase {
         (0..3).each{ assert actual[it] == expected[it] }
     }
 
+    @Test
     void testLevelWithClosure() {
         def root = createTreeFromXmlParser()
         def result = [:].withDefault { [] }

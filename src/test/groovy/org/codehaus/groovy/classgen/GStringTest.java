@@ -22,17 +22,29 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.syntax.Token;
+import org.junit.jupiter.api.Test;
 
-public class GStringTest extends TestSupport {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
-    public void testConstructor() throws Exception {
+final class GStringTest extends TestSupport {
+
+    @Test
+    void testConstructor() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
 
         //Statement printStatement = createPrintlnStatement(new VariableExpression("str"));
@@ -75,18 +87,17 @@ public class GStringTest extends TestSupport {
         );
         classNode.addMethod(new MethodNode("stringDemo", ACC_PUBLIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, block));
 
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
+        Class<?> fooClass = loadClass(classNode);
+        assertTrue(fooClass != null, "Loaded a new class");
 
         Object bean = fooClass.getDeclaredConstructor().newInstance();
-        assertTrue("Managed to create bean", bean != null);
+        assertTrue(bean != null, "Managed to create bean");
 
         //Object[] array = { new Integer(1234), "abc", "def" };
 
         try {
             InvokerHelper.invokeMethod(bean, "stringDemo", null);
-        }
-        catch (InvokerInvocationException e) {
+        } catch (InvokerInvocationException e) {
             System.out.println("Caught: " + e.getCause());
             e.getCause().printStackTrace();
             fail("Should not have thrown an exception");

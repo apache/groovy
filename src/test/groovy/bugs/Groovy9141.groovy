@@ -20,7 +20,7 @@ package bugs
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationFailedException
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -34,7 +34,7 @@ final class Groovy9141 {
                 abstract void meth() {}
             }
         '''
-        assert err =~ / You defined an abstract method\[meth\] with a body. Try removing the method body @ line /
+        assert err.message =~ / You defined an abstract method\[meth\] with a body. Try removing the method body @ line /
     }
 
     @Test // not a language requirement but script-level check takes precedence in current implementation
@@ -42,6 +42,6 @@ final class Groovy9141 {
         def err = shouldFail CompilationFailedException, '''
             abstract void meth() {}
         '''
-        assert err =~ / You cannot define an abstract method\[meth\] in the script. Try removing the 'abstract' /
+        assert err.message =~ / You cannot define an abstract method\[meth\] in the script. Try removing the 'abstract' /
     }
 }

@@ -20,8 +20,11 @@ package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
 import groovy.transform.Sortable
+import org.junit.jupiter.api.Test
 
-class SortableTransformTest extends CompilableTestSupport {
+final class SortableTransformTest extends CompilableTestSupport {
+
+    @Test
     void testSortableWithCustomOrdering() {
         assertScript '''
             import groovy.transform.Sortable
@@ -40,6 +43,7 @@ class SortableTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSortableWithCompileStatic() {
         assertScript '''
             import groovy.transform.*
@@ -63,6 +67,7 @@ class SortableTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDuckTypingWithComparators() {
         assertScript '''
             import groovy.transform.*
@@ -95,6 +100,7 @@ class SortableTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSortableWithSortableProperty() {
         assertScript '''
             import groovy.transform.*
@@ -117,6 +123,7 @@ class SortableTransformTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testBadIncludesAndExcludes() {
         def message = shouldFail '''
             @groovy.transform.Sortable(includes='first', excludes='last') class Person {
@@ -128,6 +135,7 @@ class SortableTransformTest extends CompilableTestSupport {
         assert message.contains("Error during @Sortable processing: Only one of 'includes' and 'excludes' should be supplied not both")
     }
 
+    @Test
     void testBadInclude() {
         def message = shouldFail '''
             @groovy.transform.Sortable(includes='first,middle') class Person {
@@ -139,6 +147,7 @@ class SortableTransformTest extends CompilableTestSupport {
         assert message.contains("Error during @Sortable processing: 'includes' property 'middle' does not exist.")
     }
 
+    @Test
     void testBadExclude() {
         def message = shouldFail '''
             @groovy.transform.Sortable(excludes='first,middle') class Person {
@@ -150,6 +159,7 @@ class SortableTransformTest extends CompilableTestSupport {
         assert message.contains("Error during @Sortable processing: 'excludes' property 'middle' does not exist.")
     }
 
+    @Test
     void testBadPropertyType() {
         def message = shouldFail '''
             @groovy.transform.Sortable class Person {
@@ -161,6 +171,7 @@ class SortableTransformTest extends CompilableTestSupport {
         assert message.contains("Error during @Sortable processing: property 'appearances' must be Comparable")
     }
 
+    @Test
     void testBadInterfaceUsage() {
         def message = shouldFail '''
             @groovy.transform.Sortable interface Foo { }
@@ -168,6 +179,7 @@ class SortableTransformTest extends CompilableTestSupport {
         assert message.contains("@Sortable cannot be applied to interface Foo")
     }
 
+    @Test
     void testReverseSorting() {
         assertScript '''
             import groovy.transform.*

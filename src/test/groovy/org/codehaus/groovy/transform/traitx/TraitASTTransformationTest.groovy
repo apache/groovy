@@ -333,6 +333,38 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-7217
+    @ParameterizedTest
+    @ValueSource(strings=['byte','short','int','long','float','double','Byte','Short','Integer','Long','Float','Double','Number'])
+    void testTraitWithProperty6(String type) {
+        assertScript shell, """
+            trait T {
+                $type n = 42
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.getN() == 42
+        """
+    }
+
+    // GROOVY-11862
+    @ParameterizedTest
+    @ValueSource(strings=['byte','short','int','long','float','double','Byte','Short','Integer','Long','Float','Double','Number'])
+    void testTraitWithProperty7(String type) {
+        assertScript shell, """
+            trait T {
+                static $type n = 42
+            }
+            class C implements T {
+            }
+
+            def c = new C()
+            assert c.getN() == 42
+        """
+    }
+
     @Test
     void testUpdatePropertyFromSelf() {
         assertScript shell, '''
@@ -1212,6 +1244,36 @@ final class TraitASTTransformationTest {
         '''
     }
 
+    // GROOVY-7909
+    @CompileModesTest
+    void testTraitMethodOverloadAndOverride2(String mode) {
+        assertScript shell, """
+            $mode
+            trait Three implements One, Two {
+                def postMake() {
+                    '3' + Two.super.postMake() + One.super.postMake()
+                }
+            }
+            $mode
+            trait One {
+                def postMake() { '1' }
+            }
+            $mode
+            trait Two {
+                def postMake() { '2' }
+            }
+            $mode
+            class Four implements Three {
+                def make() {
+                    '4' + Three.super.postMake()
+                }
+            }
+
+            String result = new Four().make()
+            assert result == '4321'
+        """
+    }
+
     // GROOVY-9255
     @Test
     void testTraitSuperPropertyGet() {
@@ -1358,7 +1420,7 @@ final class TraitASTTransformationTest {
             }
             assert new C().test() == 'value'
         '''
-        assert err =~ /No such property: super for class: T/
+        assert err.message =~ /No such property: super for class: T/
 
         // TODO: add support for compound assignment
         shouldFail shell, MissingPropertyException, '''
@@ -1416,7 +1478,7 @@ final class TraitASTTransformationTest {
             }
             assert new C().test() == 'value'
         '''
-        assert err =~ /No such property: super for class: T/
+        assert err.message =~ /No such property: super for class: T/
 
         assertScript shell, '''
             trait T {
@@ -2083,7 +2145,7 @@ final class TraitASTTransformationTest {
                 int foo() { 1+'foo'}
             }
         '''
-        assert err =~ 'Cannot return value of type java.lang.String for method returning int'
+        assert err.message =~ 'Cannot return value of type java.lang.String for method returning int'
     }
 
     @CompileModesTest
@@ -2410,7 +2472,7 @@ final class TraitASTTransformationTest {
             trait Foo extends Serializable {}
             Foo x = null
         '''
-        assert err =~ 'A trait cannot extend an interface.'
+        assert err.message =~ 'A trait cannot extend an interface.'
     }
 
     @Test
@@ -2524,7 +2586,7 @@ final class TraitASTTransformationTest {
             assert v.currentLevel == 3
         '''
 
-        assert err =~ 'Postfix expressions on trait fields/properties are not supported in traits'
+        assert err.message =~ 'Postfix expressions on trait fields/properties are not supported in traits'
     }
 
     @Test
@@ -2555,7 +2617,7 @@ final class TraitASTTransformationTest {
             assert v.currentLevel == 3
         '''
 
-        assert err =~ 'Prefix expressions on trait fields/properties are not supported in traits'
+        assert err.message =~ 'Prefix expressions on trait fields/properties are not supported in traits'
     }
 
     // GROOVY-6691
@@ -2595,7 +2657,7 @@ final class TraitASTTransformationTest {
             test()
         '''
 
-        assert err =~ /Cannot call Dummy#set\(App\) with arguments \[java.lang.String\]/
+        assert err.message =~ /Cannot call Dummy#set\(App\) with arguments \[java.lang.String\]/
     }
 
     @Test
@@ -3182,8 +3244,8 @@ final class TraitASTTransformationTest {
             def c = new C()
         '''
 
-        assert err =~ "class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'"
-        assert err =~ "class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'"
+        assert err.message =~ "class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'"
+        assert err.message =~ "class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'"
     }
 
     @Test
@@ -3199,7 +3261,7 @@ final class TraitASTTransformationTest {
             new Child().foo()
         '''
 
-        assert err =~ "class 'Child' implements trait 'Trait' but does not implement self type interface 'Self'"
+        assert err.message =~ "class 'Child' implements trait 'Trait' but does not implement self type interface 'Self'"
     }
 
     @Test
@@ -3215,8 +3277,8 @@ final class TraitASTTransformationTest {
             def c = new D()
         '''
 
-        assert err =~ "class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'"
-        assert err =~ "class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'"
+        assert err.message =~ "class 'C' implements trait 'B' but does not extend self type class 'java.lang.String'"
+        assert err.message =~ "class 'C' implements trait 'B' but does not implement self type interface 'java.io.Serializable'"
     }
 
     @Test
@@ -3471,7 +3533,7 @@ final class TraitASTTransformationTest {
                 }
             }
         '''
-        assert err =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
+        assert err.message =~ /Cannot assign value of type java.lang.Object to variable of type java.lang.Number/
     }
 
     // GROOVY-8281
@@ -3511,8 +3573,7 @@ final class TraitASTTransformationTest {
     // GROOVY-8730
     @Test
     void testAbstractMethodsNotNeededInHelperClass() {
-        assertScript shell, '''
-            import static groovy.test.GroovyAssert.shouldFail
+        assertScript shell, '''import static groovy.test.GroovyAssert.shouldFail
 
             trait Foo { abstract bar() }
 
@@ -3852,9 +3913,9 @@ final class TraitASTTransformationTest {
             new Main().test2()
         """
         if (mode.endsWith('Dynamic')) {
-            assert err =~ /MissingPropertyException/
+            assert err instanceof MissingPropertyException
         } else {
-            assert err =~ /\[Static type checking\] - No such property: BANG for Class or static property for class: Bar/
+            assert err.message =~ /\[Static type checking\] - No such property: BANG for Class or static property for class: Bar/
         }
     }
 

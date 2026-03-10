@@ -460,13 +460,13 @@ final class GenericsUsageTest {
 
     private void shouldFailCompilationWithMessage(scriptText, String errorMessage) {
         def mcee = shouldFail(MultipleCompilationErrorsException, scriptText)
-        def text = mcee.toString()
+        def text = mcee.message.toString()
         assert text.contains(errorMessage)
     }
 
     private void shouldFailCompilationWithMessages(scriptText, String... errorMessages) {
         def mcee = shouldFail(MultipleCompilationErrorsException, scriptText)
-        def text = mcee.toString()
+        def text = mcee.message.toString()
         for (errorMessage in errorMessages) {
             assert text.contains(errorMessage)
         }
@@ -474,7 +474,7 @@ final class GenericsUsageTest {
 
     private void shouldFailCompilationWithAnyMessage(scriptText, List<String> errorMessages) {
         def mcee = shouldFail(MultipleCompilationErrorsException, scriptText)
-        def text = mcee.toString()
+        def text = mcee.message.toString()
         for (errorMessage in errorMessages) {
             if (text.contains(errorMessage)) {
                 return

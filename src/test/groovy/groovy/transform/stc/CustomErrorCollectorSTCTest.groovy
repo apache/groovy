@@ -28,39 +28,42 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.codehaus.groovy.transform.stc.StaticTypeCheckingVisitor
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
- * Unit tests for static type checking : custom error collector.
+ * Unit tests for custom error collector.
  */
-class CustomErrorCollectorSTCTest extends StaticTypeCheckingTestCase {
+final class CustomErrorCollectorSTCTest {
 
+    @Test
     void testShouldNotFail() {
         CompilerConfiguration c = new CompilerConfiguration()
-        GroovyShell shell = new GroovyShell(c)
         c.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.INSTRUCTION_SELECTION) {
             @Override
-            void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
                 def visitor = new StaticTypeCheckingVisitor(source, classNode)
                 visitor.visitClass(classNode)
             }
         })
+        GroovyShell shell = new GroovyShell(c)
         shouldFail(MultipleCompilationErrorsException) {
             shell.evaluate('int x = new Object()')
         }
 
         c = new CompilerConfiguration()
-        shell = new GroovyShell(c)
         c.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.INSTRUCTION_SELECTION) {
             @Override
-            void call(final SourceUnit source, final GeneratorContext context, final ClassNode classNode) {
+            void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
                 def visitor = new StaticTypeCheckingVisitor(source, classNode)
                 visitor.typeCheckingContext.pushErrorCollector(new ErrorCollector(c))
                 visitor.visitClass(classNode)
             }
         })
+        shell = new GroovyShell(c)
         shouldFail(GroovyCastException) {
             shell.evaluate('int x = new Object()')
         }
     }
 }
-

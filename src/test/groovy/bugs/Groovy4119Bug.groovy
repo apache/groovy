@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 
-class Groovy4119Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy4119Bug {
     void testThis$0PassingInSuperCallWithinInnerClasses() {
         assertScript """
             class Test4119 {

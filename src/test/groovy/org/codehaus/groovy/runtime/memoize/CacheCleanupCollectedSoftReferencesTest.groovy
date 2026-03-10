@@ -18,16 +18,17 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
-import groovy.test.GroovyTestCase
-import org.junit.Ignore
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
 
-@Ignore("does not run consistently on the build server")
-class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
+@Disabled("does not run consistently on the build server")
+class CacheCleanupCollectedSoftReferencesTest {
 
+    @Test
     void testCollectedCacheValuesAreEnqueued() {
 
-        Closure cl = { 
-            new Integer(it + 1) 
+        Closure cl = {
+            new Integer(it + 1)
         }
 
         UnlimitedConcurrentCache cache = new UnlimitedConcurrentCache()
@@ -44,10 +45,11 @@ class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
         checkCollectedSoftReferenceAreEnqueued(softReference)
     }
 
+    @Test
     void testCollectedCacheValuesAreRemovedFromCache() {
 
-        Closure cl = { 
-            new Integer(it + 1) 
+        Closure cl = {
+            new Integer(it + 1)
         }
 
         UnlimitedConcurrentCache cache = new UnlimitedConcurrentCache()
@@ -61,7 +63,7 @@ class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
 
         assert cache.map.size() == 1
 
-        // As there is not a cleanup thread polling the ReferenceQueue, 
+        // As there is not a cleanup thread polling the ReferenceQueue,
         // a call() invocation is needed to fire the cleaning up of null references.
         memoizedClosure.call(2)
 
@@ -69,7 +71,7 @@ class CacheCleanupCollectedSoftReferencesTest extends GroovyTestCase {
     }
 
     private void checkSoftReferenceAreSoftlyReachable(softReference) {
-        assert softReference.get() == null : 
+        assert softReference.get() == null :
             'cache values should be softly reachable and collected before an OOME'
     }
 

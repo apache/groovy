@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy9706 extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy9706 {
+
+    @Test
     void testVarargsPrimitive() {
         assertScript '''
             @groovy.transform.TypeChecked

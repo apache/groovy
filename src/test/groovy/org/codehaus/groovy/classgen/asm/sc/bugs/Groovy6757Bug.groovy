@@ -20,8 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy6757Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6757Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testExplicitTypeHint() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION,value={
@@ -37,8 +40,9 @@ class Groovy6757Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    // GROOVY-7307
+    @Test
     void testExplicitTypeHintWithBoundedGenerics() {
-        // example from GROOVY-7307
         assertScript '''
             class A {
                 static <T extends Number> T id(T value) {
@@ -53,5 +57,4 @@ class Groovy6757Bug extends StaticTypeCheckingTestCase implements StaticCompilat
             A
         '''
     }
-
 }

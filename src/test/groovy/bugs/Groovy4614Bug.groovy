@@ -19,9 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy4614Bug extends CompilableTestSupport {
+final class Groovy4614Bug extends CompilableTestSupport {
 
+    @Test
     void testStaticOnOuterClassForbidden() {
         shouldNotCompile """
             static class StaticOuterClass {}
@@ -34,4 +36,3 @@ class Groovy4614Bug extends CompilableTestSupport {
         """
     }
 }
-

@@ -18,10 +18,10 @@
  */
 package org.codehaus.groovy.ast.builder.testpackage
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.builder.AstAssert
 import org.codehaus.groovy.ast.builder.AstBuilder
 import org.codehaus.groovy.ast.builder.WithAstBuilder
+import org.junit.jupiter.api.Test
 
 /**
  * Test package imports in AstBuilder.
@@ -30,7 +30,8 @@ import org.codehaus.groovy.ast.builder.WithAstBuilder
  * the AstBuilder class individually.
  */
 @WithAstBuilder
-class AstBuilderFromCodePackageImportTest extends GroovyTestCase {
+class AstBuilderFromCodePackageImportTest {
+    @Test
     void testPackageImport() {
         def expected = new AstBuilder().buildFromString(""" println "Hello World" """)
 

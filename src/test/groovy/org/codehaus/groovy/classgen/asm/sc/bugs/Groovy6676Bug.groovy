@@ -20,8 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy6676Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6676Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+
+    @Test
     void testShouldNotMismatchTypes() {
         assertScript '''import java.util.concurrent.Callable
 
@@ -45,4 +48,5 @@ test {
 }
 
 '''
-    }}
+    }
+}

@@ -25,25 +25,29 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.IOException;
-
 public abstract class TestXmlSupport extends TestSupport {
 
-    protected void dump(Node node) throws IOException {
+    protected final void dump(Node node) {
         XmlUtil.serialize((Element) node, System.out);
     }
 
-    protected SAXBuilder createSAXBuilder() throws IOException {
+    protected final SAXBuilder createSAXBuilder() {
         return new SAXBuilder(new LoggingDefaultHandler());
     }
 
     private static class LoggingDefaultHandler extends DefaultHandler {
+
+        @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             System.out.println("Start Element: " + localName);
         }
+
+        @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
             System.out.println("End Element: " + localName);
         }
+
+        @Override
         public void characters(char ch[], int start, int length) throws SAXException {
             System.out.println("Characters: " + new String(ch).substring(start, start + length - 1));
         }

@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.GroovyTestCase
 import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import groovy.transform.TypeChecked
@@ -27,18 +26,20 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 
 /**
  * Support class for static type checking test cases.
  */
 @AutoFinal @CompileStatic
-abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
+abstract class StaticTypeCheckingTestCase {
+
     protected CompilerConfiguration config
     protected GroovyShell shell
 
-    @Override
-    protected void setUp() {
-        super.setUp()
+    @BeforeEach
+    void setUpTestCase() {
         config = new CompilerConfiguration()
         def imports = new ImportCustomizer()
         imports.addImports(
@@ -54,35 +55,33 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
         )
         config.addCompilationCustomizers(new ASTTransformationCustomizer(TypeChecked), imports)
         configure()
-        shell = new GroovyShell(config)
-        extraSetup()
-    }
 
-    protected void extraSetup() {}
+        shell = new GroovyShell(config)
+    }
 
     protected void configure() {}
 
-    @Override
-    protected void tearDown() {
-        super.tearDown()
-        shell = null
-        config = null
+    //--------------------------------------------------------------------------
+
+    private static String getTestScriptName() {
+        String uuid = UUID.randomUUID()
+        new StringBuilder('TestScript')
+            .append(uuid,  0,  8)
+            .append(uuid,  9, 13)
+            .append(uuid, 14, 18)
+            .append(uuid, 19, 23)
+            .append(uuid, 24, 36)
+            .append('.groovy')
     }
 
-    @Override
-    protected void assertScript(String script) {
-        shell.evaluate(script, getTestClassName())
+    protected final Object assertScript(String script) {
+        shell.evaluate(script, getTestScriptName())
     }
 
-    protected Class assertClass(String classCode) {
-        GroovyClassLoader loader = new GroovyClassLoader(this.class.classLoader, config)
-        loader.parseClass(classCode)
-    }
-
-    protected void shouldFailWithMessages(String code, String... messages) {
+    protected final void shouldFailWithMessages(String script, String... messages) {
         boolean success = false
         try {
-            shell.evaluate(code, getTestClassName())
+            shell.evaluate(script, getTestScriptName())
         } catch (MultipleCompilationErrorsException mce) {
             success = messages.every { message ->
                 mce.errorCollector.errors.any {
@@ -90,12 +89,12 @@ abstract class StaticTypeCheckingTestCase extends GroovyTestCase {
                 }
             }
             if (success && mce.errorCollector.errorCount > messages.length) {
-                throw new AssertionError("Expected error messages were found, but compiler threw additional errors : $mce")
+                Assertions.fail("Expected error messages were found, but compiler threw additional errors : $mce")
             }
             if (!success) {
-                throw new AssertionError("Not all expected error messages were found, compiler threw these errors : $mce")
+                Assertions.fail("Not all expected error messages were found, compiler threw these errors : $mce")
             }
         }
-        if (!success) throw new AssertionError("Test passed but should have failed with messages [$messages]")
+        if (!success) Assertions.fail("Test passed but should have failed with messages [$messages]")
     }
 }

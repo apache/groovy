@@ -18,12 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-/**
- */
-class Bytecode6Bug extends GroovyTestCase {
+final class Bytecode6Bug {
 
+    @Test
     void testPostFixReturn() {
         def i = 1
         def closure = { i++ }
@@ -33,6 +32,7 @@ class Bytecode6Bug extends GroovyTestCase {
         assert i == 2
     }
 
+    @Test
     void testPreFixReturn() {
         def i = 1
         def closure = { return ++i }

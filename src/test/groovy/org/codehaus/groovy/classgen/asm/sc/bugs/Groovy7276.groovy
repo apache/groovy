@@ -20,76 +20,80 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
-    void testNoPrivateAccessMethod1() {
-        for (it in ['i', 'i++']) {
-            assertScript """
-                class Foo {
-                    private int i = 1
-                    int m() { new String().with { $it } }
-                }
-                assert new Foo().m() == 1
-            """
-            String  closure = astTrees['Foo$_m_closure1'][1]
-            assert  closure.contains('GETFIELD Foo.i')
-            assert !closure.contains('pfaccess$')
-        }
+    @ParameterizedTest
+    @ValueSource(strings=['i','i++'])
+    void testNoPrivateAccessMethod1(String it) {
+        assertScript """
+            class Foo {
+                private int i = 1
+                int m() { new String().with { $it } }
+            }
+            assert new Foo().m() == 1
+        """
+        String  closure = astTrees['Foo$_m_closure1'][1]
+        assert  closure.contains('GETFIELD Foo.i')
+        assert !closure.contains('pfaccess$')
     }
 
     // GROOVY-7304
-    void testNoPrivateAccessMethod2() {
-        for (it in ['i', 'i++']) {
-            assertScript """
-                class Foo {
-                    private int i = 1
-                    int m() { new String().with { $it } }
-                }
-                class Bar extends Foo {
-                }
-                assert new Bar().m() == 1
-            """
-            String  closure = astTrees['Foo$_m_closure1'][1]
-            assert  closure.contains('GETFIELD Foo.i')
-            assert !closure.contains('pfaccess$')
-        }
+    @ParameterizedTest
+    @ValueSource(strings=['i','i++'])
+    void testNoPrivateAccessMethod2(String it) {
+        assertScript """
+            class Foo {
+                private int i = 1
+                int m() { new String().with { $it } }
+            }
+            class Bar extends Foo {
+            }
+            assert new Bar().m() == 1
+        """
+        String  closure = astTrees['Foo$_m_closure1'][1]
+        assert  closure.contains('GETFIELD Foo.i')
+        assert !closure.contains('pfaccess$')
     }
 
-    void testNoPrivateAccessMethod3() {
-        for (it in ['++i', 'i+=1', 'i=i+1']) {
-            assertScript """
-                class Foo {
-                    private int i = 1
-                    int m() { new String().with { $it } }
-                }
-                assert new Foo().m() == 2
-            """
-            String  closure = astTrees['Foo$_m_closure1'][1]
-            assert  closure.contains('GETFIELD Foo.i')
-            assert !closure.contains('pfaccess$')
-        }
+    @ParameterizedTest
+    @ValueSource(strings=['++i','i+=1','i=i+1'])
+    void testNoPrivateAccessMethod3(String it) {
+        assertScript """
+            class Foo {
+                private int i = 1
+                int m() { new String().with { $it } }
+            }
+            assert new Foo().m() == 2
+        """
+        String  closure = astTrees['Foo$_m_closure1'][1]
+        assert  closure.contains('GETFIELD Foo.i')
+        assert !closure.contains('pfaccess$')
     }
 
     // GROOVY-7304
-    void testNoPrivateAccessMethod4() {
-        for (it in ['++i', 'i+=1', 'i=i+1']) {
-            assertScript """
-                class Foo {
-                    private int i = 1
-                    int m() { new String().with { $it } }
-                }
-                class Bar extends Foo {
-                }
-                assert new Bar().m() == 2
-            """
-            String  closure = astTrees['Foo$_m_closure1'][1]
-            assert  closure.contains('GETFIELD Foo.i')
-            assert !closure.contains('pfaccess$')
-        }
+    @ParameterizedTest
+    @ValueSource(strings=['++i','i+=1','i=i+1'])
+    void testNoPrivateAccessMethod4(String it) {
+        assertScript """
+            class Foo {
+                private int i = 1
+                int m() { new String().with { $it } }
+            }
+            class Bar extends Foo {
+            }
+            assert new Bar().m() == 2
+        """
+        String  closure = astTrees['Foo$_m_closure1'][1]
+        assert  closure.contains('GETFIELD Foo.i')
+        assert !closure.contains('pfaccess$')
     }
 
     // GROOVY-10687
+    @Test
     void testNoPrivateAccessMethod5() {
         assertScript '''
             class Foo {
@@ -105,6 +109,7 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
     }
 
     // GROOVY-10687
+    @Test
     void testNoPrivateAccessMethod6() {
         assertScript '''
             class Foo {
@@ -122,6 +127,7 @@ final class Groovy7276 extends StaticTypeCheckingTestCase implements StaticCompi
     }
 
     // GROOVY-10687
+    @Test
     void testPrivateAccessInInnerClass() {
         assertScript '''
             class Outer {

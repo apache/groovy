@@ -20,6 +20,8 @@ package groovy.lang
 
 import groovy.test.GroovyShellTestCase
 
+import static org.junit.jupiter.api.Assertions.assertEquals
+
 class SyntheticReturnTest extends GroovyShellTestCase{
 
     // GROOVY-5980

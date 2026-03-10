@@ -21,22 +21,16 @@ package groovy.transform.stc
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.expr.ConstantExpression
-import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.transform.GroovyASTTransformation
-
-import java.lang.reflect.Modifier
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking and AST.
  */
-class STCwithTransformationsTest extends StaticTypeCheckingTestCase {
-
-    protected void assertScript(String script, Object value) {
-        assert shell.evaluate(script, testClassName) == value
-    }
+final class STCwithTransformationsTest extends StaticTypeCheckingTestCase {
 
     @Override
     protected void configure() {
@@ -45,37 +39,41 @@ class STCwithTransformationsTest extends StaticTypeCheckingTestCase {
         )
     }
 
+    @GroovyASTTransformation
+    private static class TestTransformation implements ASTTransformation {
+
+        @Override
+        void visit(ASTNode[] nodes, SourceUnit source) {
+            def initExpr = new ConstantExpression(5L)
+            source.AST.classes[1]?.addProperty('j', 1, new ClassNode(Long), initExpr, null, null)
+        }
+    }
+
+    @Test
     void testShouldFailWithDynamicVariable() {
         shouldFailWithMessages '''
             class Test{
-                long test(){
+                long test() {
                     i + 6
                 }
             }
+
             new Test().test()
-            ''', 'The variable [i] is undeclared'
+        ''',
+        'The variable [i] is undeclared'
     }
 
+    @Test
     void testCheckedInjectedProperty() {
-        assertScript """
-            class Test{
-                long test(){
+        def result = assertScript '''
+            class Test {
+                long test() {
                     j + 6
                 }
             }
+
             new Test().test()
-            """, 11
-    }
-
-
-    @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-    private static class TestTransformation implements ASTTransformation {
-
-        void visit(ASTNode[] nodes, SourceUnit source) {
-            def initExpr = new ConstantExpression(5l)
-            source.AST.classes[1]?.addProperty('j', Modifier.PUBLIC, new ClassNode(Long), initExpr, null, null)
-        }
-
+        '''
+        assert result == 11
     }
 }
-

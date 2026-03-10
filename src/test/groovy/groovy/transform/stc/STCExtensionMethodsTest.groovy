@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doInFork
 
 /**
@@ -28,6 +30,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     /**
      * @see org.codehaus.groovy.runtime.m12n.TestStaticStringExtension
      */
+    @Test
     void testStaticExtensionMethod() {
         assertScript '''
             assert String.answer() == 42
@@ -37,6 +40,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     /**
      * @see org.codehaus.groovy.runtime.m12n.TestStringExtension
      */
+    @Test
     void testNonStaticExtensionMethod() {
         assertScript '''
             def str = 'This is a string'
@@ -48,6 +52,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
      * @see org.codehaus.groovy.runtime.m12n.TestStringExtension
      * @see org.codehaus.groovy.runtime.m12n.TestStaticStringExtension
      */
+    @Test
     void testShouldFindExtensionMethodWithGrab() {
         doInFork 'groovy.transform.stc.StaticTypeCheckingTestCase', '''
             def impl = new MetaClassImpl(String)
@@ -82,6 +87,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
      *
      * @see org.codehaus.groovy.runtime.m12n.TestPrimitiveWrapperExtension
      */
+    @Test
     void testExtensionPropertyWithPrimitiveReceiver() {
         assertScript '''
             assert 4.even
@@ -95,6 +101,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
      *
      * @see org.codehaus.groovy.runtime.m12n.Groovy6496Extension
      */
+    @Test
     void testExtensionMethodWithGenericsAndPrimitiveReceiver() {
         assertScript '''
             assert 2d.groovy6496(2d) == 2d
@@ -132,6 +139,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8788
+    @Test
     void testMethodSelection1() {
         assertScript """import ${Groovy8788.name}.*
             def a = new A()
@@ -144,6 +152,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8788
+    @Test
     void testMethodSelection2() {
         assertScript """import ${Groovy8788.name}.*
             def a = new A()
@@ -161,6 +170,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8788
+    @Test
     void testMethodSelection3() {
         assertScript """import ${Groovy8788.name}.*
             def a = new A()
@@ -172,6 +182,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8788
+    @Test
     void testMethodSelection4() {
         assertScript """import ${Groovy8788.name}.*
             def a = new A()
@@ -183,6 +194,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8788
+    @Test
     void testMethodSelection5() {
         assertScript """import ${Groovy8788.name}.*
             def a = new A()
@@ -197,6 +209,7 @@ class STCExtensionMethodsTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8788
+    @Test
     void testMethodSelection6() {
         assertScript """import ${Groovy8788.name}.*
             def a = new A()

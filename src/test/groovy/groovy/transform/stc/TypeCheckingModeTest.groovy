@@ -18,11 +18,14 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 /**
  * Unit tests for static type checking : type checking mode.
  */
 class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testShouldThrowErrorBecauseTypeCheckingIsOn() {
         shouldFailWithMessages '''
             int foo() { 'foo' }
@@ -30,6 +33,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
+    @Test
     void testShouldNotThrowErrorBecauseTypeCheckingIsOff() {
         assertScript '''
             @groovy.transform.TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
@@ -38,6 +42,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotThrowErrorBecauseTypeCheckingIsOffUsingImports() {
         assertScript '''
             import groovy.transform.TypeChecked
@@ -48,6 +53,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldThrowErrorBecauseTypeCheckingIsOnIntoClass() {
         shouldFailWithMessages '''
             class A {
@@ -57,6 +63,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         ''', 'Cannot return value of type java.lang.String for method returning int'
     }
 
+    @Test
     void testShouldNotThrowErrorBecauseTypeCheckingIsOffIntoClass() {
         assertScript '''
             @groovy.transform.TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
@@ -67,6 +74,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotThrowErrorBecauseTypeCheckingIsOff2IntoClass() {
         assertScript '''
             class A {
@@ -77,6 +85,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotThrowErrorBecauseTypeCheckingIsOff3IntoClass() {
         assertScript '''
             @groovy.transform.TypeChecked(groovy.transform.TypeCheckingMode.SKIP)
@@ -92,6 +101,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5884
+    @Test
     void testShouldSkipTypeCheckingInConstructor() {
         assertScript '''
             class GenericsApocalypse {
@@ -108,6 +118,7 @@ class TypeCheckingModeTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSkipAndAnonymousInnerClass() {
         new GroovyShell().evaluate '''import groovy.transform.TypeChecked
             public interface HibernateCallback<T> {

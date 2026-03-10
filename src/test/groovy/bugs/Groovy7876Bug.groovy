@@ -18,12 +18,15 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7876Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class Groovy7876Bug {
+    @Test
     void testClassCastExceptionsFromCompareToShouldNotLeakOutOfEqualityCheck() {
-        assertScript '''
-            import static groovy.test.GroovyAssert.shouldFail
+        assertScript '''            import static groovy.test.GroovyAssert.shouldFail
+
 
             enum E1 {A, B, C}
             enum E2 {D, E, F}

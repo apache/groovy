@@ -20,7 +20,8 @@ package testingguide
 
 import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 // tag::map_coercion[]
         class TranslationService {
@@ -57,15 +58,16 @@ import groovy.test.GroovyTestCase
 
 // end::emc2[]
 
-class MockingExampleTests extends GroovyTestCase {
+final class MockingExampleTests {
 
+    @AfterEach
     void tearDown() {
         GroovySystem.metaClassRegistry.setMetaClass(TranslationService, null)
         GroovySystem.metaClassRegistry.setMetaClass(BaseService, null)
         GroovySystem.metaClassRegistry.setMetaClass(Book, null)
-        super.tearDown()
     }
 
+    @Test
     void testMapCoercion() {
         // tag::map_coercion[]
         def service = [convert: { String key -> 'some text' }] as TranslationService
@@ -73,6 +75,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::map_coercion[]
     }
 
+    @Test
     void testClosureCoercion() {
         // tag::closure_coercion[]
         def service = { String key -> 'some text' } as TranslationService
@@ -80,6 +83,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::closure_coercion[]
     }
 
+    @Test
     void testSAMCoercion() {
         // tag::sam_coercion[]
         BaseService service = { -> println 'doing something' }
@@ -87,6 +91,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::sam_coercion[]
     }
 
+    @Test
     void testMockFor() {
         // tag::mockFor[]
         def mock = new MockFor(Person)      // <1>
@@ -101,6 +106,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::mockFor[]
     }
 
+    @Test
     void testStubFor() {
         // tag::stubFor[]
         def stub = new StubFor(Person)      // <1>
@@ -118,6 +124,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::stubFor[]
     }
 
+    @Test
     void testEMC() {
         // tag::emc[]
         String.metaClass.swapCase = {->
@@ -138,6 +145,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::emc4[]
     }
 
+    @Test
     void testEMCStaticMethod() {
         // tag::emc2[]
         Book.metaClass.static.create << { String title -> new Book(title:title) }
@@ -147,6 +155,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::emc2[]
     }
 
+    @Test
     void testEMCConstructor() {
         // tag::emc3[]
         Book.metaClass.constructor << { String title -> new Book(title:title) }
@@ -156,6 +165,7 @@ class MockingExampleTests extends GroovyTestCase {
         // end::emc3[]
     }
 
+    @Test
     void testEMCPerObject() {
         // tag::emc5[]
         def b = new Book(title: "The Stand")

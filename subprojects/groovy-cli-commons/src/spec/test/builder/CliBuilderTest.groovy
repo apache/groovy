@@ -22,12 +22,14 @@ import cli.CliBuilderTestCase
 import groovy.cli.TypedOption
 import groovy.cli.commons.CliBuilder
 import groovy.transform.TypeChecked
+import org.junit.jupiter.api.Test
 
-class CliBuilderTest extends CliBuilderTestCase {
+final class CliBuilderTest extends CliBuilderTestCase {
 
-    String getImportCliBuilder() { 'import groovy.cli.commons.CliBuilder\n' }
+    final String importCliBuilder = 'import groovy.cli.commons.CliBuilder\n'
 
     // don't expect toString values to be the same, so test per CliBuilder implementation
+    @Test
     void testAnnotationsInterfaceToString() {
         doTestAnnotationsInterfaceToString('usage', '''\
 usage: groovy Greeter
@@ -36,7 +38,7 @@ usage: groovy Greeter
 ''')
     }
 
-    @TypeChecked
+    @TypeChecked @Test
     void testTypeChecked_showingSingleHyphenForLongOptSupport() {
         def cli = new CliBuilder()
         TypedOption<String> name = cli.option(String, opt: 'n', longOpt: 'name', 'name option')
@@ -48,5 +50,4 @@ usage: groovy Greeter
         assert n == 'John' && a == 21
         assert options.arguments() == ['and', 'some', 'more']
     }
-
 }

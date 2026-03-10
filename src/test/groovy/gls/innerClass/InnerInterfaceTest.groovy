@@ -18,13 +18,17 @@
  */
 package gls.innerClass
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
 
 /**
  * Tests on inner interface usage
  */
-class InnerInterfaceTest extends GroovyTestCase {
+class InnerInterfaceTest {
 
+    @Test
     void testStaticInnerInterfaceInAClass() {
         assertScript '''
             class Foo4422V1 {
@@ -49,6 +53,7 @@ class InnerInterfaceTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testStaticInnerInterfaceInAnInterface() {
         assertScript '''
             interface Foo4422V2 {
@@ -59,6 +64,7 @@ class InnerInterfaceTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNonStaticInnerInterfaceInAClass() {
         assertScript '''
             class Foo4422V3 {
@@ -72,6 +78,7 @@ class InnerInterfaceTest extends GroovyTestCase {
     }
 
     // GROOVY-5989
+    @Test
     void testReferenceToInterfaceNestedInterface() {
         assertScript '''
             class MyMap extends HashMap {

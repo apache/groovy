@@ -18,10 +18,12 @@
  */
 package org.codehaus.groovy.ast.expr
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class PropertyExpressionTest extends GroovyTestCase {
 
+class PropertyExpressionTest {
+
+    @Test
     void testGetText() {
         PropertyExpression property = new PropertyExpression(new VariableExpression('foo'), 'bar')
         assert 'foo.bar' == property.text

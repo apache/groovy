@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.runtime.typehandling
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -179,7 +179,7 @@ final class DefaultTypeTransformationTest {
         def err = shouldFail(ClassCastException) {
             DefaultTypeTransformation.castToType(Optional.of('123'), Number[])
         }
-        assert err =~ /Cannot cast object '123' with class 'java.lang.String' to class 'java.lang.Number'/
+        assert err.message =~ /Cannot cast object '123' with class 'java.lang.String' to class 'java.lang.Number'/
 
         def nothing = Optional.empty(), something = Optional.of(12345.000)
         def result

@@ -18,10 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class AmbiguousListOrMethodTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+final class AmbiguousListOrMethodTest {
+
+    @Test
     void testLocalVariableVersion() {
         def foo = [3, 2, 3]
 
@@ -29,12 +32,14 @@ class AmbiguousListOrMethodTest extends GroovyTestCase {
         assert val == 3
     }
 
+    @Test
     void testUndefinedPropertyVersion() {
         shouldFail(MissingPropertyException) {
             def val = this.foo [0]
         }
     }
 
+    @Test
     void testMethodCallVersion() {
         def val = foo([0])
         assert val == 1
@@ -49,15 +54,15 @@ class AmbiguousListOrMethodTest extends GroovyTestCase {
         return myList.size()
     }
 
+    @Test
     void testCanFindCorrectMethod() {
         def e = new Example()
         assert e["", ""] == 2
         assert e[""] == 1
     }
 
-}
-
-class Example {
-    def getAt(String a, String b) {return 2}
-    def getAt(String a) {return 1}
+    static class Example {
+        def getAt(String a, String b) {return 2}
+        def getAt(String a) {return 1}
+    }
 }

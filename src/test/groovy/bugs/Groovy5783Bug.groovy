@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy5783Bug extends GroovyTestCase {
 
+class Groovy5783Bug {
+
+    @Test
     void testDefaultTypeTransformationCreatesLinkedHashSet() {
         Set s1 = [] as Set
         Set s2 = []

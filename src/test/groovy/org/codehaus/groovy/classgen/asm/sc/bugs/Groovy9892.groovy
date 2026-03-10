@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy9892 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testIncrementPropertyWithinClosure1() {
         assertScript '''
             class C {
@@ -44,6 +46,7 @@ final class Groovy9892 extends StaticTypeCheckingTestCase implements StaticCompi
     }
 
     // GROOVY-9978
+    @Test
     void testIncrementPropertyWithinClosure2() {
         assertScript '''
             import groovyx.gpars.dataflow.Dataflow

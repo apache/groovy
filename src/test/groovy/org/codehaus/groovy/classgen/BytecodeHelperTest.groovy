@@ -18,20 +18,24 @@
  */
 package org.codehaus.groovy.classgen
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.ast.Parameter
 import org.codehaus.groovy.ast.stmt.EmptyStatement
 import org.codehaus.groovy.classgen.asm.BytecodeHelper
+import org.junit.jupiter.api.Test
 
-class BytecodeHelperTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
 
+class BytecodeHelperTest {
+
+    @Test
     void testTypeName() {
         assertEquals("[C", BytecodeHelper.getTypeDescription(ClassHelper.char_TYPE.makeArray()))
     }
 
+    @Test
     void testMethodDescriptor() {
         String answer = BytecodeHelper.getMethodDescriptor(char[].class, new Class[0])
         assertEquals("()[C", answer)
@@ -43,6 +47,7 @@ class BytecodeHelperTest extends GroovyTestCase {
         assertEquals("(Ljava/lang/String;I)[Ljava/lang/String;", answer)
     }
 
+    @Test
     void testMethodDescriptorMethodNode() {
         assertEquals("()V",
                 BytecodeHelper.getMethodDescriptor(new MethodNode('test', 0, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, [] as ClassNode[], EmptyStatement.INSTANCE)))

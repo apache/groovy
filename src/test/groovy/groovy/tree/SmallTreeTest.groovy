@@ -18,12 +18,14 @@
  */
 package groovy.tree
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SmallTreeTest extends GroovyTestCase {
+
+class SmallTreeTest {
     def b
     def EXPECTED = 'root1[attributes={}; value=[elem1[attributes={}; value=hello1]]]'
 
+    @Test
     void testTree() {
         b = NodeBuilder.newInstance()
 

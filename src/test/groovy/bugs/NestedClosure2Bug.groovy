@@ -18,14 +18,15 @@
  */
 package bugs
 
-import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-/**
- */
-class NestedClosure2Bug extends TestSupport {
+import static groovy.test.GroovyAssert.assertScript
+
+final class NestedClosure2Bug {
 
     Object f
 
+    @Test
     void testFieldBug() {
         def closure = {
             return {
@@ -38,6 +39,7 @@ class NestedClosure2Bug extends TestSupport {
         assert f == 123
     }
 
+    @Test
     void testBugOutsideOfScript() {
         def a = 123
         def b = 456
@@ -61,8 +63,9 @@ class NestedClosure2Bug extends TestSupport {
         assert value == 123
     }
 
+    @Test
     void testBug() {
-        assertScript """
+        assertScript '''
             def a = 123
             def closure = {
                 return {
@@ -76,6 +79,6 @@ class NestedClosure2Bug extends TestSupport {
             value = c3()
 
             assert value == 123
-"""
+        '''
     }
 }

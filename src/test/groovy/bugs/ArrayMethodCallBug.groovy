@@ -19,9 +19,11 @@
 package bugs
 
 import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-class ArrayMethodCallBug extends TestSupport {
+final class ArrayMethodCallBug extends TestSupport {
 
+    @Test
     void testMethodCallingWithArrayBug() {
         def array = getMockArguments()
 

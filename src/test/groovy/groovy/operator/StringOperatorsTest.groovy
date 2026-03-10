@@ -18,13 +18,15 @@
  */
 package groovy.operator
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StringOperatorsTest extends GroovyTestCase {
+
+class StringOperatorsTest {
 
     def x
     def y
 
+    @Test
     void testPlus() {
         x = "hello " + "there"
         assert x == "hello there"
@@ -39,12 +41,14 @@ class StringOperatorsTest extends GroovyTestCase {
         assert y == "hello 1.21"
     }
 
+    @Test
     void testLongPlus() {
         x = "hello" + " " + "there" + " nice" + " day"
 
         assert x == "hello there nice day"
     }
 
+    @Test
     void testMinus() {
         x = "the quick brown fox" - "quick "
 
@@ -55,12 +59,14 @@ class StringOperatorsTest extends GroovyTestCase {
         assert y == "the fox"
     }
 
+    @Test
     void testOperationsOnConstantString() {
         assert "hello".size() == 5
 
         assert "the quick brown".substring(4).substring(0, 5) == "quick"
     }
 
+    @Test
     void testBitwiseNegate() {
         String value="test"
         String s = "^\\S+$value\$"

@@ -18,11 +18,21 @@
  */
 package org.apache.groovy.bench.dispatch
 
+import groovy.transform.CompileStatic
+import org.openjdk.jmh.infra.Blackhole
+
 class Callsite {
 
     static void dispatch(Object[] receivers, bh) {
         for (Object receiver : receivers) {
-            bh.consume(receiver.toString())
+            bh.consume(receiver.hashCode())
+        }
+    }
+
+    @CompileStatic
+    static void dispatchCS(Object[] receivers, Blackhole bh) {
+        for (Object receiver : receivers) {
+            bh.consume(receiver.hashCode())
         }
     }
 

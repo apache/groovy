@@ -21,16 +21,16 @@ package groovy.transform
 import groovy.mock.interceptor.StubFor
 import org.codehaus.groovy.ast.MethodNode
 import org.codehaus.groovy.transform.ThreadInterruptibleASTTransformation
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Modifier
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
 import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.Assume.assumeFalse
+import static org.junit.jupiter.api.Assumptions.assumeFalse
 
 /**
  * Tests for the {@link ThreadInterrupt} AST transform.
@@ -45,7 +45,7 @@ final class ThreadInterruptTest {
     }
     private Map<String, MethodNode> oldValues = [:]
 
-    @Before
+    @BeforeEach
     void setUp() {
         // JDK12+ doesn't allow adjusting static final fields even via reflection, so
         // skip all tests on such JDK versions - it is only test code that's affected
@@ -57,7 +57,7 @@ final class ThreadInterruptTest {
         }
     }
 
-    @After
+    @AfterEach
     void tearDown() {
         Thread.metaClass = null
         if (isAtLeastJdk('12.0')) return

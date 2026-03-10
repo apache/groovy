@@ -18,14 +18,13 @@
  */
 package org.codehaus.groovy.ast.source
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.io.StringReaderSource
 
-abstract class SourceBaseTestCase extends GroovyTestCase {
+abstract class SourceBaseTestCase {
 
     private classNode
 

@@ -18,23 +18,20 @@
  */
 package bugs
 
-import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
-@CompileStatic
 final class Groovy9400 {
+
     @Test
-    void testCR() {
-        final GroovyShell shell = new GroovyShell()
+    void testCR1() {
+        def shell = new GroovyShell()
         def script = shell.parse("println('hello world 1')\rprintln('hello world 2')")
         script.run()
     }
 
     @Test
     void testCR2() {
-        final GroovyShell shell = new GroovyShell()
+        def shell = new GroovyShell()
         def script = shell.parse("def a = 1\rdef b = a\rb")
         assert 1 == script.run()
     }

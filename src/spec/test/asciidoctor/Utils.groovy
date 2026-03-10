@@ -21,8 +21,11 @@ package asciidoctor
 import groovy.transform.CompileStatic
 
 @CompileStatic
-class Utils {
-    public static String stripAsciidocMarkup(String string, String newline='\n') {
+final class Utils {
+
+    private Utils() {}
+
+    static String stripAsciidocMarkup(String string, String newline = '\n') {
         boolean inside = false
         StringBuilder sb = new StringBuilder()
         new StringReader(string).eachLine { line ->

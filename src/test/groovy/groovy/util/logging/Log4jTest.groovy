@@ -18,24 +18,30 @@
  */
 package groovy.util.logging
 
-import groovy.test.GroovyTestCase
-
-import java.lang.reflect.*
 import org.apache.log4j.AppenderSkeleton
-import org.apache.log4j.spi.LoggingEvent
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
+import org.apache.log4j.spi.LoggingEvent
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for Log4j AST transformation
  */
-class Log4jTest extends GroovyTestCase {
+
+import java.lang.reflect.Field
+import java.lang.reflect.Modifier
+
+import static groovy.test.GroovyAssert.shouldFail
+
+class Log4jTest {
 
     Log4jInterceptingAppender appender
     Logger logger
 
-    protected void setUp() {
-        super.setUp()
+    @BeforeEach
+    void setUp() {
         appender = new Log4jInterceptingAppender()
         appender.setName('MyAppender')
         logger = Logger.getLogger('MyClass')
@@ -43,11 +49,12 @@ class Log4jTest extends GroovyTestCase {
         logger.setLevel(Level.ALL)
     }
 
-    protected void tearDown() {
-        super.tearDown()
+    @AfterEach
+    void tearDown() {
         logger.removeAllAppenders()
     }
 
+    @Test
     void testPrivateFinalStaticLogFieldAppears() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
@@ -64,6 +71,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExplicitPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -81,6 +89,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testPackagePrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -100,6 +109,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testProtectedFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -117,6 +127,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testPublicFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -134,6 +145,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testClassAlreadyHasLogField() {
 
         shouldFail {
@@ -148,6 +160,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testClassAlreadyHasNamedLogField() {
 
         shouldFail {
@@ -162,6 +175,7 @@ class Log4jTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testLogInfo() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
@@ -199,6 +213,7 @@ class Log4jTest extends GroovyTestCase {
         assert events[ind].message == "trace called"
     }
 
+    @Test
     void testLogFromStaticMethods() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log4j
@@ -218,6 +233,7 @@ class Log4jTest extends GroovyTestCase {
         assert events[0].message == "(static) info called"
     }
 
+    @Test
     void testLogInfoForNamedLogger() {
 
         Class clazz = new GroovyClassLoader().parseClass('''
@@ -255,6 +271,7 @@ class Log4jTest extends GroovyTestCase {
         assert events[ind].message == "trace called"
     }
 
+    @Test
     void testLogGuard() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.Log4j
@@ -282,6 +299,7 @@ class Log4jTest extends GroovyTestCase {
         assert appender.isLogGuarded == true
     }
 
+    @Test
     void testDefaultCategory() {
         Class clazz = new GroovyClassLoader().parseClass("""
             @groovy.util.logging.Log4j
@@ -297,6 +315,7 @@ class Log4jTest extends GroovyTestCase {
         assert appender.getEvents().size() == 1
     }
 
+    @Test
     void testCustomCategory() {
         Log4jInterceptingAppender appenderForCustomCategory = new Log4jInterceptingAppender()
 

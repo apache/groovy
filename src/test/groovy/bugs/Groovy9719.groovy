@@ -18,12 +18,14 @@
  */
 package bugs
 
-import org.codehaus.groovy.control.*
-import org.junit.Test
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
 final class Groovy9719 {
+
     @Test
     void testInnerClassRef() {
         def config = new CompilerConfiguration()

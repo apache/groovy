@@ -18,9 +18,7 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
-
-class Groovy779_Bug extends GroovyTestCase {
+class Groovy779_Bug {
 
     def boolean exceptionCalled = false
     def boolean finallyCalled = false

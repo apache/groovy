@@ -26,7 +26,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression
 import org.codehaus.groovy.ast.stmt.BlockStatement
 import org.codehaus.groovy.ast.stmt.ReturnStatement
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.ast.ClassHelper.dynamicType
 

@@ -19,7 +19,6 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.transform.Sealed;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ASTNode;
@@ -345,7 +344,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 MethodNode enclosingMethod = classNode.getEnclosingMethod();
                 if (enclosingMethod != null) {
                     classVisitor.visitOuterClass(
-                            BytecodeHelper.getClassInternalName(classNode.getOuterClass()),
+                            BytecodeHelper.getClassInternalName(enclosingMethod.getDeclaringClass()),
                             enclosingMethod.getName(), BytecodeHelper.getMethodDescriptor(enclosingMethod));
                 }
             }
@@ -441,9 +440,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void makeInnerClassEntry(final ClassNode innerClass) {
-        ClassNode outerClass = innerClass.getOuterClass();
-        maybeInnerClassEntry(outerClass); // GROOVY-9842
-
         String innerClassName = innerClass.getName();
         String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
         {
@@ -452,7 +448,8 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         String outerClassInternalName;
         if (innerClass.getEnclosingMethod() == null) {
-            outerClassInternalName = BytecodeHelper.getClassInternalName(outerClass.getName());
+            maybeInnerClassEntry(innerClass.getOuterClass()); // GROOVY-9842
+            outerClassInternalName = BytecodeHelper.getClassInternalName(innerClass.getOuterClass().getName());
         } else {
             outerClassInternalName = null; // local inner classes don't specify the outer class name
             if (innerClass instanceof InnerClassNode && ((InnerClassNode) innerClass).isAnonymous()) innerClassName = null;
@@ -1894,7 +1891,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // in a temporary variable
         BytecodeHelper.pushConstant(mv, size);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-        int listArrayVar = controller.getCompileStack().defineTemporaryVariable("_listOfClosures", true);
+        int listArrayVar = controller.getCompileStack().defineTemporaryVariable("_listOfClosures", ClassHelper.OBJECT_TYPE.makeArray(), true);
 
         // add curried versions
         for (int i = 0; i < size; i += 1) {
@@ -2087,10 +2084,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void visitAnnotations(final AnnotatedNode targetNode, final AnnotatedNode sourceNode, final Object visitor) {
         for (AnnotationNode an : sourceNode.getAnnotations()) {
-            // skip built-in properties
-            if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
-            if (an.getClassNode().getName().equals(Sealed.class.getName()) && sealedNative(sourceNode) && sealedSkipAnnotation(sourceNode)) continue;
+            if (an.getClassNode().equals(ClassHelper.SEALED_TYPE) && sealedNative(sourceNode) && sealedSkipAnnotation(sourceNode)) continue;
 
             maybeInnerClassEntry(an.getClassNode());
 
@@ -2102,7 +2097,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void visitTypeAnnotations(final ClassNode sourceNode, final Object visitor, final TypeReference typeRef, final String typePathStr, boolean typeUse) {
         for (AnnotationNode an : sourceNode.getTypeAnnotations()) {
-            if (an.isBuiltIn() || an.hasSourceRetention()) continue;
+            if (an.hasSourceRetention()) continue;
             if (typeUse && !an.isTargetAllowed(AnnotationNode.TYPE_USE_TARGET)) continue;
 
             AnnotationVisitor av = null;
@@ -2196,8 +2191,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void visitParameterAnnotations(final Parameter parameter, final int paramNumber, final MethodVisitor mv) {
         for (AnnotationNode an : parameter.getAnnotations()) {
-            // skip built-in properties
-            if (an.isBuiltIn() || an.hasSourceRetention()) continue;
+            if (an.hasSourceRetention()) continue;
 
             final String annotationDescriptor = BytecodeHelper.getTypeDescription(an.getClassNode());
             AnnotationVisitor av = mv.visitParameterAnnotation(paramNumber, annotationDescriptor, an.hasRuntimeRetention());

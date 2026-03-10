@@ -18,43 +18,54 @@
  */
 package groovy.jmx.builder
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import javax.management.remote.rmi.RMIConnector
 import javax.management.remote.rmi.RMIConnectorServer
 
-class JmxClientConnectorFactoryTest extends GroovyTestCase {
-    def builder
-    int defaultPort = 10990
-    def rmi
+import static groovy.test.GroovyAssert.shouldFail
 
+final class JmxClientConnectorFactoryTest {
+
+    private JmxBuilder builder
+    private Map rmi
+
+    @BeforeEach
     void setUp() {
-        super.setUp()
-        def hostAddress = getHostAddress()
-        println "hostAddress: ${hostAddress}"
-        System.setProperty("java.rmi.server.hostname", hostAddress)
-        builder = new JmxBuilder()
+        System.setProperty('java.rmi.server.hostname', hostAddress)
+
+        final int defaultPort = 10990
         rmi = JmxConnectorHelper.createRmiRegistry(defaultPort)
+
+        builder = new JmxBuilder()
+        try {
+            builder.getMBeanServer()
+        } catch (e) {
+            Assumptions.abort(e.getMessage())
+        }
     }
 
+    @AfterEach
     void tearDown() {
-        super.tearDown()
+        System.clearProperty('java.rmi.server.hostname')
         JmxConnectorHelper.destroyRmiRegistry(rmi.registry)
     }
 
+    @Test
     void testJmxClientConnectorNode() {
         RMIConnectorServer server = builder.serverConnector(port: rmi.port)
         server.start()
 
-        RMIConnector client = builder.clientConnector(
-                port: rmi.port
-        )
-
-        assert client
+        RMIConnector client = builder.clientConnector(port: rmi.port)
         client.connect()
+
         server.stop()
     }
 
+    @Test
     void testJmxClientConnectorUrl() {
         RMIConnectorServer server = builder.serverConnector(port: rmi.port)
         server.start()
@@ -65,28 +76,28 @@ class JmxClientConnectorFactoryTest extends GroovyTestCase {
         server.stop()
     }
 
+    @Test
     void testJmxClientConnectorFailure() {
         shouldFail {
-            RMIConnector client = builder.clientConnector(
-                    port: 1099
-            )
-            assert client
+            RMIConnector client = builder.clientConnector(port: 1099)
             client.connect()
         }
     }
 
-    static String getHostAddress() {
+    //--------------------------------------------------------------------------
+
+    private static String getHostAddress() {
         try {
             Enumeration<NetworkInterface> allNetInterfaces = NetworkInterface.getNetworkInterfaces()
             while (allNetInterfaces.hasMoreElements()) {
-                NetworkInterface netInterface = (NetworkInterface) allNetInterfaces.nextElement()
+                NetworkInterface netInterface = allNetInterfaces.nextElement()
                 Enumeration<InetAddress> addresses = netInterface.getInetAddresses()
                 while (addresses.hasMoreElements()) {
                     InetAddress ip = (InetAddress) addresses.nextElement()
                     if (ip != null
                             && ip instanceof Inet4Address
                             && !ip.isLoopbackAddress()
-                            && ip.getHostAddress().indexOf(":") == -1) {
+                            && ip.getHostAddress().indexOf(':') == -1) {
                         return ip.getHostAddress()
                     }
                 }
@@ -94,7 +105,5 @@ class JmxClientConnectorFactoryTest extends GroovyTestCase {
         } catch (Exception e) {
             e.printStackTrace()
         }
-        return null
     }
-
 }

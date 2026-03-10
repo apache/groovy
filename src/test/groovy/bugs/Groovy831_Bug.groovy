@@ -18,12 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test for fixing the Jira issue GROOVY-831
  */
-class Groovy831_Bug extends GroovyTestCase {
+class Groovy831_Bug {
 
     String[] cities = ['Seoul', 'London', 'Wasington']
     int[] intArrayData = [1, 3, 5]
@@ -31,6 +32,7 @@ class Groovy831_Bug extends GroovyTestCase {
     public String[] countries = [ 'Republic of Korea', 'United Kingdom', 'United State of America']
     public  int[] intArray  = [ 2, 4, 6 ]
 
+    @Test
     void testSetFieldProperty() {
         assert cities.size() == 3
         assert cities[0] == 'Seoul'
@@ -42,6 +44,7 @@ class Groovy831_Bug extends GroovyTestCase {
         assert intArrayData[2] == 5
     }
 
+    @Test
     void testSetFieldVariable() {
         assert countries.size() == 3
         assert countries[0] == 'Republic of Korea'

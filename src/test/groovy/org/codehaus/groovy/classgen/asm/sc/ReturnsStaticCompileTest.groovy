@@ -23,5 +23,5 @@ import groovy.transform.stc.ReturnsSTCTest
 /**
  * Unit tests for static compilation : explicit and implicit returns.
  */
-class ReturnsStaticCompileTest extends ReturnsSTCTest implements StaticCompilationTestSupport {
+final class ReturnsStaticCompileTest extends ReturnsSTCTest implements StaticCompilationTestSupport {
 }

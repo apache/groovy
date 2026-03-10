@@ -18,10 +18,17 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class BitSetTest extends GroovyTestCase{
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotSame
+import static org.junit.jupiter.api.Assertions.assertTrue
 
+
+class BitSetTest{
+
+    @Test
     void testSubscriptOperator() {
         def bitSet = new BitSet()
 
@@ -35,6 +42,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitFalse bitSet, 4
     }
 
+    @Test
     void testSubscriptAssignmentWithRange() {
         def bitSet = new BitSet()
 
@@ -48,6 +56,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitFalse bitSet, 5
     }
 
+    @Test
     void testSubscriptAssignmentWithReverseRange() {
         def bitSet = new BitSet()
 
@@ -61,6 +70,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitFalse bitSet, 5
     }
 
+    @Test
     void testSubscriptAccessWithRange() {
         def bitSet = new BitSet()
 
@@ -69,12 +79,12 @@ class BitSetTest extends GroovyTestCase{
 
         def subSet = bitSet[5..11]
 
-        assertTrue 'subSet should have been a BitSet', subSet instanceof BitSet
+        assertTrue subSet instanceof BitSet, 'subSet should have been a BitSet'
 
-        assertNotSame 'subSet should not have been the same object', bitSet, subSet
+        assertNotSame bitSet, subSet, 'subSet should not have been the same object'
 
         // the last true bit should be at index 6
-        assertEquals 'result had wrong logical size', 7, subSet.length()
+        assertEquals 7, subSet.length(), 'result had wrong logical size'
 
         assertBitFalse subSet, 0
         assertBitFalse subSet, 1
@@ -85,6 +95,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitTrue  subSet, 6
     }
 
+    @Test
     void testSubscriptAccessWithReverseRange() {
         def bitSet = new BitSet()
 
@@ -93,12 +104,12 @@ class BitSetTest extends GroovyTestCase{
 
         def subSet = bitSet[8..2]
 
-        assertTrue 'subSet should have been a BitSet', subSet instanceof BitSet
+        assertTrue subSet instanceof BitSet, 'subSet should have been a BitSet'
 
-        assertNotSame 'subSet should not have been the same object', bitSet, subSet
+        assertNotSame bitSet, subSet, 'subSet should not have been the same object'
 
         // the last true bit should be at index 5
-        assertEquals 'result had wrong logical size', 6, subSet.length()
+        assertEquals 6, subSet.length(), 'result had wrong logical size'
 
         assertBitFalse subSet, 0
         assertBitFalse subSet, 1
@@ -109,6 +120,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitFalse subSet, 6
     }
 
+    @Test
     void testAnd() {
         def a = new BitSet()
         a[2] = true
@@ -123,6 +135,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitTrue  c, 3
     }
 
+    @Test
     void testOr() {
         def a = new BitSet()
         a[2] = true
@@ -137,6 +150,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitTrue  c, 3
     }
 
+    @Test
     void testXor() {
         def a = new BitSet()
         a[2] = true
@@ -151,6 +165,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitFalse c, 3
     }
 
+    @Test
     void testBitwiseNegate() {
         def a = new BitSet()
         a[2] = true
@@ -162,6 +177,7 @@ class BitSetTest extends GroovyTestCase{
         assertBitFalse b, 3
     }
 
+    @Test
     void testLeftShift() {
         def testCases = [
             [1, -12L],
@@ -181,10 +197,10 @@ class BitSetTest extends GroovyTestCase{
     }
 
     private assertBitTrue(bitset, index) {
-        assertTrue  'index ' + index + ' should have been true',  bitset[index]
+        assertTrue  bitset[index], 'index ' + index + ' should have been true'
     }
 
     private assertBitFalse(bitset, index) {
-        assertFalse 'index ' + index + ' should have been false', bitset[index]
+        assertFalse bitset[index], 'index ' + index + ' should have been false'
     }
 }

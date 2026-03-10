@@ -18,15 +18,17 @@
  */
 package groovy.tree
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test case for a bug with nested closures
  */
-class NestedClosureBugTest extends GroovyTestCase {
+class NestedClosureBugTest {
     def b
     def EXPECTED = 'root[attributes={a=xyz}; value=[child[attributes={}; value=[grandChild[attributes={}; value=[]]]]]]'
 
+    @Test
     void testNestedClosureBug() {
         b = NodeBuilder.newInstance()
 

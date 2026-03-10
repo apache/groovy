@@ -18,14 +18,16 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  */
-class RodsBooleanBug extends GroovyTestCase {
+class RodsBooleanBug {
 
     def item = "hi"
 
+    @Test
     void testBug() {
         assert isIt()
     }

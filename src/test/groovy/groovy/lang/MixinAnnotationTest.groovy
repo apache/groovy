@@ -19,8 +19,8 @@
 package groovy.lang
 
 import org.codehaus.groovy.reflection.ReflectionCache
-import org.junit.After
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
@@ -129,7 +129,7 @@ final class MixinAnnotationTest {
         '''
     }
 
-    @After
+    @AfterEach
     void tearDown() {
         ReflectionCache.getCachedClass(ArrayList).setNewMopMethods(null)
         ReflectionCache.getCachedClass(List).setNewMopMethods(null)

@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SubscriptTest extends GroovyTestCase {
 
+class SubscriptTest {
+
+    @Test
     void testListRange() {
         def list = ['a', 'b', 'c', 'd', 'e']
 
@@ -51,6 +53,7 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == ['b', 'c']
     }
 
+    @Test
     void testObjectRangeRange() {
         def list = 'a'..'e'
 
@@ -71,6 +74,7 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == ['d', 'c', 'b']
     }
 
+    @Test
     void testStringArrayRange() {
         String[] list = ['a', 'b', 'c', 'd', 'e']
 
@@ -91,6 +95,7 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == ['d', 'c', 'b']
     }
 
+    @Test
     void testIntRangeRange() {
         def list = 10..15
 
@@ -111,6 +116,7 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == [13, 12, 11]
     }
 
+    @Test
     void testIntArrayRange() {
         Integer[] list = [ 10, 11, 12, 13, 14, 15 ]
 
@@ -131,6 +137,7 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == [13, 12, 11]
     }
 
+    @Test
     void testStringSubscript() {
         def text = "nice cheese gromit!"
 
@@ -153,10 +160,12 @@ class SubscriptTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testStringPutAtRange(){
         def text = "0123"
     }
 
+    @Test
     void testListSubscriptWithList() {
         def list = ['a', 'b', 'c', 'd', 'e']
 
@@ -174,6 +183,7 @@ class SubscriptTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testListSubscriptWithListAndRange() {
         def list = 100..200
 
@@ -188,12 +198,14 @@ class SubscriptTest extends GroovyTestCase {
     }
 
     // GROOVY-5865
+    @Test
     void testListSubscriptWithListAndEmptyRange() {
         def list = [0, 1, 2]
 
         assert list[0, 1..<1] == [0]
     }
 
+    @Test
     void testStringWithSubscriptList() {
 
         def text = "nice cheese gromit!"
@@ -203,6 +215,7 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == "icecheese"
     }
 
+    @Test
     void testSubMap() {
         def map = ['a':123, 'b':456, 'c':789]
 
@@ -217,6 +230,7 @@ class SubscriptTest extends GroovyTestCase {
         assert map.getClass() == sub.getClass()
     }
 
+    @Test
     void testSubMapWithNonExistentKey() {
         def map = ['a':123, 'b':456, 'c':789]
 
@@ -232,6 +246,7 @@ class SubscriptTest extends GroovyTestCase {
         assert map.getClass() == sub.getClass()
     }
 
+    @Test
     void testListWithinAListSyntax() {
         def list = [1, 2, 3, 4..10, 5, 6]
 
@@ -242,6 +257,7 @@ class SubscriptTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testBeanProperties() {
         def foo = new Foo()
 

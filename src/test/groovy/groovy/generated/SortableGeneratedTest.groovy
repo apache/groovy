@@ -19,7 +19,7 @@
 package groovy.generated
 
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 @CompileStatic
 class SortableGeneratedTest extends AbstractGeneratedAstTestCase {

@@ -18,10 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy2339Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFail
 
+
+class Groovy2339Bug {
+
+    @Test
     void testBug() {
         List list = ['groovy', 'java']
         Map map = [a: 1, b: 2]

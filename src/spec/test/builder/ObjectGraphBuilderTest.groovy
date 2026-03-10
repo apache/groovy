@@ -19,15 +19,19 @@
 package builder
 
 import asciidoctor.Utils
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Tests for ObjectGraphBuilder. The tests directly in this file are specific
  * to ObjectGraphBuilder. Functionality in common with other Builders
  * is tested in the parent class.
  */
-final class ObjectGraphBuilderTest extends GroovyTestCase {
+final class ObjectGraphBuilderTest {
 
+    @Test
     void testBuilder() {
         assertScript '''// tag::domain_classes[]
 package com.acme
@@ -78,6 +82,7 @@ assert employee.address instanceof Address
 '''
     }
 
+    @Test
     void testBuildImmutableFailure() {
         def err = shouldFail '''
 package com.acme
@@ -99,13 +104,14 @@ builder.classNameResolver = "com.acme"
 def person = builder.person(name:'Jon', age:17)
 // end::immutable_fail_runtime[]
         '''
-        assert err == Utils.stripAsciidocMarkup('''
+        assert err.message == Utils.stripAsciidocMarkup('''
 // tag::expected_error_immutable[]
 Cannot set read-only property: name for class: com.acme.Person
 // end::expected_error_immutable[]
 ''')
     }
 
+    @Test
     void testBuildImmutableFixed() {
         assertScript '''
 package com.acme
@@ -135,6 +141,7 @@ def person = builder.person(name:'Jon', age:17)
         '''
     }
 
+    @Test
     void testId() {
         assertScript '''
 package com.acme

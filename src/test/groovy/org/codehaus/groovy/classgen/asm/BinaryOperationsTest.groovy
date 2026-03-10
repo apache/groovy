@@ -18,12 +18,16 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.junit.jupiter.api.Test
+
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+import static org.junit.jupiter.api.Assumptions.assumeFalse
 
-class BinaryOperationsTest extends AbstractBytecodeTestCase {
+final class BinaryOperationsTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testIntPlus() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile("""\
             int i = 1
             int j = 2
@@ -35,8 +39,9 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testIntCompareLessThan() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile("""\
             int i = 0
             if (i < 100) println "true"
@@ -47,9 +52,10 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    // GROOVY-4741
+    @Test
     void testCompareLessThanInClosure() {
-        if (config.indyEnabled) return;
-        // GROOVY-4741
+        assumeFalse(config.indyEnabled)
         assert """
             int a = 0
             [].each {
@@ -59,8 +65,9 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
         """
     }
 
+    @Test
     void testLongLeftShift() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile("""\
             long a = 1
             long b = a << 32
@@ -70,8 +77,9 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testIntConstants() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         (0..5).each {
             assert compile("""\
                 int a = $it
@@ -102,8 +110,9 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
         }
     }
 
+    @Test
     void testCharXor() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile('''
             int i = ('a' as char) ^ ('b' as char)
         ''').hasStrictSequence ([
@@ -112,6 +121,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
     }
 
     // GROOVY-10657
+    @Test
     void testPutAtValue() {
         def sequence = compile '''
             class C {
@@ -124,6 +134,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
         '''
     }
 
+    @Test
     void testPrimitiveOrAssign() {
         ['byte','int','short','long'].each { type ->
             assertScript """
@@ -135,6 +146,7 @@ class BinaryOperationsTest extends AbstractBytecodeTestCase {
         }
     }
 
+    @Test
     void testPrimitiveAndAssign() {
         ['byte','int','short','long'].each { type ->
             assertScript """

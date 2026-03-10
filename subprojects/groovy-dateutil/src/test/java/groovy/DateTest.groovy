@@ -18,11 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 
+import static groovy.test.GroovyAssert.shouldFail
 import static java.util.Calendar.DATE
 import static java.util.Calendar.DAY_OF_WEEK
 import static java.util.Calendar.FEBRUARY
@@ -31,8 +32,10 @@ import static java.util.Calendar.MONTH
 import static java.util.Calendar.SATURDAY
 import static java.util.Calendar.YEAR
 import static java.util.Calendar.getInstance
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-class DateTest extends GroovyTestCase {
+class DateTest {
+    @Test
     void testCalendarNextPrevious() {
         TimeZone tz = TimeZone.getTimeZone('GMT+00')
         Calendar c = getInstance(tz)
@@ -51,6 +54,7 @@ class DateTest extends GroovyTestCase {
         assert dates == ['01-Feb-2002', '02-Feb-2002', '03-Feb-2002']
     }
 
+    @Test
     void testDateNextPrevious() {
         def tz = TimeZone.default
         def x = new Date()
@@ -64,6 +68,7 @@ class DateTest extends GroovyTestCase {
         assert x > y
     }
 
+    @Test
     void testDateRange() {
         def today = new Date()
         def later = today + 3
@@ -75,18 +80,21 @@ class DateTest extends GroovyTestCase {
         assert list == expected
     }
 
+    @Test
     void testCalendarIndex() {
         Calendar c = new GregorianCalendar(2002, FEBRUARY, 2)
         assert c[MONTH] == FEBRUARY
         assert c[DAY_OF_WEEK] == SATURDAY
     }
 
+    @Test
     void testDateIndex() {
         Date d = new GregorianCalendar(2002, FEBRUARY, 2).time
         assert d[MONTH] == FEBRUARY
         assert d[DAY_OF_WEEK] == SATURDAY
     }
 
+    @Test
     void testGDKDateMethods() {
         Locale defaultLocale = Locale.default
         TimeZone defaultTZ = TimeZone.default
@@ -110,6 +118,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testStaticParse() {
         TimeZone defaultTZ = TimeZone.default
         try {
@@ -123,6 +132,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testParseWithTimeZone() {
         TimeZone defaultTZ = TimeZone.default
         try {
@@ -137,6 +147,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testRoundTrip() {
         Date d = new Date()
         String pattern = 'dd MMM yyyy, hh:mm:ss,SSS a z'
@@ -147,6 +158,7 @@ class DateTest extends GroovyTestCase {
         assertEquals d.time, d2.time
     }
 
+    @Test
     void testCalendarTimeZone() {
         Locale defaultLocale = Locale.default
         TimeZone defaultTZ = TimeZone.default
@@ -176,6 +188,7 @@ class DateTest extends GroovyTestCase {
         return new java.sql.Date(f.parse(s).time)
     }
 
+    @Test
     void testMinusDates() {
         assertEquals(10, f.parse("1/11/2007") - f.parse("1/1/2007"))
         assertEquals(-10, f.parse("1/1/2007") - f.parse("1/11/2007"))
@@ -201,6 +214,7 @@ class DateTest extends GroovyTestCase {
     }
 
     /** GROOVY-3374  */
+    @Test
     void testClearTime() {
         def now = new Date()
         def calendarNow = Calendar.getInstance()
@@ -217,6 +231,7 @@ class DateTest extends GroovyTestCase {
     }
 
     /** GROOVY-4789 */
+    @Test
     void testStaticParseToStringDate() {
         TimeZone tz = TimeZone.getDefault()
         try {
@@ -233,6 +248,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void test_Upto_Date_ShouldExecuteClosureForEachDayUpToDate() {
         Date startDate = new Date()
         List expectedResults = [startDate, startDate + 1, startDate + 2]
@@ -246,6 +262,7 @@ class DateTest extends GroovyTestCase {
         assert actualResults == expectedResults
     }
 
+    @Test
     void test_upto_Date_ShouldNotAcceptToDatesLessThanStartDate() {
         Date startDate = new Date()
         Date toDate = new Date(startDate.getTime() - 1L)
@@ -255,6 +272,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void test_downto_Date_ShouldExecuteClosureForEachDayDownToDate() {
         Date startDate = new Date()
         List expectedResults = [startDate, startDate - 1, startDate - 2]
@@ -267,6 +285,7 @@ class DateTest extends GroovyTestCase {
         assert actualResults == expectedResults
     }
 
+    @Test
     void test_downto_Date_ShouldNotAcceptToDatesGreaterThanStartDate() {
         Date startDate = new Date()
         Date toDate = new Date(startDate.getTime() + 1L)
@@ -276,6 +295,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void test_upto_Calendar_ShouldExecuteClosureForEachDayUpToDate() {
         Calendar startDate = Calendar.getInstance()
         Calendar toDate = startDate.clone()
@@ -290,6 +310,7 @@ class DateTest extends GroovyTestCase {
         assert actualResults == expectedResults
     }
 
+    @Test
     void test_upto_Calendar_ShouldNotAcceptToDatesLessThanStartDate() {
         Calendar startDate = Calendar.getInstance()
         Calendar toDate = startDate.clone()
@@ -300,6 +321,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void test_downto_Calendar_ShouldExecuteClosureForEachDayDownToDate() {
         Calendar startDate = Calendar.getInstance()
         Calendar toDate = startDate.clone()
@@ -314,6 +336,7 @@ class DateTest extends GroovyTestCase {
         assert actualResults == expectedResults
     }
 
+    @Test
     void test_downto_Calendar_ShouldNotAcceptToDatesGreaterThanStartDate() {
         Calendar startDate = Calendar.getInstance()
         Calendar toDate = startDate.clone()
@@ -324,6 +347,7 @@ class DateTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCopyWith() {
         Date febOne1970 = new Date(70, 1, 1)
         Date aprilSix = febOne1970.copyWith(dayOfMonth: 6, month: Calendar.APRIL)

@@ -19,14 +19,16 @@
 package typing
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * This unit test contains both assertScript and new GroovyShell().evaluate
  * calls. It is important *not* to replace the evaluate calls with assertScript, or the semantics
  * of the tests would be very different!
  */
-class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
+final class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testFirstParamHint() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_firstparam[]
@@ -39,6 +41,7 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSecondParamHint() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_secondparam[]
@@ -53,6 +56,7 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testThirdParamHint() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_thirdparam[]
@@ -67,6 +71,7 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFirstGenericTypeParamHint() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_firstgt[]
@@ -82,6 +87,7 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSimpleTypeTypeParamHint() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_simpletype[]
@@ -96,6 +102,7 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSimpleTypeTypeMapEntry() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_mapentry[]
@@ -113,6 +120,7 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFromAbstractTypeHint() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_from_abstract_type[]
@@ -130,6 +138,7 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testFromStringTypeHint() {
         assertScript '''import groovy.transform.stc.ClosureParams
             // tag::typehint_from_string_1[]
@@ -161,8 +170,5 @@ class TypeCheckingHintsTest extends StaticTypeCheckingTestCase {
             doSomething('foo') { s1,s2 -> assert s1.toUpperCase() == s2.toUpperCase() }
             // end::typehint_from_string_3[]
         '''
-
     }
-
 }
-

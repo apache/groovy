@@ -18,13 +18,17 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
+
 
 /**
  * Tests for {@link DefaultGroovyMethods} URL.getBytes() methods.
  *
  */
-class URLGetBytesTest extends GroovyTestCase {
+class URLGetBytesTest {
+    @Test
     void testGetBytesFromURLWithParameters() {
         def url = new URL('http','groovy-lang.org',80, '/', new URLStreamHandler() {
             @Override

@@ -18,17 +18,17 @@
  */
 package bugs;
 
-import org.codehaus.groovy.classgen.TestSupport;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovyShell;
+import org.junit.jupiter.api.Test;
 
-public class IanMaceysBug extends TestSupport {
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-    public void testBug() throws Exception {
-        try {
-            assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
-            fail("Should throw a syntax exception");
-        }
-        catch (Exception e) {
-            System.out.println("Worked. Caught: " + e);
-        }
+final class IanMaceysBug {
+
+    @Test
+    void testBug() {
+        String script = "dummy = 0; for (i in 0..9) { dummy += i }";
+        assertThrows(GroovyRuntimeException.class, () -> new GroovyShell().evaluate(script, "dummy.groovy"));
     }
 }

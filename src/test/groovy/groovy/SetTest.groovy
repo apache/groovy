@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SetTest extends GroovyTestCase {
 
+class SetTest {
+
+    @Test
     void testSetPlus() {
         Set s1 = [6, 4, 5, 1, 7, 2]
         def s2 = [6, 4, 5, 1, 7, [4,5]]
@@ -29,6 +31,7 @@ class SetTest extends GroovyTestCase {
         assert s3 == [1, 2, 4, 5, 6, 7, [4,5]] as Set
     }
 
+    @Test
     void testSetSimpleMinus() {
         Set s1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
         def s2 = s1 - [1, 4]
@@ -37,6 +40,7 @@ class SetTest extends GroovyTestCase {
         assert s3 == [1, 2, 3, 5] as Set
     }
 
+    @Test
     void testSetFlatten() {
         Set orig = [[[4, 5, 6, [46, 7, "erer"] as Set] as Set, 4, [3, 6, 78] as Set] as Set, 4]
         def flat = orig.flatten()
@@ -44,6 +48,7 @@ class SetTest extends GroovyTestCase {
         assert flat == [3, 4, 5, 6, 7, 46, 78, "erer"] as Set
     }
 
+    @Test
     void testFlattenSetOfMapsWithClosure() {
         Set orig = [[a:1, b:2], [c:3, d:4]] as Set
         def flat = orig.flatten{ it instanceof Map ? it.values() : it }
@@ -53,6 +58,7 @@ class SetTest extends GroovyTestCase {
         assert flat == ["a", "b", "c", "d"] as Set
     }
 
+    @Test
     void testSetEquality() {
         def a = [1, 'a', null] as Set
         def b = ['a', null, 1] as Set

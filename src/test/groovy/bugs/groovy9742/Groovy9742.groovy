@@ -26,7 +26,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
-class Groovy9742 {
+final class Groovy9742 {
+
     @Test
     void testDeadLock() {
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);

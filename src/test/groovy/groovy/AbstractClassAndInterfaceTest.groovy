@@ -19,11 +19,12 @@
 package groovy
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
 final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
+    @Test
     void testInterface() {
-        def shell = new GroovyShell()
         def text = '''
             interface A {
                 void methodOne(Object o)
@@ -42,10 +43,11 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             def b = new B()
             return b.methodTwo()
         '''
-        def retVal = shell.evaluate(text)
+        def retVal = assertScript(text)
         assert retVal.class == Object
     }
 
+    @Test
     void testClassImplementingAnInterfaceButMissesMethod() {
         shouldNotCompile '''
             interface A {
@@ -78,6 +80,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testClassImplementingNestedInterfaceShouldContainMethodsFromSuperInterfaces() {
         shouldNotCompile '''
             interface A { def a() }
@@ -89,8 +92,8 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAbstractClass() {
-        def shell = new GroovyShell()
         def text = '''
             abstract class A {
                 abstract void methodOne(Object o)
@@ -108,10 +111,11 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             def b = new B()
             return b.methodTwo()
         '''
-        def retVal = shell.evaluate(text)
+        def retVal = assertScript(text)
         assert retVal.class == Object
     }
 
+    @Test
     void testClassExtendingAnAbstractClassButMissesMethod() {
         shouldNotCompile '''
             abstract class A {
@@ -154,9 +158,9 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testInterfaceAbstractClassCombination() {
-        def shell = new GroovyShell()
-        def text = '''
+        assertScript '''
             interface A {
                 void methodOne()
             }
@@ -174,7 +178,6 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             def c = new C()
             c.methodTwo()
         '''
-        shell.evaluate(text)
 
         shouldNotCompile '''
             interface A {
@@ -191,9 +194,9 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDefaultModifiersForInterfaces() {
-        def shell = new GroovyShell()
-        def text = '''
+        assertScript '''
             import java.lang.reflect.Modifier
 
             interface A {
@@ -207,12 +210,11 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             assert Modifier.isStatic (fields[0].modifiers)
             assert Modifier.isFinal  (fields[0].modifiers)
         '''
-        shell.evaluate(text)
     }
 
+    @Test
     void testAccessToInterfaceField() {
-        def shell = new GroovyShell()
-        def text = '''
+       assertScript '''
             interface A {
                 def foo=1
             }
@@ -221,9 +223,9 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
             }
             assert new B().foo()==1
        '''
-       shell.evaluate(text)
     }
 
+    @Test
     void testImplementsDuplicateInterface() {
         shouldCompile '''
             interface I {}
@@ -235,6 +237,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDefaultMethodParamsNotAllowedInInterface() {
         shouldCompile '''
             interface Foo {
@@ -248,6 +251,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testClassImplementsItselfCreatingACycle() {
         shouldNotCompile '''
             package p1
@@ -258,6 +262,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAbstractClassWithPrivateAbstractMethod() {
         def msg = shouldNotCompile '''
             abstract class X {
@@ -267,6 +272,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         assert msg.contains("The method 'y' must not be private as it is declared abstract in class 'X'")
     }
 
+    @Test
     void testAbstractClassWithPrivateAbstractMethods() {
         def msg = shouldNotCompile '''
             abstract class X {
@@ -278,6 +284,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         assert msg.contains("The method 'z' must not be private as it is declared abstract in class 'X'")
     }
 
+    @Test
     void testAbstractNestedClassWithPrivateAbstractMethod() {
         def msg = shouldNotCompile '''
             class Z {
@@ -289,6 +296,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         assert msg.contains("The method 'y' must not be private as it is declared abstract in class 'Z\$X'")
     }
 
+    @Test
     void testClassWithPrivateAbstractMethod() {
         def msg = shouldNotCompile '''
             class X {
@@ -299,6 +307,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         assert msg.contains("Can't have an abstract method in a non-abstract class. The class 'X' must be declared abstract or the method 'void y()' must be implemented.")
     }
 
+    @Test
     void testEnumWithPrivateAbstractMethod() {
         def msg = shouldNotCompile '''
             enum X {
@@ -312,6 +321,7 @@ final class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         assert msg.contains("The method 'y' must not be private as it is declared abstract in enum 'X'")
     }
 
+    @Test
     void testInterfaceWithPrivateAbstractMethod() {
         def msg = shouldNotCompile '''
             interface X {

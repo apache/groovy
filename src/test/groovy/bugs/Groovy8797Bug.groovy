@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy8797Bug extends CompilableTestSupport {
+final class Groovy8797Bug extends CompilableTestSupport {
+
+    @Test
     void testStaticBooleanIsPropertyInStaticContext() {
         shouldCompile """
         class C {

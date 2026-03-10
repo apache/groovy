@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class AttributeSetExpressionBug extends GroovyTestCase {
+final class AttributeSetExpressionBug {
+
+    @Test
     void testAttributeSetAccess() {
         def a = new HasStaticFieldSomeClass()
         a.name = a.name * 3
@@ -28,16 +30,16 @@ class AttributeSetExpressionBug extends GroovyTestCase {
         assert a.name == "gettter"
 
         new HasStaticFieldSomeClass().@name = "changed bar"
-        assert( HasStaticFieldSomeClass.class.@name == "changed bar" )
+        assert HasStaticFieldSomeClass.class.@name == "changed bar"
 
         HasStaticFieldSomeClass.class.@name = "changed static bar"
-        assert( HasStaticFieldSomeClass.class.@name == "changed static bar" )
+        assert HasStaticFieldSomeClass.class.@name == "changed static bar"
     }
-}
 
-class HasStaticFieldSomeClass {
-    static String name = "bar"
-    static String getName() {
-        return "gettter"
+    static class HasStaticFieldSomeClass {
+        static String name = "bar"
+            static String getName() {
+            return "gettter"
+        }
     }
 }

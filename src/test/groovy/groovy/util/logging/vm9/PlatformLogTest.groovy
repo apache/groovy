@@ -18,9 +18,9 @@
  */
 package groovy.util.logging.vm9
 
-import groovy.test.GroovyTestCase
 import groovy.util.logging.PlatformLog
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import org.junit.jupiter.api.Test
 
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
@@ -28,7 +28,11 @@ import java.lang.reflect.Modifier
 /**
  * Test to make sure the @Log annotation is working correctly.
  */
-class PlatformLogTest extends GroovyTestCase {
+
+import static groovy.test.GroovyAssert.shouldFail
+
+class PlatformLogTest {
+    @Test
     void testPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.PlatformLog
@@ -44,6 +48,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testPrivateFinalStaticNamedLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.PlatformLog('logger')
@@ -59,6 +64,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testExplicitPrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -76,6 +82,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testPackagePrivateFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -95,6 +102,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testProtectedFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -112,6 +120,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testPublicFinalStaticLogFieldAppears() {
         Class clazz = new GroovyClassLoader().parseClass('''
             import static groovy.transform.options.Visibility.*
@@ -129,6 +138,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testClassAlreadyHasLogField() {
         def msg = shouldFail {
             Class clazz = new GroovyClassLoader().parseClass('''
@@ -140,9 +150,10 @@ class PlatformLogTest extends GroovyTestCase {
 
             assert clazz.getConstructor().newInstance()
         }
-        assert msg.contains('cannot have log field declared')
+        assert msg.message.contains('cannot have log field declared')
     }
 
+    @Test
     void testClassAlreadyHasNamedLogField() {
         def msg = shouldFail {
             Class clazz = new GroovyClassLoader().parseClass('''
@@ -153,7 +164,7 @@ class PlatformLogTest extends GroovyTestCase {
             ''')
             assert clazz.getConstructor().newInstance()
         }
-        assert msg.contains('cannot have log field declared')
+        assert msg.message.contains('cannot have log field declared')
     }
 
     @PlatformLog
@@ -163,6 +174,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testLogFromStaticMethods() {
         MyClassLogFromStaticMethods.loggingMethod()
         def finder = System.LoggerFinder.getLoggerFinder()
@@ -171,6 +183,7 @@ class PlatformLogTest extends GroovyTestCase {
         assert logSpy.infoParameter    == 'info    called'
     }
 
+    @Test
     void testLogInfo() {
         Class clazz = new GroovyClassLoader().parseClass('''
             @groovy.util.logging.PlatformLog
@@ -208,6 +221,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testLogInfoWithName() {
         new MyClassLogInfoWithName().loggingMethod()
         def finder = System.LoggerFinder.getLoggerFinder()
@@ -220,6 +234,7 @@ class PlatformLogTest extends GroovyTestCase {
         assert logSpy.errorParameter   == 'error   called'
     }
 
+    @Test
     void testInheritancePrivateNoShadowingIssue() {
         def clazz = new GroovyShell().evaluate('''
             class MyParentTestInheritance {
@@ -248,6 +263,7 @@ class PlatformLogTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testInheritanceProtectedShadowing() {
         def msg = shouldFail(MultipleCompilationErrorsException) {
             new GroovyClassLoader().parseClass('''
@@ -259,9 +275,10 @@ class PlatformLogTest extends GroovyTestCase {
                 class MyClassProtectedShadowing extends MyParentProtectedShadowing { }
             ''')
         }
-        assert msg.contains('cannot have log field declared because the field exists in the parent class')
+        assert msg.message.contains('cannot have log field declared because the field exists in the parent class')
     }
 
+    @Test
     void testInheritancePublicShadowing() {
         def msg = shouldFail(MultipleCompilationErrorsException) {
             new GroovyClassLoader().parseClass('''
@@ -274,7 +291,7 @@ class PlatformLogTest extends GroovyTestCase {
                 }
             ''')
         }
-        assert msg.contains('cannot have log field declared because the field exists in the parent class')
+        assert msg.message.contains('cannot have log field declared because the field exists in the parent class')
     }
 }
 

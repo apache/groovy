@@ -40,7 +40,7 @@ final class Groovy4721 {
             }
             println new MyClass().myMethod()
         '''
-        assert err =~ /No such property: x for class: MyClass/
+        assert err.message =~ /No such property: x for class: MyClass/
     }
 
     @Test
@@ -59,7 +59,7 @@ final class Groovy4721 {
             }
             println new MyClass().myMethod()
         '''
-        assert err =~ /No such property: x for class: MyClass/
+        assert err.message =~ /No such property: x for class: MyClass/
     }
 
     @Test
@@ -78,7 +78,7 @@ final class Groovy4721 {
             }
             println new MyClass().myMethod()
         '''
-        assert err =~ /No such property: x for class: MyClass/
+        assert err.message =~ /No such property: x for class: MyClass/
     }
 
     @Test
@@ -479,6 +479,6 @@ final class Groovy4721 {
                 throw new RuntimeException("from-finally")
             }
         '''
-        assert err =~ /from-finally/
+        assert err.message =~ /from-finally/
     }
 }

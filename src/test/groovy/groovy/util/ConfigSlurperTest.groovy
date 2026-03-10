@@ -18,14 +18,20 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNull
+
 
 /**
  * Tests for the ConfigSlurper class
  *
  * @since 0.6
  */
-class ConfigSlurperTest extends GroovyTestCase {
+class ConfigSlurperTest {
+    @Test
     void testConsecutiveSlurperValues() {
         def config = new ConfigSlurper().parse('''
 grails.views.default.codec="none"
@@ -44,6 +50,7 @@ grails {
         assertEquals "smtp.foo.com", config.grails.mail.host
     }
 
+    @Test
     void testConfigSlurperNestedValues() {
         def config = new ConfigSlurper().parse('''
 foo {
@@ -68,16 +75,18 @@ foo {
 
     }
 
+    @Test
     void testConfigBinding() {
         def slurper = new ConfigSlurper()
         slurper.binding = [foo: "bar"]
         def config = slurper.parse('''
-test=foo + 1        
+test=foo + 1
         ''')
         assertEquals "bar1", config.test
 
     }
 
+    @Test
     void testEnvironmentProperties2() {
         def config = new ConfigSlurper("production").parse('''
 dataSource {
@@ -116,6 +125,7 @@ environments {
         assertEquals "jdbc:hsqldb:file:prodDb;shutdown=true", config.dataSource.url
     }
 
+    @Test
     void testParseProperties() {
         Properties props = new Properties()
         props['foo'] = 'bar'
@@ -137,6 +147,7 @@ environments {
         assertEquals 'bar', config.foo
     }
 
+    @Test
     void testSimpleProperties() {
         def slurper = new ConfigSlurper()
 
@@ -152,6 +163,7 @@ smtp.dummy = null
         assertNull config.smtp.dummy
     }
 
+    @Test
     void testScopedProperties() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
@@ -168,6 +180,7 @@ smtp.dummy = null
         assertEquals "http://localhost:80/resources", config.resources.URL
     }
 
+    @Test
     void testScopedPropertiesWithNesting() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
@@ -186,13 +199,14 @@ smtp.dummy = null
         assertEquals "http://localhost:80/resources", config.resources.URL
     }
 
+    @Test
     void testScopedVariableReusage() {
         def conf = '''
           a0 = "Goofy"
           a1 = "$a0"
           a2."$a0" = "Mickey Mouse and " + "$a0"
           group1 { a0 = "Donald Duck" }
-          group2 { 
+          group2 {
               a0 = a0
               a1 = "$group1.a0"
               group3 {
@@ -219,6 +233,7 @@ smtp.dummy = null
         assert config.a3 == "Donald Duck"
     }
 
+    @Test
     void testLog4jConfiguration() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
@@ -226,7 +241,7 @@ log4j {
     appender {
         stdout("org.apache.log4j.ConsoleAppender") {
             layout="org.apache.log4j.PatternLayout"
-        }                
+        }
     }
     rootLogger="error,stdout"
     logger {
@@ -251,6 +266,7 @@ log4j {
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
     }
 
+    @Test
     void testEnvironmentSpecificConfig() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
@@ -258,7 +274,7 @@ log4j {
     appender {
         stdout("org.apache.log4j.ConsoleAppender") {
             layout="org.apache.log4j.PatternLayout"
-        }        
+        }
     }
     rootLogger="error,stdout"
     logger {
@@ -289,7 +305,7 @@ environments {
         config = slurper.parse('''
 log4j {
     appender {
-        stdout("org.apache.log4j.ConsoleAppender") {        
+        stdout("org.apache.log4j.ConsoleAppender") {
             layout="org.apache.log4j.PatternLayout"
         }
     }
@@ -323,12 +339,13 @@ environments {
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
     }
 
+    @Test
     void testFlattenConfig() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
 log4j {
     appender {
-        stdout("org.apache.log4j.ConsoleAppender") {        
+        stdout("org.apache.log4j.ConsoleAppender") {
             layout="org.apache.log4j.PatternLayout"
         }
     }
@@ -354,6 +371,7 @@ log4j {
     }
 
 
+    @Test
     void testToProperties() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
@@ -395,13 +413,14 @@ log4j {
         assertFalse props.containsKey('smtp.dummy')
     }
 
+    @Test
     void testConfigTokensAsStrings() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
 log4j {
     appender.stdout = "org.apache.log4j.ConsoleAppender"
     appender."stdout.layout"="org.apache.log4j.PatternLayout"
-    rootLogger="error,stdout"    
+    rootLogger="error,stdout"
 }
         ''')
 
@@ -411,6 +430,7 @@ log4j {
         assertEquals "error,stdout", config.log4j.rootLogger
     }
 
+    @Test
     void testConfigInterReferencing() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
@@ -422,11 +442,12 @@ log4j {
         assertEquals 10, config.var.two
     }
 
+    @Test
     void testSerializeConfig() {
         def text = '''
 log4j {
     appender.stdout="org.apache.log4j.ConsoleAppender"
-    appender.'stdout.layout'="org.apache.log4j.PatternLayout"        
+    appender.'stdout.layout'="org.apache.log4j.PatternLayout"
     rootLogger="error,stdout"
     logger {
         org.codehaus.groovy.grails="info,stdout"
@@ -459,6 +480,7 @@ log4j {
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
     }
 
+    @Test
     void testCloneConfig() {
         ConfigObject original = new ConfigSlurper().parse('foo { bar = "barValue" }')
         ConfigObject clone = original.clone()
@@ -466,6 +488,7 @@ log4j {
         assert clone.foo.bar == "barValue"
     }
 
+    @Test
     void testNotProperlyNestedPropertiesArePreserved() throws IOException {
         Properties props = new Properties()
         props.load(ConfigSlurperTest.class.getResourceAsStream("system.properties"))
@@ -480,9 +503,10 @@ log4j {
         assertEquals("sa", props.get("catalog.prov.db.user"))
     }
 
+    @Test
     void testSameElementNestingWithoutDuplication() {
-        def cfg = """ 
-            a { b { a { foo = 1 } } } 
+        def cfg = """
+            a { b { a { foo = 1 } } }
             a.foo = 2
             a { b { a { bar = 3 } } }
         """
@@ -497,6 +521,7 @@ log4j {
      * Test for GROOVY-3186:
      * ConfigSlurper only allows a single block for any given name
      */
+    @Test
     void testTwoSameBlocks() {
         def config = new ConfigSlurper().parse("""
             topNode {
@@ -528,6 +553,7 @@ log4j {
     /**
      * Test for GROOVY-5370: ConfigSlurper - multiple environment blocks broken
      */
+    @Test
     void testMultipleToplevelEnvironmentBlocksForSameEnvironment() {
         def config = new ConfigSlurper('development').parse("""
             environments {
@@ -548,6 +574,7 @@ log4j {
     /**
      * Test for GROOVY-5370: ConfigSlurper - multiple environment blocks broken
      */
+    @Test
     void testMultipleEnvironmentBlocksOnDifferentLevelsForSameEnvironment() {
         def config = new ConfigSlurper('development').parse("""
             environments {
@@ -567,6 +594,7 @@ log4j {
         assert config == [a:1, blah:[c: 3]]
     }
 
+    @Test
     void testVariableAssignments() {
         def conf = '''
           griffon.cli.verbose = true
@@ -586,6 +614,7 @@ log4j {
         assert !config.projects.custom.griffon.rt.verbose
     }
 
+    @Test
     void testCustomConditionalBlocks() {
         def conf = '''
           griffon.cli.verbose = true
@@ -609,6 +638,7 @@ log4j {
         assert !config.griffon.cli.verbose
     }
 
+    @Test
     void testNestedConditionaBlocks() {
         def conf = '''
           var = 1
@@ -664,6 +694,7 @@ log4j {
         assert config.var == 1
     }
 
+    @Test
     void testConditionalOverrides() {
         def conf = '''
           environments {

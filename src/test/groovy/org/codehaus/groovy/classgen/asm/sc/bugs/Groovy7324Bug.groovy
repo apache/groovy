@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy7324Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy7324Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testInferenceOfListDotOperator() {
         assertScript '''
             class Account {
@@ -44,6 +46,7 @@ class Groovy7324Bug extends StaticTypeCheckingTestCase implements StaticCompilat
         '''
     }
 
+    @Test
     void testInferenceOfSpreadDotOperator() {
         assertScript '''
             class Account {

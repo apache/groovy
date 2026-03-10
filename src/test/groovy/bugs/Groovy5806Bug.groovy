@@ -18,16 +18,17 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 import java.util.concurrent.Callable
 
-class Groovy5806Bug extends GroovyTestCase {
+class Groovy5806Bug {
 
     void doWork(code) {
         code.call();
     }
 
+    @Test
     void testCallSiteCachingOfCallMethod() {
         try {
             ExpandoMetaClass.enableGlobally()

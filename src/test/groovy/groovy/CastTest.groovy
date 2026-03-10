@@ -18,12 +18,14 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class CastTest extends GroovyTestCase {
+
+class CastTest {
 
     Short b = 1
 
+    @Test
     void testCast() {
         def x = (Short) 5
 
@@ -32,6 +34,7 @@ class CastTest extends GroovyTestCase {
         methodWithShort(x)
     }
 
+    @Test
     void testImplicitCast() {
         Short x = 6
 
@@ -43,6 +46,7 @@ class CastTest extends GroovyTestCase {
         assert x.class == Short , "Type is ${x.class}"
     }
 
+    @Test
     void testImplicitCastOfField() {
 
         assert b.class == Short , "Type is ${b.class}"
@@ -52,12 +56,14 @@ class CastTest extends GroovyTestCase {
         assert b.class == Short , "Type is ${b.class}"
     }
 
+    @Test
     void testIntCast() {
         def i = (Integer) 'x'
 
         assert i instanceof Integer
     }
 
+    @Test
     void testCharCompare() {
         def i = (Integer) 'x'
         def c = 'x'
@@ -73,6 +79,7 @@ class CastTest extends GroovyTestCase {
         assert 'x' == i
     }
 
+    @Test
     void testCharCast() {
         def c = (Character) 'x'
 
@@ -94,6 +101,7 @@ class CastTest extends GroovyTestCase {
         assert idx == 2
     }
     // br
+    @Test
     void testPrimitiveCasting() {
         def d = 1.23
         def i1 = (int)d
@@ -109,6 +117,7 @@ class CastTest extends GroovyTestCase {
 
     }
 
+    @Test
     void testAsSet() {
         def mySet = [2, 3, 4, 3] as SortedSet
         assert mySet instanceof SortedSet
@@ -141,6 +150,7 @@ class CastTest extends GroovyTestCase {
         assert mySet == new HashSet([ "a" ])
     }
 
+    @Test
     void testCastToAbstractClass() {
         def closure = { 42 }
         def myList = closure as AbstractList
@@ -148,6 +158,7 @@ class CastTest extends GroovyTestCase {
         assert myList.size() == 42
     }
 
+    @Test
     void testArrayCast() {
         def a = '1' as Integer
         assert [a, a.class] == [1, Integer]
@@ -176,6 +187,7 @@ class CastTest extends GroovyTestCase {
         assert sa.class.componentType == String
     }
 
+    @Test
     void testCastString() {
         // this test must pass on 1.7.x
         // see GROOVY-3978, GROOVY-4657, GROOVY-4669
@@ -183,6 +195,7 @@ class CastTest extends GroovyTestCase {
         assert val == "abcde".bytes
     }
 
+    @Test
     void testCastEnum() {
         CastEnum val;
         val = 'value1'

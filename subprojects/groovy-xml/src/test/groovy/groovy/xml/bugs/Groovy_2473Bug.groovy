@@ -18,10 +18,13 @@
  */
 package groovy.xml.bugs
 
-import groovy.test.GroovyTestCase
 import groovy.xml.StreamingMarkupBuilder
+import org.junit.jupiter.api.Test
 
-class Groovy_2473Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+class Groovy_2473Bug {
+    @Test
     void testBug() {
         def w = new StringWriter()
         def b = new StreamingMarkupBuilder()

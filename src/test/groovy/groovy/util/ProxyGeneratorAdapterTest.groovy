@@ -18,10 +18,11 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter
 
-class ProxyGeneratorAdapterTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+class ProxyGeneratorAdapterTest {
     void testShouldCreateProxy() {
         def map = ['toString': { 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Object, null, this.class.classLoader, false, null)

@@ -18,7 +18,7 @@
  */
 package bugs
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
@@ -41,7 +41,7 @@ final class Groovy7620 {
             new B().test()
         '''
 
-        assert err =~ /The method 'java.lang.Object getFoo\(\)' is already defined in class 'B'/
+        assert err.message =~ /The method 'java.lang.Object getFoo\(\)' is already defined in class 'B'/
     }
 
     @Test
@@ -58,6 +58,6 @@ final class Groovy7620 {
             new D().test()
         '''
 
-        assert err =~ /The method 'java.lang.Object getFoo\(\)' is already defined in class 'D'/
+        assert err.message =~ /The method 'java.lang.Object getFoo\(\)' is already defined in class 'D'/
     }
 }

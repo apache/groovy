@@ -18,7 +18,8 @@
  */
 package org.codehaus.groovy.jsr223
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 import javax.script.Invocable
 import javax.script.ScriptContext
@@ -28,38 +29,50 @@ import javax.script.ScriptEngineManager
 import javax.script.ScriptException
 import javax.script.SimpleScriptContext
 
+import static groovy.test.GroovyAssert.assertScript
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertNotNull
+import static org.junit.jupiter.api.Assertions.assertTrue
+
 /**
  * Tests JSR-223 Groovy engine implementation.
  */
-class JSR223Test extends GroovyTestCase {
+class JSR223Test {
     protected ScriptEngineManager manager
 
     static final Object[] EMPTY_ARGS = new Object[0]
 
-    protected void setUp() {
+    @BeforeEach
+    void setUp() {
         manager = new ScriptEngineManager()
     }
 
+    @Test
     void testGetEngineByEngineName() {
         ScriptEngine engine = manager.getEngineByName("groovy")
         assertNotNull(engine)
     }
 
+    @Test
     void testGetEngineByLanguageName() {
         ScriptEngine engine = manager.getEngineByName("Groovy")
         assertNotNull(engine)
     }
 
+    @Test
     void testGetEngineByExtension() {
         ScriptEngine engine = manager.getEngineByExtension("groovy")
         assertNotNull(engine)
     }
 
+    @Test
     void testGetEngineByMIMEType() {
         ScriptEngine engine = manager.getEngineByMimeType("application/x-groovy")
         assertNotNull(engine)
     }
 
+    @Test
     void testCheckParameters() {
         ScriptEngine engine = manager.getEngineByName("groovy")
         assertNotNull(engine)
@@ -73,7 +86,7 @@ class JSR223Test extends GroovyTestCase {
         while (names.hasNext()) {
             if (names.next().equals("groovy")) gotname = true
         }
-        assertTrue("Short name missing from factory", gotname)
+        assertTrue(gotname, "Short name missing from factory")
 
         assertEquals("Groovy", factory.getLanguageName())
         assertNotNull(factory.getEngineVersion())
@@ -83,6 +96,7 @@ class JSR223Test extends GroovyTestCase {
         assertEquals(GroovySystem.getVersion(), factory.getLanguageVersion())
     }
 
+    @Test
     void testSimpleExpr() {
         ScriptEngine engine = manager.getEngineByName("groovy")
         assertNotNull(engine)
@@ -90,17 +104,19 @@ class JSR223Test extends GroovyTestCase {
         assertEquals(Integer.valueOf(3), engine.eval("1 + 2"))
     }
 
+    @Test
     void testSyntaxError() {
         ScriptEngine engine = manager.getEngineByName("groovy")
         assertNotNull(engine)
 
         try {
             Object x =  engine.eval("z")
-            assertFalse("Didn't get ScriptException for syntax error", true)
+            assertFalse(true, "Didn't get ScriptException for syntax error")
         } catch (ScriptException e) {
         }
     }
 
+    @Test
     void testEmptyScriptWithJustImports() {
         ScriptEngine engine = manager.getEngineByName("groovy")
         assertNotNull(engine)
@@ -112,8 +128,9 @@ class JSR223Test extends GroovyTestCase {
 
     /**
      * Fix for GROOVY-3669:
-     * Can't use several times the same JSR-223 ScriptContext for different groovy script 
+     * Can't use several times the same JSR-223 ScriptContext for different groovy script
      */
+    @Test
     void testGroovy3669() {
         def scriptContext = new SimpleScriptContext()
 
@@ -142,6 +159,7 @@ class JSR223Test extends GroovyTestCase {
      * Fix for GROOVY-3816
      * Evaluating a class should return the class, and not attempt to run it
      */
+    @Test
     void testGroovy3816() {
         def engine = new ScriptEngineManager().getEngineByName('groovy')
 
@@ -154,6 +172,7 @@ class JSR223Test extends GroovyTestCase {
         assert instance.class.isAssignableFrom(clazz)
     }
 
+    @Test
     void testInvokeFunctionRedirectsOutputToContextWriter() {
         def engine = manager.getEngineByName('groovy')
         StringWriter writer = new StringWriter()
@@ -172,6 +191,7 @@ class JSR223Test extends GroovyTestCase {
         assert writer2.toString() == 'Hello World!'
     }
 
+    @Test
     void testInvokeFunctionRedirectsOutputToContextOut() {
         def engine = manager.getEngineByName('groovy')
         StringWriter writer = new StringWriter()
@@ -194,6 +214,7 @@ class JSR223Test extends GroovyTestCase {
         assert writer2.toString() == 'Hello World!'
     }
 
+    @Test
     void testEngineContextAccessibleToScript() {
         def engine = manager.getEngineByName('groovy')
         ScriptContext engineContext = engine.getContext()
@@ -202,6 +223,7 @@ class JSR223Test extends GroovyTestCase {
         assert engine.eval(code).answer == true
     }
 
+    @Test
     void testContextBindingOverridesEngineContext() {
         def engine = manager.getEngineByName('groovy')
         ScriptContext engineContext = engine.getContext()
@@ -212,12 +234,14 @@ class JSR223Test extends GroovyTestCase {
         assert engine.eval(code).answer == 'bar'
     }
 
+    @Test
     void testScriptFactorySameAsEngineFactory() {
         ScriptEngineFactory factory = new GroovyScriptEngineFactory()
         ScriptEngine engine = factory.getScriptEngine()
         assert engine.getFactory() == factory
     }
 
+    @Test
     void testGetInterfaceScenarios() {
         assertScript '''
         interface Test { def foo(); def bar(); def baz() }
@@ -243,6 +267,7 @@ class JSR223Test extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testGroovy9430() {
         ScriptEngineFactory factory = new GroovyScriptEngineFactory()
         ScriptEngine engine = factory.getScriptEngine()

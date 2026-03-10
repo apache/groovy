@@ -18,14 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
-class CustomMetaClassTest extends GroovyTestCase {
+final class CustomMetaClassTest {
 
-    @Override
-    protected void setUp() {
-        super.setUp()
-
+    @BeforeEach
+    void setUp() {
         ExpandoMetaClass.disableGlobally()
 
         def reg = GroovySystem.metaClassRegistry
@@ -34,6 +33,7 @@ class CustomMetaClassTest extends GroovyTestCase {
         reg.removeMetaClass(this.metaClass.class)
     }
 
+    @Test
     void testReplaceMetaClass() {
         /*
          * Constructing first instance before metaclass replacement
@@ -68,11 +68,13 @@ class CustomMetaClassTest extends GroovyTestCase {
         assert stored instanceof MetaClassImpl
     }
 
+    @Test
     void testNormalCreated() {
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == metaClass.class
         assert MetaClassImpl == metaClass.delegate.class
     }
 
+    @Test
     void testEmcCreated() {
         GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
         ExpandoMetaClass.enableGlobally()
@@ -87,6 +89,7 @@ class CustomMetaClassTest extends GroovyTestCase {
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
     }
 
+    @Test
     void testStaticMetaClass() {
         // Custom metaclass created
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == metaClass.class
@@ -130,16 +133,14 @@ class CustomMetaClassTest extends GroovyTestCase {
         assert groovy.runtime.metaclass.bugs.CustomMetaClassTestMetaClass == getMetaClass().delegate.class
     }
 
-}
+    static class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass {
+        MyDelegatingMetaClass(final Class a_class) {
+            super(a_class);
+            initialize()
+        }
 
-class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass {
-    MyDelegatingMetaClass(final Class a_class) {
-        super(a_class);
-        initialize()
+        public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments) {
+            return "changed ${super.invokeMethod(a_object, a_methodName, a_arguments)}"
+        }
     }
-
-    public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments) {
-        return "changed ${super.invokeMethod(a_object, a_methodName, a_arguments)}"
-    }
 }
-

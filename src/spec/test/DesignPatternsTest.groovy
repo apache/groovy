@@ -16,10 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class DesignPatternsTest extends CompilableTestSupport {
+final class DesignPatternsTest extends CompilableTestSupport {
 
+    @Test
     void testAbstractFactory() {
         shouldCompile '''
             // tag::abstract_factory_example1[]
@@ -124,6 +127,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAdapterDelegation() {
         shouldCompile '''
             // tag::adapter_delegation_classes[]
@@ -170,6 +174,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testAdapterInheritanceClosuresExpandoMetaClass() {
         shouldCompile '''
             // tag::adapter_inheritance_classes[]
@@ -243,6 +248,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testBouncerNullCheck() {
         shouldCompile '''
             // tag::bouncer_null_check[]
@@ -277,6 +283,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testBouncerValidation() {
         shouldCompile '''
             // tag::bouncer_validation[]
@@ -324,6 +331,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testCommand() {
         shouldCompile '''
             // tag::command_traditional[]
@@ -470,6 +478,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testChainOfResponsibility() {
         shouldCompile '''
             // tag::chain_of_responsibility[]
@@ -689,6 +698,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testCompositeCode() {
         shouldCompile '''
             // tag::composite_code[]
@@ -727,6 +737,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDecoratorLogger() {
         shouldCompile '''
             // tag::decorator_logger_class[]
@@ -847,6 +858,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDecoratorCalc() {
         shouldCompile '''
             // tag::decorator_calc_class[]
@@ -903,6 +915,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDecoratorSql() {
         shouldCompile '''
             @Grab('org.apache.groovy:groovy-sql:4.0.0-beta-2')
@@ -928,6 +941,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDecoratorSpring() {
         shouldCompile '''
             package util // to match bean wiring
@@ -954,62 +968,60 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDecoratorGpars() {
-        try {
-            shouldCompile '''
-                // tag::decorator_gpars[]
-                @Grab('org.codehaus.gpars:gpars:0.10')
-                import static groovyx.gpars.GParsPool.withPool
+        shouldCompile '''
+            // tag::decorator_gpars[]
+            @Grab('org.codehaus.gpars:gpars:0.10')
+            import static groovyx.gpars.GParsPool.withPool
 
-                interface Document {
-                    void print()
-                    String getText()
-                }
+            interface Document {
+                void print()
+                String getText()
+            }
 
-                class DocumentImpl implements Document {
-                    def document
-                    void print() { println document }
-                    String getText() { document }
-                }
+            class DocumentImpl implements Document {
+                def document
+                void print() { println document }
+                String getText() { document }
+            }
 
-                def words(String text) {
-                    text.replaceAll('[^a-zA-Z]', ' ').trim().split("\\\\s+")*.toLowerCase()
-                }
+            def words(String text) {
+                text.replaceAll('[^a-zA-Z]', ' ').trim().split("\\\\s+")*.toLowerCase()
+            }
 
-                def avgWordLength = {
-                    def words = words(it.text)
-                    sprintf "Avg Word Length: %4.2f", words*.size().sum() / words.size()
-                }
-                def modeWord = {
-                    def wordGroups = words(it.text).groupBy {it}.collectEntries { k, v -> [k, v.size()] }
-                    def maxSize = wordGroups*.value.max()
-                    def maxWords = wordGroups.findAll { it.value == maxSize }
-                    "Mode Word(s): ${maxWords*.key.join(', ')} ($maxSize occurrences)"
-                }
-                def wordCount = { d -> "Word Count: " + words(d.text).size() }
+            def avgWordLength = {
+                def words = words(it.text)
+                sprintf "Avg Word Length: %4.2f", words*.size().sum() / words.size()
+            }
+            def modeWord = {
+                def wordGroups = words(it.text).groupBy {it}.collectEntries { k, v -> [k, v.size()] }
+                def maxSize = wordGroups*.value.max()
+                def maxWords = wordGroups.findAll { it.value == maxSize }
+                "Mode Word(s): ${maxWords*.key.join(', ')} ($maxSize occurrences)"
+            }
+            def wordCount = { d -> "Word Count: " + words(d.text).size() }
 
-                def asyncDecorator(Document d, Closure c) {
-                    ProxyGenerator.INSTANCE.instantiateDelegate([print: {
-                        withPool {
-                            def result = c.callAsync(d)
-                            d.print()
-                            println result.get()
-                        }
-                    }], [Document], d)
-                }
+            def asyncDecorator(Document d, Closure c) {
+                ProxyGenerator.INSTANCE.instantiateDelegate([print: {
+                    withPool {
+                        def result = c.callAsync(d)
+                        d.print()
+                        println result.get()
+                    }
+                }], [Document], d)
+            }
 
-                Document d = asyncDecorator(asyncDecorator(asyncDecorator(
-                        new DocumentImpl(document:"This is the file with the words in it\\n\\t\\nDo you see the words?\\n"),
-                //        new DocumentImpl(document: new File('AsyncDecorator.groovy').text),
-                        wordCount), modeWord), avgWordLength)
-                d.print()
-                // end::decorator_gpars[]
-            '''
-        } catch (UnsupportedClassVersionError e) {
-            // running on an older JDK
-        }
+            Document d = asyncDecorator(asyncDecorator(asyncDecorator(
+                    new DocumentImpl(document:"This is the file with the words in it\\n\\t\\nDo you see the words?\\n"),
+            //        new DocumentImpl(document: new File('AsyncDecorator.groovy').text),
+                    wordCount), modeWord), avgWordLength)
+            d.print()
+            // end::decorator_gpars[]
+        '''
     }
 
+    @Test
     void testDelegationExpandoMetaClass() {
         shouldCompile '''
             // tag::delegation_delegator[]
@@ -1081,6 +1093,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testDelegationAnnotation() {
         shouldCompile '''
             // tag::delegation_annotation[]
@@ -1106,6 +1119,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testFlyweight() {
         shouldCompile '''
             // tag::flyweight_boeing797[]
@@ -1165,6 +1179,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testIterator() {
         shouldCompile '''
             // tag::iterator_example[]
@@ -1188,6 +1203,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testLoanMyResource() {
         shouldCompile '''
             // tag::loan_my_resource_example[]
@@ -1242,6 +1258,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testMonoids() {
         assertScript '''
         // tag::monoids_intro[]
@@ -1352,6 +1369,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testNullObjectSimpleExample() {
         shouldCompile '''
             // tag::null_object_simple_example[]
@@ -1393,6 +1411,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testNullObjectTreeExample() {
         shouldCompile '''
             // tag::null_object_tree_example[]
@@ -1428,6 +1447,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testNullObjectTreeExample2() {
         shouldCompile '''
             // tag::null_object_tree_example2[]
@@ -1469,6 +1489,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testObserverExample() {
         assertScript '''
             // tag::observer_classic[]
@@ -1628,6 +1649,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testPimpMyLibraryExample() {
         shouldCompile '''
             // tag::pimp_my_library_example[]
@@ -1653,6 +1675,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testProxyClient() {
         shouldCompile '''
             // tag::proxy_client[]
@@ -1675,6 +1698,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testProxyServer() {
         shouldCompile '''
             // tag::proxy_server[]
@@ -1700,6 +1724,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSingletonVoteCollector() {
         shouldCompile '''
             // tag::singleton_vote_collector[]
@@ -1731,6 +1756,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSingletonMetaProgramming() {
         shouldCompile '''
             // tag::singleton_meta_programming_classes[]
@@ -1771,6 +1797,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSingletonGuice() {
         shouldCompile '''
             // tag::singleton_guice[]
@@ -1812,6 +1839,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSingletonGuice2() {
         shouldCompile '''
             // tag::singleton_guice2[]
@@ -1839,6 +1867,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testSingletonSpring() {
         shouldCompile '''
             // tag::singleton_spring[]
@@ -1882,6 +1911,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStateExample() {
         shouldCompile '''
             // tag::state_example[]
@@ -1966,6 +1996,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStateVariation1() {
         shouldCompile '''
             // tag::state_variation1_interface[]
@@ -1979,6 +2010,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStateVariation2() {
         shouldCompile '''
             interface State { }
@@ -1999,6 +2031,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStateVariation3() {
         shouldCompile '''
             // tag::state_variation2_classes[]
@@ -2089,6 +2122,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStateVariation4() {
         shouldCompile '''
             // tag::state_variation31[]
@@ -2189,12 +2223,11 @@ class DesignPatternsTest extends CompilableTestSupport {
                 }
             }
             // end::state_variation32[]
-            import groovy.test.GroovyTestCase
             // tag::state_variation33[]
-            class StatePatternDslTest extends GroovyTestCase {
+            class StatePatternDslTest {
                 private fsm
 
-                protected void setUp() {
+                void setUp() {
                     fsm = FiniteStateMachine.newInstance('offline')
                     def recorder = fsm.record()
                     recorder.on('connect').from('offline').to('online')
@@ -2234,6 +2267,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStrategyTraditional() {
         assertScript '''
             // tag::strategy_traditional[]
@@ -2275,6 +2309,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStrategyGroovyWay() {
         assertScript '''
             // tag::strategy_groovy_way[]
@@ -2297,6 +2332,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStrategyLambdaWithSAMInterface() {
         assertScript '''
             // tag::strategy_lambdas_with_explicit_interface[]
@@ -2323,6 +2359,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testStrategyLambdaBiFunction() {
         assertScript '''
             // tag::strategy_lambdas_using_bifunction[]
@@ -2347,6 +2384,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testTemplateMethod() {
         assertScript '''
             // tag::template_method_example[]
@@ -2376,6 +2414,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testTemplateMethod2() {
         assertScript '''
             // tag::template_method_example2[]
@@ -2395,6 +2434,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testTemplateMethod3() {
         assertScript '''
             // tag::template_method_example5[]
@@ -2405,6 +2445,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVisitorSimpleExample() {
         assertScript '''
             import groovy.transform.ToString
@@ -2492,6 +2533,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVisitorSimpleExample2() {
         assertScript '''
             import groovy.transform.ToString
@@ -2539,6 +2581,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVisitorSimpleExample3() {
         assertScript '''
             import groovy.transform.ToString
@@ -2596,6 +2639,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVisitorAdvancedExample() {
         assertScript '''
             // tag::visitor_advanced_example[]
@@ -2648,6 +2692,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVisitorAdvancedExample3() {
         assertScript '''
             // tag::visitor_advanced_example3[]
@@ -2704,6 +2749,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testVisitorAdvancedExample4() {
         assertScript '''
             // tag::visitor_advanced_example4[]
@@ -2744,6 +2790,7 @@ class DesignPatternsTest extends CompilableTestSupport {
       '''
     }
 
+    @Test
     void testVisitorAdvancedExample5() {
         assertScript '''
             // tag::visitor_advanced_example5[]

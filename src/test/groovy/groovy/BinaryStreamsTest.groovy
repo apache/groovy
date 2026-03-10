@@ -18,13 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test case for DefaultGroovyMethods involving Object streams and data streams.
  */
-final class BinaryStreamsTest extends GroovyTestCase {
+final class BinaryStreamsTest {
 
+    @Test
     void testNewObjectStream() {
         def temp1 = tempFile
         def oos = temp1.newObjectOutputStream()
@@ -46,6 +48,7 @@ final class BinaryStreamsTest extends GroovyTestCase {
         ois.close()
     }
 
+    @Test
     void testWithObjectStream() {
         def temp2 = tempFile
         temp2.withObjectOutputStream { oos ->
@@ -61,6 +64,7 @@ final class BinaryStreamsTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testNewDataStream() {
         def temp3 = tempFile
         def dos = temp3.newDataOutputStream()
@@ -82,6 +86,7 @@ final class BinaryStreamsTest extends GroovyTestCase {
         dis.close()
     }
 
+    @Test
     void testWithDataStream() {
         def temp4 = tempFile
         temp4.withDataOutputStream { dos ->

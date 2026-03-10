@@ -17,9 +17,6 @@
  *  under the License.
  */
 package groovy
-
-import groovy.test.GroovyTestCase
-
 /**
  * This test case is added to ensure an exception thrown from inside
  * groovy does always contain a valid line number and file name for
@@ -27,7 +24,7 @@ import groovy.test.GroovyTestCase
  *
  * See also GROOVY-726
  */
-class StackTraceTest extends GroovyTestCase {
+class StackTraceTest {
 
 
     public void testTrace() {

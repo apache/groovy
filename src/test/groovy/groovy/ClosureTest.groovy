@@ -18,8 +18,9 @@
  */
 package groovy
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
-import org.junit.Test
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -484,72 +485,6 @@ final class ClosureTest {
         '''
     }
 
-    @Test
-    void testStaticInnerClassOwnerWithPropertyMissingImplementation() {
-        def err = shouldFail MultipleCompilationErrorsException, '''
-            class ClosureTestA {
-                static class ClosureTestB {
-                    def propertyMissing(String myName, Object myValue) {
-                        return myValue
-                    }
-
-                    def propertyMissing(String myName) {
-                        return 42
-                    }
-
-                    def methodMissing(String myName, Object myArgs) {
-                        return 42
-                    }
-                }
-            }
-        '''
-
-        assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
-        assert err.message.contains('"propertyMissing" implementations are not supported on static inner classes as a synthetic version of "propertyMissing" is added during compilation for the purpose of outer class delegation.')
-    }
-
-    @Test
-    void testInnerClassOwnerWithPropertyMissingImplementation() {
-        assertScript '''
-            class ClosureTestA {
-                class ClosureTestB {
-                    def propertyMissing(String myName, Object myValue) {
-                        return myValue
-                    }
-
-                    def propertyMissing(String myName) {
-                        return 42
-                    }
-
-                    def methodMissing(String myName, Object myArgs) {
-                        return 42
-                    }
-                }
-            }
-
-            def a = new ClosureTestA()
-            def b = new ClosureTestA.ClosureTestB(a)
-        '''
-    }
-
-    @Test
-    void testStaticInnerClassHierarchyWithMethodMissing() {
-        def err = shouldFail MultipleCompilationErrorsException, '''
-            class ClosureTestA {
-                static class ClosureTestB {
-                    def methodMissing(String myName, Object myArgs) {
-                        return 42
-                    }
-                }
-
-                static class ClosureTestB1 extends ClosureTestB {
-                }
-            }
-        '''
-
-        assert err.message.contains('"methodMissing" implementations are not supported on static inner classes as a synthetic version of "methodMissing" is added during compilation for the purpose of outer class delegation.')
-    }
-
     // GROOVY-10943
     @Test
     void testClosureUnderscorePlaceholder() {
@@ -564,150 +499,148 @@ final class ClosureTest {
     }
 
     // GROOVY-2433, GROOVY-3073, GROOVY-9987, GROOVY-11128
-    @Test
-    void testClosureAccessToEnclosingClassPrivateMethod() {
-        for (who in ['this.', 'owner.', 'thisObject.', '']) {
-            assertScript """
-                class C {
-                    def getIds() {
-                        populateIds()
+    @ParameterizedTest
+    @ValueSource(strings=['this.', 'owner.', 'thisObject.', ''])
+    void testClosureAccessToEnclosingClassPrivateMethod(String who) {
+        assertScript """
+            class C {
+                def getIds() {
+                    populateIds()
+                }
+                def populateIds = { ->
+                    ${who}sort([ 1, 5, 3, 4, 2 ])
+                }
+                private sort(list) {
+                    list.sort{ one, two -> one <=> two }
+                }
+            }
+
+            class D extends C {
+                void test() {
+                    assert ids == [1,2,3,4,5]
+                }
+            }
+
+            new D().test()
+        """
+
+        assertScript """
+            class C {
+                protected String protectedMethod() {
+                    def closure = { ->
+                        ${who}privateMethod()
                     }
-                    def populateIds = { ->
-                        ${who}sort([ 1, 5, 3, 4, 2 ])
-                    }
-                    private sort(list) {
-                        list.sort{ one, two -> one <=> two }
+                    closure()
+                }
+                private String privateMethod() {
+                    'hello world'
+                }
+            }
+
+            class D extends C {
+                void test() {
+                    def result = protectedMethod()
+                    assert result == 'hello world'
+                }
+            }
+
+            new D().test()
+        """
+
+        assertScript """
+            class C {
+                def publicMethod() {
+                    [1].each {
+                        ${who}privateStaticMethod()
                     }
                 }
-
-                class D extends C {
-                    void test() {
-                        assert ids == [1,2,3,4,5]
-                    }
+                private static privateStaticMethod() {
+                    'hello world'
                 }
+            }
 
-                new D().test()
-            """
-
-            assertScript """
-                class C {
-                    protected String protectedMethod() {
-                        def closure = { ->
-                            ${who}privateMethod()
-                        }
-                        closure()
-                    }
-                    private String privateMethod() {
-                        'hello world'
-                    }
+            class D extends C {
+                void test() {
+                    publicMethod()
                 }
+            }
 
-                class D extends C {
-                    void test() {
-                        def result = protectedMethod()
-                        assert result == 'hello world'
-                    }
-                }
-
-                new D().test()
-            """
-
-            assertScript """
-                class C {
-                    def publicMethod() {
-                        [1].each {
-                            ${who}privateStaticMethod()
-                        }
-                    }
-                    private static privateStaticMethod() {
-                        'hello world'
-                    }
-                }
-
-                class D extends C {
-                    void test() {
-                        publicMethod()
-                    }
-                }
-
-                new D().test()
-            """
-        }
+            new D().test()
+        """
     }
 
     // GROOVY-3142, GROOVY-5438, GROOVY-6335, GROOVY-11128
-    @Test
-    void testClosureAccessToEnclosingClassPrivateField() {
-        for (who in ['this.@', 'this.', 'owner.', 'thisObject.', '']) {
-            assertScript """
-                class C {
-                    String data
-                    C(arg) {
-                        arg.each() { ${who}data = it } // MissingFieldException
+    @ParameterizedTest
+    @ValueSource(strings=['this.@', 'this.', 'owner.', 'thisObject.', ''])
+    void testClosureAccessToEnclosingClassPrivateField(String who) {
+        assertScript """
+            class C {
+                String data
+                C(arg) {
+                    arg.each() { ${who}data = it } // MissingFieldException
+                }
+            }
+
+            class D extends C {
+                D(arg) {
+                    super(arg)
+                }
+            }
+
+            new D(["test"])
+        """
+
+        assertScript """
+            class C {
+                private String data
+                C(arg) {
+                    arg.each() { ${who}data = it } // ReadOnlyPropertyException
+                }
+                String getData() { this.@data }
+                private void setData(String value) { this.@data = value }
+            }
+
+            class D extends C {
+                D(arg) {
+                    super(arg)
+                }
+            }
+
+            new D(["test"])
+        """
+
+        assertScript """
+            class C {
+                private String string = 'foo'
+                def test(List<String> strings) {
+                    strings.collect { ${who}string + it }
+                }
+            }
+
+            def result = new C().test(['bar','baz'])
+            assert result == ['foobar','foobaz']
+
+            class D extends C {
+            }
+
+            result = new D().test(['bar','baz'])
+            assert result == ['foobar','foobaz']
+        """
+
+        assertScript """
+            @groovy.util.logging.Log
+            class C {
+                void test() {
+                    1.times {
+                        ${who}log.info('sth')
                     }
                 }
+            }
 
-                class D extends C {
-                    D(arg) {
-                        super(arg)
-                    }
-                }
+            class D extends C {
+            }
 
-                new D(["test"])
-            """
-
-            assertScript """
-                class C {
-                    private String data
-                    C(arg) {
-                        arg.each() { ${who}data = it } // ReadOnlyPropertyException
-                    }
-                    String getData() { this.@data }
-                    private void setData(String value) { this.@data = value }
-                }
-
-                class D extends C {
-                    D(arg) {
-                        super(arg)
-                    }
-                }
-
-                new D(["test"])
-            """
-
-            assertScript """
-                class C {
-                    private String string = 'foo'
-                    def test(List<String> strings) {
-                        strings.collect { ${who}string + it }
-                    }
-                }
-
-                def result = new C().test(['bar','baz'])
-                assert result == ['foobar','foobaz']
-
-                class D extends C {
-                }
-
-                result = new D().test(['bar','baz'])
-                assert result == ['foobar','foobaz']
-            """
-
-            assertScript """
-                @groovy.util.logging.Log
-                class C {
-                    void test() {
-                        1.times {
-                            ${who}log.info('sth')
-                        }
-                    }
-                }
-
-                class D extends C {
-                }
-
-                new D().test()
-            """
-        }
+            new D().test()
+        """
     }
 }

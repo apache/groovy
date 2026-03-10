@@ -19,13 +19,15 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.CoercionSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : coercions.
  */
 final class CoercionStaticCompileTests extends CoercionSTCTest implements StaticCompilationTestSupport {
 
-    @Override // GROOVY-11769
+    // GROOVY-11769
+    @Override @Test
     void testCastObjectToInterface() {
         super.testCastObjectToInterface()
         String bytecode = astTrees.values()[0][1]

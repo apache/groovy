@@ -18,19 +18,22 @@
  */
 package groovy.tree
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Simple test of tree walking for Nodes
  */
-class NavigationNodeTest extends GroovyTestCase {
+class NavigationNodeTest {
 
+    @Test
     void testDepthFirst() {
         def tree = createTreeFromNodeBuilder()
         def names = tree.depthFirst().collect { it.name() }
         assert names == ['a', 'b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
     }
 
+    @Test
     void testBreadthFirst() {
         def tree = createTreeFromNodeBuilder()
         def names = tree.breadthFirst().collect { it.name() }

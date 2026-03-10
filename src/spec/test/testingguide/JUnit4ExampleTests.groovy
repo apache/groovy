@@ -18,11 +18,11 @@
  */
 package testingguide
 // tag::junit4_example[]
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 
-class JUnit4ExampleTests {
+final class JUnit4ExampleTests {
 
     @Test
     void indexOutOfBoundsAccess() {

@@ -18,33 +18,42 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-import static groovy.util.GroovyCollections.*
+import static groovy.util.GroovyCollections.combinations
+import static groovy.util.GroovyCollections.max
+import static groovy.util.GroovyCollections.min
+import static groovy.util.GroovyCollections.sum
+import static groovy.util.GroovyCollections.transpose
 
 /**
 * Tests GroovyCollections
 */
-class GroovyCollectionsStarImportTest extends GroovyTestCase {
+class GroovyCollectionsStarImportTest {
 
+    @Test
     void testCombinations() {
         // use Sets because we don't care about order
         Set expected = [['a', 1], ['a', 2], ['b', 1], ['b', 2]]
         assert combinations(['a', 'b'], [1, 2]) as Set == expected
     }
 
+    @Test
     void testTranspose() {
         assert transpose(['a', 'b'], [1, 2, 3]) == [['a', 1], ['b', 2]]
     }
 
+    @Test
     void testMin() {
         assert min('a', 'b') == 'a'
     }
 
+    @Test
     void testMax() {
         assert max(1, 2, 3) == 3
     }
 
+    @Test
     void testSum() {
         assert sum(1, 2, 3, 4) == 10
     }

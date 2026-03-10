@@ -19,10 +19,12 @@
 package bugs;
 
 import org.codehaus.groovy.classgen.TestSupport;
+import org.junit.jupiter.api.Test;
 
-public class ClassInScriptBug extends TestSupport {
+final class ClassInScriptBug extends TestSupport {
 
-    public void testBug() throws Exception {
+    @Test
+    void testBug() throws Exception {
         assertScript("class X {}\nx = new X()\nprintln(x)");
     }
 }

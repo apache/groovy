@@ -19,9 +19,11 @@
 package bugs
 
 import groovy.bugs.TestSupport
+import org.junit.jupiter.api.Test
 
-class IterateOverCustomTypeBug extends TestSupport {
+final class IterateOverCustomTypeBug extends TestSupport {
 
+    @Test
     void testBug() {
         def object = this
 

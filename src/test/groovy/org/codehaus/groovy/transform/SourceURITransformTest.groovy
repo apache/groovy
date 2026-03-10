@@ -19,8 +19,11 @@
 package org.codehaus.groovy.transform
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class SourceURITransformTest extends CompilableTestSupport {
+final class SourceURITransformTest extends CompilableTestSupport {
+
+    @Test
     void testWorksInClass() {
         def groovy = new GroovyClassLoader()
         def compiledClass = groovy.parseClass '''class CompanionThingy {
@@ -40,6 +43,7 @@ class SourceURITransformTest extends CompilableTestSupport {
         assert compiledClass.newInstance().toString().matches(".*data:.*,class%20CompanionThingy%20%7B.*")
     }
 
+    @Test
     void testWorksInScript() {
         assertScript '''// This is script for testWorksInScript
    @groovy.transform.SourceURI def myURI

@@ -19,9 +19,12 @@
 package groovy.xml.bugs;
 
 import org.codehaus.groovy.classgen.TestSupport;
+import org.junit.jupiter.api.Test;
 
-public class MarkupInScriptBug extends TestSupport {
-    public void testBug() throws Exception {
+final class MarkupInScriptBug extends TestSupport {
+
+    @Test
+    void testBug() throws Exception {
         assertScriptFile("src/test/groovy/groovy/xml/script/AtomTestScript.groovy");
     }
 }

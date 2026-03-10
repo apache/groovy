@@ -20,7 +20,7 @@ package org.codehaus.groovy.classgen
 
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class InterfaceTest {
 

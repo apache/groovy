@@ -37,7 +37,6 @@ import java.util.List;
 import static java.util.stream.Collectors.toList;
 import static org.apache.groovy.ast.tools.MethodCallUtils.appendS;
 import static org.apache.groovy.ast.tools.MethodCallUtils.toStringX;
-import static org.codehaus.groovy.ast.ClassHelper.make;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
@@ -58,12 +57,13 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
  * Utility class for working with ConstructorNodes
  */
 public class ConstructorNodeUtils {
-    private static final ClassNode EXCEPTION = make(IllegalArgumentException.class);
-    private static final ClassNode IMMUTABLE_TYPE = make(ImmutableASTTransformation.class);
-    private static final ClassNode STRINGBUILDER_TYPE = make(StringBuilder.class);
-    private static final ClassNode INVOKER_TYPE = make(InvokerHelper.class);
 
     private ConstructorNodeUtils() { }
+
+    private static final ClassNode EXCEPTION_TYPE = ClassHelper.make(IllegalArgumentException.class);
+    private static final ClassNode IMMUTABLE_TYPE = ClassHelper.make(ImmutableASTTransformation.class);
+    private static final ClassNode INVOKER_HELPER_TYPE = ClassHelper.make(InvokerHelper.class);
+    private static final ClassNode STRING_BUILDER_TYPE = ClassHelper.make(StringBuilder.class);
 
     /**
      * Return the first statement from the constructor code if it is a call to super or this, otherwise null.
@@ -103,13 +103,13 @@ public class ConstructorNodeUtils {
         MethodCallExpression isNameValid = callX(validNames, "contains", varX(name));
         isNameValid.setImplicitThis(false);
 
-        Expression sb = localVarX("sb");
-        Expression toString = pojo ? toStringX(sb) : callX(INVOKER_TYPE, "toString", sb);
+        Expression sb = localVarX("sb", STRING_BUILDER_TYPE);
+        Expression toString = pojo ? toStringX(sb) : callX(INVOKER_HELPER_TYPE, "toString", sb);
         Statement errorBlock = block(
-                declS(sb, ctorX(STRINGBUILDER_TYPE)),
+                declS(sb, ctorX(STRING_BUILDER_TYPE)),
                 appendS(sb, constX("Unknown named argument: ")),
                 appendS(sb, varX(name)),
-                throwS(ctorX(EXCEPTION, toString))
+                throwS(ctorX(EXCEPTION_TYPE, toString))
         );
 
         return block(

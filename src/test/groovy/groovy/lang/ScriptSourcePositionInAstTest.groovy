@@ -18,14 +18,14 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.Phases
+import org.junit.jupiter.api.Test
 
 /**
  * Check that scripts have proper source position in the AST
  */
-class ScriptSourcePositionInAstTest extends GroovyTestCase {
+class ScriptSourcePositionInAstTest {
 
     private positionsForScript(String text) {
         CompilationUnit cu = new CompilationUnit()
@@ -37,14 +37,17 @@ class ScriptSourcePositionInAstTest extends GroovyTestCase {
         [[node.getLineNumber(), node.getColumnNumber()], [node.getLastLineNumber(), node.getLastColumnNumber()]]
     }
 
+    @Test
     void testEmptyScript() {
         assert positionsForScript("") == [[-1, -1], [-1, -1]]
     }
 
+    @Test
     void testSingleStatementScript() {
         assert positionsForScript("println 'hello'") == [[1, 1], [1, 16]]
     }
 
+    @Test
     void testDoubleStatementScript() {
         assert positionsForScript("""\
             println 'hello'
@@ -52,6 +55,7 @@ class ScriptSourcePositionInAstTest extends GroovyTestCase {
         """.stripIndent(true)) == [[1, 1], [2, 14]]
     }
 
+    @Test
     void testScriptWithClasses() {
         assert positionsForScript("""\
             class Bar {}

@@ -18,9 +18,13 @@
  */
 package org.codehaus.groovy.macro.matcher
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ASTMatcherTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class ASTMatcherTest {
+    @Test
     void testMatchesSimpleVar() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -29,6 +33,7 @@ class ASTMatcherTest extends GroovyTestCase {
         assert ASTMatcher.matches(ast, ast)
         '''
     }
+    @Test
     void testMatchesSimpleVarNeg() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -40,6 +45,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testBinaryExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -56,6 +62,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMethodCallExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -77,6 +84,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMethodCallExpressionWithVarargs() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -95,6 +103,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPropertyExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -115,6 +124,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testAttributeExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -135,6 +145,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testClassExpression() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.ClassExpression
@@ -154,6 +165,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testTernaryExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -175,6 +187,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testElvis() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -195,6 +208,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPrefixExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -211,6 +225,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPostfixExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -227,6 +242,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testConstructorCall() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -243,6 +259,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDeclaration() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -261,6 +278,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testBooleanExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -279,6 +297,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testClosureExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -301,6 +320,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNotExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -319,6 +339,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMapExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -345,6 +366,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testRangeExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -365,6 +387,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testListExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -390,6 +413,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testSpreadExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -406,6 +430,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testArrayExpression() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.ArrayExpression
@@ -426,6 +451,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMethodPointerExpression() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.MethodPointerExpression
@@ -444,6 +470,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testUnaryMinus() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.UnaryMinusExpression
@@ -462,6 +489,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testUnaryPlus() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.UnaryPlusExpression
@@ -480,6 +508,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testBitwiseNegate() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.BitwiseNegationExpression
@@ -498,6 +527,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testCastExpression() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.CastExpression
@@ -516,6 +546,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testGStringExpression() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.GStringExpression
@@ -534,6 +565,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testClassComparison() {
         assertScript '''
         import org.codehaus.groovy.ast.ClassNode
@@ -565,6 +597,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPropertyComparison() {
         assertScript '''
         import org.codehaus.groovy.ast.ClassNode
@@ -612,6 +645,7 @@ class ASTMatcherTest extends GroovyTestCase {
         assert !ASTMatcher.matches(ast8, ast9)
         '''
     }
+    @Test
     void testFieldComparison() {
         assertScript '''
         import org.codehaus.groovy.ast.ClassNode
@@ -664,6 +698,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testIf() {
         assertScript '''
         import org.codehaus.groovy.ast.stmt.IfStatement
@@ -690,6 +725,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testForLoop() {
         assertScript '''
         import org.codehaus.groovy.ast.stmt.ForStatement
@@ -712,6 +748,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testWhileLoop() {
         assertScript '''
         import org.codehaus.groovy.ast.stmt.WhileStatement
@@ -731,6 +768,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testWildcardMatchVariable() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -744,6 +782,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testWildcardMatchVariableInBinaryExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -763,6 +802,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testWildcardForSubExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -776,6 +816,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testWildcardInMethodName() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -789,6 +830,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testConstrainedMatcher() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -804,6 +846,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPlaceholdersMustMatch() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -821,6 +864,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPlaceholdersMustMatch2() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -839,6 +883,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMacroCombination() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -857,6 +902,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testRelaxedBinaryExpression() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -879,6 +925,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testRelaxedBinaryExpressionWithConstrainedToken() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher
@@ -904,6 +951,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testInlineMacroCombinationWithConstraints() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -928,6 +976,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testInlineMacroCombinationWithSimplifiedConstraints() {
         assertScript '''
         import org.codehaus.groovy.ast.expr.BinaryExpression
@@ -953,6 +1002,7 @@ class ASTMatcherTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testRelationshipMatching() {
         assertScript '''
         import org.codehaus.groovy.macro.matcher.ASTMatcher

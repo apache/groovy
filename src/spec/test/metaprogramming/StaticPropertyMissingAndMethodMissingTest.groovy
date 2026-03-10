@@ -18,10 +18,13 @@
  */
 package metaprogramming
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StaticPropertyMissingAndMethodMissingTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+final class StaticPropertyMissingAndMethodMissingTest {
+
+    @Test
     void testStaticMethodMissing() {
         assertScript '''
             // tag::static_method_missing[]
@@ -36,6 +39,7 @@ class StaticPropertyMissingAndMethodMissingTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testStaticPropertyMissing() {
         assertScript '''
             // tag::static_property_missing[]

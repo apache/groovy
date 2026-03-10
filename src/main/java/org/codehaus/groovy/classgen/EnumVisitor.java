@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.apache.groovy.ast.tools.MethodNodeUtils;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -25,7 +26,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
@@ -282,7 +282,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport {
                             if (!methodNode.isAbstract()) continue;
                             MethodNode enumConstMethod = inner.getMethod(methodNode.getName(), methodNode.getParameters());
                             if (enumConstMethod == null || enumConstMethod.isAbstract()) {
-                                addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + methodNode.getTypeDescriptor(true) + "'.");
+                                addError(field, "Can't have an abstract method in enum constant " + field.getName() + ". Implement method '" + MethodNodeUtils.methodDescriptor(methodNode,true) + "'.");
                             }
                         }
                         if (inner.getVariableScope() == null) {

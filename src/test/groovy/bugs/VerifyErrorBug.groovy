@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class VerifyErrorBug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class VerifyErrorBug {
+    @Test
     void testShouldNotThrowVerifyError1() {
         assertScript """
             x = this.&println
@@ -30,6 +34,7 @@ class VerifyErrorBug extends GroovyTestCase {
             }
         """
     }
+    @Test
     void testShouldNotThrowVerifyError2() {
         assertScript """
             for (int i = 1; i < 10; i++) {
@@ -38,6 +43,7 @@ class VerifyErrorBug extends GroovyTestCase {
             }
         """
     }
+    @Test
     void testShouldNotThrowVerifyError3() {
         assertScript """
             x = this.&println
@@ -47,6 +53,7 @@ class VerifyErrorBug extends GroovyTestCase {
             }
         """
     }
+    @Test
     void testShouldNotThrowVerifyError4() {
         assertScript """
             x = this.&println

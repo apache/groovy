@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy7917Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy7917Bug {
+    @Test
     void testShouldBeAbleToOverrideStaticConstantProperties() {
         assertScript '''
             class Base {

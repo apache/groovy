@@ -18,20 +18,21 @@
  */
 package groovy.servlet
 
-import groovy.test.GroovyTestCase
 import groovy.xml.MarkupBuilder
-
 import jakarta.servlet.ServletContext
 import jakarta.servlet.ServletOutputStream
 import jakarta.servlet.WriteListener
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.servlet.http.HttpSession
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * This test case tests the ServletBinding class.
  */
-class ServletBindingTest extends GroovyTestCase {
+class ServletBindingTest {
 
     def session = {} as HttpSession
     def response = {} as HttpServletResponse
@@ -56,6 +57,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests that the constructor binds the correct default variables.
      */
+    @Test
     void testConstructor_VariableBindings() {
         def request = makeDefaultRequest()
         def binding = makeDefaultBinding(request)
@@ -72,6 +74,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests that the constructor binds request parameter names correctly.
      */
+    @Test
     void testConstructor_ParameterNameBindings() {
         def parmNames = new Vector()
         parmNames.add('name1')
@@ -98,6 +101,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests that the constructor binds request header values correctly.
      */
+    @Test
     void testConstructor_HeaderBindings() {
         def headerNames = new Vector()
         headerNames.add('name1')
@@ -124,6 +128,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests the argument contract on getVariable.
      */
+    @Test
     void testGetVariable_Contract() {
         def request = makeDefaultRequest()
         def binding = makeDefaultBinding(request)
@@ -135,6 +140,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests that getVariables truly returns all variables
      */
+    @Test
     void testGetVariables_Contract() {
         def expectedVariables = ['request', 'response', 'context', 'application',
                 'session', 'params', 'headers', 'out', 'sout', 'html', 'json']
@@ -150,6 +156,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests that getVariable works for the special key names.
      */
+    @Test
     void testGetVariable_ImplicitKeyNames() {
         def writer = new PrintWriter(new StringWriter())
         def outputStream = new OutputStreamStub()
@@ -173,6 +180,7 @@ class ServletBindingTest extends GroovyTestCase {
         assert binding.getVariable('json') instanceof groovy.json.StreamingJsonBuilder
     }
 
+    @Test
     void testOutSoutWriteException() {
         def writer = new PrintWriter(new StringWriter())
         def outputStream = new OutputStreamStub()
@@ -199,6 +207,7 @@ class ServletBindingTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testSoutOutWriteException() {
         def writer = new PrintWriter(new StringWriter())
         def outputStream = new OutputStreamStub()
@@ -228,6 +237,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests the contract on setVariable().
      */
+    @Test
     void testSetVariable_Contract() {
         def request = makeDefaultRequest()
         def binding = makeDefaultBinding(request)
@@ -243,6 +253,7 @@ class ServletBindingTest extends GroovyTestCase {
     /**
      * Tests setVariable.
      */
+    @Test
     void testSetVariable() {
         def request = makeDefaultRequest()
         def binding = makeDefaultBinding(request)

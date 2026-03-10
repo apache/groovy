@@ -22,34 +22,42 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.runtime.DummyBean;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Modifier;
 
-public class PropertyTest extends TestSupport {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_SUPER;
 
-    public void testFields() throws Exception {
+final class PropertyTest extends TestSupport {
+
+    @Test
+    void testFields() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         classNode.addField("x", ACC_PUBLIC, ClassHelper.OBJECT_TYPE, null);
         classNode.addField("y", ACC_PUBLIC, ClassHelper.Integer_TYPE, null);
         classNode.addField("z", ACC_PRIVATE, ClassHelper.STRING_TYPE, null);
 
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
+        Class<?> fooClass = loadClass(classNode);
+        assertTrue(fooClass != null, "Loaded a new class");
 
         assertField(fooClass, "x", Modifier.PUBLIC, ClassHelper.OBJECT_TYPE);
         assertField(fooClass, "y", Modifier.PUBLIC, ClassHelper.Integer_TYPE);
         assertField(fooClass, "z", Modifier.PRIVATE, ClassHelper.STRING_TYPE);
     }
 
-    public void testProperties() throws Exception {
+    @Test
+    void testProperties() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, ClassHelper.OBJECT_TYPE);
         classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
 
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
+        Class<?> fooClass = loadClass(classNode);
+        assertTrue(fooClass != null, "Loaded a new class");
 
         Object bean = fooClass.getDeclaredConstructor().newInstance();
-        assertTrue("Managed to create bean", bean != null);
+        assertTrue(bean != null, "Managed to create bean");
 
         assertField(fooClass, "bar", 0, ClassHelper.STRING_TYPE);
 
@@ -57,15 +65,16 @@ public class PropertyTest extends TestSupport {
         assertSetProperty(bean, "bar", "newValue");
     }
 
-    public void testInheritedProperties() throws Exception {
+    @Test
+    void testInheritedProperties() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, ClassHelper.make(DummyBean.class));
         classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
 
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
+        Class<?> fooClass = loadClass(classNode);
+        assertTrue(fooClass != null, "Loaded a new class");
 
         Object bean = fooClass.getDeclaredConstructor().newInstance();
-        assertTrue("Managed to create bean", bean != null);
+        assertTrue(bean != null, "Managed to create bean");
 
         assertField(fooClass, "bar", 0, ClassHelper.STRING_TYPE);
 

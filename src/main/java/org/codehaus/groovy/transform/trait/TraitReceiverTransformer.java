@@ -317,7 +317,6 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
 
         for (ClassNode superTrait : traits) {
             ClassNode traitHelper = Traits.findHelper(superTrait);
-            if (traitHelper == null) continue; // GROOVY-11743: order issue
             for (MethodNode methodNode : traitHelper.getDeclaredMethods(methodName)) {
                 if (methodNode.isPublic() && methodNode.isStatic()
                         // exclude public method with body as it's included in trait interface

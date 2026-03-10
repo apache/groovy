@@ -18,14 +18,18 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertTrue
+
 
 /**
  *  Verifies that comparisons to Integer.MIN_VALUE work
  */
 
-class Groovy513_Bug extends GroovyTestCase {
+class Groovy513_Bug {
 
+    @Test
     void testMinMaxValueComparison() {
         assertTrue(8 < Integer.MAX_VALUE);
         assertTrue(8 > Integer.MIN_VALUE);

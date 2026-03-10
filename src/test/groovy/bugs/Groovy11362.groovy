@@ -19,9 +19,11 @@
 package bugs
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 final class Groovy11362 extends AbstractBytecodeTestCase {
 
+    @Test
     void testCatchException() {
         def bytecode = compile method:'test', '''
             void test() {

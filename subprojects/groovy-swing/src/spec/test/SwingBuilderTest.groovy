@@ -17,9 +17,11 @@
  *  under the License.
  */
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class DesignPatternsTest extends CompilableTestSupport {
+final class DesignPatternsTest extends CompilableTestSupport {
 
+    @Test
     void testSimpleExample() {
         shouldCompile '''
         // tag::simple_example[]
@@ -39,6 +41,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testMoreInvolvedExample() {
         shouldCompile '''
         // tag::more_involved_example[]
@@ -76,6 +79,7 @@ class DesignPatternsTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testObservableBindingExample() {
         shouldCompile '''
         // tag::observable_binding_example[]

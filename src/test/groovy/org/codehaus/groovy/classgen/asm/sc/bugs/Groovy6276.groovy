@@ -20,9 +20,11 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
 final class Groovy6276 extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testOuterClassMethodCall() {
         assertScript '''
             class Outer {
@@ -45,6 +47,7 @@ final class Groovy6276 extends StaticTypeCheckingTestCase implements StaticCompi
         '''
     }
 
+    @Test
     void testAccessPrivateMethodFromClosure() {
         assertScript '''
             class Outer {

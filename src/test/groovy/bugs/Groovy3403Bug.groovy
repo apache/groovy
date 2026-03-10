@@ -19,10 +19,11 @@
 package bugs
 
 import groovy.mock.interceptor.StubFor
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3403Bug extends GroovyTestCase {
+class Groovy3403Bug {
 
+    @Test
     void testStubIssueForStaticMethodsDueToCallSiteCachingWhenUsing2Stubs() {
         def stub1 = new StubFor(Main3403)
         stub1.demand.test() {

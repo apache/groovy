@@ -18,13 +18,12 @@
  */
 package bugs.groovy9802
 
-
 import groovy.transform.CompileStatic
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.isAtLeastJdk
-import static org.junit.Assume.assumeTrue
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 @CompileStatic
 final class Groovy9802 {
@@ -36,19 +35,19 @@ final class Groovy9802 {
             import java.net.http.*
             import java.nio.file.Paths
             import static java.net.http.HttpResponse.*
-            
+
             def req = HttpRequest.newBuilder()
                     .uri(URI.create("https://raw.githubusercontent.com/apache/groovy/master/subprojects/groovy-json/src/test/resources/groovy9802.json"))
                     .build()
-    
+
             def parser = new JsonSlurper()
             parser.parseText('{}')
-    
+
             def res = HttpClient.newHttpClient().sendAsync(req, BodyHandlers.ofString())
                     .thenApply(r -> r.body())
                     .thenApply(parser::parseText)
                     .join()
-    
+
             assert 'response: [userId:1, id:1, title:delectus aut autem, completed:false]' == "response: $res"
         '''
     }

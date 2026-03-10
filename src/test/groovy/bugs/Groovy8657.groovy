@@ -71,6 +71,6 @@ final class Groovy8657 {
                 }
             }
         '''
-        assert err =~ /No such property: from for class: /
+        assert err.message =~ /No such property: from for class: /
     }
 }

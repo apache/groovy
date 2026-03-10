@@ -18,6 +18,8 @@
  */
 package groovy.transform.stc
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.isAtLeastJdk
 
 /**
@@ -26,6 +28,7 @@ import static groovy.test.GroovyAssert.isAtLeastJdk
 class BugsSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-5456
+    @Test
     void testShouldNotAllowDivOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -33,6 +36,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Object#div(int)'
     }
+    @Test
     void testShouldNotAllowDivByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -40,6 +44,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Integer#div(java.lang.Object)'
     }
+    @Test
     void testShouldNotAllowModOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -47,6 +52,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Object#mod(int)'
     }
+    @Test
     void testShouldNotAllowModByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -54,6 +60,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Integer#mod(java.lang.Object)'
     }
+    @Test
     void testShouldNotAllowRemainderOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -61,6 +68,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Object#remainder(int)'
     }
+    @Test
     void testShouldNotAllowRemainderByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -68,6 +76,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Integer#remainder(java.lang.Object)'
     }
+    @Test
     void testShouldNotAllowMulOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -75,6 +84,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Object#multiply(int)'
     }
+    @Test
     void testShouldNotAllowMulByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -82,6 +92,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Integer#multiply(java.lang.Object)'
     }
+    @Test
     void testShouldNotAllowPlusOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -89,6 +100,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Object#plus(int)'
     }
+    @Test
     void testShouldNotAllowPlusWithUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -96,6 +108,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Integer#plus(java.lang.Object)'
     }
+    @Test
     void testShouldNotAllowMinusOnUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -103,6 +116,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
         'Cannot find matching method java.lang.Object#minus(int)'
     }
+    @Test
     void testShouldNotAllowMinusByUntypedVariable() {
         shouldFailWithMessages '''
             def foo(Closure cls) {}
@@ -112,6 +126,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7929
+    @Test
     void testShouldDetectInvalidMethodUseWithinTraitWithCompileStaticAndSelfType() {
         shouldFailWithMessages '''
             class C {
@@ -127,6 +142,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10102
+    @Test
     void testShouldDetectValidMethodUseWithinTraitWithCompileStaticAndSelfType() {
         assertScript '''
             import groovy.transform.*
@@ -159,6 +175,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGroovy5444() {
         assertScript '''
             def millis = { System.currentTimeMillis() }
@@ -176,6 +193,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGroovy5487ReturnNull() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value= {
@@ -187,6 +205,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGroovy5487ReturnNullWithExplicitReturn() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value= {
@@ -198,6 +217,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGroovy5487ReturnNullWithEmptyBody() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value= {
@@ -208,6 +228,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testGroovy7477NullGenericsType() {
         assertScript '''
             class L<E> extends ArrayList<E> {
@@ -231,6 +252,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call L#removeIf(java.util.Comparator<? super java.lang.String>) with arguments [java.util.Comparator<?>]'
     }
 
+    @Test
     void testGroovy5482ListsAndFlowTyping() {
         assertScript '''class C {}
             def foo = [new Date(), 1, new C()]
@@ -244,6 +266,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5616
+    @Test
     void testAssignToGroovyObject() {
         assertScript '''
             class A {}
@@ -251,6 +274,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignJavaClassToGroovyObject() {
         shouldFailWithMessages '''
             GroovyObject obj = 'foo'
@@ -258,6 +282,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type groovy.lang.GroovyObject'
     }
 
+    @Test
     void testCastToGroovyObject() {
         assertScript '''
             class A {}
@@ -265,6 +290,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testAssignInnerClassToGroovyObject() {
         assertScript '''
             class A { static class B {} }
@@ -272,6 +298,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCastInnerClassToGroovyObject() {
         assertScript '''
             class A { static class B {} }
@@ -280,6 +307,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5656
+    @Test
     void testShouldNotThrowAmbiguousMethodError() {
         assertScript '''import groovy.transform.*
             class Expr {}
@@ -301,6 +329,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5793
+    @Test
     void testByteAsParameter() {
         assertScript '''
             void testMethod(java.lang.Byte param){
@@ -316,6 +345,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5870
+    @Test
     void testShouldNotThrowErrorIfTryingToCastToInterface() {
         assertScript '''
             Set tmp = null
@@ -324,6 +354,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5889
+    @Test
     void testShouldNotGoIntoInfiniteLoop() {
         assertScript '''
             class Enclosing {
@@ -337,6 +368,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5959
+    @Test
     void testSwitchCaseShouldNotRemoveBreakStatements() {
         assertScript '''
             int test(Map<String, String> token) {
@@ -358,6 +390,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldChooseFindMethodFromList() {
         assertScript '''
             class Mylist implements List<Object> {
@@ -395,6 +428,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6050
+    @Test
     void testShouldAllowTypeConversion() {
         assertScript '''
             interface SomeInterface { void sayHello() }
@@ -408,6 +442,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6099
+    @Test
     void testFlowTypingErrorWithIfElse() {
         assertScript '''
             def o = new Object()
@@ -425,6 +460,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6104
+    @Test
     void testShouldResolveConstantFromInterfaceImplementedInSuperClass() {
         assertScript '''
             interface Foo {
@@ -441,6 +477,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6098
+    @Test
     void testUnresolvedPropertyReferencingIsBooleanMethod() {
         assertScript '''
             boolean isFoo() { true }
@@ -449,6 +486,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6119
+    @Test
     void testShouldCallConstructorWithMap() {
         assertScript '''
             class Foo {
@@ -463,6 +501,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6119
+    @Test
     void testShouldCallConstructorWithHashMap() {
         assertScript '''
             class Foo {
@@ -477,6 +516,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6162
+    @Test
     void testShouldConsiderThisInStaticContext() {
         assertScript '''
             class Foo {
@@ -496,6 +536,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testListToSet() {
         assertScript '''
             Set foo(List<Map.Entry> set) {
@@ -504,6 +545,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testConstructorNewInstance() {
         assertScript '''import java.lang.reflect.Constructor
             class Person {
@@ -517,6 +559,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testOuterDotThisNotation() {
         assertScript '''
             class Outer {
@@ -534,6 +577,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6965
+    @Test
     void testShouldNotFailWithClassCastExceptionDuringCompilation() {
         assertScript '''
             interface Job {
@@ -558,6 +602,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6970
+    @Test
     void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods1() {
         assertScript '''
             interface A { void m() }
@@ -575,6 +620,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods2() {
         assertScript '''
             interface A { void m() }
@@ -592,6 +638,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldBeAbleToChooseBetweenTwoEquivalentInterfaceMethods3() {
         assertScript '''
             interface A { void m() }
@@ -608,6 +655,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6849
+    @Test
     void testAmbiguousMethodResolution() {
         assertScript '''
             interface ObservableList<E> extends List<E> {
@@ -620,6 +668,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7160
+    @Test
     void testAmbiguousMethodResolutionObjectVsEnums() {
         // Currently preferring JDK9+ Set.of(E, E, E, E, E, E) ahead of EnumSet.of(E, E[])
         // TODO clarify behavior for this edge case
@@ -636,6 +685,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7710
+    @Test
     void testAmbiguousMethodResolutionNoArgsOverload() {
         shouldFailWithMessages '''
             Arrays.sort()
@@ -644,6 +694,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7711
+    @Test
     void testAmbiguousMethodResolutionNoArgsCovariantOverride() {
         assertScript '''
             class A {}
@@ -663,6 +714,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9006
+    @Test
     void testAmbiguousMethodResolutionTimestampComparedToNull() {
         assertScript '''
             import java.sql.Timestamp
@@ -678,6 +730,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6911
+    @Test
     void testShouldNotThrowArrayIndexOfOutBoundsException() {
         assertScript '''
             class MyMap<T> extends LinkedHashMap<String, Object> { }
@@ -692,6 +745,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7416
+    @Test
     void testMethodsFromInterfacesOfSuperClassesShouldBeVisible() {
         assertScript '''
             interface SomeInterface {
@@ -725,6 +779,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7315
+    @Test
     void testNamedArgConstructorSupportWithInnerClassesAndCS() {
         assertScript '''
             import groovy.transform.*
@@ -754,6 +809,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8255, GROOVY-8382
+    @Test
     void testTargetTypingEmptyCollectionLiterals() {
         assertScript '''
             class Foo {
@@ -803,6 +859,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8590
+    @Test
     void testNestedMethodCallInferredTypeInReturnStmt() {
         assertScript '''
             class Source {
@@ -816,6 +873,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9415
+    @Test
     void testStaticGetAtAndSquareBracketIndexing() {
         assertScript '''
             class C9415 {
@@ -827,6 +885,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11071
+    @Test
     void testIfaceGetAtAndSquareBracketIndexing() {
         assertScript '''
             interface MapLike<SELF extends MapLike<SELF,K,V>,K,V> {
@@ -846,6 +905,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10741
+    @Test
     void testMethodPointerPropertyReference() {
         assertScript '''
             class C { def foo }
@@ -876,6 +936,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9463
+    @Test
     void testMethodPointerUnknownReference() {
         shouldFailWithMessages '''
             def ptr = String.&toLowerCaseX
@@ -884,6 +945,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9938
+    @Test
     void testInnerClassImplementsInterfaceMethod() {
         assertScript '''
             class Main {
@@ -908,6 +970,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInnerClassImplementsInterfaceMethodWithTrait() {
         assertScript '''
             class Main {
@@ -934,6 +997,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInnerClassImplementsInterfaceMethodWithDelegate() {
         assertScript '''
             class Main {
@@ -962,6 +1026,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9951
+    @Test
     void testInnerImmutablePOJO() {
         assertScript '''
             import groovy.transform.Immutable
@@ -980,6 +1045,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10380
+    @Test
     void testInvokeDefaultMethodFromPackagePrivateInterface1() {
         assertScript '''
             class C extends groovy.transform.stc.Groovy10380 {
@@ -993,6 +1059,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8693
+    @Test
     void testInvokeDefaultMethodFromPackagePrivateInterface2() {
         assertScript '''
             class C extends groovy.transform.stc.Groovy10380 {
@@ -1009,6 +1076,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8299, GROOVY-9909
+    @Test
     void testInvokeDefaultMethodFromDirectInterface() {
         shouldFailWithMessages '''
             class C implements groovy.transform.stc.Groovy9909 {
@@ -1023,6 +1091,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8299, GROOVY-11256
+    @Test
     void testInvokeAbstractFromDirectInterface() {
         shouldFailWithMessages '''
             interface I {
@@ -1040,6 +1109,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8339, GROOVY-10109, GROOVY-10594, GROOVY-11746
+    @Test
     void testInvokePublicMethodFromInaccessibleBase() {
         assertScript '''
             new StringBuilder().setLength(0)
@@ -1067,6 +1137,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInvokeSuperMethodFromCovariantOverride() {
         assertScript '''
             abstract class A { int i = 0
@@ -1086,6 +1157,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10092
+    @Test
     void testAssignBooleanValueToFloatLocalVariable() {
         shouldFailWithMessages '''
             float x = true // internal compiler error: Boolean cannot be cast to Number
@@ -1094,6 +1166,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10424
+    @Test
     void testPrivateInnerClassOptimizedBooleanExpr1() {
         assertScript '''
             class Outer {
@@ -1112,6 +1185,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10424
+    @Test
     void testPrivateInnerClassOptimizedBooleanExpr2() {
         assertScript '''
             class Outer {
@@ -1130,6 +1204,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10869
+    @Test
     void testBigDecimalCompareNullPointerException1() {
         assertScript '''
             class C<T> {
@@ -1142,6 +1217,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11427
+    @Test
     void testClassSubscript() {
         shouldFailWithMessages '''
             Class<String> c = String.class
@@ -1151,6 +1227,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9999
+    @Test
     void testMathSqrt() {
         assertScript '''
             def test() {
@@ -1162,6 +1239,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11684
+    @Test
     void testImmutableCopyWith() {
         shouldFailWithMessages '''
             import groovy.transform.Immutable
@@ -1177,6 +1255,7 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11684
+    @Test
     void testMapConstructor() {
         shouldFailWithMessages '''
             import groovy.transform.Immutable
@@ -1189,5 +1268,4 @@ class BugsSTCTest extends StaticTypeCheckingTestCase {
         ''',
             '[Static type checking] - unexpected named arg: last'
     }
-
 }

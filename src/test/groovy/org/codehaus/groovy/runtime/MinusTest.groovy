@@ -18,36 +18,40 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class MinusTest extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+
+class MinusTest {
 
     void doTestMinus(String type, def a, b, c, d) {
-        assertEquals(type, [a, b], [a, b, c] - [c])
-        assertEquals(type, [a, b], [a, b, c] - [c, d])
-        assertEquals(type, [], [a, b, c] - [a, b, c])
-        assertEquals(type, [], [a, b, c] - [c, b, a])
-        assertEquals(type, [a, b, c], [a, b, c] - [])
-        assertEquals(type, [], [] - [a, b, c])
+        assertEquals([a, b], [a, b, c] - [c], type)
+        assertEquals([a, b], [a, b, c] - [c, d], type)
+        assertEquals([], [a, b, c] - [a, b, c], type)
+        assertEquals([], [a, b, c] - [c, b, a], type)
+        assertEquals([a, b, c], [a, b, c] - [], type)
+        assertEquals([], [] - [a, b, c], type)
     }
 
     void doTestMinusDuplicates(String type, def a, b, c, d) {
-        assertEquals(type, [a, a], [a, a] - [])
-        assertEquals(type, [a, b, b, c], [a, b, b, c] - [])
-        assertEquals(type, [b, b, c], [a, b, b, c] - [a])
-        assertEquals(type, [a], [a, b, b, c] - [b, c])
-        assertEquals(type, [], [a] - [a, a])
+        assertEquals([a, a], [a, a] - [], type)
+        assertEquals([a, b, b, c], [a, b, b, c] - [], type)
+        assertEquals([b, b, c], [a, b, b, c] - [a], type)
+        assertEquals([a], [a, b, b, c] - [b, c], type)
+        assertEquals([], [a] - [a, a], type)
     }
 
     void doTestMinusWithNull(String type, def a, b, c, d) {
-        assertEquals(type, [a, b, c], [a, b, c] - [null])
-        assertEquals(type, [a, b, c], [a, b, c, null] - [null])
-        assertEquals(type, [a, b], [a, b, c, null] - [null, c])
-        assertEquals(type, [], [] - [a, b, c, null])
-        assertEquals(type, [a, b, c, null], [a, b, c, null] - [])
-        assertEquals(type, [a, b, null], [a, b, c, null] - [c])
+        assertEquals([a, b, c], [a, b, c] - [null], type)
+        assertEquals([a, b, c], [a, b, c, null] - [null], type)
+        assertEquals([a, b], [a, b, c, null] - [null, c], type)
+        assertEquals([], [] - [a, b, c, null], type)
+        assertEquals([a, b, c, null], [a, b, c, null] - [], type)
+        assertEquals([a, b, null], [a, b, c, null] - [c], type)
     }
 
+    @Test
     void testMinusComparable() {
         def a = 'a'
         def b = 'b'
@@ -59,6 +63,7 @@ class MinusTest extends GroovyTestCase {
         doTestMinusWithNull('Comparable', a, b, c, d)
     }
 
+    @Test
     void testMinusNumber() {
         def a = 1
         def b = 2
@@ -70,6 +75,7 @@ class MinusTest extends GroovyTestCase {
         doTestMinusWithNull('Number', a, b, c, d)
     }
 
+    @Test
     void testMinusNumbersMixed() {
         def a = 1
         def b = new BigInteger('2')
@@ -81,6 +87,7 @@ class MinusTest extends GroovyTestCase {
         doTestMinusWithNull('NumbersMixed', a, b, c, d)
     }
 
+    @Test
     void testMinusNonComparable() {
         def a = new Object()
         def b = new Object()
@@ -92,6 +99,7 @@ class MinusTest extends GroovyTestCase {
         doTestMinusWithNull('NonComparable', a, b, c, d)
     }
 
+    @Test
     void testMinusMixed() {
         def a = new Object()
         def b = 2
@@ -103,6 +111,7 @@ class MinusTest extends GroovyTestCase {
         doTestMinusWithNull('Mixed', a, b, c, d)
     }
 
+    @Test
     void testArrayMinus() {
         def x = [1, 2, 3] as Object[]
         def y = [1, 2] as Object[]
@@ -112,6 +121,7 @@ class MinusTest extends GroovyTestCase {
         assert x - z == [1] as Object[]
     }
 
+    @Test
     void testMapMinus() {
         def x = [1: 1, 2: 2, 3: 3, 4: 4]
         def y = [1: 1, 2: 2]

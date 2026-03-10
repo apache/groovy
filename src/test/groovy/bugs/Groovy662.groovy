@@ -20,7 +20,7 @@ package bugs
 
 import groovy.transform.CompileStatic
 import groovy.transform.PackageScope
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 

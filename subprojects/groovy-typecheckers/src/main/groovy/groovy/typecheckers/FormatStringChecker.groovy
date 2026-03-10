@@ -68,8 +68,10 @@ import static org.codehaus.groovy.ast.ClassHelper.makeCached
  */
 @Incubating
 class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
+
     private static final ClassNode LOCALE_TYPE = makeCached(Locale)
     private static final ClassNode FORMATTER_TYPE = makeCached(Formatter)
+
     private String formatSpecifier = /%(\d+\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])/
     private List<ASTNode> formatMethods = [
         macro(CompilePhase.SEMANTIC_ANALYSIS) { String.format(a) }.withConstraints { varargPlaceholder a },
@@ -95,13 +97,13 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                 makeVisitor().checkFormatterMethod(call)
             }
         }
+
         afterVisitMethod { MethodNode method ->
-            def visitor = makeVisitor()
-            method.code.visit(visitor)
+            method.code.visit(makeVisitor())
         }
     }
 
-    private makeVisitor() {
+    private CheckingVisitor makeVisitor() {
         new CheckingVisitor() {
             @Override
             void visitMethodCallExpression(MethodCallExpression call) {
@@ -145,7 +147,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                 }
             }
 
-            void checkFormatStringTypes(Expression expression, List<Expression> args, Expression target) {
+            private void checkFormatStringTypes(Expression expression, List<Expression> args, Expression target) {
                 int next = 0
                 int prevIndex = -1
                 expression.value.eachMatch(formatSpecifier) { spec ->
@@ -254,14 +256,14 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
                 }
             }
 
-            void checkBadFlags(flagList, conversion, Expression target, String badFlags) {
+            private void checkBadFlags(flagList, conversion, Expression target, String badFlags) {
                 def mismatched = flagList?.findAll { badFlags.contains(it) }?.join()
                 if (mismatched) {
                     addStaticTypeError("FormatFlagsConversionMismatch: Conversion = $conversion, Flags = '$mismatched'", target)
                 }
             }
 
-            void checkFormatStringConstantArgs(ConstantExpression formatString, args, Expression target) {
+            private void checkFormatStringConstantArgs(ConstantExpression formatString, args, Expression target) {
                 try {
                     new Formatter().format(formatString.value, *args)
                 } catch (IllegalFormatException ex) {
@@ -275,7 +277,7 @@ class FormatStringChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckin
             void visitDeclarationExpression(DeclarationExpression decl) {
                 super.visitDeclarationExpression(decl)
                 if (decl.variableExpression != null) {
-                    if (isConstantExpression(decl.rightExpression)) {
+                    if (decl.rightExpression instanceof ConstantExpression) {
                         localConstVars.put(decl.variableExpression, decl.rightExpression)
                     }
                 }

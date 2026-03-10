@@ -20,36 +20,37 @@ package org.codehaus.groovy.classgen.asm.sc.bugs
 
 import groovy.transform.stc.StaticTypeCheckingTestCase
 import org.codehaus.groovy.classgen.asm.sc.StaticCompilationTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy6411Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
+final class Groovy6411Bug extends StaticTypeCheckingTestCase implements StaticCompilationTestSupport {
 
+    @Test
     void testShouldNotThrowInvokerInvocationException() {
-            assertScript '''
-    class Client<T> {
-      static boolean caughtIOEx = false
-      static boolean caughtInvokerEx = false
+        assertScript '''
+            class Client<T> {
+              static boolean caughtIOEx = false
+              static boolean caughtInvokerEx = false
 
-      static String method() {
-        return ({
-          try {
-            return doSomething()
-          } catch (IOException ioe) {
-            caughtIOEx = true
-          } catch (Exception e) {
-            caughtInvokerEx = true
-          }
-        })()
-      }
+              static String method() {
+                return ({
+                  try {
+                    return doSomething()
+                  } catch (IOException ioe) {
+                    caughtIOEx = true
+                  } catch (Exception e) {
+                    caughtInvokerEx = true
+                  }
+                })()
+              }
 
-      private static <T> T doSomething() throws IOException {
-        throw new IOException()
-      }
-    }
+              private static <T> T doSomething() throws IOException {
+                throw new IOException()
+              }
+            }
 
-    Client.method()
-    assert Client.caughtIOEx
-    assert !Client.caughtInvokerEx
-
-    '''
+            Client.method()
+            assert Client.caughtIOEx
+            assert !Client.caughtInvokerEx
+        '''
     }
 }

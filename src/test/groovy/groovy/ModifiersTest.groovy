@@ -19,17 +19,20 @@
 package groovy
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class ModifiersTest extends CompilableTestSupport {
+final class ModifiersTest extends CompilableTestSupport {
 
-    public void testInterface() {
+    @Test
+    void testInterface() {
         // control
         shouldCompile("interface X {}")
         // erroneous
         shouldNotCompile("synchronized interface X {}")
     }
 
-    public void testClass() {
+    @Test
+    void testClass() {
         // control
         shouldCompile("public class X {}")
         shouldCompile """
@@ -43,28 +46,32 @@ class ModifiersTest extends CompilableTestSupport {
         shouldNotCompile("private class X {}")
     }
 
-    public void testMethodsShouldOnlyHaveOneVisibility() {
+    @Test
+    void testMethodsShouldOnlyHaveOneVisibility() {
         // control
         shouldCompile("class X { private method() {} }")
         // erroneous
         shouldNotCompile("class X { private public method() {} }")
     }
 
-    public void testFinalMethodParametersShouldNotBeModified() {
+    @Test
+    void testFinalMethodParametersShouldNotBeModified() {
         // control
         shouldCompile("class X { private method(x) { x = 1 } }")
         // erroneous
         shouldNotCompile("class X { private method(final x) { x = 1 } }")
     }
 
-    public void testMethodsShouldNotBeVolatile() {
+    @Test
+    void testMethodsShouldNotBeVolatile() {
         // control
         shouldCompile("class X { def method() {} }")
         // erroneous
         shouldNotCompile("class X { volatile method() {} }")
     }
 
-    public void testInterfaceMethodsShouldNotBeSynchronizedNativeStrictfp() {
+    @Test
+    void testInterfaceMethodsShouldNotBeSynchronizedNativeStrictfp() {
         // control
         shouldCompile("interface X { def method() }")
         // erroneous
@@ -73,14 +80,16 @@ class ModifiersTest extends CompilableTestSupport {
         shouldNotCompile("interface X { strictfp method() }")
     }
 
-    public void testVariableInClass() {
+    @Test
+    void testVariableInClass() {
         // control
         shouldCompile("class X { protected name }")
         // erroneous
         shouldNotCompile("class X { protected private name }")
     }
 
-    public void testVariableInScript() {
+    @Test
+    void testVariableInScript() {
         // control
         shouldCompile("def name")
         shouldCompile("String name")
@@ -98,7 +107,8 @@ class ModifiersTest extends CompilableTestSupport {
         shouldNotCompile("private protected name")
     }
 
-    public void testInvalidModifiersOnConstructor() {
+    @Test
+    void testInvalidModifiersOnConstructor() {
         // control
         shouldCompile("class Foo { Foo() {}}")
         // erroneous
@@ -107,5 +117,4 @@ class ModifiersTest extends CompilableTestSupport {
         shouldNotCompile("class Foo { abstract Foo() {}}")
         shouldNotCompile("class Foo { native Foo() {}}")
     }
-
 }

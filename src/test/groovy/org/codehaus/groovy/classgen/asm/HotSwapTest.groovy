@@ -18,12 +18,16 @@
  */
 package org.codehaus.groovy.classgen.asm
 
+import org.junit.jupiter.api.Test
+
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+import static org.junit.jupiter.api.Assumptions.assumeFalse
 
-class HotSwapTest extends AbstractBytecodeTestCase {
+final class HotSwapTest extends AbstractBytecodeTestCase {
 
+    @Test
     void testHotSwapMethodExistsAndCallsGetCallSiteArray() {
-        if (config.indyEnabled) return;
+        assumeFalse(config.indyEnabled)
         assert compile(method: '__$swapInit', '''
             Long d = 123456L
         ''').hasSequence([
@@ -32,6 +36,7 @@ class HotSwapTest extends AbstractBytecodeTestCase {
         ])
     }
 
+    @Test
     void testClinitCallingHotSwapMethod() {
         assert compile(method: '<clinit>', '''
              Long d = 123456L

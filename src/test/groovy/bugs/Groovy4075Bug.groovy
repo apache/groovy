@@ -18,9 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4075Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.shouldFailWithCause
+
+
+class Groovy4075Bug {
     static void failChecked() throws Exception {
         throw new Exception(new IllegalArgumentException(new NullPointerException("NPE in failChecked")))
     }
@@ -29,15 +32,17 @@ class Groovy4075Bug extends GroovyTestCase {
         throw new RuntimeException(new IllegalArgumentException("IAE in failUnchecked", new NullPointerException()))
     }
 
+    @Test
     void testCheckedFailure() {
         assert shouldFailWithCause(NullPointerException) {
             Groovy4075Bug.failChecked()
-        } == "NPE in failChecked"
+        }.message == "NPE in failChecked"
     }
 
+    @Test
     void testUncheckedFailure() {
         assert shouldFailWithCause(IllegalArgumentException) {
             Groovy4075Bug.failUnchecked()
-        } == "IAE in failUnchecked"
+        }.message == "IAE in failUnchecked"
     }
 }

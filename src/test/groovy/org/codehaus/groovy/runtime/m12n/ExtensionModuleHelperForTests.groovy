@@ -20,18 +20,31 @@ package org.codehaus.groovy.runtime.m12n
 
 import groovy.ant.AntBuilder
 
-class ExtensionModuleHelperForTests {
+final class ExtensionModuleHelperForTests {
 
-    static void doInFork(String baseTestClass = 'groovy.test.GroovyTestCase', String code) {
+    private ExtensionModuleHelperForTests() {}
+
+    static void doInFork(String baseTestClass = 'java.lang.Object', String code) {
         File baseDir = File.createTempDir()
         File sourceFile = new File(baseDir, 'Temp.groovy')
         sourceFile << """import org.codehaus.groovy.runtime.m12n.*
             class TempTest extends $baseTestClass {
+                @org.junit.jupiter.api.Test
                 void testCode() {
                     $code
                 }
             }
-            org.junit.runner.JUnitCore.main('TempTest')
+
+            import org.junit.platform.launcher.core.*
+            import static org.junit.platform.engine.discovery.DiscoverySelectors.*
+
+            def launcher = LauncherFactory.create()
+            def testPlan = launcher.discover(
+                LauncherDiscoveryRequestBuilder.request().selectors(
+                    selectClass("TempTest")
+                ).build()
+            )
+            launcher.execute(testPlan)
         """
 
         Set<String> cp = System.getProperty('java.class.path').split(File.pathSeparator) as Set

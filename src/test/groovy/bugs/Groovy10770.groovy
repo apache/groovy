@@ -19,7 +19,7 @@
 package bugs
 
 import groovy.test.NotYetImplemented
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 import static groovy.test.GroovyAssert.shouldFail
@@ -44,7 +44,7 @@ final class Groovy10770 {
                 }
             }
         '''
-        assert err =~ /The variable .bar. is undeclared/
+        assert err.message =~ /The variable .bar. is undeclared/
     }
 
     @Test
@@ -59,7 +59,7 @@ final class Groovy10770 {
                 }
             }
         '''
-        assert err =~ /No such property: baz for class: java.lang.String/
+        assert err.message =~ /No such property: baz for class: java.lang.String/
     }
 
     @Test
@@ -94,7 +94,7 @@ final class Groovy10770 {
             def c = new C()
             def d = new C.D(c)
         '''
-        assert err =~ /Access to java.lang.String#baz is forbidden/ // passes STC but fails during compilation
+        assert err.message =~ /Access to java.lang.String#baz is forbidden/ // passes STC but fails during compilation
     }
 
     @Test
@@ -112,7 +112,7 @@ final class Groovy10770 {
             def c = new C()
             def d = new C.D(c)
         '''
-        assert err =~ /Access to java.lang.String#baz is forbidden/ // passes STC but fails during compilation
+        assert err.message =~ /Access to java.lang.String#baz is forbidden/ // passes STC but fails during compilation
     }
 
     @Test @NotYetImplemented
@@ -130,7 +130,7 @@ final class Groovy10770 {
             def c = new C()
             def d = new C.D(c)
         '''
-        assert err =~ /Access to java.lang.String#baz is forbidden/ // passes STC but fails during compilation
+        assert err.message =~ /Access to java.lang.String#baz is forbidden/ // passes STC but fails during compilation
     }
 
     @Test // annotate method

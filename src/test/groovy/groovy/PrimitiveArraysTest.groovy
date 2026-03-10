@@ -18,9 +18,10 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class PrimitiveArraysTest extends GroovyTestCase {
+
+class PrimitiveArraysTest {
 
     def c1Field = [] as char[]
     char[] c2Field = [] as char[]
@@ -43,6 +44,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
     def s1Field = [] as short[]
     short[] s2Field = [] as short[]
 
+    @Test
     void testChar() {
         assert c1Field.class == c2Field.class
         def ca = ['l','l'] as char[]
@@ -56,6 +58,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testInt() {
         assert i1Field.class == i2Field.class
         def ia = [1,1] as int[]
@@ -69,6 +72,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testLong() {
         assert l1Field.class == l2Field.class
         def la = [1,1] as long[]
@@ -82,6 +86,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testShort() {
         assert s1Field.class == s2Field.class
         def sa = [1,1] as short[]
@@ -94,6 +99,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
         sb.each{ assert it==1 }
     }
 
+    @Test
     void testByte() {
         assert b1Field.class == b2Field.class
         def ba = [1,1] as byte[]
@@ -107,6 +113,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
     }
 
 
+    @Test
     void testDouble() {
         assert d1Field.class == d2Field.class
         def da = [1,1] as double[]
@@ -119,6 +126,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
         db.each{ assert it==1.0d }
     }
 
+    @Test
     void testFloat() {
         assert f1Field.class == f2Field.class
         def fa = [1,1] as float[]
@@ -131,6 +139,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
         fb.each{ assert it==1.0f }
     }
 
+    @Test
     void testBoolean() {
       def ba = new boolean[1][2][3]
       assert ba[0].length == 2

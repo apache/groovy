@@ -18,13 +18,17 @@
  */
 package gls.syntax
 
-class AssertTest extends gls.CompilableTestSupport {
+import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-  void testAssignment() {
-    // don't allow "=" here, it most certainly must be a "=="
-    shouldNotCompile """
-       def a = 1
-       assert a = 2
-    """
-  }
+final class AssertTest extends CompilableTestSupport {
+
+    @Test
+    void testAssignment() {
+        // don't allow "=" here, it most certainly must be a "=="
+        shouldNotCompile '''
+            def a = 1
+            assert a = 2
+        '''
+    }
 }

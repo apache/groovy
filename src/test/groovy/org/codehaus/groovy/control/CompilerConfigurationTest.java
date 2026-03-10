@@ -20,22 +20,22 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.control.customizers.ImportCustomizer;
 import org.codehaus.groovy.control.messages.WarningMessage;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Make sure CompilerConfiguration works.
@@ -44,13 +44,13 @@ public final class CompilerConfigurationTest {
 
     private Properties savedProperties;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         savedProperties = System.getProperties();
         System.setProperties(new Properties(savedProperties));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         System.setProperties(savedProperties);
     }

@@ -18,14 +18,13 @@
  */
 package groovy.xml
 
-import groovy.test.GroovyTestCase
 import org.custommonkey.xmlunit.Diff
 import org.custommonkey.xmlunit.XMLUnit
 
 /**
  * Common test cases for StreamingMarkupBuilder and MarkupBuilder.
  */
-abstract class BuilderTestSupport extends GroovyTestCase {
+abstract class BuilderTestSupport {
 
     protected abstract assertExpectedXml(Closure markup, String expectedXml)
 

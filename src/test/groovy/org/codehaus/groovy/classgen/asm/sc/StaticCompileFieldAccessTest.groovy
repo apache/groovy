@@ -20,6 +20,8 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
 
+import static groovy.test.GroovyAssert.shouldFail
+
 /**
  * Unit tests for static compilation: access field nodes.
  */

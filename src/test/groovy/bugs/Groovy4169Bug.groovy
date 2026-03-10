@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy4169Bug extends CompilableTestSupport {
+final class Groovy4169Bug extends CompilableTestSupport {
+
+    @Test
     void testClosureParameterWithAnnotations() {
         shouldCompile """
             import java.lang.annotation.*

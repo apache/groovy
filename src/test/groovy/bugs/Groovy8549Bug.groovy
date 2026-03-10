@@ -19,8 +19,11 @@
 package bugs
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class Groovy8549Bug extends CompilableTestSupport {
+final class Groovy8549Bug extends CompilableTestSupport {
+
+    @Test
     void testNumberWithVarSlotLoader() {
         assertScript """
             import groovy.transform.CompileStatic

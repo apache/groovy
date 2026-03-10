@@ -18,10 +18,13 @@
  */
 package support
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 // tag::instance_extension[]
 class MaxRetriesExtension {                                     // <1>
     static void maxRetries(Integer self, Closure code) {        // <2>
-        assert self >= 0
+        assert self != null && self >= 0
         int retries = self
         Throwable e = null
         while (retries > 0) {
@@ -30,7 +33,7 @@ class MaxRetriesExtension {                                     // <1>
                 break
             } catch (Throwable err) {
                 e = err
-                retries--
+                retries -= 1
             }
         }
         if (retries == 0 && e) {

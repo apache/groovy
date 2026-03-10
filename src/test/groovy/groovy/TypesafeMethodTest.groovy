@@ -18,10 +18,12 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class TypesafeMethodTest extends GroovyTestCase {
 
+class TypesafeMethodTest {
+
+    @Test
     void testTypesafeMethod() {
         def y = someMethod(1)
 

@@ -18,17 +18,24 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.control.*
-import org.codehaus.groovy.control.messages.*
 
-class Groovy5915Bug extends GroovyTestCase {
+import org.codehaus.groovy.control.CompilationFailedException
+import org.codehaus.groovy.control.CompilationUnit
+import org.codehaus.groovy.control.CompilerConfiguration
+import org.codehaus.groovy.control.Phases
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.fail
+
+class Groovy5915Bug {
     def myTestCode = """void myMethod(){
   void wrongMethod() {
     return
   }
 }"""
 
+    @Test
     void testCorrectEndColumn() {
         def unit = new CompilationUnit(CompilerConfiguration.DEFAULT, null, new GroovyClassLoader(getClass().classLoader))
         unit.addSource('mycode.groovy', myTestCode)

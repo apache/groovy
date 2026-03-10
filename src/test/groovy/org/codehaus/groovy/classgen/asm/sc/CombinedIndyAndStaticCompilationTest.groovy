@@ -19,15 +19,19 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import org.codehaus.groovy.classgen.asm.AbstractBytecodeTestCase
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.control.CompilerConfiguration.DEFAULT as config
+import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 /**
  * Tests for combined static compilation and indy code
  */
-class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCase {
+final class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCase {
+
+    @Test
     void testArrayAccess() {
-        if (!config.indyEnabled) return;
+        assumeTrue(config.indyEnabled)
         ["byte", "short", "int", "long", "float", "double", "boolean", "char"].each { type->
             //array get
             compile ("""
@@ -48,6 +52,7 @@ class CombinedIndyAndStaticCompilationTest extends AbstractBytecodeTestCase {
         }
     }
 
+    @Test
     void testNegativeAccess() {
         ["byte", "short", "int", "long", "float", "double", "char"].each { type ->
             assertScript """

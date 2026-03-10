@@ -18,19 +18,24 @@
  */
 package groovy.ant
 
-import groovy.test.GroovyTestCase
 import groovy.xml.NamespaceBuilder
 import org.apache.tools.ant.BuildEvent
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.ProjectHelper
 import org.apache.tools.ant.UnknownElement
-import org.junit.Assert
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.assertEquals
+import static org.junit.jupiter.api.Assertions.assertNull
+import static org.junit.jupiter.api.Assertions.assertTrue
+import static org.junit.jupiter.api.Assertions.fail
 
 /**
  * Tests for the <groovy> task.
  */
-class AntTest extends GroovyTestCase {
+class AntTest {
 
+    @Test
     void testAnt() {
         def ant = new AntBuilder()
         // let's just call one task
@@ -52,6 +57,7 @@ class AntTest extends GroovyTestCase {
         assert file.exists()
     }
 
+    @Test
     void testFileIteration() {
         def ant = new AntBuilder()
         // let's create a scanner of filesets
@@ -71,6 +77,7 @@ class AntTest extends GroovyTestCase {
         assert found
     }
 
+    @Test
     void testPathBuilding() {
         def ant = new AntBuilder()
         def value = ant.path {
@@ -82,10 +89,11 @@ class AntTest extends GroovyTestCase {
         assertEquals org.apache.tools.ant.types.Path, value.getClass()
     }
 
+    @Test
     void testTaskContainerExecutionSequence() {
         SpoofTaskContainer.getSpoof().length = 0
         def antFile = new File('src/test-resources/groovy/ant/AntTest.xml')
-        assertTrue "Couldn't find ant test script", antFile.exists()
+        assertTrue(antFile.exists(), "Couldn't find ant test script")
         // run it with ant, to be sure that our assumptions are correct
         def project = new Project()
         project.init()
@@ -112,7 +120,7 @@ end SpoofTaskContainer execute
         def ant = new AntBuilder()
         def PATH = 'task.path'
 
-        // and now run it with the AntBuilder        
+        // and now run it with the AntBuilder
         ant.path(id: PATH) { ant.pathelement(location: 'classes') }
         ['spoofcontainer': SpoofTaskContainer, 'spoof': SpoofTask].each { pair ->
             ant.taskdef(name: pair.key, classname: pair.value.name, classpathref: PATH)
@@ -140,6 +148,7 @@ end SpoofTaskContainer execute
     }
 
     /** Checks that we can access dynamically (through Ant's property task) defined properties in Groovy scriptlets  */
+    @Test
     void testDynamicProperties() {
         def antBuilder = new AntBuilder()
         antBuilder.property(name: 'testProp1', value: 'TEST 1')
@@ -154,6 +163,7 @@ end SpoofTaskContainer execute
     /**
      * Test access to AntBuilder properties
      */
+    @Test
     void testAntBuilderProperties() {
         def ant = new AntBuilder()
         assertNull ant.project.properties.'myProp'
@@ -165,6 +175,7 @@ end SpoofTaskContainer execute
      * Tests that the AntBuilder can handle conditions (conditions aren't tasks)
      * (test for GROOVY-824)
      */
+    @Test
     void testCondition() {
         def ant = new AntBuilder()
         ant.condition(property: 'containsHi') {
@@ -181,9 +192,10 @@ end SpoofTaskContainer execute
      * Tests that using the AntBuilder within the <groovy> task doesn't cause double execution
      * (test for GROOVY-1602)
      */
+    @Test
     void testAntBuilderWithinGroovyTask() {
         def antFile = new File('src/test-resources/groovy/ant/AntTest.xml')
-        assertTrue "Couldn't find ant test script", antFile.exists()
+        assertTrue(antFile.exists(), "Couldn't find ant test script")
 
         def project = new Project()
         project.init()
@@ -213,9 +225,10 @@ finished: echo[message:after groovy task]
     /**
      * Test usage of import
      */
+    @Test
     void testImport() {
         def antFile = new File('src/test-resources/groovy/ant/AntTest_import.xml')
-        assertTrue "Couldn't find ant test script", antFile.exists()
+        assertTrue(antFile.exists(), "Couldn't find ant test script")
 
         def ant = new AntBuilder()
         def customListener = new SimpleListener()
@@ -227,7 +240,7 @@ started: import[file:${antFile.absolutePath}]
 started: echo[message:outside targets, at the top]
 finished: echo[message:outside targets, at the top]
 finished: import[file:${antFile.absolutePath}]
-"""
+""".toString()
         assertEquals expectedSpoof, customListener.spoof.toString()
 
         customListener.spoof.length = 0
@@ -256,6 +269,7 @@ finished: echo[message:echo from AntBuilder's target foo]
         assertEquals expectedSpoof, customListener.spoof.toString()
     }
 
+    @Test
     void testDefineTarget_groovy2900() {
         def ant = new AntBuilder()
         def project = ant.project
@@ -297,7 +311,7 @@ class SimpleListener extends org.apache.tools.ant.DefaultLogger {
     def spoof = new StringBuffer()
 
     void taskStarted(BuildEvent event) {
-        if (!(event.task instanceof UnknownElement)) Assert.fail("Task is already configured. Listeners won't have a chance to alter UnknownElement for additional configuration");
+        if (!(event.task instanceof UnknownElement)) fail("Task is already configured. Listeners won't have a chance to alter UnknownElement for additional configuration");
         spoof << "started: " + logTask(event.task) + "\n"
     }
 

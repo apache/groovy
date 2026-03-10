@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy4415Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy4415Bug {
+    @Test
     void testCompilerShouldFindMethod() {
         // interface defined in Groovy
         assertScript '''
@@ -42,6 +46,7 @@ class Groovy4415Bug extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testGroovy4645() {
         assertScript '''
             interface CovariantReturns {

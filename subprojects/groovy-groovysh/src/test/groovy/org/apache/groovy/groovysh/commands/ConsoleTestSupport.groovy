@@ -18,7 +18,6 @@
  */
 package org.apache.groovy.groovysh.commands
 
-import groovy.test.GroovyTestCase
 import org.apache.groovy.groovysh.Main
 import org.apache.groovy.groovysh.jline.GroovyCommands
 import org.apache.groovy.groovysh.jline.GroovyConsoleEngine
@@ -32,13 +31,14 @@ import org.jline.console.impl.DefaultPrinter
 import org.jline.reader.LineReader
 import org.jline.reader.LineReaderBuilder
 import org.jline.reader.impl.DefaultParser
+import org.junit.jupiter.api.BeforeEach
 
 import java.nio.file.Path
 
 /**
  * Support for testing {@link ConsoleEngine} instances.
  */
-abstract class ConsoleTestSupport extends GroovyTestCase {
+abstract class ConsoleTestSupport {
     protected GroovyEngine engine = new GroovyEngine()
     private URL rootURL = Main.getResource('/nanorc')
     private Path root = ClasspathResourceUtil.getResourcePath(rootURL)
@@ -51,9 +51,8 @@ abstract class ConsoleTestSupport extends GroovyTestCase {
     protected CommandRegistry.CommandSession session = new CommandRegistry.CommandSession()
     protected LineReader reader
 
-    @Override
+    @BeforeEach
     void setUp() {
-        super.setUp()
         reader = LineReaderBuilder.builder().parser(new DefaultParser(regexCommand: /\/?[a-zA-Z!]+\S*/)).build()
         console = new GroovyConsoleEngine(engine, printer, null, configPath, reader)
     }

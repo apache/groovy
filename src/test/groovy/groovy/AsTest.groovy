@@ -18,18 +18,20 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Test case for using the "as" keyword to convert between strings
  * and numbers in both directions.
  */
-class AsTest extends GroovyTestCase {
+class AsTest {
 
     def subject
     /**
      * Test that "as String" works for various types.
      */
+    @Test
     void testAsString() {
         assert (48256846 as String) == "48256846"
         assert (0.345358 as String) == "0.345358"
@@ -37,102 +39,119 @@ class AsTest extends GroovyTestCase {
         assert (3568874G as String) == "3568874"
     }
 
+    @Test
     void testStringAsBigInteger() {
         subject = "34587203957357" as BigInteger
         assert subject.class == BigInteger
         assert subject == 34587203957357
     }
 
+    @Test
     void testStringAsLong() {
         subject = "32498687" as Long
         assert subject.class == Long
         assert subject == 32498687L
     }
 
+    @Test
     void testStringAsInt() {
         subject = "32498687" as int
         assert subject.class == Integer
         assert subject == 32498687
     }
 
+    @Test
     void testStringAsShort() {
         subject = "13279" as Short
         assert subject.class == Short
         assert subject == 13279
     }
 
+    @Test
     void testStringAsByte() {
         subject = "12" as Byte
         assert subject.class == Byte
         assert subject == 12
     }
 
+    @Test
     void testStringAsBigDecimal() {
         subject = "12.54356" as BigDecimal
         assert subject.class == BigDecimal
         assert subject == 12.54356
     }
 
+    @Test
     void testStringAsDouble() {
         subject = "1.345" as double
         assert subject.class == Double
         assert subject == 1.345
     }
 
+    @Test
     void testStringAsFloat() {
         subject = "1.345" as float
         assert subject.class == Float
         assert subject == 1.345F
     }
 
+    @Test
     void testFloatAsBigDecimal() {
         subject = 0.1f as BigDecimal
         assert subject.class == BigDecimal
         assert subject == 0.1
     }
 
+    @Test
     void testDoubleAsBigDecimal() {
         subject = 0.1d as BigDecimal
         assert subject.class == BigDecimal
         assert subject == 0.1
     }
 
+    @Test
     void testFloatAsDouble() {
         subject = 0.1f as Double
         assert subject.class == Double
         assert subject == 0.1
     }
 
+    @Test
     void testGStringAsByte() {
         subject = "${42}" as byte
         assert subject.class == Byte // "as" wraps types
         assert subject == 42
     }
 
+    @Test
     void testGStringAsShort() {
         subject = "${42}" as short
         assert subject.class == Short // "as" wraps types
         assert subject == 42
     }
 
+    @Test
     void testGStringAsInt() {
         subject = "${42}" as int
         assert subject.class == Integer // "as" wraps types
         assert subject == 42
     }
 
+    @Test
     void testGStringAsLong() {
         subject = "${42}" as long
         assert subject.class == Long // "as" wraps types
         assert subject == 42
     }
 
+    @Test
     void testGStringAsFloat() {
         subject = "${42.666}" as float
         assert subject.class == Float // "as" wraps types
         assert subject == 42.666f
     }
 
+    @Test
     void testGStringAsDouble() {
         subject = "${42.666}" as double
         assert subject.class == Double // "as" wraps types

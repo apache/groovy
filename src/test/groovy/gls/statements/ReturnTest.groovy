@@ -19,17 +19,20 @@
 package gls.statements
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class ReturnTest extends CompilableTestSupport {
+final class ReturnTest extends CompilableTestSupport {
 
+  @Test
   void testObjectInitializer() {
       shouldNotCompile """
          class A {
             {return}
-         }      
+         }
       """
   }
 
+  @Test
   void testStaticInitializer() {
       assertScript """
          class A {
@@ -37,9 +40,10 @@ class ReturnTest extends CompilableTestSupport {
              static { return; foo=1 }
          }
          assert A.foo==2
-      """      
+      """
   }
 
+  @Test
   void testReturnAdditionInFinally() {
       //GROOVY-7065
       assertScript """

@@ -19,7 +19,7 @@
 package org.codehaus.groovy.ast.stmt
 
 import org.codehaus.groovy.ast.ClassHelper
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX
 

@@ -18,15 +18,18 @@
  */
 package groovy.util
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.util.ListBufferedIterator;
-import org.codehaus.groovy.util.IteratorBufferedIterator;
+import org.codehaus.groovy.util.IteratorBufferedIterator
+import org.codehaus.groovy.util.ListBufferedIterator
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.shouldFail
 
 /**
  * Test class for BufferedIterators.
  */
-class BufferedIteratorTest extends GroovyTestCase {
+class BufferedIteratorTest {
 
+    @Test
     void testHeadOnEmptyShouldFail() {
         def bufferedIterator1 = new IteratorBufferedIterator([].iterator())
         def bufferedIterator2 = new ListBufferedIterator([])
@@ -39,6 +42,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testHeadShouldntConsumeFirstElement() {
         def bufferedIterator1 = new IteratorBufferedIterator([1,2,3,4].iterator())
         def bufferedIterator2 = new ListBufferedIterator([1,2,3,4])
@@ -49,6 +53,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert bufferedIterator2.toList() == [1,2,3,4]
     }
 
+    @Test
     void testHeadShouldntConsumeMiddleElement() {
         def bufferedIterator1 = new IteratorBufferedIterator([1,2,3,4].iterator())
         def bufferedIterator2 = new ListBufferedIterator([1,2,3,4])
@@ -61,6 +66,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert bufferedIterator2.toList() == [2,3,4]
     }
 
+    @Test
     void testHeadShouldntConsumeLastElement() {
         def bufferedIterator1 = new IteratorBufferedIterator([1,2,3,4].iterator())
         def bufferedIterator2 = new ListBufferedIterator([1,2,3,4])
@@ -77,6 +83,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert bufferedIterator2.toList() == [4]
     }
 
+    @Test
     void testHeadTwiceShouldReturnSameElement() {
         def bufferedIterator1 = new IteratorBufferedIterator([1,2,3,4].iterator())
         def bufferedIterator2 = new ListBufferedIterator([1,2,3,4])
@@ -91,6 +98,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert bufferedIterator2.toList() == [2,3,4]
     }
 
+    @Test
     void testHeadShouldWorkMultipleTimesOnSameIterator() {
         def bufferedIterator1 = new IteratorBufferedIterator([1,2,3,4].iterator())
         def bufferedIterator2 = new ListBufferedIterator([1,2,3,4])
@@ -107,6 +115,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert bufferedIterator2.toList() == [3,4]
     }
 
+    @Test
     void testIteratorBufferedIteratorSucceedIfHeadNotCalled() {
         def list = [1,2,3,4]
         def bufferedIterator = new IteratorBufferedIterator(list.iterator())
@@ -117,6 +126,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert list == [2,3,4]
     }
 
+    @Test
     void testIteratorBufferedIteratorRemoveShouldFailIfHeadCalled() {
         def list = [1,2,3,4]
         def bufferedIterator = new IteratorBufferedIterator(list.iterator())
@@ -128,6 +138,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testIteratorBufferedIteratorRemoveShouldSucceedIfNextCalledAfterHead() {
         def list = [1,2,3,4]
         def bufferedIterator = new IteratorBufferedIterator(list.iterator())
@@ -140,6 +151,7 @@ class BufferedIteratorTest extends GroovyTestCase {
         assert list == [1,3,4]
     }
 
+    @Test
     void testListBufferedIteratorRemoveShouldRemoveLastReturnedByNext() {
         def list = [1,2,3,4]
         def bufferedIterator = new ListBufferedIterator(list)

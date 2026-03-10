@@ -40,13 +40,19 @@ import java.util.Set;
  * This interface is for internal use only!
  */
 public interface VMPlugin {
-    void setAdditionalClassInformation(ClassNode c);
+
     Class[] getPluginDefaultGroovyMethods();
     Class[] getPluginStaticGroovyMethods();
-    void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode root);
-    void configureAnnotation(AnnotationNode an);
-    void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
+
+    void setAdditionalClassInformation(ClassNode node);
+    void configureClassNode(CompileUnit unit, ClassNode node);
+
+    void configureAnnotation(AnnotationNode node);
+    default void configureAnnotationNodeFromDefinition(AnnotationNode definition, AnnotationNode node) {
+    }
+
     void invalidateCallSites();
+
     /**
      * Returns a handle with bound receiver to invokeSpecial the given method.
      * This method will require at least Java 7, but since the source has to compile

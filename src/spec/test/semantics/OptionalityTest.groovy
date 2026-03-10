@@ -19,9 +19,11 @@
 package semantics
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class OptionalityTest extends CompilableTestSupport {
+final class OptionalityTest extends CompilableTestSupport {
 
+    @Test
     void testOptionalParentheses() {
         // tag::optional_parentheses[]
         println 'Hello World'
@@ -29,6 +31,7 @@ class OptionalityTest extends CompilableTestSupport {
         // end::optional_parentheses[]
     }
 
+    @Test
     void testRequiredParentheses() {
         // tag::required_parentheses[]
         println()
@@ -36,6 +39,7 @@ class OptionalityTest extends CompilableTestSupport {
         // end::required_parentheses[]
     }
 
+    @Test
     void testOptionalSemicolons() {
         // tag::single_statement_with_semicolon[]
         assert true;
@@ -46,12 +50,14 @@ class OptionalityTest extends CompilableTestSupport {
         // end::single_statement_without_semicolon[]
     }
 
+    @Test
     void testRequiredSemicolons() {
         // tag::statements_separated_by_semicolon[]
         boolean a = true; assert a
         // end::statements_separated_by_semicolon[]
     }
 
+    @Test
     void testOptionalReturn() {
         assertScript '''
             // tag::return_keyword[]
@@ -71,6 +77,7 @@ class OptionalityTest extends CompilableTestSupport {
         '''
     }
 
+    @Test
     void testOptionalPublic() {
         shouldCompile '''
             // tag::public_keyword[]

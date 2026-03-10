@@ -28,12 +28,16 @@ import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.CompilationCustomizer
 import org.codehaus.groovy.transform.stc.StaticTypesMarker
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 /**
  * Unit tests for static type checking : type inference.
  */
 class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
+    @Test
     void testStringToInteger() {
         assertScript '''
             def name = "123" // we want type inference
@@ -42,18 +46,19 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9935
-    void testIntegerToNumber() {
-        ['def', 'int', 'Integer', 'BigInteger'].each { type ->
-            assertScript """
-                Number f() {
-                    $type n = 10
-                    return n
-                }
-                assert f() == 10
-            """
-        }
+    @ParameterizedTest
+    @ValueSource(strings=['def','int','Integer','BigInteger'])
+    void testIntegerToNumber(String type) {
+        assertScript """
+            Number f() {
+                $type n = 10
+                return n
+            }
+            assert f() == 10
+        """
     }
 
+    @Test
     void testGStringMethods() {
         assertScript '''
             def myname = 'Cedric'
@@ -62,6 +67,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDynamicMethodWithinTypeCheckedClass() {
         assertScript '''
             import groovy.transform.*
@@ -91,6 +97,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOf1() {
         assertScript '''
             Object o
@@ -100,6 +107,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOf2() {
         assertScript '''
             Object o
@@ -111,6 +119,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOf3() {
         shouldFailWithMessages '''
             Object o
@@ -122,6 +131,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    @Test
     void testInstanceOf4() {
         shouldFailWithMessages '''
             Object o
@@ -134,6 +144,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Object#toUpperCase()'
     }
 
+    @Test
     void testInstanceOf5() {
         assertScript '''
             class A {
@@ -158,6 +169,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9953
+    @Test
     void testInstanceOf6() {
         assertScript '''
             class A {
@@ -175,6 +187,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8828
+    @Test
     void testInstanceOf7() {
         assertScript '''
             interface Foo {
@@ -193,6 +206,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9454
+    @Test
     void testInstanceOf8() {
         assertScript '''
             interface Face {
@@ -219,6 +233,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10667
+    @Test
     void testInstanceOf9() {
         assertScript '''
             trait Tagged {
@@ -239,6 +254,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7971
+    @Test
     void testInstanceOf10() {
         assertScript '''
             import groovy.json.JsonOutput
@@ -256,6 +272,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8337
+    @Test
     void testInstanceOf11() {
         assertScript '''
             class C {
@@ -281,6 +298,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10096
+    @Test
     void testInstanceOf12() {
         shouldFailWithMessages '''
             class Foo {
@@ -298,8 +316,20 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot return value of type Foo for method returning Bar'
     }
 
-    // GROOVY-11007
+    @Test
     void testInstanceOf13() {
+        assertScript '''
+            "".with { x ->
+                if (x instanceof String) {
+                    x.toUpperCase()
+                }
+            }
+        '''
+    }
+
+    // GROOVY-11007
+    @Test
+    void testInstanceOf14() {
         assertScript '''
             interface I {
                 CharSequence getCharSequence()
@@ -319,7 +349,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11290
-    void testInstanceOf14() {
+    @Test
+    void testInstanceOf15() {
         assertScript '''
             def test(List<String> list) {
                 if (list instanceof List) {
@@ -332,7 +363,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11815
-    void testInstanceOf15() {
+    @Test
+    void testInstanceOf16() {
         assertScript '''
             def c = true ? new ArrayDeque() : new Stack()
             if (c instanceof Deque) {
@@ -350,7 +382,36 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot call (java.util.AbstractCollection','#add(java.lang.String) with arguments [int]'
     }
 
+    // GROOVY-11864
+    @Test
+    void testInstanceOf17() {
+        assertScript '''
+            boolean enabled() {}
+            @ASTTest(phase=INSTRUCTION_SELECTION, value={
+                def expr = lookup('x').get(0).expression
+                def type = expr.getNodeMetaData(INFERRED_TYPE)
+                assert type.name == 'java.lang.Number'
+            })
+            def test(Number n) {
+                if (enabled()) {
+                    if (n instanceof Long) return n
+                    throw new IllegalArgumentException()
+                }
+            x:  n
+            }
+            assert test(42) == 42
+        '''
+        shouldFailWithMessages '''
+            void test(Integer i) {
+                if (i instanceof Long) {
+                }
+            }
+        ''',
+        'Incompatible instanceof types: java.lang.Integer and java.lang.Long'
+    }
+
     // GROOVY-5226
+    @Test
     void testNestedInstanceOf1() {
         assertScript '''
             Object o = "foo"
@@ -363,6 +424,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5226
+    @Test
     void testNestedInstanceOf2() {
         assertScript '''
             Object o = "foo"
@@ -375,6 +437,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11290
+    @Test
     void testNestedInstanceOf3() {
         assertScript '''
             Object o = null
@@ -386,6 +449,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNestedInstanceOf4() {
         assertScript '''
             Object o = [1,2] as Number[]
@@ -397,6 +461,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNestedInstanceOf5() {
         assertScript '''
             class A {
@@ -405,19 +470,20 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             class B {
                int bar() { 2 }
             }
+            class C {
+            }
 
-            def o = new A()
-            int result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
-            assert result == 1
-            o = new B()
-            result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
-            assert result == 2
-            o = new Object()
-            result = o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
-            assert result == 3
+            def test(o) {
+                o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
+            }
+
+            assert test(new A()) == 1
+            assert test(new B()) == 2
+            assert test(new C()) == 3
         '''
     }
 
+    @Test
     void testMultipleInstanceOf1() {
         assertScript '''
             class A {
@@ -454,6 +520,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleInstanceOf2() {
         assertScript '''
             int cardinality(o) {
@@ -465,6 +532,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleInstanceOf3() {
         assertScript '''
             boolean empty(o) {
@@ -479,6 +547,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8965
+    @Test
     void testMultipleInstanceOf4() {
         assertScript '''
             def foo(o) {
@@ -494,6 +563,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11559
+    @Test
     void testMultipleInstanceOf5() {
         assertScript '''
             def foo(o) {
@@ -506,6 +576,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleInstanceOf6() {
         assertScript '''
             void test(thing) {
@@ -523,6 +594,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testMultipleInstanceOf7() {
         assertScript '''
             class C extends AbstractCollection {
@@ -554,6 +626,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10668
+    @Test
     void testMultipleInstanceOf8() {
         for (string in ['(value as String)', 'value.toString()']) {
             assertScript """
@@ -576,6 +649,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10702
+    @Test
     void testMultipleInstanceOf9() {
         shouldFailWithMessages '''
             def toArray(value) {
@@ -598,6 +672,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6429
+    @Test
     void testNotInstanceof1() {
         String types = '''
             class C {
@@ -638,6 +713,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8523
+    @Test
     void testNotInstanceof2() {
         for (test in ['!(x instanceof Runnable)', 'x !instanceof Runnable']) {
             assertScript """
@@ -665,6 +741,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8523
+    @Test
     void testNotInstanceOf3() {
         for (test in ['!(x instanceof List)', 'x !instanceof List']) {
             assertScript """
@@ -697,6 +774,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9455
+    @Test
     void testNotInstanceOf4() {
         for (test in ['!(x instanceof String)', 'x !instanceof String']) {
             shouldFailWithMessages """
@@ -711,6 +789,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9931
+    @Test
     void testNotInstanceof5() {
         for (test in ['!(x instanceof Number)', 'x !instanceof Number']) {
             assertScript """
@@ -728,6 +807,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8412
+    @Test
     void testNotInstanceof6() {
         for (test in ['!(x instanceof Number)', 'x !instanceof Number']) {
             assertScript """
@@ -748,6 +828,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10217
+    @Test
     void testInstanceOfThenSubscriptOperator() {
         assertScript '''
             void test(Object o) {
@@ -761,6 +842,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOfInferenceWithImplicitIt() {
         assertScript '''
             ['a', 'b', 'c'].each {
@@ -771,6 +853,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOfTypeInferenceWithDef() {
         assertScript '''
             def profile = ['Guillaume', 34, true]
@@ -781,6 +864,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOfTypeInferenceWithoutDef() {
         assertScript '''
             def profile = ['Guillaume', 34, true]
@@ -790,6 +874,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOfInferenceWithProperty1() {
         assertScript '''
             class A {
@@ -802,6 +887,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInstanceOfInferenceWithProperty2() {
         shouldFailWithMessages '''
             class A {
@@ -815,6 +901,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testInstanceOfInferenceWithMissingProperty() {
         shouldFailWithMessages '''
             class A {
@@ -829,6 +916,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9967
+    @Test
     void testInstanceOfInferenceWithSubclassProperty() {
         assertScript '''
             class A {
@@ -874,6 +962,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotAllowDynamicVariable() {
         shouldFailWithMessages '''
             String name = 'Guillaume'
@@ -882,6 +971,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'The variable [naamme] is undeclared'
     }
 
+    @Test
     void testShouldNotFailWithWith() {
         assertScript '''
             class A {
@@ -895,6 +985,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldFailWithWith() {
         shouldFailWithMessages '''
             class A {
@@ -908,6 +999,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign value of type java.lang.String to variable of type int'
     }
 
+    @Test
     void testShouldNotFailWithWithTwoClasses() {
         // we must make sure that type inference engine in this case
         // takes the same property as at runtime
@@ -930,6 +1022,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotFailWithWithAndImplicitIt() {
         assertScript '''
             class A {
@@ -943,6 +1036,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotFailWithWithAndExplicitIt() {
         assertScript '''
             class A {
@@ -956,6 +1050,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldFailWithWithAndWrongExplicitIt() {
         shouldFailWithMessages '''
             class A {
@@ -969,6 +1064,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Expected type A for closure parameter: it'
     }
 
+    @Test
     void testShouldNotFailWithInheritanceAndWith() {
          assertScript '''
              class A {
@@ -985,6 +1081,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
          '''
     }
 
+    @Test
     void testCallMethodInWithContext() {
         assertScript '''
             class A {
@@ -997,6 +1094,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testCallMethodInWithContextAndShadowing() {
        // make sure that the method which is found in 'with' is actually the one from class A
        // which returns a String
@@ -1029,6 +1127,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Integer#toUpperCase()'
     }
 
+    @Test
     void testDeclarationTypeInference() {
         Reference<MethodNode> method = []
         config.addCompilationCustomizers(new CompilationCustomizer(CompilePhase.CLASS_GENERATION) {
@@ -1080,6 +1179,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
     }
 
+    @Test
     void testChooseMethodWithTypeInference() {
         assertScript '''
             void method(Object o) { println 'Object' }
@@ -1089,6 +1189,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStarOperatorOnMap() {
         assertScript '''
             List keys = [x:1,y:2,z:3]*.key
@@ -1096,6 +1197,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testStarOperatorOnMap2() {
         assertScript '''
             List keys = [x:1,y:2,z:3]*.key
@@ -1111,6 +1213,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Integer#toUpperCase()'
     }
 
+    @Test
     void testStarOperatorOnMap3() {
         assertScript '''
             def keys = [x:1,y:2,z:3]*.key
@@ -1126,6 +1229,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot find matching method java.lang.Integer#toUpperCase()'
     }
 
+    @Test
     void testStarOperatorOnMap4() {
         assertScript '''
             def map = [x:1,y:2,z:3]
@@ -1162,6 +1266,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7247
+    @Test
     void testStarOperatorOnMapKey() {
         assertScript '''
             Map<String, Integer> map = [*:[A:1], *:[B:2]]
@@ -1191,6 +1296,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Cannot assign java.util.LinkedHashMap<java.lang.String, java.lang.Number',' to: java.util.Map<java.lang.String, java.lang.Integer>'
     }
 
+    @Test
     void testFlowTypingWithStringVariable() {
         assertScript '''
             String s = new Object() // anything assignable to String
@@ -1198,6 +1304,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testDefTypeAfterLongThenIntAssignments() {
         assertScript '''
             def o
@@ -1211,6 +1318,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5519
+    @Test
     void testInferThrowable() {
         assertScript '''
             try {
@@ -1225,6 +1333,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5522
+    @Test
     void testTypeInferenceWithArrayAndFind() {
         assertScript '''
             File findFile() {
@@ -1234,6 +1343,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testShouldNotThrowIncompatibleArgToFunVerifyError() {
         assertScript '''
             Object convertValueToType(Object value, Class targetType) {
@@ -1248,6 +1358,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testSwitchCaseAnalysis1() {
         assertScript '''
             import org.codehaus.groovy.ast.tools.WideningCategories.LowestUpperBoundClassNode as LUB
@@ -1275,6 +1386,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6215
+    @Test
     void testSwitchCaseAnalysis2() {
         assertScript '''
             def getValueForNumber(int x) {
@@ -1301,6 +1413,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-8411
+    @Test
     void testSwitchCaseAnalysis3() {
         shouldFailWithMessages '''
             void test(something) {
@@ -1382,6 +1495,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testNumberPrefixPlusPlusInference() {
         [Byte:'Integer',
          Character: 'Character',
@@ -1406,6 +1520,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         }
     }
 
+    @Test
     void testNumberPostfixPlusPlusInference() {
         [Byte:'Byte',
          Character: 'Character',
@@ -1431,6 +1546,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6522
+    @Test
     void testInferenceWithImplicitClosureCoercion() {
         assertScript '''
             interface CustomCallable<T> {
@@ -1458,6 +1574,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInferenceWithImplicitClosureCoercionAndArrayReturn() {
         assertScript '''
             interface ArrayFactory<T> { T[] array() }
@@ -1473,6 +1590,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInferenceWithImplicitClosureCoercionAndListReturn() {
         assertScript '''
             interface ListFactory<T> { List<T> list() }
@@ -1492,6 +1610,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6835
+    @Test
     void testFlowTypingWithInstanceofAndInterfaceTypes() {
         assertScript '''
             class ShowFlowTypeBug {
@@ -1509,6 +1628,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    @Test
     void testInferenceWithImplicitClosureCoercionAndGenericTypeAsParameter() {
         assertScript '''
             interface Action<T> { void execute(T t) }
@@ -1522,6 +1642,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6574
+    @Test
     void testShouldInferPrimitiveBoolean() {
         assertScript '''
             def foo(Boolean o) {
@@ -1535,6 +1656,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-7549
+    @Test
     void testShouldKeepDeclTypeWhenAssignedInaccessibleT() {
         config.targetDirectory = File.createTempDir()
         def parentDir = File.createTempDir()
@@ -1593,6 +1715,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-5655
+    @Test
     void testByteArrayInference() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -1604,6 +1727,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-11623
+    @Test
     void testAnnotationDefaults() {
         assertScript '''
             import java.lang.annotation.*
@@ -1640,6 +1764,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-6207
+    @Test
     void testGetAnnotationFails() {
         assertScript '''
             import groovy.transform.*
@@ -1683,6 +1808,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-9077
+    @Test
     void testInferredTypeForPropertyThatResolvesToMethod() {
         assertScript '''
             import groovy.transform.*
@@ -1714,6 +1840,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10089
+    @Test
     void testInferredTypeForMapOfList() {
         assertScript '''
             void test(... attributes) {
@@ -1737,6 +1864,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
     }
 
     // GROOVY-10328
+    @Test
     void testInferredTypeForMapOrList() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={

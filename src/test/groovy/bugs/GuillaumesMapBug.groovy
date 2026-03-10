@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class GuillaumesMapBug extends GroovyTestCase {
 
+class GuillaumesMapBug {
+
+    @Test
     void testBug2() {
         def list = [1, 2, 3]
         def map = [:]
@@ -41,6 +43,7 @@ class GuillaumesMapBug extends GroovyTestCase {
     }
 
 
+    @Test
     void testBug() {
         def list = [1, 2, 3]
         def map = [:]

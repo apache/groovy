@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
-import groovy.test.GroovyTestCase
 
-abstract class AbstractMemoizeTestCase extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals
+
+
+abstract class AbstractMemoizeTestCase {
 
     volatile int counter = 0
 

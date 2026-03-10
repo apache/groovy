@@ -18,7 +18,9 @@
  */
 package groovy.grape
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
+
+import static org.junit.jupiter.api.Assertions.fail
 
 /**
  * Test for GROOVY-3853.

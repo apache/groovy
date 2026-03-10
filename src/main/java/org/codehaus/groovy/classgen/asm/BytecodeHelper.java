@@ -115,7 +115,7 @@ public class BytecodeHelper {
      * @return the ASM internal name of the type
      */
     public static String getClassInternalName(String name) {
-        return name.replace('.', '/');
+        return name.indexOf('.') < 0 ? name : name.replace('.', '/');
     }
 
     /**
@@ -476,16 +476,23 @@ public class BytecodeHelper {
         ret.append(end);
     }
 
-    public static void doCast(MethodVisitor mv, ClassNode type) {
-        if (isObjectType(type)) return;
+    public static void doCast(final MethodVisitor mv, final Class<?> type) {
+        if (type.isPrimitive() && type != Void.TYPE) {
+            unbox(mv, type);
+        } else if (type != Object.class) {
+            mv.visitTypeInsn(CHECKCAST, type.isArray()
+                    ? BytecodeHelper.getTypeDescription(type)
+                    : BytecodeHelper.getClassInternalName(type.getName()));
+        }
+    }
+
+    public static void doCast(final MethodVisitor mv, final ClassNode type) {
         if (isPrimitiveType(type) && !isPrimitiveVoid(type)) {
             unbox(mv, type);
-        } else {
-            mv.visitTypeInsn(
-                    CHECKCAST,
-                    type.isArray() ?
-                            BytecodeHelper.getTypeDescription(type) :
-                            BytecodeHelper.getClassInternalName(type.getName()));
+        } else if (!isObjectType(type)) {
+            mv.visitTypeInsn(CHECKCAST, type.isArray()
+                    ? BytecodeHelper.getTypeDescription(type)
+                    : BytecodeHelper.getClassInternalName(type.getName()));
         }
     }
 
@@ -513,19 +520,6 @@ public class BytecodeHelper {
      */
     public static void doCastToWrappedType(MethodVisitor mv, ClassNode sourceType, ClassNode targetType) {
         mv.visitMethodInsn(INVOKESTATIC, getClassInternalName(targetType), "valueOf", "(" + getTypeDescription(sourceType) + ")" + getTypeDescription(targetType), false);
-    }
-
-    public static void doCast(MethodVisitor mv, Class type) {
-        if (type == Object.class) return;
-        if (type.isPrimitive() && type != Void.TYPE) {
-            unbox(mv, type);
-        } else {
-            mv.visitTypeInsn(
-                    CHECKCAST,
-                    type.isArray() ?
-                            BytecodeHelper.getTypeDescription(type) :
-                            BytecodeHelper.getClassInternalName(type.getName()));
-        }
     }
 
     /**

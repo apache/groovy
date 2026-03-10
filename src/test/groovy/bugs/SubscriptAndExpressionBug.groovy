@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class SubscriptAndExpressionBug extends GroovyTestCase {
 
+class SubscriptAndExpressionBug {
+
+    @Test
     void testBug() {
         def foo = ["nice cheese grommit"]
 
@@ -30,6 +32,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         assert cheese == true
     }
 
+    @Test
     void testSubscriptIncrement() {
         def foo = [5, 6, 7]
         foo[0] += 5
@@ -46,6 +49,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         assert foo[1] == 11
     }
 
+    @Test
     void testLargeSubscript() {
         def foo = [1]
 
@@ -64,6 +68,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         assert foo[20] == 6
     }
 
+    @Test
     void testDoubleSubscript() {
         def foo = ["nice cheese grommit"]
 
@@ -72,6 +77,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         assert cheese == "cheese"
     }
 
+    @Test
     void testSubscriptAndProperty() {
         def foo = [['gromit':'cheese']]
 
@@ -80,6 +86,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         assert cheese == "cheese"
     }
 
+    @Test
     void testBooleanExpression() {
        int[] a = new int[1]
        assert (a[0] = 42) == 42

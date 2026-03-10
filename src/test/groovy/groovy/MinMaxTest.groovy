@@ -18,13 +18,15 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Tests the min() and max() functions
  */
-class MinMaxTest extends GroovyTestCase {
+class MinMaxTest {
 
+    @Test
     void testSimpleMinMax() {
         def list = [5, 2, 6, 1, 9, 8]
 
@@ -35,6 +37,7 @@ class MinMaxTest extends GroovyTestCase {
         assert n == 9
     }
 
+    @Test
     void testMinMaxWithComparator() {
         def people = getPeople()
 
@@ -50,6 +53,7 @@ class MinMaxTest extends GroovyTestCase {
         assert p.get("@name") == "Chris", "found person ${p}"
     }
 
+    @Test
     void testMinMaxOnArraysWithComparator() {
         Person[] people = [
                 new Person(name: 'James', cheese: 'Edam', location: 'London'),

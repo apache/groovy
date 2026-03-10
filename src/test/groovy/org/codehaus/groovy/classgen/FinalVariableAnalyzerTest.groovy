@@ -18,7 +18,6 @@
  */
 package org.codehaus.groovy.classgen
 
-import groovy.test.GroovyTestCase
 import groovy.transform.AutoFinal
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ClassNode
@@ -29,9 +28,12 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.customizers.builder.CompilerCustomizationBuilder
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
 
 @AutoFinal
-final class FinalVariableAnalyzerTest extends GroovyTestCase {
+final class FinalVariableAnalyzerTest {
 
     protected void assertFinals(Map<String, Boolean> expectations, String script) throws Exception {
         def cc = new CompilerConfiguration()
@@ -63,16 +65,19 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         assert (vars - checked).isEmpty()
     }
 
+    @Test
     void testVariableShouldBeEffectivelyFinal() {
         assertFinals x: true, 'def x = 1'
     }
 
+    @Test
     void testVariableDeclaredAsFinal() {
         assertFinals x: true, '''
             final x = 1
         '''
     }
 
+    @Test
     void testReassignedVarShouldNotBeFinal() {
         assertFinals x: false, '''
             def x = 1
@@ -80,6 +85,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testReassignedVarShouldNotBeFinalWhenUsingMultiAssignment() {
         assertFinals x: false, '''
             def x = 1
@@ -87,10 +93,12 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testUnassignedVarShouldNotBeConsideredFinal() {
         assertFinals x: false, '''def x'''
     }
 
+    @Test
     void testVariableReassignedInClosureShouldNotBeFinal() {
         assertFinals x: false, '''
             def x
@@ -99,6 +107,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testVariableNotReassignedInClosureShouldBeFinal() {
         assertFinals x: true, '''
             def x = 1
@@ -107,6 +116,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testVariableInitializedInTwoStepsShouldBeFinal() {
         assertFinals x: true, '''
             def x
@@ -114,18 +124,21 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testParameterShouldBeConsideredFinal() {
         assertFinals x: true, '''
             def foo(int x) { x+1 }
        '''
     }
 
+    @Test
     void testParameterShouldNotBeConsideredFinal() {
         assertFinals x: false, '''
             def foo(int x) { x = x+1 }
        '''
     }
 
+    @Test
     void testReassignedFinalVariableShouldThrowCompilationError() {
         assertFinalCompilationErrors(['x'], '''
             final x = []
@@ -133,6 +146,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testReassignedFinalParameterShouldThrowCompilationError() {
         assertFinalCompilationErrors(['x'], '''
             void foo(final int x) {
@@ -141,6 +155,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testFinalVariableAssignedInIfBranchesShouldNotBeFinal() {
         assertFinals x: false, '''
             int x
@@ -150,6 +165,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testFinalVariableAssignedInElseBranchesShouldStillNotBeFinal() {
         assertFinals x: false, '''
             int x
@@ -161,6 +177,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testFinalVariableAssignedInIfElseBranchesShouldStillBeFinal() {
         assertFinals x: true, '''
             int x
@@ -172,6 +189,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testFinalVariableAssignedInIfElseBranchesShouldNotBeFinal() {
         assertFinals x: false, '''
             int x
@@ -184,6 +202,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testFinalVariableAssignedInIfElseBranchesShouldNotBeFinal2() {
         assertFinals x: false, '''
             int x
@@ -196,6 +215,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testNestedIfShouldNotBeFinal() {
         assertFinals x: false, '''
             int x
@@ -213,6 +233,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-8386
+    @Test
     void testPotentiallyUninitializedFinalVarOkayIfNotUsed() {
         assertFinals begin: false, '''
             final begin
@@ -225,6 +246,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-8094
+    @Test
     void testFinalVarSetWithinIf() {
         assertFinalCompilationErrors(['z'], '''
             def method() {
@@ -236,6 +258,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testPrePostfixShouldMakeVarNotFinal() {
         assertFinals x: false, y: false, z: false, o: false, '''
             def x = 0
@@ -249,6 +272,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testPrePostfixShouldNotCompileWithUninitializedFinalVar() {
         assertFinalCompilationErrors(['x'], '''
             final x
@@ -260,6 +284,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''', true)
     }
 
+    @Test
     void testAssignmentInIfBooleanExpressionShouldFailCompilation() {
         assertFinalCompilationErrors(['a'], '''
             final a = 3
@@ -270,6 +295,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testDirectlyAssignedClosureSharedVariableShouldBeConsideredFinal() {
         assertFinals x: true, '''
             def x = 1
@@ -278,6 +304,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDelayedAssignedClosureSharedVariableShouldNotBeConsideredFinal() {
         assertFinals x: false, '''
             def x
@@ -286,6 +313,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testShouldThrowCompilationErrorBecauseClosureSharedVariable() {
         assertFinalCompilationErrors(['x'], '''
             final x
@@ -295,6 +323,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testDirectlyAssignedAICSharedVariableShouldBeConsideredFinal() {
         assertFinals x: true, '''
             def x = 1
@@ -303,6 +332,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDelayedAssignedAICSharedVariableShouldNotBeConsideredFinal() {
         assertFinals x: false, '''
             def x
@@ -312,6 +342,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testShouldThrowCompilationErrorBecauseUsedInAIC() {
         assertFinalCompilationErrors(['x'], '''
             final x
@@ -321,6 +352,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testShouldBeCompileTimeErrorBecauseOfUninitializedVar() {
         assertFinalCompilationErrors(['x'], '''
             final x
@@ -329,6 +361,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''', true)
     }
 
+    @Test
     void testShouldConsiderThatXIsEffectivelyFinalWithIfElse() {
         assertFinals x: true, '''
             int x
@@ -341,6 +374,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testShouldConsiderThatXIsNotEffectivelyFinalWithSubsequentIfs() {
         assertFinals x: false, '''
             int x
@@ -353,12 +387,14 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testShouldConsiderFinalVarOkayIfNotAccessedButShouldNotBeDeemedFinal() {
         assertFinals x: false, '''
             final x
         '''
     }
 
+    @Test
     void testShouldThrowCompileTimeErrorBecauseXIsNotEffectivelyFinalWithSubsequentIfs() {
         assertFinalCompilationErrors(['x'], '''
             final x
@@ -372,6 +408,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         ''')
     }
 
+    @Test
     void testShouldNotSayThatVarIsNotInitialized() {
         assertScript '''
                 final List<String> list = ['a','b'].collect { it.toUpperCase() }
@@ -395,6 +432,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testFinalVariableInitializedInTryCatchFinally() {
         // x initialized in try block
         assertFinals x: false, '''
@@ -428,6 +466,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testVarInitializedInBothTryCatchAndFinallyBlocksShouldBeCompileTimeError() {
         assertFinalCompilationErrors(['x'], '''
             final x
@@ -449,6 +488,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-8093
+    @Test
     void testLocalVarsInClosureOnlyCheckedWithinClosure() {
         assertScript '''
             class Foo {
@@ -463,6 +503,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-8472
+    @Test
     void testTryCatchWithReturnInTry() {
         assertScript '''
             def method(String foo) {
@@ -483,6 +524,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-8472
+    @Test
     void testTryCatchWithReturnInCatch() {
         assertScript '''
             def method(String foo) {
@@ -506,6 +548,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-9424
+    @Test
     void testFinalVarInitializedByAllSwitchBranches() {
         assertScript '''
             final String result
@@ -524,6 +567,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-9438
+    @Test
     void testFinalVarWithSwitchAsLastStatementAndCaseContainingOnlyBreak() {
         assertScript '''
             switch(1) {
@@ -536,6 +580,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-10580
+    @Test
     void testFinalVarIfElseStatementReturningBranch() {
         assertScript '''
             final int i
@@ -564,6 +609,7 @@ final class FinalVariableAnalyzerTest extends GroovyTestCase {
     }
 
     // GROOVY-11273
+    @Test
     void testReassignedFinalVariableInInterfaceDefaultMethodShouldThrowCompilationError() {
         assertFinalCompilationErrors(['x'], '''
             interface Test {

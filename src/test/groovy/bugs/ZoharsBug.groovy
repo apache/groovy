@@ -18,10 +18,12 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class ZoharsBug extends GroovyTestCase {
 
+class ZoharsBug {
+
+    @Test
     void testBug() {
         def values = [1,2,3,4]
         def result = bloo(values, {it > 1})

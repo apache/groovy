@@ -18,7 +18,7 @@
  */
 package org.codehaus.groovy.runtime.m12n
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static org.codehaus.groovy.runtime.m12n.ExtensionModuleHelperForTests.doInFork
 
@@ -98,7 +98,8 @@ final class ExtensionModuleTest {
         '''
     }
 
-    @Test // GROOVY-7225
+    // GROOVY-7225
+    @Test
     void testExtensionModuleUsingGrabAndClosure() {
         doInFork '''
             ExtensionModuleRegistry registry = GroovySystem.metaClassRegistry.moduleRegistry
@@ -122,6 +123,7 @@ final class ExtensionModuleTest {
 
     /**
      * Just to make sure the custom override of {@code #compareTo} is possible and works.
+     *
      * @see TestLocalDateTimeExtension
      */
     @Test

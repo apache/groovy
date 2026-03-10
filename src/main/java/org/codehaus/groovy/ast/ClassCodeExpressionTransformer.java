@@ -20,6 +20,7 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ClosureListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
@@ -137,7 +138,9 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     @Override
     public void visitForLoop(final ForStatement stmt) {
-        visitAnnotations(stmt.getVariable()); // "for(T x : y)" or "for(x in y)"
+        if (!(stmt.getCollectionExpression() instanceof ClosureListExpression)) {
+            visitAnnotations(stmt.getValueVariable()); // "for(T x : y)" or "for(x in y)"
+        }
         stmt.setCollectionExpression(transform(stmt.getCollectionExpression()));
         stmt.getLoopBlock().visit(this);
     }

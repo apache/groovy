@@ -20,13 +20,14 @@ package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.test.NotYetImplemented
 import groovy.transform.stc.GenericsSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static compilation : generics.
  */
-class GenericsStaticCompileTest extends GenericsSTCTest implements StaticCompilationTestSupport {
+final class GenericsStaticCompileTest extends GenericsSTCTest implements StaticCompilationTestSupport {
 
-    @NotYetImplemented
+    @NotYetImplemented @Test
     void testPlusInClosure2() {
         super.testPlusInClosure2()
     }

@@ -18,13 +18,18 @@
  */
 package groovy.transform.stc
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
 
 /**
  * Unit tests for POJO marker interface handling
  */
-class POJOTest extends GroovyTestCase {
 
+import static groovy.test.GroovyAssert.assertScript
+
+class POJOTest {
+
+    @Test
     void testDelegateWithPOJO() {
         assertScript '''
             import groovy.transform.*
@@ -44,6 +49,7 @@ class POJOTest extends GroovyTestCase {
     }
 
     // GROOVY-10691
+    @Test
     void testInnerClassWithPOJO() {
         assertScript '''
             import groovy.transform.CompileStatic

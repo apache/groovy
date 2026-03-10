@@ -18,14 +18,28 @@
  */
 package org.codehaus.groovy.runtime
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-import java.util.concurrent.*
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ConcurrentSkipListMap
+import java.util.concurrent.ConcurrentSkipListSet
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CopyOnWriteArraySet
+import java.util.concurrent.DelayQueue
+import java.util.concurrent.Delayed
+import java.util.concurrent.LinkedBlockingDeque
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.PriorityBlockingQueue
+import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.TimeUnit
 
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.createSimilarCollection
 import static org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport.createSimilarMap
 
-class DefaultGroovyMethodsSupportTest extends GroovyTestCase {
+class DefaultGroovyMethodsSupportTest {
+    @Test
     void testCreateSimilarCollectionForSets() {
         def comparator = [
                 compare: { a, b -> b <=> a },
@@ -68,6 +82,7 @@ class DefaultGroovyMethodsSupportTest extends GroovyTestCase {
         assert 3 == set2.last()
     }
 
+    @Test
     void testCreateSimilarCollectionForLists() {
         [
                 CopyOnWriteArrayList.class,
@@ -84,6 +99,7 @@ class DefaultGroovyMethodsSupportTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCreateSimilarCollectionForQueues() {
         [
                 LinkedBlockingDeque.class,
@@ -135,6 +151,7 @@ class DefaultGroovyMethodsSupportTest extends GroovyTestCase {
         }
     }
 
+    @Test
     void testCreateSimilarMap() {
         def comparator = [
                 compare: { a, b -> b <=> a },

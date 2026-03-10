@@ -18,9 +18,8 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 
-class Groovy2773Bug extends GroovyTestCase {
+class Groovy2773Bug {
     void test() {
         assertScript '''
             class DateTime {
@@ -37,6 +36,8 @@ class Groovy2773Bug extends GroovyTestCase {
             }
 
             import static Utils.nowUTC
+import org.junit.jupiter.api.Test
+import static groovy.test.GroovyAssert.*
 
             DateTime baseDate = Utils.nowUTC()
             Long now = new Date().getTime()

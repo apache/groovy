@@ -18,11 +18,13 @@
  */
 package metaprogramming
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 
-class ExpandoMetaClassTest extends GroovyTestCase {
+final class ExpandoMetaClassTest {
 
+    @Test
     void testConstructors() {
         assertScript '''
              // tag::emc_constructors[]
@@ -37,6 +39,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMethodPointer() {
         assertScript '''
             // tag::emc_method_pointer[]
@@ -60,6 +63,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testDynamicMethodNames() {
         assertScript '''
             // tag::emc_dynamic_method_names[]
@@ -82,6 +86,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testOverrideInvokeMethod() {
         assertScript '''
             // tag::emc_invoke_method[]
@@ -107,6 +112,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testOverrideGetProperty() {
         assertScript '''
             // tag::emc_get_property[]
@@ -132,6 +138,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testOverrideInvokeMethodStatic() {
         assertScript '''
             // tag::emc_invoke_method_static[]
@@ -156,6 +163,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testGetProperty() {
         assertScript '''
             // tag::emc_getter[]
@@ -171,6 +179,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testSetGetProperty() {
         assertScript '''
             // tag::emc_getter_setter[]
@@ -190,6 +199,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testProperty() {
         assertScript '''
             // tag::emc_property[]
@@ -205,6 +215,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testStaticMethod() {
         assertScript '''
             // tag::emc_static[]
@@ -219,6 +230,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testMethod() {
         assertScript '''
             // tag::emc_method[]
@@ -235,6 +247,7 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         '''
     }
 
+    @Test
     void testInterface() {
         assertScript '''
             // tag::emc_interface[]
@@ -249,7 +262,4 @@ class ExpandoMetaClassTest extends GroovyTestCase {
             // end::emc_interface[]
         '''
     }
-
-
-
 }

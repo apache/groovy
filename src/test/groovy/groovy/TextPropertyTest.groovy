@@ -18,41 +18,48 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 /**
  * check that text def is available on...
  *
- * myFile.text,  myFile.text(charset),  
+ * myFile.text,  myFile.text(charset),
  * myURL.text,  myURL.text(charset),
  * myInputStream.text,  myInputStream.text(charset),
  * myReader.text,
  * myBufferedReader.text,
  * myProcess.text
  */
-class TextPropertyTest extends GroovyTestCase {
+class TextPropertyTest {
     def myReader
     def myInputStream
     def myBigEndianEncodedInputStream
 
+    @BeforeEach
     void setUp() {
         myReader = new StringReader("digestive")
         myInputStream = new ByteArrayInputStream("chocolate chip".bytes)
         myBigEndianEncodedInputStream = new ByteArrayInputStream("shortbread".getBytes("UTF-16BE"))
     }
 
+    @Test
     void testBigEndianEncodedInputStreamText() {
         assert "shortbread" == myBigEndianEncodedInputStream.getText("UTF-16BE")
     }
 
+    @Test
     void testInputStreamText() {
         assert "chocolate chip" == myInputStream.text
     }
 
+    @Test
     void testReaderText() {
         assert "digestive" == myReader.text
     }
 
+    @AfterEach
     void tearDown() {
         myInputStream = null
         myReader = null

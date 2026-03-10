@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.BugsSTCTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking : bugs.
@@ -26,6 +27,7 @@ import groovy.transform.stc.BugsSTCTest
 final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilationTestSupport {
 
     // GROOVY-5498
+    @Test
     void testPropertyAccess() {
         assertScript '''
             class Test {
@@ -48,6 +50,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5512
+    @Test
     void testCreateRangeInInnerClass() {
         new GroovyShell().evaluate '''
             class Outer {
@@ -65,8 +68,9 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5526
+    @Test
     void testAssertEqualsShouldNotThrowVerifyError() {
-        assertScript '''import static org.junit.Assert.*
+        assertScript '''import static org.junit.jupiter.api.Assertions.*
             class CompilerBugs {
                 public static void main(String[] args) {
                     int expected = 0
@@ -77,6 +81,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5529
+    @Test
     void testStaticCompilationOfClosureWhenSingleMethodAnnotated() {
         new GroovyShell().evaluate '''
             interface Row {
@@ -100,6 +105,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5536
+    @Test
     void testShouldNotThrowVerifyErrorWithNullDereferenceInIf() {
         assertScript '''
             boolean getDescriptorForPlugin(File pluginDir) {
@@ -110,9 +116,10 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-9863
+    @Test
     void testPlusShouldNotThrowGroovyBugError() {
         assertScript '''
-            import static org.junit.Assert.assertEquals
+            import static org.junit.jupiter.api.Assertions.assertEquals
 
             class C {
                 double getSomeValue() {
@@ -128,6 +135,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-
+    @Test
     void testPowerShouldNotThrowVerifyError() {
         assertScript '''
             int squarePlusOne(int num) {
@@ -138,6 +146,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5570
+    @Test
     void testShouldNotThrowVerifyErrorRegisterContainsWrongType() {
         assertScript '''
             void foo() {
@@ -154,6 +163,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5572
+    @Test
     void testTernaryOperatorWithNull() {
         assertScript '''
             assert (true ? null : true) == null
@@ -161,6 +171,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5564
+    @Test
     void testSkipStaticCompile() {
         new GroovyShell().evaluate '''import groovy.transform.CompileStatic
             import static groovy.transform.TypeCheckingMode.SKIP
@@ -178,6 +189,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5586
+    @Test
     void testCanonicalInInnerClass() {
         new GroovyShell().evaluate '''import groovy.transform.*
             @CompileStatic
@@ -196,6 +208,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
 
     // GROOVY-5607
     // duplicate of GROOVY-5573, see ArraysAndCollectionsSTCTest#testArrayNewInstance()
+    @Test
     void testStaticNewInstanceMethodClash() {
         assertScript '''
             class Sql {
@@ -217,6 +230,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testCompileStaticTwiceShouldNotBeAProblem() {
         new GroovyShell().evaluate '''import groovy.transform.CompileStatic
             @CompileStatic
@@ -237,6 +251,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testCompileStaticTwiceShouldNotBeAProblemUsingCustomizer() {
         assertScript '''
             @CompileStatic
@@ -258,6 +273,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5613
+    @Test
     void testNullSafeAssignment() {
         assertScript '''
             class A {
@@ -271,6 +287,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testNullSafeAssignmentWithLong() {
         assertScript '''
             class A {
@@ -284,6 +301,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testNullSafeAssignmentWithChar() {
         assertScript '''
             class A {
@@ -298,6 +316,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testCallStaticallyImportedMethodWithNullSafeArgument() {
         assertScript '''import static java.lang.Math.abs
             class A {
@@ -309,6 +328,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testClosureAsInterfaceArgument() {
         assertScript '''
             Closure c = { Integer x, Integer y -> x <=> y }
@@ -317,6 +337,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testInferredTypeForInteger() {
         assertScript '''
             @ASTTest(phase=INSTRUCTION_SELECTION, value={
@@ -327,6 +348,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5671
+    @Test
     void testPostfixIncPrimitiveInteger() {
         assertScript '''
             int x = 0
@@ -338,6 +360,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testPostfixIncInteger() {
         assertScript '''
             Integer x = 0
@@ -349,6 +372,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testPostfixDecInt() {
         assertScript '''
             int x = 0
@@ -360,6 +384,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testPostfixDecInteger() {
         assertScript '''
             Integer x = 0
@@ -371,6 +396,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testPrefixIncPrimitiveInteger() {
         assertScript '''
             int x = 0
@@ -382,6 +408,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testPrefixIncInteger() {
         assertScript '''
             Integer x = 0
@@ -393,6 +420,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testPrefixDecInt() {
         assertScript '''
             int x = 0
@@ -403,6 +431,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testPrefixDecInteger() {
         assertScript '''
             Integer x = 0
@@ -414,6 +443,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5672
+    @Test
     void testTypeCheckedPlusCompileStatic() {
         new GroovyShell().evaluate '''import groovy.transform.*
             @TypeChecked
@@ -426,6 +456,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testSubclassShouldNotThrowArrayIndexOutOfBoundsException() {
         assertScript '''
             // The error only shows up if the subclass is compiled *before* the superclass
@@ -445,6 +476,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementOperatorOnInt() {
         assertScript '''
             int incInt(int n) {
@@ -457,6 +489,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementOperatorOnShort() {
         assertScript '''
             short incInt(short n) {
@@ -469,6 +502,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementOperatorOnByte() {
         assertScript '''
             byte incInt(byte n) {
@@ -481,6 +515,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementOperatorOnLong() {
         assertScript '''
             long incInt(long n) {
@@ -493,6 +528,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementOperatorOnFloat() {
         assertScript '''
             float incInt(float n) {
@@ -505,6 +541,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementOperatorOnDouble() {
         assertScript '''
             double incInt(double n) {
@@ -517,6 +554,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementOperatorOnChar() {
         assertScript '''
             char incInt(char n) {
@@ -529,6 +567,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testIncrementField() {
         assertScript '''
             class Foo {
@@ -543,6 +582,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5789
+    @Test
     void testLoopWithIncrement() {
         assertScript '''
             int execute() {
@@ -556,6 +596,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5800
+    @Test
     void testInOperator() {
         assertScript '''
             boolean m( Integer i ) {
@@ -567,6 +608,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5814
+    @Test
     void testCompileStaticImmutable() {
         assertScript '''
             import groovy.transform.*
@@ -582,6 +624,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5738
+    @Test
     void testAccessFieldFromGStringAfterInstanceOf() {
         new GroovyShell().evaluate '''
             class Greeting { String who }
@@ -601,6 +644,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5738
+    @Test
     void testAccessMethodFromGStringAfterInstanceOf() {
         new GroovyShell().evaluate '''
             class Greeting {
@@ -623,6 +667,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5804
+    @Test
     void testNegateSharedBooleanInClosure() {
         assertScript '''
             boolean x = false
@@ -637,6 +682,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testCallClosureInInnerClass() {
         assertScript '''
             class A {
@@ -652,6 +698,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5890
+    @Test
     void testIsCaseWithClassLiteral() {
         assertScript '''
             assert 'a' in String
@@ -659,6 +706,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5887
+    @Test
     void testSpreadCallWithArray() {
         assertScript '''
             def list = 'a,b,c'.split(/,/)*.trim()
@@ -667,6 +715,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5919
+    @Test
     void testPrivateAccessorsWithSubClass() {
         assertScript '''
             class Top {
@@ -685,6 +734,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testSuperMethodCallInSkippedSection() {
         assertScript '''
             class Top {
@@ -701,6 +751,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testArrayGetOnObject() {
         shouldFailWithMessages '''
             def foo(Object o) {
@@ -710,6 +761,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
+    @Test
     void testStaticCompileWithPattern() {
         shouldFailWithMessages '''
             def fieldMatcher = '[x=1] [a=b] [foo=bar]' =~ ~"\\\\[([^=\\\\[]+)=([^\\\\]]+)\\\\]"
@@ -724,6 +776,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         'Cannot find matching method java.lang.Object#getAt(int)'
     }
 
+    @Test
     void testChainedNullSafePropertyOnMap() {
         assertScript '''
             Map<String, Map<String,Map<String,Integer>>> m = [:]
@@ -738,6 +791,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         assert !script.contains('ScriptBytecodeAdapter.createMap')
     }
 
+    @Test
     void testNullSafePropertyOnList() {
         assertScript '''
             List<Class> classes = null
@@ -747,6 +801,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6061
+    @Test
     void testShouldCallPutAt() {
         assertScript '''
             def swapUseStatic(List<Integer> a, int i, int j) {
@@ -761,6 +816,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6101
+    @Test
     void testShouldNotGenerateInvalidClassWithNullSafeInvocationOnMethodReturningPrimitiveType() {
         assertScript '''
             class Piece {
@@ -782,6 +838,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6101 fix side effect
+    @Test
     void testMakeSureOptimizationKeepsSideEffect() {
         assertScript '''
             class Foo {
@@ -796,6 +853,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
          '''
     }
 
+    @Test
     void testShouldNotThrowNPEBecauseLHSIsNull() {
         assertScript '''
             class A {
@@ -808,6 +866,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5921
+    @Test
     void testShouldHandleLongArray() {
         assertScript '''
             class Groovy5921 {
@@ -823,6 +882,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testShouldHandleLongArrayWithUnboxing() {
         assertScript '''
             class Groovy5921 {
@@ -838,6 +898,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testShouldHandleBoxedLongArray() {
         assertScript '''
             class Groovy5921 {
@@ -853,6 +914,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testShouldHandleBoxedLongArrayWithBoxing() {
         assertScript '''
             class Groovy5921 {
@@ -869,6 +931,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6113
+    @Test
     void testCallObjectVargsMethodWithPrimitiveIntConstant() {
         assertScript '''
             int sum(... zeroOrMore) {
@@ -880,6 +943,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-9918
+    @Test
     void testCallObjectObjectVargsMethodWithObjectArray() {
         assertScript '''
             def m(one, ... zeroOrMore) {
@@ -889,6 +953,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testDefaultArgumentAndVargs() {
         assertScript '''
             def m(int x=1, int y, String[] z) {
@@ -905,6 +970,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6095
+    @Test
     void testServletError() {
         new GroovyShell().evaluate '''
             @Grab('javax.servlet:javax.servlet-api:3.0.1')
@@ -927,6 +993,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6137
+    @Test
     void testIsCaseShouldBeNullSafe() {
         assertScript '''
             def isCaseNullCS(a, b) {
@@ -941,6 +1008,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6242
+    @Test
     void testGetAtBigInt() {
         assertScript '''
             class Sequence {
@@ -969,6 +1037,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6243
+    @Test
     void testSwapUsingMultipleAssignment() {
         assertScript '''
             def swap(result,next) {
@@ -988,6 +1057,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-5882
+    @Test
     void testMod() {
         assertScript '''
             int foo(Map<Integer, Object> markers, int i) {
@@ -1023,6 +1093,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testSuperCallShouldBeDirect() {
         try {
             assertScript '''
@@ -1042,6 +1113,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         }
     }
 
+    @Test
     void testNullSafeOperatorShouldNotCallMethodTwice() {
         assertScript '''
             import java.util.concurrent.atomic.AtomicLong
@@ -1062,6 +1134,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive() {
         assertScript '''
             import java.util.concurrent.atomic.AtomicLong
@@ -1082,6 +1155,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testNullSafeOperatorShouldNotCallMethodTwice1Arg() {
         assertScript '''
             import java.util.concurrent.atomic.AtomicLong
@@ -1102,6 +1176,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testNullSafeOperatorShouldNotCallMethodTwiceWithPrimitive1Arg() {
         assertScript '''
             import java.util.concurrent.atomic.AtomicLong
@@ -1122,6 +1197,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testShouldAllowSubscriptOperatorOnSet() {
         assertScript '''
             def map = new LinkedHashMap<>([a:1,b:2])
@@ -1149,6 +1225,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6552
+    @Test
     void testShouldNotThrowClassCastException() {
         assertScript '''import java.util.concurrent.Callable
             String text(Class clazz) {
@@ -1168,6 +1245,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6851
+    @Test
     void testShouldNotThrowNPEIfElvisOperatorIsUsedInDefaultArgumentValue() {
         assertScript '''
             class GrailsHomeWorkspaceReader {
@@ -1186,6 +1264,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6342
+    @Test
     void testShouldNotThrowNPEIfElvisOperatorIsUsedInsideTernary() {
         assertScript '''
             class Inner {
@@ -1197,6 +1276,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testAccessOuterClassMethodFromInnerClassConstructor() {
         assertScript '''
             class Parent {
@@ -1217,6 +1297,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testAccessOuterClassMethodFromInnerClassConstructorUsingExplicitOuterThis() {
         assertScript '''
             class Parent {
@@ -1237,6 +1318,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testAccessOuterClassMethodFromInnerClassConstructorUsingExplicitOuterThisAndProperty() {
         assertScript '''
             class Parent {
@@ -1257,6 +1339,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testAccessOuterClassStaticMethodFromInnerClassConstructor() {
         assertScript '''
             class Parent {
@@ -1278,6 +1361,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testStaticMethodFromInnerClassConstructor() {
         assertScript '''
             class Parent {
@@ -1298,6 +1382,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6876
+    @Test
     void testSetterOfPrimitiveType() {
         assertScript '''
             class Foo {
@@ -1339,6 +1424,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6921
+    @Test
     void testSubscriptOnClosureSharedVariable() {
         assertScript '''
             def versionRanges = [['1.7', 3]]
@@ -1348,6 +1434,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-6924
+    @Test
     void testShouldNotThrowIncompatibleClassChangeError() {
         try {
             assertScript '''import org.codehaus.groovy.classgen.asm.sc.Groovy6924Support
@@ -1370,6 +1457,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-7381
+    @Test
     void testNonVoidSetterCalls() {
         assertScript '''
             class Foo {
@@ -1393,6 +1481,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-7610
+    @Test
     void testNullSafeIsCallConditionShouldNotThrowVerifyError() {
         assertScript '''
             class A {
@@ -1410,6 +1499,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-7631
+    @Test
     void testPrimitiveNotEqualNullShouldReturnTrue() {
         assertScript '''
             assert false != null
@@ -1426,6 +1516,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-7639
+    @Test
     void testComparisonOfPrimitiveWithNullSafePrimitivePropertyExpression() {
         assertScript '''
             class Foo {
@@ -1439,6 +1530,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-7841
+    @Test
     void testAssertionOfNonZeroPrimitiveEdgeCases() {
         assertScript '''
             assert 4294967296
@@ -1448,6 +1540,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-7784
+    @Test
     void testWithSamAndVarArgs() {
         assertScript '''
             class Foo {
@@ -1466,6 +1559,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
         '''
     }
 
+    @Test
     void testNumberWrapperMultiAssign() {
         assertScript '''
             import org.codehaus.groovy.ast.CodeVisitorSupport
@@ -1495,6 +1589,7 @@ final class BugsStaticCompileTest extends BugsSTCTest implements StaticCompilati
     }
 
     // GROOVY-10819, GROOVY-10820
+    @Test
     void testClassVersusObjectMethods() {
         assertScript '''
             assert String.metaClass != Class.metaClass

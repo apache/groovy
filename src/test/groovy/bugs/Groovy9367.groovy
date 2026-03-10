@@ -19,7 +19,7 @@
 package bugs
 
 import org.codehaus.groovy.runtime.NullObject
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class Groovy9367 {
 

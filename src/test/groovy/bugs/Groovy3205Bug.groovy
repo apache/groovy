@@ -18,9 +18,7 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
-
-class Groovy3205Bug extends GroovyTestCase {
+class Groovy3205Bug {
     def void testOverrideToStringInMapOfClosures() {
         def proxyImpl = [
                 control: { "new control" },

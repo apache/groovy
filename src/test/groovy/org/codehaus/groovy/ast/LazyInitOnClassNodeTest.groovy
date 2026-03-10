@@ -18,10 +18,11 @@
  */
 package org.codehaus.groovy.ast
 
-import groovy.test.GroovyTestCase
-import org.codehaus.groovy.ast.*
 
-class LazyInitOnClassNodeTest extends GroovyTestCase {
+import org.junit.jupiter.api.Test
+
+class LazyInitOnClassNodeTest {
+    @Test
     void testLazyInit() {
         def script = """
           class ClassNodeMethodsListGrowth {

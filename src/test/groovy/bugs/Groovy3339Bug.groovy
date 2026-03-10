@@ -18,9 +18,11 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy3339Bug extends GroovyTestCase {
+
+class Groovy3339Bug {
+    @Test
     void testConstantCachingInClosureClasses() {
         // In all the cases below, the OptimizerVisitor replaces number 10 by
         // the cached constant in the closure class, which it is not supposed

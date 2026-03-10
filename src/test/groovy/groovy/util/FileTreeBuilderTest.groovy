@@ -18,22 +18,22 @@
  */
 package groovy.util
 
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 final class FileTreeBuilderTest {
 
     private File tmpDir
     private FileTreeBuilder root
 
-    @Before
+    @BeforeEach
     void setUp() {
         tmpDir = File.createTempDir()
         root = new FileTreeBuilder(tmpDir)
     }
 
-    @After
+    @AfterEach
     void tearDown() {
         tmpDir.deleteDir()
     }

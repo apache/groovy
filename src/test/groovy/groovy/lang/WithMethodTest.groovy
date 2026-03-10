@@ -18,25 +18,32 @@
  */
 package groovy.lang
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.fail
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
+
 
 /**
  * Tests the .with method
  */
-class WithMethodTest extends GroovyTestCase {
+class WithMethodTest {
 
+     @Test
      void testDelegateGetsFirstOpportunity() {
          def sb = new StringBuffer()
 
          sb.with {
-             // this should call append() on the 
+             // this should call append() on the
              // delegate not, the owner
              append 'some text'
          }
 
-         assertEquals 'delegate had wrong value', 'some text', sb.toString()
+         assertEquals 'some text', sb.toString(), 'delegate had wrong value'
      }
 
+     @Test
      void testOwnerGetsOpportunityIfDelegateCannotRespond() {
          def sb = new StringBuffer()
 
@@ -47,11 +54,12 @@ class WithMethodTest extends GroovyTestCase {
              returnValue = ownerMethod()
          }
 
-         assertEquals 'owner should have responded to method call', 
-                      42, 
-                      returnValue
+         assertEquals 42,
+                      returnValue,
+                      'owner should have responded to method call'
      }
 
+     @Test
      void testCallingNonExistentMethod() {
          def sb = new StringBuffer()
 
@@ -62,6 +70,7 @@ class WithMethodTest extends GroovyTestCase {
          }
      }
 
+     @Test
      void testClosureWithResolveStrategyExplicitlySet() {
          def closure = {
              append 'some text'
@@ -74,9 +83,10 @@ class WithMethodTest extends GroovyTestCase {
          // the closure has another strategy set
          sb.with closure
 
-         assertEquals 'delegate had wrong value', 'some text', sb.toString()
+         assertEquals 'some text', sb.toString(), 'delegate had wrong value'
      }
 
+     @Test
      void testBooleanVariant() {
          def p = new PersonWith(firstName: 'Johnny', lastName: 'Depp')
          def result1 = p.with(false) {

@@ -19,14 +19,12 @@
 package bugs
 
 import groovy.transform.AnnotationCollector
-import groovy.transform.CompileStatic
 import groovy.transform.NullCheck
 import groovy.transform.RecordType
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-@CompileStatic
 final class Groovy11062 {
 
     @Test

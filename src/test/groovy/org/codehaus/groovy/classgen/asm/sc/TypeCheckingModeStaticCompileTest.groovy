@@ -19,12 +19,14 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.TypeCheckingModeTest
+import org.junit.jupiter.api.Test
 
 /**
  * Unit tests for static type checking : type checking mode.
  */
 final class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest implements StaticCompilationTestSupport {
 
+    @Test
     void testEnsureBytecodeIsDifferentWhenSkipped() {
         assertScript '''
             // @CompileStatic is implicit
@@ -46,6 +48,7 @@ final class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest imple
         assert !linesOfCode.contains('INVOKEVIRTUAL')
     }
 
+    @Test
     void testSkipAndAnonymousInnerClass() {
         new GroovyShell().evaluate '''import groovy.transform.CompileStatic
             public interface HibernateCallback<T> {
@@ -70,6 +73,7 @@ final class TypeCheckingModeStaticCompileTest extends TypeCheckingModeTest imple
     }
 
     // GROOVY-9707: CompileStatic by configuration and TypeChecked by annotation
+    @Test
     void testTypeCheckedAnnotation() {
         assertScript '''
             @groovy.transform.TypeChecked

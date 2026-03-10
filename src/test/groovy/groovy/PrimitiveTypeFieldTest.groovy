@@ -18,9 +18,10 @@
  */
 package groovy
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class PrimitiveTypeFieldTest extends GroovyTestCase {
+
+class PrimitiveTypeFieldTest {
     private long longField
     private static short shortField
 
@@ -33,6 +34,7 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
         return x
     }
 
+    @Test
     void testPrimitiveField() {
         setValue()
 
@@ -42,6 +44,7 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
         assert longField == 1
     }
 
+    @Test
     void testIntParamBug() {
         assert bugMethod(123) == 246
         assert bugMethod2(123) == 246
@@ -59,18 +62,21 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
     def bugMethod2(int x) {
         x * 2
     }
+    @Test
     void testStaticPrimitiveField() {
         shortField = (Short) 123
 
         assert shortField == 123
     }
 
+    @Test
     void testIntLocalVariable() {
         int x = 123
         def y = x + 1
         assert y == 124
     }
 
+    @Test
     void testLongLocalVariable() {
         long x = 123
         def y = x + 1

@@ -848,17 +848,20 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             // GROOVY-7971, GROOVY-8965, GROOVY-10096, GROOVY-10702, et al.
             if (op == LOGICAL_OR) typeCheckingContext.pushTemporaryTypeInfo();
 
+            ClassNode lType;
             leftExpression.visit(this);
-            ClassNode lType = getType(leftExpression);
-            var setterInfo  = removeSetterInfo(leftExpression);
-            if (setterInfo != null) { assert op != LOGICAL_OR ;
+            var setterInfo = removeSetterInfo(leftExpression);
+            if (setterInfo != null) { assert op != LOGICAL_OR;
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
+                lType = getType(leftExpression); // GROOVY-11870
             } else {
                 if (op == EQUAL) {
                     lType = getOriginalDeclarationType(leftExpression);
                     applyTargetType(lType, rightExpression);
+                } else {
+                    lType = getType(leftExpression);
                 }
                 if (op != LOGICAL_OR) {
                     rightExpression.visit(this);
@@ -977,6 +980,11 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                     }
                 }
             } else if (op == KEYWORD_INSTANCEOF) {
+                rType = rightExpression.getType();
+                if (lType instanceof WideningCategories.LowestUpperBoundClassNode) lType = lType.getUnresolvedSuperClass();
+                if (!lType.isInterface() && !rType.isInterface() && !(lType.isDerivedFrom(rType) || rType.isDerivedFrom(lType))) {
+                    addError("Incompatible instanceof types: " + prettyPrintTypeName(lType) + " and " + prettyPrintTypeName(rType), expression);
+                }
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
             } else if (op == COMPARE_NOT_INSTANCEOF) { // GROOVY-6429, GROOVY-8321, GROOVY-8412, GROOVY-8523, GROOVY-9931
                 putNotInstanceOfTypeInfo(extractTemporaryTypeInfoKey(leftExpression), Set.of(rightExpression.getType()));
@@ -987,7 +995,7 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
 
             // GROOVY-5874: if left expression is a closure shared variable, a second pass should be done
-            if (leftExpression instanceof VariableExpression && ((VariableExpression) leftExpression).isClosureSharedVariable()) {
+            if (leftExpression instanceof VariableExpression vexp && vexp.isClosureSharedVariable()) {
                 typeCheckingContext.secondPassExpressions.add(new SecondPassExpression<>(expression));
             }
         } finally {
@@ -2176,7 +2184,7 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
             visitStatement(forLoop);
             collectionExpression.visit(this);
             ClassNode collectionType = getType(collectionExpression);
-            ClassNode forLoopVariableType = forLoop.getVariableType();
+            ClassNode forLoopVariableType = forLoop.getValueVariable().getType();
             ClassNode componentType;
             if (isStringType(collectionType)) {
                 if (isWrapperCharacter(getWrapper(forLoopVariableType))) {
@@ -4236,9 +4244,11 @@ trying: for (ClassNode[] signature : signatures) {
             visitStatement(ifElse);
             ifElse.getBooleanExpression().visit(this);
 
+            var tti = Map.copyOf(typeCheckingContext.temporaryIfBranchTypeInformation.peek()); // GROOVY-11864
+
             thenPath.visit(this);
 
-            Map<Object, List<ClassNode>> tti = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+            typeCheckingContext.temporaryIfBranchTypeInformation.pop();
             // GROOVY-6099: isolate assignment tracking
             restoreTypeBeforeConditional();
 
@@ -5305,11 +5315,15 @@ trying: for (ClassNode[] signature : signatures) {
         }
 
         if (node instanceof ListExpression) {
-            return inferListExpressionType((ListExpression) node);
+            type = inferListExpressionType((ListExpression) node);
+            node.putNodeMetaData(INFERRED_TYPE, type);
+            return type;
         }
 
         if (node instanceof MapExpression) {
-            return inferMapExpressionType((MapExpression) node);
+            type = inferMapExpressionType((MapExpression) node);
+            node.putNodeMetaData(INFERRED_TYPE, type);
+            return type;
         }
 
         if (node instanceof RangeExpression re) {
@@ -6331,12 +6345,10 @@ out:    for (ClassNode type : todo) {
 
     public static class SignatureCodecFactory {
         public static SignatureCodec getCodec(final int version, final ClassLoader classLoader) {
-            switch (version) {
-              case 1:
-                return new SignatureCodecVersion1(classLoader);
-              default:
-                return null;
-            }
+            return switch (version) {
+                case 1 -> new SignatureCodecVersion1(classLoader);
+                default -> null;
+            };
         }
     }
 

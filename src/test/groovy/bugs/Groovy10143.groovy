@@ -22,9 +22,10 @@ import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.customizers.ASTTransformationCustomizer
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
 final class Groovy10143 {
+
     @Test
     void testTraitsAndTypes() {
         def config = new CompilerConfiguration(targetDirectory: File.createTempDir())

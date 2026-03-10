@@ -19,37 +19,40 @@
 package gls.invocation
 
 import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
 
-class StaticMethodInvocationTest extends CompilableTestSupport {
+final class StaticMethodInvocationTest extends CompilableTestSupport {
 
+    // GROOVY-2409
+    @Test
     void testDifferentCalls() {
-        // GROOVY-2409
         assertScript """
-class Test { 
-  // all errors go away if method is declared non-private 
-  private static foo() {} 
+class Test {
+  // all errors go away if method is declared non-private
+  private static foo() {}
 
-  static callFooFromStaticMethod() { 
-    Test.foo()         
-    foo()              
-    this.foo()         
-    new Test().foo()   
-  } 
+  static callFooFromStaticMethod() {
+    Test.foo()
+    foo()
+    this.foo()
+    new Test().foo()
+  }
 
-  def callFooFromInstanceMethod() { 
-    Test.foo()        
-    foo()             
-    this.foo()        
-    new Test().foo()  
-  } 
-} 
+  def callFooFromInstanceMethod() {
+    Test.foo()
+    foo()
+    this.foo()
+    new Test().foo()
+  }
+}
 
-Test.callFooFromStaticMethod() 
-new Test().callFooFromInstanceMethod()          
+Test.callFooFromStaticMethod()
+new Test().callFooFromInstanceMethod()
         """
     }
 
-    //GROOVY-6662
+    // GROOVY-6662
+    @Test
     void testStaticMethodNotWronglyCached() {
         assertScript '''
             class A { static bar() {1} }
@@ -61,7 +64,8 @@ new Test().callFooFromInstanceMethod()
         '''
     }
 
-    //GROOVY-6883
+    // GROOVY-6883
+    @Test
     void testStaticMethodCallFromOpenBlock() {
         assertScript '''
             class SuperClass {

@@ -20,7 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.ResourceGroovyMethods;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -29,8 +29,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public final class GroovyShellTest {
 

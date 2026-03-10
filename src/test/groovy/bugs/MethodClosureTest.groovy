@@ -99,12 +99,12 @@ final class MethodClosureTest {
         def err = shouldFail MissingMethodException, base + '''
             closure()
         '''
-        assert err =~ /No signature of method: m for class: C is applicable for argument types: \(\) values: \[\]/
+        assert err.message =~ /No signature of method: m for class: C is applicable for argument types: \(\) values: \[\]/
 
         /**/err = shouldFail MissingMethodException, base + '''
             closure("")
         '''
-        assert err =~ /No signature of method: m for class: C is applicable for argument types: \(String\) values: \[\]/
+        assert err.message =~ /No signature of method: m for class: C is applicable for argument types: \(String\) values: \[\]/
     }
 
     @Test

@@ -18,9 +18,13 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class Groovy8030Bug extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
+
+
+class Groovy8030Bug {
+    @Test
     void testCompileStaticWithBinaryExpressionAndFlowTyping() {
         assertScript """
 @groovy.transform.CompileStatic

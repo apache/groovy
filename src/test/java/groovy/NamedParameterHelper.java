@@ -21,20 +21,23 @@ package groovy;
 import groovy.transform.NamedParam;
 import groovy.transform.NamedParams;
 
-import java.util.LinkedHashMap;
+import java.util.Map;
 
-public class NamedParameterHelper {
+public final class NamedParameterHelper {
+
+    private NamedParameterHelper() {}
+
     public static String myJavaMethod(@NamedParams({
             @NamedParam(value = "foo"),
             @NamedParam(value = "bar", type = String.class, required = true)
-    }) LinkedHashMap params) {
+    }) Map<String,Object> params) {
         return "foo = " + params.get("foo") + ", bar = " + params.get("bar");
     }
 
     public static String myJavaMethod(@NamedParams({
             @NamedParam(value = "foo", type = String.class, required = true),
             @NamedParam(value = "bar", type = Integer.class)
-    }) LinkedHashMap params, int num) {
+    }) Map<String,Object> params, int num) {
         return "foo = " + params.get("foo") + ", bar = " + params.get("bar") + ", num = " + num;
     }
 }

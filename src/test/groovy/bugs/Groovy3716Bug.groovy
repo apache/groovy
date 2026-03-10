@@ -18,10 +18,14 @@
  */
 package bugs
 
-import groovy.test.GroovyTestCase
 import org.codehaus.groovy.ast.ClassHelper
+import org.junit.jupiter.api.Test
 
-class Groovy3716Bug extends GroovyTestCase {
+import static org.junit.jupiter.api.Assertions.assertFalse
+import static org.junit.jupiter.api.Assertions.assertTrue
+
+class Groovy3716Bug {
+    @Test
     void testVoidAndObjectDerivedFromResults() {
         assertTrue ClassHelper.VOID_TYPE.isDerivedFrom(ClassHelper.VOID_TYPE)
         assertFalse ClassHelper.OBJECT_TYPE.isDerivedFrom(ClassHelper.VOID_TYPE)

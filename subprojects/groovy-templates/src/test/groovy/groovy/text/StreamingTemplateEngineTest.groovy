@@ -18,10 +18,10 @@
  */
 package groovy.text
 
-import org.junit.Test
+import org.junit.jupiter.api.Test
 
-import static org.junit.Assert.assertThrows
 import static groovy.test.GroovyAssert.assertScript
+import static org.junit.jupiter.api.Assertions.assertThrows
 
 final class StreamingTemplateEngineTest {
 
