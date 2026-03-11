@@ -124,6 +124,8 @@ import static org.codehaus.groovy.ast.tools.GenericsUtils.correctToGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.createGenericsSpec;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.parameterizeType;
 import static org.codehaus.groovy.ast.tools.PropertyNodeUtils.adjustPropertyModifiersForMethod;
+import static org.codehaus.groovy.transform.sc.StaticCompilationMetadataKeys.STATIC_COMPILE_NODE;
+import static org.codehaus.groovy.transform.stc.StaticTypesMarker.DIRECT_METHOD_CALL_TARGET;
 
 /**
  * Verifies the AST node and adds any default AST code before bytecode generation occurs.
@@ -1020,6 +1022,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             addPropertyMethod(newMethod);
             newMethod.putNodeMetaData(DEFAULT_PARAMETER_GENERATED, Boolean.TRUE);
+            newMethod.putNodeMetaData(STATIC_COMPILE_NODE, method.getNodeMetaData(STATIC_COMPILE_NODE));
         });
     }
 
@@ -1064,7 +1067,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             ConstructorNode old = type.getDeclaredConstructor(params);
             if (old == null || isGenerated(old)) { type.removeConstructor(old);
                 // delegate to original constructor using arguments derived from defaults
-                addConstructor(params, (ConstructorNode) method, stmt(ctorThisX(arguments)), type);
+                ConstructorCallExpression call = ctorThisX(arguments);
+                call.putNodeMetaData(DIRECT_METHOD_CALL_TARGET, method);
+                addConstructor(params, (ConstructorNode) method, stmt(call), type);
             } else {
                 String warning = "Default argument(s) specify duplicate constructor: " +
                     MethodNodeUtils.methodDescriptor(old,true).replace("<init>",type.getNameWithoutPackage());
@@ -1075,6 +1080,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected void addConstructor(final Parameter[] newParams, final ConstructorNode ctor, final Statement code, final ClassNode type) {
         ConstructorNode newConstructor = type.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+        newConstructor.putNodeMetaData(STATIC_COMPILE_NODE, ctor.getNodeMetaData(STATIC_COMPILE_NODE));
         newConstructor.putNodeMetaData(DEFAULT_PARAMETER_GENERATED, Boolean.TRUE);
         markAsGenerated(type, newConstructor);
         // TODO: Copy annotations, etc.?
