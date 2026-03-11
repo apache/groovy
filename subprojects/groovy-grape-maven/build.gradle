@@ -16,38 +16,13 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.grape;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-
-public interface GrapeEngine {
-
-    String CALLEE_DEPTH = "calleeDepth";
-
-    int DEFAULT_CALLEE_DEPTH = 3 ;
-
-    Object grab(String endorsedModule);
-
-    Object grab(Map args);
-
-    Object grab(Map args, Map... dependencies);
-
-    Map<String, Map<String, List<String>>> enumerateGrapes();
-
-    URI[] resolve(Map args, Map... dependencies);
-
-    URI[] resolve(Map args, List depsInfo, Map... dependencies);
-
-    Map[] listDependencies(ClassLoader classLoader);
-
-    void addResolver(Map<String, Object> args);
-
-    /**
-     * Sets the logging level for the grape engine.
-     * @param level the logging level (0=quiet/errors only, 1=warn, 2=info, 3=verbose, 4=debug)
-     */
-    default void setLoggingLevel(int level) { }
+plugins {
+    id 'org.apache.groovy-library'
 }
 
+dependencies {
+    api rootProject
+    implementation "org.apache.maven:maven-resolver-provider:${versions.mavenResolverProvider}"
+    implementation "org.apache.maven.resolver:maven-resolver-supplier-mvn4:${versions.mavenResolverSupplier}"
+    runtimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
+}

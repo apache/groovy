@@ -49,10 +49,16 @@ final class GrabResolverTest {
         assert grapeRoot.mkdir()
         grapeRoot.deleteOnExit()
 
-        Grape.instance.settings.getResolver('downloadGrapes').resolvers.removeAll {
-            // jcenter is no longer used but it is left in this test just in case
-            // someone running this test has an old ~/.groovy/grapeConfig.xml
-            it.name == 'localm2' || it.name == 'cachedGrapes' || it.name == 'jcenter'
+        def engine = Grape.instance
+        if (engine instanceof GrapeIvy) {
+            engine.settings.getResolver('downloadGrapes').resolvers.removeAll {
+                // jcenter is no longer used but it is left in this test just in case
+                // someone running this test has an old ~/.groovy/grapeConfig.xml
+                it.name == 'localm2' || it.name == 'cachedGrapes' || it.name == 'jcenter'
+            }
+        } else if (engine.metaClass.hasProperty(engine, 'repos')) {
+            // Maven engine: start from no repositories so @GrabResolver is required by the test.
+            engine.repos.clear()
         }
     }
 

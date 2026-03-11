@@ -19,6 +19,7 @@
 package groovy.console.ui
 
 import groovy.grape.Grape
+import groovy.grape.GrapeEngine
 import groovy.grape.GrapeIvy
 import org.apache.ivy.core.event.IvyListener
 import org.apache.ivy.core.event.download.PrepareDownloadEvent
@@ -36,29 +37,30 @@ class ConsoleIvyPlugin {
 
     def addListener(Console console) {
         savedConsole = console
-
-        ((GrapeIvy) Grape.instance).ivyInstance.eventManager.addIvyListener([progress: { ivyEvent ->
-            switch (ivyEvent) {
-                case StartResolveEvent:
-                    ivyEvent.moduleDescriptor.dependencies.each { it ->
-                        def name = it.toString()
-                        if (!resolvedDependencies.contains(name)) {
-                            resolvedDependencies << name
-                            savedConsole.showMessage "Resolving ${name} ..."
+        GrapeEngine engine = Grape.instance
+        if (engine instanceof GrapeIvy) {
+            engine.ivyInstance.eventManager.addIvyListener([progress: { ivyEvent ->
+                switch (ivyEvent) {
+                    case StartResolveEvent:
+                        ivyEvent.moduleDescriptor.dependencies.each { it ->
+                            def name = it.toString()
+                            if (!resolvedDependencies.contains(name)) {
+                                resolvedDependencies << name
+                                savedConsole.showMessage "Resolving ${name} ..."
+                            }
                         }
-                    }
-                    break
-                case PrepareDownloadEvent:
-                    ivyEvent.artifacts.each { it ->
-                        def name = it.toString()
-                        if (!downloadedArtifacts.contains(name)) {
-                            downloadedArtifacts << name
-                            savedConsole.showMessage "Downloading artifact ${name} ..."
+                        break
+                    case PrepareDownloadEvent:
+                        ivyEvent.artifacts.each { it ->
+                            def name = it.toString()
+                            if (!downloadedArtifacts.contains(name)) {
+                                downloadedArtifacts << name
+                                savedConsole.showMessage "Downloading artifact ${name} ..."
+                            }
                         }
-                    }
-                    break
-            }
-        }] as IvyListener)
-
+                        break
+                }
+            }] as IvyListener)
+        }
     }
 }
