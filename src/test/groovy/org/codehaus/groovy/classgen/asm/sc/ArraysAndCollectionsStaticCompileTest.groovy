@@ -31,9 +31,9 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     @Test
     void testShouldNotThrowVerifyError() {
         assertScript '''
-            def al = new ArrayList<Double>()
-            al.add(2.0d)
-            assert al.get(0) + 1 == 3.0d
+        def list = new ArrayList<Double>()
+            list.add(2.0d)
+            assert list.get(0) + 1 == 3.0d
         '''
     }
 
@@ -41,9 +41,9 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     @Test
     void testShouldNotThrowForbiddenAccessWithMapProperty() {
         assertScript '''
-            Map<String, Integer> m = ['abcd': 1234]
-            assert m['abcd'] == 1234
-            assert m.abcd == 1234
+            Map<String, Integer> map = ['abcd': 1234]
+            assert map['abcd'] == 1234
+            assert map.abcd == 1234
         '''
     }
 
@@ -71,33 +71,41 @@ final class ArraysAndCollectionsStaticCompileTest extends ArraysAndCollectionsST
     @Test
     void testSpreadSafeMethodCallsOnListLiteralShouldNotCreateListTwice() {
         assertScript '''
-            class Foo {
-                static void test() {
-                    def list = [1, 2]
-                    def lengths = [list << 3]*.size()
-                    assert lengths == [3]
-                    assert list == [1, 2, 3]
-                }
+            void check(List items, List sizes) {
+                assert items == [1, 2, 3]
+                assert sizes == [3]
             }
-            Foo.test()
+            void test() {
+                def items = [1, 2]
+                def sizes = [items << 3]*.size()
+                check(items, sizes)
+            }
+            test()
         '''
-        assert astTrees['Foo'][1].count('ScriptBytecodeAdapter.createList') == 4
+        String bytecode = astTrees.values()[0][1]
+        int offset = bytecode.indexOf('test()V')
+        bytecode = bytecode.substring(offset, bytecode.indexOf('RETURN', offset))
+
+        assert bytecode.count('ScriptBytecodeAdapter.createList') == 0 // GROOVY-8699
+        assert bytecode.count('INVOKESPECIAL java/util/ArrayList.<init>') == 3 // one for the spread result
     }
 
     // GROOVY-7688
     @Test
     void testSpreadSafeMethodCallReceiversWithSideEffectsShouldNotBeVisitedTwice() {
         assertScript '''
-            class Foo {
-                static void test() {
-                    def list = ['a', 'b']
-                    def lengths = list.toList()*.length()
-                    assert lengths == [1, 1]
-                }
+            void test() {
+                def list = ['a', 'b']
+                def lengths = list.toList()*.length()
+                assert lengths == [1, 1]
             }
-            Foo.test()
+            test()
         '''
-        assert astTrees['Foo'][1].count('DefaultGroovyMethods.toList') == 1
+        String bytecode = astTrees.values()[0][1]
+        int offset = bytecode.indexOf('test()V')
+        bytecode = bytecode.substring(offset, bytecode.indexOf('RETURN', offset))
+
+        assert bytecode.count('DefaultGroovyMethods.toList') == 1
     }
 
     @Override @Test
