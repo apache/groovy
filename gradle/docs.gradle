@@ -17,17 +17,36 @@
  *  under the License.
  */
 
-task doc(dependsOn: ['javadocAll', 'groovydocAll', 'docGDK', 'asciidocAll']) {
+// Check if asciidoctor plugin is available
+def hasAsciidoctor = project.plugins.hasPlugin('org.asciidoctor.gradle.asciidoctor') ||
+                      project.tasks.findByName('asciidoctor') != null
+
+def docDeps = ['javadocAll', 'groovydocAll', 'docGDK']
+if (hasAsciidoctor) {
+    docDeps << 'asciidocAll'
+}
+
+task doc(dependsOn: docDeps) {
     ext.footer = 'Copyright &copy; 2003-2024 The Apache Software Foundation. All rights reserved.'
     ext.title = "Groovy ${groovyVersion}"
 }
 
-task asciidocAll(type: Copy) {
-    allprojects {
-        dependsOn asciidoctor
-        from asciidoctor.outputDir
+// Only create asciidocAll if asciidoctor plugin is available
+if (hasAsciidoctor) {
+    task asciidocAll(type: Copy) {
+        allprojects {
+            dependsOn asciidoctor
+            from asciidoctor.outputDir
+        }
+        into "$buildDir/asciidocAll"
     }
-    into "$buildDir/asciidocAll"
+} else {
+    // Stub task when asciidoctor is not available
+    task asciidocAll {
+        doLast {
+            logger.lifecycle 'Asciidoctor plugin not available, skipping asciidocAll'
+        }
+    }
 }
 
 def javadocSpec = {
@@ -58,7 +77,8 @@ def groovydocBaseSpec = {
     header = doc.title
     footer = doc.footer
     overviewText = rootProject.resources.text.fromFile('src/main/java/overview.html')
-    includePrivate = false
+    // includePrivate property removed in Gradle 9.x, use access property
+    access = org.gradle.api.tasks.javadoc.GroovydocAccess.PUBLIC
     link 'https://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
     link 'https://docs.oracle.com/javase/8/docs/api/', 'java.', 'org.xml.', 'javax.', 'org.w3c.'
     link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
@@ -71,13 +91,45 @@ def groovydocBaseSpec = {
 }
 
 def groovydocSpec = groovydocBaseSpec >> {
-    source = project.sourceSets.main.allSource
-    classpath = javadoc.classpath
+    // Use java + groovy sources separately to avoid duplicates from the antlr directory
+    // which is added to both source sets in the root project's build.gradle
+    // Gradle 9.x strictly validates duplicate files
+    source = project.sourceSets.main.java.srcDirs + project.sourceSets.main.groovy.srcDirs.findAll {
+        // Exclude the antlr generated directory from groovy since it's already in java
+        !it.path.contains('antlr2')
+    }
+    classpath = project.sourceSets.main.compileClasspath
+    // Exclude source maps (Gradle 9.x duplicate detection)
+    exclude '**/*.smap'
 }
 
+// Configure groovydoc with proper cross-project resolution for Gradle 9.x
 allprojects {
     javadoc javadocSpec
+
+    // Create a dedicated configuration for groovyClasspath that can be safely resolved
+    // This avoids cross-project configuration resolution issues in Gradle 9.x
+    configurations {
+        groovydocClasspath {
+            canBeConsumed = false
+            canBeResolved = true
+            attributes {
+                attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+                attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+                attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+            }
+        }
+    }
+    dependencies {
+        groovydocClasspath project(':groovy-groovydoc')
+        groovydocClasspath project(':groovy-ant')
+    }
+
     groovydoc groovydocSpec
+    groovydoc {
+        // Explicitly set groovyClasspath to our dedicated configuration
+        groovyClasspath = configurations.groovydocClasspath
+    }
 }
 
 javadoc {
@@ -86,13 +138,16 @@ javadoc {
 
 evaluationDependsOn('groovy-jaxb')
 
+// Skip these subprojects for documentation tasks (Gradle 9.x cross-project isolation)
+def excludedFromDocs = ['binary-compatibility', 'performance']
+
 // Root project has an extra 'all' javadoc task
 task javadocAll(type: Javadoc)
 javadocAll {
     destinationDir = new File(buildDir, 'alljavadoc')
     source = javadoc.source
     classpath = javadoc.classpath
-    subprojects.each { sp ->
+    subprojects.findAll { !(it.name in excludedFromDocs) }.each { sp ->
         source += sp.javadoc.source
         classpath += sp.javadoc.classpath
     }
@@ -100,20 +155,56 @@ javadocAll {
 }
 javadocAll javadocSpec
 
+// Create a configuration for groovydocAll that can safely resolve all module dependencies
+configurations {
+    groovydocAllClasspath {
+        canBeConsumed = false
+        canBeResolved = true
+        attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+    }
+}
+// Add all modules to groovydocAllClasspath
+subprojects.findAll { !(it.name in excludedFromDocs) }.each { sp ->
+    dependencies {
+        groovydocAllClasspath sp
+    }
+}
+// Add JAXB dependencies for Java 9+ (JAXB removed from standard library)
+dependencies {
+    groovydocAllClasspath 'javax.xml.bind:jaxb-api:2.3.0'
+    groovydocAllClasspath 'com.sun.xml.bind:jaxb-core:2.3.0.1'
+    groovydocAllClasspath 'com.sun.xml.bind:jaxb-impl:2.3.0.1'
+    groovydocAllClasspath 'javax.activation:activation:1.1.1'
+}
+
 // Root project has an extra 'all' groovydoc task
 task groovydocAll(type: Groovydoc)
 groovydocAll {
     dependsOn( { project(':groovy-groovydoc').classes })
     dependsOn( { project(':groovy-docgenerator').classes })
     destinationDir = new File(buildDir, 'allgroovydoc')
+
+    // Build source from root project (using our deduplicated spec)
     source = groovydoc.source
-    classpath = groovydoc.classpath
-    groovyClasspath = groovydoc.groovyClasspath
-    subprojects.each { sp ->
-        source += sp.groovydoc.source
-        classpath += sp.groovydoc.classpath
-        groovyClasspath += sp.groovydoc.groovyClasspath
+
+    // Add subproject sources, using the source trees (not just directories)
+    // to preserve the proper relative paths
+    subprojects.findAll { !(it.name in excludedFromDocs) }.each { sp ->
+        // Use the actual source file trees which preserve directory structure
+        source += sp.sourceSets.main.java
+        source += sp.sourceSets.main.groovy
     }
+
+    // Use dedicated configurations for Gradle 9.x cross-project resolution
+    classpath = configurations.groovydocAllClasspath
+    groovyClasspath = configurations.groovydocClasspath
+
+    // Exclude source maps (Gradle 9.x duplicate detection)
+    exclude '**/*.smap'
 }
 groovydocAll groovydocBaseSpec
 
@@ -126,6 +217,18 @@ task docProjectVersionInfo(type: Copy) {
         from(generateReleaseInfo)
     }
     from('subprojects/groovy-docgenerator/src/main/resources')
+}
+
+// Create a configuration for groovydoc classpath that doesn't depend on groovydocAll task
+configurations {
+    groovydocTools {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+dependencies {
+    groovydocTools project(':groovy-groovydoc')
+    groovydocTools project(':groovy-ant')
 }
 
 task docGDK {
@@ -142,7 +245,7 @@ task docGDK {
                 java(classname: 'org.apache.groovy.docgenerator.DocGenerator',
                      fork: 'true',
                      failonerror: 'true',
-                     classpath: (sourceSets.main.runtimeClasspath + rootProject.files(docProjectVersionInfo.destinationDir) + configurations.tools + groovydocAll.groovyClasspath + docGeneratorPath).asPath,
+                     classpath: (sourceSets.main.runtimeClasspath + rootProject.files(docProjectVersionInfo.destinationDir) + configurations.tools + configurations.groovydocTools + docGeneratorPath).asPath,
                      errorproperty: 'edr',
                      outputproperty: 'odr') {
                     arg(value: '-title')

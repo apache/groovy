@@ -1300,7 +1300,8 @@ final class LambdaTest {
             test()
         '''
 
-        assert err.message.contains('$Lambda$')
+        // Java 25+ uses $$Lambda/ format, earlier JDKs use $Lambda$
+        assert err.message.contains('Lambda')
     }
 
     @Test
@@ -1923,7 +1924,8 @@ final class LambdaTest {
             @groovy.transform.CompileStatic
             static void main(args) {
                 java.util.function.Function<String, String> lower = String::toLowerCase
-                assert lower.toString().contains('$$Lambda$')
+                // Java 25+ uses $$Lambda/ format, earlier JDKs use $$Lambda$
+                assert lower.toString().contains('Lambda')
             }
         '''
     }

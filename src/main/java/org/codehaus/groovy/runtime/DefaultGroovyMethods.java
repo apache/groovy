@@ -8562,6 +8562,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         putAt(self, range, (Object)value);
     }
 
+    /**
+     * List subscript assignment operator when given an EmptyRange and List.
+     * This overload resolves method ambiguity between (EmptyRange, Collection) and (List, List).
+     *
+     * @param self   a List
+     * @param range  the (in this case empty) subset of the list to set
+     * @param values the List of values
+     * @since 3.0.23
+     * @see #putAt(java.util.List, groovy.lang.EmptyRange, java.lang.Object)
+     */
+    public static void putAt(List self, EmptyRange range, List values) {
+        putAt(self, range, (Object)values);
+    }
+
     private static <T> List<T> resizeListWithRangeAndGetSublist(List<T> self, IntRange range) {
         RangeInfo info = subListBorders(self.size(), range);
         int size = self.size();
@@ -8594,6 +8608,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List sublist = resizeListWithRangeAndGetSublist(self, range);
         if (col.isEmpty()) return;
         sublist.addAll(col);
+    }
+
+    /**
+     * List subscript assignment operator when given an IntRange and List.
+     * This overload resolves method ambiguity between (IntRange, Collection) and (List, List).
+     *
+     * @param self   a List
+     * @param range  the subset of the list to set
+     * @param values the list of values to put at the given sublist
+     * @since 3.0.23
+     */
+    public static void putAt(List self, IntRange range, List values) {
+        putAt(self, range, (Collection) values);
     }
 
     /**

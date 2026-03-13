@@ -45,15 +45,10 @@ logger.lifecycle "ArtifactoryUser user: $artifactoryUser"
 
 allprojects {
     if (project == rootProject || rootProject.ext.modules().contains(project)) {
-        apply plugin: 'com.jfrog.artifactory-upload'
+        apply plugin: 'com.jfrog.artifactory'
 
         artifactory {
             contextUrl = project.hasProperty('artifactoryContext') ? project.artifactoryContext : 'https://groovy.jfrog.io/artifactory'
-            resolve {
-                repository {
-                    repoKey = 'libs-release'
-                }
-            }
             publish {
                 excludePatterns = [
 //                        'org/codehaus/groovy/groovy/**',

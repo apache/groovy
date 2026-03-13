@@ -51,7 +51,7 @@ public class ScriptLauncher extends Thread
         // run the script numIter times
         for (int i = 0; i < numIter; i++)
         {
-            Builder builder = new Builder();
+            org.codehaus.groovy.benchmarks.vm5.b2394.Builder builder = new org.codehaus.groovy.benchmarks.vm5.b2394.Builder();
 
             Binding binding = new Binding();
             binding.setVariable("builder", builder);

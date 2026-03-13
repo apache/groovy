@@ -30,7 +30,8 @@ dependencies {
     implementation project(':groovy-templates') // needed by TemplateServlet
 
     testImplementation "jmock:jmock:$jmockVersion"
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
+    // Use test output instead of full runtimeClasspath to avoid cross-project resolution issues in Gradle 9.x
+    testImplementation project(':').sourceSets.test.output
     testImplementation project(':groovy-json')
     testImplementation project(':groovy-test')
 }

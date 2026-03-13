@@ -18,7 +18,8 @@
  */
 dependencies {
     api rootProject  // SwingBuilder extends FactoryBuilderSupport...
-    testImplementation rootProject.sourceSets.test.runtimeClasspath
+    // Use test output instead of full runtimeClasspath to avoid cross-project resolution issues in Gradle 9.x
+    testImplementation project(':').sourceSets.test.output
     testImplementation project(':groovy-test')
 }
 task moduleDescriptor(type: org.codehaus.groovy.gradle.WriteExtensionDescriptorTask) {

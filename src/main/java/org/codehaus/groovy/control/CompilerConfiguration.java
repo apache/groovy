@@ -91,6 +91,22 @@ public class CompilerConfiguration {
     public static final String JDK16 = "16";
     /** This (<code>"17"</code>) is the value for targetBytecode to compile for a JDK 17. */
     public static final String JDK17 = "17";
+    /** This (<code>"18"</code>) is the value for targetBytecode to compile for a JDK 18. */
+    public static final String JDK18 = "18";
+    /** This (<code>"19"</code>) is the value for targetBytecode to compile for a JDK 19. */
+    public static final String JDK19 = "19";
+    /** This (<code>"20"</code>) is the value for targetBytecode to compile for a JDK 20. */
+    public static final String JDK20 = "20";
+    /** This (<code>"21"</code>) is the value for targetBytecode to compile for a JDK 21. */
+    public static final String JDK21 = "21";
+    /** This (<code>"22"</code>) is the value for targetBytecode to compile for a JDK 22. */
+    public static final String JDK22 = "22";
+    /** This (<code>"23"</code>) is the value for targetBytecode to compile for a JDK 23. */
+    public static final String JDK23 = "23";
+    /** This (<code>"24"</code>) is the value for targetBytecode to compile for a JDK 24. */
+    public static final String JDK24 = "24";
+    /** This (<code>"25"</code>) is the value for targetBytecode to compile for a JDK 25. */
+    public static final String JDK25 = "25";
 
     /**
      * This constant is for comparing targetBytecode to ensure it is set to JDK 1.5 or later.
@@ -123,7 +139,15 @@ public class CompilerConfiguration {
             JDK14, Opcodes.V14,
             JDK15, Opcodes.V15,
             JDK16, Opcodes.V16,
-            JDK17, Opcodes.V17
+            JDK17, Opcodes.V17,
+            JDK18, Opcodes.V18,
+            JDK19, Opcodes.V19,
+            JDK20, Opcodes.V20,
+            JDK21, Opcodes.V21,
+            JDK22, Opcodes.V22,
+            JDK23, Opcodes.V23,
+            JDK24, Opcodes.V24,
+            JDK25, Opcodes.V25
     );
 
     /**
