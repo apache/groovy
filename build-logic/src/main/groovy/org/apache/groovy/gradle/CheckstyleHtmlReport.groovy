@@ -22,7 +22,8 @@ import groovy.text.markup.MarkupTemplateEngine
 import groovy.text.markup.TemplateConfiguration
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import groovy.util.slurpersupport.GPathResult
+import groovy.xml.XmlSlurper
+import groovy.xml.slurpersupport.GPathResult
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
