@@ -33,6 +33,7 @@ import groovy.lang.MetaProperty;
 import groovy.lang.MissingMethodException;
 import groovy.transform.Internal;
 import org.apache.groovy.runtime.ObjectUtil;
+import org.apache.groovy.util.SystemUtil;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.CachedMethod;
@@ -123,6 +124,21 @@ public abstract class Selector {
      * Cache values for read-only access
      */
     private static final CallType[] CALL_TYPE_VALUES = CallType.values();
+
+    /**
+     * Whether to use a global SwitchPoint guard for metaclass changes.
+     * <p>
+     * <strong>Default is {@code false}</strong> to avoid the performance cost of globally
+     * invalidating all indy call sites whenever <em>any</em> metaclass changes.
+     * Enabling this will significantly degrade performance in frameworks or applications
+     * with frequent metaclass changes (for example, Grails), because every such change
+     * forces all guarded call sites to be re-linked.
+     * <p>
+     * Set {@code groovy.indy.switchpoint.guard=true} <strong>only</strong> for specific
+     * debugging or backward-compatibility scenarios where strict metaclass change
+     * detection is required, and not for general production use.
+     */
+    private static final boolean INDY_SWITCHPOINT_GUARD = SystemUtil.getBooleanSafe("groovy.indy.switchpoint.guard");
 
     /**
      * Returns the Selector
@@ -940,9 +956,11 @@ public abstract class Selector {
                 }
             }
 
-            // handle constant metaclass and category changes
-            handle = switchPoint.guardWithTest(handle, fallback);
-            if (LOG_ENABLED) LOG.info("added switch point guard");
+            // Apply global switchpoint guard if enabled (disabled by default for performance)
+            if (INDY_SWITCHPOINT_GUARD) {
+                handle = switchPoint.guardWithTest(handle, fallback);
+                if (LOG_ENABLED) LOG.info("added switch point guard");
+            }
 
             java.util.function.Predicate<Class<?>> nonFinalOrNullUnsafe = (t) -> {
                 return !Modifier.isFinal(t.getModifiers())
