@@ -710,7 +710,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
                 for (CategoryMethod cm : methods) {
                     Class<?> cmdc = cm.getDeclaringClass().getTheClass();
-                    if (cmdc.isAssignableFrom(theClass)) // GROOVY-11813: not sender
+                    if (cmdc == Object.class ? !isGroovyFunctor() // GROOVY-7685
+                                             : cmdc.isAssignableFrom(theClass)) // GROOVY-11813
                         filterMatchingMethodForCategory(array, cm);
                 }
                 answer = array;
