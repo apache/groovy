@@ -37,6 +37,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.ABSTRACT;
+import static org.apache.groovy.parser.antlr4.GroovyLangParser.ASYNC;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.FINAL;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.NATIVE;
 import static org.apache.groovy.parser.antlr4.GroovyLangParser.STATIC;
@@ -47,7 +48,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLangParser.VOLATILE;
  */
 class ModifierManager {
     private static final Map<Class, List<Integer>> INVALID_MODIFIERS_MAP = Maps.of(
-            ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE),
+            ConstructorNode.class, Arrays.asList(STATIC, FINAL, ABSTRACT, NATIVE, ASYNC),
             MethodNode.class, Arrays.asList(VOLATILE/*, TRANSIENT*/) // Transient is left open for properties for legacy reasons but should be removed before ClassCompletionVerifier runs (CLASSGEN)
     );
     private AstBuilder astBuilder;
@@ -163,6 +164,7 @@ class ModifierManager {
     }
 
     public Parameter processParameter(Parameter parameter) {
+        rejectAsyncModifier("parameter declarations");
         modifierNodeList.forEach(e -> {
             parameter.setModifiers(parameter.getModifiers() | e.getOpcode());
 
@@ -191,6 +193,7 @@ class ModifierManager {
     }
 
     public VariableExpression processVariableExpression(VariableExpression ve) {
+        rejectAsyncModifier("variable declarations");
         modifierNodeList.forEach(e -> {
             ve.setModifiers(ve.getModifiers() | e.getOpcode());
 
@@ -198,6 +201,23 @@ class ModifierManager {
         });
 
         return ve;
+    }
+
+    /**
+     * Rejects the {@code async} modifier when used in an unsupported context
+     * (e.g. parameter or local variable declarations).  The grammar allows
+     * {@code async} as a general modifier, but semantically it is only valid
+     * on method declarations.  This check prevents silent acceptance.
+     *
+     * @param target human-readable description of the disallowed context
+     */
+    private void rejectAsyncModifier(String target) {
+        Optional<ModifierNode> asyncModifier = get(ASYNC);
+        if (asyncModifier.isPresent()) {
+            throw astBuilder.createParsingFailedException(
+                    "modifier `async` is only allowed for method declarations, not for " + target,
+                    asyncModifier.get());
+        }
     }
 
     public <T extends AnnotatedNode> T attachAnnotations(T node) {
