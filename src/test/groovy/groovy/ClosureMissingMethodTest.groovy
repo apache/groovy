@@ -20,36 +20,35 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-
-class ClosureMissingMethodTest {
+final class ClosureMissingMethodTest {
 
     @Test
     void testInScript() {
-        GroovyShell shell = new GroovyShell()
-        shell.evaluate("""
-          int count = 0
+        assertScript '''
+            int count = 0
 
-          foo = {
-            count++
-            bar()
-          }
-          baz = {
-            foo()
-          }
+            def foo = {
+                ++count
+                bar()
+            }
+            def baz = {
+                foo()
+            }
 
-          try {
-              baz()
-              fail()
-          } catch (org.codehaus.groovy.runtime.InvokerInvocationException iie) {
-              assert iie.cause.method == 'bar'
-              assert count == 1
-          } catch (MissingMethodException mme) {
-              assert mme.method == 'bar'
-              assert count == 1
-          }
-      """);
+            try {
+                baz()
+                assert false
+            } catch (org.codehaus.groovy.runtime.InvokerInvocationException iie) {
+                assert iie.cause.method == 'bar'
+                assert count == 1
+            } catch (MissingMethodException mme) {
+                assert mme.method == 'bar'
+                assert count == 1
+            }
+        '''
     }
 
     @Test
@@ -57,50 +56,48 @@ class ClosureMissingMethodTest {
         int count = 0
 
         def foo = {
-            count++
+            ++count
             bar()
         }
         def baz = {
             foo()
         }
 
-        try {
+        def mme = shouldFail(MissingMethodException) {
             baz()
-            fail()
-        } catch (MissingMethodException mme) {
-            assert mme.method == 'bar'
-            assert count == 1
         }
+        assert mme.method == 'bar'
+        assert count == 1
     }
 
     @Test
     void testWithMetaClassInScript() {
-        GroovyShell shell = new GroovyShell()
-        shell.evaluate("""
-          int count = 0
+        assertScript '''
+            int count = 0
 
-          foo = {
-            count++
-            bar()
-          }
-          baz = {
-            foo()
-          }
-          mc = new ExpandoMetaClass(baz.getClass())
-          mc.initialize()
-          baz.metaClass = mc
+            def foo = {
+                ++count
+                bar()
+            }
+            def baz = {
+                foo()
+            }
 
-          try {
-              baz()
-              fail()
-          } catch (org.codehaus.groovy.runtime.InvokerInvocationException iie) {
-              assert iie.cause.method == 'bar'
-              assert count == 1
-          } catch (MissingMethodException mme) {
-              assert mme.method == 'bar'
-              assert count == 1
-          }
-      """);
+            def emc = new ExpandoMetaClass(baz.getClass())
+            emc.initialize()
+            baz.metaClass = emc
+
+            try {
+                baz()
+                assert false
+            } catch (org.codehaus.groovy.runtime.InvokerInvocationException iie) {
+                assert iie.cause.method == 'bar'
+                assert count == 1
+            } catch (MissingMethodException mme) {
+                assert mme.method == 'bar'
+                assert count == 1
+            }
+        '''
     }
 
     @Test
@@ -108,22 +105,21 @@ class ClosureMissingMethodTest {
         int count = 0
 
         def foo = {
-            count++
+            ++count
             bar()
         }
         def baz = {
             foo()
         }
-        MetaClass mc = new ExpandoMetaClass(baz.getClass())
-        mc.initialize()
-        baz.metaClass = mc
 
-        try {
+        def emc = new ExpandoMetaClass(baz.getClass())
+        emc.initialize()
+        baz.metaClass = emc
+
+        def mme = shouldFail(MissingMethodException) {
             baz()
-            fail()
-        } catch (MissingMethodException mme) {
-            assert mme.method == 'bar'
-            assert count == 1
         }
+        assert mme.method == 'bar'
+        assert count == 1
     }
 }
