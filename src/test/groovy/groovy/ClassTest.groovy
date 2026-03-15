@@ -40,7 +40,7 @@ class ClassTest {
     }
 
     @Test
-    def testClassesHaveSuperModiferSet() {
+    void testClassesHaveSuperModiferSet() {
         assert java.lang.reflect.Modifier.isSynchronized(this.class.modifiers)
     }
 

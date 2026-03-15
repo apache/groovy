@@ -39,7 +39,7 @@ class MethodDispatchBug {
     }
 
     @Test
-    def testBug() {
+    void testBug() {
         def o = this;
 
         assert "BB" == o.doit(true, true);
