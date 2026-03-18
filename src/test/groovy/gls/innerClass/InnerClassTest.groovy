@@ -2429,9 +2429,33 @@ final class InnerClassTest {
         '''
     }
 
-    // GROOVY-9618
+    // GROOVY-11875
     @Test
     void testNestedPropertyHandling6() {
+        assertScript '''import java.util.concurrent.atomic.AtomicBoolean
+            class Outer {
+                private AtomicBoolean foo = [true]
+                boolean isFoo() {
+                    foo.get()
+                }
+                Boolean bar() {
+                    def i = new Inner()
+                    i.baz()
+                }
+                class Inner {
+                    def baz() {
+                        foo
+                    }
+                }
+            }
+
+            assert new Outer().bar()
+        '''
+    }
+
+    // GROOVY-9618
+    @Test
+    void testNestedPropertyHandling7() {
         assertScript '''
             class Super {
                 public static X = 1
