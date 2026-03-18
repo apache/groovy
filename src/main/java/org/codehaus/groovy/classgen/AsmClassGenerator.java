@@ -1457,13 +1457,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
             pexp.getProperty().setSourcePosition(expression);
-            pexp.setType(expression.getType());
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
-
-            if (!compileStack.isLHS() && !expression.isDynamicTyped()) {
-                controller.getOperandStack().doGroovyCast(typeOf(expression));
-            }
         }
 
         if (!compileStack.isLHS()) {
