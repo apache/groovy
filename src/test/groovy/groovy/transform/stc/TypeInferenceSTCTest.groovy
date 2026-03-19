@@ -176,8 +176,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             A test(Object o) {
                 if (o instanceof A) {
-                    def v = o
-                    return v
+                    def a = o
+                    return a
                 } else {
                     new A()
                 }
@@ -268,6 +268,26 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             def string = test('two')
             assert string == '"two"'
+        '''
+
+        assertScript '''
+            abstract class Foo {
+                abstract boolean isBaz()
+            }
+            class Bar extends Foo {
+                final boolean baz = false
+            }
+            class Baz extends Foo {
+                final boolean baz = true
+            }
+            void test(Foo foo) {
+                if (foo instanceof Bar || foo.isBaz()) {
+                    foo.toString()
+                }
+            }
+            test(new Bar())
+            test(new Baz())
+            test(new Foo(){ boolean isBaz() { false } })
         '''
     }
 
@@ -401,6 +421,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             }
             assert test(42) == 42
         '''
+
         shouldFailWithMessages '''
             void test(Integer i) {
                 if (i instanceof Long) {
@@ -476,7 +497,6 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             def test(o) {
                 o instanceof A ? o.foo() : (o instanceof B ? o.bar() : 3)
             }
-
             assert test(new A()) == 1
             assert test(new B()) == 2
             assert test(new C()) == 3
@@ -1136,6 +1156,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 method.set(classNode.methods.find { it.name == 'method' })
             }
         })
+
         assertScript '''
             void method() {
                 def o
@@ -1143,12 +1164,10 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 'String'
             }
         '''
-
-        def inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
-        assert inft instanceof WideningCategories.LowestUpperBoundClassNode
-        [Comparable, Serializable].each {
-            assert ClassHelper.make(it) in inft.interfaces
-        }
+        ClassNode type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type instanceof WideningCategories.LowestUpperBoundClassNode
+        assert ClassHelper.make(Comparable  ) in type.interfaces
+        assert ClassHelper.make(Serializable) in type.interfaces
 
         assertScript '''
             void method() {
@@ -1157,7 +1176,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.int_TYPE
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type == ClassHelper.int_TYPE
 
         assertScript '''
             void method() {
@@ -1166,8 +1186,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
-        assert inft  == ClassHelper.long_TYPE
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type  == ClassHelper.long_TYPE
 
         assertScript '''
             void method() {
@@ -1176,7 +1196,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = new LinkedHashSet()
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type == ClassHelper.make(HashSet)
     }
 
     @Test
