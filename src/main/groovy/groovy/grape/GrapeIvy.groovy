@@ -28,6 +28,7 @@ import org.apache.groovy.plugin.GroovyRunner
 import org.apache.groovy.plugin.GroovyRunnerRegistry
 import org.apache.ivy.Ivy
 import org.apache.ivy.core.IvyContext
+import org.apache.ivy.core.event.IvyListener
 import org.apache.ivy.core.event.download.PrepareDownloadEvent
 import org.apache.ivy.core.event.resolve.StartResolveEvent
 import org.apache.ivy.core.module.descriptor.Configuration
@@ -729,6 +730,10 @@ class GrapeIvy implements GrapeEngine {
         ivyInstance = Ivy.newInstance(settings)
         resolvedDependencies = []
         downloadedArtifacts = []
+    }
+
+    IvyListener makeIvyListener(Closure c) {
+        [progress: c] as IvyListener
     }
 }
 
