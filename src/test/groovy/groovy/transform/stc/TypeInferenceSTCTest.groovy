@@ -18,7 +18,6 @@
  */
 package groovy.transform.stc
 
-import groovy.test.NotYetImplemented
 import org.codehaus.groovy.ast.ClassHelper
 import org.codehaus.groovy.ast.ClassNode
 import org.codehaus.groovy.ast.MethodNode
@@ -44,7 +43,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     // GROOVY-9935
     void testIntegerToNumber() {
-        ['def', 'int', 'Integer', 'BigInteger'].each { type ->
+        for (type in ['def', 'int', 'Integer', 'BigInteger']) {
             assertScript """
                 Number f() {
                     $type n = 10
@@ -242,23 +241,29 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-10096
-    @NotYetImplemented
+    // GROOVY-11769
     void testInstanceOf10() {
-        shouldFailWithMessages '''
-            class Foo {
-                void foo() {
-                }
+        assertScript '''
+            abstract class Foo {
+                abstract boolean isBaz()
             }
             class Bar extends Foo {
-                void bar() {
+                final boolean baz = false
+            }
+            class Baz extends Foo {
+                final boolean baz = true
+            }
+
+            void test(Foo foo) {
+                if (foo instanceof Bar || foo.isBaz()) {
+                    foo.toString()
                 }
             }
-            static Bar baz(Foo foo) {
-                (false || foo instanceof Bar) ? foo : new Bar()
-            }
-        ''',
-        'Cannot return value of type Foo for method returning Bar'
+
+            test(new Bar())
+            test(new Baz())
+            test(new Foo(){ boolean isBaz() { false } })
+        '''
     }
 
     // GROOVY-11007
@@ -699,11 +704,11 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
 
     void testInstanceOfInferenceWithImplicitIt() {
         assertScript '''
-        ['a', 'b', 'c'].each {
-            if (it instanceof String) {
-                println it.toUpperCase()
+            ['a', 'b', 'c'].each {
+                if (it instanceof String) {
+                    println it.toUpperCase()
+                }
             }
-        }
         '''
     }
 
@@ -972,8 +977,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
             void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
                 method = classNode.methods.find { it.name == 'method' }
             }
-
         })
+
         assertScript '''
             void method() {
                 def o
@@ -981,11 +986,10 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 'String'
             }
         '''
-        def inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
-        assert inft instanceof WideningCategories.LowestUpperBoundClassNode
-        [Comparable, Serializable].each {
-            assert ClassHelper.make(it) in inft.interfaces
-        }
+        ClassNode type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type instanceof WideningCategories.LowestUpperBoundClassNode
+        assert ClassHelper.make(Comparable  ) in type.interfaces
+        assert ClassHelper.make(Serializable) in type.interfaces
 
         assertScript '''
             void method() {
@@ -994,7 +998,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.int_TYPE
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type == ClassHelper.int_TYPE
 
         assertScript '''
             void method() {
@@ -1003,8 +1008,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = 2
             }
         '''
-        inft = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
-        assert inft  == ClassHelper.long_TYPE
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type  == ClassHelper.long_TYPE
 
         assertScript '''
             void method() {
@@ -1013,7 +1018,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
                 o = new LinkedHashSet()
             }
         '''
-        assert method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE) == ClassHelper.make(HashSet)
+        type = method.code.statements[0].expression.leftExpression.getNodeMetaData(StaticTypesMarker.DECLARATION_INFERRED_TYPE)
+        assert type == ClassHelper.make(HashSet)
     }
 
     void testChooseMethodWithTypeInference() {
@@ -1575,7 +1581,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-
+    // GROOVY-6207
     void testGetAnnotationFails() {
         assertScript '''
             import groovy.transform.*
