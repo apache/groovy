@@ -39,35 +39,6 @@ configurations {
 
 sourceSets {
     main {
-        java {
-            if (!JavaVersion.current().isJava9Compatible()) {
-                exclude '**/v9/*'
-                exclude '**/vm9/*'
-                exclude '**/PlatformLog.java'
-            }
-            if (!JavaVersion.current().isJava10Compatible()) {
-                exclude '**/v10/*'
-                exclude '**/vm10/*'
-            }
-            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
-                exclude '**/v16/*'
-                exclude '**/vm16/*'
-            }
-        }
-        groovy {
-            if (!JavaVersion.current().isJava9Compatible()) {
-                exclude '**/v9/*'
-                exclude '**/vm9/*'
-            }
-            if (!JavaVersion.current().isJava10Compatible()) {
-                exclude '**/v10/*'
-                exclude '**/vm10/*'
-            }
-            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
-                exclude '**/v16/*'
-                exclude '**/vm16/*'
-            }
-        }
         antlr {
             srcDirs = ['src/antlr']
         }
@@ -76,20 +47,6 @@ sourceSets {
         }
     }
     test {
-        groovy {
-            if (!JavaVersion.current().isJava9Compatible()) {
-                exclude '**/v9/*'
-                exclude '**/vm9/*'
-            }
-            if (!JavaVersion.current().isJava10Compatible()) {
-                exclude '**/v10/*'
-                exclude '**/vm10/*'
-            }
-            if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
-                exclude '**/v16/*'
-                exclude '**/vm16/*'
-            }
-        }
         resources {
             srcDirs += ['src/test-resources']
         }
