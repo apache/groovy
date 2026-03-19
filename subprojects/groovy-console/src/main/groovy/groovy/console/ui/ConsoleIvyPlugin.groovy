@@ -34,7 +34,7 @@ class ConsoleIvyPlugin {
     def addListener(Console console) {
         savedConsole = console
         GrapeEngine engine = Grape.instance
-        if (engine?.class?.name == 'groovy.grape.ivy.GrapeIvy' && engine.metaClass.respondsTo(engine, 'getIvyInstance', Closure)) {
+        if (engine?.class?.name == 'groovy.grape.GrapeIvy' && engine.metaClass.respondsTo(engine, 'getIvyInstance', Closure)) {
             engine.ivyInstance.eventManager.addIvyListener(engine.makeIvyListener{ ivyEvent ->
                 switch (ivyEvent.class.simpleName) {
                     case 'StartResolveEvent':
