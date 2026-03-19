@@ -31,10 +31,4 @@ class TypeInferenceStaticCompileTest extends TypeInferenceSTCTest implements Sta
     void testInstanceOf9() {
         super.testInstanceOf9() // GROOVY-7971
     }
-
-    @Override
-    @NotYetImplemented
-    void testInstanceOf10() {
-        super.testInstanceOf10() // GROOVY-11769
-    }
 }
