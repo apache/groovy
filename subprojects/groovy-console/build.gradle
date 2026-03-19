@@ -26,9 +26,6 @@ dependencies {
     implementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
     implementation projects.groovyTemplates
-    implementation ("org.apache.ivy:ivy:${versions.ivy}") {
-        transitive = false
-    }
     runtimeOnly "org.abego.treelayout:org.abego.treelayout.core:${versions.treelayout}"
     testImplementation projects.groovyTest
     testImplementation testFixtures(projects.groovySwing)
@@ -37,6 +34,9 @@ dependencies {
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
+    }
+    testRuntimeOnly ("org.apache.ivy:ivy:${versions.ivy}") {
+        transitive = false
     }
 }
 
