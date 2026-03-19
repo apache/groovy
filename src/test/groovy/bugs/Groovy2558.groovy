@@ -16,24 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs;
+package bugs
 
-import groovy.lang.GroovyShell;
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test
 
-class Autobox {
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-    public static class Util {
-        public static void printByte(String str, Byte defaultValue) {
-            System.out.println(str + ", " + defaultValue);
-        }
-    }
-}
+final class Groovy2558 {
 
-public class Groovy2553Bug extends TestCase {
-
-    public void testMe () {
-        new GroovyShell().evaluate("bugs.Autobox.Util.printByte(\"1\", Byte.valueOf((byte)1));");
-        new GroovyShell().evaluate("bugs.Autobox.Util.printByte(\"1\", (byte)1);");
+    @Test
+    void testMe() {
+        Person person = new Person()
+        String propertyName = 'name'
+        person."$propertyName" = 'peter'
+        assertEquals "peter", person.name
     }
 }

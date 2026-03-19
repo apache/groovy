@@ -20,15 +20,15 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+final class Groovy2801 {
 
-
-class Groovy2557Bug{
     @Test
-    void testArray2ListCoercion() {
-        String[] args = ['a', 'b']
-        List list = args as List
-        list.add('c')
-        assertEquals(['a', 'b', 'c'], list)
+    void testOverrideToStringInMapOfClosures() {
+        def proxyImpl = [foo: { 'Foo!' }, toString: { 'overridden.' }] as IGroovy2801Bug
+        assert proxyImpl.toString() == 'overridden.'
+    }
+
+    interface IGroovy2801Bug {
+        String foo()
     }
 }

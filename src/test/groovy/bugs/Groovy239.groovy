@@ -20,20 +20,38 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
+final class Groovy239 {
 
-
-class Groovy2339Bug {
+    def makeClosure() {
+        return { it() }
+    }
 
     @Test
     void testBug() {
-        List list = ['groovy', 'java']
-        Map map = [a: 1, b: 2]
+        def a = makeClosure()
+        def b = makeClosure()
+        def c = makeClosure()
 
-        shouldFail(MissingMethodException) {
-            list.each {
-                map.keySet().each {Date d ->
-                    println d
+        a() {
+            println('A')
+            b() {
+                println('B')
+                c() {
+                    println('C')
+                }
+            }
+        }
+    }
+
+    @Test
+    void testBug2() {
+        def a = { it() }
+        def b = { it() }
+        def c = { it() }
+
+        a() {
+            b() {
+                c() {
                 }
             }
         }

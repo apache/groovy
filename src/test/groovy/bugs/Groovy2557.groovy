@@ -18,23 +18,17 @@
  */
 package bugs
 
+import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
+final class Groovy2557 {
 
-class Groovy2490Bug {
-    void test () {
-        assertEquals One.foo, "hello"
-        assertEquals Two.foo, "goodbye"
+    @Test
+    void testArray2ListCoercion() {
+        String[] args = ['a', 'b']
+        List list = args as List
+        list.add('c')
+        assertEquals(['a', 'b', 'c'], list)
     }
-}
-
-class One {
-
-    static String foo = "hello";
-}
-
-class Two extends One{
-
-    static String foo = "goodbye";
 }

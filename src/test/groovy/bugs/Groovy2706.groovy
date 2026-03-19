@@ -18,29 +18,29 @@
  */
 package bugs
 
+import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+final class Groovy2706 {
 
+    static counter = 0
 
-class Groovy2348Bug{
-  void test () {
-     assertEquals( ['1.0', '2.0'], Foo.test(['1.0-vers', '2.0-subvers']))
-  }
-}
-
-class Foo {
-
-    private static test(tokens) {
-        tokens.collect {
-            trimTag(it)
-        }
-    }
-
-    private static trimTag(pluginVersion) {
-        int i = pluginVersion.indexOf('-')
-        if(i > 0) {
-            pluginVersion = pluginVersion[0..i-1]
-        }
-        pluginVersion
+    @Test
+    void testStaticAccessWithIncAndDec() {
+        ++Groovy2706.counter
+        assert counter == 1
+        Groovy2706.counter++
+        assert counter == 2
+        --Groovy2706.counter
+        assert counter == 1
+        Groovy2706.counter--
+        assert counter == 0
+        --counter
+        assert counter == -1
+        ++counter
+        assert counter == 0
+        counter++
+        assert counter == 1
+        counter--
+        assert counter == 0
     }
 }

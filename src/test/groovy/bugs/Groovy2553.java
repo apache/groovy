@@ -16,25 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package bugs
+package bugs;
 
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+import static groovy.test.GroovyAssert.assertScript;
 
+final class Groovy2553 {
 
-class Groovy2351Bug {
-   @Test
-   void testVarArgs () {
+    public static class Autobox {
+        public static class Util {
+            public static void printByte(String str, Byte defaultValue) {
+                System.out.println(str + ", " + defaultValue);
+            }
+        }
+    }
 
-       def a = new VarArgs()
-       assertEquals( "method with Integer", a.method(1, 2, 3, 4, 5))
-       assertEquals( "method with Objects", a.method("", 2, "22", 4, 5))
-   }
-}
-
-class VarArgs {
-    def method(Object... args) { "method with Objects" }
-
-    def method(Integer... args) { "method with Integer" }
+    @Test
+    void testMe() {
+        assertScript(Autobox.Util.class.getName() + ".printByte('1', Byte.valueOf((byte) 1));");
+        assertScript(Autobox.Util.class.getName() + ".printByte('1', (byte) 1);");
+    }
 }

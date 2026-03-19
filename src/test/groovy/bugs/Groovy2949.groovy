@@ -20,15 +20,22 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.assertEquals
+import static groovy.test.GroovyAssert.assertScript
 
+final class Groovy2949 {
 
-class Groovy2558Bug {
     @Test
-    void testMe () {
-        Person person = new Person()
-        String propertyName = 'name'
-        person."$propertyName" = 'peter'
-        assertEquals "peter", person.name
+    void testBug() {
+        assertScript '''
+            abstract class A {
+                abstract protected void doIt()
+            }
+            class B extends A {
+                void doIt() {
+                }
+            }
+
+            new ProxyGenerator(debug:true).instantiateDelegateWithBaseClass([ x : { int a, int b -> } ], [], new B())
+        '''
     }
 }

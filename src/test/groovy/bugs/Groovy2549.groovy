@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy2549 {
 
-class Groovy2549Bug {
     @Test
     void test2549() {
         def c = 2

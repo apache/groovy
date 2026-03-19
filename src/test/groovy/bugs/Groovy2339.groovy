@@ -20,40 +20,21 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 
-/**
- */
-class Groovy252_Bug {
-
-    def count = 0
+final class Groovy2339 {
 
     @Test
     void testBug() {
-        def value = f()
-        assert value == null
+        List list = ['groovy', 'java']
+        Map map = [a: 1, b: 2]
 
-        value = g()
-        assert value == null
-
-        value = h()
-        assert value == null
-    }
-
-
-    def f() {
-         if (count++ == 5)
-            return null
-         else
-            return null
-    }
-
-    def g() {
-         ++count
-         return null
-    }
-
-    def h() {
-         ++count
-         return null
+        shouldFail(MissingMethodException) {
+            list.each {
+                map.keySet().each {Date d ->
+                    println d
+                }
+            }
+        }
     }
 }

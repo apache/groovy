@@ -18,37 +18,44 @@
  */
 package bugs
 
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 import static org.junit.jupiter.api.Assertions.assertEquals
 
+final class Groovy2556 {
 
-class Groovy2556Bug {
-    final String SOME_METHOD_VALUE = 'someMethodValue'
-    final String TEST_NAME = 'someName'
+    private final String TEST_NAME = 'someName'
+    private final String SOME_METHOD_VALUE = 'someMethodValue'
 
-    String s
-
-    Map names
-
-    @BeforeEach
-    void setUp() {
-        names = [:]
-    }
-
+    private String s
     private count = 0
+    private Map names = [:]
 
-    private getCount () {
-        count++;
+    private getCount() {
+        count++
     }
+
+    String someMethod() {
+        s = SOME_METHOD_VALUE
+    }
+
+    String addName(String name) {
+        names[name] = name
+    }
+
+    String addNameWithReturn(String name) {
+        return names[name] = name
+    }
+
+    //--------------------------------------------------------------------------
 
     @Test
     void testCompile () {
-        new GroovyShell().parse ("""
-        def arr = [2:0]
-        assert 33 == (arr[2] += 33)
-        """).run ()
+        assertScript '''
+            def map = [2:0]
+            assert 33 == (map[2] += 33)
+        '''
     }
 
     @Test
@@ -66,51 +73,38 @@ class Groovy2556Bug {
         assertEquals(TEST_NAME, addNameWithReturn(TEST_NAME))
     }
 
-    String someMethod() {
-        s = SOME_METHOD_VALUE
-    }
-
-    String addName(String name) {
-        names[name] = name
-    }
-
-    String addNameWithReturn(String name) {
-        return names[name] = name
-    }
-
     @Test
     void testArrayAssignment() {
         def arr = [*0..4]
-        assert 33 == (arr[2] = 33)
-        assert 55 == (arr[2] += 22)
+        assertEquals 33, (arr[2] = 33)
+        assertEquals 55, (arr[2] += 22)
     }
 
     @Test
     void testArrayAssignmentInClosure() {
         def arr = [*0..4]
-        assert 55 == { arr[2] = 55 }.call()
-        assert 88 == { arr[2] += 33 }.call()
+        assertEquals 55, { arr[2] = 55 }.call()
+        assertEquals 88, { arr[2] += 33 }.call()
     }
 
     @Test
     void testVarAssignment() {
         def var = 1
-        assert 77 == ( var = 77)
+        assertEquals 77, (var = 77)
     }
 
     @Test
     void testVarAssignmentInClosure() {
         def var = 1
-        assert 22 == { var = 22 }.call()
-        assert 55 == { var += 33 }.call()
+        assertEquals 22, { var = 22 }.call()
+        assertEquals 55, { var += 33 }.call()
     }
 
     @Test
     void testReusableExpression() {
-        def arr = [*1..5]
-        assert 34 == (arr[getCount()] += 33)
-        assert 34 == arr [0]
-        assert 2 == arr [getCount()]
+        def arr = (1..5).toArray()
+        assertEquals 34, (arr[getCount()] += 33)
+        assertEquals 34, arr[0]
+        assertEquals  2, arr[getCount()]
     }
 }
-

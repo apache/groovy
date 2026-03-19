@@ -19,31 +19,32 @@
 package bugs
 
 import groovy.mock.interceptor.StubFor
+import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertEquals
 
-class Groovy2271Bug {
-    static final String TEST_TEXT = "I'm a mock"
+final class Groovy2271 {
 
-    def void testClosureMock() {
-        StubFor fooStub = new StubFor(Groovy2271Foo)
+    private static final String TEST_TEXT = "I'm a mock"
 
-        fooStub.demand.createBar(0..2) {TEST_TEXT}
+    @Test
+    void testClosureMock() {
+        def fooStub = new StubFor(Foo)
+        fooStub.demand.createBar(0..2) { TEST_TEXT }
 
-        Closure closure = {createBar()}
+        Closure closure = { createBar() }
 
         fooStub.use {
-            Groovy2271Foo foo = new Groovy2271Foo()
+            def foo = new Foo()
             assertEquals(TEST_TEXT, foo.createBar())
             closure.delegate = foo
             assertEquals(TEST_TEXT, closure.call())
         }
     }
-}
 
-class Groovy2271Foo {
-    def createBar() {
-        throw new RuntimeException("We should never get here!")
+    static class Foo {
+        Object createBar() {
+            throw new RuntimeException('We should never get here!')
+        }
     }
 }
-

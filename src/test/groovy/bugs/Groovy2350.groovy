@@ -18,54 +18,53 @@
  */
 package bugs
 
+import org.codehaus.groovy.runtime.metaclass.MethodSelectionException
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.shouldFail
 import static org.junit.jupiter.api.Assertions.assertEquals
 
-
-class Groovy2350Bug{
+final class Groovy2350 {
 
      @Test
      void testNoArg () {
-         shouldFail (org.codehaus.groovy.runtime.metaclass.MethodSelectionException) {
+         shouldFail (MethodSelectionException) {
              def a = new DefaultNoArgCtor()
          }
 
-         assertEquals "NULL", new DefaultNoArgCtor2().value
+         assertEquals 'NULL', new DefaultNoArgCtor2().value
      }
 
      @Test
      void testNoDefCtor () {
-         def a = new NoDefaultCtor("first")
-         assertEquals "toS: first", a.toString()
+         def a = new NoDefaultCtor('first')
+         assertEquals 'toS: first', a.toString()
 
          def b = new NoDefaultCtor()
-         assertEquals "toS: null", b.toString()
+         assertEquals 'toS: null', b.toString()
      }
-}
 
-class NoDefaultCtor {
-    def field
+     static class NoDefaultCtor {
+         def field
+         NoDefaultCtor(param) {
+             field = param
+         }
+         String toString() {
+             return "toS: ${field}"
+         }
+     }
 
-    NoDefaultCtor(param) { field= param }
+     static class DefaultNoArgCtor {
+         DefaultNoArgCtor(String s) {
+         }
+         DefaultNoArgCtor(int s) {
+         }
+     }
 
-    String toString() {
-      return "toS: ${field}"
-    }
-}
-
-
-class DefaultNoArgCtor {
-  DefaultNoArgCtor(String s) {}
-
-  DefaultNoArgCtor(int s) {}
-}
-
-class DefaultNoArgCtor2 {
-  String value
-
-  DefaultNoArgCtor2(String s) {
-      value = s ? s : "NULL"
-  }
+     static class DefaultNoArgCtor2 {
+         String value
+         DefaultNoArgCtor2(String s) {
+             value = s ? s : 'NULL'
+         }
+     }
 }

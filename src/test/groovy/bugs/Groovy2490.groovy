@@ -18,28 +18,23 @@
  */
 package bugs
 
-import org.codehaus.groovy.GroovyBugError
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-class Groovy2666Bug{
-
-    private void ex () {
-        throw new GroovyBugError ("ERR")
-    }
+final class Groovy2490 {
 
     @Test
-    void testMe () {
+    void test () {
+        assertEquals 'hello'  , One.foo
+        assertEquals 'goodbye', Two.foo
+    }
 
-        try {
-            ex ()
-        } catch (org.codehaus.groovy.GroovyBugError e) {
-            // expected
-            return
-        } catch (NullPointerException e) {
-        }
+    static class One {
+        static String foo = 'hello'
+    }
 
-        fail ()
+    static class Two extends One{
+        static String foo = 'goodbye'
     }
 }

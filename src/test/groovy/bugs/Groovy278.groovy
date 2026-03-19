@@ -20,28 +20,22 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 
-public class Groovy2706Bug {
-    static counter = 0
+final class Groovy278 {
 
     @Test
-    void testStaticAccessWithIncAndDec() {
-        ++Groovy2706Bug.counter
-        assert counter == 1
-        Groovy2706Bug.counter++
-        assert counter == 2
-        --Groovy2706Bug.counter
-        assert counter == 1
-        Groovy2706Bug.counter--
-        assert counter == 0
-        --counter
-        assert counter == -1
-        ++counter
-        assert counter == 0
-        counter++
-        assert counter == 1
-        counter--
-        assert counter == 0
-    }
+    void testBug() {
+        assertScript '''
+            class MyRange extends IntRange {
+                MyRange() {
+                    super(1, 2)
+                }
+            }
 
+            def value = new MyRange()
+            println value
+            assert value != null
+        '''
+    }
 }

@@ -20,15 +20,29 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-class Groovy2801Bug {
+final class Groovy2348 {
+
     @Test
-    void testOverrideToStringInMapOfClosures() {
-        def proxyImpl = [foo: { "Foo!" }, toString: { "overridden." }] as IGroovy2801Bug
-        assert proxyImpl.toString() == "overridden."
+    void test () {
+        assertEquals(['1.0', '2.0'], Foo.test(['1.0-vers', '2.0-subvers']))
     }
-}
 
-interface IGroovy2801Bug {
-   String foo()
+    static class Foo {
+
+        private static test(tokens) {
+            tokens.collect {
+                trimTag(it)
+            }
+        }
+
+        private static trimTag(String pluginVersion) {
+            int i = pluginVersion.indexOf('-')
+                if(i > 0) {
+                    pluginVersion = pluginVersion[0..i-1]
+                }
+            pluginVersion
+        }
+    }
 }

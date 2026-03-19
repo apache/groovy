@@ -18,16 +18,38 @@
  */
 package bugs
 
-class Groovy2949Bug {
-    void testBug () {
-        new GroovyShell().evaluate """
-        public abstract class A { abstract protected void doIt() }
+import org.junit.jupiter.api.Test
 
-        class B extends A {
-           void doIt() {}
-        }
+final class Groovy252 {
 
-        new ProxyGenerator(debug:true).instantiateDelegateWithBaseClass([ x : { int a, int b -> } ], [], new B())
-        """
+    def count = 0
+
+    @Test
+    void testBug() {
+        def value = f()
+        assert value == null
+
+        value = g()
+        assert value == null
+
+        value = h()
+        assert value == null
+    }
+
+    def f() {
+         if (count++ == 5)
+            return null
+         else
+            return null
+    }
+
+    def g() {
+         ++count
+         return null
+    }
+
+    def h() {
+         ++count
+         return null
     }
 }

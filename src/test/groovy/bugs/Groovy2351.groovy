@@ -20,42 +20,19 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-class Groovy239_Bug {
-
-    @Test
-    void testBug() {
-        def a = makeClosure()
-        def b = makeClosure()
-        def c = makeClosure()
-
-        a() {
-            println("A")
-            b() {
-                println("B")
-                c() {
-                    println("C")
-                }
-            }
-        }
-    }
-
-    def makeClosure() {
-        return { it() }
-    }
+final class Groovy2351 {
 
     @Test
-    void testBug2() {
-        def a = { it() }
-        def b = { it() }
-        def c = { it() }
-
-        a() {
-            b() {
-                c() {
-                }
-            }
-        }
+    void testVarArgs() {
+        def a = new VarArgs()
+        assertEquals('method with Integer', a.method(1, 2, 3, 4, 5))
+        assertEquals('method with Objects', a.method('', 2, '22', 4, 5))
     }
 
+    static class VarArgs {
+        def method(Object... args) { 'method with Objects' }
+        def method(Integer... args) { 'method with Integer' }
+    }
 }
