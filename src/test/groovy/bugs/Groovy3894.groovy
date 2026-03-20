@@ -20,40 +20,19 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-class Groovy3831Bug {
-    @Test
-    void testClosureDefinitionInSpecialCallsInConstructorsV1() {
-        def test = new Test3831V1('hello', ["world"])
-        assert test.string == 'hello'
-        assert test.uris.size() == 1
-    }
+final class Groovy3894 {
 
     @Test
-    void testClosureDefinitionInSpecialCallsInConstructorsV2() {
-        // just loading of class is test enough as it was giving VerifyError earlier.
-        new Test3831V2()
-    }
-}
-
-class Test3831V1 {
-    String string
-    URI[] uris
-
-    public Test3831V1(String string, URI[] uris) {
-        this.string = string
-        this.uris = uris
+    void testInfinityToBigDecimalConversion1() {
+        BigDecimal x =  999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+        assert x ** 5 == Double.POSITIVE_INFINITY
+        BigDecimal y = x ** 5
     }
 
-    public Test3831V1(String string, List uris) {
-        this(string, uris.collect { new URI(it) } as URI[])
-    }
-}
-
-class Test3831V2 {
-    public Test3831V2(cl) {}
-
-    public Test3831V2() {
-        this({1})
+    @Test
+    void testInfinityToBigDecimalConversion2() {
+        BigDecimal x = -999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+        assert x ** 5 == Double.NEGATIVE_INFINITY
+        BigDecimal y = x ** 5
     }
 }

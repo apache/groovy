@@ -20,125 +20,102 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.fail
+import static groovy.test.GroovyAssert.assertScript
+import static groovy.test.GroovyAssert.shouldFail
 
-class Groovy3749Bug {
+final class Groovy3749 {
+
+    /**
+     * Test various signatures of static main()
+     */
     @Test
     void testScriptsProvidingStaticMainMethod() {
-        def scriptStr
-
-        // test various signatures of static main()
-        scriptStr = """
+        shouldFail RuntimeException, '''
             static main(args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             static def main(args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             static void main(args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             static main(String[] args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             static def main(String[] args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             static void main(String[] args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        // if both main() and the loose statements are provided, then the loose statements should run and not main
-        scriptStr = """
+        def err = shouldFail '''
             static main(args) {
                 throw new RuntimeException('main called')
             }
             throw new Error()
-        """
-        assertScriptFails(scriptStr, "Error")
+        '''
+        assert err.message.contains('The method public static void main(java.lang.String[] args) { ... } is a duplicate of the one declared for this script\'s body code')
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             static void main() {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
         // if param type doesn't match, this main won't execute
-        runScript """
-            static main(Date args) {
+        assertScript '''
+            static main(Date date) {
                 throw new RuntimeException('main called')
             }
-        """
+        '''
     }
 
+    /**
+     * Test various signatures of non-static main()
+     */
     @Test
     void testScriptsProvidingInstanceMainMethod() {
-        def scriptStr
-
-        // test various signatures of instance main()
-        scriptStr = """
+        shouldFail RuntimeException, '''
             def main(String[] args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             void main(args) {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
-        scriptStr = """
+        shouldFail RuntimeException, '''
             void main() {
                 throw new RuntimeException('main called')
             }
-        """
-        assertScriptFails(scriptStr, "RuntimeException")
+        '''
 
         // if param type doesn't match, this main won't execute
-        runScript """
-            def main(Date args) {
+        assertScript '''
+            def main(Date date) {
                 throw new RuntimeException('main called')
             }
-        """
-    }
-
-    static void assertScriptFails(scriptText, expectedFailure) {
-        try {
-            runScript(scriptText)
-        } catch (Throwable ex) {
-            assert ex.class.name.contains(expectedFailure)
-            return
-        }
-        fail("Expected script to fail with '$expectedFailure' but passed.")
-    }
-
-    private static void runScript(String scriptText) {
-        new GroovyShell().run(scriptText, 'Groovy3749Snippet', [] as String[])
+        '''
     }
 }

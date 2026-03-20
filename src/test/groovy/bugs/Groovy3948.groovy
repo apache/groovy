@@ -20,16 +20,33 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy3948 {
 
-class Groovy37XXBug {
     @Test
-    void testVarArgsWithAnInterfaceAsVarArgArrayTypeWithInheritenceInArgs() {
-        def obj
+    void testBug1() {
+        Expando.metaClass.foo = { -> delegate.bar() }
 
-        obj = new Groovy3799Helper(new ConcreteFoo3799(), new UnrelatedFoo3799())
-        assert obj.foos.size() == 2
+        def e = new Expando()
 
-        obj = new Groovy3799Helper("a", "b", new ConcreteFoo3799(), new UnrelatedFoo3799())
-        assert obj.foos.size() == 2
+        e.metaClass.bar = { -> 1 }
+        assert e.foo() == 1
+
+        e.metaClass.bar = { -> 2 }
+        assert e.foo() == 2
     }
+
+    @Test
+    void testBug2() {
+        Foo f = new Foo()
+        def results = []
+        for (idx in 1..3) {
+            def sound = 'woof' * idx
+            def x = { sound }
+            f.metaClass.bark = x
+            results << f.bark()
+        }
+        assert results == ['woof', 'woofwoof', 'woofwoofwoof']
+    }
+
+    private static class Foo { }
 }

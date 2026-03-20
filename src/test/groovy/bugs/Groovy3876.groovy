@@ -18,36 +18,27 @@
  */
 package bugs
 
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 
-class Groovy3948Bug {
-
-    @Test
-    void testBug1() {
-        Expando.metaClass.foo = { -> delegate.bar() }
-
-        def e = new Expando()
-
-        e.metaClass.bar = { -> 1 }
-        assert e.foo() == 1
-
-        e.metaClass.bar = { -> 2 }
-        assert e.foo() == 2
-    }
+final class Groovy3876 {
 
     @Test
-    void testBug2() {
-        Foo f = new Foo()
-        def results = []
-        for (idx in 1..3) {
-            def sound = 'woof' * idx
-            def x = { sound }
-            f.metaClass.bark = x
-            results << f.bark()
+    void testGStringToNumberConversion() {
+        def a
+
+        assert '-1' as Integer == -1
+        a = '-1'
+        assert "$a" as Integer == -1
+
+        shouldFail(GroovyCastException) {
+            ((Integer) "$a")
         }
-        assert results == ['woof', 'woofwoof', 'woofwoofwoof']
-    }
 
-    private static class Foo { }
+        assert '-1000' as Integer == -1000
+        a = '-1000'
+        assert "$a" as Integer == -1000
+    }
 }

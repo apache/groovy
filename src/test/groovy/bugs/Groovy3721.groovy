@@ -18,19 +18,25 @@
  */
 package bugs
 
+import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
+final class Groovy3721 extends CompilableTestSupport {
 
-class Groovy3949Bug {
     @Test
-    void testClosureCallInStaticContextForClassWithStaticCallMethod() {
-        assert Class3949.m { "$it 123" } == "1234 123"
-    }
-}
-
-class Class3949 {
-    static call(arg) {"wrong call"}
-    static m(Closure closure) {
-        closure("1234")
+    void testCompilationWithDuplicateJavaBeanProperties() {
+        shouldNotCompile '''
+            class Foo3721V1 {
+                def F = 1
+                def f = 2
+            }
+        '''
+        shouldNotCompile '''
+            class Foo3721V2 {
+                def f = 0
+                def a = 1
+                def F = 2
+            }
+        '''
     }
 }

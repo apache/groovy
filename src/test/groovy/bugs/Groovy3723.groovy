@@ -22,42 +22,30 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class Groovy3770Bug {
-    @Test
-    void testSetDelegateAndResolveStrategyOnACurriedClosure() {
-        assertScript """
-            void hello(who) {
-                println ("Hello " + who)
-            }
-
-            def c = { x ->
-                hello(x)
-            }
-
-            def d = c.curry("Ian")
-            d.call()
-
-            d.delegate = null
-
-            assert d.delegate == null
-
-            d.resolveStrategy = Closure.DELEGATE_ONLY
-
-            try {
-                d.call()
-                throw new RuntimeException("The curried closure call should have failed here with MME")
-            } catch(MissingMethodException ex) {
-                // ok if closure call returned in an exception (MME)
-            }
-        """
-    }
+final class Groovy3723 {
 
     @Test
-    void testCurriedClosuresShouldNotAffectParent() {
-        // GROOVY-3875
-        def orig = { tmp -> assert tmp == 1 }
-        def curriedOrig = orig.curry(1)
-        assert orig != curriedOrig.getOwner()
+    void testEMCPropertyAccessWitGetPropertySetProperty() {
+        assertScript '''
+            class Dummy3723 {}
+
+            Dummy3723.metaClass.id = 1
+
+            Dummy3723.metaClass.getProperty = { name ->
+               def metaProperty = delegate.metaClass.getMetaProperty(name)
+               return metaProperty?.getProperty(delegate)
+            }
+
+            Dummy3723.metaClass.setProperty = { name, value ->
+               def metaProperty = delegate.metaClass.getMetaProperty(name)
+               metaProperty?.setProperty(delegate,value)
+            }
+
+            def d = new Dummy3723()
+            // was failing with groovy.lang.GroovyRuntimeException: Cannot set read-only property: id
+            d.id = 123
+            // was failing with groovy.lang.GroovyRuntimeException: Cannot read write-only property: id
+            assert d.id, 123
+        '''
     }
 }

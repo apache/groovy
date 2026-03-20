@@ -18,35 +18,30 @@
  */
 package bugs
 
+import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
+final class Groovy3817 extends CompilableTestSupport {
 
-class Groovy3818Bug {
     @Test
-    void testCreatingSimilarSetandMapWithComparator() {
-        def scompare = { a, b -> a.id <=> b.id } as Comparator
+    void testUsageOfRangeExpressionJustAfterTryCatch() {
+        shouldCompile '''
+            try { println 'nix' }
+            catch ( Exception e ) { e.printStackTrace() }
+            (1..10).each{ print it }
+        '''
 
-        def set = new TreeSet( scompare )
+        shouldCompile '''
+            try { println 'nix' }
+            catch ( Exception e ) {
+                e.printStackTrace()
+            }
+            (1..10).each{ print it }
+        '''
 
-        set << [name: "Han Solo",       id: 1]
-        set << [name: "Luke Skywalker", id: 2]
-        set << [name: "L. Skywalker",   id: 3]
-
-        def result = set.findAll { elt -> elt.name =~ /Sky/ }
-        assert result.size() == 2
-
-        result = set.grep { elt -> elt.name =~ /Sky/ }
-        assert result.size() == 2
-
-        def mcompare = { a, b -> a.id <=> b.id } as Comparator
-
-        def map = new TreeMap( mcompare )
-
-        map[[name: "Han Solo", id: 1]] = "Dummy"
-        map[[name: "Luke Skywalker", id: 2]] = "Dummy"
-        map[[name: "L. Skywalker",   id: 3]] = "Dummy"
-
-        result = map.findAll { elt ->elt.key.name =~ /Sky/ }
-        assert result.size() == 2
+        shouldCompile '''
+            try { println 'nix' } catch ( Exception e ) { e.printStackTrace() }
+            (1..10).each{ print it }
+        '''
     }
 }

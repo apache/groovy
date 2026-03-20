@@ -18,26 +18,23 @@
  */
 package bugs
 
+import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
+final class Groovy3989 extends CompilableTestSupport {
 
-class Groovy3894Bug {
     @Test
-    void testInfinityToBigDecimalConversion() {
-        BigDecimal x = 999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
-        assert x ** 5 == Double.POSITIVE_INFINITY
-        try {
-            BigDecimal y = x ** 5
-        } catch (NumberFormatException nfe) {
-            assert nfe.message == 'Infinite or NaN'
-        }
-
-        x = -999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
-        assert x ** 5 == Double.NEGATIVE_INFINITY
-        try {
-            BigDecimal y = x ** 5
-        } catch (NumberFormatException nfe) {
-            assert nfe.message == 'Infinite or NaN'
-        }
+    void testOverridingFinalMethods() {
+        shouldNotCompile '''
+            class A {
+                def foo() {}
+                final def bar() {}
+            }
+            class B extends A {
+                def foo() {}
+                def bar() {}
+            }
+            B
+        '''
     }
 }

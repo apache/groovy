@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy3830 {
 
-class Groovy3830Bug {
     @Test
     void testCallSitesUsageInAnInterface() {
         assert I3830.i == 2
@@ -44,34 +44,33 @@ class Groovy3830Bug {
         assert C3830.I3830.I3830_2.i3 == 18
     }
 
-}
-
-interface I3830 {
-    Integer i = 2
-    Integer i2 = i + 3
-    Integer i3 = i * 3
-}
-
-class C3830 {
     interface I3830 {
         Integer i = 2
         Integer i2 = i + 3
         Integer i3 = i * 3
-        interface I3830_1 {
-            // ensure inner class number increments for callsites helper
-            // anon C3830$I3830$I3830_1$1 and helper C3830$I3830$I3830_1$2
-            def x = new Runnable() {
-                @Override
-                void run() {}
+    }
+    static class C3830 {
+        interface I3830 {
+            Integer i = 2
+            Integer i2 = i + 3
+            Integer i3 = i * 3
+            interface I3830_1 {
+                // ensure inner class number increments for callsites helper
+                // anon C3830$I3830$I3830_1$1 and helper C3830$I3830$I3830_1$2
+                def x = new Runnable() {
+                    @Override
+                    void run() {
+                    }
+                }
+                Integer i = 4
+                Integer i2 = i + 3
+                Integer i3 = i * 3
             }
-            Integer i = 4
-            Integer i2 = i + 3
-            Integer i3 = i * 3
-        }
-        interface I3830_2 {
-            Integer i = 6
-            Integer i2 = i + 3
-            Integer i3 = i * 3
+            interface I3830_2 {
+                Integer i = 6
+                Integer i2 = i + 3
+                Integer i3 = i * 3
+            }
         }
     }
 }

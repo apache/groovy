@@ -20,24 +20,16 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.shouldFail
-import static org.junit.jupiter.api.Assertions.assertEquals
+final class Groovy3799 {
 
-
-class Groovy3834Bug {
     @Test
-    void testDuplicateCallsToMissingMethod() {
-        def instance = new AClassWithMethodMissingMethod()
-        shouldFail MissingMethodException, { instance.someMissingMethod() }
-        assertEquals 1, instance.count
-    }
-}
+    void testVarArgsWithAnInterfaceAsVarArgArrayTypeWithInheritenceInArgs() {
+        def obj
 
-class AClassWithMethodMissingMethod {
-    int count = 0
-    def methodMissing(String name, args) {
-        count++
-        throw new MissingMethodException(name, AClassWithMethodMissingMethod, args)
-    }
+        obj = new Groovy3799Helper(new ConcreteFoo3799(), new UnrelatedFoo3799())
+        assert obj.foos.size() == 2
 
+        obj = new Groovy3799Helper("a", "b", new ConcreteFoo3799(), new UnrelatedFoo3799())
+        assert obj.foos.size() == 2
+    }
 }

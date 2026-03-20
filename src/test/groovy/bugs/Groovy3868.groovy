@@ -18,36 +18,28 @@
  */
 package bugs
 
-import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
-final class Groovy3768Bug extends CompilableTestSupport {
+final class Groovy3868 {
 
     @Test
-    void testLocalVariableMarkedStatic() {
+    void testAsTypeCallWithPrimitiveType() {
+        callAndcheckResults(Long)
+        callAndcheckResults(Integer)
+        callAndcheckResults(Short)
+        callAndcheckResults(Byte)
+        callAndcheckResults(Character)
+        callAndcheckResults(Double)
+        callAndcheckResults(Float)
+    }
 
-        shouldNotCompile """
-            static int x = 3
-        """
+    def callAndcheckResults(klazz) {
+        def num = '1'
+        def result = num.asType(klazz.TYPE) // get the primitive type of this class
 
-        shouldNotCompile """
-            def m() {
-                static int x = 3
-            }
-        """
+        if (klazz == Character) num = num as char // Character.valueOf(String) is not there
 
-        shouldNotCompile """
-            class G3768A {
-                def m() {
-                    static int x = 3
-                }
-            }
-        """
-
-        shouldCompile """
-            class G3768B {
-                static int x = 3
-            }
-        """
+        assert result == klazz.valueOf(num)
+        assert result.class == klazz
     }
 }

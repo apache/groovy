@@ -24,17 +24,18 @@ import java.lang.reflect.Modifier
 
 import static org.junit.jupiter.api.Assertions.assertFalse
 
-class Groovy3726Bug {
+final class Groovy3726 {
+
     @Test
     void testVolatilePropertiesResultingInBridgeMethods() {
         def scriptStr, clazz, fooGetter, fooSetter
         GroovyClassLoader cl = new GroovyClassLoader();
 
-        scriptStr = """
+        scriptStr = '''
             public class GroovyBean3726B {
-                volatile String foo = "anything"
+                volatile String foo = 'anything'
             }
-        """
+        '''
         clazz = cl.parseClass(scriptStr, 'GroovyBean3726B.groovy')
 
         fooGetter = clazz.getMethod('getFoo')
@@ -51,11 +52,11 @@ class Groovy3726Bug {
         def scriptStr, clazz, barGetter, barSetter
         GroovyClassLoader cl = new GroovyClassLoader();
 
-        scriptStr = """
+        scriptStr = '''
             public class GroovyBean3726D {
-                transient String bar = "anything"
+                transient String bar = 'anything'
             }
-        """
+        '''
         clazz = cl.parseClass(scriptStr, 'GroovyBean3726D.groovy')
 
         barGetter = clazz.getMethod('getBar')

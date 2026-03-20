@@ -18,32 +18,26 @@
  */
 package bugs
 
-import org.codehaus.groovy.GroovyBugError
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
+import static groovy.test.GroovyAssert.shouldFail
 
-class Groovy3776Bug {
+final class Groovy3776 {
+
     @Test
     void testInvalidListWithMapEntryExpressions() {
-        GroovyClassLoader cl = new GroovyClassLoader();
-
-        def scriptStr = """
-            class InvalidListLiteral {
-                def x = [
-                    [foo: 1, bar: 2]
-                    [foo: 1, bar: 2]
-                ]
+        try (GroovyClassLoader gcl = new GroovyClassLoader()) {
+            shouldFail(MultipleCompilationErrorsException) {
+                gcl.parseClass '''
+                    class InvalidListLiteral {
+                        def x = [
+                            [foo: 1, bar: 2]
+                            [foo: 1, bar: 2]
+                        ]
+                    }
+                '''
             }
-        """
-        try {
-            cl.parseClass(scriptStr)
-            fail('Compilation should have failed with MultipleCompilationErrorsException')
-        } catch(MultipleCompilationErrorsException mcee) {
-            // ok if failed with this error.
-        } catch(GroovyBugError gbe) {
-            fail('Compilation should have failed with MultipleCompilationErrorsException but failed with GroovyBugError')
         }
     }
 }

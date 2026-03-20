@@ -20,25 +20,19 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.assertScript
 
-/**
- *  Verifies that closures work inside case blocks.
- *
- */
-class Groovy389_Bug {
+final class Groovy3863 {
 
     @Test
-    void testBug() {
-       def a = [10, 11, 12]
-       def b = 0
-
-       switch( "list" ) {
-          case "list":
-             a.each { b = b + 1 }
-             break
-       }
-
-       assert b == 3
+    void testClassNameAccessInMainMethod() {
+        assertScript '''
+            class Foo3863 {
+                static main(args) {
+                    println this.name
+                    assert this.name.contains('Foo3863') == true
+                }
+            }
+        '''
     }
-
 }

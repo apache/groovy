@@ -18,29 +18,20 @@
  */
 package bugs
 
-import org.codehaus.groovy.runtime.typehandling.GroovyCastException
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
+import static org.junit.jupiter.api.Assertions.assertFalse
 
-class Groovy3876Bug {
+final class Groovy3718 {
+
     @Test
-    void testGStringToNumberConversion() {
-        def a
+    void testPatternMatchOfNull() {
+        assertFalse null ==~ /[^0-9]+/
 
-        assert "-1" as Integer == -1
-        a = '-1'
-        assert "$a" as Integer == -1
+        assertFalse null ==~ /[0-9]+/
 
-        try {
-            ((Integer) "$a")
-            fail('The cast should have failed with GroovyCastException')
-        }catch(GroovyCastException ex) {
-            // fine
-        }
+        assertFalse "test" ==~ null
 
-        assert "-1000" as Integer == -1000
-        a = "-1000"
-        assert "$a" as Integer == -1000
+        assertFalse null ==~ null
     }
 }

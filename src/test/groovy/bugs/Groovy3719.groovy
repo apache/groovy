@@ -26,11 +26,9 @@ final class Groovy3719 {
 
     @Test
     void testScriptThrowingNoSuchMethodException() {
-        def err = shouldFail '''
+        shouldFail NoSuchMethodException, '''
             println "YES I CAN!"
             throw new NoSuchMethodException()
         '''
-
-        assert err instanceof NoSuchMethodException
     }
 }

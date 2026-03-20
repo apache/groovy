@@ -20,19 +20,17 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
+final class Groovy3949 {
 
-
-class Groovy3863Bug {
     @Test
-    void testClassNameAccessInMainMethod() {
-        assertScript """
-            class Foo3863 {
-                static main(args) {
-                    println this.name
-                    assert this.name.contains('Foo3863') == true
-                }
-            }
-        """
+    void testClosureCallInStaticContextForClassWithStaticCallMethod() {
+        assert Class3949.m { "$it 123" } == '1234 123'
+    }
+
+    static class Class3949 {
+        static call(arg) {'wrong call'}
+        static m(Closure closure) {
+            closure('1234')
+        }
     }
 }

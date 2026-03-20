@@ -18,23 +18,25 @@
  */
 package bugs
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
-class Groovy3827Bug {
-    @Test
-    void testDuplicateCompilationErrorOnProperty() {
-        GroovyClassLoader cl = new GroovyClassLoader();
+import static groovy.test.GroovyAssert.shouldFail
+import static org.junit.jupiter.api.Assertions.assertEquals
 
-        def scriptStr = """
-            class NewGroovyClass {
-                Test x
-            }
-        """
-        try {
-            cl.parseClass(scriptStr)
-        } catch(MultipleCompilationErrorsException mcee) {
-            assert mcee.errorCollector.errors.size() == 1
-        }
+final class Groovy3834 {
+
+    @Test
+    void testDuplicateCallsToMissingMethod() {
+        def instance = new AClassWithMethodMissingMethod()
+        shouldFail MissingMethodException, instance.&someMissingMethod
+        assertEquals 1, instance.count
+    }
+}
+
+class AClassWithMethodMissingMethod {
+    int count = 0
+    def methodMissing(String name, args) {
+        count += 1
+        throw new MissingMethodException(name, AClassWithMethodMissingMethod, args)
     }
 }

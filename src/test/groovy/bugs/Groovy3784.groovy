@@ -18,25 +18,24 @@
  */
 package bugs
 
-import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
-final class Groovy3721Bug extends CompilableTestSupport {
+final class Groovy3784 {
 
     @Test
-    void testCompilationWithDuplicateJavaBeanProperties() {
-        shouldNotCompile """
-            class Foo3721V1 {
-                def F = 1
-                def f = 2
-            }
-        """
-        shouldNotCompile """
-            class Foo3721V2 {
-                def f = 0
-                def a = 1
-                def F = 2
-            }
-        """
+    void testUseOfDelegateAndThenGenericsSharingTheSameClassHelper() {
+        try (GroovyClassLoader gcl = new GroovyClassLoader()) {
+            gcl.parseClass '''
+                class A {
+                    @Delegate List a
+                }
+            '''
+
+            gcl.parseClass '''
+                class B {
+                    List<String> a
+                }
+            '''
+        }
     }
 }

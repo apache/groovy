@@ -18,23 +18,24 @@
  */
 package bugs
 
-import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
-final class Groovy3989Bug extends CompilableTestSupport {
+/**
+ * Verifies that closures work inside case blocks.
+ */
+final class Groovy389 {
 
     @Test
-    void testOverridingFinalMethods() {
-        shouldNotCompile """
-            class A {
-                def foo() {}
-                final def bar() {}
-            }
-            class B extends A {
-                def foo() {}
-                def bar() {}
-            }
-            B
-        """
+    void testBug() {
+        def a = [10, 11, 12]
+        def b = 0
+
+        switch ('list') {
+          case 'list':
+            a.each { b = b + 1 }
+            break
+        }
+
+        assert b == 3
     }
 }

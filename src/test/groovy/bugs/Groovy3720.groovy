@@ -20,10 +20,13 @@ package bugs
 
 import groovy.mock.interceptor.MockFor
 import groovy.mock.interceptor.StubFor
+import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertNotNull
 
-class Groovy3720Bug {
+final class Groovy3720 {
+
+    @Test
     void testCreateStubNode() {
         def stubNodeContext1 = new StubFor(AnotherNode3720)
         assertNotNull stubNodeContext1.proxyInstance()
@@ -32,6 +35,7 @@ class Groovy3720Bug {
         assertNotNull stubNodeContext2.proxyInstance()
     }
 
+    @Test
     void testCreateStubNodeDelegate() {
         def stubNodeContext1 = new StubFor(AnotherNode3720)
         assertNotNull stubNodeContext1.proxyDelegateInstance()
@@ -40,6 +44,7 @@ class Groovy3720Bug {
         assertNotNull stubNodeContext2.proxyDelegateInstance()
     }
 
+    @Test
     void testCreateMockNode() {
         def mockNodeContext1 = new MockFor(AnotherNode3720)
         assertNotNull mockNodeContext1.proxyInstance()
@@ -48,6 +53,7 @@ class Groovy3720Bug {
         assertNotNull mockNodeContext2.proxyInstance()
     }
 
+    @Test
     void testCreateMockNodeDelegate() {
         def mockNodeContext1 = new MockFor(AnotherNode3720)
         assertNotNull mockNodeContext1.proxyDelegateInstance()
@@ -55,14 +61,15 @@ class Groovy3720Bug {
         def mockNodeContext2 = new MockFor(MyNode3720)
         assertNotNull mockNodeContext2.proxyDelegateInstance()
     }
-}
 
-abstract class MyNode3720 {}
+    abstract static class MyNode3720 {
+    }
 
-abstract class BaseNode3720 {
-    abstract m1()
-}
+    abstract static class BaseNode3720 {
+        abstract m1()
+    }
 
-abstract class AnotherNode3720 extends BaseNode3720 {
-    abstract m2()
+    abstract static class AnotherNode3720 extends BaseNode3720 {
+        abstract m2()
+    }
 }

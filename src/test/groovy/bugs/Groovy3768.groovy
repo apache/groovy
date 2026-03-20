@@ -18,17 +18,35 @@
  */
 package bugs
 
-import org.codehaus.groovy.ast.ClassHelper
+import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.assertFalse
-import static org.junit.jupiter.api.Assertions.assertTrue
+final class Groovy3768 extends CompilableTestSupport {
 
-class Groovy3716Bug {
     @Test
-    void testVoidAndObjectDerivedFromResults() {
-        assertTrue ClassHelper.VOID_TYPE.isDerivedFrom(ClassHelper.VOID_TYPE)
-        assertFalse ClassHelper.OBJECT_TYPE.isDerivedFrom(ClassHelper.VOID_TYPE)
-        assertFalse ClassHelper.VOID_TYPE.isDerivedFrom(ClassHelper.OBJECT_TYPE)
+    void testLocalVariableMarkedStatic() {
+        shouldNotCompile '''
+            static int x = 3
+        '''
+
+        shouldNotCompile '''
+            def m() {
+                static int x = 3
+            }
+        '''
+
+        shouldNotCompile '''
+            class G3768A {
+                def m() {
+                    static int x = 3
+                }
+            }
+        '''
+
+        shouldCompile '''
+            class G3768B {
+                static int x = 3
+            }
+        '''
     }
 }

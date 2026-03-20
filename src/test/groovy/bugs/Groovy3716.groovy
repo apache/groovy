@@ -18,17 +18,15 @@
  */
 package bugs
 
-import gls.CompilableTestSupport
+import org.codehaus.groovy.ast.ClassHelper
 import org.junit.jupiter.api.Test
 
-final class Groovy3857Bug extends CompilableTestSupport {
+final class Groovy3716 {
 
     @Test
-    void testInterfaceDefWithGenericsFollowedByANewLine() {
-        shouldCompile """
-            public interface MyMy <T extends Object>
-            {
-            }
-        """
+    void testVoidAndObjectDerivedFromResults() {
+        assert  ClassHelper.  VOID_TYPE.isDerivedFrom(ClassHelper.  VOID_TYPE)
+        assert !ClassHelper.OBJECT_TYPE.isDerivedFrom(ClassHelper.  VOID_TYPE)
+        assert !ClassHelper.  VOID_TYPE.isDerivedFrom(ClassHelper.OBJECT_TYPE)
     }
 }

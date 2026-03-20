@@ -18,30 +18,24 @@
  */
 package bugs
 
-import gls.CompilableTestSupport
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
-final class Groovy3817Bug extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy3827 {
 
     @Test
-    void testUsageOfRangeExpressionJustAfterTryCatch() {
-        shouldCompile """
-            try { println "nix" }
-            catch ( Exception e ) { e.printStackTrace() }
-            (1..10).each{ print it }
-        """
-
-        shouldCompile """
-            try { println "nix" }
-            catch ( Exception e ) {
-                e.printStackTrace()
+    void testDuplicateCompilationErrorOnProperty() {
+        try (GroovyClassLoader gcl = new GroovyClassLoader()) {
+            def mcee = shouldFail(MultipleCompilationErrorsException) {
+                gcl.parseClass '''
+                    class NewGroovyClass {
+                        Test x
+                    }
+                '''
             }
-            (1..10).each{ print it }
-        """
-
-        shouldCompile """
-            try { println "nix" } catch ( Exception e ) { e.printStackTrace() }
-            (1..10).each{ print it }
-        """
+            assert mcee.errorCollector.errors.size() == 1
+        }
     }
 }

@@ -18,27 +18,17 @@
  */
 package bugs
 
+import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
+final class Groovy3857 extends CompilableTestSupport {
 
-class Groovy3868Bug {
     @Test
-    void testAsTypeCallWithPrimitiveType() {
-        callAndcheckResults(Long)
-        callAndcheckResults(Integer)
-        callAndcheckResults(Short)
-        callAndcheckResults(Byte)
-        callAndcheckResults(Character)
-        callAndcheckResults(Double)
-        callAndcheckResults(Float)
-    }
-    def callAndcheckResults(klazz) {
-        def num = "1"
-        def result = num.asType(klazz.TYPE) // get the primitive type of this class
-
-        if(klazz == Character) num = num as char // Character.valueOf(String) is not there
-
-        assert result == klazz.valueOf(num)
-        assert result.class == klazz
+    void testInterfaceDefWithGenericsFollowedByANewLine() {
+        shouldCompile '''
+            interface I <T extends Object>
+            {
+            }
+        '''
     }
 }
