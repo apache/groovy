@@ -24,13 +24,15 @@ import groovy.cli.picocli.CliBuilder
 import groovy.transform.TypeChecked
 import org.junit.jupiter.api.Test
 
+// tag::mapOptionImports[]
+
 import java.util.concurrent.TimeUnit
 
 import static java.util.concurrent.TimeUnit.DAYS
 import static java.util.concurrent.TimeUnit.HOURS
-import static org.junit.jupiter.api.Assertions.assertEquals
 
 // end::mapOptionImports[]
+import static org.junit.jupiter.api.Assertions.assertEquals
 
 // Core functionality we expect to remain the same for all implementations is tested in the base test case
 // here we also add any functionality specific to this implementation that we value highly
