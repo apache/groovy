@@ -18,18 +18,31 @@
  */
 package bugs
 
-class Groovy3205Bug {
-    def void testOverrideToStringInMapOfClosures() {
-        def proxyImpl = [
-                control: { "new control" },
-                toString: { "new toString" }
-        ] as IGroovy3205Bug
-        assert proxyImpl.control() == "new control"
-        assert proxyImpl.toString() == "new toString"
-    }
-}
+import org.junit.jupiter.api.Test
 
-class IGroovy3205Bug {
-    String control() { "original control" }
-    String toString() { "original toString" }
+final class Groovy3235 {
+
+    @Test
+    void testBug3235 () {
+        def d = '''\
+            |This is one line.
+            |
+            |That was an empty line.
+            |Another empty line follows.
+            |
+            |All these lines should be written.
+            |'''.stripMargin()
+
+        def f = File.createTempFile('groovy.bugs.Groovy3235Bug', '.txt')
+        f.deleteOnExit()
+        f.withWriter { w ->
+            d.eachLine { w.println it }
+        }
+
+        def t = f.text
+
+        assert d == t.normalize()
+
+        assert d.denormalize() == t
+   }
 }

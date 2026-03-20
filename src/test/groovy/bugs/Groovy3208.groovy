@@ -20,27 +20,28 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
-class Groovy3175_Bug {
+final class Groovy3208 {
 
     @Test
-    void testSyntheticModifier() {
-        assertScript """
-        import groovy.transform.Generated
+    void testBug() {
+        new Sub().each { assert it.doIt() == 'ABC' }
+        assert new Sub().doItAgain() == 'ABC'
+    }
 
-        class MyService {
-            private fio
-            def thing
-            def something() { }
-            def anotherSomething() { assert true }
-        }
-        def fields = MyService.getDeclaredFields().grep { !it.synthetic }
-        assert fields.size() == 2
-        def methods = MyService.getDeclaredMethods().grep { !it.synthetic }
-        assert methods.size() == 6
-        methods = methods.grep { !it.getAnnotation(Generated) }
-        assert methods.size() == 2
-        """
+    @Test
+    void testSubclassStaticContextProperty() {
+       assert Sub.doItStatically()      == 'ABC'
+       assert Sub.doItStaticallyAgain() == 'ABC'
+    }
+
+    static class Super {
+        def doIt = { PROP }
+        static doItStatically = { PROP }
+        static final String PROP = 'ABC'
+    }
+
+    static class Sub extends Super {
+        String doItAgain() { PROP }
+        static String doItStaticallyAgain() { PROP }
     }
 }

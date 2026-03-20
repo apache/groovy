@@ -18,21 +18,25 @@
  */
 package bugs
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.fail
+import static groovy.test.GroovyAssert.assertScript
 
-class Groovy3304Bug {
+final class Groovy3389 {
+
     @Test
-    void testBreakAfterSwitchCausesSyntaxError() {
-        try {
-            new GroovyShell().parse("switch(x) {}\nbreak")
-            fail()
-        } catch (MultipleCompilationErrorsException e) {
-            def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError
-            assert syntaxError.line == 2
-        }
+    void testFieldHidingByLocalVariable() {
+        assertScript '''
+            class Foo {
+                String bar
+                void doIt() {
+                    def bar = new File('.')
+                    assert bar instanceof File
+                }
+            }
+
+            def obj = new Foo()
+            obj.doIt()
+        '''
     }
 }

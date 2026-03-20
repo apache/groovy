@@ -20,25 +20,21 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-/**
- */
-class Groovy308_Bug {
+final class Groovy3205 {
 
     @Test
-    void testBug() {
-        def out = new StringWriter()
-        out << "hello " << "world!"
+    void testOverrideToStringInMapOfClosures() {
+        def proxyImpl = [
+                control: { 'new control' },
+                toString: { 'new toString' }
+        ] as IGroovy3205
 
-        def value = out.toString()
-        assert value == "hello world!"
+        assert proxyImpl.control() == 'new control'
+        assert proxyImpl.toString() == 'new toString'
+    }
 
-        out = new ByteArrayOutputStream()
-        out << "hello " << "world!"
-
-        value = new String(out.toByteArray())
-        assert value == "hello world!"
-
-        System.out << "hello" << " world!"
+    static class IGroovy3205 {
+        String control() { 'original control' }
+        String toString() { 'original toString' }
     }
 }
-

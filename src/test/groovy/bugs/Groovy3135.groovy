@@ -20,59 +20,58 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy3135 {
 
-class Groovy3135Bug {
-    static Byte b = Byte.parseByte("1")
-    static Short s = Short.parseShort("2")
-    static Integer i = Integer.parseInt("3")
-    static Long l = Long.parseLong("4")
-    static Float f = Float.parseFloat("5")
-    static Double d = Double.parseDouble("6")
-    static BigInteger bi = new BigInteger("7")
-    static BigDecimal bd = new BigDecimal("8")
+    private static Byte b = Byte.parseByte('1')
+    private static Short s = Short.parseShort('2')
+    private static Integer i = Integer.parseInt('3')
+    private static Long l = Long.parseLong('4')
+    private static Float f = Float.parseFloat('5')
+    private static Double d = Double.parseDouble('6')
+    private static BigInteger bi = new BigInteger('7')
+    private static BigDecimal bd = new BigDecimal('8')
 
-    def values
+    private Object values
 
     @Test
     void testConversionForPrimitiveTypeVarArgs() {
-
-        setVarArgsShort("", b, s)
+        setVarArgsShort('', b, s)
         checkConversionAndVarArgCount(Short.TYPE, 2)
 
-        setVarArgsInteger("", b, s, i)
+        setVarArgsInteger('', b, s, i)
         checkConversionAndVarArgCount(Integer.TYPE, 3)
 
-        setVarArgsLong("", b, s, i, l)
+        setVarArgsLong('', b, s, i, l)
         checkConversionAndVarArgCount(Long.TYPE, 4)
 
-        setVarArgsFloat("", b, s, i, l, f)
+        setVarArgsFloat('', b, s, i, l, f)
         checkConversionAndVarArgCount(Float.TYPE, 5)
 
-        setVarArgsDouble("", b, s, i, l, f, d, bi, bd)
+        setVarArgsDouble('', b, s, i, l, f, d, bi, bd)
         checkConversionAndVarArgCount(Double.TYPE, 8)
     }
 
-    def setVarArgsShort(String str, short... varArgValues) {
+    void setVarArgsShort(String str, short... varArgValues) {
         values = varArgValues
     }
 
-    def setVarArgsInteger(String str, int... varArgValues) {
+    void setVarArgsInteger(String str, int... varArgValues) {
         values = varArgValues
     }
 
-    def setVarArgsLong(String str, long... varArgValues) {
+    void setVarArgsLong(String str, long... varArgValues) {
         values = varArgValues
     }
 
-    def setVarArgsFloat(String str, float... varArgValues) {
+    void setVarArgsFloat(String str, float... varArgValues) {
         values = varArgValues
     }
 
-    def setVarArgsDouble(String str, double... varArgValues) {
+    void setVarArgsDouble(String str, double... varArgValues) {
         values = varArgValues
     }
 
-    def checkConversionAndVarArgCount(expectedType, varArgsCount) {
+    void checkConversionAndVarArgCount(expectedType, varArgsCount) {
         assert values.class.componentType == expectedType
         assert values.size() == varArgsCount
     }

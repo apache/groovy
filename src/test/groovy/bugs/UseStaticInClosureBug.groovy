@@ -20,19 +20,16 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-class UseStaticInClosureBug {
+final class UseStaticInClosureBug {
 
     static def stuff = [:]
 
     @Test
     void testBug() {
-        [1,2,3].each { stuff[it] = "dog" }
+        [1,2,3].each { stuff[it] = 'dog' }
 
         assert stuff.size() == 3
-        assert stuff[2] == "dog"
+        assert stuff[2] == 'dog'
     }
 
     @Test
@@ -40,10 +37,10 @@ class UseStaticInClosureBug {
         doStatic()
     }
 
-    static def doStatic() {
-        [1,2,3].each { stuff[it] = "dog" }
+    private static doStatic() {
+        [1,2,3].each { stuff[it] = 'dog' }
 
         assert stuff.size() == 3
-        assert stuff[2] == "dog"
+        assert stuff[2] == 'dog'
     }
 }

@@ -18,20 +18,44 @@
  */
 package bugs
 
-import groovy.bugs.TestSupport
 import org.junit.jupiter.api.Test
 
-final class StaticMethodCallBug {
+final class Groovy2621 {
 
     @Test
-    void testBug() {
-        def value = TestSupport.mockStaticMethod()
-        assert value == 'cheese'
+    void testSimilarNamesForMethodAndLocalWithLocalAsMethodArgument() {
+        def convention = 'value'
+        1.times {
+            this.convention(convention)
+        }
     }
 
+    void convention(String arg) {
+    }
+
+    //--------------------------------------------------------------------------
+
+    // GROOVY-3156
     @Test
-    void testStaticProperty() {
-        def value = TestSupport.mockStaticProperty
-        assert value == 'cheese'
+    void testMethodNameResolutionInNestedClosure() {
+        assert m() == 'method'
+        assert c1() == 'method'
+    }
+
+    def m = { return 'method' }
+
+    def c1 = {
+        def m = { return 'c1' }
+        def c2 = {
+            /*
+            *  If both 'm()' and 'this.m()' are used as follows,
+            *  'this.m()' should not resolve to c1 closure's 'm' local variable.
+            *  It should resolve to outermost class' m().
+            */
+            assert m() == 'c1'
+            
+            return this.m()
+        }
+        return c2()
     }
 }

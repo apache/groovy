@@ -20,8 +20,8 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy3339 {
 
-class Groovy3339Bug {
     @Test
     void testConstantCachingInClosureClasses() {
         // In all the cases below, the OptimizerVisitor replaces number 10 by

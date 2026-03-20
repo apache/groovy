@@ -18,30 +18,18 @@
  */
 package bugs
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.junit.jupiter.api.Test
 
+import static groovy.test.GroovyAssert.shouldFail
 
-class Groovy3235Bug {
+final class Groovy3304 {
 
-@Test
-void testBug3235 () {
-      def d = """This is one line.
+    @Test
+    void testBreakAfterSwitchCausesSyntaxError() {
+        def e = shouldFail(MultipleCompilationErrorsException, 'switch(x){}\nbreak')
 
-      That was an empty line.
-      Another empty line follows.
-
-      All these lines should be written.
-"""
-      def f = File.createTempFile("groovy.bugs.Groovy3235Bug", ".txt")
-      f.deleteOnExit()
-      f.withWriter { w ->
-          d.eachLine { w.println it }
-      }
-
-      def t = f.text
-
-      assert d == t.normalize()
-
-      assert d.denormalize() == t
-   }
+        def syntaxError = e.errorCollector.getSyntaxError(0)
+        assert syntaxError?.line == 2
+    }
 }

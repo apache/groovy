@@ -20,31 +20,12 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static org.junit.jupiter.api.Assertions.assertEquals
-
-
-class Groovy3208Bug {
+final class Groovy3335 {
 
     @Test
-    void testBug() {
-        new Sub().each { assertEquals("ABC", it.doIt()) }
-
-        assertEquals("ABC", new Sub().doItAgain())
+    void testClassToString() {
+        // the following call was resulting in a MethodSelectionException
+        // because Integer class defines static toString(int) and toString(int, int) methods
+        assert Integer.class.toString()
     }
-
-//    void testSubclassStaticContextProperty() {
-//       assert "ABC" == Sub.doItStatically()
-//       assert "ABC" == Sub.doItStaticallyAgain()
-//    }
-}
-
-class Super {
-    static final String PROP = "ABC"
-    def doIt = { PROP }
-//   static doItStatically = { PROP }
-}
-
-class Sub extends Super {
-    String doItAgain() { PROP }
-//   static String doItStaticallyAgain() { PROP }
 }

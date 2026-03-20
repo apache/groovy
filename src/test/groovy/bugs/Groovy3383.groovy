@@ -22,21 +22,17 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
+final class Groovy3383 {
 
-class Groovy3389Bug {
     @Test
-    void testFieldHidingByLocalVariable() {
-        assertScript """
-            class Groovy3389 {
-                String bar
-                void doIt() {
-                    def bar = new File('.')
-                    assert bar instanceof File
-                }
+    void testClassUsageInInterfaceDef() {
+        assertScript '''
+            interface IGroovy3383 {
+               Class type = IGroovy3383.class
             }
 
-            def obj = new Groovy3389()
-            obj.doIt()
-        """
+            def t = IGroovy3383.type
+            assert t.name == 'IGroovy3383'
+        '''
     }
 }

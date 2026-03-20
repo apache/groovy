@@ -20,12 +20,22 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy308 {
 
-class Groovy3335Bug {
     @Test
-    void testClassToString() {
-        // the following call was resulting in a MethodSelectionException
-        // because Integer class defines static toString(int) and toString(int, int) methods
-        assert Integer.class.toString()
+    void testBug() {
+        def out = new StringWriter()
+        out << 'hello ' << 'world!'
+
+        def value = out.toString()
+        assert value == 'hello world!'
+
+        out = new ByteArrayOutputStream()
+        out << 'hello ' << 'world!'
+
+        value = new String(out.toByteArray())
+        assert value == 'hello world!'
+
+        System.out << 'hello' << ' world!'
     }
 }

@@ -21,14 +21,14 @@ package bugs
 import groovy.mock.interceptor.StubFor
 import org.junit.jupiter.api.Test
 
-class Groovy3139Bug {
+final class Groovy3139 {
 
     @Test
     void testStubbingIssueDueToCachingWhenUsing2Stubs() {
         def urlStub1 = new StubFor(URL)
-        urlStub1.demand.openConnection {""}
+        urlStub1.demand.openConnection {''}
         urlStub1.use {
-           def get = new Get2(url: "http://localhost")
+           def get = new Get2(url: 'http://localhost')
            def result = get.text
         }
 
@@ -36,24 +36,26 @@ class Groovy3139Bug {
         // the following stubbed call is on urlStub2 and its demand cound should be separate.
         // Currently due to caching of MockProxyMetaClass, it gets counted towards urlStub1 demands
         // and throws "End of demands" exception
-        urlStub2.demand.openConnection {""}
+        urlStub2.demand.openConnection {''}
         urlStub2.use {
-           def get = new Get2(url: "http://localhost")
+           def get = new Get2(url: 'http://localhost')
            def result = get.text
         }
     }
-}
 
-class Get2{
-    String url
+    static class Get2 {
 
-    String getText() {
+        String url
+
+        String getText() {
             def aUrl = new URL(toString())
-            def conn = aUrl.openConnection()
-            return "DUMMY"
-    }
+                def conn = aUrl.openConnection()
+                return 'DUMMY'
+        }
 
-    String toString(){
-        return url
+        @Override
+        String toString() {
+            return url
+        }
     }
 }

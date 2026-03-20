@@ -22,17 +22,24 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
+final class Groovy3175 {
 
-class Groovy3383Bug {
     @Test
-    void testClassUsageInInterfaceDef() {
-        assertScript """
-            interface Groovy3383 {
-               Class type = Groovy3383.class
+    void testSyntheticModifier() {
+        assertScript '''
+            class MyService {
+                private fio
+                def thing
+                def something() { }
+                def anotherSomething() { assert true }
             }
 
-            def t = Groovy3383.type
-            assert t.name == "Groovy3383"
-        """
+            def fields = MyService.getDeclaredFields().grep { !it.synthetic }
+            assert fields.size() == 2
+            def methods = MyService.getDeclaredMethods().grep { !it.synthetic }
+            assert methods.size() == 6
+            methods = methods.grep { !it.getAnnotation(groovy.transform.Generated) }
+            assert methods.size() == 2
+        '''
     }
 }

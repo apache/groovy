@@ -20,7 +20,6 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
-
 /**
  * Bug illustrating the nested closures variable scope visibility issue.
  * l.each is ClosureInClosureBug$1 and it.each is ClosureInClosureBug$2
@@ -29,25 +28,19 @@ import org.junit.jupiter.api.Test
  * but cannot see what's in the second level.
  *
  * In order to make the test work, do not forget to uncomment the line "println(text)"
- *
- * @authour Guillaume Laforge
  */
-class ClosureInClosureTest {
+final class ClosureInClosureTest {
+
     @Test
     void testInvisibleVariable() {
-        def text = "test "
+        def text = 'test '
 
         def l = [1..11, 2..12, 3..13, 4..14]
 
-        l.each{
-            it.each{
+        l.each {
+            it.each {
                 assert text == 'test '
             }
         }
-    }
-
-    static void main(args) {
-        def bug = new ClosureInClosureTest()
-        bug.testInvisibleVariable()
     }
 }
