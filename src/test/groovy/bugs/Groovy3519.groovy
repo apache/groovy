@@ -22,20 +22,43 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-final class Groovy3422 {
+final class Groovy3519 {
 
     @Test
-    void testStaticClosureProperty() {
+    void testShouldSkipPrivateMethodsFromCovariantReturnTypeChecks() {
         assertScript '''
-            class C {
-                static foo = { val -> "foo $val"; }
-                static bar = { -> this.foo("bar") }
-                static baz = { ->
-                    foo("baz") // object expression is the closure instance; property resolved against closure (ClosureMetaClass#invokeMethod)
-                }
+            class A {
+                private String foo() { "1" }
+                def bar() { foo() }
             }
-            assert "foo bar" == C.bar()
-            assert "foo baz" == C.baz()
+            def a = new A()
+            assert a.bar() == "1"
+
+            class B extends A {
+                Integer foo() {2}
+            }
+            def b = new B()
+            assert b.bar() == "1"
+        '''
+    }
+
+    @Test
+    void testShouldSkipPrivateMethodsFromCovariantReturnTypeChecksCS() {
+        assertScript '''
+            @groovy.transform.CompileStatic
+            class A {
+                private String foo() { "1" }
+                def bar() { foo() }
+            }
+            def a = new A()
+            assert a.bar() == "1"
+
+            @groovy.transform.CompileStatic
+            class B extends A {
+                Integer foo() {2}
+            }
+            def b = new B()
+            assert b.bar() == "1"
         '''
     }
 }

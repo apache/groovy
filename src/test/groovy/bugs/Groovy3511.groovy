@@ -18,45 +18,33 @@
  */
 package bugs
 
-import groovy.mock.interceptor.StubFor
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation
 import org.junit.jupiter.api.Test
 
-class Groovy3403Bug {
+import static groovy.test.GroovyAssert.shouldFail
+
+final class Groovy3511 {
 
     @Test
-    void testStubIssueForStaticMethodsDueToCallSiteCachingWhenUsing2Stubs() {
-        def stub1 = new StubFor(Main3403)
-        stub1.demand.test() {
-            return "stubbed call made - 1"
+    void testExceptionMessageStringToNumberConversion() {
+        def ex = shouldFail {
+            Double test = 'Hello'
         }
+        assert ex.message.contains(Double.class.name)
 
-        def ot = new Helper3403()
-
-        stub1.use {
-            assert ot.doTest() == "stubbed call made - 1"
+        ex = shouldFail {
+            Float test = 'Hello'
         }
+        assert ex.message.contains(Float.class.name)
 
-        def stub2 = new StubFor(Main3403)
-        stub2.demand.test() {
-            return "stubbed call made - 2"
+        ex = shouldFail {
+            DefaultTypeTransformation.castToNumber('Hello', Long.class)
         }
+        assert ex.message.contains(Long.class.name)
 
-        // the following stubbed call is on stub2 and its demand count should be separate.
-        // Currently due to caching of MockProxyMetaClass, it gets counted towards stub1 demands
-        // and throws "End of demands" exception
-        stub2.use {
-            assert ot.doTest() == "stubbed call made - 2"
+        ex = shouldFail {
+            DefaultTypeTransformation.castToNumber('Hello')
         }
-    }
-}
-
-class Main3403 {
-   static test(){
-   }
-}
-
-class Helper3403 {
-    def doTest() {
-        Main3403.test()
+        assert ex.message.contains(Number.class.name)
     }
 }

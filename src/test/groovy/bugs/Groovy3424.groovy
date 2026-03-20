@@ -22,10 +22,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class Groovy3424Bug {
+final class Groovy3424 {
 
-    MetaClassRegistry registry
-    MetaClass originalMetaClass
+    private MetaClassRegistry registry
+    private MetaClass originalMetaClass
 
     @BeforeEach
     void setUp() {
@@ -84,15 +84,15 @@ class Groovy3424Bug {
         assert newFoo() instanceof Groovy3424Foo
     }
 
-}
-
-class Groovy3424Foo {}
-
-class Groovy3424ClassProxyMetaClass extends ProxyMetaClass {
-    Groovy3424ClassProxyMetaClass(MetaClassRegistry metaClassRegistry, Class aClass, MetaClass adaptee) {
-        super(metaClassRegistry, aClass, adaptee)
+    static class Groovy3424Foo {
     }
-    public Object invokeConstructor(final Object[] arguments) {
-        'constructor'
+
+    static class Groovy3424ClassProxyMetaClass extends ProxyMetaClass {
+        Groovy3424ClassProxyMetaClass(MetaClassRegistry metaClassRegistry, Class aClass, MetaClass adaptee) {
+            super(metaClassRegistry, aClass, adaptee)
+        }
+        Object invokeConstructor(final Object[] arguments) {
+            'constructor'
+        }
     }
 }

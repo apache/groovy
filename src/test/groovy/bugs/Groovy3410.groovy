@@ -22,12 +22,11 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class Groovy3410Bug {
+final class Groovy3410 {
 
     @Test
-    void testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields() {
-        assertScript """
+    void testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields1() {
+        assertScript '''
             class Groovy3405N1 {
                 long id // or float or double
 
@@ -35,43 +34,59 @@ class Groovy3410Bug {
                     return (id ? true : false)
                 }
             }
-            println new Groovy3405N1()
-        """
 
-            assertScript """
+            println new Groovy3405N1()
+        '''
+    }
+
+    @Test
+    void testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields2() {
+        assertScript '''
             class Groovy3405N2 {
                 long id
                 def bar() {
-                    return (id ? "a" : "b")
+                    return (id ? 'a' : 'b')
                 }
             }
-            println new Groovy3405N2()
-        """
 
-            assertScript """
+            println new Groovy3405N2()
+        '''
+    }
+
+    @Test
+    void testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields3() {
+        assertScript '''
             class Groovy3405N3 {
                 long id = 0
                 def bar() {
-                    assert id, "Done"
+                    assert id, 'Done'
                 }
             }
-            println new Groovy3405N3()
-        """
 
-        assertScript """
+            println new Groovy3405N3()
+        '''
+    }
+
+    @Test
+    void testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields4() {
+        assertScript '''
             class Groovy3405N4 {
                 long id = 0
                 def bar() {
                     while(id){
-                        print "here"
+                        print 'here'
                         break
                     }
                 }
             }
-            println new Groovy3405N4()
-        """
 
-        assertScript """
+            println new Groovy3405N4()
+        '''
+    }
+
+    @Test
+    void testClassVerificationErrorsWithBooleanExpUsingPrimitiveFields5() {
+        assertScript '''
             class Groovy3405N5 {
                 long id = 0
                 def bar() {
@@ -82,7 +97,8 @@ class Groovy3410Bug {
                     }
                 }
             }
+
             println new Groovy3405N5()
-        """
+        '''
     }
 }

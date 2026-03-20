@@ -22,10 +22,10 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class Groovy3426Bug {
+final class Groovy3426 {
 
-    MetaClassRegistry registry
-    MetaClass originalMetaClass
+    private MetaClassRegistry registry
+    private MetaClass originalMetaClass
 
     @BeforeEach
     void setUp() {
@@ -54,17 +54,16 @@ class Groovy3426Bug {
         assert 'foo' == getFoo()
     }
 
-}
-
-class Groovy3426Foo {
-    static get() { 'foo' }
-}
-
-class Groovy3426ClassProxyMetaClass extends ProxyMetaClass {
-    Groovy3426ClassProxyMetaClass(MetaClassRegistry metaClassRegistry, Class aClass, MetaClass adaptee) {
-        super(metaClassRegistry, aClass, adaptee)
+    static class Groovy3426Foo {
+        static get() { 'foo' }
     }
-    public Object invokeStaticMethod(final Object aClass, final String method, final Object[] arguments) {
-        'static'
+
+    static class Groovy3426ClassProxyMetaClass extends ProxyMetaClass {
+        Groovy3426ClassProxyMetaClass(MetaClassRegistry metaClassRegistry, Class aClass, MetaClass adaptee) {
+            super(metaClassRegistry, aClass, adaptee)
+        }
+        public Object invokeStaticMethod(final Object aClass, final String method, final Object[] arguments) {
+            'static'
+        }
     }
 }

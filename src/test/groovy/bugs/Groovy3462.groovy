@@ -18,16 +18,24 @@
  */
 package bugs
 
-import gls.CompilableTestSupport
 import org.junit.jupiter.api.Test
 
-final class Groovy3596Bug extends CompilableTestSupport {
+import static groovy.test.GroovyAssert.assertScript
+
+final class Groovy3462 {
 
     @Test
-    void testMapReferenceWithGenericsTypeParameters() {
-        shouldCompile """
-            interface TypeDescriptor3596 {}
-            interface MapDescriptor3596 extends Map<String, TypeDescriptor3596> {}
-        """
+    void testClosureWithParameterHavingDefaultExpression() {
+        assertScript '''
+            month = { String date = new Date().format('yyyyMM') ->
+                date
+            }
+
+            def obj = month('200101')
+            assert month('200101') == '200101'
+
+            String expectedDate = new Date().format('yyyyMM')
+            assert month() == expectedDate
+        '''
     }
 }

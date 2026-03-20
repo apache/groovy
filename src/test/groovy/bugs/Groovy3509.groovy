@@ -20,8 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-class Groovy3509Bug {
+final class Groovy3509 {
 
     @Test
     void testGPathInconcistency() {
@@ -72,16 +71,16 @@ class Groovy3509Bug {
         // even with this intermediary null node, we should still get 3
         assert root?.level1?.level2?.level3.sum() == 3
     }
-}
 
-class Root {
-  List level1 = []
-}
+    static class Root {
+        List level1 = []
+    }
 
-class Level2 {
-  Integer level3
-}
+    static class Level2 {
+        Integer level3
+    }
 
-class Level1 {
-  Level2 level2
+    static class Level1 {
+        Level2 level2
+    }
 }

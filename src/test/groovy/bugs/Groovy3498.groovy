@@ -22,44 +22,13 @@ import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
-
-class Groovy3519Bug {
+final class Groovy3498 {
 
     @Test
-    void testShouldSkipPrivateMethodsFromCovariantReturnTypeChecks() {
+    void testClosureExpressionFiltering() {
         assertScript '''
-            class A {
-                private String foo() { "1" }
-                def bar() { foo() }
-            }
-            def a = new A()
-            assert a.bar() == "1"
-            class B extends A {
-                Integer foo() {2}
-            }
-            def b = new B()
-            assert b.bar()=="1"
+            { -> assert false : 'This statement should not have been executed' }
+            println 'Ok'
         '''
     }
-
-    @Test
-    void testShouldSkipPrivateMethodsFromCovariantReturnTypeChecksCS() {
-        assertScript '''import groovy.transform.CompileStatic
-
-            @CompileStatic
-            class A {
-                private String foo() { "1" }
-                def bar() { foo() }
-            }
-            def a = new A()
-            assert a.bar() == "1"
-            @CompileStatic
-            class B extends A {
-                Integer foo() {2}
-            }
-            def b = new B()
-            assert b.bar()=="1"
-        '''
-    }
-
 }

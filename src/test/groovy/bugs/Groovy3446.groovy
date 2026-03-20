@@ -20,23 +20,14 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-import static groovy.test.GroovyAssert.assertScript
-
-
-class Groovy3462Bug {
+final class Groovy3446 {
 
     @Test
-    void testClosureWithParameterHavingDefaultExpression() {
-        assertScript """
-            month = { String date = new Date().format("yyyyMM") ->
-                date
-            }
+    void testLocalMethodFavoredOverStaticallyImportedMethod() {
+        assert currentTimeMillis() == 'local method called'
+    }
 
-            def obj = month("200101")
-            assert month("200101") == "200101"
-
-            String expectedDate = new Date().format("yyyyMM")
-            assert month() == expectedDate
-        """
+    def currentTimeMillis() {
+        'local method called'
     }
 }

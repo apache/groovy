@@ -18,18 +18,27 @@
  */
 package bugs
 
+import groovy.transform.PackageScope
 import org.junit.jupiter.api.Test
 
 import static bugs.Groovy3465Helper.func
 
-class Groovy3465Bug {
+final class Groovy3465 {
+
     @Test
     void testCallingAStaticImportedMethodWithNamedParamaters() {
-
         func text: 'Some text', value: 1
-
         func(text: 'Some text', value: 1)
-
         func([text: 'Some text', value: 1])
+    }
+}
+
+@PackageScope class Groovy3465Helper {
+
+    static func(arg) {
+        assert arg instanceof Map
+        assert arg.size() == 2
+        assert arg.containsKey('text') && arg.containsKey('value')
+        return arg
     }
 }

@@ -20,11 +20,11 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy3590 {
 
-class Groovy3560Bug {
     @Test
-    void testVarArgsWithAnInterfaceAsVarArgArrayType() {
-        assert Groovy3560Helper.m1(new Groovy3560A(), new Groovy3560B()) == 2
-        assert Groovy3560Helper.m2("a", "b", new Groovy3560A(), new Groovy3560B()) == 2
+    void testMapDefaultValueGetWithPrevKeyHavingNullValue() {
+        def map = [key: null]
+        assert map.get('key', this) == null
     }
 }

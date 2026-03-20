@@ -20,13 +20,11 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
+final class Groovy3560 {
 
-class Groovy3498Bug {
     @Test
-    void testClosureExpressionFiltering() {
-        new GroovyShell().evaluate """
-        { -> assert false, 'This statement should not have been executed' }
-        println 'Ok'
-        """
+    void testVarArgsWithAnInterfaceAsVarArgArrayType() {
+        assert Groovy3560Helper.m1(new Groovy3560A(), new Groovy3560B()) == 2
+        assert Groovy3560Helper.m2("a", "b", new Groovy3560A(), new Groovy3560B()) == 2
     }
 }

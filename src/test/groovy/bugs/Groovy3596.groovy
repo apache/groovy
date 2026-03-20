@@ -18,11 +18,16 @@
  */
 package bugs
 
-class Groovy3465Helper {
-    static func(arg) {
-        assert arg instanceof Map
-        assert arg.size() == 2
-        assert arg.containsKey('text') && arg.containsKey('value')
-        return arg
+import gls.CompilableTestSupport
+import org.junit.jupiter.api.Test
+
+final class Groovy3596 extends CompilableTestSupport {
+
+    @Test
+    void testMapReferenceWithGenericsTypeParameters() {
+        shouldCompile '''
+            interface TypeDescriptor3596 {}
+            interface MapDescriptor3596 extends Map<String, TypeDescriptor3596> {}
+        '''
     }
 }

@@ -18,13 +18,27 @@
  */
 package bugs
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
+final class Groovy3405 {
 
-class Groovy3590Bug {
+    @AfterEach
+    void tearDown() {
+        String.metaClass = null
+    }
+
     @Test
-    void testMapDefaultValueGetWithPrevKeyHavingNullValue() {
-        def map = ['key':null]
-        assert map.get('key', this) == null
+    void testAddingStaticMethodsOnMCWithDefaultParameters() {
+        // test with 2 params having default values
+        String.metaClass.'static'.testStaticTwoParams = { first = 'foo', second = 'bar' ->  return "$first - $second" }
+        assert 'baz - qux' == ''.testStaticTwoParams('baz', 'qux')
+        assert 'baz - bar' == ''.testStaticTwoParams('baz')
+        assert 'foo - bar' == ''.testStaticTwoParams()
+
+        // test with 1 param having default value
+        String.metaClass.'static'.testStaticOneParam = { first = 'foo' ->  return first }
+        assert 'baz' == ''.testStaticOneParam('baz')
+        assert 'foo' == ''.testStaticOneParam()
     }
 }
