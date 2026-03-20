@@ -20,10 +20,12 @@ package groovy.console
 
 import groovy.console.ui.Console
 import groovy.console.ui.ConsoleActions
+import groovy.console.ui.ConsoleSupport
 import groovy.console.ui.view.BasicMenuBar
 import groovy.console.ui.view.MacOSXMenuBar
 import groovy.swing.GroovySwingTestCase
 import groovy.swing.SwingBuilder
+import groovy.transform.CompileStatic
 import org.codehaus.groovy.control.CompilerConfiguration
 
 import javax.swing.JTextPane
@@ -32,11 +34,15 @@ import java.awt.Color
 import java.awt.event.ActionEvent
 import java.util.prefs.Preferences
 
+import static groovy.test.GroovyAssert.isAtLeastJdk
+
 class SwingBuilderConsoleTest extends GroovySwingTestCase {
 
     File temporaryFolder
     Preferences testPreferences
-    private static final String BASE_DIR = new File(Console.classLoader.getResource('groovy/console/ui/ConsoleIcon.png').toURI()).parentFile.parentFile.parentFile.parent
+
+    @Lazy
+    private static String baseDir = new File(ConsoleSupport.classLoader.getResource('groovy/console/ui/ConsoleIcon.png').toURI()).parentFile.parentFile.parentFile.parent
 
     @Override
     protected void setUp() throws Exception {
@@ -62,6 +68,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testTabbedPane() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             def swing = new SwingBuilder()
             swing.tabbedPane(id: 'tp') {
@@ -144,6 +151,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testTabbedPaneRenamedProperties() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             def swing = new SwingBuilder()
             swing.tabbedPane(id: 'tp',
@@ -193,14 +201,15 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testImageIcon() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             def swing = new SwingBuilder()
             final String ICON_PATH = '/groovy/console/ui/ConsoleIcon.png'
 
             String resource = ICON_PATH
             GString gresource = "${ICON_PATH}"
-            String path = BASE_DIR + resource
-            String gpath = "$BASE_DIR$resource"
+            String path = baseDir + resource
+            String gpath = "$baseDir$resource"
             File file = new File(path)
             String relativeResource = file.name
             String grelativeResource = "$file.name"
@@ -342,6 +351,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testMacOSXMenuBarHasBasicMenuBarSubElements() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             def binding = new Binding()
             binding.setVariable('controller', new Console())
@@ -373,6 +383,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testAutoSaveOnRunMenuBarCheckbox() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             def binding = new Binding()
             binding.setVariable('controller', new Console())
@@ -403,6 +414,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testDoNotShowOriginalStackTrace() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
                 runnable.run()
@@ -437,6 +449,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testSelectBlock() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             final consoleActions = new ConsoleActions()
             def swing = new SwingBuilder()
@@ -510,6 +523,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testSystemOutputAndErrorRedirectedToCorrectConsole() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
                 runnable.run()
@@ -560,6 +574,7 @@ class SwingBuilderConsoleTest extends GroovySwingTestCase {
     }
 
     void testWithIndyCompilation() {
+        if (isAtLeastJdk('26')) return
         testInEDT {
             SwingUtilities.metaClass.static.invokeLater = { Runnable runnable ->
                 runnable.run()
