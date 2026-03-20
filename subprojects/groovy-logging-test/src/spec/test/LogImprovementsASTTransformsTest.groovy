@@ -17,6 +17,9 @@
  *  under the License.
  */
 
+import org.apache.log4j.BasicConfigurator
+import org.apache.log4j.LogManager
+import org.apache.log4j.varia.NullAppender
 import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
@@ -96,7 +99,10 @@ g.greet()
 
     @Test
     void testLog4jASTTransformation() {
-        assertScript '''
+        LogManager.resetConfiguration()
+        BasicConfigurator.configure(new NullAppender())
+        try {
+            assertScript '''
 // tag::log4j_spec[]
 @groovy.util.logging.Log4j
 class Greeter {
@@ -109,7 +115,7 @@ class Greeter {
 def g = new Greeter()
 g.greet()
         '''
-        assertScript '''
+            assertScript '''
 // tag::log4j_equiv[]
 import org.apache.log4j.Logger
 
@@ -126,6 +132,9 @@ class Greeter {
 def g = new Greeter()
 g.greet()
 '''
+        } finally {
+            LogManager.resetConfiguration()
+        }
     }
 
     @Test
@@ -144,7 +153,7 @@ g.greet()
     g.greet()
             '''
 
-                assertScript '''
+        assertScript '''
     // tag::log4j2_equiv[]
     import org.apache.logging.log4j.LogManager
     import org.apache.logging.log4j.Logger
@@ -195,6 +204,42 @@ class Greeter {
     }
 }
 // end::slf4j_equiv[]
+def g = new Greeter()
+g.greet()
+'''
+    }
+
+    @Test
+    void testPlatformLogASTTransformation() {
+        assertScript '''
+// tag::platformlog_spec[]
+@groovy.util.logging.PlatformLog
+class Greeter {
+    void greet() {
+        log.info 'Called greeter'
+        println 'Hello, world!'
+    }
+}
+// end::platformlog_spec[]
+def g = new Greeter()
+g.greet()
+        '''
+
+        assertScript '''
+// tag::platformlog_equiv[]
+import java.lang.System.Logger
+import java.lang.System.LoggerFinder
+import static java.lang.System.Logger.Level.INFO
+
+class Greeter {
+    private static final transient Logger log =
+        LoggerFinder.loggerFinder.getLogger(Greeter.class.name, Greeter.class.module)
+    void greet() {
+        log.log INFO, 'Called greeter'
+        println 'Hello, world!'
+    }
+}
+// end::platformlog_equiv[]
 def g = new Greeter()
 g.greet()
 '''
