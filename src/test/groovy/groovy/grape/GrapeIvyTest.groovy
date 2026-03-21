@@ -44,9 +44,9 @@ final class GrapeIvyTest {
             [groupId:'commons-lang', artifactId:'commons-lang', version:'2.6'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version: jideVersion],
             [groupId:'org.neo4j', artifactId:'neo4j-kernel', version:'2.0.0-RC1'],
+            [groupId:'org.apache.commons', artifactId:'commons-digester3', version:'3.2'],
             [groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15'],
-            [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']],
-            [groupId:'org.apache.commons', artifactId:'commons-digester3', version:'3.2', transitive:false])
+            [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']])
     }
 
     @Test
@@ -404,6 +404,7 @@ final class GrapeIvyTest {
     void testTransitiveShorthandExpectFailure() {
         shouldFail MissingPropertyException, '''
             @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
+            @Grab('commons-logging:commons-logging:1.1.1')
             import org.apache.commons.digester3.Digester
 
             assert Digester.name.size() == 37
@@ -414,7 +415,7 @@ final class GrapeIvyTest {
     @Test
     void testAutoDownloadGrapeConfigDefault() {
         assertScript '''
-            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
+            @Grab('org.apache.commons:commons-digester3:3.2')
             import org.apache.commons.digester3.Digester
 
             assert Digester.name.size() == 37
@@ -427,7 +428,7 @@ final class GrapeIvyTest {
         assumeFalse(System.getProperty('os.name').containsIgnoreCase('windows'))
 
         assertScript '''
-            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
+            @Grab('org.apache.commons:commons-digester3:3.2')
             @GrabConfig(autoDownload=false)
             import org.apache.commons.digester3.Digester
 
@@ -439,7 +440,7 @@ final class GrapeIvyTest {
     @Test
     void testAutoDownloadGrapeConfigTrue() {
         assertScript '''
-            @Grab('org.apache.commons:commons-digester3:3.2;transitive=false')
+            @Grab('org.apache.commons:commons-digester3:3.2')
             @GrabConfig(autoDownload=true)
             import org.apache.commons.digester3.Digester
 
