@@ -32,7 +32,7 @@ jobs:
           java-version: 17
           check-latest: true
       - uses: actions/checkout@v3
-      - uses: gradle/gradle-build-action@v2
+      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
       - name: Build and package
         run: ./gradlew clean dist --no-build-cache --no-daemon --no-scan --refresh-dependencies
         timeout-minutes: 60
