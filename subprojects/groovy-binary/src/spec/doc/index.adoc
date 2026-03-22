@@ -118,6 +118,8 @@ include::../../../../../subprojects/groovy-typecheckers/src/spec/doc/typechecker
 
 include::../../../../../subprojects/groovy-contracts/src/spec/doc/contracts-userguide.adoc[leveloffset=+2]
 
+include::../../../../../subprojects/groovy-http-builder/src/spec/doc/http-builder.adoc[leveloffset=+2]
+
 === Scripting Ant tasks
 
 Groovy integrates very well with http://ant.apache.org[Apache Ant] thanks to <<antbuilder,AntBuilder>>.

@@ -63,6 +63,7 @@ def subprojects = [
         'groovy-jsr223',
         'groovy-logging-test',
         'groovy-ginq',
+        'groovy-http-builder',
         'groovy-macro',
         'groovy-macro-library',
         'groovy-nio',
