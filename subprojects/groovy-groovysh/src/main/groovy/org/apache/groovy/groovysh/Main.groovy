@@ -280,6 +280,10 @@ class Main {
             }
         }
 
+        @Override
+        List<String> commandInfo(String command) {
+            posix.commandNames.toList()
+        }
     }
 
     static Path getUserStateDirectory() {
