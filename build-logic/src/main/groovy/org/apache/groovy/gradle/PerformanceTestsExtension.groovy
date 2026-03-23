@@ -92,7 +92,7 @@ class PerformanceTestsExtension {
             }
             [
                 'org.cyberneko:html:1.9.8',
-                'commons-net:commons-net:3.12.0',
+                'commons-net:commons-net:3.13.0',
                 'net.sourceforge.htmlunit:htmlunit:2.70.0',
                 'com.sleepycat:je:18.3.12',
                 'commons-httpclient:commons-httpclient:3.1',
