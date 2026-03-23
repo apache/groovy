@@ -48,9 +48,8 @@ import org.jline.utils.*;
  * Aggregate command registries.
  */
 public class SystemRegistryImpl implements SystemRegistry {
-    // NOTE: This file can be deleted if the following PRs are merged:
-    // https://github.com/jline/jline3/pull/1392
-    // https://github.com/jline/jline3/pull/1394
+    // This class could be deleted if the following changes to JLine3 are removed:
+    // * Pipe enum had additional PIPE option (which then filters through many methods including private ones)
 
     public enum Pipe {
         FLIP,

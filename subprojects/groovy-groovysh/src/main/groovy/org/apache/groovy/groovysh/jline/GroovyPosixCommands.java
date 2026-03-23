@@ -80,10 +80,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// The following file is expected to be deleted if/when the following issues have been merged in JLine3:
-// https://github.com/jline/jline3/pull/1400
-// https://github.com/jline/jline3/pull/1398
-// https://github.com/jline/jline3/pull/1390
+// This class could be deleted if/when the following differences with JLine3 are removed:
+// * getSources() also supports String[] sources which allows piping in Groovy - it would be nice if jline had a protected such method
+// * wc has more flexible control over totals
+// * head, tail, and grep have more flexible control of when filename headers are displayed
+// * the Groovy variants use Object[] for argv to allow variables to be used as sources
+// * uses Ant's Glob expansion if available on the classpath for more flexible expansion
 public class GroovyPosixCommands extends PosixCommands {
 
     public static void cat(Context context, Object[] argv) throws Exception {
