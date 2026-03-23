@@ -17,6 +17,8 @@
  *  under the License.
  */
 
+import groovy.xml.XmlParser
+
 def appendNode(node, text) {
     node.append(new XmlParser().parseText(text))
 }
