@@ -1,0 +1,5 @@
+= Groovy Ant Module
+
+Provides Ant tasks for executing Groovy scripts and compiling Groovy code from within Ant build files.
+
+See link:src/spec/doc/groovy-ant-task.adoc[groovy-ant-task.adoc] and link:src/spec/doc/groovyc-ant-task.adoc[groovyc-ant-task.adoc] for detailed documentation.
