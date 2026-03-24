@@ -1,0 +1,5 @@
+= Groovy GINQ Module
+
+Provides a higher-level abstraction for querying in-memory collections of objects in SQL-like style using Groovy-Integrated Query (GINQ).
+
+See link:src/spec/doc/ginq-userguide.adoc[ginq-userguide.adoc] for detailed documentation.

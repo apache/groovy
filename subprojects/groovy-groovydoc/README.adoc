@@ -1,0 +1,5 @@
+= Groovy Groovydoc Module
+
+Provides a documentation generator for Groovy and Java code, similar to Javadoc but capable of handling both languages.
+
+See link:src/spec/doc/groovydoc.adoc[groovydoc.adoc] for detailed documentation.

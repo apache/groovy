@@ -1,0 +1,5 @@
+= Groovy Contracts Module
+
+Provides design by contract support with annotations for class invariants, pre-conditions, and post-conditions on Groovy classes and interfaces.
+
+See link:src/spec/doc/contracts-userguide.adoc[contracts-userguide.adoc] for detailed documentation.

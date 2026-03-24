@@ -1,0 +1,5 @@
+= Groovy Console Module
+
+Provides a Groovy Swing Console that allows users to enter and run Groovy scripts interactively.
+
+See link:src/spec/doc/groovy-console.adoc[groovy-console.adoc] for detailed documentation.

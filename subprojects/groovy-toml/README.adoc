@@ -1,0 +1,5 @@
+= Groovy TOML Module
+
+Provides support for converting between Groovy objects and TOML with classes for serialisation and parsing.
+
+See link:src/spec/doc/toml-userguide.adoc[toml-userguide.adoc] for detailed documentation.

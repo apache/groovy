@@ -1,0 +1,5 @@
+= Groovy YAML Module
+
+Provides support for converting between Groovy objects and YAML with classes for serialisation and parsing.
+
+See link:src/spec/doc/yaml-userguide.adoc[yaml-userguide.adoc] for detailed documentation.

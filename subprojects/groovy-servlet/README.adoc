@@ -1,0 +1,5 @@
+= Groovy Servlet Module
+
+Provides servlet support including Groovylets (Groovy scripts as Servlets) and Template Servlets for running Groovy's template engines.
+
+See link:src/spec/doc/servlet-userguide.adoc[servlet-userguide.adoc] for detailed documentation.

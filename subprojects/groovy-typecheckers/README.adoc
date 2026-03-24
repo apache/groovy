@@ -1,0 +1,5 @@
+= Groovy Typecheckers Module
+
+Provides built-in auxiliary type checkers that extend Groovy's static type checking mechanism for specific scenarios.
+
+See link:src/spec/doc/typecheckers.adoc[typecheckers.adoc] for detailed documentation.

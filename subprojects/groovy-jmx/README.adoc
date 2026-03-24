@@ -1,0 +1,5 @@
+= Groovy JMX Module
+
+Provides GroovyMBean class which simplifies working with JMX by making MBeans look like normal Groovy objects.
+
+See link:src/spec/doc/jmx.adoc[jmx.adoc] for detailed documentation.

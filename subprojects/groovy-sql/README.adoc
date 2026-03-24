@@ -1,0 +1,5 @@
+= Groovy SQL Module
+
+Provides a higher-level abstraction over Java's JDBC technology for interacting with SQL databases.
+
+See link:src/spec/doc/sql-userguide.adoc[sql-userguide.adoc] for detailed documentation.

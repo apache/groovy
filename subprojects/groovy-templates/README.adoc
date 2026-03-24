@@ -1,0 +1,5 @@
+= Groovy Templates Module
+
+Provides a dedicated template framework for generating text dynamically from static templates with multiple template engine implementations.
+
+See link:src/spec/doc/template-engines.adoc[template-engines.adoc] for detailed documentation.

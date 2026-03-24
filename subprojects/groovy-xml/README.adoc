@@ -1,0 +1,5 @@
+= Groovy XML Module
+
+Provides support for parsing and generating XML with classes like XmlParser and XmlSlurper.
+
+See link:src/spec/doc/xml-userguide.adoc[xml-userguide.adoc] for detailed documentation.

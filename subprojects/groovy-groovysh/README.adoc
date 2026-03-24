@@ -1,0 +1,5 @@
+= Groovy Groovysh Module
+
+Provides the Groovy Shell, a command-line application for easily evaluating Groovy expressions, defining classes, and running experiments.
+
+See link:src/spec/doc/groovysh.adoc[groovysh.adoc] for detailed documentation.

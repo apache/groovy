@@ -1,0 +1,5 @@
+= Groovy Binary Module
+
+Provides the main Groovy language documentation and binary distribution.
+
+See link:src/spec/doc/index.adoc[index.adoc] for detailed documentation.

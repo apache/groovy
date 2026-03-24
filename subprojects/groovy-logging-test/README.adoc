@@ -1,0 +1,5 @@
+= Groovy Logging Test Module
+
+Provides AST transformations for integration with widely used logging frameworks, adding streamlined declarative logging support.
+
+See link:src/spec/doc/logging-transforms.adoc[logging-transforms.adoc] for detailed documentation.
