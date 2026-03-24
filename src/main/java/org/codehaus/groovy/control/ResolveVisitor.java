@@ -1393,6 +1393,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         super.visitCatchStatement(cs);
     }
 
+    /**
+     * Resolves the class nodes of any annotations attached to a loop statement
+     * (stored in statement metadata rather than in {@link org.codehaus.groovy.ast.AnnotatedNode}).
+     */
+    @Override
+    protected void visitStatementAnnotations(final Statement statement) {
+        for (AnnotationNode annotation : statement.getStatementAnnotations()) {
+            visitAnnotation(annotation);
+        }
+    }
+
     @Override
     public void visitForLoop(final ForStatement forLoop) {
         if (forLoop.getValueVariable() != null) {

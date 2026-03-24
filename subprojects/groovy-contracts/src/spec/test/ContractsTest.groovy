@@ -110,6 +110,52 @@ class ContractsTest extends GroovyTestCase {
         '''
     }
 
+    void testLoopInvariantForIn() {
+        assertScript '''
+        // tag::loop_invariant_for_example[]
+        import groovy.contracts.Invariant
+
+        int sum = 0
+        @Invariant({ 0 <= i && i <= 4 })
+        for (int i in 0..4) {
+            sum += i
+        }
+        assert sum == 10
+        // end::loop_invariant_for_example[]
+        '''
+    }
+
+    void testLoopInvariantWhile() {
+        assertScript '''
+        // tag::loop_invariant_while_example[]
+        import groovy.contracts.Invariant
+
+        int n = 10
+        @Invariant({ n >= 0 })
+        while (n > 0) {
+            n--
+        }
+        assert n == 0
+        // end::loop_invariant_while_example[]
+        '''
+    }
+
+    void testLoopInvariantMultiple() {
+        assertScript '''
+        // tag::loop_invariant_multiple_example[]
+        import groovy.contracts.Invariant
+
+        int sum = 0
+        @Invariant({ sum >= 0 })
+        @Invariant({ sum <= 100 })
+        for (int i in 1..5) {
+            sum += i
+        }
+        assert sum == 15
+        // end::loop_invariant_multiple_example[]
+        '''
+    }
+
     void testJep445Script() {
         runScript '''
         // tag::jep445_example[]

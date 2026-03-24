@@ -30,10 +30,13 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static org.apache.groovy.parser.antlr4.GroovyParser.ASSIGN;
+import static org.apache.groovy.parser.antlr4.GroovyParser.AT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.BuiltInPrimitiveType;
 import static org.apache.groovy.parser.antlr4.GroovyParser.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyParser.DO;
 import static org.apache.groovy.parser.antlr4.GroovyParser.DOT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.ExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.FOR;
 import static org.apache.groovy.parser.antlr4.GroovyParser.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LBRACK;
 import static org.apache.groovy.parser.antlr4.GroovyParser.LPAREN;
@@ -41,7 +44,9 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.LT;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PathExpressionContext;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExprAltContext;
 import static org.apache.groovy.parser.antlr4.GroovyParser.PostfixExpressionContext;
+import static org.apache.groovy.parser.antlr4.GroovyParser.RPAREN;
 import static org.apache.groovy.parser.antlr4.GroovyParser.StringLiteral;
+import static org.apache.groovy.parser.antlr4.GroovyParser.WHILE;
 import static org.apache.groovy.parser.antlr4.GroovyParser.YIELD;
 import static org.apache.groovy.parser.antlr4.util.StringUtils.matches;
 
@@ -186,8 +191,39 @@ public class SemanticPredicates {
                 !(BuiltInPrimitiveType == tokenType || Arrays.binarySearch(MODIFIER_ARRAY, tokenType) >= 0)
                         && !Character.isUpperCase(nextCodePoint)
                         && nextCodePoint != '@'
-                        && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2));
+                        && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2))
+                || (nextCodePoint == '@' && isAnnotatedLoopStatement(ts));
 
     }
 
+    /**
+     * When the input starts with one or more annotations, scan past them and check whether
+     * the first non-annotation token is a loop keyword ({@code for}, {@code while}, {@code do}).
+     * If so, the construct is an annotated loop statement, NOT a local variable declaration.
+     *
+     * @param ts the token stream positioned at the first annotation {@code @} token
+     * @return {@code true} if annotations are followed by a loop keyword
+     */
+    static boolean isAnnotatedLoopStatement(TokenStream ts) {
+        int idx = 1; // ts.LT(1) is '@'
+        while (ts.LT(idx).getType() == AT) {
+            idx += 2; // skip AT and annotation name
+            // skip qualifier parts of a fully-qualified annotation name, e.g. @java.lang.Deprecated
+            while (ts.LT(idx).getType() == DOT) {
+                idx += 2; // skip DOT and next name element
+            }
+            // skip annotation arguments (parenthesised), handling nesting
+            if (ts.LT(idx).getType() == LPAREN) {
+                idx++;
+                int depth = 1;
+                while (depth > 0 && ts.LT(idx).getType() != org.antlr.v4.runtime.Token.EOF) {
+                    int t = ts.LT(idx++).getType();
+                    if (t == LPAREN) depth++;
+                    else if (t == RPAREN) depth--;
+                }
+            }
+        }
+        int afterAnnotations = ts.LT(idx).getType();
+        return afterAnnotations == FOR || afterAnnotations == WHILE || afterAnnotations == DO;
+    }
 }

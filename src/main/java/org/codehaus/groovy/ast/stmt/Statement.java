@@ -19,11 +19,14 @@
 package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Collections;
 
 /**
  * Base class for any statement.
@@ -57,6 +60,43 @@ public class Statement extends ASTNode {
             labels.forEach(this::addStatementLabel);
         });
     }
+
+    //--------------------------------------------------------------------------
+    // Statement-level annotation support (Groovy-only; stored in node metadata)
+
+    private static final Object STATEMENT_ANNOTATIONS_KEY = "_statementAnnotations_";
+
+    /**
+     * Returns the list of statement-level annotations attached to this statement.
+     * These are Groovy-only source-retention annotations that do not appear at the
+     * JVM level; they are processed by registered {@link org.codehaus.groovy.transform.ASTTransformation}s.
+     *
+     * @return an unmodifiable view of the annotations list, never {@code null}
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public List<AnnotationNode> getStatementAnnotations() {
+        List<AnnotationNode> annotations = getNodeMetaData(STATEMENT_ANNOTATIONS_KEY);
+        return annotations != null ? Collections.unmodifiableList(annotations) : Collections.emptyList();
+    }
+
+    /**
+     * Attaches a statement-level annotation to this statement.
+     *
+     * @param annotation the annotation to attach
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public void addStatementAnnotation(final AnnotationNode annotation) {
+        List<AnnotationNode> annotations = getNodeMetaData(STATEMENT_ANNOTATIONS_KEY);
+        if (annotations == null) {
+            annotations = new ArrayList<>();
+            setNodeMetaData(STATEMENT_ANNOTATIONS_KEY, annotations);
+        }
+        annotations.add(Objects.requireNonNull(annotation));
+    }
+
+    //--------------------------------------------------------------------------
 
     public boolean isEmpty() {
         return false;

@@ -470,7 +470,9 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
 
         Statement loopBody = this.unpackStatement((Statement) this.visit(ctx.statement()));
 
-        return configureAST(maker.apply(loopBody), ctx);
+        ForStatement forStatement = configureAST(maker.apply(loopBody), ctx);
+        visitAnnotationsOpt(ctx.annotationsOpt()).forEach(forStatement::addStatementAnnotation);
+        return forStatement;
     }
 
     @Override
@@ -571,14 +573,18 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public WhileStatement visitWhileStmtAlt(final WhileStmtAltContext ctx) {
         Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
 
-        return configureAST(new WhileStatement(conditionAndBlock.getV1(), conditionAndBlock.getV2()), ctx);
+        WhileStatement whileStatement = configureAST(new WhileStatement(conditionAndBlock.getV1(), conditionAndBlock.getV2()), ctx);
+        visitAnnotationsOpt(ctx.annotationsOpt()).forEach(whileStatement::addStatementAnnotation);
+        return whileStatement;
     }
 
     @Override
     public DoWhileStatement visitDoWhileStmtAlt(final DoWhileStmtAltContext ctx) {
         Tuple2<BooleanExpression, Statement> conditionAndBlock = createLoopConditionExpressionAndBlock(ctx.expressionInPar(), ctx.statement());
 
-        return configureAST(new DoWhileStatement(conditionAndBlock.getV1(), conditionAndBlock.getV2()), ctx);
+        DoWhileStatement doWhileStatement = configureAST(new DoWhileStatement(conditionAndBlock.getV1(), conditionAndBlock.getV2()), ctx);
+        visitAnnotationsOpt(ctx.annotationsOpt()).forEach(doWhileStatement::addStatementAnnotation);
+        return doWhileStatement;
     }
 
     private Tuple2<BooleanExpression, Statement> createLoopConditionExpressionAndBlock(final ExpressionInParContext eipc, final StatementContext sc) {

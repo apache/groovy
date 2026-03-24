@@ -26,6 +26,7 @@ import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -109,6 +110,17 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
 
         for (AnnotationNode annotation : nodeAnnotations) {
+            addTransformsToClassNode(annotation);
+        }
+    }
+
+    /**
+     * Collects AST transforms from statement-level annotations (e.g. annotations placed
+     * directly on {@code for}/{@code while}/{@code do-while} loop statements).
+     */
+    @Override
+    protected void visitStatementAnnotations(final Statement statement) {
+        for (AnnotationNode annotation : statement.getStatementAnnotations()) {
             addTransformsToClassNode(annotation);
         }
     }

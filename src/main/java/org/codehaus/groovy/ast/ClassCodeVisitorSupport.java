@@ -200,6 +200,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitDoWhileLoop(DoWhileStatement statement) {
         visitStatement(statement);
+        visitStatementAnnotations(statement);
         super.visitDoWhileLoop(statement);
     }
 
@@ -212,6 +213,7 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitForLoop(ForStatement statement) {
         visitStatement(statement);
+        visitStatementAnnotations(statement);
         if (statement.getValueVariable() != null) {
             visitAnnotations(statement.getValueVariable());
         }
@@ -257,12 +259,23 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     @Override
     public void visitWhileLoop(WhileStatement statement) {
         visitStatement(statement);
+        visitStatementAnnotations(statement);
         super.visitWhileLoop(statement);
     }
 
     //--------------------------------------------------------------------------
 
     protected void visitStatement(Statement statement) {
+    }
+
+    /**
+     * Called for each loop statement ({@code for}, {@code while}, {@code do-while}) that
+     * carries statement-level annotations. Subclasses may override to process those annotations.
+     *
+     * @param statement the loop statement that may have statement-level annotations
+     * @since 6.0.0
+     */
+    protected void visitStatementAnnotations(Statement statement) {
     }
 
     protected abstract SourceUnit getSourceUnit();
