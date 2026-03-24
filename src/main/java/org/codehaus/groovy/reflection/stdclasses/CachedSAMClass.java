@@ -29,7 +29,6 @@ import org.codehaus.groovy.transform.trait.Traits;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
@@ -106,14 +105,9 @@ public class CachedSAMClass extends CachedClass {
         return false;
     }
 
-    @SuppressWarnings("removal") // TODO: a future Groovy version should remove the security check
     private static Method[] getDeclaredMethods(final Class<?> c) {
-        try {
-            Method[] methods = java.security.AccessController.doPrivileged((PrivilegedAction<Method[]>) c::getDeclaredMethods);
-            if (methods != null) return methods;
-        } catch (java.security.AccessControlException ace) {
-            // swallow and do as if no method is available
-        }
+        Method[] methods = c.getDeclaredMethods();
+        if (methods != null) return methods;
         return EMPTY_METHOD_ARRAY;
     }
 

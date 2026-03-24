@@ -48,7 +48,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -60,7 +59,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * with dependent scripts.
  */
 public class GroovyScriptEngine implements ResourceConnector {
-    private static final ClassLoader CL_STUB = doPrivileged((PrivilegedAction<ClassLoader>) () -> new ClassLoader() {});
+    private static final ClassLoader CL_STUB = new ClassLoader() {};
 
     private static final URL[] EMPTY_URL_ARRAY = new URL[0];
 
@@ -337,21 +336,14 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @return the parent classloader used to load scripts
      */
     private GroovyClassLoader initGroovyLoader() {
-        GroovyClassLoader groovyClassLoader =
-                doPrivileged((PrivilegedAction<ScriptClassLoader>) () -> {
-                    if (parentLoader instanceof GroovyClassLoader) {
-                        return new ScriptClassLoader((GroovyClassLoader) parentLoader);
-                    } else {
-                        return new ScriptClassLoader(parentLoader, config);
-                    }
-                });
+        GroovyClassLoader groovyClassLoader;
+        if (parentLoader instanceof GroovyClassLoader) {
+            groovyClassLoader = new ScriptClassLoader((GroovyClassLoader) parentLoader);
+        } else {
+            groovyClassLoader = new ScriptClassLoader(parentLoader, config);
+        }
         for (URL root : roots) groovyClassLoader.addURL(root);
         return groovyClassLoader;
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
     }
 
     /**

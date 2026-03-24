@@ -149,28 +149,6 @@ public interface VMPlugin {
     MetaMethod transformMetaMethod(MetaClass metaClass, MetaMethod metaMethod, Class<?> caller);
 
     /**
-     * Performs the specified PrivilegedAction with privileges enabled on platforms
-     * which support that capability, otherwise the action is performed ignoring privileges.
-     *
-     * @param action the action to be performed
-     * @param <T> the type of the value returned by the PrivilegedAction's run method
-     * @return the value returned by the action's run method
-     */
-    @Deprecated
-    <T> T doPrivileged(java.security.PrivilegedAction<T> action);
-
-    /**
-     * Performs the specified PrivilegedExceptionAction with privileges enabled on platforms
-     * which support that capability, otherwise the action is performed ignoring privileges.
-     *
-     * @param action the action to be performed
-     * @param <T> the type of the value returned by the PrivilegedAction's run method
-     * @return the value returned by the action's run method
-     */
-    @Deprecated
-    <T> T doPrivileged(java.security.PrivilegedExceptionAction<T> action) throws java.security.PrivilegedActionException;
-
-    /**
      * transform meta method.
      *
      * @param metaClass metaclass

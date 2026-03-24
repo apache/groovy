@@ -29,7 +29,6 @@ import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -77,11 +76,7 @@ public class AllTestSuite extends TestSuite {
     private static final Logger LOG = Logger.getLogger(AllTestSuite.class.getName());
     private static final ClassLoader JAVA_LOADER = AllTestSuite.class.getClassLoader();
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static final GroovyClassLoader GROOVY_LOADER =
-            java.security.AccessController.doPrivileged(
-                    (PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(JAVA_LOADER)
-            );
+    private static final GroovyClassLoader GROOVY_LOADER = new GroovyClassLoader(JAVA_LOADER);
 
     private static final String[] EMPTY_ARGS = new String[]{};
     private static IFileNameFinder finder = null;

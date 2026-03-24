@@ -27,17 +27,13 @@ import java.security.PrivilegedExceptionAction;
  * Support class for creating XML Factories
  */
 public class FactorySupport {
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     static Object createFactory(PrivilegedExceptionAction action) throws ParserConfigurationException {
         try {
-            return java.security.AccessController.doPrivileged(action);
-        } catch (java.security.PrivilegedActionException pae) {
-            Exception e = pae.getException();
-            if (e instanceof ParserConfigurationException) {
-                throw (ParserConfigurationException) e;
-            } else {
-                throw new RuntimeException(e);
-            }
+            return action.run();
+        } catch (ParserConfigurationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

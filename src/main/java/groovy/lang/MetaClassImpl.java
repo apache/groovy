@@ -90,8 +90,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URL;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -3404,12 +3402,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         BeanInfo info;
         try {
             if (isBeanDerivative(theClass)) {
-                info = doPrivileged(() -> Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO));
+                info = Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO);
             } else {
-                info = doPrivileged(() -> Introspector.getBeanInfo(theClass));
+                info = Introspector.getBeanInfo(theClass);
             }
-        } catch (PrivilegedActionException pae) {
-            throw new GroovyRuntimeException("exception during bean introspection", pae.getException());
+        } catch (Exception e) {
+            throw new GroovyRuntimeException("exception during bean introspection", e);
         }
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
         // build up the metaproperties based on the public fields, property descriptors,
@@ -3454,11 +3452,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
         }
-    }
-
-    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(final PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
-        return java.security.AccessController.doPrivileged(action);
     }
 
     private static boolean isBeanDerivative(Class theClass) {

@@ -2148,27 +2148,18 @@ final class InnerClassTest {
     @Test
     void testThisReferenceForAICInOpenBlock() {
         assertScript '''
-            import java.security.AccessController
-            import java.security.PrivilegedAction
-
             static void injectVariables(final def instance, def variables) {
                 instance.class.declaredFields.each { field ->
                     if (variables[field.name]) {
-                        AccessController.doPrivileged(new PrivilegedAction() {
-                            @Override
-                            Object run() {
-                                boolean wasAccessible = field.isAccessible()
-                                try {
-                                    field.accessible = true
-                                    field.set(instance, variables[field.name])
-                                    return null; // return nothing...
-                                } catch (IllegalArgumentException | IllegalAccessException ex) {
-                                    throw new IllegalStateException("Cannot set field: " + field, ex)
-                                } finally {
-                                    field.accessible = wasAccessible
-                                }
-                            }
-                        })
+                        boolean wasAccessible = field.isAccessible()
+                        try {
+                            field.accessible = true
+                            field.set(instance, variables[field.name])
+                        } catch (IllegalArgumentException | IllegalAccessException ex) {
+                            throw new IllegalStateException("Cannot set field: " + field, ex)
+                        } finally {
+                            field.accessible = wasAccessible
+                        }
                     }
                 }
             }

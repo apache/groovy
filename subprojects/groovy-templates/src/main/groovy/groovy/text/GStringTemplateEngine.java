@@ -31,7 +31,6 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
-import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -213,9 +212,8 @@ public class GStringTemplateEngine extends TemplateEngine {
             }
         }
 
-        @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
         private GroovyClassLoader createClassLoader(ClassLoader parentLoader) {
-            return java.security.AccessController.doPrivileged((PrivilegedAction<GroovyClassLoader>) () -> new GroovyClassLoader(parentLoader));
+            return new GroovyClassLoader(parentLoader);
         }
 
         private static void appendCharacter(final char c,

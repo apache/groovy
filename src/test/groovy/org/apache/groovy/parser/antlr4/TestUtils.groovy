@@ -47,8 +47,6 @@ package org.apache.groovy.parser.antlr4
     import org.codehaus.groovy.control.SourceUnit
     import org.codehaus.groovy.syntax.Token
 
-    import java.security.AccessController
-    import java.security.PrivilegedAction
     import java.util.logging.Level
     import java.util.zip.ZipEntry
     import java.util.zip.ZipFile
@@ -225,9 +223,7 @@ final class TestUtils {
     }
 
     private static ModuleNode buildAST(File sourceFile, CompilerConfiguration config) {
-        def loader = AccessController.doPrivileged({ ->
-            new GroovyClassLoader()
-        } as PrivilegedAction<GroovyClassLoader>)
+        def loader = new GroovyClassLoader()
 
         try {
             new SourceUnit(sourceFile, config, loader, null).with {
@@ -245,9 +241,7 @@ final class TestUtils {
     }
 
     private static ModuleNode buildAST(String sourceText, CompilerConfiguration config) {
-        def loader = AccessController.doPrivileged({ ->
-            new GroovyClassLoader()
-        } as PrivilegedAction<GroovyClassLoader>)
+        def loader = new GroovyClassLoader()
 
         try {
             ParserPlugin.buildAST(sourceText, config, loader, null)

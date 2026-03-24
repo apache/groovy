@@ -588,7 +588,7 @@ public class Java8 implements VMPlugin {
             return newLookup(receiverClass).unreflectSpecial(method, receiverClass).bindTo(receiver);
         } catch (ReflectiveOperationException e1) {
             if (!method.isAccessible()) {
-                doPrivilegedInternal(() -> ReflectionUtils.trySetAccessible(method));
+                ReflectionUtils.trySetAccessible(method);
             }
             final Class<?> declaringClass = method.getDeclaringClass();
             try {
@@ -617,20 +617,4 @@ public class Java8 implements VMPlugin {
         throw new IllegalStateException();
     }
 
-    @Override
-    @Deprecated(since = "4.0.2")
-    public <T> T doPrivileged(final java.security.PrivilegedAction<T> action) {
-        throw new UnsupportedOperationException("doPrivileged is no longer supported");
-    }
-
-    @Override
-    @Deprecated(since = "4.0.2")
-    public <T> T doPrivileged(final java.security.PrivilegedExceptionAction<T> action) {
-        throw new UnsupportedOperationException("doPrivileged is no longer supported");
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivilegedInternal(final java.security.PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
 }

@@ -66,24 +66,24 @@ public abstract class TestSupport {
             .append(id, 24, 36)
             .append(".groovy")
             .toString();
-        Class<?> scriptClass = loader.parseClass(doPrivileged(() ->
+        Class<?> scriptClass = loader.parseClass(
             new GroovyCodeSource(scriptText, scriptName, "/groovy/testSupport")
-        ));
+        );
         Script script = InvokerHelper.createScript(scriptClass, new Binding());
         script.run();
     }
 
     protected final void assertScriptFile(String fileName) throws Exception {
-        Class<?> scriptClass = loader.parseClass(doPrivileged(() ->
-            new GroovyCodeSource(new File(fileName)))
+        Class<?> scriptClass = loader.parseClass(
+            new GroovyCodeSource(new File(fileName))
         );
         Script script = InvokerHelper.createScript(scriptClass, new Binding());
         script.run();
     }
 
     protected final GroovyObject compile (String fileName) throws Exception {
-        Class<?> groovyClass = loader.parseClass(doPrivileged(() ->
-            new GroovyCodeSource(new File(fileName)))
+        Class<?> groovyClass = loader.parseClass(
+            new GroovyCodeSource(new File(fileName))
         );
         GroovyObject groovyObject = (GroovyObject) groovyClass.getDeclaredConstructor().newInstance();
         assertNotNull(groovyObject);
@@ -130,7 +130,7 @@ public abstract class TestSupport {
     @BeforeEach
     void setUpTestCase() throws Exception {
         ClassLoader parentLoader = getClass().getClassLoader();
-        loader = doPrivileged(() -> new GroovyClassLoader(parentLoader));
+        loader = new GroovyClassLoader(parentLoader);
     }
 
     @AfterEach
@@ -167,10 +167,5 @@ public abstract class TestSupport {
             fail("InvocationTargetException: " + e.getTargetException());
             return null;
         }
-    }
-
-    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(java.security.PrivilegedExceptionAction<T> action) throws Exception {
-        return java.security.AccessController.doPrivileged(action);
     }
 }

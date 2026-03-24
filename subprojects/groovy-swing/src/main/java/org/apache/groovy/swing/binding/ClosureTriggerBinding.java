@@ -26,7 +26,6 @@ import org.codehaus.groovy.reflection.ReflectionUtils;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -71,39 +70,33 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
             // create our own local copy of the closure
             final Class closureClass = closure.getClass();
 
-            // do in privileged block since we may be looking at private stuff
-            Closure closureLocalCopy = doPrivileged(new PrivilegedAction<Closure>() {
-                @Override
-                public Closure run() {
-                    // assume closures have only 1 constructor, of the form (Object, Reference*)
-                    Constructor constructor = closureClass.getConstructors()[0];
-                    int paramCount = constructor.getParameterTypes().length;
-                    Object[] args = new Object[paramCount];
-                    args[0] = delegate;
-                    for (int i = 1; i < paramCount; i++) {
-                        args[i] = new Reference<Object>(new BindPathSnooper());
+            // assume closures have only 1 constructor, of the form (Object, Reference*)
+            Constructor constructor = closureClass.getConstructors()[0];
+            int paramCount = constructor.getParameterTypes().length;
+            Object[] args = new Object[paramCount];
+            args[0] = delegate;
+            for (int i = 1; i < paramCount; i++) {
+                args[i] = new Reference<Object>(new BindPathSnooper());
+            }
+            Closure closureLocalCopy;
+            try {
+                boolean acc = isAccessible(constructor);
+                ReflectionUtils.trySetAccessible(constructor);
+                closureLocalCopy = (Closure) constructor.newInstance(args);
+                if (!acc) { constructor.setAccessible(false); }
+                closureLocalCopy.setResolveStrategy(Closure.DELEGATE_ONLY);
+                for (Field f:closureClass.getDeclaredFields()) {
+                    acc = isAccessible(f);
+                    ReflectionUtils.trySetAccessible(f);
+                    if (f.getType() == Reference.class) {
+                        delegate.fields.put(f.getName(),
+                                (BindPathSnooper) ((Reference) f.get(closureLocalCopy)).get());
                     }
-                    try {
-                        boolean acc = isAccessible(constructor);
-                        ReflectionUtils.trySetAccessible(constructor);
-                        Closure localCopy = (Closure) constructor.newInstance(args);
-                        if (!acc) { constructor.setAccessible(false); }
-                        localCopy.setResolveStrategy(Closure.DELEGATE_ONLY);
-                        for (Field f:closureClass.getDeclaredFields()) {
-                            acc = isAccessible(f);
-                            ReflectionUtils.trySetAccessible(f);
-                            if (f.getType() == Reference.class) {
-                                delegate.fields.put(f.getName(),
-                                        (BindPathSnooper) ((Reference) f.get(localCopy)).get());
-                            }
-                            if (!acc) { f.setAccessible(false); }
-                        }
-                        return localCopy;
-                    } catch (Exception e) {
-                        throw new RuntimeException("Error snooping closure", e);
-                    }
+                    if (!acc) { f.setAccessible(false); }
                 }
-            });
+            } catch (Exception e) {
+                throw new RuntimeException("Error snooping closure", e);
+            }
             try {
                 closureLocalCopy.call();
             } catch (DeadEndException e) {
@@ -130,12 +123,6 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         fb.bindPaths = rootPaths.toArray(EMPTY_BINDPATH_ARRAY);
         return fb;
     }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
-
 
     // TODO when JDK9+ is minimum, use canAccess and remove suppression
     @SuppressWarnings("deprecation")

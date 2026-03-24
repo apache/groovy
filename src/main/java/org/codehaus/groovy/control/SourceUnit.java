@@ -242,9 +242,8 @@ public class SourceUnit extends ProcessingUnit {
         }
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should get the property not as a privileged action
     private String getProperty(String key) {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<String>) () -> System.getProperty(key));
+        return System.getProperty(key);
     }
 
     /**
