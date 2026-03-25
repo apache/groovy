@@ -95,7 +95,7 @@ tasks.withType(Test).configureEach {
             // delete if it exists already to be in a clean state
             delete(grapeDirectory)
         }
-        System.err.println "Grape directory: ${grapeDirectory.absolutePath}"
+        logger.debug "Grape directory: ${grapeDirectory.absolutePath}"
     }
 
     doLast {
