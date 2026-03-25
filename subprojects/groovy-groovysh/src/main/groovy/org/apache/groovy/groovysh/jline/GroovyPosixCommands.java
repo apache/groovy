@@ -29,13 +29,15 @@ package org.apache.groovy.groovysh.jline;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.jline.builtins.Less;
 import org.jline.builtins.Options;
-import org.jline.builtins.PosixCommands;
+import org.jline.builtins.PosixCommands.Context;
 import org.jline.builtins.Source;
 import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.InputStreamReader;
 import org.jline.utils.OSUtils;
+
+import static org.jline.builtins.PosixCommands.*;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -80,10 +82,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-// The following file is expected to be deleted if/when the following issues have been merged in JLine3:
-// https://github.com/jline/jline3/pull/1436
-// also some desired fixes have been merged only on master (v4) which is not yet released
-public class GroovyPosixCommands extends PosixCommands {
+public class GroovyPosixCommands {
+
+    private static Options parseOptions(Context context, String[] usage, Object[] argv) {
+        String[] tokens = Arrays.stream(argv).map(String::valueOf).toArray(String[]::new);
+        String[] args = tokens.length > 0 ? Arrays.copyOfRange(tokens, 1, tokens.length) : tokens;
+        return Options.compile(usage).parse(args);
+    }
 
     public static void cat(Context context, Object[] argv) throws Exception {
         final String[] usage = {
