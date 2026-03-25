@@ -24,10 +24,11 @@ plugins {
     id 'org.apache.groovy-asciidoctor'
 }
 
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
+//only used when testing locally built artifacts, not for publishing
+//repositories {
+//    mavenLocal()
+//    mavenCentral()
+//}
 
 docAggregation {
     excludeFromJavadoc '**/*.html',
