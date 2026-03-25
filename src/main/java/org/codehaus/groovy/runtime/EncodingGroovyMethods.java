@@ -21,7 +21,6 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
 import org.apache.groovy.io.StringBuilderWriter;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
 import java.io.Writer;

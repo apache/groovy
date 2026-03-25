@@ -22,7 +22,6 @@ import groovy.test.GroovyTestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
