@@ -62,8 +62,8 @@ tasks.withType(Javadoc).configureEach {
         links("https://docs.oracle.com/en/java/javase/${17}/docs/api/",
               'https://docs.oracle.com/javaee/7/api/',
               'https://commons.apache.org/proper/commons-cli/javadocs/api-release/',
-              'https://junit.org/junit4/javadoc/latest/',
-              'https://docs.junit.org/current/api/',
+              "https://junit.org/junit4/javadoc/${versions.junit}/",
+              "https://docs.junit.org/${versions.junit5}/api/",
               'https://picocli.info/apidocs/')
     }
 }
@@ -83,8 +83,8 @@ tasks.withType(Groovydoc).configureEach {
     link 'https://docs.oracle.com/javaee/7/api/', 'javax.servlet.', 'javax.management.'
     link "https://docs.oracle.com/javase/${17}/docs/api/java.base/", 'java.', 'org.xml.', 'javax.', 'org.w3c.'
     link 'https://docs.groovy-lang.org/docs/ant/api/', 'org.apache.ant.', 'org.apache.tools.ant.'
-    link 'https://junit.org/junit4/javadoc/latest/', 'org.junit.', 'junit.'
-    link 'https://docs.junit.org/current/api/org.junit.jupiter.api/', 'org.junit.jupiter.', 'org.junit.platform.'
+    link "https://junit.org/junit4/javadoc/${versions.junit}/", 'org.junit.', 'junit.'
+    link "https://docs.junit.org/${versions.junit5}/api/org.junit.jupiter.api/", 'org.junit.jupiter.', 'org.junit.platform.'
     link 'https://www.antlr.org/api/Java/', 'org.antlr.v4.'
     link 'https://commons.apache.org/proper/commons-cli/javadocs/api-release/', 'org.apache.commons.cli.'
     link 'https://picocli.info/apidocs/', 'picocli.'
