@@ -21,11 +21,13 @@ on:
       - 'gradlew'
       - 'gradlew.bat'
       - 'gradle/wrapper/'
+      - '.github/workflows/gradle-wrapper-validation.yml'
   pull_request:
     paths:
       - 'gradlew'
       - 'gradlew.bat'
       - 'gradle/wrapper/'
+      - '.github/workflows/gradle-wrapper-validation.yml'
 
 permissions:
   contents: read
@@ -36,4 +38,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: gradle/actions/wrapper-validation@v5
+      - uses: gradle/actions/wrapper-validation@4c125117fe7c5aed11272ec4213f602f012f89f2
