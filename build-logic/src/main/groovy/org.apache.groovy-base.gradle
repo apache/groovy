@@ -161,7 +161,8 @@ tasks.withType(AbstractArchiveTask).configureEach {
 
 tasks.withType(Jar).configureEach { jar ->
     metaInf {
-        if (jar.name in ['jar', 'sourcesJar']) {
+        // root project provides its own JARJAR license/notice in its jar task
+        if (jar.name in ['jar', 'sourcesJar'] && project != rootProject) {
             if (file("${projectDir}/LICENSE").exists()) {
                 from "${projectDir}/LICENSE"
             } else {
