@@ -213,6 +213,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * see {@link groovy.test.GroovyAssert#shouldFail(Class, groovy.lang.Closure)}
      */
+    @SuppressWarnings("unchecked")
     protected String shouldFail(Class clazz, Closure code) {
         return GroovyAssert.shouldFail(clazz, code).getMessage();
     }
@@ -220,6 +221,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * see {@link groovy.test.GroovyAssert#shouldFailWithCause(Class, groovy.lang.Closure)}
      */
+    @SuppressWarnings("unchecked")
     protected String shouldFailWithCause(Class clazz, Closure code) {
         return GroovyAssert.shouldFailWithCause(clazz, code).getMessage();
     }
@@ -227,6 +229,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * see {@link groovy.test.GroovyAssert#shouldFail(Class, String)}
      */
+    @SuppressWarnings("unchecked")
     protected String shouldFail(Class clazz, String script) {
         return GroovyAssert.shouldFail(clazz, script).getMessage();
     }
