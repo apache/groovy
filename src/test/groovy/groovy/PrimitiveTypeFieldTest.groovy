@@ -20,8 +20,8 @@ package groovy
 
 import org.junit.jupiter.api.Test
 
+final class PrimitiveTypeFieldTest {
 
-class PrimitiveTypeFieldTest {
     private long longField
     private static short shortField
 
@@ -44,12 +44,12 @@ class PrimitiveTypeFieldTest {
         assert longField == 1
     }
 
+    // GROOVY-133
     @Test
     void testIntParamBug() {
         assert bugMethod(123) == 246
         assert bugMethod2(123) == 246
 
-        // GROOVY-133
         def closure = {int x-> x * 2 }
         assert closure.call(123) == 246
 
@@ -62,6 +62,7 @@ class PrimitiveTypeFieldTest {
     def bugMethod2(int x) {
         x * 2
     }
+
     @Test
     void testStaticPrimitiveField() {
         shortField = (Short) 123

@@ -18,6 +18,7 @@
  */
 
 import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
+import org.apache.groovy.gradle.TargetJavaHomeSupport
 
 // TODO: Instead of adding to the test sources, these should be a
 // separate source set so that we can run spec tests in isolation
@@ -43,16 +44,10 @@ dependencies {
 
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
-    def grapeDirectory = new File(temporaryDir, 'grape')
-    def jdk8 = ['-XX:+UseConcMarkSweepGC']
-    def jdk9 = ['-Djava.locale.providers=COMPAT,SPI']
-    def common = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en']
-    if (JavaVersion.current().isJava9Compatible()) {
-        jvmArgs(*common, *jdk9)
-        systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
-    } else {
-        jvmArgs(*common, *jdk8)
-    }
+    def grapeDirectory = new File(temporaryDir, '.groovy')
+    def options = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en', '-Djava.locale.providers=COMPAT,SPI']
+    jvmArgs(*options)
+    systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
     def testdb = System.properties['groovy.testdb.props']
     if (testdb) {
         systemProperty 'groovy.testdb.props', testdb
@@ -63,6 +58,8 @@ tasks.withType(Test).configureEach {
     }
     systemProperty 'apple.awt.UIElement', 'true'
     systemProperty 'javadocAssertion.src.dir', './src/main'
+//    systemProperty 'groovy.grape.report.downloads', 'true'
+//    systemProperty 'ivy.message.logger.level', '4'
 
     jvmArgumentProviders.add(new TestCommandLineArgumentProvider(
         grapeRoot: grapeDirectory,
@@ -70,12 +67,10 @@ tasks.withType(Test).configureEach {
         userHome: temporaryDir // make sure tests are isolated from real user home or tests using Grape may fail
     ))
 
-    if (rootProject.hasProperty('target.java.home')) {
-        String targetJavaHome = rootProject.property('target.java.home')?.trim()
-        if (targetJavaHome) {
-            executable = "${targetJavaHome}/bin/java"
-            println "Using ${executable} to run tests"
-        }
+    String targetJavaHome = TargetJavaHomeSupport.targetJavaHome(project)
+    if (targetJavaHome) {
+        executable = TargetJavaHomeSupport.javaExecutable(targetJavaHome)
+        println "Using ${executable} to run tests"
     }
 
     forkEvery = 50
@@ -100,11 +95,23 @@ tasks.withType(Test).configureEach {
             // delete if it exists already to be in a clean state
             delete(grapeDirectory)
         }
+        logger.debug "Grape directory: ${grapeDirectory.absolutePath}"
     }
 
     doLast {
         fs.delete {
             delete(files(".").filter { it.name.endsWith '.class' })
+        }
+    }
+}
+
+tasks.withType(GroovyCompile).configureEach {
+    if (name == 'compileTestGroovy') {
+        Integer feature = TargetJavaHomeSupport.featureVersionFromReleaseFile(TargetJavaHomeSupport.targetJavaHome(project))
+        if (feature != null) {
+            javaLauncher = javaToolchains.launcherFor {
+                languageVersion = JavaLanguageVersion.of(feature)
+            }
         }
     }
 }

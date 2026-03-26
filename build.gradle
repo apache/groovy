@@ -115,10 +115,6 @@ dependencies {
     testImplementation projects.groovyMacro
     testImplementation projects.groovyDateutil
     testImplementation "net.jcip:jcip-annotations:${versions.jcipAnnotations}"
-    testImplementation "ch.qos.logback:logback-classic:${versions.logback}"
-    testImplementation "log4j:log4j:${versions.log4j}"
-    testImplementation "org.apache.logging.log4j:log4j-core:${versions.log4j2}"
-    testImplementation "org.slf4j:jcl-over-slf4j:${versions.slf4j}"
     testImplementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
     testImplementation "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     testImplementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${versions.jackson}"
@@ -134,7 +130,7 @@ dependencies {
     // updated bridger dependencies to remove vulnerabilities:
     tools "com.jcraft:jsch:0.1.55"
     tools "commons-io:commons-io:2.21.0"
-    tools "org.apache.maven:maven-core:3.9.13"
+    tools "org.apache.maven:maven-core:3.9.14"
     tools "org.apache.maven.shared:maven-shared-utils:3.4.2"
     tools "org.codehaus.plexus:plexus-utils:4.0.2"
     // end
@@ -143,13 +139,14 @@ dependencies {
 
     spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
 
-    testRuntimeOnly "org.slf4j:slf4j-simple:${versions.slf4j}"
     testRuntimeOnly(project(':')) {
         because 'Tests are using Grapes'
         capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
+    testRuntimeOnly projects.groovyGrapeIvy
+
     testRuntimeOnly(project(':')) {
         because 'Tests are using GPars'
         capabilities {

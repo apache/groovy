@@ -22,15 +22,15 @@ import org.junit.jupiter.api.Test
 
 final class ByteIndexBug {
 
-    // TODO: this tests a string with 128 nulls - is that what is intended?
+    // TODO: This tests a string with 128 nulls - is that what is intended?
     @Test
     void testBug() {
-        def sb = new StringBuffer("\"\"\"\n")
-        for (j in 0..127){ // 126 is okay.
-            sb.append('$').append("{x}")
+        def sb = new StringBuilder('"""\n')
+        for (j in 0..127) { // 126 is okay
+            sb.append('${x}')
         }
-        sb.append("\n\"\"\"\n")
-        def b = new Binding(x:null)
-        new GroovyShell(b).evaluate(sb.toString(),"foo")
+        sb.append('\n"""\n')
+        def b = new Binding(x: null)
+        new GroovyShell(b).evaluate(sb.toString(), 'foo')
     }
 }

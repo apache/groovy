@@ -64,14 +64,15 @@ import java.util.Set;
  * all instances of this class will share that MetaClass. The Class MetaClass
  * is initialized lazy, because most operations do not need this MetaClass.
  * <p>
- * The Closure and Class MetaClasses are not replaceable.
+ * The Closure and Class metaclasses are not replaceable.
  * <p>
  * This MetaClass is for internal usage only!
  *
  * @since 1.5
  */
 public final class ClosureMetaClass extends MetaClassImpl {
-    private volatile boolean initialized, attributeInitDone;
+
+    private volatile boolean attributeInitDone;
     private final FastArray closureMethods = new FastArray(3);
     private final Map<String, CachedField> attributes = new HashMap<>();
     private MethodChooser chooser;
@@ -109,8 +110,9 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return classMetaClass;
     }
 
+    @FunctionalInterface
     private interface MethodChooser {
-        Object chooseMethod(Class[] arguments, boolean coerce);
+        Object chooseMethod(Class<?>[] arguments, boolean coerce);
     }
 
     private static class StandardClosureChooser implements MethodChooser {
@@ -123,7 +125,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
 
         @Override
-        public Object chooseMethod(final Class[] arguments, final boolean coerce) {
+        public Object chooseMethod(final Class<?>[] arguments, final boolean coerce) {
             if (arguments.length == 0) return doCall0;
             if (arguments.length == 1) return doCall1;
             return null;
@@ -131,27 +133,25 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     private static class NormalMethodChooser implements MethodChooser {
+        private final Class<?> theClass;
         private final FastArray methods;
-        final Class theClass;
 
-        NormalMethodChooser(final Class theClass, final FastArray methods) {
+        NormalMethodChooser(final Class<?> theClass, final FastArray methods) {
             this.theClass = theClass;
             this.methods = methods;
         }
 
         @Override
-        public Object chooseMethod(final Class[] arguments, final boolean coerce) {
+        public Object chooseMethod(final Class<?>[] arguments, final boolean coerce) {
             if (arguments.length == 0) {
                 return MetaClassHelper.chooseEmptyMethodParams(methods);
             } else if (arguments.length == 1 && arguments[0] == null) {
                 return MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
             } else {
-                final Object[] data = methods.getArray();
-                final int methodCount = methods.size();
-                List matchingMethods = new ArrayList(methodCount);
+                int methodCount = methods.size();
+                List<Object> matchingMethods = new ArrayList<>(methodCount);
                 for (int i = 0; i < methodCount; i += 1) {
-                    Object method = data[i];
-
+                    Object method = methods.get(i);
                     // making this false helps find matches
                     if (((ParameterTypes) method).isValidMethod(arguments)) {
                         matchingMethods.add(method);
@@ -159,18 +159,14 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 }
 
                 int size = matchingMethods.size();
-                if (0 == size) {
+                if (size == 0) {
                     return null;
-                } else if (1 == size) {
+                } else if (size == 1) {
                     return matchingMethods.get(0);
                 }
 
-                return chooseMostSpecificParams(CLOSURE_DO_CALL_METHOD, matchingMethods, arguments);
+                return doChooseMostSpecificParams(theClass.getName(), CLOSURE_DO_CALL_METHOD, matchingMethods, arguments, true);
             }
-        }
-
-        private Object chooseMostSpecificParams(final String name, final List matchingMethods, final Class[] arguments) {
-            return doChooseMostSpecificParams(theClass.getName(), name, matchingMethods, arguments, true);
         }
     }
 
@@ -185,11 +181,11 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return CLOSURE_METACLASS.getMetaProperty(name);
     }
 
-    private MetaMethod pickClosureMethod(final Class[] argClasses) {
+    private MetaMethod pickClosureMethod(final Class<?>[] argClasses) {
         return (MetaMethod) chooser.chooseMethod(argClasses, false);
     }
 
-    private MetaMethod getDelegateMethod(final Closure closure, final Object delegate, final String methodName, final Class[] argClasses) {
+    private MetaMethod getDelegateMethod(final Closure<?> closure, final Object delegate, final String methodName, final Class<?>[] argClasses) {
         if (delegate == closure || delegate == null) {
             return null;
         }
@@ -339,7 +335,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         throw new MissingMethodException(methodName, theClass, theArguments, false);
     }
 
-    private static Object invokeOnDelegationObjects(final boolean i1, final Object o1, final boolean i2, final Object o2, final String methodName, final Object[] args, final Class c) {
+    private static Object invokeOnDelegationObjects(final boolean i1, final Object o1, final boolean i2, final Object o2, final String methodName, final Object[] args, final Class<?> c) {
         MissingMethodException first = null;
         if (i1) {
             try {
@@ -359,7 +355,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         throw first;
     }
 
-    private static Object invokeOnDelegationObject(final Class sender, final Object object, final String methodName, final Object[] arguments) {
+    private static Object invokeOnDelegationObject(final Class<?> sender, final Object object, final String methodName, final Object[] arguments) {
         MissingMethodException first = null;
         try {
             return InvokerHelper.invokeMethod(object, methodName, arguments); // includes callable property
@@ -368,13 +364,13 @@ public final class ClosureMetaClass extends MetaClassImpl {
         } catch (GroovyRuntimeException gre) {
             Throwable t = gre;
             while (t.getCause() != t && t.getCause() instanceof GroovyRuntimeException) t = t.getCause();
-            if (t instanceof MissingMethodException && methodName.equals(((MissingMethodException) t).getMethod())) {
-                first = (MissingMethodException) t;
+            if (t instanceof MissingMethodException mme && methodName.equals(mme.getMethod())) {
+                first = mme;
             } else {
                 throw gre;
             }
         }
-        Class thisType = sender;
+        Class<?> thisType = sender;
         while (GeneratedClosure.class.isAssignableFrom(thisType)) thisType = thisType.getEnclosingClass();
         if (thisType != object.getClass() && thisType.isInstance(object)) { // GROOVY-2433, GROOVY-11128
             try {
@@ -405,7 +401,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public synchronized void initialize() {
         if (!isInitialized()) {
             CachedMethod[] methodArray = theCachedClass.getMethods();
-            for (final CachedMethod cachedMethod : methodArray) {
+            for (CachedMethod cachedMethod : methodArray) {
                 if (!cachedMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
                 closureMethods.add(cachedMethod);
             }
@@ -416,8 +412,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private void assignMethodChooser() {
         if (closureMethods.size() == 1) {
-            final MetaMethod doCall = (MetaMethod) closureMethods.get(0);
-            final CachedClass[] c = doCall.getParameterTypes();
+            MetaMethod doCall = (MetaMethod) closureMethods.get(0);
+            CachedClass[] c = doCall.getParameterTypes();
             int length = c.length;
             if (length == 0) {
                 // no arg method
@@ -499,7 +495,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         if (object instanceof GroovyObject) {
             metaClass = ((GroovyObject) object).getMetaClass();
         } else if (object.getClass() == Class.class) {
-            metaClass = registry.getMetaClass((Class)object);
+            metaClass = registry.getMetaClass((Class<?>) object);
         } else {
             metaClass = InvokerHelper.getMetaClass(object);
         }
@@ -533,16 +529,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     public MetaMethod retrieveStaticMethod(final String methodName, final Class[] arguments) {
         return null;
-    }
-
-    @Override
-    protected boolean isInitialized() {
-        return initialized;
-    }
-
-    @Override
-    protected void setInitialized(final boolean initialized) {
-        this.initialized = initialized;
     }
 
     @Override
@@ -670,7 +656,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private synchronized void loadMetaInfo() {
         if (!isInitialized()) {
-          reinitialize();
+            reinitialize();
         }
     }
 

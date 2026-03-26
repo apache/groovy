@@ -20,6 +20,8 @@ package org.codehaus.groovy.ast;
 
 import org.objectweb.asm.Opcodes;
 
+import java.util.Collections;
+
 /**
  * Represents an inner class definition.
  */
@@ -75,11 +77,31 @@ public class InnerClassNode extends ClassNode {
         this.scope = scope;
     }
 
+    @Override
+    public boolean isSealed() {
+        return !isAnonymous() && super.isSealed(); // JLS 15.9.5
+    }
+
     public boolean isAnonymous() {
         return anonymous;
     }
 
-    public void setAnonymous(boolean anonymous) {
-        this.anonymous = anonymous;
+    public void setAnonymous(final boolean anonymous) {
+        if (this.anonymous != anonymous) {
+            if (anonymous) { // JLS 15.9.5
+                this.anonymous = true;
+
+                // GROOVY-11877
+                int modifiers = getModifiers();
+                modifiers &= ~Opcodes.ACC_STATIC;
+                modifiers &= ~Opcodes.ACC_ABSTRACT;
+                if (!isEnum()) modifiers &= ~Opcodes.ACC_FINAL;
+                setModifiers(modifiers);
+
+                setPermittedSubclasses(Collections.emptyList());
+            } else {
+                throw new IllegalArgumentException("cannot demote anon. inner class");
+            }
+        }
     }
 }

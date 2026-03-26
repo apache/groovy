@@ -102,6 +102,9 @@ public class SecurityTest extends GroovyTestCase {
          *         at java.base/java.lang.invoke.BootstrapMethodInvoker.invoke(BootstrapMethodInvoker.java:127)
          */
         VMPluginFactory.getPlugin();
+        // ReflectionUtils initializes StackWalker, which can trigger reflective access checks.
+        // Warm it up before the restrictive manager is active.
+        ReflectionUtils.getCallingClass();
 
         forbidden = new Permissions();
         forbidden.add(new ReflectPermission("suppressAccessChecks"));

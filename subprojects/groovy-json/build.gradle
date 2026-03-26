@@ -33,6 +33,7 @@ dependencies {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }
+    testRuntimeOnly projects.groovyGrapeIvy
     testRuntimeOnly projects.groovyAnt // for JavadocAssertionTests
     testRuntimeOnly 'com.google.code.gson:gson:2.13.2' // json-unit requires gson, jackson1 or jackson2
 }

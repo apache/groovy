@@ -432,6 +432,32 @@ final class CategoryTest {
         '''
     }
 
+    // GROOVY-7685
+    @Test
+    void testCategoryMethodAndClosureResolveStrategy() {
+        assertScript '''
+            class C {
+                static m(self) {
+                    'Category'
+                }
+            }
+            class D {
+                def m() {
+                    'Delegate'
+                }
+            }
+
+            use(C) {
+                def x = { ->
+                    assert m() == 'Delegate'
+                }
+                x.resolveStrategy = Closure.DELEGATE_ONLY
+                x.delegate = new D()
+                x.call()
+            }
+        '''
+    }
+
     // GROOVY-11813
     @Test
     void testCategoryOperatorMethodAndCustomMetaClass() {

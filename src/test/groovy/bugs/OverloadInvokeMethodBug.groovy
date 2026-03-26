@@ -20,11 +20,7 @@ package bugs
 
 import org.junit.jupiter.api.Test
 
-
-/**
- */
-
-class OverloadInvokeMethodBug {
+final class OverloadInvokeMethodBug {
 
     @Test
     void testBug() {
@@ -35,18 +31,16 @@ class OverloadInvokeMethodBug {
         b.duh()
     }
 
-}
-
-class OverloadA {
-    def invokeMethod(String name, Object args) {
-        try {
-            metaClass.invokeMethod(this, name, args)
-        } catch (MissingMethodException e) {
-            println "Missing method: ${name}"
+    static class OverloadA {
+        def invokeMethod(String name, Object args) {
+            try {
+                metaClass.invokeMethod(this, name, args)
+            } catch (MissingMethodException e) {
+                println "Missing method: ${name}"
+            }
         }
     }
-}
 
-class OverloadB extends OverloadA {
-
+    static class OverloadB extends OverloadA {
+    }
 }

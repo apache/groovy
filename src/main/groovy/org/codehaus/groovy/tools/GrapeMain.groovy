@@ -19,8 +19,6 @@
 package org.codehaus.groovy.tools
 
 import groovy.grape.Grape
-import org.apache.ivy.util.DefaultMessageLogger
-import org.apache.ivy.util.Message
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -65,12 +63,14 @@ class GrapeMain implements Runnable {
         parser.subcommands.findAll { k, v -> k != 'help' }.each { k, v -> v.addMixin('helpOptions', new HelpOptionsMixin()) }
 
         grape.parser = parser
-        parser.execute(args)
+        int exitCode = parser.execute(args)
+        System.exit(exitCode)
     }
 
     void run() {
         if (unmatched) {
             System.err.println "grape: '${unmatched[0]}' is not a grape command. See 'grape --help'"
+            throw new CommandLine.ParameterException(parser, "Unknown command: ${unmatched[0]}")
         } else {
             parser.usage(System.out) // if no subcommand was specified
         }
@@ -84,20 +84,20 @@ class GrapeMain implements Runnable {
     }
 
     @SuppressWarnings('UnusedPrivateMethod') // used in run()
-    private void setupLogging(int defaultLevel = Message.MSG_INFO) {
+    private void setupLogging(int defaultLevel = 2) {
+        int level = defaultLevel
         if (quiet) {
-            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_ERR)
+            level = 0
         } else if (warn) {
-            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_WARN)
+            level = 1
         } else if (info) {
-            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_INFO)
+            level = 2
         } else if (verbose) {
-            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_VERBOSE)
+            level = 3
         } else if (debug) {
-            Message.defaultLogger = new DefaultMessageLogger(Message.MSG_DEBUG)
-        } else {
-            Message.defaultLogger = new DefaultMessageLogger(defaultLevel)
+            level = 4
         }
+        Grape.instance?.setLoggingLevel(level)
     }
 
     /**
@@ -152,10 +152,18 @@ class GrapeMain implements Runnable {
                 Grape.addResolver(name:url, root:url)
             }
 
-            try {
-                Grape.grab(autoDownload: true, group: group, module: module, version: version, classifier: classifier, noExceptions: true)
-            } catch (Exception ex) {
-                System.err.println "An error occurred : $ex"
+            // Call the engine directly to get the exception return value
+            // The Grape.grab() facade doesn't propagate the return value
+            def engine = Grape.instance
+            if (!engine) {
+                System.err.println "Grape engine not available"
+                throw new CommandLine.ExecutionException(new CommandLine(this), "Grape engine not initialized")
+            }
+
+            def result = engine.grab(autoDownload: true, group: group, module: module, version: version, classifier: classifier, noExceptions: true)
+            if (result instanceof Exception) {
+                System.err.println "Error grabbing Grapes -- ${result.message}"
+                throw new CommandLine.ExecutionException(new CommandLine(this), "Failed to install grape", result)
             }
         }
     }
@@ -179,7 +187,7 @@ class GrapeMain implements Runnable {
             parentCommand.setupLogging()
 
             Grape.enumerateGrapes().each {String groupName, Map group ->
-                group.each {String moduleName, List<String> versions ->
+                group.each { String moduleName, List<String> versions ->
                     println "$groupName $moduleName  $versions"
                     moduleCount++
                     versionCount += versions.size()
@@ -195,6 +203,7 @@ class GrapeMain implements Runnable {
             customSynopsis = 'grape resolve [-adhisv] (<groupId> <artifactId> <version>)+',
             description = [
                     'Prints the file locations of the jars representing the artifacts for the specified module(s) and the respective transitive dependencies.',
+                    'The exact format supported by some parameters depends on the Grape implementation, e.g. Ivy or Maven.',
                     '',
                     'Parameters:',
                     '      <group>     Which module group the module comes from. Translates directly',
@@ -229,9 +238,9 @@ class GrapeMain implements Runnable {
         void run() {
             parentCommand.init()
 
-            // set the instance so we can re-set the logger
+            // set the instance so we can re-set the logger (implementation dependent)
             Grape.instance
-            parentCommand.setupLogging(Message.MSG_ERR)
+            parentCommand.setupLogging(0) // errors only
 
             if ((args.size() % 3) != 0) {
                 println 'There needs to be a multiple of three arguments: (group module version)+'
@@ -299,6 +308,7 @@ class GrapeMain implements Runnable {
             } catch (Exception e) {
                 System.err.println "Error in resolve:\n\t$e.message"
                 if (e.message =~ /unresolved dependency/) println 'Perhaps the grape is not installed?'
+                throw new CommandLine.ExecutionException(new CommandLine(this), "Failed to resolve grape", e)
             }
         }
     }

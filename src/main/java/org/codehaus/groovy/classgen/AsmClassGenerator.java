@@ -1457,13 +1457,8 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             PropertyExpression pexp = thisPropX(/*implicit-this*/true, expression.getName());
             pexp.getProperty().setSourcePosition(expression);
-            pexp.setType(expression.getType());
             pexp.copyNodeMetaData(expression);
             pexp.visit(this);
-
-            if (!compileStack.isLHS() && !expression.isDynamicTyped()) {
-                controller.getOperandStack().doGroovyCast(typeOf(expression));
-            }
         }
 
         if (!compileStack.isLHS()) {
@@ -1981,8 +1976,8 @@ public class AsmClassGenerator extends ClassGenerator {
             MethodVisitor mv = controller.getMethodVisitor();
             BytecodeHelper.pushConstant(mv, size);
             mv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-            int maxInit = 1000;
-            if (size<maxInit || !containsOnlyConstants) {
+            final int maxInit = 1000; // top end for unroll
+            if (size < maxInit || !containsOnlyConstants) {
                 for (int i = 0; i < size; i += 1) {
                     mv.visitInsn(DUP);
                     BytecodeHelper.pushConstant(mv, i);

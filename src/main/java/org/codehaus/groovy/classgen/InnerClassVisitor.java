@@ -36,7 +36,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 
@@ -48,7 +47,7 @@ import java.util.List;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.attrX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.constX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorSuperS;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_MANDATED;
@@ -73,6 +72,8 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         return sourceUnit;
     }
 
+    //--------------------------------------------------------------------------
+
     @Override
     public void visitClass(ClassNode node) {
         classNode = node;
@@ -96,11 +97,27 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
     }
 
     @Override
-    public void visitClosureExpression(ClosureExpression expression) {
-        boolean inClosureOld = inClosure;
+    public void visitField(FieldNode node) {
+        currentField = node;
+        super.visitField(node);
+        currentField = null;
+    }
+
+    @Override
+    public void visitProperty(PropertyNode node) {
+        final FieldNode field = node.getField();
+        final Expression init = field.getInitialExpression();
+        field.setInitialValueExpression(null);
+        super.visitProperty(node);
+        field.setInitialValueExpression(init);
+    }
+
+    @Override
+    public void visitClosureExpression(ClosureExpression closure) {
+        boolean inClosurePrevious = inClosure;
         inClosure = true;
-        super.visitClosureExpression(expression);
-        inClosure = inClosureOld;
+        super.visitClosureExpression(closure);
+        inClosure = inClosurePrevious;
     }
 
     @Override
@@ -126,107 +143,94 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
     }
 
     @Override
-    public void visitField(FieldNode node) {
-        currentField = node;
-        super.visitField(node);
-        currentField = null;
-    }
-
-    @Override
-    public void visitProperty(PropertyNode node) {
-        final FieldNode field = node.getField();
-        final Expression init = field.getInitialExpression();
-        field.setInitialValueExpression(null);
-        super.visitProperty(node);
-        field.setInitialValueExpression(init);
-    }
-
-    @Override
-    public void visitConstructorCallExpression(ConstructorCallExpression call) {
+    public void visitConstructorCallExpression(final ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
         if (!call.isUsingAnonymousInnerClass()) {
             passThisReference(call);
             return;
         }
 
-        InnerClassNode innerClass = (InnerClassNode) call.getType();
+        ClassNode innerClass = call.getType();
         ClassNode outerClass = innerClass.getOuterClass();
         ClassNode upperClass = innerClass.getUnresolvedSuperClass(false);
         if (upperClass.getOuterClass() != null && !upperClass.isInterface()
                 && !(upperClass.isStaticClass() || (upperClass.getModifiers() & ACC_STATIC) != 0)) {
             insertThis0ToSuperCall(call, innerClass);
         }
-        if (!innerClass.getDeclaredConstructors().isEmpty()) return;
+
         if ((innerClass.getModifiers() & ACC_STATIC) != 0) return;
+        if (!innerClass.getDeclaredConstructors().isEmpty()) return;
 
-        VariableScope scope = innerClass.getVariableScope();
-        if (scope == null) return;
-        boolean isStatic = !inClosure && isStatic(innerClass, scope, call);
+        VariableScope scope = ((InnerClassNode) innerClass).getVariableScope();
+        if (scope != null) {
+            List<Expression> arguments = ((TupleExpression) call.getArguments()).getExpressions();
+            boolean isStatic = !inClosure && isStatic(innerClass, scope, call);
+            addConstructor(innerClass, outerClass, scope, arguments, isStatic);
+        }
+    }
 
-        // expressions = constructor call arguments
-        List<Expression> expressions = ((TupleExpression) call.getArguments()).getExpressions();
-        // block = init code for the constructor we produce
-        BlockStatement block = new BlockStatement();
-        // parameters = parameters of the constructor
-        int additionalParamCount = (isStatic ? 0 : 1) + scope.getReferencedLocalVariablesCount();
-        List<Parameter> parameters = new ArrayList<>(expressions.size() + additionalParamCount);
-        // superCallArguments = arguments for the super call == the constructor call arguments
-        List<Expression> superCallArguments = new ArrayList<>(expressions.size());
+    //--------------------------------------------------------------------------
 
-        // first we add a super() call for all expressions given in the constructor call expression
-        for (int i = 0, n = expressions.size(); i < n; i += 1) {
-            // add one parameter for each expression in the constructor call
-            Parameter param = new Parameter(ClassHelper.OBJECT_TYPE, "p" + additionalParamCount + i);
-            parameters.add(param);
-            // add the corresponding argument to the super constructor call
-            superCallArguments.add(new VariableExpression(param));
+    /**
+     * This is the counterpart of <code>addThisReference</code>.  For non-static
+     * inner classes, outer this should be passed as the implicit first argument.
+     */
+    private void passThisReference(final ConstructorCallExpression call) {
+        ClassNode cn = call.getType().redirect();
+        if (!shouldHandleImplicitThisForInnerClass(cn)) return;
+
+        boolean isInStaticContext;
+        if (currentMethod != null)
+            isInStaticContext = currentMethod.isStatic();
+        else if (currentField != null)
+            isInStaticContext = currentField.isStatic();
+        else
+            isInStaticContext = !processingObjInitStatements;
+
+        // GROOVY-10289
+        ClassNode enclosing = classNode;
+        while (!isInStaticContext && !enclosing.equals(cn.getOuterClass())) {
+            isInStaticContext = (enclosing.getModifiers() & ACC_STATIC) != 0;
+            // TODO: if enclosing is a local type, also test field or method
+            enclosing = enclosing.getOuterClass();
+            if (enclosing == null) break;
         }
 
-        // add the super call
-        ConstructorCallExpression cce = new ConstructorCallExpression(
-                ClassNode.SUPER,
-                new TupleExpression(superCallArguments)
-        );
+        if (isInStaticContext) {
+            // constructor call is in static context and the inner class is non-static - 1st arg is supposed to be
+            // passed as enclosing "this" instance
+            Expression args = call.getArguments();
+            if (args instanceof TupleExpression && ((TupleExpression) args).getExpressions().isEmpty()) {
+                addError("No enclosing instance passed in constructor call of a non-static inner class", call);
+            }
+        } else {
+            insertThis0ToSuperCall(call, cn);
+        }
+    }
 
-        block.addStatement(new ExpressionStatement(cce));
-
-        int pCount = 0;
-        if (!isStatic) {
-            // need to pass "this" to access unknown methods/properties
-            ClassNode enclosingType = (inClosure ? ClassHelper.CLOSURE_TYPE : outerClass).getPlainNodeReference();
-            expressions.add(pCount, new VariableExpression("this", enclosingType));
-            Parameter thisParameter = new Parameter(enclosingType, "p" + pCount);
-            thisParameter.setModifiers(ACC_FINAL | ACC_MANDATED);
-            parameters.add(pCount++, thisParameter);
-
-            // "this" reference is saved in a field named "this$0"
-            FieldNode thisField = innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, enclosingType, null);
-            addFieldInit(thisParameter, thisField, block);
+    private void insertThis0ToSuperCall(final ConstructorCallExpression call, final ClassNode innerClass) {
+        // calculate outer class which we need for this$0
+        ClassNode parent = classNode;
+        int level = 0;
+        for (; parent != null && parent != innerClass.getOuterClass(); parent = parent.getOuterClass()) {
+            level++;
         }
 
-        // for each shared variable, add a Reference field
-        for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext();) {
-            Variable var = it.next();
+        // if constructor call is not in outer class, do not pass 'this' implicitly
+        if (parent == null) return;
 
-            VariableExpression ve = new VariableExpression(var);
-            ve.setClosureSharedVariable(true);
-            ve.setUseReferenceDirectly(true);
-            expressions.add(pCount, ve);
-
-            ClassNode referenceType = ClassHelper.REFERENCE_TYPE.getPlainNodeReference();
-            Parameter p = new Parameter(referenceType, "p" + pCount);
-            p.setOriginType(var.getOriginType());
-            parameters.add(pCount++, p);
-
-            VariableExpression initial = new VariableExpression(p);
-            initial.setSynthetic(true);
-            initial.setUseReferenceDirectly(true);
-            FieldNode pField = innerClass.addFieldFirst(ve.getName(), ACC_PUBLIC | ACC_SYNTHETIC, referenceType, initial);
-            pField.setHolder(true);
-            pField.setOriginType(ClassHelper.getWrapper(var.getOriginType()));
+        Expression args = call.getArguments();
+        if (args instanceof TupleExpression tuple) {
+            Expression this0 = new VariableExpression("this"); // bypass closure
+            for (int i = 0; i != level; ++i) {
+                this0 = attrX(this0, constX("this$0"));
+                // GROOVY-8104: an anonymous inner class may still have closure nesting
+                if (i == 0 && classNode.getDeclaredField("this$0").getType().equals(ClassHelper.CLOSURE_TYPE)) {
+                    this0 = callX(this0, "getThisObject");
+                }
+            }
+            tuple.getExpressions().add(0, this0);
         }
-
-        innerClass.addConstructor(ACC_SYNTHETIC, parameters.toArray(Parameter.EMPTY_ARRAY), ClassNode.EMPTY_ARRAY, block);
     }
 
     private boolean isStatic(final ClassNode innerClass, final VariableScope scope, final ConstructorCallExpression call) {
@@ -262,64 +266,65 @@ public class InnerClassVisitor extends InnerClassVisitorHelper {
         return isStatic;
     }
 
-    // this is the counterpart of addThisReference(). To non-static inner classes, outer this should be
-    // passed as the first argument implicitly.
-    private void passThisReference(final ConstructorCallExpression call) {
-        ClassNode cn = call.getType().redirect();
-        if (!shouldHandleImplicitThisForInnerClass(cn)) return;
+    private void addConstructor(final ClassNode innerClass, final ClassNode outerClass, final VariableScope scope, final List<Expression> arguments, final boolean isStatic) {
+        // block: init code for the constructor
+        BlockStatement block = new BlockStatement();
+        // parameters: parameters of the constructor
+        int additionalParamCount = (isStatic ? 0 : 1) + scope.getReferencedLocalVariablesCount();
+        List<Parameter> parameters = new ArrayList<>(arguments.size() + additionalParamCount);
+        // superCallArguments: arguments for the super constructor call
+        List<Expression> superCallArguments = new ArrayList<>(arguments.size());
 
-        boolean isInStaticContext;
-        if (currentMethod != null)
-            isInStaticContext = currentMethod.isStatic();
-        else if (currentField != null)
-            isInStaticContext = currentField.isStatic();
-        else
-            isInStaticContext = !processingObjInitStatements;
-
-        // GROOVY-10289
-        ClassNode enclosing = classNode;
-        while (!isInStaticContext && !enclosing.equals(cn.getOuterClass())) {
-            isInStaticContext = (enclosing.getModifiers() & ACC_STATIC) != 0;
-            // TODO: if enclosing is a local type, also test field or method
-            enclosing = enclosing.getOuterClass();
-            if (enclosing == null) break;
+        // first we add a super() call for all expressions given in the constructor call expression
+        for (int i = 0, n = arguments.size(); i < n; i += 1) {
+            // add one parameter for each expression in the constructor call
+            Parameter p = new Parameter(ClassHelper.OBJECT_TYPE, "p" + additionalParamCount + i);
+            parameters.add(p);
+            // add the corresponding argument to the super constructor call
+            superCallArguments.add(new VariableExpression(p));
         }
 
-        if (isInStaticContext) {
-            // constructor call is in static context and the inner class is non-static - 1st arg is supposed to be
-            // passed as enclosing "this" instance
-            Expression args = call.getArguments();
-            if (args instanceof TupleExpression && ((TupleExpression) args).getExpressions().isEmpty()) {
-                addError("No enclosing instance passed in constructor call of a non-static inner class", call);
-            }
-        } else {
-            insertThis0ToSuperCall(call, cn);
-        }
-    }
+        // add the super call
+        block.addStatement(ctorSuperS(new TupleExpression(superCallArguments)));
 
-    private void insertThis0ToSuperCall(final ConstructorCallExpression call, final ClassNode cn) {
-        // calculate outer class which we need for this$0
-        ClassNode parent = classNode;
-        int level = 0;
-        for (; parent != null && parent != cn.getOuterClass(); parent = parent.getOuterClass()) {
-            level++;
+        int pCount = 0;
+        if (!isStatic) {
+            // need to pass "this" to access unknown methods/properties
+            ClassNode enclosingType = (inClosure ? ClassHelper.CLOSURE_TYPE : outerClass).getPlainNodeReference();
+            arguments.add(pCount, new VariableExpression("this", enclosingType));
+            Parameter thisParameter = new Parameter(enclosingType, "p" + pCount);
+            thisParameter.setModifiers(ACC_FINAL | ACC_MANDATED);
+            parameters.add(pCount++, thisParameter);
+
+            // "this" reference is saved in a field named "this$0"
+            FieldNode thisField = innerClass.addField("this$0", ACC_FINAL | ACC_SYNTHETIC, enclosingType, null);
+            addFieldInit(thisParameter, thisField, block);
         }
 
-        // if constructor call is not in outer class, don't pass 'this' implicitly. Return.
-        if (parent == null) return;
+        // for each shared variable, add a Reference field
+        for (Iterator<Variable> it = scope.getReferencedLocalVariablesIterator(); it.hasNext(); ) {
+            Variable v = it.next();
 
-        Expression args = call.getArguments();
-        if (args instanceof TupleExpression) {
-            Expression this0 = varX("this"); // bypass closure
-            for (int i = 0; i != level; ++i) {
-                this0 = attrX(this0, constX("this$0"));
-                // GROOVY-8104: an anonymous inner class may still have closure nesting
-                if (i == 0 && classNode.getDeclaredField("this$0").getType().equals(ClassHelper.CLOSURE_TYPE)) {
-                    this0 = callX(this0, "getThisObject");
-                }
-            }
+            VariableExpression ve = new VariableExpression(v);
+            ve.setClosureSharedVariable(true);
+            ve.setUseReferenceDirectly(true);
+            arguments.add(pCount, ve);
 
-            ((TupleExpression) args).getExpressions().add(0, this0);
+            ClassNode referenceType = ClassHelper.REFERENCE_TYPE.getPlainNodeReference();
+            Parameter p = new Parameter(referenceType, "p" + pCount);
+            p.setOriginType(v.getOriginType());
+            parameters.add(pCount++, p);
+
+            VariableExpression initial = new VariableExpression(p);
+            initial.setSynthetic(true);
+            initial.setUseReferenceDirectly(true);
+
+            FieldNode pField = innerClass.addFieldFirst(ve.getName(), ACC_PUBLIC | ACC_SYNTHETIC, referenceType, initial);
+            pField.setHolder(true);
+            pField.setOriginType(ClassHelper.getWrapper(v.getOriginType()));
         }
+
+        // TODO: JLS 15.9.5.1 : checked exceptions of super constructor should be declared by constructor
+        innerClass.addConstructor(0, parameters.toArray(Parameter[]::new), ClassNode.EMPTY_ARRAY, block);
     }
 }

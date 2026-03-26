@@ -31,14 +31,15 @@ final class Groovy10034 extends AbstractBytecodeTestCase {
                 ["x"].toArray(new String[0])
             }
         '''
-        int offset = result.indexOf('INVOKESTATIC', result.indexOf('--BEGIN--'))
+        int offset = result.indexOf('INVOKEVIRTUAL', result.indexOf('--BEGIN--'))
         assert result.hasStrictSequence([
-            'INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.createList',
-            'CHECKCAST java/util/ArrayList', // not 'INVOKEDYNAMIC cast'
+            'INVOKEVIRTUAL java/util/ArrayList.add',
+            'POP',
             'ICONST_0',
             'ANEWARRAY java/lang/String',
             // no 'INVOKEDYNAMIC cast' to Object[]
-            'INVOKEVIRTUAL java/util/ArrayList.toArray'
+            'INVOKEVIRTUAL java/util/ArrayList.toArray',
+            'ARETURN'
         ], offset)
     }
 }

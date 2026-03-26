@@ -112,7 +112,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 import static groovy.lang.Tuple.tuple;
-import static java.lang.Character.isUpperCase;
 import static org.apache.groovy.ast.tools.ClassNodeUtils.isValidAccessorName;
 import static org.apache.groovy.util.Arrays.concat;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.inSamePackage;
@@ -710,7 +709,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
                 for (CategoryMethod cm : methods) {
                     Class<?> cmdc = cm.getDeclaringClass().getTheClass();
-                    if (cmdc.isAssignableFrom(theClass)) // GROOVY-11813: not sender
+                    if (cmdc == Object.class ? !isGroovyFunctor() // GROOVY-7685
+                                             : cmdc.isAssignableFrom(theClass)) // GROOVY-11813
                         filterMatchingMethodForCategory(array, cm);
                 }
                 answer = array;
@@ -2169,7 +2169,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaMethod   mm = null;
         MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
 
-        if ((mp == null || mp instanceof CachedField) && !name.isEmpty() && isUpperCase(name.charAt(0)) && (name.length() < 2 || !isUpperCase(name.charAt(1))) && !"Class".equals(name) && !"MetaClass".equals(name)) {
+        if ((mp == null || mp instanceof CachedField)
+                && name != null && !name.isEmpty() && Character.isUpperCase(name.charAt(0)) // GROOVY-11874
+                && (name.length() == 1 || (!Character.isUpperCase(name.charAt(1)) && !name.equals("Class") && !name.equals("MetaClass"))) ) {
             // GROOVY-9618: adjust because capitalised properties aren't stored as meta bean props
             MetaProperty saved = mp;
             mp = getMetaProperty(sender, BeanUtils.decapitalize(name), useSuper, isStatic);

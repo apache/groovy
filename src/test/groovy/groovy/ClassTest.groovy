@@ -20,7 +20,8 @@ package groovy
 
 import groovy.test.GroovyTestCase
 import org.junit.jupiter.api.Test
-
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.Opcodes
 
 class ClassTest {
 
@@ -40,8 +41,19 @@ class ClassTest {
     }
 
     @Test
-    def testClassesHaveSuperModiferSet() {
-        assert java.lang.reflect.Modifier.isSynchronized(this.class.modifiers)
+    void testClassesHaveSuperModiferSet() {
+        // ACC_SUPER (0x0020) is written into the .class file by Groovy's AsmClassGenerator
+        // for every non-interface class. java.lang.reflect.Class.getModifiers() does NOT
+        // expose it — bit 0x0020 is reused as ACC_SYNCHRONIZED for method modifiers — so
+        // we inspect the raw bytecode access flags via ASM.
+        //
+        // ClassTest has Object as its implicit supertype;
+        // GroovyTestCase has junit.framework.TestCase as its supertype.
+        [ClassTest, GroovyTestCase].each { Class<?> clazz ->
+            def stream = clazz.getResourceAsStream("/${clazz.name.replace('.', '/')}.class")
+            assert (new ClassReader(stream).access & Opcodes.ACC_SUPER) != 0,
+                    "Expected ACC_SUPER to be set on ${clazz.name}"
+        }
     }
 
 }

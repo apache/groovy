@@ -918,7 +918,8 @@ final class DesignPatternsTest extends CompilableTestSupport {
     @Test
     void testDecoratorSql() {
         shouldCompile '''
-            @Grab('org.apache.groovy:groovy-sql:4.0.0-beta-2')
+            @GrabExclude('org.codehaus.groovy:groovy-all')
+            @Grab('org.apache.groovy:groovy-sql:5.0.4')
             import groovy.sql.Sql
             import java.lang.reflect.InvocationHandler
             import java.sql.Connection
@@ -971,8 +972,9 @@ final class DesignPatternsTest extends CompilableTestSupport {
     @Test
     void testDecoratorGpars() {
         shouldCompile '''
+            @GrabExclude('org.codehaus.groovy:groovy-all')
             // tag::decorator_gpars[]
-            @Grab('org.codehaus.gpars:gpars:0.10')
+            @Grab('org.codehaus.gpars:gpars:1.2.1')
             import static groovyx.gpars.GParsPool.withPool
 
             interface Document {

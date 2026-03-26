@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy3645 {
+
     @Test
     void testMethodCallOnSuperInAStaticMethod() {
         def err = shouldFail MissingMethodException, '''

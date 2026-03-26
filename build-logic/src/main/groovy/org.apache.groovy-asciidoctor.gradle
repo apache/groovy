@@ -55,12 +55,12 @@ asciidoctor {
     }
     outputDir = layout.buildDirectory.dir("asciidoc/html5")
     resources {
-        duplicatesStrategy = DuplicatesStrategy.WARN
-
         from("${rootProject.projectDir}/src/spec/doc/assets") {
             include 'css/style.css'
         }
-        from layout.buildDirectory.dir("tmp/asciidoctor-assets")
+        from(layout.buildDirectory.dir("tmp/asciidoctor-assets")) {
+            exclude 'css/style.css'
+        }
         into 'assets'
     }
     jvm {

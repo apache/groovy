@@ -89,6 +89,34 @@ final class InnerClassTest {
         '''
     }
 
+    // GROOVY-11877
+    @Test
+    void testInnerAIC2() {
+        assertScript '''import java.lang.reflect.Modifier
+            interface I {
+                def bar = new Object[1]
+                def foo = new Runnable() {
+                    @Override
+                    void run() {
+                        bar[0] = true
+                    }
+                }
+            }
+
+            def obj = I.foo
+            assert !I.bar[0]
+            obj.run()
+            assert  I.bar[0]
+
+            def aic = obj.getClass()
+            assert aic.getName() == 'I$1'
+            assert aic.getEnclosingClass().getName() == 'I'
+            assert !Modifier.isFinal   (aic.getModifiers())
+            assert !Modifier.isStatic  (aic.getModifiers())
+            assert !Modifier.isAbstract(aic.getModifiers())
+        '''
+    }
+
     // GROOVY-11854
     @Test
     void testScriptAIC() {
@@ -2439,9 +2467,33 @@ final class InnerClassTest {
         '''
     }
 
-    // GROOVY-9618
+    // GROOVY-11875
     @Test
     void testNestedPropertyHandling6() {
+        assertScript '''import java.util.concurrent.atomic.AtomicBoolean
+            class Outer {
+                private AtomicBoolean foo = [true]
+                boolean isFoo() {
+                    foo.get()
+                }
+                Boolean bar() {
+                    def i = new Inner()
+                    i.baz()
+                }
+                class Inner {
+                    def baz() {
+                        foo
+                    }
+                }
+            }
+
+            assert new Outer().bar()
+        '''
+    }
+
+    // GROOVY-9618
+    @Test
+    void testNestedPropertyHandling7() {
         assertScript '''
             class Super {
                 public static X = 1
