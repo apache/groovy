@@ -136,7 +136,7 @@ public class LineColumnReader extends BufferedReader {
      */
     @Override
     public int read(char[] chars, int startOffset, int length) throws IOException {
-        for (int i = startOffset; i <= startOffset + length; i++) {
+        for (int i = startOffset; i < startOffset + length; i++) {
             int readInt = read();
             if (readInt == -1) return i - startOffset;
             chars[i] = (char)readInt;
