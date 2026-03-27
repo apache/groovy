@@ -19,6 +19,7 @@
 package org.codehaus.groovy.transform;
 
 import groovy.transform.Parallel;
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -43,9 +44,10 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 
 /**
- * Demo AST transform for {@link Parallel}: each {@code for-in} iteration body is
+ * Simple AST transform for {@link Parallel}: each {@code for-in} iteration body is
  * wrapped in a new thread and started immediately.
  */
+@Incubating
 @GroovyASTTransformation(phase = CompilePhase.SEMANTIC_ANALYSIS)
 public class ParallelASTTransformation implements ASTTransformation {
 

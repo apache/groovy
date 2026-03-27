@@ -18,6 +18,7 @@
  */
 package groovy.transform;
 
+import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
@@ -27,12 +28,13 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Runs each iteration of an annotated {@code for} loop on a separate thread.
  * <p>
- * This annotation is a lightweight demo transform and intentionally favors simplicity
+ * This annotation is a lightweight transform that intentionally favors simplicity
  * over production-grade parallel orchestration.
  *
  * @since 6.0.0
  * @see org.codehaus.groovy.transform.ParallelASTTransformation
  */
+@Incubating
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ParallelASTTransformation")
