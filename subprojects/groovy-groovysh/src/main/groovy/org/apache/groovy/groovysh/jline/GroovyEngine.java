@@ -79,13 +79,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.jline.console.ConsoleEngine.VAR_NANORC;
-
 /**
  * Implements Groovy ScriptEngine.
  * You must be very careful when using GroovyEngine in a multithreaded environment. The Binding instance is not
  * thread safe, and it is shared by all scripts.
  */
+@SuppressWarnings("deprecation")
 public class GroovyEngine implements ScriptEngine {
     public enum Format {
         JSON,
@@ -767,7 +766,7 @@ public class GroovyEngine implements ScriptEngine {
     protected SyntaxHighlighter getSyntaxHighlighter() {
         String syntax = groovyOption(NANORC_SYNTAX, DEFAULT_NANORC_SYNTAX);
         if (syntaxHighlighter == null || syntax == null || !syntax.equals(syntaxHighlighterStyle)) {
-            String nanorcString = (String) get(VAR_NANORC);
+            String nanorcString = (String) get("NANORC");
             Path nanorc = nanorcString != null ? Paths.get(nanorcString) : null;
             if (syntax == null) {
                 syntaxHighlighter = SyntaxHighlighter.build("");

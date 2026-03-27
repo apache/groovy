@@ -79,6 +79,7 @@ import static org.jline.jansi.AnsiRenderer.render
 /**
  * Groovy Repo modelled on JLine3 Groovy Repl demo
  */
+@SuppressWarnings('deprecation')
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     public static final String INTERPRETER_MODE_PREFERENCE_KEY = 'interpreterMode'

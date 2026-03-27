@@ -30,7 +30,6 @@ import org.jline.builtins.Options;
 import org.jline.builtins.Options.HelpException;
 import org.jline.builtins.Styles;
 import org.jline.console.*;
-import org.jline.console.ConsoleEngine.ExecutionResult;
 import org.jline.console.impl.Builtins;
 import org.jline.console.impl.ConsoleEngineImpl;
 import org.jline.console.impl.JlineCommandRegistry;
@@ -47,6 +46,7 @@ import org.jline.utils.*;
 /**
  * Aggregate command registries.
  */
+@SuppressWarnings("deprecation")
 public class SystemRegistryImpl implements SystemRegistry {
     // NOTE: This file can be deleted if the following PRs are merged:
     // https://github.com/jline/jline3/pull/1392
@@ -1295,7 +1295,7 @@ public class SystemRegistryImpl implements SystemRegistry {
                         if (cmd.pipe().equals(pipeName.get(Pipe.PIPE)) && out == null) {
                             out = outputStream.output;
                         }
-                        ExecutionResult er = postProcess(cmd, statement, consoleEngine, out);
+                        ConsoleEngine.ExecutionResult er = postProcess(cmd, statement, consoleEngine, out);
                         postProcessed = true;
                         consoleEngine.println(er.result());
                         out = null;
@@ -1329,16 +1329,16 @@ public class SystemRegistryImpl implements SystemRegistry {
         return out;
     }
 
-    private ExecutionResult postProcess(
+    private ConsoleEngine.ExecutionResult postProcess(
             CommandData cmd, boolean statement, ConsoleEngine consoleEngine, Object result) {
-        ExecutionResult out;
+        ConsoleEngine.ExecutionResult out;
         if (cmd.file() != null) {
             int status = 1;
             if (cmd.file().exists()) {
                 long delta = new Date().getTime() - cmd.file().lastModified();
                 status = delta < 100 ? 0 : 1;
             }
-            out = new ExecutionResult(status, result);
+            out = new ConsoleEngine.ExecutionResult(status, result);
         } else if (!statement) {
             outputStream.close();
             out = consoleEngine.postProcess(cmd.rawLine(), result, outputStream.getOutput());
@@ -1348,7 +1348,7 @@ public class SystemRegistryImpl implements SystemRegistry {
             } else {
                 out = consoleEngine.postProcess(result);
             }
-            out = new ExecutionResult(out.status(), null);
+            out = new ConsoleEngine.ExecutionResult(out.status(), null);
         } else {
             out = consoleEngine.postProcess(result);
         }
