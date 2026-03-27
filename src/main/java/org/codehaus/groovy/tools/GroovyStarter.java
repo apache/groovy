@@ -118,9 +118,8 @@ public class GroovyStarter {
         }
     }
 
-    @SuppressWarnings("removal") // TODO: a future Groovy version should perform the operation not as a privileged action
     private static ClassLoader getLoader(LoaderConfiguration lc) {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<ClassLoader>) () -> new RootLoader(lc));
+        return new RootLoader(lc);
     }
 
     private static void exit(Exception e) {

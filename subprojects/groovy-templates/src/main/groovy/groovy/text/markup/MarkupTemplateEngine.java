@@ -43,7 +43,6 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -104,7 +103,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
             compilerConfiguration.setBytecodePostprocessor(BytecodeDumper.STANDARD_ERR);
         }
 
-        groovyClassLoader = doPrivileged(() -> new TemplateGroovyClassLoader(parentLoader, compilerConfiguration));
+        groovyClassLoader = new TemplateGroovyClassLoader(parentLoader, compilerConfiguration);
 
         templateResolver = resolver != null ? resolver : new DefaultTemplateResolver();
         templateResolver.configure(groovyClassLoader, templateConfiguration);
@@ -117,20 +116,7 @@ public class MarkupTemplateEngine extends TemplateEngine {
      * @param tplConfig         template engine configuration
      */
     public MarkupTemplateEngine(final ClassLoader parentLoader, final File templateDirectory, TemplateConfiguration tplConfig) {
-        this(doPrivileged(
-                new PrivilegedAction<URLClassLoader>() {
-                    @Override
-                    public URLClassLoader run() {
-                        return new URLClassLoader(buildURLs(templateDirectory), parentLoader);
-                    }
-                }),
-                tplConfig,
-                null);
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
+        this(new URLClassLoader(buildURLs(templateDirectory), parentLoader), tplConfig, null);
     }
 
     private static URL[] buildURLs(final File templateDirectory) {

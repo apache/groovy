@@ -278,9 +278,8 @@ public class ProxyGeneratorAdapter extends ClassVisitor {
         return traits;
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
     private static InnerLoader createInnerLoader(final ClassLoader parent, final Class<?>[] interfaces) {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<InnerLoader>) () -> new InnerLoader(parent, interfaces));
+        return new InnerLoader(parent, interfaces);
     }
 
     private InnerLoader findClassLoader(final Class<?> clazz, final Class<?>[] interfaces) {

@@ -39,30 +39,23 @@ public class VMPluginFactory {
     private static final VMPlugin PLUGIN = createPlugin();
 
     private static VMPlugin createPlugin() {
-        return doPrivileged(() -> {
-            ClassLoader loader = VMPluginFactory.class.getClassLoader();
-            int specVer = Runtime.version().feature();
-            for (Map.Entry<Integer,String> entry : PLUGIN_MAP.entrySet()) {
-                if (specVer >= entry.getKey()) {
-                    String fullName = entry.getValue();
-                    try {
-                        return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
-                    } catch (Throwable t) {
-                        var log = java.util.logging.Logger.getLogger(VMPluginFactory.class.getName());
-                        if (log.isLoggable(java.util.logging.Level.FINE)) {
-                            log.fine("Trying to create VM plugin `" + fullName + "`, but failed:\n" + DefaultGroovyMethods.asString(t));
-                        }
-                        return null;
+        ClassLoader loader = VMPluginFactory.class.getClassLoader();
+        int specVer = Runtime.version().feature();
+        for (Map.Entry<Integer,String> entry : PLUGIN_MAP.entrySet()) {
+            if (specVer >= entry.getKey()) {
+                String fullName = entry.getValue();
+                try {
+                    return (VMPlugin) loader.loadClass(fullName).getDeclaredConstructor().newInstance();
+                } catch (Throwable t) {
+                    var log = java.util.logging.Logger.getLogger(VMPluginFactory.class.getName());
+                    if (log.isLoggable(java.util.logging.Level.FINE)) {
+                        log.fine("Trying to create VM plugin `" + fullName + "`, but failed:\n" + DefaultGroovyMethods.asString(t));
                     }
+                    return null;
                 }
             }
-            return null;
-        });
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
+        }
+        return null;
     }
 
     public static VMPlugin getPlugin() {

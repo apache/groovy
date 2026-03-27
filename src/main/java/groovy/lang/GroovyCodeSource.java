@@ -32,8 +32,6 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.CodeSource;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
 import java.util.Objects;
 
@@ -122,36 +120,26 @@ public class GroovyCodeSource {
         //The calls below require access to user.dir - allow here since getName() and getCodeSource() are
         //package private and used only by the GroovyClassLoader.
         try {
-            Object[] info = doPrivileged((PrivilegedExceptionAction<Object[]>) () -> {
-                // retrieve the content of the file using the provided encoding
-                if (encoding != null) {
-                    scriptText = ResourceGroovyMethods.getText(infile, encoding);
-                } else {
-                    scriptText = ResourceGroovyMethods.getText(infile);
-                }
+            // retrieve the content of the file using the provided encoding
+            if (encoding != null) {
+                scriptText = ResourceGroovyMethods.getText(infile, encoding);
+            } else {
+                scriptText = ResourceGroovyMethods.getText(infile);
+            }
 
-                Object[] info1 = new Object[2];
-                URL url = file.toURI().toURL();
-                info1[0] = url.toExternalForm();
-                //toURI().toURL() will encode, but toURL() will not.
-                info1[1] = new CodeSource(url, (Certificate[]) null);
-                return info1;
-            });
+            Object[] info = new Object[2];
+            URL url = file.toURI().toURL();
+            info[0] = url.toExternalForm();
+            //toURI().toURL() will encode, but toURL() will not.
+            info[1] = new CodeSource(url, (Certificate[]) null);
 
             this.name = (String) info[0];
             this.codeSource = (CodeSource) info[1];
-        } catch (PrivilegedActionException pae) {
-            Throwable cause = pae.getCause();
-            if (cause instanceof IOException) {
-                throw (IOException) cause;
-            }
-            throw new RuntimeException("Could not construct CodeSource for file: " + file, cause);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not construct CodeSource for file: " + file, e);
         }
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private <T> T doPrivileged(PrivilegedExceptionAction<T> action) throws PrivilegedActionException {
-        return java.security.AccessController.doPrivileged(action);
     }
 
     /**

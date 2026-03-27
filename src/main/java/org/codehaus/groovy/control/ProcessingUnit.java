@@ -95,18 +95,13 @@ public abstract class ProcessingUnit {
      * Sets the class loader for use by this ProcessingUnit.
      */
     public void setClassLoader(final GroovyClassLoader loader) {
-        // ClassLoaders should only be created inside a doPrivileged block in case
-        // this method is invoked by code that does not have security permissions.
         this.classLoader = loader != null ? loader : createClassLoader();
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should create the loader not as a privileged action
     private GroovyClassLoader createClassLoader() {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<GroovyClassLoader>) () -> {
-            ClassLoader parent = Thread.currentThread().getContextClassLoader();
-            if (parent == null) parent = ProcessingUnit.class.getClassLoader();
-            return new GroovyClassLoader(parent, getConfiguration());
-        });
+        ClassLoader parent = Thread.currentThread().getContextClassLoader();
+        if (parent == null) parent = ProcessingUnit.class.getClassLoader();
+        return new GroovyClassLoader(parent, getConfiguration());
     }
 
     /**

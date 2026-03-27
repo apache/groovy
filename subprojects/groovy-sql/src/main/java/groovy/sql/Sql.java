@@ -29,7 +29,6 @@ import groovy.transform.stc.SimpleType;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.sql.DataSource;
-import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -4412,8 +4411,6 @@ public class Sql implements AutoCloseable {
             return useConnection;
         }
         if (dataSource != null) {
-            // Use a doPrivileged here as many different properties need to be
-            // read, and the policy shouldn't have to list them all.
             Connection con = createConnection(dataSource);
             if (cacheStatements || cacheConnection) {
                 useConnection = con;
@@ -4423,24 +4420,8 @@ public class Sql implements AutoCloseable {
         return useConnection;
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private Connection createConnection(DataSource dataSource) throws SQLException {
-        Connection con;
-        try {
-            con = java.security.AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
-                @Override
-                public Connection run() throws SQLException {
-                    return dataSource.getConnection();
-                }
-            });
-        } catch (java.security.PrivilegedActionException pae) {
-            Exception e = pae.getException();
-            if (e instanceof SQLException) {
-                throw (SQLException) e;
-            } else {
-                throw (RuntimeException) e;
-            }
-        }
+        Connection con = dataSource.getConnection();
         return con;
     }
 

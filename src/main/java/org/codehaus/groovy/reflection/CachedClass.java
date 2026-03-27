@@ -52,11 +52,6 @@ public class CachedClass {
 
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
-    @SuppressWarnings("removal") // TODO: perform the action as not privileged
-    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
-
     private static <M extends AccessibleObject & Member> boolean isAccessibleOrCanSetAccessible(M m) {
         final int modifiers = m.getModifiers();
         final Class<?> declaringClass = m.getDeclaringClass();
@@ -74,10 +69,9 @@ public class CachedClass {
 
         @Override
         public CachedField[] initValue() {
-            return doPrivileged(() -> Arrays.stream(getTheClass().getDeclaredFields())
+            return Arrays.stream(getTheClass().getDeclaredFields())
                 .filter(CachedClass::isAccessibleOrCanSetAccessible)
-                .map(CachedField::new).toArray(CachedField[]::new)
-            );
+                .map(CachedField::new).toArray(CachedField[]::new);
         }
     };
 
@@ -86,12 +80,11 @@ public class CachedClass {
 
         @Override
         public CachedConstructor[] initValue() {
-            return doPrivileged(() -> Arrays.stream(getTheClass().getDeclaredConstructors())
+            return Arrays.stream(getTheClass().getDeclaredConstructors())
                 .filter(c -> !c.isSynthetic()) // GROOVY-9245: exclude inner class ctors
                 .filter(CachedClass::isAccessibleOrCanSetAccessible)
                 .map(c -> new CachedConstructor(CachedClass.this, c))
-                .toArray(CachedConstructor[]::new)
-            );
+                .toArray(CachedConstructor[]::new);
         }
     };
 
@@ -100,16 +93,15 @@ public class CachedClass {
 
         @Override
         public CachedMethod[] initValue() {
-            CachedMethod[] declaredMethods = doPrivileged(() -> {
-                try {
-                    return Arrays.stream(getTheClass().getDeclaredMethods())
-                        .filter(CachedClass::isAccessibleOrCanSetAccessible)
-                        .map(m -> new CachedMethod(CachedClass.this, m))
-                        .toArray(CachedMethod[]::new);
-                } catch (LinkageError e) {
-                    return CachedMethod.EMPTY_ARRAY;
-                }
-            });
+            CachedMethod[] declaredMethods;
+            try {
+                declaredMethods = Arrays.stream(getTheClass().getDeclaredMethods())
+                    .filter(CachedClass::isAccessibleOrCanSetAccessible)
+                    .map(m -> new CachedMethod(CachedClass.this, m))
+                    .toArray(CachedMethod[]::new);
+            } catch (LinkageError e) {
+                declaredMethods = CachedMethod.EMPTY_ARRAY;
+            }
 
             List<CachedMethod> methods = new ArrayList<>(declaredMethods.length);
             List<CachedMethod> mopMethods = new ArrayList<>(declaredMethods.length);
@@ -142,7 +134,7 @@ public class CachedClass {
 
         @Override
         public CallSiteClassLoader initValue() {
-            return doPrivileged(() -> new CallSiteClassLoader(CachedClass.this.cachedClass));
+            return new CallSiteClassLoader(CachedClass.this.cachedClass);
         }
     };
 

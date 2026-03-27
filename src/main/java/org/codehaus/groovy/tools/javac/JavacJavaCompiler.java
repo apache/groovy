@@ -213,10 +213,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             || param.equals("release") || param.equals("-release");
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private static java.security.CodeSource getCodeSource() {
-        return java.security.AccessController.doPrivileged((java.security.PrivilegedAction<java.security.CodeSource>) () ->
-            GroovyObject.class.getProtectionDomain().getCodeSource()
-        );
+        return GroovyObject.class.getProtectionDomain().getCodeSource();
     }
 }

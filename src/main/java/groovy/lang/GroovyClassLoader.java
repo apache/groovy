@@ -175,24 +175,17 @@ public class GroovyClassLoader extends URLClassLoader {
 
     //--------------------------------------------------------------------------
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(java.security.PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
-    }
-
     private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
         @Override
         public URL loadGroovySource(final String filename) {
-            return doPrivileged(() -> {
-                for (String extension : config.getScriptExtensions()) {
-                    try {
-                        URL url = getSourceFile(filename, extension);
-                        if (url != null) return url;
-                    } catch (Throwable ignore) {
-                    }
+            for (String extension : config.getScriptExtensions()) {
+                try {
+                    URL url = getSourceFile(filename, extension);
+                    if (url != null) return url;
+                } catch (Throwable ignore) {
                 }
-                return null;
-            });
+            }
+            return null;
         }
     };
 
@@ -298,7 +291,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(final String text, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = doPrivileged(() -> new GroovyCodeSource(text, fileName, "/groovy/script"));
+        GroovyCodeSource gcs = new GroovyCodeSource(text, fileName, "/groovy/script");
         gcs.setCachable(false);
         return parseClass(gcs);
     }
@@ -314,14 +307,13 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     public Class parseClass(final Reader reader, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = doPrivileged(() -> {
-            try {
-                String scriptText = IOGroovyMethods.getText(reader);
-                return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
-            } catch (IOException e) {
-                throw new RuntimeException("Impossible to read the content of the reader for file named: " + fileName, e);
-            }
-        });
+        GroovyCodeSource gcs;
+        try {
+            String scriptText = IOGroovyMethods.getText(reader);
+            gcs = new GroovyCodeSource(scriptText, fileName, "/groovy/script");
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible to read the content of the reader for file named: " + fileName, e);
+        }
         return parseClass(gcs);
     }
 
@@ -473,7 +465,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private ProtectionDomain getProtectionDomain() {
-        return doPrivileged(() -> getClass().getProtectionDomain());
+        return getClass().getProtectionDomain();
     }
 
     /**
@@ -502,7 +494,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     private InnerLoader createLoader() {
-        return doPrivileged(() -> new InnerLoader(GroovyClassLoader.this));
+        return new InnerLoader(GroovyClassLoader.this);
     }
 
     /**
@@ -877,40 +869,37 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #addURL(URL)
      */
     public void addClasspath(final String path) {
-        doPrivileged(() -> {
-            URI newURI;
-            try {
-                newURI = new URI(path);
-                // check if we can create a URL from that URI
-                newURI.toURL();
-            } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
-                // the URI has a false format, so lets try it with files ...
-                newURI = new File(path).toURI();
-            }
+        URI newURI;
+        try {
+            newURI = new URI(path);
+            // check if we can create a URL from that URI
+            newURI.toURL();
+        } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
+            // the URI has a false format, so lets try it with files ...
+            newURI = new File(path).toURI();
+        }
 
-            URL[] urls = getURLs();
-            for (URL url : urls) {
-                // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
-                // That is a violation of RFC and just plain evil.
-                // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
-                // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
-                // "Since hosts comparison requires name resolution, this operation is a blocking operation.
-                // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
-                try {
-                    if (newURI.equals(url.toURI())) return null;
-                } catch (URISyntaxException e) {
-                    // fail fast! if we got a malformed URI the Classloader has to tell it
-                    throw new RuntimeException(e);
-                }
-            }
+        URL[] urls = getURLs();
+        for (URL url : urls) {
+            // Do not use URL.equals.  It uses the network to resolve names and compares ip addresses!
+            // That is a violation of RFC and just plain evil.
+            // http://michaelscharf.blogspot.com/2006/11/javaneturlequals-and-hashcode-make.html
+            // http://docs.oracle.com/javase/7/docs/api/java/net/URL.html#equals(java.lang.Object)
+            // "Since hosts comparison requires name resolution, this operation is a blocking operation.
+            // Note: The defined behavior for equals is known to be inconsistent with virtual hosting in HTTP."
             try {
-                addURL(newURI.toURL());
-            } catch (MalformedURLException e) {
-                // fail fast! if we got a malformed URL the Classloader has to tell it
+                if (newURI.equals(url.toURI())) return;
+            } catch (URISyntaxException e) {
+                // fail fast! if we got a malformed URI the Classloader has to tell it
                 throw new RuntimeException(e);
             }
-            return null;
-        });
+        }
+        try {
+            addURL(newURI.toURL());
+        } catch (MalformedURLException e) {
+            // fail fast! if we got a malformed URL the Classloader has to tell it
+            throw new RuntimeException(e);
+        }
     }
 
     /**

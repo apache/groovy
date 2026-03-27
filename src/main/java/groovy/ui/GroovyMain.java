@@ -525,12 +525,7 @@ public class GroovyMain {
             }
         }
 
-        doPrivileged(new DoSetContext(shell.getClassLoader()));
-    }
-
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
-    private static <T> T doPrivileged(PrivilegedAction<T> action) {
-        return java.security.AccessController.doPrivileged(action);
+        new DoSetContext(shell.getClassLoader()).run();
     }
 
     /**

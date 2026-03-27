@@ -25,7 +25,6 @@ import org.codehaus.groovy.runtime.callsite.CallSite;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ClassLoaderForClassArtifacts extends ClassLoader {
@@ -79,8 +78,7 @@ public class ClassLoaderForClassArtifacts extends ClassLoader {
         return null;
     }
 
-    @SuppressWarnings("removal") // TODO a future Groovy version should perform the operation not as a privileged action
     private Class definePrivileged(String name, byte[] bytes) {
-        return java.security.AccessController.doPrivileged((PrivilegedAction<Class>) () -> define(name, bytes));
+        return define(name, bytes);
     }
 }
