@@ -241,7 +241,7 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-11769
+    // GROOVY-11754
     void testInstanceOf10() {
         assertScript '''
             abstract class Foo {
