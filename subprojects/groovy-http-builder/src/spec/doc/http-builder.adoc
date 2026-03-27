@@ -1,0 +1,183 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= HttpBuilder – lightweight HTTP client DSL (incubating)
+
+The `groovy-http-builder` module provides a tiny declarative DSL over
+the JDK `java.net.http.HttpClient`.
+It is designed for scripting and simple automation tasks where a full-blown
+HTTP library would be overkill.
+
+== Goals
+
+* Keep the implementation small and easy to maintain.
+* Use only JDK HTTP client primitives (Jsoup is optionally supported for HTML parsing).
+* Make common request setup declarative with Groovy closures.
+* Handle only the simple cases that often pop up in scripting — not the full
+  use cases that Apache Geb covers.
+* Include JSON/XML/HTML response parsing hooks while intentionally keeping
+  request hooks minimal.
+
+== Basic Usage
+
+Create a client with `HttpBuilder.http`, configure shared settings in the
+closure, and issue requests:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=basic_get_with_query,indent=0]
+----
+
+`query(...)` encodes keys and values as URI query components using RFC 3986
+style percent-encoding — for example, spaces become `%20`.
+
+=== Non-DSL Equivalent (JDK HttpClient)
+
+The snippet above is equivalent to the following plain JDK code:
+
+[source,groovy]
+----
+import java.net.URI
+import java.net.URLEncoder
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
+
+def encodeQueryComponent = { Object value ->
+    URLEncoder.encode(value.toString(), StandardCharsets.UTF_8)
+            .replace('+', '%20')
+            .replace('*', '%2A')
+            .replace('%7E', '~')
+}
+
+def baseUri = 'https://example.com/'
+def query = [page: 1, size: 10]
+        .collect { k, v ->
+            "${encodeQueryComponent(k)}=${encodeQueryComponent(v)}"
+        }
+        .join('&')
+
+def target = URI.create(baseUri).resolve("/api/items?${query}")
+
+def client = HttpClient.newHttpClient()
+def request = HttpRequest.newBuilder(target)
+        .header('User-Agent', 'my-app/1.0')
+        .GET()
+        .build()
+
+def response = client.send(request, HttpResponse.BodyHandlers.ofString())
+
+assert response.statusCode() == 200
+println response.body()
+----
+
+== JSON
+
+=== GET
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=json_get,indent=0]
+----
+
+`res.json` lazily parses the response body as JSON.
+`res.parsed` auto-dispatches by the response `Content-Type` header, so for
+`application/json` it behaves identically to `res.json`.
+
+=== POST
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=json_post,indent=0]
+----
+
+The `json(...)` helper serialises the supplied object as JSON and sets
+`Content-Type: application/json` automatically.
+
+== XML
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=xml_get,indent=0]
+----
+
+`result.xml` parses the response body with `XmlSlurper`.
+`result.parsed` dispatches to `xml` for XML content types.
+
+== HTML (jsoup)
+
+If https://jsoup.org[jsoup] is on the classpath, `result.html` returns a
+jsoup `Document`:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=html_jsoup,indent=0]
+----
+
+`result.parsed` dispatches to jsoup for `text/html` content types when jsoup
+is available, otherwise it falls back to the raw string body.
+
+== Form URL-Encoding
+
+The `form(...)` helper sends `application/x-www-form-urlencoded` POST bodies:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=form_post,indent=0]
+----
+
+`form(...)` encodes values as `application/x-www-form-urlencoded` and sets
+`Content-Type` automatically (unless you override it with `header`).
+
+Unlike `query(...)`, `form(...)` uses _form semantics_, so spaces become `+`.
+
+== HTML Login Example
+
+Combining `form(...)` with HTML parsing enables simple login flows:
+
+[source,groovy]
+----
+include::../test/HttpBuilderSpecTest.groovy[tags=html_login,indent=0]
+----
+
+== Content-Type Auto-Parsing
+
+`result.parsed` dispatches by the response `Content-Type`:
+
+[cols="1,1"]
+|===
+| Content-Type | Parsed as
+
+| `application/json`, `application/\*+json`
+| JSON object (`JsonSlurper`)
+
+| `application/xml`, `text/xml`, `application/*+xml`
+| XML object (`XmlSlurper`)
+
+| `text/html`
+| jsoup `Document` (if jsoup is on the classpath, otherwise raw string)
+
+| anything else
+| raw string body
+|===
+
+
