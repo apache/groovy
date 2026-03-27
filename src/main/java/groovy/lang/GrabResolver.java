@@ -18,6 +18,9 @@
  */
 package groovy.lang;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -51,6 +54,7 @@ import java.lang.annotation.Target;
         ElementType.METHOD,
         ElementType.PARAMETER,
         ElementType.TYPE})
+@ExtendedTarget(ExtendedElementType.IMPORT)
 public @interface GrabResolver {
     /**
      * Allows a shorthand form which sets the name and root to this value.

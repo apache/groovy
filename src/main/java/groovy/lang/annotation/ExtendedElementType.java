@@ -16,22 +16,18 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.annotations
-
-import groovy.lang.annotation.ExtendedElementType
-import groovy.lang.annotation.ExtendedTarget
-
-import java.lang.annotation.*
-
-import static java.lang.annotation.RetentionPolicy.*
-import org.codehaus.groovy.transform.GroovyASTTransformationClass
+package groovy.lang.annotation;
 
 /**
- * Test annotation
+ * Groovy-specific element types that extend {@link java.lang.annotation.ElementType}
+ * to cover Groovy language constructs not present in the JDK.
+ *
+ * @see ExtendedTarget
+ * @since 6.0.0
  */
-@Retention(RUNTIME)
-@ExtendedTarget(ExtendedElementType.IMPORT)
-@GroovyASTTransformationClass("groovy.annotations.MyIntegerAnnoTraceASTTransformation")
-@interface MyIntegerAnno {
-    int value()
+public enum ExtendedElementType {
+    /** Import statement. */
+    IMPORT,
+    /** Loop statement ({@code for}, {@code while}, {@code do-while}). */
+    LOOP
 }

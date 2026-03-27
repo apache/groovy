@@ -16,22 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.annotations
+package groovy.lang.annotation;
 
-import groovy.lang.annotation.ExtendedElementType
-import groovy.lang.annotation.ExtendedTarget
-
-import java.lang.annotation.*
-
-import static java.lang.annotation.RetentionPolicy.*
-import org.codehaus.groovy.transform.GroovyASTTransformationClass
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Test annotation
+ * Indicates Groovy-specific element types on which an annotation is allowed,
+ * complementing {@link java.lang.annotation.Target} for constructs that have
+ * no corresponding {@link java.lang.annotation.ElementType}.
+ *
+ * @see ExtendedElementType
+ * @since 6.0.0
  */
-@Retention(RUNTIME)
-@ExtendedTarget(ExtendedElementType.IMPORT)
-@GroovyASTTransformationClass("groovy.annotations.MyIntegerAnnoTraceASTTransformation")
-@interface MyIntegerAnno {
-    int value()
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface ExtendedTarget {
+    ExtendedElementType[] value();
 }
