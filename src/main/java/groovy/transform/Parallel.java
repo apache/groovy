@@ -18,6 +18,8 @@
  */
 package groovy.transform;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -37,6 +39,7 @@ import java.lang.annotation.RetentionPolicy;
 @Incubating
 @Documented
 @Retention(RetentionPolicy.SOURCE)
+@ExtendedTarget(ExtendedElementType.LOOP)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ParallelASTTransformation")
 public @interface Parallel {
 }
