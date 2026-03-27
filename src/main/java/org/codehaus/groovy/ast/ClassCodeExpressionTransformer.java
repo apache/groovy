@@ -127,6 +127,7 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     @Override
     public void visitDoWhileLoop(final DoWhileStatement stmt) {
+        visitStatementAnnotations(stmt);
         stmt.getLoopBlock().visit(this);
         stmt.setBooleanExpression((BooleanExpression) transform(stmt.getBooleanExpression()));
     }
@@ -138,6 +139,7 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     @Override
     public void visitForLoop(final ForStatement stmt) {
+        visitStatementAnnotations(stmt);
         if (!(stmt.getCollectionExpression() instanceof ClosureListExpression)) {
             visitAnnotations(stmt.getValueVariable()); // "for(T x : y)" or "for(x in y)"
         }
@@ -179,6 +181,7 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     @Override
     public void visitWhileLoop(final WhileStatement stmt) {
+        visitStatementAnnotations(stmt);
         stmt.setBooleanExpression((BooleanExpression) transform(stmt.getBooleanExpression()));
         stmt.getLoopBlock().visit(this);
     }

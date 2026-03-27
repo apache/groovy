@@ -50,6 +50,8 @@ public class AnnotationNode extends ASTNode {
     public static final int TYPE_PARAMETER_TARGET   = 1 << 8;
     public static final int TYPE_USE_TARGET         = 1 << 9;
     public static final int RECORD_COMPONENT_TARGET = 1 << 10;
+    /** Groovy-only target for statement-level annotations (e.g. on {@code for}/{@code while} loops). */
+    public static final int STATEMENT_TARGET        = 1 << 11;
     public static final int TYPE_TARGET             = ANNOTATION_TARGET | 1; // GROOVY-7151
 
     private final ClassNode classNode;
@@ -257,6 +259,7 @@ public class AnnotationNode extends ASTNode {
             case TYPE_PARAMETER_TARGET   -> "TYPE_PARAMETER";
             case TYPE_USE_TARGET         -> "TYPE_USE";
             case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
+            case STATEMENT_TARGET        -> "STATEMENT";
             default -> "unknown target";
         };
     }

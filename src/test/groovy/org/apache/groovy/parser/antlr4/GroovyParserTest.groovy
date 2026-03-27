@@ -286,6 +286,12 @@ final class GroovyParserTest {
     }
 
     @Test
+    void 'groovy core - AnnotatedLoop'() {
+        doTest('core/AnnotatedLoop_01.groovy')
+        doRunAndTestAntlr4('core/AnnotatedLoop_02x.groovy')
+    }
+
+    @Test
     void 'groovy core - TryCatch'() {
         doTest('core/TryCatch_01.groovy')
     }

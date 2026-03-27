@@ -600,9 +600,9 @@ switchStatement
     ;
 
 loopStatement
-    :   FOR LPAREN forControl RPAREN nls statement                                                            #forStmtAlt
-    |   WHILE expressionInPar nls statement                                                                   #whileStmtAlt
-    |   DO nls statement nls WHILE expressionInPar                                                            #doWhileStmtAlt
+    :   annotationsOpt FOR LPAREN forControl RPAREN nls statement                                             #forStmtAlt
+    |   annotationsOpt WHILE expressionInPar nls statement                                                    #whileStmtAlt
+    |   annotationsOpt DO nls statement nls WHILE expressionInPar                                             #doWhileStmtAlt
     ;
 
 continueStatement

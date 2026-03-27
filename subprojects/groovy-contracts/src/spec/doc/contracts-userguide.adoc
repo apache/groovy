@@ -22,7 +22,8 @@
 = Groovy Contracts – design by contract support for Groovy
 
 This module provides contract annotations that support the specification of class-invariants,
-as well as pre- and post-conditions on Groovy classes and interfaces.
+pre- and post-conditions on Groovy classes and interfaces, and loop invariants on
+`for`, `while`, and `do-while` loops.
 Special support is provided so that post-conditions may refer to the old value of variables
 or to the result value associated with calling a method.
 
@@ -42,6 +43,7 @@ include::../test/ContractsTest.groovy[tags=basic_example,indent=0]
 Groovy contracts supports the following feature set:
 
 * definition of class invariants, pre- and post-conditions via @Invariant, @Requires and @Ensures
+* definition of loop invariants on `for`, `while`, and `do-while` loops via @Invariant
 * inheritance of class invariants, pre- and post-conditions of concrete predecessor classes
 * inheritance of class invariants, pre- and post-conditions in implemented interfaces
 * usage of old and result variable in post-condition assertions
@@ -95,3 +97,46 @@ include::../test/ContractsTest.groovy[tags=jep445_example,indent=0]
 
 You could even place an `@Invariant` annotation on the `main` method
 and it will be moved to the generated script class.
+
+== Loop Invariants
+
+In addition to class-level invariants, `@Invariant` can be placed directly on
+`for`, `while`, and `do-while` loops. A loop invariant is a condition that must
+hold at the start of each iteration. If the condition is violated, a
+`LoopInvariantViolation` (a subclass of `AssertionError`) is thrown.
+
+This is inspired by design-by-contract constructs found in languages like Dafny
+and Eiffel.
+
+=== For loop
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=loop_invariant_for_example,indent=0]
+----
+
+=== While loop
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=loop_invariant_while_example,indent=0]
+----
+
+=== Multiple invariants
+
+Multiple `@Invariant` annotations can be stacked on a single loop, and each
+condition is checked independently at the start of every iteration:
+
+[source,groovy]
+----
+include::../test/ContractsTest.groovy[tags=loop_invariant_multiple_example,indent=0]
+----
+
+=== Rules for loop invariant closures
+
+* The closure should be a boolean expression (or multiple expressions).
+* The closure may reference any variables visible in the enclosing scope,
+  including the loop variable.
+* Assignment operators and state-changing postfix/prefix operators are
+  not supported inside the closure.
+

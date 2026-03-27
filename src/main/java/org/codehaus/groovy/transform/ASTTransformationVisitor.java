@@ -31,6 +31,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.ASTTransformationsContext;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -169,6 +170,20 @@ public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         for (AnnotationNode annotation : distinctAnnotations(node)) {
             if (transforms.containsKey(annotation)) {
                 targetNodes.add(new ASTNode[]{annotation, node});
+            }
+        }
+    }
+
+    /**
+     * Adds annotated loop statements to the target list so that the registered
+     * AST transformation is invoked with {@code nodes[1]} being the loop statement.
+     */
+    @Override
+    protected void visitStatementAnnotations(final Statement statement) {
+        if (transforms == null) return;
+        for (AnnotationNode annotation : statement.getStatementAnnotations()) {
+            if (transforms.containsKey(annotation)) {
+                targetNodes.add(new ASTNode[]{annotation, statement});
             }
         }
     }

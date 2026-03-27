@@ -81,7 +81,7 @@ class ASTTestTransformation implements ASTTransformation, CompilationUnitAware {
         annotationNode.setNodeMetaData(ASTTestTransformation, member)
         annotationNode.setMember('value', new ClosureExpression(
             Parameter.EMPTY_ARRAY, EmptyStatement.INSTANCE))
-        member.variableScope.@parent = null
+        member.variableScope?.@parent = null
 
         ISourceUnitOperation astTester = new ASTTester(astNode: nodes[1], sourceUnit: source, testClosure: annotationNode.getNodeMetaData(ASTTestTransformation))
         for (int p = (phase ?: CompilePhase.SEMANTIC_ANALYSIS).phaseNumber, q = (phase ?: CompilePhase.FINALIZATION).phaseNumber; p <= q; p += 1) {
