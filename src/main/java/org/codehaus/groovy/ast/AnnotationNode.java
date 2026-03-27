@@ -24,6 +24,9 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -52,6 +55,8 @@ public class AnnotationNode extends ASTNode {
     public static final int RECORD_COMPONENT_TARGET = 1 << 10;
     /** Groovy-only target for statement-level annotations (e.g. on {@code for}/{@code while} loops). */
     public static final int STATEMENT_TARGET        = 1 << 11;
+    /** Groovy-only target for annotations on import statements. */
+    public static final int IMPORT_TARGET           = 1 << 12;
     public static final int TYPE_TARGET             = ANNOTATION_TARGET | 1; // GROOVY-7151
 
     private final ClassNode classNode;
@@ -159,7 +164,37 @@ public class AnnotationNode extends ASTNode {
             return 0x4FF; // GROOVY-11838: JLS 9.6.4.1
         });
 
+        // check @ExtendedTarget for Groovy-specific element types
+        allowedTargets |= classNode.redirect().getNodeMetaData(ExtendedTarget.class, (k) -> {
+            for (AnnotationNode an : classNode.getAnnotations()) {
+                if ("groovy.lang.annotation.ExtendedTarget".equals(an.getClassNode().getName())) {
+                    Expression member = an.getMember("value");
+                    int bits = 0;
+                    if (member instanceof ListExpression list) {
+                        for (Expression e : list.getExpressions()) {
+                            bits |= extendedElementTypeBits(e);
+                        }
+                    } else {
+                        bits |= extendedElementTypeBits(member);
+                    }
+                    return bits;
+                }
+            }
+            return 0;
+        });
+
         return (target & allowedTargets) == target;
+    }
+
+    private static int extendedElementTypeBits(final Expression e) {
+        if (e instanceof PropertyExpression item) {
+            String name = item.getPropertyAsString();
+            return switch (ExtendedElementType.valueOf(name)) {
+                case IMPORT -> IMPORT_TARGET;
+                case LOOP   -> STATEMENT_TARGET;
+            };
+        }
+        return 0;
     }
 
     private RetentionPolicy getRetentionPolicy() {
@@ -260,6 +295,7 @@ public class AnnotationNode extends ASTNode {
             case TYPE_USE_TARGET         -> "TYPE_USE";
             case RECORD_COMPONENT_TARGET -> "RECORD_COMPONENT";
             case STATEMENT_TARGET        -> "STATEMENT";
+            case IMPORT_TARGET           -> "IMPORT";
             default -> "unknown target";
         };
     }

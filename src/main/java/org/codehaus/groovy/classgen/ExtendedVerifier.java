@@ -25,7 +25,9 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -43,6 +45,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -50,16 +53,19 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
 import static org.codehaus.groovy.ast.AnnotationNode.ANNOTATION_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.CONSTRUCTOR_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.FIELD_TARGET;
+import static org.codehaus.groovy.ast.AnnotationNode.IMPORT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.LOCAL_VARIABLE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.METHOD_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PACKAGE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.RECORD_COMPONENT_TARGET;
+import static org.codehaus.groovy.ast.AnnotationNode.STATEMENT_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_PARAMETER_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_TARGET;
 import static org.codehaus.groovy.ast.AnnotationNode.TYPE_USE_TARGET;
@@ -86,6 +92,7 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
     private ClassNode currentClass;
     private final SourceUnit source;
     private final Map<String, Boolean> repeatableCache = new HashMap<>();
+    private final Set<ModuleNode> visitedModules = new HashSet<>();
 
     public ExtendedVerifier(final SourceUnit sourceUnit) {
         this.source = sourceUnit;
@@ -104,6 +111,10 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         PackageNode packageNode = node.getPackage();
         if (packageNode != null) {
             visitAnnotations(packageNode, PACKAGE_TARGET);
+        }
+        ModuleNode module = node.getModule();
+        if (module != null && visitedModules.add(module)) {
+            visitImportAnnotations(module);
         }
         if (node.isAnnotationDefinition()) {
             visitAnnotations(node, ANNOTATION_TARGET);
@@ -218,6 +229,32 @@ public class ExtendedVerifier extends ClassCodeVisitorSupport {
         visitConstructorOrMethod(node);
         if (!isPrimitiveVoid(node.getReturnType())) {
             extractTypeUseAnnotations(node.getAnnotations(), node.getReturnType(), METHOD_TARGET);
+        }
+    }
+
+    @Override
+    protected void visitStatementAnnotations(final Statement statement) {
+        for (AnnotationNode annotation : statement.getStatementAnnotations()) {
+            ErrorCollector errorCollector = new ErrorCollector(source.getConfiguration());
+            AnnotationVisitor visitor = new AnnotationVisitor(source, errorCollector);
+            AnnotationNode visited = visitor.visit(annotation);
+            source.getErrorCollector().addCollectorContents(errorCollector);
+
+            if (!visited.isTargetAllowed(STATEMENT_TARGET)) {
+                addError("Annotation @" + visited.getClassNode().getName() + " is not allowed on element "
+                        + AnnotationNode.targetToName(STATEMENT_TARGET), visited);
+            }
+        }
+    }
+
+    private void visitImportAnnotations(final ModuleNode module) {
+        List<ImportNode> allImports = new ArrayList<>();
+        allImports.addAll(module.getImports());
+        allImports.addAll(module.getStarImports());
+        allImports.addAll(module.getStaticImports().values());
+        allImports.addAll(module.getStaticStarImports().values());
+        for (ImportNode importNode : allImports) {
+            visitAnnotations(importNode, IMPORT_TARGET);
         }
     }
 

@@ -77,11 +77,9 @@ assert x == 4
 @ASTTest(phase=SEMANTIC_ANALYSIS, value={
     assert node instanceof ForStatement
     def annos = node.statementAnnotations
-    assert annos.size() == 2
+    assert annos.size() == 1
     assert annos[0].classNode.name == 'groovy.transform.ASTTest'
-    assert annos[1].classNode.name == 'java.lang.SuppressWarnings'
 })
-@SuppressWarnings('unused')
 for (String s in ['a', 'b']) {
     assert s.length() == 1
 }
@@ -91,11 +89,9 @@ int y = 0
 @ASTTest(phase=SEMANTIC_ANALYSIS, value={
     assert node instanceof WhileStatement
     def annos = node.statementAnnotations
-    assert annos.size() == 2
+    assert annos.size() == 1
     assert annos[0].classNode.name == 'groovy.transform.ASTTest'
-    assert annos[1].classNode.name == 'java.lang.SuppressWarnings'
 })
-@SuppressWarnings('unused')
 while (y < 2) {
     y++
 }
@@ -106,11 +102,9 @@ int z = 0
 @ASTTest(phase=SEMANTIC_ANALYSIS, value={
     assert node instanceof DoWhileStatement
     def annos = node.statementAnnotations
-    assert annos.size() == 2
+    assert annos.size() == 1
     assert annos[0].classNode.name == 'groovy.transform.ASTTest'
-    assert annos[1].classNode.name == 'java.lang.SuppressWarnings'
 })
-@SuppressWarnings('unused')
 do {
     z++
 } while (z < 3)
