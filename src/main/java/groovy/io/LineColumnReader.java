@@ -192,7 +192,7 @@ public class LineColumnReader extends BufferedReader {
      */
     @Override
     public int read(char[] chars) throws IOException {
-        return read(chars, 0, chars.length - 1);
+        return read(chars, 0, chars.length);
     }
 
     /**
