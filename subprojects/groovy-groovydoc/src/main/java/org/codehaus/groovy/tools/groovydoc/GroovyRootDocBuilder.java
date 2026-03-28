@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import static java.lang.System.Logger.Level.WARNING;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGEX;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.LINK_REGEX;
 import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.TAG_REGEX;
@@ -44,6 +45,7 @@ import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.TAG_REGEX
  *  todo: order methods alphabetically (implement compareTo enough?)
  */
 public class GroovyRootDocBuilder {
+    private static final System.Logger LOGGER = System.getLogger(GroovyRootDocBuilder.class.getName());
     private final Logger log = Logger.create(GroovyRootDocBuilder.class);
     private static final char FS = '/';
     private final List<LinkArgument> links;
@@ -96,7 +98,7 @@ public class GroovyRootDocBuilder {
                 String content = ResourceGroovyMethods.getText(new File(path));
                 calcThenSetOverviewDescription(content);
             } catch (IOException e) {
-                System.err.println("Unable to load overview file: " + e.getMessage());
+                LOGGER.log(WARNING, "Unable to load overview file: {0}", e.getMessage());
             }
         }
     }

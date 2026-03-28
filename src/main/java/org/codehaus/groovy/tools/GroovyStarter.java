@@ -22,10 +22,14 @@ import java.io.FileInputStream;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 /**
  * Helper class to initialize the Groovy runtime.
  */
 public class GroovyStarter {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyStarter.class.getName());
 
     static void printUsage() {
         System.out.println("possible programs are 'groovyc','groovy','console', and 'groovysh'");
@@ -98,7 +102,7 @@ public class GroovyStarter {
             try {
                 lc.configure(new FileInputStream(conf));
             } catch (Exception e) {
-                System.err.println("exception while configuring main class loader:");
+                LOGGER.log(ERROR, "Exception while configuring main class loader");
                 exit(e);
             }
         }
@@ -128,7 +132,7 @@ public class GroovyStarter {
     }
 
     private static void exit(String text) {
-        System.err.println(text);
+        LOGGER.log(ERROR, text);
         System.exit(1);
     }
 }

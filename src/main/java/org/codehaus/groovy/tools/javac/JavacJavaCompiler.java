@@ -41,7 +41,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static java.lang.System.Logger.Level.INFO;
+
 public class JavacJavaCompiler implements JavaCompiler {
+
+    private static final System.Logger LOGGER = System.getLogger(JavacJavaCompiler.class.getName());
 
     private final CompilerConfiguration config;
 
@@ -76,7 +80,7 @@ public class JavacJavaCompiler implements JavaCompiler {
                 default -> "unexpected return value by javac.";
             }, javacOutput.toString(), cu);
         } else {
-            System.out.print(javacOutput); // print errors/warnings
+            LOGGER.log(INFO, javacOutput.toString()); // javac errors/warnings
         }
     }
 

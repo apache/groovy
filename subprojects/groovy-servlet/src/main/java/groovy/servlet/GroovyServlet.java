@@ -30,6 +30,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 /**
  * This servlet will run Groovy scripts as Groovlets.  Groovlets are scripts
  * with these objects implicit in their scope:
@@ -72,6 +74,8 @@ import java.io.IOException;
  * @see groovy.servlet.ServletBinding
  */
 public class GroovyServlet extends AbstractHttpServlet {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyServlet.class.getName());
 
     /**
      * The script engine executing the Groovy scripts for this servlet
@@ -139,8 +143,8 @@ public class GroovyServlet extends AbstractHttpServlet {
                 if (runtimeException.getStackTrace().length > 0)
                     error.append(runtimeException.getStackTrace()[0].toString());
                 servletContext.log(error.toString());
-                System.err.println(error);
-                runtimeException.printStackTrace(System.err);
+                LOGGER.log(ERROR, error.toString());
+                LOGGER.log(ERROR, "Script processing failed", runtimeException);
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error.toString());
                 return;
             }
@@ -150,7 +154,7 @@ public class GroovyServlet extends AbstractHttpServlet {
             if (e instanceof ResourceException) {
                 error.append(" Script not found, sending 404.");
                 servletContext.log(error.toString());
-                System.err.println(error);
+                LOGGER.log(ERROR, error.toString());
                 response.sendError(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
@@ -162,8 +166,8 @@ public class GroovyServlet extends AbstractHttpServlet {
             if (e.getStackTrace().length > 0)
                 error.append(e.getStackTrace()[0].toString());
             servletContext.log(e.toString());
-            System.err.println(e.toString());
-            runtimeException.printStackTrace(System.err);
+            LOGGER.log(ERROR, e.toString());
+            LOGGER.log(ERROR, "Internal error", runtimeException);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
         }
     }

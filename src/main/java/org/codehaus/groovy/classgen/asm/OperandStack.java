@@ -36,6 +36,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveBoolean;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveByte;
 import static org.codehaus.groovy.ast.ClassHelper.isPrimitiveChar;
@@ -87,6 +89,8 @@ import static org.objectweb.asm.Opcodes.POP2;
 import static org.objectweb.asm.Opcodes.SWAP;
 
 public class OperandStack {
+
+    private static final System.Logger LOGGER = System.getLogger(OperandStack.class.getName());
 
     private final List<ClassNode> stack = new ArrayList<>();
     private final WriterController controller;
@@ -281,7 +285,7 @@ public class OperandStack {
         try {
             if (size == 0) throw new ArrayIndexOutOfBoundsException("size==0");
         } catch (ArrayIndexOutOfBoundsException ai) {
-            System.err.println("index problem in " + controller.getSourceUnit().getName());
+            LOGGER.log(ERROR, "Index problem in {0}", controller.getSourceUnit().getName());
             throw ai;
         }
 

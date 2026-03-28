@@ -26,7 +26,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.net.URI;
 
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.WARNING;
+
 public abstract class XStreamUtils {
+
+    private static final System.Logger LOGGER = System.getLogger(XStreamUtils.class.getName());
 
     public static void serialize(final String name, final Object ast) {
         if (name == null || name.isEmpty()) return;
@@ -36,16 +41,15 @@ public abstract class XStreamUtils {
         try {
             File astFile = astFile(name);
             if (astFile == null) {
-                System.out.println("File-name for writing " + name + " AST could not be determined!");
+                LOGGER.log(WARNING, "File-name for writing {0} AST could not be determined!", name);
                 return;
             }
             astFileWriter = new FileWriter(astFile, false);
             xstream.toXML(ast, astFileWriter);
-            System.out.println("Written AST to " + name + ".xml");
+            LOGGER.log(DEBUG, "Written AST to {0}.xml", name);
 
         } catch (Exception e) {
-            System.out.println("Couldn't write to " + name + ".xml");
-            e.printStackTrace();
+            LOGGER.log(WARNING, "Couldn''t write to " + name + ".xml", e);
         } finally {
             DefaultGroovyMethods.closeQuietly(astFileWriter);
         }

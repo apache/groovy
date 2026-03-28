@@ -28,6 +28,8 @@ import org.apache.groovy.test.ScriptTestAdapter;
 
 import java.io.File;
 
+import static java.lang.System.Logger.Level.INFO;
+
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
  * either as a unit test case or as an application.
@@ -45,6 +47,8 @@ import java.io.File;
  * </code>
  */
 public class GroovyTestSuite extends TestSuite {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyTestSuite.class.getName());
 
     protected static String file = null;
 
@@ -72,7 +76,7 @@ public class GroovyTestSuite extends TestSuite {
         if (fileName == null) {
             throw new RuntimeException("No filename given in the 'test' system property so cannot run a Groovy unit test");
         }
-        System.out.println("Compiling: " + fileName);
+        LOGGER.log(INFO, "Compiling: {0}", fileName);
         Class<?> type = compile(fileName);
         String[] args = {};
         if (TestCase.class.isAssignableFrom(type)) {

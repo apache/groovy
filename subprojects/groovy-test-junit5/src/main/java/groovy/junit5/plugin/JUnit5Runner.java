@@ -28,10 +28,14 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Integration code for running JUnit5 tests in Groovy.
  */
 public class JUnit5Runner implements GroovyRunner {
+
+    private static final System.Logger LOGGER = System.getLogger(JUnit5Runner.class.getName());
 
     /**
      * Utility method to check via reflection if the parsed class appears to be a JUnit5
@@ -117,7 +121,7 @@ public class JUnit5Runner implements GroovyRunner {
                 loader.loadClass("org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder");
             } catch (ClassNotFoundException ignored) {
                 // subsequent steps will bomb out but try to give some more friendly information first
-                System.err.println("WARNING: Required dependency: org.junit.platform:junit-platform-launcher doesn't appear to be on the classpath");
+                LOGGER.log(WARNING, "Required dependency: org.junit.platform:junit-platform-launcher doesn''t appear to be on the classpath");
             }
             Class<?> helper = loader.loadClass("groovy.junit5.plugin.GroovyJUnitRunnerHelper");
             Throwable ifFailed = (Throwable) InvokerHelper.invokeStaticMethod(helper, "execute", new Object[]{scriptClass});
