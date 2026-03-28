@@ -122,7 +122,7 @@ dependencies {
 
     testFixturesImplementation projects.groovyXml
     testFixturesImplementation projects.groovyTest
-    testFixturesImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit5}"
+    testFixturesImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit6}"
     testFixturesImplementation "xmlunit:xmlunit:${versions.xmlunit}"
 
     tools "com.eed3si9n.jarjar:ant-jarjar:${versions.jarjar}"
