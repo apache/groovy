@@ -20,6 +20,7 @@ package org.codehaus.groovy.transform;
 
 import groovy.transform.Parallel;
 import org.apache.groovy.lang.annotation.Incubating;
+import org.apache.groovy.util.concurrent.ThreadHelper;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -40,7 +41,6 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.castX;
-import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
 
 /**
@@ -98,8 +98,9 @@ public class ParallelASTTransformation implements ASTTransformation {
         Expression runnable = castX(ClassHelper.make(Runnable.class), boundWorker);
 
         Statement startThread = stmt(callX(
-                ctorX(ClassHelper.make(Thread.class), args(runnable)),
-                "start"));
+                ClassHelper.make(ThreadHelper.class),
+                "startThread",
+                args(runnable)));
         startThread.setSourcePosition(annotation);
 
         BlockStatement loopBody = block(startThread);
