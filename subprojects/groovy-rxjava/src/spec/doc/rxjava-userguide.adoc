@@ -1,0 +1,320 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= RxJava 3 Integration
+
+The `groovy-rxjava` module provides seamless integration between
+https://github.com/ReactiveX/RxJava[RxJava 3] and Groovy's native
+`async`/`await` system. Adding this module to the classpath enables
+`await` on `Single` and `Maybe`, and `for await` on `Observable` and
+`Flowable` — no manual adapter registration or boilerplate is required.
+
+[[rxjava-getting-started]]
+== Getting Started
+
+Add `groovy-rxjava` as a dependency alongside Groovy:
+
+.Gradle
+[source,groovy,subs="attributes"]
+----
+dependencies {
+    implementation "org.apache.groovy:groovy-rxjava:{groovy-full-version}"
+}
+----
+
+.Maven
+[source,xml,subs="attributes"]
+----
+<dependency>
+    <groupId>org.apache.groovy</groupId>
+    <artifactId>groovy-rxjava</artifactId>
+    <version>{groovy-full-version}</version>
+</dependency>
+----
+
+Once on the classpath, the `RxJavaAwaitableAdapter` is auto-discovered
+via `java.util.ServiceLoader` at class-initialization time:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=serviceloader_discovery,indent=0]
+----
+
+[[rxjava-type-mapping]]
+== Type Mapping
+
+The adapter maps all four core RxJava types to Groovy's async abstractions:
+
+[cols="1,1,3"]
+|===
+| RxJava Type | Groovy Abstraction | Description
+
+| `Single<T>`
+| `Awaitable<T>`
+| Emits exactly one value. Converted via `Single.toCompletionStage()`.
+
+| `Maybe<T>`
+| `Awaitable<T>`
+| Emits zero or one value. An empty `Maybe` resolves to `null`.
+
+| `Observable<T>`
+| `AsyncStream<T>`
+| Multi-value stream without back-pressure. Iterated via `for await`.
+
+| `Flowable<T>`
+| `AsyncStream<T>`
+| Multi-value stream with Reactive Streams back-pressure. Iterated via `for await`.
+|===
+
+=== Choosing the Boundary
+
+RxJava remains the right abstraction when your API is already modeled in RxJava terms.
+Groovy async/await is most helpful where orchestration becomes easier to express as
+straight-line code.
+
+[cols="1,3"]
+|===
+| If your code is... | Prefer...
+
+| exposing or composing a native RxJava API
+| keep `Single`, `Maybe`, `Observable`, or `Flowable` in the public surface and use RxJava operators
+
+| coordinating several async steps in service or application logic
+| `await` for `Single` / `Maybe`, and `for await` for `Observable` / `Flowable`
+
+| migrating gradually toward Groovy-native async abstractions
+| `Awaitable.from(...)` or `AsyncStream.from(...)` where you want to cross that boundary explicitly
+|===
+
+[[rxjava-await-single]]
+== Awaiting a `Single`
+
+A `Single` represents a computation that emits exactly one value or an
+error — the RxJava equivalent of a `CompletableFuture`. With
+`groovy-rxjava` on the classpath, `await` works directly:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=await_single_basic,indent=0]
+----
+
+=== Operators
+
+RxJava's rich operator library is fully supported. Apply `map`, `flatMap`,
+`zipWith`, or any other operator _before_ passing the `Single` to `await`:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=await_single_map,indent=0]
+----
+
+=== Error Handling
+
+If a `Single` signals an error, the exception is propagated through
+`await` and can be caught with a standard `try`/`catch` block:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=await_single_error,indent=0]
+----
+
+[[rxjava-await-maybe]]
+== Awaiting a `Maybe`
+
+A `Maybe` is like a `Single` that is allowed to emit nothing. An empty
+`Maybe` resolves to `null`, consistent with Groovy's null-safe design:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=await_maybe_basic,indent=0]
+----
+
+=== Empty Maybe
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=await_maybe_empty,indent=0]
+----
+
+[[rxjava-awaitable-api]]
+== Working with the `Awaitable` API
+
+Once a `Single` or `Maybe` is converted to an `Awaitable`, all of
+Groovy's `Awaitable` combinators and inspection methods become available.
+
+=== Explicit Conversion
+
+Use `Awaitable.from(single)` to obtain an `Awaitable` without immediately
+blocking:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=single_to_awaitable_api,indent=0]
+----
+
+=== `exceptionally` — Error Recovery
+
+The `exceptionally` combinator provides a fallback value when the
+upstream `Single` fails:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=single_exceptionally,indent=0]
+----
+
+=== Parallel Combinators
+
+`Awaitable.all` waits for multiple `Single` or `Maybe` values to complete
+and collects their results:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=rxjava_awaitable_all,indent=0]
+----
+
+`Awaitable.allSettled` waits for all to settle (succeed or fail) and
+returns `AwaitResult` objects for inspection:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=rxjava_awaitable_allsettled,indent=0]
+----
+
+[[rxjava-for-await-observable]]
+== Iterating an `Observable` with `for await`
+
+An `Observable` emits a sequence of values without back-pressure
+guarantees. With `groovy-rxjava`, it works naturally with Groovy's
+`for await` loop:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=for_await_observable_basic,indent=0]
+----
+
+=== Operators
+
+Apply RxJava operators to shape the `Observable` before iterating:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=for_await_observable_operators,indent=0]
+----
+
+=== Consuming and Processing
+
+The loop body can perform arbitrary work on each emitted element,
+including further `await` calls for per-element async processing:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=for_await_observable_consume,indent=0]
+----
+
+[[rxjava-for-await-flowable]]
+== Iterating a `Flowable` with `for await`
+
+A `Flowable` is the back-pressure-aware variant of `Observable`. It
+implements the Reactive Streams `Publisher` interface and respects demand
+signaled by the consumer:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=for_await_flowable_basic,indent=0]
+----
+
+=== Programmatic Generation
+
+`Flowable.generate` creates a pull-based source, enabling efficient
+demand-driven streaming:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=for_await_flowable_generate,indent=0]
+----
+
+[[rxjava-observable-vs-flowable]]
+=== Observable vs. Flowable
+
+[cols="1,1,2"]
+|===
+| Feature | `Observable` | `Flowable`
+
+| Back-pressure
+| No (buffering only)
+| Yes (Reactive Streams)
+
+| Typical use case
+| UI events, small collections
+| I/O streams, large datasets
+
+| `for await` behaviour
+| Buffers internally; consumer iterates at its own pace
+| Requests elements one at a time; true demand-driven consumption
+
+| Upstream interface
+| `ObservableSource<T>`
+| `Publisher<T>` (Reactive Streams)
+|===
+
+Both types work transparently with `for await`. Choose `Flowable` when
+the producer may emit faster than the consumer can process.
+
+[[rxjava-async-methods]]
+== Async Methods with RxJava
+
+RxJava types can be used inside async methods or returned from them.
+This is useful when writing service layers that combine RxJava-based
+clients with Groovy async logic:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=async_method_rxjava,indent=0]
+----
+
+[[rxjava-cf-interop]]
+== CompletableFuture Interop
+
+RxJava types can be mixed with standard `CompletableFuture` values in the
+same `await` expression or combinator call, enabling gradual migration
+between the two styles:
+
+[source,groovy]
+----
+include::../test/groovy/org/apache/groovy/rxjava/RxJavaDocSpecTest.groovy[tags=rxjava_cf_interop,indent=0]
+----
+
+[[rxjava-internals]]
+== Operational Notes
+
+For everyday development, the important guarantees are:
+
+* adding `groovy-rxjava` to the classpath is enough for discovery — no manual adapter registration is required;
+* `await` preserves the shape of single-result RxJava types: `Single` resolves one value, `Maybe` resolves one value or `null`, and failures propagate as exceptions;
+* `for await` keeps stream consumption readable while preserving the practical difference between `Observable` and `Flowable`;
+* leaving a `for await` loop early closes the adapted stream, which prevents accidental background work from continuing unseen.
+
+[TIP]
+====
+Choose `Flowable` when you need explicit back-pressure across component boundaries.
+Choose `Observable` for finite or moderate-rate event streams where that protocol would
+add more ceremony than value.
+====
