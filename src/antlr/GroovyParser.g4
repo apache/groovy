@@ -286,8 +286,9 @@ methodDeclaration[int t, int ct]
         (   { $ct == 3 }? // GROOVY-11208: @interface only
             (DEFAULT nls elementValue)
         |
-            (nls THROWS nls qualifiedClassNameList)?
-            (nls methodBody)?
+            nls THROWS nls qualifiedClassNameList (nls methodBody)?
+        |
+            nls methodBody
         )?
     ;
 
