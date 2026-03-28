@@ -37,7 +37,7 @@ dependencies {
     testCompileOnly "junit:junit:${versions.junit}"
     testImplementation "org.junit.jupiter:junit-jupiter:${versions.junit5}"
     testRuntimeOnly "org.junit.vintage:junit-vintage-engine:${versions.junit5}"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit5Platform}", {
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit5}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
     }
 }

@@ -30,12 +30,11 @@ dependencies {
     implementation "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
     }
-    implementation "org.junit.platform:junit-platform-launcher:${versions.junit5Platform}", {
+    implementation "org.junit.platform:junit-platform-launcher:${versions.junit5}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
     }
     testImplementation projects.groovyTest
     testImplementation "net.jqwik:jqwik-api:${versions.jqwik}"
     testRuntimeOnly    "net.jqwik:jqwik-engine:${versions.jqwik}"
     testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junit5}"
-    testRuntimeOnly    "org.junit.platform:junit-platform-runner:${versions.junit5Platform}"
 }
