@@ -44,9 +44,9 @@ repositories {
 dependencies {
     jmh project(':')
     testImplementation project(':')
-    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit5}"
-    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}"
-    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit5}"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${versions.junit6}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${versions.junit6}"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:${versions.junit6}"
 
     stats "org.apache.commons:commons-math3:${versions.commonsMath3}"
 }
