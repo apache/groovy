@@ -31,4 +31,12 @@ final class AssignmentsStaticCompileTest extends STCAssignmentTest implements St
         String bytecode = astTrees['C'][1]
         assert !bytecode.contains('ScriptBytecodeAdapter.setGroovyObjectProperty') : '"c.i += 10" should use setter, not dynamic property'
     }
+
+    @Override // GROOVY-11769
+    void testCastObjectToInterface() {
+        super.testCastObjectToInterface()
+        String bytecode = astTrees.values()[0][1]
+        bytecode = bytecode.substring(bytecode.indexOf('m(Ljava/lang/Object;)'))
+        assert bytecode.count('CHECKCAST') == 1 // guarded typecast isn't groovy
+    }
 }
