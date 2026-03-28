@@ -28,6 +28,8 @@ import java.awt.event.MouseEvent;
 import java.util.Date;
 import java.util.Vector;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * A sorter for TableModels.
  * <p>
@@ -45,6 +47,7 @@ import java.util.Vector;
  * function returns 0 to denote that they are equivalent.
  */
 public class TableSorter extends TableMap {
+    private static final System.Logger LOGGER = System.getLogger(TableSorter.class.getName());
     private static final int[] EMPTY_INT_ARRAY = new int[0];
     int[] indexes;
     Vector<Integer> sortingColumns = new Vector<>();
@@ -185,7 +188,7 @@ public class TableSorter extends TableMap {
 
     public void checkModel() {
         if (indexes.length != model.getRowCount()) {
-            System.err.println("Sorter not informed of a change in model.");
+            LOGGER.log(WARNING, "Sorter not informed of a change in model");
         }
     }
 

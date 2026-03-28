@@ -61,10 +61,12 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
+
 /**
  * Swing application to graphically display the tokens produced by the lexer.
  */
 public class LexerFrame extends JFrame implements ActionListener {
+    private static final System.Logger LOGGER = System.getLogger(LexerFrame.class.getName());
     private static final long serialVersionUID = 2715693043143492893L;
     private static final Class<GroovyLexer> TOKEN_TYPES_CLASS = GroovyLexer.class;
     private static final Font MONOSPACED_FONT = new Font("Monospaced", Font.PLAIN, 12);
@@ -292,7 +294,7 @@ public class LexerFrame extends JFrame implements ActionListener {
         if (args.length == 0) {
             lexerFrame = new LexerFrame();
         } else if (args.length > 1) {
-            System.err.println("usage: java LexerFrame [filename.ext]");
+            LOGGER.log(System.Logger.Level.ERROR, "usage: java LexerFrame [filename.ext]");
             System.exit(1);
         } else {
             String filename = args[0];

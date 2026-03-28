@@ -24,7 +24,11 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Collections;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 public class Exceptions {
+
+    private static final System.Logger LOGGER = System.getLogger(Exceptions.class.getName());
 
     public static boolean die() {
         throw new JsonInternalException("died");
@@ -128,12 +132,10 @@ public class Exceptions {
 
         @Override
         public void printStackTrace() {
-            System.err.println(this.getMessage());
+            LOGGER.log(ERROR, this.getMessage());
 
             if (getCause() != null) {
-                System.err.println("This Exception was wrapped, the original exception\n" +
-                        "stack trace is:\n");
-                getCause().printStackTrace();
+                LOGGER.log(ERROR, "This Exception was wrapped, the original exception stack trace is:", getCause());
             } else {
                 super.printStackTrace();
             }

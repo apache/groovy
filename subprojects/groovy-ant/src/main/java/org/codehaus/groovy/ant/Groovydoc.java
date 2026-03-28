@@ -39,10 +39,13 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Access to the GroovyDoc tool from Ant.
  */
 public class Groovydoc extends Task {
+    private static final System.Logger LOGGER = System.getLogger(Groovydoc.class.getName());
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path sourcePath;
@@ -494,8 +497,8 @@ public class Groovydoc extends Task {
                 File outfile = new File(destDir, "stylesheet.css");
                 ResourceGroovyMethods.setText(outfile, css);
             } catch (IOException e) {
-                System.out.println("Warning: Unable to copy specified stylesheet '" + styleSheetFile.getAbsolutePath() +
-                        "'. Using default stylesheet instead. Due to: " + e.getMessage());
+                LOGGER.log(WARNING, "Unable to copy specified stylesheet ''{0}''. Using default stylesheet instead. Due to: {1}",
+                        styleSheetFile.getAbsolutePath(), e.getMessage());
             }
         }
     }

@@ -23,6 +23,10 @@ import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.control.Phases
 import org.junit.jupiter.api.Test
 
+import java.util.logging.Handler
+import java.util.logging.LogRecord
+import java.util.logging.Logger
+
 final class Groovy10281 {
 
     @Test
@@ -53,17 +57,34 @@ final class Groovy10281 {
         def code = """
                 println 'Hello, world!'
             """
-        def result = new StringWriter()
-        PrintWriter pw = new PrintWriter(result)
-        def config = stacktrace ? new CompilerConfiguration(logClassgen: true, logClassgenStackTraceMaxDepth: maxDepth, output: pw)
-                                                    : new CompilerConfiguration(logClassgen: true, output: pw)
+        def result = new StringBuilder()
 
-        new CompilationUnit(config).with {
-            addSource 'helloWorld.groovy', code
-            compile Phases.CLASS_GENERATION
+        // Capture System.Logger output via JUL handler
+        def loggerName = 'org.codehaus.groovy.classgen.asm.util.LoggableTextifier'
+        def julLogger = Logger.getLogger(loggerName)
+        def originalLevel = julLogger.level
+        julLogger.level = java.util.logging.Level.ALL
+        def handler = new Handler() {
+            void publish(LogRecord record) { result.append(record.message) }
+            void flush() {}
+            void close() {}
+        }
+        handler.level = java.util.logging.Level.ALL
+        julLogger.addHandler(handler)
+
+        try {
+            def config = stacktrace ? new CompilerConfiguration(logClassgen: true, logClassgenStackTraceMaxDepth: maxDepth)
+                                    : new CompilerConfiguration(logClassgen: true)
+
+            new CompilationUnit(config).with {
+                addSource 'helloWorld.groovy', code
+                compile Phases.CLASS_GENERATION
+            }
+        } finally {
+            julLogger.removeHandler(handler)
+            julLogger.level = originalLevel
         }
 
-        pw.close()
         return result.toString()
     }
 }

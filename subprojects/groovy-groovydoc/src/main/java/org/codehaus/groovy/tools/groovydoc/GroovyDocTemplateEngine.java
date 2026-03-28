@@ -40,10 +40,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Process Groovydoc templates.
  */
 public class GroovyDocTemplateEngine {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyDocTemplateEngine.class.getName());
     private final TemplateEngine engine;
     private final ResourceManager resourceManager;
     private final Properties properties;
@@ -89,8 +94,8 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).writeTo(reasonableSizeWriter()).toString();
         } catch (Exception e) {
-            System.out.println("Error processing class template for: " + classDoc.getFullPathName());
-            e.printStackTrace();
+            LOGGER.log(ERROR, "Error processing class template for: {0}", classDoc.getFullPathName());
+            LOGGER.log(ERROR, "Template error", e);
         }
         return templateWithBindingApplied;
     }
@@ -112,8 +117,8 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
-            System.out.println("Error processing package template for: " + packageDoc.name());
-            e.printStackTrace();
+            LOGGER.log(ERROR, "Error processing package template for: {0}", packageDoc.name());
+            LOGGER.log(ERROR, "Template error", e);
         }
         return templateWithBindingApplied;
     }
@@ -131,8 +136,8 @@ public class GroovyDocTemplateEngine {
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
         } catch (Exception e) {
-            System.out.println("Error processing root doc template");
-            e.printStackTrace();
+            LOGGER.log(ERROR, "Error processing root doc template");
+            LOGGER.log(ERROR, "Template error", e);
         }
         return templateWithBindingApplied;
     }
@@ -157,9 +162,9 @@ public class GroovyDocTemplateEngine {
                 outputStream = Files.newOutputStream(Paths.get(destFileName));
                 IOGroovyMethods.leftShift(outputStream, inputStream);
             } catch (IOException e) {
-                System.err.println("Resource " + template + " skipped due to: " + e.getMessage());
+                LOGGER.log(WARNING, "Resource {0} skipped due to: {1}", template, e.getMessage());
             } catch (NullPointerException e) {
-                System.err.println("Resource " + template + " not found so skipped");
+                LOGGER.log(WARNING, "Resource {0} not found so skipped", template);
             } finally {
                 DefaultGroovyMethodsSupport.closeQuietly(outputStream);
             }

@@ -40,7 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 public class GroovyDocParser implements GroovyDocParserI {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyDocParser.class.getName());
+
     private final List<LinkArgument> links;
     private final Properties properties;
     private final Logger log = Logger.create(GroovyDocParser.class);
@@ -68,11 +73,11 @@ public class GroovyDocParser implements GroovyDocParserI {
         GroovydocJavaVisitor visitor = new GroovydocJavaVisitor(packagePath, links);
         try {
             visitor.visit(StaticJavaParser.parse(src), null);
-        } catch(Throwable t) {
-            System.err.println("Attempting to ignore error parsing Java source file: " + packagePath + "/" + file);
-            System.err.println("Consider reporting the error to the Groovy project: https://issues.apache.org/jira/browse/GROOVY");
-            System.err.println("... or directly to the JavaParser project: https://github.com/javaparser/javaparser/issues");
-            System.err.println("Error: " + t.getMessage());
+        } catch (Throwable t) {
+            LOGGER.log(WARNING, "Attempting to ignore error parsing Java source file: {0}/{1}", packagePath, file);
+            LOGGER.log(WARNING, "Consider reporting the error to the Groovy project: https://issues.apache.org/jira/browse/GROOVY");
+            LOGGER.log(WARNING, "... or directly to the JavaParser project: https://github.com/javaparser/javaparser/issues");
+            LOGGER.log(WARNING, "Error: {0}", t.getMessage());
         }
         return visitor.getGroovyClassDocs();
     }
@@ -98,7 +103,7 @@ public class GroovyDocParser implements GroovyDocParserI {
                     case "INSTRUCTION_SELECTION": phase = 6; break;
                     case "CLASS_GENERATION": phase = 7; break;
                     default:
-                        System.err.println("Ignoring unrecognised or unsuitable phase and keeping default");
+                        LOGGER.log(WARNING, "Ignoring unrecognised or unsuitable phase and keeping default");
                 }
             }
         }

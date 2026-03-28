@@ -26,12 +26,12 @@ import org.objectweb.asm.TypePath;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * Logging bytecode generation, which can make debugging easy
@@ -40,8 +40,9 @@ import java.util.stream.Collectors;
  */
 public class LoggableTextifier extends Textifier {
 
+    private static final System.Logger LOGGER = System.getLogger(LoggableTextifier.class.getName());
+
     private final CompilerConfiguration compilerConfiguration;
-    private final PrintWriter out;
     private int lineCount;
 
     public LoggableTextifier() {
@@ -51,7 +52,6 @@ public class LoggableTextifier extends Textifier {
     public LoggableTextifier(final CompilerConfiguration compilerConfiguration) {
         super(CompilerConfiguration.ASM_API_VERSION);
         this.compilerConfiguration = compilerConfiguration;
-        this.out = Optional.ofNullable(compilerConfiguration.getOutput()).orElseGet(() -> new PrintWriter(System.out, true));
     }
 
     @Override
@@ -69,10 +69,12 @@ public class LoggableTextifier extends Textifier {
             }
         }
         if (!bcList.isEmpty()) {
-            out.print(getInvocationPositionInfo());
+            StringBuilder sb = new StringBuilder();
+            sb.append(getInvocationPositionInfo());
             for (Object bc : bcList) {
-                out.print(bc);
+                sb.append(bc);
             }
+            LOGGER.log(DEBUG, sb.toString());
         }
         lineCount = textSize;
     }
