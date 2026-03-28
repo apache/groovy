@@ -21,24 +21,18 @@ plugins {
     id 'org.apache.groovy-library'
 }
 
-groovyLibrary {
-    optionalModule()
-}
-
 dependencies {
-    api rootProject // JUnit5Runner implements GroovyRunner...
-    api "org.junit.jupiter:junit-jupiter-api:${versions.junit5}", {
+    api rootProject // JUnit6Runner implements GroovyRunner...
+    api "org.junit.jupiter:junit-jupiter-api:${versions.junit6}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
         exclude group: 'org.junit.platform', module: 'junit-platform-commons'
     }
-    implementation "org.junit.jupiter:junit-jupiter-engine:${versions.junit5}", {
+    implementation "org.junit.jupiter:junit-jupiter-engine:${versions.junit6}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
     }
-    implementation "org.junit.platform:junit-platform-launcher:${versions.junit5Platform}", {
+    implementation "org.junit.platform:junit-platform-launcher:${versions.junit6}", {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
     }
     testImplementation projects.groovyTest
-    testImplementation "net.jqwik:jqwik-api:${versions.jqwik}"
-    testRuntimeOnly    "net.jqwik:jqwik-engine:${versions.jqwik}"
-    testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junit5}"
+    testImplementation "org.junit.jupiter:junit-jupiter-params:${versions.junit6}"
 }
