@@ -19,6 +19,8 @@
 package groovy.transform;
 
 import groovy.lang.Closure;
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
@@ -57,6 +59,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.PACKAGE, ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
+@ExtendedTarget(ExtendedElementType.LOOP)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.ASTTestTransformation")
 public @interface ASTTest {
     /**
