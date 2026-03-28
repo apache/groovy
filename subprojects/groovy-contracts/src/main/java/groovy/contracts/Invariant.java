@@ -66,7 +66,7 @@ import java.lang.annotation.Target;
 @Incubating
 @ClassInvariant
 @Repeatable(Invariants.class)
-@ExtendedTarget(ExtendedElementType.LOOP)
+@ExtendedTarget({ExtendedElementType.LOOP, ExtendedElementType.IMPORT})
 @AnnotationProcessorImplementation(ClassInvariantAnnotationProcessor.class)
 @GroovyASTTransformationClass("org.apache.groovy.contracts.ast.LoopInvariantASTTransformation")
 public @interface Invariant {

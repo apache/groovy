@@ -155,5 +155,122 @@ class LoopInvariantTests extends BaseTestClass {
             assert f.property == 'hello'
         '''
     }
+
+    @Test
+    void invariantOnImportActsAsScriptClassInvariant() {
+        assertScript '''
+            @groovy.contracts.Invariant({ property != null })
+            import groovy.transform.Field
+
+            @Field String property = 'hello'
+            assert property == 'hello'
+        '''
+    }
+
+    @Test
+    void invariantOnImportViolationThrows() {
+        shouldFail AssertionError, '''
+            @groovy.contracts.Invariant({ property != null })
+            import groovy.transform.Field
+
+            @Field String property = 'hello'
+
+            def nullify() {
+                property = null
+            }
+
+            nullify()
+        '''
+    }
+
+    @Test
+    void invariantOnImportBankAccountScript() {
+        assertScript '''
+            @Invariant({ balance >= 0 })
+            import groovy.transform.Field
+            import groovy.contracts.Invariant
+            import static groovy.test.GroovyAssert.shouldFail
+            import org.apache.groovy.contracts.ClassInvariantViolation
+
+            @Field Integer balance = 5
+
+            def withdraw(int amount) { balance -= amount }
+
+            def deposit(int amount) { balance += amount }
+
+            deposit(5)
+            assert balance == 10
+
+            shouldFail(ClassInvariantViolation) {
+                withdraw(15)
+            }
+
+            balance = 10  // restore valid state (withdraw left balance at -5)
+
+            shouldFail(ClassInvariantViolation) {
+                deposit(-15)
+            }
+
+            balance = 10  // restore valid state before run() ends
+        '''
+    }
+
+    @Test
+    void ensuresOnScriptMethods() {
+        assertScript '''
+            import groovy.transform.Field
+            import groovy.contracts.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @Field Integer balance = 5
+
+            @Ensures({ balance >= 0 })
+            def withdraw(int amount) { balance -= amount }
+
+            @Ensures({ balance >= 0 })
+            def deposit(int amount) { balance += amount }
+
+            deposit(5)
+            assert balance == 10
+
+            shouldFail(AssertionError) {
+                withdraw(15)
+            }
+
+            balance = 5
+
+            shouldFail(AssertionError) {
+                deposit(-10)
+            }
+        '''
+    }
+
+    @Test
+    void requiresOnScriptMethods() {
+        assertScript '''
+            import groovy.transform.Field
+            import groovy.contracts.*
+            import static groovy.test.GroovyAssert.shouldFail
+
+            @Field Integer balance = 5
+
+            @Requires({ balance >= amount })
+            def withdraw(int amount) { balance -= amount }
+
+            @Requires({ amount >= 0 })
+            def deposit(int amount) { balance += amount }
+
+            deposit(5)
+            assert balance == 10
+
+            shouldFail(AssertionError) {
+                withdraw(15)
+            }
+
+            shouldFail(AssertionError) {
+                deposit(-15)
+            }
+        '''
+    }
 }
 

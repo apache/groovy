@@ -19,6 +19,7 @@
 package org.apache.groovy.contracts.ast;
 
 import groovy.contracts.Contracted;
+import groovy.contracts.Invariant;
 import org.apache.groovy.contracts.ast.visitor.AnnotationClosureVisitor;
 import org.apache.groovy.contracts.ast.visitor.ConfigurationSetup;
 import org.apache.groovy.contracts.ast.visitor.ContractElementVisitor;
@@ -27,6 +28,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
@@ -50,10 +52,40 @@ public class ClosureExpressionEvaluationASTTransformation extends BaseASTTransfo
     public void visit(ASTNode[] nodes, SourceUnit unit) {
         final ModuleNode moduleNode = unit.getAST();
 
+        promoteImportInvariantsToScriptClass(moduleNode);
+
         ReaderSource source = getReaderSource(unit);
         final List<ClassNode> classNodes = new ArrayList<>(moduleNode.getClasses());
 
         generateAnnotationClosureClasses(unit, source, classNodes);
+    }
+
+    /**
+     * Promotes {@link Invariant} annotations found on import statements to the script body class,
+     * allowing {@code @Invariant} on an import to act as a class invariant for the script.
+     */
+    private static void promoteImportInvariantsToScriptClass(final ModuleNode moduleNode) {
+        final String invariantName = Invariant.class.getName();
+        final List<ImportNode> allImports = new ArrayList<>();
+        allImports.addAll(moduleNode.getImports());
+        allImports.addAll(moduleNode.getStarImports());
+        allImports.addAll(moduleNode.getStaticImports().values());
+        allImports.addAll(moduleNode.getStaticStarImports().values());
+
+        ClassNode scriptClass = null;
+        for (ImportNode importNode : allImports) {
+            for (AnnotationNode annotation : importNode.getAnnotations()) {
+                if (invariantName.equals(annotation.getClassNode().getName())) {
+                    if (scriptClass == null) {
+                        scriptClass = moduleNode.getClasses().stream()
+                                .filter(ClassNode::isScriptBody)
+                                .findFirst().orElse(null);
+                        if (scriptClass == null) return;
+                    }
+                    scriptClass.addAnnotation(annotation);
+                }
+            }
+        }
     }
 
     private void generateAnnotationClosureClasses(SourceUnit unit, ReaderSource source, List<ClassNode> classNodes) {
