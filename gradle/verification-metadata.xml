@@ -131,6 +131,7 @@
       </ignored-keys>
       <trusted-keys>
          <trusted-key id="0181A4828FA27B6BE6F1F5A68611CD28F472E006" group="org.jline"/>
+         <trusted-key id="F3184BCD55F4D016E30D4C9BF42E87F9665015C9" group="org.jsoup"/>
          <trusted-key id="019082BC00E0324E2AEF4CF00D3B328562A119A7" group="org.openjdk.jmh"/>
          <trusted-key id="0191E61ACBBE76323AC15C83B5AD94BDD6BDB924" group="me.champeau.openbeans" name="openbeans" version="1.0.2"/>
          <trusted-key id="04543577D6A9CC626239C50C7ECBD740FF06AEB5">
