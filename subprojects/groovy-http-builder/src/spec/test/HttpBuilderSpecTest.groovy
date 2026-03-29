@@ -19,12 +19,9 @@
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import java.nio.charset.StandardCharsets
-
-import static org.junit.jupiter.api.Assumptions.assumeFalse
 
 class HttpBuilderSpecTest {
 
@@ -81,6 +78,20 @@ class HttpBuilderSpecTest {
                 exchange.sendResponseHeaders(200, bytes.length)
                 exchange.responseBody.withCloseable { it.write(bytes) }
             }
+        }
+        server.createContext('/artifact/org.apache.groovy/groovy-all') { exchange ->
+            String body = '''<!DOCTYPE html>
+<html>
+<head><title>Maven Repository: org.apache.groovy : groovy-all</title></head>
+<body>
+<h2 class="im-title"><a href="/artifact/org.apache.groovy/groovy-all">groovy-all</a></h2>
+<span class="badge badge-license">Apache 2.0</span>
+</body>
+</html>'''
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8)
+            exchange.responseHeaders.add('Content-Type', 'text/html; charset=UTF-8')
+            exchange.sendResponseHeaders(200, bytes.length)
+            exchange.responseBody.withCloseable { it.write(bytes) }
         }
         server.start()
         rootUri = URI.create("http://127.0.0.1:${server.address.port}")
@@ -187,22 +198,17 @@ class HttpBuilderSpecTest {
         """
     }
 
-    @Disabled("Requires external site and may fail due to 403 error")
     @Test
     void testHtmlJsoup() {
-        // Skip on JDKs with TLS fingerprints that trigger Cloudflare bot detection
-        def jdkVersion = Runtime.version().feature()
-        assumeFalse(jdkVersion in [18, 19, 20, 22],
-            "Skipping on JDK ${jdkVersion} due to Cloudflare TLS fingerprinting")
-
-        assertScript '''
+        def mvnrepositoryUri = rootUri
+        assertScript """
         import static groovy.http.HttpBuilder.http
 
         // tag::html_jsoup[]
         // @Grab('org.jsoup:jsoup:1.22.1') // needed if running as standalone script
-        def client = http('https://mvnrepository.com')
-        def res = client.get('/artifact/org.codehaus.groovy/groovy-all') {
-            header 'User-Agent', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        def client = http('${mvnrepositoryUri}')
+        def res = client.get('/artifact/org.apache.groovy/groovy-all') {
+            header 'User-Agent', 'Mozilla/5.0 (Macintosh)'
         }
 
         assert res.status == 200
@@ -210,7 +216,7 @@ class HttpBuilderSpecTest {
         def license = res.parsed.select('span.badge.badge-license')*.text().join(', ')
         assert license == 'Apache 2.0'
         // end::html_jsoup[]
-        '''
+        """
     }
 
     @Test
