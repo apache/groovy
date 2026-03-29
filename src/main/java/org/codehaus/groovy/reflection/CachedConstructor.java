@@ -128,10 +128,6 @@ public class CachedConstructor extends ParameterTypes implements MetaMember {
 
     public Constructor getCachedConstructor() {
         makeAccessibleIfNecessary();
-        if (!accessAllowed) {
-            AccessPermissionChecker.checkAccessPermission(cachedConstructor);
-            accessAllowed = true;
-        }
         return cachedConstructor;
     }
 
@@ -147,5 +143,5 @@ public class CachedConstructor extends ParameterTypes implements MetaMember {
         return Modifier.isAbstract(cachedConstructor.getDeclaringClass().getModifiers());
     }
 
-    private boolean accessAllowed = false;
+
 }

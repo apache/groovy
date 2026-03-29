@@ -19,7 +19,6 @@
 package org.codehaus.groovy.vmplugin.v9;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.GroovyBugError;
@@ -35,8 +34,6 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -136,48 +133,9 @@ public class Java9 extends Java8 {
     @Override
     protected MethodHandles.Lookup newLookup(final Class<?> targetClass) {
         try {
-            var privateLookup = getPrivateLookup();
-            if (privateLookup != null) {
-                return (MethodHandles.Lookup) privateLookup.invoke(null, targetClass, MethodHandles.lookup());
-            }
-            return getLookupConstructor().newInstance(targetClass, MethodHandles.Lookup.PRIVATE).in(targetClass);
-
-        } catch (final IllegalAccessException | InstantiationException e) {
+            return MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup());
+        } catch (final IllegalAccessException e) {
             throw new IllegalArgumentException(e);
-        } catch (final InvocationTargetException e) {
-            throw new GroovyRuntimeException(e);
-        }
-    }
-
-    protected static Constructor<MethodHandles.Lookup> getLookupConstructor() {
-        return LookupHolder.LOOKUP_Constructor;
-    }
-
-    protected static Method getPrivateLookup() {
-        return LookupHolder.PRIVATE_LOOKUP;
-    }
-
-    private static class LookupHolder {
-        private static final Method PRIVATE_LOOKUP;
-        private static final Constructor<MethodHandles.Lookup> LOOKUP_Constructor;
-
-        static {
-            Constructor<MethodHandles.Lookup> lookup = null;
-            Method privateLookup = null;
-            try { // java 9
-                privateLookup = MethodHandles.class.getMethod("privateLookupIn", Class.class, MethodHandles.Lookup.class);
-            } catch (final NoSuchMethodException | RuntimeException e) { // java 8 or fallback if anything else goes wrong
-                try {
-                    lookup = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, Integer.TYPE);
-                    if (!lookup.isAccessible()) {
-                        ReflectionUtils.trySetAccessible(lookup);
-                    }
-                } catch (final NoSuchMethodException ex) {
-                    throw new IllegalStateException("Incompatible JVM", e);
-                }
-            }
-            PRIVATE_LOOKUP = privateLookup;
-            LOOKUP_Constructor = lookup;
         }
     }
 
