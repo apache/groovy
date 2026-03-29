@@ -17,6 +17,19 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+#
+# download-release-artifacts.sh - Download Groovy release artifacts from dist.apache.org.
+#
+# Fetches the source, binary, doc, and sdk distribution zip files, their GPG signatures (.asc), and checksum
+# files (.sha256) into a local directory for offline verification.
+#
+# Artifacts are downloaded from:
+#   https://dist.apache.org/repos/dist/{dev|release}/groovy/<version>/
+#
+# Usage:
+#   download-release-artifacts.sh <dev|release> <version> [download-dir]
+#
+
 set -e
 
 if [ $# -lt 2 ]; then
@@ -49,24 +62,24 @@ VERSION=${VERSION#v} # in case someone prefixes a v
 # download into subdirs because they unpack into the same directory name
 # Source distro
 
-echo "Downloading SVN source release files"
+echo "Downloading source release files"
 curl -f -L -o "${DOWNLOAD_LOCATION}/src/apache-${PROJECT_NAME}-src-${VERSION}.zip" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/sources/apache-${PROJECT_NAME}-src-${VERSION}.zip"
 curl -f -L -o "${DOWNLOAD_LOCATION}/src/apache-${PROJECT_NAME}-src-${VERSION}.zip.asc" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/sources/apache-${PROJECT_NAME}-src-${VERSION}.zip.asc"
 curl -f -L -o "${DOWNLOAD_LOCATION}/src/apache-${PROJECT_NAME}-src-${VERSION}.zip.sha256" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/sources/apache-${PROJECT_NAME}-src-${VERSION}.zip.sha256"
 
 # Binary distro
 
-echo "Downloading SVN distribution binary files"
+echo "Downloading distribution binary files"
 curl -f -L -o "${DOWNLOAD_LOCATION}/binary/apache-${PROJECT_NAME}-binary-${VERSION}.zip" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-binary-${VERSION}.zip"
 curl -f -L -o "${DOWNLOAD_LOCATION}/binary/apache-${PROJECT_NAME}-binary-${VERSION}.zip.asc" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-binary-${VERSION}.zip.asc"
 curl -f -L -o "${DOWNLOAD_LOCATION}/binary/apache-${PROJECT_NAME}-binary-${VERSION}.zip.sha256" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-binary-${VERSION}.zip.sha256"
 
-echo "Downloading SVN distribution docs files"
+echo "Downloading distribution docs files"
 curl -f -L -o "${DOWNLOAD_LOCATION}/docs/apache-${PROJECT_NAME}-docs-${VERSION}.zip" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-docs-${VERSION}.zip"
 curl -f -L -o "${DOWNLOAD_LOCATION}/docs/apache-${PROJECT_NAME}-docs-${VERSION}.zip.asc" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-docs-${VERSION}.zip.asc"
 curl -f -L -o "${DOWNLOAD_LOCATION}/docs/apache-${PROJECT_NAME}-docs-${VERSION}.zip.sha256" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-docs-${VERSION}.zip.sha256"
 
-echo "Downloading SVN distribution sdk files"
+echo "Downloading distribution sdk files"
 curl -f -L -o "${DOWNLOAD_LOCATION}/sdk/apache-${PROJECT_NAME}-sdk-${VERSION}.zip" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-sdk-${VERSION}.zip"
 curl -f -L -o "${DOWNLOAD_LOCATION}/sdk/apache-${PROJECT_NAME}-sdk-${VERSION}.zip.asc" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-sdk-${VERSION}.zip.asc"
 curl -f -L -o "${DOWNLOAD_LOCATION}/sdk/apache-${PROJECT_NAME}-sdk-${VERSION}.zip.sha256" "https://dist.apache.org/repos/dist/${DIST_TYPE}/groovy/${VERSION}/distribution/apache-${PROJECT_NAME}-sdk-${VERSION}.zip.sha256"

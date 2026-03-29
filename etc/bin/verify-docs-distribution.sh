@@ -17,6 +17,22 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+#
+# verify-docs-distribution.sh - Verify a downloaded Groovy docs distribution.
+#
+# Expects the download directory to contain SVN_KEYS (the Groovy project KEYS
+# file) and a docs/ subdirectory with the zip, .asc, and .sha256 files, as
+# produced by download-release-artifacts.sh.
+#
+# Performs the following checks:
+#   1. SHA-256 checksum verification
+#   2. GPG signature verification (using an isolated temporary keyring)
+#   3. Extraction and presence of LICENSE and NOTICE
+#
+# Usage:
+#   verify-docs-distribution.sh <version> [download-dir]
+#
+
 set -euo pipefail
 
 if [ $# -lt 1 ]; then
@@ -30,6 +46,16 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 VERSION=${VERSION#v} # in case someone prefixes a v
 
+export GROOVY_GPG_HOME=$(mktemp -d)
+cleanup() {
+  rm -rf "${GROOVY_GPG_HOME}"
+}
+trap cleanup EXIT
+
+echo "Importing GPG key to independent GPG home ..."
+gpg --homedir "${GROOVY_GPG_HOME}" --import "${DOWNLOAD_LOCATION}/SVN_KEYS"
+echo "✅ GPG Key Imported"
+
 cd "${DOWNLOAD_LOCATION}/docs"
 ZIP_FILE=$(ls "apache-groovy-docs-${VERSION}.zip" 2>/dev/null | head -n 1)
 
@@ -37,12 +63,6 @@ if [ -z "${ZIP_FILE}" ]; then
   echo "Error: Could not find apache-groovy-docs-${VERSION}.zip in ${DOWNLOAD_LOCATION}/docs"
   exit 1
 fi
-
-export GROOVY_GPG_HOME=$(mktemp -d)
-cleanup() {
-  rm -rf "${GROOVY_GPG_HOME}"
-}
-trap cleanup EXIT
 
 echo "Verifying checksum..."
 EXPECTED_HASH=$(cat apache-groovy-docs-${VERSION}.zip.sha256 | tr -d '\r\n')
@@ -53,10 +73,6 @@ if [ "${EXPECTED_HASH}" != "${ACTUAL_HASH}" ]; then
 else
     echo "✅ Checksum Verified"
 fi
-
-echo "Importing GPG key to independent GPG home ..."
-gpg --homedir "${GROOVY_GPG_HOME}" --import "${DOWNLOAD_LOCATION}/SVN_KEYS"
-echo "✅ GPG Key Imported"
 
 echo "Verifying GPG signature..."
 gpg --homedir "${GROOVY_GPG_HOME}" --verify "apache-groovy-docs-${VERSION}.zip.asc" "apache-groovy-docs-${VERSION}.zip"
