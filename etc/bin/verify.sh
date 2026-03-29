@@ -17,6 +17,25 @@
 #  specific language governing permissions and limitations
 #  under the License.
 #
+#
+# verify.sh - End-to-end release verification for Apache Groovy.
+#
+# Downloads staged artifacts from dist.apache.org, verifies their checksums
+# and GPG signatures, checks for required files (LICENSE, NOTICE, README.md),
+# and runs the Apache RAT license audit against the extracted source.
+#
+# The individual steps are delegated to companion scripts in this directory:
+#   download-release-artifacts.sh  - fetches the distribution artifacts and hashes
+#   verify-<type>-distribution.sh  - checks integrity, signatures, and contents
+#
+# Usage:
+#   verify.sh <dev|release> <version> [download-dir]
+#
+# Examples:
+#   verify.sh dev 8.0.1 /tmp/geb-verify   # verify a staging candidate
+#   verify.sh release 8.0.0               # verify a published release
+#
+
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
@@ -95,6 +114,8 @@ if [ "${GRADLE_CMD}" = "gradle" ]; then
 else
   echo "Gradle Bootstrap not needed ..."
 fi
+
+cd -
 
 echo "Applying License Audit ..."
 cd "${DOWNLOAD_LOCATION}/src/groovy-${VERSION}"
