@@ -19,6 +19,7 @@
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 import java.nio.charset.StandardCharsets
@@ -186,6 +187,7 @@ class HttpBuilderSpecTest {
         """
     }
 
+    @Disabled("Requires external site and may fail due to 403 error")
     @Test
     void testHtmlJsoup() {
         // Skip on JDKs with TLS fingerprints that trigger Cloudflare bot detection
