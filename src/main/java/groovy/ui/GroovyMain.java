@@ -61,10 +61,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import static java.lang.System.Logger.Level.ERROR;
+
 /**
  * A Command line to execute groovy.
  */
 public class GroovyMain {
+
+    private static final System.Logger LOGGER = System.getLogger(GroovyMain.class.getName());
 
     // arguments to the script
     private List<String> args;
@@ -390,13 +394,13 @@ public class GroovyMain {
             }
             return true;
         } catch (CompilationFailedException e) {
-            System.err.println(e);
+            LOGGER.log(ERROR, e.toString());
             return false;
         } catch (Throwable e) {
             if (e instanceof InvokerInvocationException iie) {
                 e = iie.getCause();
             }
-            System.err.println("Caught: " + e);
+            LOGGER.log(ERROR, "Caught: {0}", e);
             if (!debug) {
                 StackTraceUtils.deepSanitize(e);
             }

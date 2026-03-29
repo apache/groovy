@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.lang.System.Logger.Level.INFO;
+
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -56,6 +58,8 @@ import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.RETURN;
 
 public class DgmConverter {
+
+    private static final System.Logger LOGGER = System.getLogger(DgmConverter.class.getName());
 
     public static void main(String[] args) throws IOException {
         String targetDirectory = "build/classes/";
@@ -124,7 +128,7 @@ public class DgmConverter {
 
         GeneratedMetaMethod.DgmMethodRecord.saveDgmInfo(records, targetDirectory+"/META-INF/dgminfo");
         if (info)
-            System.out.println("Saved " + cur + " dgm records to: "+targetDirectory+"/META-INF/dgminfo");
+            LOGGER.log(INFO, "Saved {0} dgm records to: {1}/META-INF/dgminfo", cur, targetDirectory);
     }
 
     private static void createConstructor(ClassWriter cw) {

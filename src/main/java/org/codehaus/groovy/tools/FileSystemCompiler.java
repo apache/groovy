@@ -48,11 +48,15 @@ import java.util.Map;
 import static groovy.ui.GroovyMain.buildConfigScriptText;
 import static groovy.ui.GroovyMain.processConfigScriptText;
 import static groovy.ui.GroovyMain.processConfigScripts;
+import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Command-line compiler (aka. <tt>groovyc</tt>).
  */
 public class FileSystemCompiler {
+
+    private static final System.Logger LOGGER = System.getLogger(FileSystemCompiler.class.getName());
 
     private static boolean displayStackTraceOnError = false;
     private final CompilationUnit unit;
@@ -116,10 +120,10 @@ public class FileSystemCompiler {
         for (String filename : filenames) {
             File file = new File(filename);
             if (!file.exists()) {
-                System.err.println("error: file not found: " + file);
+                LOGGER.log(ERROR, "File not found: {0}", file);
                 errors += 1;
             } else if (!file.canRead()) {
-                System.err.println("error: file not readable: " + file);
+                LOGGER.log(ERROR, "File not readable: {0}", file);
                 errors += 1;
             }
         }
@@ -244,7 +248,7 @@ public class FileSystemCompiler {
             try {
                 if (tmpDir != null) deleteRecursive(tmpDir);
             } catch (Throwable t) {
-                System.err.println("error: could not delete temp files - " + tmpDir.getPath());
+                LOGGER.log(WARNING, "Could not delete temp files - {0}", tmpDir.getPath());
             }
         }
     }
@@ -269,14 +273,14 @@ public class FileSystemCompiler {
                         fileList.add(file);
                     }
                 } catch (IOException ioe) {
-                    System.err.println("error: file not readable: " + fn);
+                    LOGGER.log(ERROR, "File not readable: {0}", fn);
                     errors = true;
                 } finally {
                     if (null != br) {
                         try {
                             br.close();
                         } catch (IOException e) {
-                            System.err.println("error: failed to close buffered reader: " + fn);
+                            LOGGER.log(WARNING, "Failed to close buffered reader: {0}", fn);
                             errors = true;
                         }
                     }
@@ -440,7 +444,7 @@ public class FileSystemCompiler {
                     || Integer.parseInt(warningLevel) == WarningMessage.PARANOIA) {
                 configuration.setWarningLevel(Integer.parseInt(warningLevel));
             } else {
-                System.err.println("error: warning level not recognized: " + warningLevel);
+                LOGGER.log(ERROR, "Warning level not recognized: {0}", warningLevel);
             }
 
             // joint compilation parameters

@@ -22,7 +22,11 @@ import java.math.BigDecimal;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 class Sys {
+
+    private static final System.Logger LOGGER = System.getLogger(Sys.class.getName());
 
     private static final boolean is1_8OrLater;
     private static final boolean is1_7;
@@ -48,8 +52,7 @@ class Sys {
                     v = new BigDecimal("1.9");
                 }
             } catch (Exception ex) {
-                ex.printStackTrace();
-                System.err.println("Unable to determine build number or version");
+                LOGGER.log(WARNING, "Unable to determine build number or version", ex);
             }
         } else if ("1.8.0".equals(sversion)) {
             v = new BigDecimal("1.8");

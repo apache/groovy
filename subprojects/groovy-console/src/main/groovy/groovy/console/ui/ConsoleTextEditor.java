@@ -55,10 +55,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.prefs.Preferences;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Component which provides a styled editor for the console.
  */
 public class ConsoleTextEditor extends JScrollPane {
+    private static final System.Logger LOGGER = System.getLogger(ConsoleTextEditor.class.getName());
     private static final long serialVersionUID = -3582625263676326887L;
     private static final Preferences PREFERENCES = Preferences.userNodeForPackage(Console.class);
     private static final String PREFERENCE_FONT_SIZE = "fontSize";
@@ -104,7 +107,7 @@ public class ConsoleTextEditor extends JScrollPane {
             try {
                 startingY = textEditor.modelToView(start).y + fontHeight - fontDesc;
             } catch (BadLocationException e1) {
-                System.err.println(e1.getMessage());
+                LOGGER.log(WARNING, e1.getMessage());
             }
             g.setFont(f);
             for (int line = startline, y = startingY; line <= endline; y += fontHeight, line++) {

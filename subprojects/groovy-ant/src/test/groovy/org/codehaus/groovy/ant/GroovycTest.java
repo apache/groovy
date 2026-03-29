@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -34,6 +33,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -243,24 +246,35 @@ final class GroovycTest {
 
     @Test
     void testGroovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath() {
-        // capture ant's output so we can verify the effect of passing compilerarg to javac
-        ByteArrayOutputStream allOutput = new ByteArrayOutputStream();
+        // Capture javac warnings via JUL handler — JavacJavaCompiler logs via System.Logger
+        // which defaults to JUL backend
+        StringBuilder logOutput = new StringBuilder();
+        String loggerName = "org.codehaus.groovy.tools.javac.JavacJavaCompiler";
+        Logger julLogger = Logger.getLogger(loggerName);
+        Level originalLevel = julLogger.getLevel();
+        julLogger.setLevel(Level.ALL);
+        Handler handler = new Handler() {
+            @Override public void publish(LogRecord record) { logOutput.append(record.getMessage()); }
+            @Override public void flush() {}
+            @Override public void close() {}
+        };
+        handler.setLevel(Level.ALL);
+        julLogger.addHandler(handler);
 
-        PrintStream out = System.out;
-        System.setOut(new PrintStream(allOutput));
         try {
             ensureNotPresent("IncorrectGenericsUsage");
             project.executeTarget("Groovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath");
             ensurePresent("IncorrectGenericsUsage");
 
-            String antOutput = adjustOutputToHandleOpenJDKJavacOutputDifference(allOutput.toString());
+            String antOutput = adjustOutputToHandleOpenJDKJavacOutputDifference(logOutput.toString());
             // verify if passing -Xlint in compilerarg had its effect
             Pattern p = Pattern.compile(".*?found[ ]*:[ ]*java.util.ArrayList.*", Pattern.DOTALL);
             assertTrue(p.matcher(antOutput).matches(), "Expected line 1 not found in ant output");
             p = Pattern.compile(".*?required[ ]*:[ ]*java.util.ArrayList<java.lang.String>.*", Pattern.DOTALL);
             assertTrue(p.matcher(antOutput).matches(), "Expected line 2 not found in ant output");
         } finally {
-            System.setOut(out);
+            julLogger.removeHandler(handler);
+            julLogger.setLevel(originalLevel);
         }
     }
 
