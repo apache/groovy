@@ -569,6 +569,52 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
+    // GROOVY-11889: instanceof interface check on union type
+    @Test
+    void testInstanceOf27() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer) {
+                    if (x instanceof Serializable) {
+                        assert true
+                    }
+                }
+            }
+            test('hello')
+            test(42)
+        '''
+    }
+
+    // GROOVY-11889: union containing interface delegate
+    @Test
+    void testInstanceOf28() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof Serializable || x instanceof String) {
+                    if (x instanceof String) {
+                        assert true
+                    }
+                }
+            }
+            test('hello')
+        '''
+    }
+
+    // GROOVY-11889: incompatible instanceof on union type should produce error
+    @Test
+    void testInstanceOf29() {
+        shouldFailWithMessages '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer) {
+                    if (x instanceof Long) {
+                        // unreachable - neither String nor Integer is related to Long
+                    }
+                }
+            }
+        ''',
+        'Incompatible instanceof types'
+    }
+
     // GROOVY-5226
     @Test
     void testNestedInstanceOf1() {
