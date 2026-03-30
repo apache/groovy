@@ -21,11 +21,13 @@ package org.codehaus.groovy.runtime.powerassert;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.io.Serial;
+
 /**
  * Indicates that the source text for an assertion statement is not available.
  */
 public class SourceTextNotAvailableException extends RuntimeException {
-    private static final long serialVersionUID = -3815868502019514479L;
+    @Serial private static final long serialVersionUID = -3815868502019514479L;
 
     // only accepts AssertStatementS so that better error messages can be produced
     public SourceTextNotAvailableException(AssertStatement stat, SourceUnit unit, String msg) {

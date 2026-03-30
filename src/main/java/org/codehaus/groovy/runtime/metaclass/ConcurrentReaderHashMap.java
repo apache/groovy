@@ -19,6 +19,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
@@ -139,7 +140,7 @@ import java.util.Set;
 public class ConcurrentReaderHashMap
   extends AbstractMap
   implements Cloneable, Serializable {
-  private static final long serialVersionUID = -3225682440765612861L;
+    @Serial private static final long serialVersionUID = -3225682440765612861L;
 
 
   /*
@@ -167,7 +168,7 @@ public class ConcurrentReaderHashMap
 
   /** A Serializable class for barrier lock **/
   protected static class BarrierLock implements java.io.Serializable {
-      private static final long serialVersionUID = -2159505361622844863L;
+      @Serial private static final long serialVersionUID = -2159505361622844863L;
   }
 
   /**

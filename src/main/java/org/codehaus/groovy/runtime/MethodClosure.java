@@ -23,6 +23,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
+import java.io.Serial;
 import java.util.Arrays;
 
 /**
@@ -37,7 +38,7 @@ public class MethodClosure extends Closure {
 
     //
 
-    private static final long serialVersionUID = -2491254866810955844L;
+    @Serial private static final long serialVersionUID = -2491254866810955844L;
 
     /**
      * Indicates if this may be related to an instance method.

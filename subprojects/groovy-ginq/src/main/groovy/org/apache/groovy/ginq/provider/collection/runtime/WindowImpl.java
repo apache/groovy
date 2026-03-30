@@ -21,6 +21,7 @@ package org.apache.groovy.ginq.provider.collection.runtime;
 import groovy.lang.Tuple2;
 import org.apache.groovy.util.ReversedList;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
@@ -287,5 +288,5 @@ class WindowImpl<T, U extends Comparable<? super U>> extends QueryableCollection
     private final List<T> list;
     private static final BigDecimal MIN_VALUE = toBigDecimal(Long.MIN_VALUE);
     private static final BigDecimal MAX_VALUE = toBigDecimal(Long.MAX_VALUE);
-    private static final long serialVersionUID = -3458969297047398621L;
+    @Serial private static final long serialVersionUID = -3458969297047398621L;
 }

@@ -18,17 +18,19 @@
  */
 package org.codehaus.groovy.util;
 
+import java.io.Serial;
+
 /**
  * Soft reference with lazy initialization under lock
  */
 public abstract class LazyReference<T> extends LockableObject {
     private static final ManagedReference INIT = new ManagedReference(ReferenceType.HARD,null,null){};
     private static final ManagedReference NULL_REFERENCE = new ManagedReference(ReferenceType.HARD,null,null){};
-    private static final long serialVersionUID = -828564509716680325L;
+    @Serial private static final long serialVersionUID = -828564509716680325L;
     private ManagedReference<T> reference = INIT;
     private final ReferenceBundle bundle;
 
-    public LazyReference(ReferenceBundle bundle) { 
+    public LazyReference(ReferenceBundle bundle) {
         this.bundle = bundle;
     }
 

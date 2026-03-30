@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.GroovyRuntimeException;
 
+import java.io.Serial;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -27,7 +28,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class InvokerInvocationException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = 1337849572129640775L;
+    @Serial private static final long serialVersionUID = 1337849572129640775L;
 
     public InvokerInvocationException(InvocationTargetException e) {
         super(e.getTargetException());

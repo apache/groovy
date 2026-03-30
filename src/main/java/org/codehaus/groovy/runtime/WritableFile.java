@@ -20,16 +20,13 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Writable;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 
 /**
  * A Writable File.
  */
 public class WritableFile extends File implements Writable {
-    private static final long serialVersionUID = 4157767752861425917L;
+    @Serial private static final long serialVersionUID = 4157767752861425917L;
     private final String encoding;
 
     public WritableFile(final File delegate) {

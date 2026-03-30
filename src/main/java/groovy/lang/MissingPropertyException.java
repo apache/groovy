@@ -21,6 +21,8 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MethodRankHelper;
 
+import java.io.Serial;
+
 /**
  * An exception occurred if a dynamic property dispatch fails with an unknown property.
  * <p>
@@ -31,7 +33,7 @@ public class MissingPropertyException extends GroovyRuntimeException {
 
     public  static final Object MPE = new Object(); // synchronization?
 
-    private static final long serialVersionUID = -1780027060966200019L;
+    @Serial private static final long serialVersionUID = -1780027060966200019L;
 
     private final String property;
     private final Class  type;

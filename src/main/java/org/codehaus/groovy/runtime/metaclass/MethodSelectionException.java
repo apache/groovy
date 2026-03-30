@@ -23,6 +23,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedConstructor;
 import org.codehaus.groovy.util.FastArray;
 
+import java.io.Serial;
 import java.lang.reflect.Modifier;
 
 /**
@@ -36,7 +37,7 @@ import java.lang.reflect.Modifier;
  */
 public class MethodSelectionException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = 8126246630023758333L;
+    @Serial private static final long serialVersionUID = 8126246630023758333L;
     private final String methodName;
     private final FastArray methods;
     private final Class[] arguments;

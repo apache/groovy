@@ -35,6 +35,7 @@ import org.codehaus.groovy.runtime.memoize.LRUCache;
 import org.codehaus.groovy.runtime.memoize.Memoize;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.io.Writer;
 import java.util.Map;
@@ -200,7 +201,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     public static final int DONE = 1, SKIP = 2;
     private static final Object[] EMPTY_OBJECT_ARRAY = {};
     public static final Closure IDENTITY = new Closure<Object>(null) {
-        private static final long serialVersionUID = 730973623329943963L;
+        @Serial private static final long serialVersionUID = 730973623329943963L;
 
         public Object doCall(Object args) {
             return args;
@@ -232,7 +233,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
     private int directive;
     protected Class<?>[] parameterTypes;
     protected int maximumNumberOfParameters;
-    private static final long serialVersionUID = 4368710879820278874L;
+    @Serial private static final long serialVersionUID = 4368710879820278874L;
     private BooleanClosureWrapper bcw;
 
     public Closure(Object owner, Object thisObject) {
@@ -950,7 +951,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * inner class instead of the outer!
      */
     private class WritableClosure extends Closure implements Writable {
-        private static final long serialVersionUID = -5749205698681690370L;
+        @Serial private static final long serialVersionUID = -5749205698681690370L;
 
         private WritableClosure() {
             super(Closure.this);

@@ -28,6 +28,7 @@ import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,7 +40,7 @@ import java.util.List;
  */
 public class ErrorCollector implements Serializable {
 
-    private static final long serialVersionUID = 2844774170905056755L;
+    @Serial private static final long serialVersionUID = 2844774170905056755L;
 
     /**
      * ErrorMessages collected during processing

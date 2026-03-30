@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.runtime.memoize;
 
+import java.io.Serial;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ import java.util.Map;
  * The touch method can be used to renew an element and move it to the from the LRU queue.
  */
 final class LRUProtectionStorage extends LinkedHashMap<Object, Object> implements ProtectionStorage {
-    private static final long serialVersionUID = 1L;
+    @Serial private static final long serialVersionUID = 1L;
 
     private final int maxSize;
 

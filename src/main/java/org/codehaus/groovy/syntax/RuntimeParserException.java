@@ -21,13 +21,15 @@ package org.codehaus.groovy.syntax;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.ASTNode;
 
+import java.io.Serial;
+
 /**
  * A helper class to allow parser exceptions to be thrown anywhere in the code.
  * Should be replaced when no longer required.
  */
 public class RuntimeParserException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = -6612860527133856587L;
+    @Serial private static final long serialVersionUID = -6612860527133856587L;
 
     public RuntimeParserException(String message, ASTNode node) {
         super(message + "\n", node);

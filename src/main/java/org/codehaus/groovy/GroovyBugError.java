@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy;
 
+import java.io.Serial;
+
 /**
  * This class represents an error that is thrown when a bug is
  * recognized inside the runtime. Basically it is thrown when
@@ -25,7 +27,7 @@ package org.codehaus.groovy;
  */
 public class GroovyBugError extends AssertionError {
 
-    private static final long serialVersionUID = -9165076784700059275L;
+    @Serial private static final long serialVersionUID = -9165076784700059275L;
     // message string
     private String message;
     // optional exception

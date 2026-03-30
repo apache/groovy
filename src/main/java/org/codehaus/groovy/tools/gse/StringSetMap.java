@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.gse;
 
+import java.io.Serial;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -25,7 +26,7 @@ import java.util.TreeSet;
 
 public class StringSetMap extends LinkedHashMap<String,Set<String>> {
 
-    private static final long serialVersionUID = -8603734698633884431L;
+    @Serial private static final long serialVersionUID = -8603734698633884431L;
 
     public StringSetMap() {
         super();

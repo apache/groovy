@@ -18,13 +18,14 @@
  */
 package org.codehaus.groovy.util;
 
+import java.io.Serial;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
  * A bit simplified lock designed to be inherited by.
  */
 public class LockableObject extends AbstractQueuedSynchronizer {
-    private static final long serialVersionUID = 2284470475073785118L;
+    @Serial private static final long serialVersionUID = 2284470475073785118L;
     transient Thread owner;
 
     @Override

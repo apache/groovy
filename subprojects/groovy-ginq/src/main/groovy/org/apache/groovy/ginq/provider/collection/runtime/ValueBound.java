@@ -18,13 +18,15 @@
  */
 package org.apache.groovy.ginq.provider.collection.runtime;
 
+import java.io.Serial;
+
 /**
  * Represents value bounds of window frame
  *
  * @since 4.0.0
  */
 public class ValueBound<U extends Comparable<? super U>> extends AbstractBound<U, U> {
-    private static final long serialVersionUID = -8240086260919353012L;
+    @Serial private static final long serialVersionUID = -8240086260919353012L;
 
     /**
      * Construct a new ValueBound instance with lower and upper frame bounds

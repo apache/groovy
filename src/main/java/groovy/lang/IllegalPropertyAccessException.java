@@ -18,16 +18,17 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 /**
- * An exception occurred if a dynamic property dispatch fails with a 
+ * An exception occurred if a dynamic property dispatch fails with a
  * field not accessible.
  */
 public class IllegalPropertyAccessException extends MissingPropertyException {
 
-    private static final long serialVersionUID = 8149534204771978786L;
+    @Serial private static final long serialVersionUID = 8149534204771978786L;
 
     private static String makeMessage(String propertyName, Class clazz, int modifiers, boolean isField) {
         String access = "private";

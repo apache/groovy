@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -135,7 +136,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     }
 
     private static final class Bucket<E> extends ArrayList<E> {
-        private static final long serialVersionUID = 2813676753531316403L;
+        @Serial private static final long serialVersionUID = 2813676753531316403L;
         Bucket(int initialCapacity) {
             super(initialCapacity);
         }
@@ -802,5 +803,5 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     private static final String PARALLEL = "parallel";
     private static final String TRUE_STR = "true";
     private static final String FALSE_STR = "false";
-    private static final long serialVersionUID = -5067092453136522893L;
+    @Serial private static final long serialVersionUID = -5067092453136522893L;
 }

@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.Serial;
 import java.util.List;
 
 /**
@@ -57,7 +58,7 @@ import java.util.List;
  */
 public final class ComposedClosure<V> extends Closure<V> {
 
-    private static final long serialVersionUID = -4816724431590921285L;
+    @Serial private static final long serialVersionUID = -4816724431590921285L;
     private Closure first;
     private Closure<V> second;
 

@@ -18,12 +18,14 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
+
 /**
  * This exception is thrown if an attempt is made to set a read-only property.
  */
 public class ReadOnlyPropertyException extends MissingPropertyException {
 
-    private static final long serialVersionUID = -1800912081930896077L;
+    @Serial private static final long serialVersionUID = -1800912081930896077L;
 
     public ReadOnlyPropertyException(final String property, final Class type) {
         super("Cannot set read-only property: " + property + " for class: " + type.getName(), property, type);

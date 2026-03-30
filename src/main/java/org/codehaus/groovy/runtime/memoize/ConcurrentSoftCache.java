@@ -19,6 +19,7 @@
 
 package org.codehaus.groovy.runtime.memoize;
 
+import java.io.Serial;
 import java.lang.ref.SoftReference;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ import java.util.Map;
  * @param <V> real value type
  */
 public class ConcurrentSoftCache<K, V> extends ConcurrentCommonCache<K, SoftReference<V>> {
-    private static final long serialVersionUID = 5646536868666351819L;
+    @Serial private static final long serialVersionUID = 5646536868666351819L;
 
 
     /**

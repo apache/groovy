@@ -18,15 +18,17 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
+
 /**
  * An exception occurred if a dynamic field dispatch fails with an unknown field.
- * 
+ *
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
  */
 public class MissingFieldException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = -9209464582858098430L;
+    @Serial private static final long serialVersionUID = -9209464582858098430L;
     private final String field;
     private final Class type;
 
@@ -56,7 +58,7 @@ public class MissingFieldException extends GroovyRuntimeException {
     }
 
     /**
-     * 
+     *
      * @return The type on which the field was attempted to be called
      */
     public Class getType() {
