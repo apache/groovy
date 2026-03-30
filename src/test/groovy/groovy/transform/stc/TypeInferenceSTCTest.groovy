@@ -537,8 +537,8 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         '''
     }
 
-    // GROOVY-7971: negated || instanceof — re-check instanceof in else branch
-    @Test @org.junit.jupiter.api.Disabled('requires instanceof compatibility fix for UnionTypeClassNode')
+    // GROOVY-11889: negated || instanceof — re-check instanceof in else branch
+    @Test
     void testInstanceOf25() {
         assertScript '''
             void test(Object x) {
