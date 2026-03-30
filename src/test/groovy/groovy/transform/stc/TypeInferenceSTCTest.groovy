@@ -431,6 +431,144 @@ class TypeInferenceSTCTest extends StaticTypeCheckingTestCase {
         'Incompatible instanceof types: java.lang.Integer and java.lang.Long'
     }
 
+    // GROOVY-7971: nested && within || — method calls on narrowed types within
+    // each && branch should work; the || produces a union for the body
+    @Test
+    void testInstanceOf18() {
+        assertScript '''
+            int test(Object x) {
+                if (x instanceof String && x.length() > 0 || x instanceof List && x.size() > 0) {
+                    return 1
+                }
+                return 0
+            }
+            assert test('hello') == 1
+            assert test([1, 2, 3]) == 1
+            assert test('') == 0
+            assert test([]) == 0
+            assert test(42) == 0
+        '''
+    }
+
+    // GROOVY-7971: ternary with || instanceof in condition
+    @Test
+    void testInstanceOf19() {
+        assertScript '''
+            String test(Object x) {
+                (x instanceof String || x instanceof Integer) ? x.toString() : 'other'
+            }
+            assert test('hi') == 'hi'
+            assert test(42) == '42'
+            assert test(3.14) == 'other'
+        '''
+    }
+
+    // GROOVY-7971: negated || instanceof
+    @Test
+    void testInstanceOf20() {
+        assertScript '''
+            void test(Object x) {
+                if (!(x instanceof String || x instanceof Integer)) {
+                    assert x != null
+                }
+            }
+            test('hello')
+            test(42)
+            test(3.14)
+        '''
+    }
+
+    // GROOVY-7971: chained || with 3+ instanceof checks
+    @Test
+    void testInstanceOf21() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer || x instanceof List) {
+                    assert "$x" != null // should be String|Integer|List
+                }
+            }
+            test('hello')
+            test(42)
+            test([1, 2])
+        '''
+    }
+
+    // GROOVY-7971: RHS of || should not see LHS instanceof narrowing
+    @Test
+    void testInstanceOf22() {
+        assertScript '''
+            void test(Number n) {
+                if (n instanceof Integer || n.doubleValue() > 0) {
+                    assert "$n" != null // n should be Integer|Number
+                }
+            }
+            test(42)
+            test(1.5)
+        '''
+    }
+
+    // GROOVY-7971: closure shared variable with || instanceof
+    @Test
+    void testInstanceOf23() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof Integer) {
+                    def c = { -> x.toString() }
+                    assert c() != null
+                }
+            }
+            test('hello')
+            test(42)
+        '''
+    }
+
+    // GROOVY-11888: method resolution on union type — toString() is on Object
+    // and should be found via (String|List) union
+    @Test
+    void testInstanceOf24() {
+        assertScript '''
+            void test(Object x) {
+                if (x instanceof String || x instanceof List) {
+                    assert x.toString() != null
+                }
+            }
+            test('hello')
+            test([1, 2])
+        '''
+    }
+
+    // GROOVY-7971: negated || instanceof — re-check instanceof in else branch
+    @Test @org.junit.jupiter.api.Disabled('requires instanceof compatibility fix for UnionTypeClassNode')
+    void testInstanceOf25() {
+        assertScript '''
+            void test(Object x) {
+                if (!(x instanceof String || x instanceof Integer)) {
+                    assert x != null
+                } else {
+                    assert x instanceof String || x instanceof Integer
+                }
+            }
+            test('hello')
+            test(42)
+            test(3.14)
+        '''
+    }
+
+    // GROOVY-11888: method resolution on union type — intValue() is on Number
+    // and should be found via (Integer|Number) union
+    @Test
+    void testInstanceOf26() {
+        assertScript '''
+            void test(Number n) {
+                if (n instanceof Integer || n.intValue() > 0) {
+                    assert n.intValue() >= 0
+                }
+            }
+            test(42)
+            test(1.5)
+        '''
+    }
+
     // GROOVY-5226
     @Test
     void testNestedInstanceOf1() {
