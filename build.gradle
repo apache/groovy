@@ -132,7 +132,7 @@ dependencies {
     tools "commons-io:commons-io:2.21.0"
     tools "org.apache.maven:maven-core:3.9.14"
     tools "org.apache.maven.shared:maven-shared-utils:3.4.2"
-    tools "org.codehaus.plexus:plexus-utils:4.0.2"
+    tools "org.codehaus.plexus:plexus-utils:4.0.3"
     // end
     tools "org.ow2.asm:asm:${versions.asm}"
     tools "com.thoughtworks.qdox:qdox:${versions.qdox}"
