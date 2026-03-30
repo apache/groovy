@@ -20,6 +20,8 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.Serial;
+
 import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
 
 /**
@@ -49,7 +51,7 @@ import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
  */
 public final class CurriedClosure<V> extends Closure<V> {
 
-    private static final long serialVersionUID = 2077643745780234126L;
+    @Serial private static final long serialVersionUID = 2077643745780234126L;
     private final Object[] curriedArguments;
     private final int minParamsExpected;
     private int index;

@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.Serial;
 import java.lang.reflect.Method;
 import java.util.Map;
 
@@ -29,7 +30,7 @@ import java.util.Map;
  */
 public class ConvertedMap extends ConversionHandler {
 
-    private static final long serialVersionUID = 8535543126684786030L;
+    @Serial private static final long serialVersionUID = 8535543126684786030L;
 
     /**
      * to create a ConvertedMap object.

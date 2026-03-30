@@ -21,6 +21,8 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.MethodRankHelper;
 
+import java.io.Serial;
+
 /**
  * An exception occurred if a dynamic method dispatch fails with an unknown method.
  * <p>
@@ -29,7 +31,7 @@ import org.codehaus.groovy.runtime.MethodRankHelper;
  */
 public class MissingMethodException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = -6676430495683939401L;
+    @Serial private static final long serialVersionUID = -6676430495683939401L;
 
     private final String method;
     private final Class<?> type;

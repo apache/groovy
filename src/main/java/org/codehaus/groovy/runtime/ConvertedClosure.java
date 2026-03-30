@@ -20,6 +20,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 
@@ -30,7 +31,7 @@ import static org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation
  */
 public class ConvertedClosure extends ConversionHandler implements Serializable {
 
-    private static final long serialVersionUID = 1162833713450835227L;
+    @Serial private static final long serialVersionUID = 1162833713450835227L;
 
     private final String methodName;
 

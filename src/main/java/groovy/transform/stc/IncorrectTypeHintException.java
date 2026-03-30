@@ -21,8 +21,10 @@ package groovy.transform.stc;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.syntax.SyntaxException;
 
+import java.io.Serial;
+
 public class IncorrectTypeHintException extends SyntaxException {
-    private static final long serialVersionUID = 4481159236968540419L;
+    @Serial private static final long serialVersionUID = 4481159236968540419L;
 
     public IncorrectTypeHintException(final MethodNode mn, final Throwable e, int line, int column) {
         super("Incorrect type hint in @ClosureParams in class "+mn.getDeclaringClass().getName()+" method "+mn.getTypeDescriptor()+" : "+e.getMessage(), e, line, column);

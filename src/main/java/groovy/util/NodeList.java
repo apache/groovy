@@ -25,6 +25,7 @@ import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.namespace.QName;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -33,7 +34,7 @@ import java.util.Collection;
  * which provides some XPath like helper methods for GPath.
  */
 public class NodeList extends ArrayList {
-    private static final long serialVersionUID = 8307095805417308716L;
+    @Serial private static final long serialVersionUID = 8307095805417308716L;
 
     static {
         // wrap the standard MetaClass with the delegate

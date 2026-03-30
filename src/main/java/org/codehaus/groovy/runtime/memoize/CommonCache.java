@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime.memoize;
 
 import org.apache.groovy.util.concurrent.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
@@ -39,7 +40,7 @@ import java.util.Set;
  * @since 2.5.0
  */
 public class CommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<V, Object>, Serializable {
-    private static final long serialVersionUID = 934699400232698324L;
+    @Serial private static final long serialVersionUID = 934699400232698324L;
     /**
      * The default load factor
      */
@@ -79,7 +80,7 @@ public class CommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<
                         .build();
         }
         return new LinkedHashMap<K, V>(initialCapacity, DEFAULT_LOAD_FACTOR, lru) {
-            private static final long serialVersionUID = -8012450791479726621L;
+            @Serial private static final long serialVersionUID = -8012450791479726621L;
 
             @Override
             protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {

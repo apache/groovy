@@ -22,6 +22,7 @@ import javax.annotation.concurrent.Immutable;
 import javax.annotation.concurrent.ThreadSafe;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
@@ -1458,7 +1459,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** An entry that allows updates to write through to the map. */
   final class WriteThroughEntry extends SimpleEntry<K, V> {
-    private static final long serialVersionUID = 1;
+      @Serial private static final long serialVersionUID = 1;
 
     WriteThroughEntry(Node<K, V> node) {
       super(node.key, node.getValue());
@@ -1477,7 +1478,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** A weigher that enforces that the weight falls within a valid range. */
   static final class BoundedEntryWeigher<K, V> implements EntryWeigher<K, V>, Serializable {
-    private static final long serialVersionUID = 1;
+      @Serial private static final long serialVersionUID = 1;
     final EntryWeigher<? super K, ? super V> weigher;
 
     BoundedEntryWeigher(EntryWeigher<? super K, ? super V> weigher) {
@@ -1514,9 +1515,9 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
     @Override public void onEviction(Object key, Object value) {}
   }
 
-  /* ---------------- Serialization Support -------------- */
+    /* ---------------- Serialization Support -------------- */
 
-  private static final long serialVersionUID = 1;
+    @Serial private static final long serialVersionUID = 1;
 
   Object writeReplace() {
     return new SerializationProxy<>(this);
@@ -1559,7 +1560,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
       return map;
     }
 
-    private static final long serialVersionUID = 1;
+      @Serial private static final long serialVersionUID = 1;
   }
 
   /* ---------------- Builder -------------- */

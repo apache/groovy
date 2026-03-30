@@ -20,13 +20,15 @@ package org.apache.groovy.ginq.dsl;
 
 import org.codehaus.groovy.ast.expr.Expression;
 
+import java.io.Serial;
+
 /**
  * Represents GINQ syntax error
  *
  * @since 4.0.0
  */
 public class GinqSyntaxError extends AssertionError {
-    private static final long serialVersionUID = 1106607493949279933L;
+    @Serial private static final long serialVersionUID = 1106607493949279933L;
     private final int line;
     private final int column;
 

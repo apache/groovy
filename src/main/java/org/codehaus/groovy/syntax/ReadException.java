@@ -21,12 +21,13 @@ package org.codehaus.groovy.syntax;
 import org.codehaus.groovy.GroovyException;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * Encapsulates non-specific i/o exceptions.
  */
 public class ReadException extends GroovyException {
-    private static final long serialVersionUID = 848585058428047961L;
+    @Serial private static final long serialVersionUID = 848585058428047961L;
     private final IOException cause;
 
     public ReadException(IOException cause) {

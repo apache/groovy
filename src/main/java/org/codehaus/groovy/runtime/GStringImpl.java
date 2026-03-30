@@ -24,6 +24,7 @@ import groovy.transform.Pure;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
@@ -37,7 +38,7 @@ import java.util.stream.Stream;
  * @see groovy.lang.GString
  */
 public class GStringImpl extends GString {
-    private static final long serialVersionUID = 3581289038662723858L;
+    @Serial private static final long serialVersionUID = 3581289038662723858L;
     private final String[] strings;
     private final boolean frozen;
     private boolean cacheable;

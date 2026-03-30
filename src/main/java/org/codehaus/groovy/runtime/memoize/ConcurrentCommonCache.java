@@ -19,6 +19,8 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import javax.annotation.concurrent.ThreadSafe;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
@@ -34,7 +36,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @ThreadSafe
 public class ConcurrentCommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<V, Object>, Serializable {
-    private static final long serialVersionUID = -7352338549333024936L;
+    @Serial private static final long serialVersionUID = -7352338549333024936L;
 
     private final ReentrantReadWriteLock rwl = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = rwl.readLock();

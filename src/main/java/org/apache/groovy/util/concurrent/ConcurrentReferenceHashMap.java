@@ -25,6 +25,7 @@ package org.apache.groovy.util.concurrent;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -234,7 +235,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      */
     private static final int RETRIES_BEFORE_LOCK = 2;
 
-    private static final long serialVersionUID = 7249069246763182397L;
+    @Serial private static final long serialVersionUID = 7249069246763182397L;
 
     /* ---------------- Fields -------------- */
 
@@ -504,7 +505,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
          * count field are marked in code comments.
          */
 
-        private static final long serialVersionUID = 2249069246763182397L;
+        @Serial private static final long serialVersionUID = 2249069246763182397L;
 
         /**
          * The number of elements in this segment's region.
@@ -1772,7 +1773,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      * This class is needed for JDK5 compatibility.
      */
     protected static class SimpleEntry<K, V> implements Entry<K, V>, Serializable {
-        private static final long serialVersionUID = -8499721149061103585L;
+        @Serial private static final long serialVersionUID = -8499721149061103585L;
 
         protected final K key;
         protected V value;
@@ -1829,7 +1830,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V> implemen
      * changes to the underlying map.
      */
     protected class WriteThroughEntry extends SimpleEntry<K, V> {
-        private static final long serialVersionUID = -7900634345345313646L;
+        @Serial private static final long serialVersionUID = -7900634345345313646L;
 
         protected WriteThroughEntry(K k, V v) {
             super(k, v);

@@ -18,12 +18,14 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
+
 /**
  * An exception thrown by a closure invocation
  */
 public class ClosureException extends RuntimeException {
 
-    private static final long serialVersionUID = -945565055750688719L;
+    @Serial private static final long serialVersionUID = -945565055750688719L;
     private final Closure closure;
 
     public ClosureException(Closure closure, Throwable cause) {

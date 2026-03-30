@@ -21,6 +21,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.RangeInfo;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.util.AbstractList;
@@ -55,7 +56,7 @@ import java.util.Objects;
  */
 public class IntRange extends AbstractList<Integer> implements Range<Integer>, Serializable {
 
-    private static final long serialVersionUID = -7827097587793510780L;
+    @Serial private static final long serialVersionUID = -7827097587793510780L;
 
     /**
      * Iterates through each number in an <code>IntRange</code>.

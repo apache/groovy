@@ -21,12 +21,14 @@ package groovy.lang;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ModuleNode;
 
+import java.io.Serial;
+
 /**
  * An exception thrown by the interpreter
  */
 public class GroovyRuntimeException extends RuntimeException {
 
-    private static final long serialVersionUID = -193137033604506378L;
+    @Serial private static final long serialVersionUID = -193137033604506378L;
     private ModuleNode module;
     private ASTNode node;
 

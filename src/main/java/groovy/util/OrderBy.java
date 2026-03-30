@@ -22,6 +22,7 @@ import groovy.lang.Closure;
 import org.codehaus.groovy.runtime.NumberAwareComparator;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,7 +34,7 @@ import java.util.List;
  */
 public class OrderBy<T> implements Comparator<T>, Serializable {
 
-    private static final long serialVersionUID = 8385130064804116654L;
+    @Serial private static final long serialVersionUID = 8385130064804116654L;
     private final List<Closure> closures;
     private boolean equalityCheck;
     private final NumberAwareComparator<Object> numberAwareComparator = new NumberAwareComparator<Object>();

@@ -53,6 +53,7 @@ import java.awt.event.KeyEvent;
 import java.awt.print.PrinterJob;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Serial;
 import java.util.prefs.Preferences;
 
 import static java.lang.System.Logger.Level.WARNING;
@@ -62,7 +63,7 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 public class ConsoleTextEditor extends JScrollPane {
     private static final System.Logger LOGGER = System.getLogger(ConsoleTextEditor.class.getName());
-    private static final long serialVersionUID = -3582625263676326887L;
+    @Serial private static final long serialVersionUID = -3582625263676326887L;
     private static final Preferences PREFERENCES = Preferences.userNodeForPackage(Console.class);
     private static final String PREFERENCE_FONT_SIZE = "fontSize";
     private static final int DEFAULT_FONT_SIZE = 12;

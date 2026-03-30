@@ -23,6 +23,7 @@ import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.RangeInfo;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -54,7 +55,7 @@ import static org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus.plus;
  */
 public class NumberRange extends AbstractList<Comparable> implements Range<Comparable>, Serializable {
 
-    private static final long serialVersionUID = 5107424833653948484L;
+    @Serial private static final long serialVersionUID = 5107424833653948484L;
     /**
      * The first value in the range.
      */

@@ -21,15 +21,17 @@ package groovy.lang;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 
+import java.io.Serial;
+
 /**
  * An exception occurred if a dynamic method dispatch fails with an unknown class.
- * 
+ *
  * Note that the Missing*Exception classes were named for consistency and
  * to avoid conflicts with JDK exceptions of the same name.
  */
 public class MissingClassException extends GroovyRuntimeException {
 
-    private static final long serialVersionUID = -4059735896182191589L;
+    @Serial private static final long serialVersionUID = -4059735896182191589L;
     private final String type;
 
     public MissingClassException(String type, ASTNode node, String message) {
@@ -43,7 +45,7 @@ public class MissingClassException extends GroovyRuntimeException {
     }
 
     /**
-     * 
+     *
      * @return The type that could not be resolved
      */
     public String getType() {
