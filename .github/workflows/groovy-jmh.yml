@@ -42,7 +42,7 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           check-latest: true
-      - uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c
+      - uses: gradle/actions/setup-gradle@39e147cb9de83bb9910b8ef8bd7fff0ee20fcd6f
       - name: JMH (${{ matrix.suite }})
         run: ./gradlew perf:jmh -PbenchInclude=${{ matrix.pattern }}
         timeout-minutes: 60
