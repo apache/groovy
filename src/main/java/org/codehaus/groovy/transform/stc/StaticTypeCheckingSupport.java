@@ -965,7 +965,7 @@ public abstract class StaticTypeCheckingSupport {
             var view = methods;
             if (duckType) {
                 view = methods.stream().filter(m -> implementsInterfaceOrSubclassOf(rcvr, m.getDeclaringClass())).toList();
-                if (view.size() > 1 && !first(view).isConstructor())
+                if (view.size() > 1)
                     view = removeCovariantsAndInterfaceEquivalents(view, true);
             }
             view = chooseBestMethods(rcvr, view, argumentTypes);
