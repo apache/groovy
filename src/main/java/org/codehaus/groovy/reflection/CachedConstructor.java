@@ -112,7 +112,7 @@ public class CachedConstructor extends ParameterTypes implements MetaMember {
                 init
                         + constructor
                         + " with arguments: "
-                        + FormatHelper.toString(argumentArray)
+                        + FormatHelper.toArrayString(argumentArray)
                         + " reason: "
                         + e,
                 setReason ? e : null);

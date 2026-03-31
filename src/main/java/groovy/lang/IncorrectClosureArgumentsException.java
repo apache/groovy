@@ -38,9 +38,9 @@ public class IncorrectClosureArgumentsException extends GroovyRuntimeException {
             "Incorrect arguments to closure: "
                 + closure
                 + ". Expected: "
-                + FormatHelper.toString(expected)
+                + FormatHelper.toArrayString(expected)
                 + ", actual: "
-                + FormatHelper.toString(arguments));
+                + FormatHelper.toString(arguments));  // arguments is Object, not array
         this.closure = closure;
         this.arguments = arguments;
         this.expected = expected;

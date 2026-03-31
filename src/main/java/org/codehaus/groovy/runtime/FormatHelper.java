@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaMethod;
 import groovy.lang.Range;
 import groovy.lang.Writable;
 import groovy.transform.NamedParam;
@@ -28,15 +29,12 @@ import groovy.transform.NamedParams;
 import org.apache.groovy.io.StringBuilderWriter;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-import org.w3c.dom.Element;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -61,8 +59,25 @@ public class FormatHelper {
     private static final int ITEM_ALLOCATE_SIZE = 5;
 
     public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
-    private static final String XMLUTIL_CLASS_FULL_NAME = "groovy.xml.XmlUtil";
-    private static final String SERIALIZE_METHOD_NAME = "serialize";
+    private static final String GROOVY_TO_STRING = "groovyToString";
+    private static final Class[] EMPTY_TYPES = {};
+
+    /**
+     * Attempts to invoke a {@code groovyToString()} extension method on the given object
+     * via the metaclass. Returns the result if found, or {@code null} if no such method exists.
+     */
+    static String tryGroovyToString(Object object) {
+        if (object == null) return null;
+        try {
+            MetaMethod method = InvokerHelper.getMetaClass(object).getMetaMethod(GROOVY_TO_STRING, EMPTY_TYPES);
+            if (method != null) {
+                return (String) method.invoke(object, EMPTY_ARGS);
+            }
+        } catch (ClassCastException | GroovyRuntimeException ignore) {
+            // method found but not applicable to this object's actual type
+        }
+        return null;
+    }
 
     static final Set<String> DEFAULT_IMPORT_PKGS = new HashSet<>();
     static final Set<String> DEFAULT_IMPORT_CLASSES = new HashSet<>();
@@ -152,7 +167,16 @@ public class FormatHelper {
         }
         if (arguments.getClass().isArray()) {
             if (arguments instanceof Object[]) {
+                if (!inspect && !escapeBackslashes && maxSize == -1 && !safe) {
+                    String result = tryGroovyToString(arguments);
+                    return result != null ? result : arguments.toString();
+                }
                 return toArrayString((Object[]) arguments, inspect, escapeBackslashes, maxSize, safe);
+            }
+            if (!inspect && !escapeBackslashes && maxSize == -1 && !safe) {
+                // char[] and primitive arrays — delegate to groovyToString if available
+                String result = tryGroovyToString(arguments);
+                return result != null ? result : arguments.toString();
             }
             if (arguments instanceof char[]) {
                 return new String((char[]) arguments);
@@ -160,33 +184,26 @@ public class FormatHelper {
             // other primitives
             return formatCollection(DefaultTypeTransformation.arrayAsCollection(arguments), inspect, escapeBackslashes, maxSize, safe);
         }
-        if (arguments instanceof Range range) {
-            try {
-                if (inspect) {
-                    return range.inspect();
-                } else {
-                    return range.toString();
+        // When inspect/maxSize/safe are active, use the hardcoded formatters for
+        // Range, Collection, and Map (they support those parameters). Otherwise, the
+        // groovyToString check below will handle them.
+        if (inspect || escapeBackslashes || maxSize != -1 || safe) {
+            if (arguments instanceof Range range) {
+                try {
+                    return inspect ? range.inspect() : range.toString();
+                } catch (RuntimeException ex) {
+                    if (!safe) throw ex;
+                    return handleFormattingException(arguments, ex);
+                } catch (Exception ex) {
+                    if (!safe) throw new GroovyRuntimeException(ex);
+                    return handleFormattingException(arguments, ex);
                 }
-            } catch (RuntimeException ex) {
-                if (!safe) throw ex;
-                return handleFormattingException(arguments, ex);
-            } catch (Exception ex) {
-                if (!safe) throw new GroovyRuntimeException(ex);
-                return handleFormattingException(arguments, ex);
             }
-        }
-        if (arguments instanceof Collection) {
-            return formatCollection((Collection) arguments, inspect, escapeBackslashes, maxSize, safe);
-        }
-        if (arguments instanceof Map) {
-            return formatMap((Map) arguments, inspect, escapeBackslashes, maxSize, safe);
-        }
-        if (arguments instanceof Element) {
-            try {
-                Method serialize = Class.forName(XMLUTIL_CLASS_FULL_NAME).getMethod(SERIALIZE_METHOD_NAME, Element.class);
-                return (String) serialize.invoke(null, arguments);
-            } catch (ClassNotFoundException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                throw new RuntimeException(e);
+            if (arguments instanceof Collection) {
+                return formatCollection((Collection) arguments, inspect, escapeBackslashes, maxSize, safe);
+            }
+            if (arguments instanceof Map) {
+                return formatMap((Map) arguments, inspect, escapeBackslashes, maxSize, safe);
             }
         }
         if (arguments instanceof CharSequence) {
@@ -198,9 +215,13 @@ public class FormatHelper {
             if (!inspect) return arg;
             return !escapeBackslashes && multiline(arg) ? "\"\"\"" + arg + "\"\"\"" : DQ + arg.replace(DQ, "\\\"") + DQ;
         }
+        // Check for a groovyToString() extension method. By default, DGM methods
+        // provide Groovy's custom formatting for Map, Collection, and Object[].
+        // Users can add groovyToString for any type via extension modules, or
+        // disable it with -Dgroovy.extension.disable=groovyToString.
+        String groovyStr = tryGroovyToString(arguments);
+        if (groovyStr != null) return groovyStr;
         try {
-            // TODO: For GROOVY-2599 do we need something like below but it breaks other things
-//            return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
             return arguments.toString();
         } catch (RuntimeException ex) {
             if (!safe) throw ex;
@@ -482,14 +503,6 @@ public class FormatHelper {
     public static void write(Writer out, Object object) throws IOException {
         if (object instanceof String) {
             out.write((String) object);
-        } else if (object instanceof Object[]) {
-            out.write(toArrayString((Object[]) object));
-        } else if (object instanceof Map) {
-            out.write(toMapString((Map) object));
-        } else if (object instanceof Collection) {
-            out.write(toListString((Collection) object));
-        } else if (object instanceof Writable writable) {
-            writable.writeTo(out);
         } else if (object instanceof InputStream || object instanceof Reader) {
             // Copy stream to stream
             Reader reader;
@@ -506,7 +519,14 @@ public class FormatHelper {
                 }
             }
         } else {
-            out.write(toString(object));
+            String result = tryGroovyToString(object);
+            if (result != null) {
+                out.write(result);
+            } else if (object instanceof Writable writable) {
+                writable.writeTo(out);
+            } else {
+                out.write(toString(object));
+            }
         }
     }
 
@@ -516,16 +536,6 @@ public class FormatHelper {
     public static void append(Appendable out, Object object) throws IOException {
         if (object instanceof String) {
             out.append((String) object);
-        } else if (object instanceof Object[]) {
-            out.append(toArrayString((Object[]) object));
-        } else if (object instanceof Map) {
-            out.append(toMapString((Map) object));
-        } else if (object instanceof Collection) {
-            out.append(toListString((Collection) object));
-        } else if (object instanceof Writable writable) {
-            Writer stringWriter = new StringBuilderWriter();
-            writable.writeTo(stringWriter);
-            out.append(stringWriter.toString());
         } else if (object instanceof InputStream || object instanceof Reader) {
             // Copy stream to stream
             try (Reader reader =
@@ -540,7 +550,16 @@ public class FormatHelper {
                 }
             }
         } else {
-            out.append(toString(object));
+            String result = tryGroovyToString(object);
+            if (result != null) {
+                out.append(result);
+            } else if (object instanceof Writable writable) {
+                Writer stringWriter = new StringBuilderWriter();
+                writable.writeTo(stringWriter);
+                out.append(stringWriter.toString());
+            } else {
+                out.append(toString(object));
+            }
         }
     }
 }

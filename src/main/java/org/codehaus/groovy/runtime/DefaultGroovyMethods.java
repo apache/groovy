@@ -8140,6 +8140,101 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // groovyToString
+
+    /**
+     * Returns Groovy's default string representation for a Map.
+     * This is used by Groovy's formatting infrastructure (e.g., GString interpolation,
+     * {@code println}, assert messages). By default, it delegates to
+     * {@link FormatHelper#toMapString(Map)}.
+     * <p>
+     * <pre class="groovyTestCase">
+     * assert [a:1, b:2].groovyToString() == '[a:1, b:2]'
+     * </pre>
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(Map)},
+     * the normal map {@code toString()} is used instead.
+     * Alternatively, you have the option to provide a replacement extension method in an extension module
+     * to customize how maps are displayed throughout Groovy.
+     *
+     * @param self the Map to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(Map self) {
+        return FormatHelper.toMapString(self);
+    }
+
+    /**
+     * Returns Groovy's default string representation for a Range.
+     * By default, it delegates to {@link Range#toString()},
+     * producing the compact {@code from..to} notation.
+     * <p>
+     * <pre class="groovyTestCase">
+     * assert (1..4).groovyToString() == '1..4'
+     * </pre>
+     * <p>
+     * This method exists to stop the {@code groovyToString(Collection)} variant
+     * from overriding the built-in {@code Range#toString}.
+     * Since a range is a list, you can use {@code range.toListString()}
+     * to print it using normal list formatting.
+     *
+     * @param self the Range to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(Range self) {
+        return self.toString();
+    }
+
+    /**
+     * Returns Groovy's default string representation for a Collection.
+     * This is used by Groovy's formatting infrastructure (e.g., GString interpolation,
+     * {@code println}, assert messages). By default, it delegates to
+     * {@link FormatHelper#toListString(Collection)}.
+     * <p>
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].groovyToString() == '[1, 2, 3]'
+     * </pre>
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(Collection)},
+     * the normal list {@code toString()} is used instead.
+     * Alternatively, you have the option to provide a replacement extension method in an extension module
+     * to customize how collections are displayed throughout Groovy.
+     *
+     * @param self the Collection to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(Collection self) {
+        return FormatHelper.toListString(self);
+    }
+
+    /**
+     * Returns Groovy's default string representation for an XML Element.
+     * This is used by Groovy's formatting infrastructure. By default, it
+     * serializes the element using {@code groovy.xml.XmlUtil.serialize(Element)}.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(Element)},
+     * the element's default {@code toString()} is used instead.
+     * Alternatively, you have the option to provide a replacement extension method in an extension module
+     * to customize how elements are displayed throughout Groovy.
+     *
+     * @param self the Element to format
+     * @return the serialized XML string
+     * @since 6.0.0
+     */
+    public static String groovyToString(org.w3c.dom.Element self) {
+        try {
+            java.lang.reflect.Method serialize = Class.forName("groovy.xml.XmlUtil")
+                    .getMethod("serialize", org.w3c.dom.Element.class);
+            return (String) serialize.invoke(null, self);
+        } catch (Exception e) {
+            return self.toString();
+        }
+    }
+
+    //--------------------------------------------------------------------------
     // hasProperty
 
     /**

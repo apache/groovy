@@ -364,4 +364,75 @@ class FormatHelperTest {
     void testMetaRegistryNotNull() {
         assertNotNull(FormatHelper.metaRegistry)
     }
+
+    // -- groovyToString tests (GROOVY-11893) --
+
+    static class Foo {
+        String toString() { 'some foo' }
+        String groovyToString() { 'some bar' }
+    }
+
+    @Test
+    void groovyToStringUsedInMapFormatting() {
+        assert [foo: new Foo()].toString() == '[foo:some bar]'
+    }
+
+    @Test
+    void groovyToStringUsedInListFormatting() {
+        assert [new Foo()].toString() == '[some bar]'
+    }
+
+    @Test
+    void groovyToStringUsedInInterpolation() {
+        def f = new Foo()
+        assert "$f" == 'some bar'
+    }
+
+    @Test
+    void groovyToStringUsedByFormatHelper() {
+        assert FormatHelper.toString(new Foo()) == 'some bar'
+    }
+
+    static class BadFoo {
+        Date groovyToString() { new Date() }
+        String toString() { 'fallback foo' }
+    }
+
+    @Test
+    void groovyToStringWrongReturnTypeFallsBack() {
+        assert FormatHelper.toString(new BadFoo()) == 'fallback foo'
+    }
+
+    @Test
+    void groovyToStringDisabledViaForkedJvm() {
+        def groovyHome = System.getProperty('groovy.home') ?: System.env.GROOVY_HOME
+        // Find java executable
+        def javaHome = System.getProperty('java.home')
+        def java = new File(javaHome, 'bin/java').absolutePath
+        // Build classpath from current test classpath
+        def cp = System.getProperty('java.class.path')
+
+        def script = '''
+            int[] arr = [1, 2, 3]
+            // With groovyToString disabled for int[], should fall back to Java's toString
+            // which produces something like [I@hashcode rather than [1, 2, 3]
+            print(arr.toString().startsWith('[1'))
+        '''
+
+        def scriptFile = File.createTempFile('groovyToStringTest', '.groovy')
+        scriptFile.deleteOnExit()
+        scriptFile.text = script
+
+        def pb = new ProcessBuilder(java, '-cp', cp,
+                '-Dgroovy.extension.disable=groovyToString(int[])',
+                'groovy.ui.GroovyMain', scriptFile.absolutePath)
+        pb.redirectErrorStream(true)
+        def process = pb.start()
+        def output = process.inputStream.text.trim()
+        def exitCode = process.waitFor()
+
+        // With groovyToString disabled, int[].toString() should NOT produce [1, 2, 3]
+        assert output == 'false', "Expected groovyToString to be disabled, but got: $output"
+        assert exitCode == 0
+    }
 }

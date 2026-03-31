@@ -3344,11 +3344,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         StringBuilder msg = new StringBuilder("Ambiguous method overloading for method ");
         msg.append(theClassName).append("#").append(name)
                 .append(".\nCannot resolve which method to invoke for ")
-                .append(FormatHelper.toString(arguments))
+                .append(FormatHelper.toArrayString(arguments))
                 .append(" due to overlapping prototypes between:");
         for (final Object match : matches) {
             CachedClass[] types = ((ParameterTypes) match).getParameterTypes();
-            msg.append("\n\t").append(FormatHelper.toString(types));
+            msg.append("\n\t").append(FormatHelper.toArrayString(types));
         }
         return msg.toString();
     }
