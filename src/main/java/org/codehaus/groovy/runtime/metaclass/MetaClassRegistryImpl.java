@@ -84,7 +84,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
     private final ExtensionModuleRegistry moduleRegistry = new ExtensionModuleRegistry();
     private final String disabledString = SystemUtil.getSystemPropertySafe(EXTENSION_DISABLE_PROPERTY);
     private final boolean disabling = disabledString != null;
-    private final Set<String> disabledNames = disabling ? new HashSet<>(Arrays.asList(disabledString.split(","))) : null;
+    private final List<DisabledMethodSpec> disabledSpecs = disabling ? DisabledMethodSpec.parse(disabledString) : null;
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -207,7 +207,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
                 List<GeneratedMetaMethod.DgmMethodRecord> records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
 
                 for (GeneratedMetaMethod.DgmMethodRecord record : records) {
-                    if (disabling && disabledNames.contains(record.methodName)) continue;
+                    if (disabling && isDisabled(record.methodName, record.parameters)) continue;
                     Class[] newParams = new Class[record.parameters.length - 1];
                     System.arraycopy(record.parameters, 1, newParams, 0, newParams.length);
 
@@ -235,7 +235,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
             CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
             for (CachedMethod method : methods) {
                 if (method.isStatic() && method.isPublic() && method.getAnnotation(Deprecated.class) == null) {
-                    if (disabling && disabledNames.contains(method.getName())) continue;
+                    if (disabling && isDisabled(method.getName(), method.getParameterTypes())) continue;
                     CachedClass[] paramTypes = method.getParameterTypes();
                     if (paramTypes.length > 0) {
                         List<MetaMethod> arr = map.computeIfAbsent(paramTypes[0], k -> new ArrayList<MetaMethod>(4));
@@ -538,6 +538,118 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
                     instanceMethods.add(metaMethod);
                 }
             }
+        }
+    }
+
+    // DGM records use Class[]
+    private boolean isDisabled(String methodName, Class[] parameters) {
+        for (DisabledMethodSpec spec : disabledSpecs) {
+            if (spec.matches(methodName, parameters)) return true;
+        }
+        return false;
+    }
+
+    // Extension module methods use CachedClass[]
+    private boolean isDisabled(String methodName, CachedClass[] parameters) {
+        for (DisabledMethodSpec spec : disabledSpecs) {
+            if (spec.matches(methodName, parameters)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Represents a parsed entry from the {@code groovy.extension.disable} system property.
+     * <p>
+     * Supported forms:
+     * <ul>
+     *   <li>{@code methodName} — matches all overloads</li>
+     *   <li>{@code methodName(type)} — matches by receiver type (first parameter)</li>
+     *   <li>{@code methodName(type1,type2,...)} — matches the exact parameter signature</li>
+     * </ul>
+     */
+    private static final class DisabledMethodSpec {
+        private final String name;
+        private final String[] paramTypes; // null means match all overloads
+
+        DisabledMethodSpec(String name, String[] paramTypes) {
+            this.name = name;
+            this.paramTypes = paramTypes;
+        }
+
+        boolean matches(String methodName, Class[] parameters) {
+            if (!name.equals(methodName)) return false;
+            if (paramTypes == null) return true;
+            if (paramTypes.length != parameters.length) return false;
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (!matchesType(paramTypes[i], parameters[i])) return false;
+            }
+            return true;
+        }
+
+        boolean matches(String methodName, CachedClass[] parameters) {
+            if (!name.equals(methodName)) return false;
+            if (paramTypes == null) return true;
+            if (paramTypes.length != parameters.length) return false;
+            for (int i = 0; i < paramTypes.length; i++) {
+                if (!matchesType(paramTypes[i], parameters[i].getTheClass())) return false;
+            }
+            return true;
+        }
+
+        // Allows simple name ("Set"), fully qualified name ("java.util.Set"),
+        // and array notation ("Object[]", "boolean[][]", etc.).
+        // Uses Class.getCanonicalName() which produces human-readable names
+        // like "java.lang.Object[]" instead of JVM names like "[Ljava.lang.Object;".
+        private static boolean matchesType(String spec, Class<?> type) {
+            String canonical = type.getCanonicalName();
+            if (spec.equals(canonical)) return true;
+            // allow simple name to match: "Set" matches "java.util.Set",
+            // "Object[]" matches "java.lang.Object[]"
+            String simpleName = type.getSimpleName();
+            return spec.equals(simpleName);
+        }
+
+        /**
+         * Parses the comma-separated disable property value, respecting parentheses.
+         * For example: {@code "asChecked,toSorted(Set,Class),collect"} produces three specs.
+         */
+        static List<DisabledMethodSpec> parse(String input) {
+            List<DisabledMethodSpec> specs = new ArrayList<>();
+            for (String entry : splitRespectingParens(input)) {
+                entry = entry.trim();
+                if (entry.isEmpty()) continue;
+                int parenIdx = entry.indexOf('(');
+                if (parenIdx < 0) {
+                    specs.add(new DisabledMethodSpec(entry, null));
+                } else {
+                    String name = entry.substring(0, parenIdx);
+                    String paramStr = entry.substring(parenIdx + 1, entry.length() - 1);
+                    if (paramStr.isEmpty()) {
+                        specs.add(new DisabledMethodSpec(name, new String[0]));
+                    } else {
+                        String[] params = paramStr.split(",");
+                        for (int i = 0; i < params.length; i++) params[i] = params[i].trim();
+                        specs.add(new DisabledMethodSpec(name, params));
+                    }
+                }
+            }
+            return specs;
+        }
+
+        private static List<String> splitRespectingParens(String input) {
+            List<String> result = new ArrayList<>();
+            int depth = 0, start = 0;
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c == '(') depth++;
+                else if (c == ')') depth--;
+                else if (c == ',' && depth == 0) {
+                    result.add(input.substring(start, i));
+                    start = i + 1;
+                }
+            }
+            result.add(input.substring(start));
+            return result;
         }
     }
 }
