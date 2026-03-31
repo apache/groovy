@@ -729,8 +729,8 @@ For a complete list of options, please refer to gapi:org.codehaus.groovy.control
 This customizer will allow the developer of a DSL to restrict the
 *grammar* of the language, for example, to prevent users from using particular constructs.
 It is only ``secure'' in that one aspect, i.e. limiting the allowable constructs within a DSL.
-It does *not* replace a security manager which might additionally
-be needed as an orthogonal aspect of overall security.
+It does *not* replace other aspects of security which might additionally
+be needed.
 The only reason for it to exist is to limit the expressiveness of the
 language. This customizer only works at the AST (abstract syntax tree)
 level, not at runtime! It can be strange at first glance, but it makes

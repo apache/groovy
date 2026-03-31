@@ -134,7 +134,7 @@ public interface VMPlugin {
      * @param ao the accessible object
      * @return {@code true} if the {@code accessible} flag is set to {@code true};
      *         {@code false} if access cannot be enabled.
-     * @throws SecurityException if the request is denied by the security manager
+     * @throws SecurityException if the request is denied by the security manager (legacy comment)
      */
     boolean trySetAccessible(AccessibleObject ao);
 
