@@ -9658,6 +9658,176 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // isSorted
+
+    /**
+     * Determines if the Iterable is sorted. Assumes the elements are
+     * comparable and uses a {@link NumberAwareComparator} to determine the order.
+     * <pre class="groovyTestCase">
+     * assert [1, 2, 3].isSorted()
+     * assert !([3, 1, 2].isSorted())
+     * assert [].isSorted()
+     * </pre>
+     *
+     * @param self the Iterable to check
+     * @return true if the elements are sorted in non-descending order
+     * @see #isSorted(Iterable, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterable<T> self) {
+        return isSorted(self, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Determines if the Iterable is sorted according to the given Comparator.
+     * This is efficient — it checks adjacent pairs in a single pass and
+     * short-circuits on the first out-of-order pair.
+     * {@code SortedSet} instances always return {@code true}.
+     * <pre class="groovyTestCase">
+     * assert ["hello","Hey","hi"].isSorted(String.CASE_INSENSITIVE_ORDER)
+     * assert !(["hi","Hey","hello"].isSorted(String.CASE_INSENSITIVE_ORDER))
+     * assert (new TreeSet(["c","a","b"])).isSorted()
+     * </pre>
+     *
+     * @param self       the Iterable to check
+     * @param comparator a Comparator used for the comparison
+     * @return true if the elements are sorted according to the comparator
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterable<T> self, Comparator<? super T> comparator) {
+        if (self instanceof SortedSet) return true;
+        return isSorted(self.iterator(), comparator);
+    }
+
+    /**
+     * Determines if the Iterable is sorted using the given Closure to determine order.
+     * <p>
+     * If the Closure has two parameters it is used like a traditional Comparator.
+     * Otherwise, the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for further comparison.
+     * <pre class="groovyTestCase">
+     * assert ["hi","hey","hello"].isSorted { it.length() }
+     * assert !["hello","hi","hey"].isSorted { it.length() }
+     * assert ["hi","hey","hello"].isSorted { a, b {@code ->} a.length() {@code <=>} b.length() }
+     * </pre>
+     *
+     * @param self    the Iterable to check
+     * @param closure a 1 or 2 arg Closure used to determine the ordering
+     * @return true if the elements are sorted according to the closure
+     * @see #isSorted(Iterable, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterable<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        return isSorted(self, comparator);
+    }
+
+    /**
+     * Determines if the Iterator elements are sorted. Assumes the elements are
+     * comparable and uses a {@link NumberAwareComparator} to determine the order.
+     * <p>
+     * The iterator will be exhausted of elements after determining the sorted status.
+     *
+     * @param self the Iterator to check
+     * @return true if the elements are sorted in non-descending order
+     * @see #isSorted(Iterator, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterator<T> self) {
+        return isSorted(self, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Determines if the Iterator elements are sorted according to the given Comparator.
+     * This is efficient — it checks adjacent pairs and short-circuits on the first
+     * out-of-order pair. The iterator will be exhausted only if the elements are sorted.
+     *
+     * @param self       the Iterator to check
+     * @param comparator a Comparator used for the comparison
+     * @return true if the elements are sorted according to the comparator
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterator<T> self, Comparator<? super T> comparator) {
+        if (!self.hasNext()) return true;
+        T prev = self.next();
+        while (self.hasNext()) {
+            T curr = self.next();
+            if (comparator.compare(prev, curr) > 0) return false;
+            prev = curr;
+        }
+        return true;
+    }
+
+    /**
+     * Determines if the Iterator elements are sorted using the given Closure to determine order.
+     * <p>
+     * If the Closure has two parameters it is used like a traditional Comparator.
+     * Otherwise, the Closure is assumed to take a single parameter and return a
+     * Comparable which is then used for further comparison.
+     * <p>
+     * The iterator will be exhausted of elements after determining the sorted status.
+     *
+     * @param self    the Iterator to check
+     * @param closure a 1 or 2 arg Closure used to determine the ordering
+     * @return true if the elements are sorted according to the closure
+     * @see #isSorted(Iterator, Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(Iterator<T> self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure closure) {
+        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        return isSorted(self, comparator);
+    }
+
+    /**
+     * Determines if the Map entries are sorted.
+     * Assumes the entries are comparable and uses a {@link NumberAwareValueComparator}
+     * to determine the order. The map's iteration order is checked.
+     * <pre class="groovyTestCase">
+     * def map = new LinkedHashMap([b:3, d:4, a:5, c:6])
+     * assert map.isSorted()
+     * </pre>
+     *
+     * @param self the Map to check
+     * @return true if the map entries are sorted in non-descending order
+     * @since 6.0.0
+     */
+    public static <K, V> boolean isSorted(Map<K, V> self) {
+        return isSorted(self, new NumberAwareValueComparator<>());
+    }
+
+    /**
+     * Determines if the Map entries are sorted according to the given Comparator.
+     * The map's iteration order is checked.
+     * {@code SortedMap} instances always return {@code true}.
+     *
+     * @param self       the Map to check
+     * @param comparator a Comparator used to compare Map.Entry instances
+     * @return true if the map entries are sorted according to the comparator
+     * @since 6.0.0
+     */
+    public static <K, V> boolean isSorted(Map<K, V> self, Comparator<Map.Entry<K, V>> comparator) {
+        if (self instanceof SortedMap) return true;
+        return isSorted(self.entrySet(), comparator);
+    }
+
+    /**
+     * Determines if the Map entries are sorted using the given Closure to determine order.
+     * <p>
+     * If the Closure has two parameters it is used like a traditional Comparator on entries.
+     * Otherwise, the Closure is assumed to take a single entry parameter and return a
+     * Comparable which is then used for further comparison.
+     *
+     * @param self      the Map to check
+     * @param condition a Closure used as a comparator
+     * @return true if the map entries are sorted according to the closure
+     * @since 6.0.0
+     */
+    public static <K, V> boolean isSorted(Map<K, V> self, @ClosureParams(value=FromString.class, options={"Map.Entry<K,V>","Map.Entry<K,V>,Map.Entry<K,V>"}) Closure condition) {
+        Comparator<Map.Entry<K,V>> comparator = (condition.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(condition) : new ClosureComparator<>(condition);
+        return isSorted(self, comparator);
+    }
+
+    //--------------------------------------------------------------------------
     // isUpperCase
 
     /**
