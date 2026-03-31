@@ -94,9 +94,9 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
                     "Parameters to method: "
                     + getName()
                     + " do not match types: "
-                    + FormatHelper.toString(getParameterTypes())
+                    + FormatHelper.toArrayString(getParameterTypes())
                     + " for arguments: "
-                    + FormatHelper.toString(arguments));
+                    + FormatHelper.toArrayString(arguments));
         }
     }
 
@@ -143,7 +143,7 @@ public abstract class MetaMethod extends ParameterTypes implements MetaMember, C
             + "[name: "
             + getName()
             + " params: "
-            + FormatHelper.toString(getParameterTypes())
+            + FormatHelper.toArrayString(getParameterTypes())
             + " returns: "
             + getReturnType()
             + " owner: "

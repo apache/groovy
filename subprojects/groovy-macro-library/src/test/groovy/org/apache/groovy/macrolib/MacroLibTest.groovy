@@ -34,7 +34,7 @@ final class MacroLibTest {
     @Test
     void testSV() {
         assertScript BASE + '''\
-            assert SV(num, list, range, string).toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+            assert SV(num, list, range, string).toString() == 'num=42, list=[1, 2, 3], range=0..5, string=foo'
         '''
     }
 
@@ -44,14 +44,14 @@ final class MacroLibTest {
             def cl = {
                 SV(num, list, range, string).toString()
             }
-            assert cl().toString() == 'num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+            assert cl().toString() == 'num=42, list=[1, 2, 3], range=0..5, string=foo'
         '''
     }
 
     @Test
     void testList() {
         assertScript BASE + '''\
-            assert [SV(num, list), SV(range, string)].toString() == '[num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo]'
+            assert [SV(num, list), SV(range, string)].toString() == '[num=42, list=[1, 2, 3], range=0..5, string=foo]'
         '''
     }
 
@@ -59,7 +59,7 @@ final class MacroLibTest {
     void testSVInclude() {
         assertScript BASE + '''\
             def numSV = SV(num)
-            assert SV(numSV, list, range, string).toString() == 'numSV=num=42, list=[1, 2, 3], range=[0, 1, 2, 3, 4, 5], string=foo'
+            assert SV(numSV, list, range, string).toString() == 'numSV=num=42, list=[1, 2, 3], range=0..5, string=foo'
         '''
     }
 

@@ -4430,6 +4430,142 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // groovyToString
+
+    /**
+     * Returns Groovy's list-like string representation for an Object array.
+     * This is used by Groovy's formatting infrastructure (e.g., GString interpolation,
+     * {@code println}, assert messages). By default, it delegates to
+     * {@link FormatHelper#toArrayString(Object[])}.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(Object[])},
+     * the JDK's default array {@code toString()} is used instead.
+     * Alternatively, you have the option to provide a replacement extension method in an extension module
+     * to customize how arrays are displayed throughout Groovy.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(Object[] self) {
+        return FormatHelper.toArrayString(self);
+    }
+
+    /**
+     * Returns Groovy's list-like string representation for a boolean array.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(boolean[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(boolean[] self) {
+        return FormatHelper.toListString(DefaultTypeTransformation.primitiveArrayToList(self));
+    }
+
+    /**
+     * Returns Groovy's list-like string representation for a byte array.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(byte[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(byte[] self) {
+        return FormatHelper.toListString(DefaultTypeTransformation.primitiveArrayToList(self));
+    }
+
+    /**
+     * Returns Groovy's string representation for a char array.
+     * By default, a char array is rendered as a String (e.g. {@code 'abc'.chars}
+     * displays as {@code abc}).
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(char[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(char[] self) {
+        return new String(self);
+    }
+
+    /**
+     * Returns Groovy's list-like string representation for a short array.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(short[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(short[] self) {
+        return FormatHelper.toListString(DefaultTypeTransformation.primitiveArrayToList(self));
+    }
+
+    /**
+     * Returns Groovy's list-like string representation for an int array.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(int[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(int[] self) {
+        return FormatHelper.toListString(DefaultTypeTransformation.primitiveArrayToList(self));
+    }
+
+    /**
+     * Returns Groovy's list-like string representation for a long array.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(long[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(long[] self) {
+        return FormatHelper.toListString(DefaultTypeTransformation.primitiveArrayToList(self));
+    }
+
+    /**
+     * Returns Groovy's list-like string representation for a float array.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(float[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(float[] self) {
+        return FormatHelper.toListString(DefaultTypeTransformation.primitiveArrayToList(self));
+    }
+
+    /**
+     * Returns Groovy's list-like string representation for a double array.
+     * <p>
+     * If disabled, e.g. via {@code -Dgroovy.extension.disable=groovyToString(double[])},
+     * the JDK's default array {@code toString()} is used instead.
+     *
+     * @param self the array to format
+     * @return the string representation
+     * @since 6.0.0
+     */
+    public static String groovyToString(double[] self) {
+        return FormatHelper.toListString(DefaultTypeTransformation.primitiveArrayToList(self));
+    }
+
+    //--------------------------------------------------------------------------
     // head
 
     /**
