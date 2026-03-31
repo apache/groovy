@@ -127,11 +127,35 @@ JAVA_OPTS = -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080
 [[Grape-Logging]]
 === Logging
 
-Logging configuration depends on which Grape implementation is active.
+The Grape facade (`groovy.grape.Grape`) uses
+https://docs.oracle.com/en/java/javase/17/docs/api/java.logging/java/lang/System.Logger.html[JDK Platform Logging]
+and can be configured through `~/.groovy/logging.properties`
+(see <<section-groovy-commandline>> for details).
+
+Logging of the underlying engine depends on which Grape implementation is active.
 
 ==== GrapeIvy logging
 
-If you want to see what Grape is doing set the system property
+GrapeIvy routes Ivy's internal logging through JDK Platform Logging
+under the logger name `groovy.grape.ivy`. To control the verbosity,
+set the level in `~/.groovy/logging.properties`:
+
+[source,properties]
+----
+# Show Ivy info messages (INFO, WARNING, ERROR)
+groovy.grape.ivy.level=INFO
+
+# Show verbose Ivy output (adds dependency resolution details)
+groovy.grape.ivy.level=FINE
+
+# Show all Ivy debug output
+groovy.grape.ivy.level=FINEST
+----
+
+The `grape` command's `-q`, `-w`, `-i`, `-V`, and `-d` flags also
+adjust the Ivy logging level for that invocation.
+
+If you want to see download progress specifically, set the system property
 `groovy.grape.report.downloads` to `true` (e.g. add
 `-Dgroovy.grape.report.downloads=true` to invocation or JAVA_OPTS) and Grape will
 print the following infos to System.error:
@@ -141,15 +165,11 @@ print the following infos to System.error:
 * Retrying download of an artifact
 * Download size and time for downloaded artifacts
 
-To log with even more verbosity, increase the Ivy log level
-(defaults to `-1`). For example `-Divy.message.logger.level=4`.
-
 ==== GrapeMaven logging
 
 When using the GrapeMaven engine, set `-Dgroovy.grape.debug=true` to
 enable verbose Maven Resolver logging to `System.err`. The
-`groovy.grape.report.downloads` and `ivy.message.logger.level`
-properties have no effect with this engine.
+`groovy.grape.report.downloads` property has no effect with this engine.
 
 [[Grape-Detail]]
 == Detail
