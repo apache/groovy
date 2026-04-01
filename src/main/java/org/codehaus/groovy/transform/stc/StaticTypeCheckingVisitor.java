@@ -982,7 +982,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             } else if (op == KEYWORD_INSTANCEOF) {
                 rType = rightExpression.getType();
                 if (lType instanceof WideningCategories.LowestUpperBoundClassNode) lType = lType.getUnresolvedSuperClass();
-                if (!lType.isInterface() && !rType.isInterface() && !(lType.isDerivedFrom(rType) || rType.isDerivedFrom(lType))) {
+                if (lType instanceof UnionTypeClassNode union) {
+                    boolean compatible = rType.isInterface();
+                    for (int i = 0; !compatible && i < union.getDelegates().length; i += 1) {
+                        ClassNode delegate = union.getDelegates()[i];
+                        compatible = delegate.isInterface() || delegate.isDerivedFrom(rType) || rType.isDerivedFrom(delegate);
+                    }
+                    if (!compatible) {
+                        addError("Incompatible instanceof types: " + prettyPrintTypeName(lType) + " and " + prettyPrintTypeName(rType), expression);
+                    }
+                } else if (!lType.isInterface() && !rType.isInterface() && !(lType.isDerivedFrom(rType) || rType.isDerivedFrom(lType))) {
                     addError("Incompatible instanceof types: " + prettyPrintTypeName(lType) + " and " + prettyPrintTypeName(rType), expression);
                 }
                 pushInstanceOfTypeInfo(leftExpression, rightExpression);
