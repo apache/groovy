@@ -259,39 +259,29 @@ public class GroovyShell extends GroovyObjectSupport {
                 // ignore instantiation errors, try to do main
             }
         }
-        try {
-            // let's find a String[] main method
-            Method stringArrayMain = scriptClass.getMethod(MAIN_METHOD_NAME, String[].class);
-            // if that main method exists, invoke it
-            if (Modifier.isStatic(stringArrayMain.getModifiers())) {
-                return InvokerHelper.invokeStaticMethod(scriptClass, MAIN_METHOD_NAME, new Object[]{args});
-            } else {
-                Object script = InvokerHelper.invokeNoArgumentsConstructorOf(scriptClass);
-                return InvokerHelper.invokeMethod(script, MAIN_METHOD_NAME, args);
+        // Select main method using JEP-512 priority: static before instance, args before no-args.
+        // Uses Method.invoke() directly to avoid Groovy multimethod dispatch selecting a different overload.
+        Method selected = findMainMethod(scriptClass);
+        if (selected != null) {
+            try {
+                selected.setAccessible(true);
+                if (Modifier.isStatic(selected.getModifiers())) {
+                    return selected.getParameterCount() == 0
+                            ? selected.invoke(null)
+                            : selected.invoke(null, (Object) args);
+                } else {
+                    Object instance = InvokerHelper.invokeNoArgumentsConstructorOf(scriptClass);
+                    return selected.getParameterCount() == 0
+                            ? selected.invoke(instance)
+                            : selected.invoke(instance, (Object) args);
+                }
+            } catch (InvocationTargetException e) {
+                throw e.getCause() instanceof RuntimeException re ? re
+                        : new InvokerInvocationException(e);
+            } catch (ReflectiveOperationException e) {
+                throw new GroovyRuntimeException("Failed to invoke main method: " + e, e);
             }
-        } catch (NoSuchMethodException ignore) { }
-        try {
-            // let's find an Object main method
-            Method stringArrayMain = scriptClass.getMethod(MAIN_METHOD_NAME, Object.class);
-            // if that main method exists, invoke it
-            if (Modifier.isStatic(stringArrayMain.getModifiers())) {
-                return InvokerHelper.invokeStaticMethod(scriptClass, MAIN_METHOD_NAME, new Object[]{args});
-            } else {
-                Object script = InvokerHelper.invokeNoArgumentsConstructorOf(scriptClass);
-                return InvokerHelper.invokeMethod(script, MAIN_METHOD_NAME, new Object[]{args});
-            }
-        } catch (NoSuchMethodException ignore) { }
-        try {
-            // let's find a no-arg main method
-            Method noArgMain = scriptClass.getMethod(MAIN_METHOD_NAME);
-            // if that main method exists, invoke it
-            if (Modifier.isStatic(noArgMain.getModifiers())) {
-                return InvokerHelper.invokeStaticNoArgumentsMethod(scriptClass, MAIN_METHOD_NAME);
-            } else {
-                Object script = InvokerHelper.invokeNoArgumentsConstructorOf(scriptClass);
-                return InvokerHelper.invokeMethod(script, MAIN_METHOD_NAME, EMPTY_ARGS);
-            }
-        } catch (NoSuchMethodException ignore) { }
+        }
         // if it implements Runnable, try to instantiate it
         if (Runnable.class.isAssignableFrom(scriptClass)) {
             return runRunnable(scriptClass, args);
@@ -316,6 +306,30 @@ public class GroovyShell extends GroovyObjectSupport {
             }
         }
         throw new GroovyRuntimeException(message.toString());
+    }
+
+    /**
+     * Finds the main method to invoke using JEP-512 priority order:
+     * static main(String[]) &gt; static main(Object) &gt; static main()
+     * &gt; instance main(String[]) &gt; instance main(Object) &gt; instance main().
+     */
+    private static Method findMainMethod(Class<?> scriptClass) {
+        Class<?>[][] signatures = { {String[].class}, {Object.class}, {} };
+        // static methods first
+        for (Class<?>[] paramTypes : signatures) {
+            try {
+                Method m = scriptClass.getMethod(MAIN_METHOD_NAME, paramTypes);
+                if (Modifier.isStatic(m.getModifiers())) return m;
+            } catch (NoSuchMethodException ignore) { }
+        }
+        // then instance methods
+        for (Class<?>[] paramTypes : signatures) {
+            try {
+                Method m = scriptClass.getMethod(MAIN_METHOD_NAME, paramTypes);
+                if (!Modifier.isStatic(m.getModifiers())) return m;
+            } catch (NoSuchMethodException ignore) { }
+        }
+        return null;
     }
 
     private static Object runRunnable(Class scriptClass, String[] args) {
