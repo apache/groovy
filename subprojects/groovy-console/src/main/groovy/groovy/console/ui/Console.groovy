@@ -237,6 +237,10 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean stackOverFlowError = false
     Action interruptAction
 
+    // Script arguments
+    String scriptArgs = ''
+    Action setScriptArgsAction
+
     Action selectWordAction
     Action selectPreviousWordAction
 
@@ -1200,7 +1204,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         @Override
         Object run(String src) {
             String name = ((File) Console.this.scriptFile)?.name ?: (DEFAULT_SCRIPT_NAME_START + Console.this.scriptNameCounter++)
-            Console.this.shell.run(src, name, [])
+            Console.this.shell.run(src, name, Console.this.scriptArgsArray)
         }
 
         @Override
@@ -1343,6 +1347,30 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         newScript(null, binding)
         // reload output transforms
         binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
+    }
+
+    void setScriptArgs(EventObject evt = null) {
+        def result = JOptionPane.showInputDialog(frame, 'Enter script arguments (space-separated):',
+                'Set Script Arguments', JOptionPane.PLAIN_MESSAGE, null, null, scriptArgs)
+        if (result != null) {
+            scriptArgs = result.toString()
+            updateSetScriptArgsAction()
+        }
+    }
+
+    private void updateSetScriptArgsAction() {
+        if (setScriptArgsAction) {
+            if (scriptArgs) {
+                def display = scriptArgs.length() > 30 ? scriptArgs[0..29] + '...' : scriptArgs
+                setScriptArgsAction.putValue(Action.NAME, "Set Script Arguments [${display}]" as String)
+            } else {
+                setScriptArgsAction.putValue(Action.NAME, 'Set Script Arguments')
+            }
+        }
+    }
+
+    private String[] getScriptArgsArray() {
+        scriptArgs ? scriptArgs.split(/\s+/) : new String[0]
     }
 
     private void saveInputAreaContentHash() {

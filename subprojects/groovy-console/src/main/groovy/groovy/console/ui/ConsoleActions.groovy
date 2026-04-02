@@ -235,6 +235,12 @@ runJavaSelectionAction = action(
         closure: controller.&runSelectedJava
 )
 
+setScriptArgsAction = action(
+        name: 'Set Script Arguments',
+        closure: controller.&setScriptArgs,
+        mnemonic: 'G',
+)
+
 addClasspathJar = action(
         name: 'Add Jar(s) to ClassPath',
         closure: controller.&addClasspathJar,
