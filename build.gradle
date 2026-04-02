@@ -109,6 +109,7 @@ dependencies {
     }
 
     testImplementation projects.groovyAnt
+    testImplementation projects.groovyHttpBuilder
     testImplementation projects.groovyNio
     testImplementation projects.groovyXml
     testImplementation projects.groovyJson

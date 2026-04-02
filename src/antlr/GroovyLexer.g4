@@ -392,6 +392,9 @@ DEF             : 'def';
 IN              : 'in';
 TRAIT           : 'trait';
 THREADSAFE      : 'threadsafe'; // reserved keyword
+ASYNC           : 'async';
+AWAIT           : 'await';
+DEFER           : 'defer';
 
 // §3.9 Keywords
 BuiltInPrimitiveType
