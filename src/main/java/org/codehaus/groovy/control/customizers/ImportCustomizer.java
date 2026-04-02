@@ -20,13 +20,21 @@ package org.codehaus.groovy.control.customizers;
 
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ImportNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.ModuleImportHelper;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
 
+import java.lang.module.ModuleFinder;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This compilation customizer allows adding various types of imports to the compilation unit. Supports adding:
@@ -35,6 +43,7 @@ import java.util.List;
  *     <li>star imports via {@link #addStarImports(String...)}</li>
  *     <li>static imports via {@link #addStaticImport(String, String)} or {@link #addStaticImport(String, String, String)}</li>
  *     <li>static star imports via {@link #addStaticStars(String...)}</li>
+ *     <li>module imports via {@link #addModuleImports(String...)}</li>
  * </ul>
  *
  * @since 1.8.0
@@ -68,6 +77,24 @@ public class ImportCustomizer extends CompilationCustomizer {
                 case star:
                     ast.addStarImport(anImport.star);
                     break;
+                case moduleImport:
+                    expandModuleImport(source, ast, anImport.star);
+                    break;
+            }
+        }
+    }
+
+    private static void expandModuleImport(final SourceUnit source, final ModuleNode ast, final String moduleName) {
+        ModuleFinder finder = ModuleImportHelper.moduleFinder(source);
+        List<String> packageNames = ModuleImportHelper.resolveModulePackages(moduleName, finder);
+        Set<String> skip = new HashSet<>(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
+        ast.getStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
+        ast.getModuleStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
+        for (String pkg : packageNames) {
+            String packageName = pkg + ".";
+            if (!skip.contains(packageName)) {
+                ast.addModuleStarImport(packageName, Collections.emptyList());
+                skip.add(packageName);
             }
         }
     }
@@ -104,6 +131,21 @@ public class ImportCustomizer extends CompilationCustomizer {
     public ImportCustomizer addStaticStars(final String... classNames) {
         for (String className : classNames) {
             addStaticStar(className);
+        }
+        return this;
+    }
+
+    /**
+     * Adds module imports. Each module name (e.g. {@code "java.sql"}) is expanded
+     * at compilation time into star imports for all packages exported by that module,
+     * including packages from transitively required modules (per JEP 476).
+     *
+     * @param moduleNames the JPMS module names to import
+     * @since 6.0.0
+     */
+    public ImportCustomizer addModuleImports(final String... moduleNames) {
+        for (String moduleName : moduleNames) {
+            imports.add(new Import(ImportType.moduleImport, moduleName));
         }
         return this;
     }
@@ -164,6 +206,7 @@ public class ImportCustomizer extends CompilationCustomizer {
         regular,
         staticImport,
         staticStar,
-        star
+        star,
+        moduleImport
     }
 }

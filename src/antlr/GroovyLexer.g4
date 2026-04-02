@@ -457,6 +457,7 @@ INT           : 'int';
 fragment
 LONG          : 'long';
 
+MODULE        : 'module';
 NATIVE        : 'native';
 NEW           : 'new';
 NON_SEALED    : 'non-sealed';

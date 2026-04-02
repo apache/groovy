@@ -124,6 +124,7 @@ import org.codehaus.groovy.ast.tools.ClosureUtils;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.ModuleImportHelper;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.transform.AsyncTransformHelper;
@@ -140,8 +141,10 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -149,6 +152,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -338,6 +342,11 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ImportNode visitImportDeclaration(final ImportDeclarationContext ctx) {
         List<AnnotationNode> annotations = this.visitAnnotationsOpt(ctx.annotationsOpt());
 
+        if (asBoolean(ctx.MODULE())) {
+            String moduleName = this.visitQualifiedName(ctx.qualifiedName());
+            return expandModuleImport(moduleName, annotations, ctx);
+        }
+
         boolean hasStatic = asBoolean(ctx.STATIC());
         boolean hasStar   = asBoolean(ctx.MUL());
         boolean hasAlias  = asBoolean(ctx.alias);
@@ -386,6 +395,55 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
 
         return configureAST(importNode, ctx);
+    }
+
+    /**
+     * Expands {@code import module java.base} into star imports for all
+     * packages exported (unqualified) by the named module and, recursively,
+     * by any modules it {@code requires transitive} (per JEP 476).
+     * Packages already covered by Groovy's default imports or existing
+     * star imports are skipped to avoid redundant resolution work.
+     * <p>
+     * Modules are located from system modules (JDK) first, then from
+     * modular JARs on the compilation classpath. Automatic modules
+     * (JARs with an {@code Automatic-Module-Name} manifest entry but no
+     * {@code module-info.class}) are supported — all packages in the JAR
+     * are imported since automatic modules have no explicit exports.
+     * <p>
+     * Known differences from Java's module import behavior:
+     * <ul>
+     * <li>Ambiguous class names from multiple module imports silently resolve
+     *     to the last match, consistent with Groovy's existing star import
+     *     semantics. Java reports a compile-time error for such ambiguities.</li>
+     * <li>Explicit single-type imports take priority over module-expanded
+     *     star imports (same as Java).</li>
+     * </ul>
+     */
+    private ImportNode expandModuleImport(final String moduleName, final List<AnnotationNode> annotations, final ImportDeclarationContext ctx) {
+        var finder = ModuleImportHelper.moduleFinder(sourceUnit);
+        List<String> packageNames;
+        try {
+            packageNames = ModuleImportHelper.resolveModulePackages(moduleName, finder);
+        } catch (IllegalArgumentException e) {
+            throw createParsingFailedException(e.getMessage(), ctx);
+        }
+        Set<String> skip = new HashSet<>(Arrays.asList(
+                org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS));
+        moduleNode.getStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
+        ImportNode lastImport = null;
+        for (String pkg : packageNames) {
+            String packageName = pkg + DOT_STR;
+            if (!skip.contains(packageName)) {
+                moduleNode.addStarImport(packageName, annotations);
+                lastImport = last(moduleNode.getStarImports());
+                skip.add(packageName);
+            }
+        }
+        if (lastImport == null) {
+            // All exported packages were already covered by existing imports
+            lastImport = last(moduleNode.getStarImports());
+        }
+        return configureAST(lastImport, ctx);
     }
 
     private static AnnotationNode makeAnnotationNode(final Class<? extends Annotation> type) {

@@ -32,3 +32,8 @@ dependencies {
     testRuntimeOnly projects.groovyGrapeIvy
     testRuntimeOnly projects.groovySwing
 }
+
+tasks.named('test') {
+    dependsOn 'jarjar'
+    systemProperty 'groovy.jmx.jar', tasks.named('jarjar').flatMap { it.outputFile }.get().asFile.path
+}

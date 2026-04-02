@@ -163,4 +163,113 @@ final class ImportTest {
             Entry entry = [foo:'bar'].entrySet().first()
         '''
     }
+
+    // module imports
+
+    @Test
+    void testImportModuleJavaBase() {
+        assertScript '''
+            import module java.base
+
+            // java.util
+            List list = [1, 2, 3]
+            Map map = [a: 1]
+
+            // java.io
+            File f = new File('.')
+
+            // java.net
+            URI uri = new URI('http://example.com')
+
+            // java.time
+            LocalDate date = LocalDate.now()
+
+            // java.util.concurrent
+            CountDownLatch latch = new CountDownLatch(1)
+
+            assert list.size() == 3
+        '''
+    }
+
+    @Test
+    void testImportModuleJavaSql() {
+        assertScript '''
+            import module java.sql
+
+            // java.sql package
+            assert Connection.name == 'java.sql.Connection'
+            assert DriverManager.name == 'java.sql.DriverManager'
+        '''
+    }
+
+    @Test
+    void testImportModuleFromClasspath() {
+        // Find JUnit JAR from the test classloader and add it to the compiler classpath
+        def junitUrl = Test.class.protectionDomain.codeSource.location
+        def config = new org.codehaus.groovy.control.CompilerConfiguration()
+        config.classpathList = [new File(junitUrl.toURI()).path]
+        def loader = new GroovyClassLoader(getClass().classLoader, config)
+        def shell = new GroovyShell(loader)
+        shell.evaluate '''
+            import module org.junit.jupiter.api
+
+            // org.junit.jupiter.api package
+            assert Test.name == 'org.junit.jupiter.api.Test'
+            assert Assertions.name == 'org.junit.jupiter.api.Assertions'
+            assert DisplayName.name == 'org.junit.jupiter.api.DisplayName'
+            assert DisabledIf.name == 'org.junit.jupiter.api.condition.DisabledIf'
+        '''
+    }
+
+    // GROOVY-11896: JEP 476 specifies that `import module M` should also import
+    // packages from modules that M requires transitively.
+    @Test
+    void testImportModuleTransitiveDependencies() {
+        // java.sql requires transitive java.xml, java.logging, java.transaction.xa
+        assertScript '''
+            import module java.sql
+
+            // Direct exports of java.sql
+            assert Connection.name == 'java.sql.Connection'
+
+            // From java.xml (requires transitive): javax.xml.transform
+            assert Source.name == 'javax.xml.transform.Source'
+
+            // From java.logging (requires transitive): java.util.logging
+            assert Logger.name == 'java.util.logging.Logger'
+
+            // From java.transaction.xa (requires transitive): javax.transaction.xa
+            assert XAResource.name == 'javax.transaction.xa.XAResource'
+        '''
+    }
+
+    @Test
+    void testImportModuleUnknown() {
+        shouldFail '''
+            import module no.such.module
+        '''
+    }
+
+    @Test
+    void testImportModuleStarNotAllowed() {
+        shouldFail '''
+            import module java.base.*
+        '''
+    }
+
+    @Test
+    void testImportModuleAliasNotAllowed() {
+        shouldFail '''
+            import module java.base as jb
+        '''
+    }
+
+    @Test
+    void testModuleAsIdentifier() {
+        // 'module' can still be used as a variable name
+        assertScript '''
+            def module = 'hello'
+            assert module.toUpperCase() == 'HELLO'
+        '''
+    }
 }

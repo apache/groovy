@@ -16,26 +16,28 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.groovysh.commands
+package groovy.jmx
 
 import org.junit.jupiter.api.Test
 
-/**
- * Tests for the {@code /imports} command.
- */
-class ImportTest extends SystemTestSupport {
-    @Test
-    void testImport() {
-        system.execute('/imports')
-        assert !printer.output.join().contains('import java.awt.TextField')
-        system.execute('import java.awt.TextField')
-        system.execute('/imports')
-        assert printer.output.join().contains('import java.awt.TextField')
-    }
+import static groovy.test.GroovyAssert.assertScript
+
+final class ImportModuleJmxTest {
 
     @Test
-    void testModuleImport() {
-        system.execute('import module java.sql')
-        system.execute('assert Connection.name == "java.sql.Connection"')
+    void testImportModuleAutomatic() {
+        // groovy-jmx is an automatic module (Automatic-Module-Name in MANIFEST.MF);
+        // JAR path is passed as a system property from build.gradle
+        def jmxJar = System.getProperty('groovy.jmx.jar')
+        assert jmxJar, 'groovy.jmx.jar system property not set'
+        def config = new org.codehaus.groovy.control.CompilerConfiguration()
+        config.classpathList = [jmxJar]
+        def loader = new GroovyClassLoader(getClass().classLoader, config)
+        def shell = new GroovyShell(loader)
+        shell.evaluate '''
+            import module org.apache.groovy.jmx
+
+            assert GroovyMBean.name == 'groovy.jmx.GroovyMBean'
+        '''
     }
 }

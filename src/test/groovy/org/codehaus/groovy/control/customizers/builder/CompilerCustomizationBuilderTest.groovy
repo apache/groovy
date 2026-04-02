@@ -181,6 +181,30 @@ class CompilerCustomizationBuilderTest {
     }
 
     @Test
+    void testImportBuilderModule() {
+        def builder = new CompilerCustomizationBuilder()
+        def cz = builder.imports {
+            module 'java.sql'
+        }
+        assert cz instanceof ImportCustomizer
+        assert cz.imports.size() == 1
+        assert cz.imports[0].type.toString() == 'moduleImport'
+        assert cz.imports[0].star == 'java.sql'
+    }
+
+    @Test
+    void testImportBuilderModuleIntegration() {
+        def config = new CompilerConfiguration()
+        CompilerCustomizationBuilder.withConfig(config) {
+            imports {
+                module 'java.sql'
+            }
+        }
+        def shell = new GroovyShell(config)
+        shell.evaluate('assert Connection.name == "java.sql.Connection"')
+    }
+
+    @Test
     void testSourceAwareCustomizerBuilder() {
         def builder = new CompilerCustomizationBuilder()
         def cz = builder.source {
