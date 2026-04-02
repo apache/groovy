@@ -164,6 +164,41 @@ For example we can import `java.sql.Date` as `SQLDate` and use it in the same fi
 include::../test/PackageTest.groovy[tags=alias_import,indent=0]
 ----
 
+=== Module import
+
+Groovy supports Java's module import declarations (https://openjdk.org/jeps/476[JEP 476], finalized in Java 25).
+A module import imports all public types from all packages exported by the named module with a single statement:
+
+[source,groovy]
+----
+include::../test/PackageTest.groovy[tags=module_import,indent=0]
+----
+
+This is equivalent to writing a star import (`import pkg.*`) for every package the module exports.
+
+Module imports also include packages from any modules that the named module `requires transitive`.
+For example, `java.sql` transitively requires `java.xml`, `java.logging`, and `java.transaction.xa`:
+
+[source,groovy]
+----
+include::../test/PackageTest.groovy[tags=module_import_transitive,indent=0]
+----
+
+Module imports work with system modules (JDK modules like `java.base`, `java.sql`, `java.desktop`),
+JPMS modules from modular JARs on the classpath (those containing `module-info.class`),
+and automatic modules (JARs with an `Automatic-Module-Name` manifest entry).
+
+Explicit single-type imports take priority over module-expanded imports, which allows you to
+resolve any ambiguity by adding a specific import:
+
+[source,groovy]
+----
+include::../test/PackageTest.groovy[tags=module_import_with_explicit,indent=0]
+----
+
+NOTE: The `module` keyword is context-sensitive — it can still be used as a variable, method, or class name.
+Wildcard (`import module java.base.*`) and alias (`import module java.base as jb`) forms are not supported.
+
 === Namespace conflicts
 
 Similar to Java, it is an error in Groovy to specify multiple imports with the same name but different types:

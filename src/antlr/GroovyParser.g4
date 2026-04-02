@@ -119,6 +119,7 @@ packageDeclaration
 
 importDeclaration
     :   annotationsOpt IMPORT STATIC? qualifiedName (DOT MUL | AS alias=identifier)?
+    |   annotationsOpt IMPORT MODULE qualifiedName
     ;
 
 
@@ -1243,6 +1244,7 @@ identifier
     |   AWAIT
     |   DEFER
     |   IN
+    |   MODULE
     |   PERMITS
     |   RECORD
     |   SEALED

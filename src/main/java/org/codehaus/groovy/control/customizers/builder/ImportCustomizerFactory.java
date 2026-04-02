@@ -36,6 +36,7 @@ import java.util.Map;
  *     <li><i>staticStar</i> for "static star" imports</li>
  *     <li><i>alias</i> for imports with alias</li>
  *     <li><i>staticMember</i> for static imports of individual members</li>
+ *     <li><i>module</i> for module imports (JEP 476)</li>
  * </ul>
  *
  * For example:
@@ -128,6 +129,10 @@ public class ImportCustomizerFactory extends AbstractFactory {
         }
         protected void staticMember(String alias, String name, String field) {
             customizer.addStaticImport(alias, name, field);
+        }
+
+        protected void module(String... moduleNames) {
+            customizer.addModuleImports(moduleNames);
         }
 
     }

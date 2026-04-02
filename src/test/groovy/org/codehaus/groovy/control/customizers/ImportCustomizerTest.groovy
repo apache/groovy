@@ -177,6 +177,23 @@ final class ImportCustomizerTest {
         ''')
     }
 
+    @Test
+    void testAddModuleImport() {
+        importCustomizer.addModuleImports('java.sql')
+        def shell = new GroovyShell(configuration)
+        shell.evaluate('assert Connection.name == "java.sql.Connection"')
+        // no exception means success
+    }
+
+    @Test
+    void testAddModuleImportTransitive() {
+        importCustomizer.addModuleImports('java.sql')
+        def shell = new GroovyShell(configuration)
+        // java.sql requires transitive java.logging
+        shell.evaluate('assert Logger.name == "java.util.logging.Logger"')
+        // no exception means success
+    }
+
     //--------------------------------------------------------------------------
 
     protected static class Inner {}

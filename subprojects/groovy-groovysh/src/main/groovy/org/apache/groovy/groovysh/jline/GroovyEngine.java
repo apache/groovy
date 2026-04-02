@@ -407,7 +407,21 @@ public class GroovyEngine implements ScriptEngine {
     @Override
     public Object execute(String statement) throws Exception {
         Object out = null;
-        if (statement.matches("import\\s+(static\\s+)?(([^;\\s])+)(?:\\s+as\\s+(" + BASE_REGEX_VAR + "))?\\s*(;)?")) {
+        if (statement.matches("import\\s+module\\s+([^;\\s]+)\\s*(;)?")) {
+            String[] p = statement.split("\\s+");
+            String moduleName = p[2].replaceAll(";", "");
+            executeStatement(shell, snippets, EnumSet.of(SnippetType.IMPORT), statement);
+            imports.put("module " + moduleName, addSnippet(SnippetType.IMPORT, statement));
+            // Populate the completion cache with exported packages from the module
+            try {
+                var finder = java.lang.module.ModuleFinder.ofSystem();
+                for (String pkg : org.codehaus.groovy.control.ModuleImportHelper.resolveModulePackages(moduleName, finder)) {
+                    addToNameClass(pkg + ".*");
+                }
+            } catch (Exception ignore) {
+                // module resolution may not be available
+            }
+        } else if (statement.matches("import\\s+(static\\s+)?(([^;\\s])+)(?:\\s+as\\s+(" + BASE_REGEX_VAR + "))?\\s*(;)?")) {
             String[] p = statement.split("\\s+");
             int classIdx = 1;
             boolean isStatic = p[1].equals("static");
@@ -681,7 +695,7 @@ public class GroovyEngine implements ScriptEngine {
     public void removeImport(String name) {
         Integer gone = imports.remove(name);
         if (gone != null) snippets.set(gone, null);
-        if (name.endsWith(".*")) {
+        if (name.endsWith(".*") || name.startsWith("module ")) {
             refreshNameClass();
         } else {
             classLoader.purgeClassCache(name + "(\\$.*)?");

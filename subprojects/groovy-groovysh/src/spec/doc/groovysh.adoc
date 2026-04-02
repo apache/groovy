@@ -638,6 +638,15 @@ Add a custom import which will be included for all shell evaluations.
 groovy> import java.util.concurrent.BlockingDeque
 --------------
 
+Module imports (JEP 476) are also supported, which import all exported packages from a named module:
+
+[source,jshell]
+--------------
+groovy> import module java.sql
+groovy> Connection.name
+===> java.sql.Connection
+--------------
+
 This command can be given at any time to add new imports.
 
 Completion is available and prompts a level at a time using the package structure of all known classes.
