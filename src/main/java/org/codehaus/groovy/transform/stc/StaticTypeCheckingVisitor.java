@@ -266,6 +266,7 @@ import static org.codehaus.groovy.syntax.Types.INTDIV;
 import static org.codehaus.groovy.syntax.Types.INTDIV_EQUAL;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_IN;
 import static org.codehaus.groovy.syntax.Types.KEYWORD_INSTANCEOF;
+import static org.codehaus.groovy.syntax.Types.LOGICAL_OR;
 import static org.codehaus.groovy.syntax.Types.MINUS_MINUS;
 import static org.codehaus.groovy.syntax.Types.MOD;
 import static org.codehaus.groovy.syntax.Types.MOD_EQUAL;
@@ -848,10 +849,13 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 return;
             }
 
+            // GROOVY-7971, GROOVY-8965, GROOVY-10702, GROOVY-11754, et al.
+            if (op == LOGICAL_OR) typeCheckingContext.pushTemporaryTypeInfo();
+
             ClassNode lType;
             leftExpression.visit(this);
             var setterInfo = removeSetterInfo(leftExpression);
-            if (setterInfo != null) {
+            if (setterInfo != null) { assert op != LOGICAL_OR;
                 if (ensureValidSetter(expression, leftExpression, rightExpression, setterInfo)) {
                     return;
                 }
@@ -863,7 +867,16 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
                 } else {
                     lType = getType(leftExpression);
                 }
-                rightExpression.visit(this);
+                if (op != LOGICAL_OR) {
+                    rightExpression.visit(this);
+                } else {
+                    var lhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+                    typeCheckingContext.pushTemporaryTypeInfo();
+                    rightExpression.visit(this);
+
+                    var rhs = typeCheckingContext.temporaryIfBranchTypeInformation.pop();
+                    propagateTemporaryTypeInfo(lhs, rhs); // `instanceof` on either side?
+                }
             }
 
             ClassNode rType = isNullConstant(rightExpression)
@@ -989,6 +1002,43 @@ public class StaticTypeCheckingVisitor extends ClassCodeVisitorSupport {
             }
         } finally {
             typeCheckingContext.popEnclosingBinaryExpression();
+        }
+    }
+
+    private void propagateTemporaryTypeInfo(final Map<Object, List<ClassNode>> lhs,
+                                            final Map<Object, List<ClassNode>> rhs) {
+        // TODO: deal with (x !instanceof T)
+        lhs.keySet().removeIf(k -> k instanceof Object[]);
+        rhs.keySet().removeIf(k -> k instanceof Object[]);
+
+        Function<Object, List<ClassNode>> getOrAdd = (key) ->
+            typeCheckingContext.temporaryIfBranchTypeInformation.peek().computeIfAbsent(key, x -> new LinkedList<>());
+
+        for (var entry : lhs.entrySet()) {
+            if (rhs.containsKey(entry.getKey())) {
+                // main case: (x instanceof A || x instanceof B) produces A|B type
+                List<ClassNode> types = getOrAdd.apply(entry.getKey());
+                types.addAll(entry.getValue());
+                types.addAll(rhs.get(entry.getKey()));
+            } else if (entry.getKey() instanceof Variable) {
+                // edge case: (x instanceof A || ...) produces A|typeof(x) type
+                List<ClassNode> types = getOrAdd.apply(entry.getKey());
+                types.addAll(entry.getValue());
+                Variable v = (Variable) entry.getKey();
+                types.add(v instanceof ASTNode ? getType((ASTNode) v) : v.getType());
+            }
+        }
+
+        rhs.keySet().removeAll(lhs.keySet());
+
+        for (var entry : rhs.entrySet()) {
+            if (entry.getKey() instanceof Variable) {
+                // edge case: (... || x instanceof B) produces typeof(x)|B type
+                List<ClassNode> types = getOrAdd.apply(entry.getKey());
+                Variable v = (Variable) entry.getKey();
+                types.add(v instanceof ASTNode ? getType((ASTNode) v) : v.getType());
+                types.addAll(entry.getValue());
+            }
         }
     }
 
@@ -1173,8 +1223,8 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 }
                 addStaticTypeError(message, leftExpression);
             } else {
-                ClassNode[] tergetTypes = visibleSetters.stream().map(setterType).toArray(ClassNode[]::new);
-                addAssignmentError(tergetTypes.length == 1 ? tergetTypes[0] : new UnionTypeClassNode(tergetTypes), getType(valueExpression), expression);
+                ClassNode[] targetTypes = visibleSetters.stream().map(setterType).toArray(ClassNode[]::new);
+                addAssignmentError(targetTypes.length == 1 ? targetTypes[0] : new UnionTypeClassNode(targetTypes), getType(valueExpression), expression);
             }
             return true;
         }
