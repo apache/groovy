@@ -527,11 +527,14 @@ public class ModuleNode extends ASTNode {
      * We retain the 'main' method if a compatible one is found.
      * A compatible one has no parameters or 1 (Object or String[]) parameter.
      * The return type must be void or Object.
+     * When multiple valid main methods exist, a warning is issued for those
+     * that would not be reachable from the command-line runner.
+     * Priority follows JEP-512: static before instance, args before no-args.
      */
     private MethodNode handleMainMethodIfPresent(final List<MethodNode> methods) {
         boolean foundInstance = false;
         boolean foundStatic = false;
-        MethodNode result = null;
+        List<MethodNode> validMains = new ArrayList<>();
         for (MethodNode node : methods) {
             if ("main".equals(node.getName()) && !node.isPrivate()) {
                 int numParams = node.getParameters().length;
@@ -545,9 +548,7 @@ public class ModuleNode extends ASTNode {
                         if (node.isStatic() ? foundStatic : foundInstance) {
                             throw new RuntimeException("Repetitive main method found.");
                         }
-                        if (!foundStatic) { // static trumps instance
-                            result = node;
-                        }
+                        validMains.add(node);
 
                         if (node.isStatic()) foundStatic = true;
                         else foundInstance = true;
@@ -555,6 +556,25 @@ public class ModuleNode extends ASTNode {
                 }
             }
         }
+
+        if (validMains.isEmpty()) return null;
+
+        // Select winner using JEP-512 priority: static before instance, args before no-args
+        validMains.sort((a, b) -> {
+            if (a.isStatic() != b.isStatic()) return a.isStatic() ? -1 : 1;
+            return Integer.compare(b.getParameters().length, a.getParameters().length);
+        });
+        MethodNode result = validMains.get(0);
+
+        // Warn about unreachable main methods
+        for (int i = 1; i < validMains.size(); i++) {
+            MethodNode unreachable = validMains.get(i);
+            getContext().addWarning("Method '" + unreachable.getText()
+                    + "' is not reachable from the Groovy runner"
+                    + " because a higher-priority main method '"
+                    + result.getText() + "' exists", unreachable);
+        }
+
         return result;
     }
 

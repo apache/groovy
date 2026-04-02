@@ -437,3 +437,28 @@ with versions of Groovy prior to Groovy 5 (where JEP 445 support was added).
 As a consequence, such classes are compatible with the Java launch protocol prior to JEP 445 support.
 * Groovy's runner has been made aware of JEP 445 compatible classes and can run all variations
 for JDK11 and above and without the need for preview mode to be enabled.
+
+=== Main method selection priority
+
+When a class has multiple valid `main` method signatures, the Groovy runner selects one
+using a priority order aligned with JEP 512. Static methods take priority over instance
+methods, and methods with parameters take priority over no-arg methods:
+
+[cols="1,3"]
+|===
+| Priority | Method signature
+
+| 1 | `static main(String[] args)`
+| 2 | `static main(Object args)`
+| 3 | `static main()`
+| 4 | `main(String[] args)` (instance)
+| 5 | `main(Object args)` (instance)
+| 6 | `main()` (instance)
+|===
+
+Only one method is selected — lower-priority `main` methods are not reachable from the
+Groovy runner. A compile-time warning is issued for any valid `main` method that would
+be shadowed by a higher-priority one.
+
+NOTE: Having multiple `main` method overloads in a single class is considered poor style.
+We recommend providing a single `main` method to avoid any confusion about which one will run.
