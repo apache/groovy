@@ -126,6 +126,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import org.codehaus.groovy.transform.AsyncTransformHelper;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.syntax.Numbers;
@@ -465,13 +466,32 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
-    public ForStatement visitForStmtAlt(final ForStmtAltContext ctx) {
+    public Statement visitForStmtAlt(final ForStmtAltContext ctx) {
+        boolean isForAwait = asBoolean(ctx.AWAIT());
         Function<Statement, ForStatement> maker = this.visitForControl(ctx.forControl());
 
         Statement loopBody = this.unpackStatement((Statement) this.visit(ctx.statement()));
 
         ForStatement forStatement = configureAST(maker.apply(loopBody), ctx);
         visitAnnotationsOpt(ctx.annotationsOpt()).forEach(forStatement::addStatementAnnotation);
+
+        if (isForAwait) {
+            // Transform collection expression: wrap in AsyncSupport.toBlockingIterable()
+            // and wrap the loop in try/finally to ensure cleanup on break/exception
+            Expression original = forStatement.getCollectionExpression();
+            String tempVar = "__forAwaitSource" + ctx.hashCode();
+            Expression toBlockingCall = AsyncTransformHelper.buildToBlockingIterableCall(original);
+
+            // var $temp = AsyncSupport.toBlockingIterable(original)
+            Statement declStmt = stmt(declX(varX(tempVar), toBlockingCall));
+            forStatement.setCollectionExpression(varX(tempVar));
+
+            // try { for (...) { body } } finally { AsyncSupport.closeIterable($temp) }
+            Statement finallyStmt = stmt(AsyncTransformHelper.buildCloseIterableCall(varX(tempVar)));
+            TryCatchStatement tryCatch = new TryCatchStatement(forStatement, finallyStmt);
+            return configureAST(block(declStmt, tryCatch), ctx);
+        }
+
         return forStatement;
     }
 
@@ -867,8 +887,29 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     }
 
     @Override
+    public ExpressionStatement visitYieldReturnStmtAlt(final YieldReturnStmtAltContext ctx) {
+        Expression expr = (Expression) this.visit(ctx.expression());
+        return configureAST(new ExpressionStatement(AsyncTransformHelper.buildYieldReturnCall(expr)), ctx);
+    }
+
+    @Override
     public ReturnStatement visitYieldStmtAlt(final YieldStmtAltContext ctx) {
         return configureAST(this.visitYieldStatement(ctx.yieldStatement()), ctx);
+    }
+
+    @Override
+    public ExpressionStatement visitDeferStmtAlt(final DeferStmtAltContext ctx) {
+        Expression action;
+        ExpressionStatement stmtExprStmt = (ExpressionStatement) this.visit(ctx.statementExpression());
+        Expression expr = stmtExprStmt.getExpression();
+        if (expr instanceof ClosureExpression) {
+            action = expr;
+        } else {
+            ClosureExpression wrapper = new ClosureExpression(Parameter.EMPTY_ARRAY, block(stmtExprStmt));
+            wrapper.setSourcePosition(stmtExprStmt);
+            action = wrapper;
+        }
+        return configureAST(new ExpressionStatement(AsyncTransformHelper.buildDeferCall(action)), ctx);
     }
 
     @Override
@@ -2891,6 +2932,62 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         }
         CastExpression cast = new CastExpression(this.visitCastParExpression(ctx.castParExpression()), expr);
         return configureAST(cast, ctx);
+    }
+
+    @Override
+    public Expression visitAwaitExprAlt(final AwaitExprAltContext ctx) {
+        List<? extends ExpressionContext> exprCtxs = ctx.expression();
+        if (exprCtxs.size() == 1) {
+            Expression expr = (Expression) this.visit(exprCtxs.get(0));
+            return configureAST(
+                    AsyncTransformHelper.buildAwaitCall(expr),
+                    ctx);
+        }
+        // Multi-arg: await(p1, p2, ..., pn) or await p1, p2, ..., pn
+        List<Expression> exprs = exprCtxs.stream()
+                                            .map(ec -> (Expression) this.visit(ec))
+                                            .collect(Collectors.toList());
+        return configureAST(
+            AsyncTransformHelper.buildAwaitCall(new ArgumentListExpression(exprs)),
+            ctx);
+    }
+
+    @Override
+    public Expression visitAsyncClosureExprAlt(final AsyncClosureExprAltContext ctx) {
+        ClosureExpression closure = this.visitClosureOrLambdaExpression(ctx.closureOrLambdaExpression());
+        boolean hasYieldReturn = AsyncTransformHelper.containsYieldReturn(closure.getCode());
+        boolean hasDefer = AsyncTransformHelper.containsDefer(closure.getCode());
+
+        if (hasDefer) {
+            Statement wrappedBody = AsyncTransformHelper.wrapWithDeferScope(closure.getCode());
+            ClosureExpression newClosure = new ClosureExpression(closure.getParameters(), wrappedBody);
+            newClosure.setVariableScope(closure.getVariableScope());
+            newClosure.setSourcePosition(closure);
+            closure = newClosure;
+        }
+
+        if (hasYieldReturn) {
+            // Inject synthetic $__asyncGen__ as first parameter
+            Parameter genParam = AsyncTransformHelper.createGenParam();
+            Parameter[] existingParams = closure.getParameters();
+            boolean hasUserParams = existingParams != null && existingParams.length > 0;
+            Parameter[] newParams;
+            if (hasUserParams) {
+                newParams = new Parameter[existingParams.length + 1];
+                newParams[0] = genParam;
+                System.arraycopy(existingParams, 0, newParams, 1, existingParams.length);
+            } else {
+                newParams = new Parameter[]{genParam};
+            }
+            ClosureExpression genClosure = new ClosureExpression(newParams, closure.getCode());
+            genClosure.setVariableScope(closure.getVariableScope());
+            genClosure.setSourcePosition(closure);
+            return configureAST(AsyncTransformHelper.buildAsyncGeneratorCall(
+                    new ArgumentListExpression(genClosure)), ctx);
+        } else {
+            return configureAST(AsyncTransformHelper.buildAsyncCall(
+                    new ArgumentListExpression(closure)), ctx);
+        }
     }
 
     @Override
