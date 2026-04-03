@@ -16,6 +16,8 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+import org.apache.groovy.gradle.TargetJavaHomeSupport
+
 plugins {
     id 'org.apache.groovy-library'
 }
@@ -41,7 +43,9 @@ dependencies {
 }
 
 tasks.withType(Test).configureEach {
-    if (JavaVersion.current() < JavaVersion.VERSION_24) {
+    Integer feature = TargetJavaHomeSupport.featureVersionFromReleaseFile(TargetJavaHomeSupport.targetJavaHome(project))
+    boolean testJdkPre24 = feature != null ? feature < 24 : JavaVersion.current() < JavaVersion.VERSION_24
+    if (testJdkPre24) {
         // Setting isn't allowed for Java 24+ but hushes security manager warnings from Ant for JDK17-23
         jvmArgs '-Djava.security.manager=allow'
     }
