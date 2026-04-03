@@ -41,5 +41,8 @@ dependencies {
 }
 
 tasks.withType(Test).configureEach {
-    jvmArgs '-Djava.security.manager=allow'
+    if (JavaVersion.current() < JavaVersion.VERSION_24) {
+        // Setting isn't allowed for Java 24+ but hushes security manager warnings from Ant for JDK17-23
+        jvmArgs '-Djava.security.manager=allow'
+    }
 }
