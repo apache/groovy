@@ -30,7 +30,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * This class defines new groovy methods which appear on normal JDK
@@ -538,7 +541,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Process execute(final String self) throws IOException {
-        return Runtime.getRuntime().exec(self);
+        return new ProcessBuilder(tokenize(self)).start();
     }
 
     /**
@@ -561,7 +564,17 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Process execute(final String self, final String[] envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(self, envp, dir);
+        ProcessBuilder pb = new ProcessBuilder(tokenize(self));
+        if (dir != null) pb.directory(dir);
+        if (envp != null) {
+            Map<String, String> env = pb.environment();
+            env.clear();
+            for (String e : envp) {
+                int idx = e.indexOf('=');
+                if (idx >= 0) env.put(e.substring(0, idx), e.substring(idx + 1));
+            }
+        }
+        return pb.start();
     }
 
     /**
@@ -720,6 +733,16 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Process execute(final List commands, final List envp, final File dir) throws IOException {
         return Runtime.getRuntime().exec(stringify(commands), stringify(envp), dir);
+    }
+
+    // just simple parsing otherwise use ProcessBuilder directly
+    private static List<String> tokenize(final String command) {
+        StringTokenizer st = new StringTokenizer(command);
+        List<String> tokens = new ArrayList<>();
+        while (st.hasMoreTokens()) {
+            tokens.add(st.nextToken());
+        }
+        return tokens;
     }
 
     private static String[] stringify(final List orig) {
