@@ -39,3 +39,7 @@ dependencies {
     testImplementation projects.groovyTest
     testImplementation projects.groovyXml
 }
+
+tasks.withType(Test).configureEach {
+    jvmArgs '-Djava.security.manager=allow'
+}
