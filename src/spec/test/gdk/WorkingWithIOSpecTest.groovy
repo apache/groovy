@@ -23,6 +23,9 @@ import groovy.io.FileVisitResult
 import groovy.transform.CompileStatic
 import org.junit.jupiter.api.Test
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
 import static org.junit.jupiter.api.Assumptions.assumeTrue
 
 final class WorkingWithIOSpecTest {
@@ -310,8 +313,8 @@ Fin.''')
     void testProcess1() {
         if (unixlike) {
             // tag::process_list_files[]
-            def process = "ls -l".execute()             // <1>
-            println "Found text ${process.text}"        // <2>
+            def process = "ls -l".execute()       // <1>
+            println "Files: $process.text"                 // <2>
             // end::process_list_files[]
             assert process instanceof Process
         }
@@ -319,14 +322,14 @@ Fin.''')
             try {
                 // tag::dir_windows[]
                 def process = "dir".execute()
-                println "${process.text}"
+                println "Files: $process.text"
                 // end::dir_windows[]
                 // we do not check that the expected exception is really thrown,
                 // because the command succeeds if PATH contains cygwin
-            } catch (e) {
+            } catch (ignore) {
                 // tag::dir_windows_fixed[]
                 def process = "cmd /c dir".execute()
-                println "${process.text}"
+                println "Files: $process.text"
                 // end::dir_windows_fixed[]
             }
         }
@@ -403,7 +406,109 @@ Fin.''')
         }
     }
 
-    public static class Person implements Serializable {
+    @Test
+    void testWaitForResult() {
+        assumeUnixLikeSystem()
+
+        // tag::waitforresult[]
+        def result = "echo Hello World".execute().waitForResult()
+        assert result.ok
+        assert result.out.trim() == 'Hello World'
+        assert result.exitCode == 0
+        // end::waitforresult[]
+    }
+
+    @Test
+    void testWaitForResultTimeout() {
+        assumeUnixLikeSystem()
+
+        // tag::waitforresult_timeout[]
+        def result = "echo Fast".execute().waitForResult(10, TimeUnit.SECONDS)
+        assert result.ok
+        assert result.out.trim() == 'Fast'
+        // end::waitforresult_timeout[]
+    }
+
+    @Test
+    void testWaitForResultCapturesError() {
+        assumeUnixLikeSystem()
+
+        // tag::waitforresult_error[]
+        def result = "ls /nonexistent_path_xxx".execute().waitForResult()
+        assert !result.ok
+        assert result.err.length() > 0
+        // end::waitforresult_error[]
+    }
+
+    @Test
+    void testExecuteWithNamedParams() {
+        assumeUnixLikeSystem()
+
+        doInTmpDir { b ->
+            File tmpDir = b.baseDir
+            b.'test.txt'('hello')
+
+            // tag::execute_named_params[]
+            def process = "ls".execute(dir: tmpDir)
+            def result = process.waitForResult()
+            assert result.ok
+            assert result.out.contains('test.txt')
+            // end::execute_named_params[]
+        }
+    }
+
+    @Test
+    void testExecuteWithRedirectErrorStream() {
+        assumeUnixLikeSystem()
+
+        // tag::execute_redirect_error[]
+        def process = "ls /nonexistent_path_xxx".execute(redirectErrorStream: true)
+        def output = process.text
+        assert output.length() > 0  // error message now in stdout
+        // end::execute_redirect_error[]
+    }
+
+    @Test
+    void testToProcessBuilder() {
+        assumeUnixLikeSystem()
+
+        // tag::to_process_builder[]
+        def pb = "echo Hello".toProcessBuilder()
+        pb.redirectErrorStream(true)
+        def process = pb.start()
+        assert process.text.trim() == 'Hello'
+        // end::to_process_builder[]
+    }
+
+    @Test
+    void testPipeline() {
+        assumeUnixLikeSystem()
+
+        // tag::pipeline[]
+        def procs = ["echo one two three", "wc -w"].pipeline()
+        def result = procs.last().waitForResult()
+        assert result.ok
+        assert result.out.trim() == '3'
+        // end::pipeline[]
+    }
+
+    @Test
+    void testOnExit() {
+        assumeUnixLikeSystem()
+
+        // tag::on_exit[]
+        def latch = new CountDownLatch(1)
+        def exitCode = -1
+        "echo done".execute().onExit { proc ->
+            exitCode = proc.exitValue()
+            latch.countDown()
+        }
+        latch.await(10, TimeUnit.SECONDS)
+        assert exitCode == 0
+        // end::on_exit[]
+    }
+
+    static class Person implements Serializable {
         String name
         int age
     }
