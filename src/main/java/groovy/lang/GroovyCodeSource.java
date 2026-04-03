@@ -232,7 +232,8 @@ public class GroovyCodeSource {
             sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
         }
         try {
-            return new CodeSource(new URI("file", "", codeBase, null).toURL(), (java.security.cert.Certificate[]) null);
+            String path = codeBase.startsWith("/") ? codeBase : "/" + codeBase;
+            return new CodeSource(new URI("file", "", path, null).toURL(), (java.security.cert.Certificate[]) null);
         }
         catch (MalformedURLException | URISyntaxException e) {
             throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
