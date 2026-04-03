@@ -21,134 +21,72 @@
 
 = Async/Await (Incubating)
 
-[[async-await]]
+[[async-intro]]
 == Introduction
 
 Groovy provides native `async`/`await` support, enabling developers to write
 concurrent code in a sequential, readable style. Rather than dealing with
 callbacks, `CompletableFuture` chains, or manual thread management, you express
-concurrency with two simple constructs:
+concurrency with two constructs:
 
-* **`async { ... }`** — execute a closure asynchronously, returning an `Awaitable`
+* **`async { ... }`** — start a closure on a background thread, returning an `Awaitable`
 * **`await expr`** — block until an asynchronous result is available
 
 On JDK 21+, async tasks automatically leverage
 https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html#ofVirtual()[virtual threads]
 for optimal scalability. On JDK 17–20, a cached thread pool is used as a
-fallback, providing correct behavior with slightly higher resource cost for
-high-concurrency scenarios.
+fallback.
 
-A `defer` statement for cleanup is also provided, inspired by Go's `defer` keyword.
+The examples throughout this guide use an online multiplayer card game as a
+running theme — dealing hands, racing for the fastest play, streaming cards,
+and managing tournament rounds.
 
-[[async-basic]]
-== Basic Usage
+[[async-getting-started]]
+== Getting Started
 
-The simplest use of `async`/`await` spawns work in a background thread and
-collects the result:
+=== Your first async/await
 
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=basic_async_await,indent=0]
-----
-
-`async { ... }` creates a _reusable async closure_ — the work does **not**
-start immediately. You must call it with `()` to launch the computation and
-get back an `Awaitable`:
+`async { ... }` starts work immediately on a background thread and returns an
+`Awaitable`. Use `await` to collect the result:
 
 [source,groovy]
 ----
-def task = async { expensiveWork() }   // defines the async closure — nothing runs yet
-def awaitable = task()                  // () starts the work, returns an Awaitable
-def result = await awaitable            // blocks until the result is ready
+include::../test/AsyncAwaitSpecTest.groovy[tags=draw_card,indent=0]
 ----
 
-Each `()` invocation starts a fresh, independent execution, so the same
-async closure can be reused. If you want work to start immediately without
-the extra `()` call, use `Awaitable.go`:
+=== Exception handling
 
-[source,groovy]
-----
-def task = Awaitable.go { expensiveWork() }   // starts immediately
-def result = await task                        // no () needed
-----
-
-Here is a more realistic example — a sequential workflow where each step
-depends on the previous one:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=sequential_workflow,indent=0]
-----
-
-The code reads top-to-bottom like synchronous code, but the entire workflow
-runs in a background thread. No callbacks, no `.thenCompose()` chains.
-
-[[async-shared-state]]
-=== A Note on Shared State
-
-Async closures run on a separate thread, so mutating shared variables from
-multiple async closures is a race condition — just as it would be with
-`Thread.start { ... }`:
-
-[source,groovy]
-----
-// UNSAFE — count is shared and mutated without synchronization
-var count = 0
-def tasks = (1..100).collect { async { count++ } }
-tasks.each { await it() }
-// count may not be 100!
-----
-
-Prefer returning values from async closures and collecting results with
-`await` or combinators, rather than mutating shared state:
-
-[source,groovy]
-----
-// SAFE — each async closure returns a value, no shared mutation
-def tasks = (1..100).collect { n -> async { n } }
-def results = await(tasks.collect { it() })
-assert results.sum() == 5050
-----
-
-When shared mutable state is unavoidable, use `AtomicInteger`,
-`ConcurrentHashMap`, or other thread-safe types from `java.util.concurrent`.
-
-[[async-exception-handling]]
-=== Exception Handling
-
-`await` automatically unwraps `CompletionException` and `ExecutionException`,
-rethrowing the original exception. Standard `try`/`catch` works naturally:
+`await` unwraps `CompletionException` and `ExecutionException` automatically.
+Standard `try`/`catch` works exactly as with synchronous code:
 
 [source,groovy]
 ----
 include::../test/AsyncAwaitSpecTest.groovy[tags=exception_handling,indent=0]
 ----
 
-[[async-cf-interop]]
-=== CompletableFuture Interop
+=== CompletableFuture interop
 
 `await` works directly with `CompletableFuture`, `CompletionStage`, and `Future`
-from Java libraries — no wrapping needed:
+from Java libraries:
 
 [source,groovy]
 ----
 include::../test/AsyncAwaitSpecTest.groovy[tags=cf_interop,indent=0]
 ----
 
-[[async-combinators]]
-== Combinators
+[[async-parallel]]
+== Running Tasks in Parallel
 
-`Awaitable` provides static combinator methods for coordinating multiple
-concurrent tasks.
+The real power of async/await appears when you need to run several tasks
+concurrently and coordinate their results.
 
-[[async-all]]
-=== Waiting for All: `Awaitable.all()` and Multi-arg `await`
+=== Waiting for all: `Awaitable.all()`
 
-Launch several tasks in parallel and wait for all results:
+Deal cards to multiple players at the same time and wait for all hands:
 
 [source,groovy]
 ----
-include::../test/AsyncAwaitSpecTest.groovy[tags=parallel_tasks,indent=0]
+include::../test/AsyncAwaitSpecTest.groovy[tags=deal_hands,indent=0]
 ----
 
 Multi-argument `await` is syntactic sugar for `Awaitable.all()`:
@@ -158,179 +96,101 @@ Multi-argument `await` is syntactic sugar for `Awaitable.all()`:
 include::../test/AsyncAwaitSpecTest.groovy[tags=multi_arg_await,indent=0]
 ----
 
-[[async-any]]
 === Racing: `Awaitable.any()`
 
-Returns the result of the first task to complete (success or failure):
+Returns the result of the first task to complete — useful for fallback
+patterns or latency-sensitive code:
 
 [source,groovy]
 ----
-include::../test/AsyncAwaitSpecTest.groovy[tags=racing_tasks,indent=0]
+include::../test/AsyncAwaitSpecTest.groovy[tags=fastest_server,indent=0]
 ----
 
-[[async-first]]
-=== First Success: `Awaitable.first()`
+=== First success: `Awaitable.first()`
 
 Like JavaScript's `Promise.any()` — returns the first _successful_ result,
-ignoring individual failures. Only fails when all tasks fail:
+silently ignoring individual failures. Only fails when every task fails:
 
 [source,groovy]
 ----
 include::../test/AsyncAwaitSpecTest.groovy[tags=first_success,indent=0]
 ----
 
-Typical use cases include hedged requests (send to multiple endpoints, use
-whichever responds first) and graceful degradation (try primary, then fallback).
+=== Inspecting all outcomes: `Awaitable.allSettled()`
 
-[[async-all-settled]]
-=== Inspecting All Outcomes: `Awaitable.allSettled()`
-
-Waits for all tasks to complete (succeed or fail) without throwing, returning
-an `AwaitResult` list:
+Waits for all tasks to finish (succeed or fail) without throwing. Returns an
+`AwaitResult` list where each entry has `success`, `value`, and `error` fields:
 
 [source,groovy]
 ----
 include::../test/AsyncAwaitSpecTest.groovy[tags=all_settled,indent=0]
 ----
 
-Each `AwaitResult` has `success` (boolean), `value` (if successful), and
-`error` (if failed).
-
-[[async-go]]
-=== Lightweight Spawn: `Awaitable.go()`
-
-A shorthand for spawning a task on the default executor:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=go_spawn,indent=0]
-----
-
-[[async-structured]]
-== Structured Concurrency
-
-Structured concurrency binds the lifetime of concurrent tasks to a scope.
-When the scope exits, all child tasks are guaranteed to have completed (or
-been cancelled). This prevents orphaned tasks, resource leaks, and silent
-failures from unobserved exceptions.
-
-Use `AsyncScope.withScope` to create a scope:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=structured_concurrency,indent=0]
-----
-
-[[async-fail-fast]]
-=== Fail-fast Cancellation
-
-By default, if any child task fails, all siblings are cancelled immediately.
-The first failure propagates as the scope's exception:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=scope_fail_fast,indent=0]
-----
-
-[[async-scope-waits]]
-=== All Children Complete
-
-The scope blocks until every child task finishes, even if no explicit `await`
-is used:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=scope_waits,indent=0]
-----
-
-[[async-timeout]]
-== Timeouts and Delays
-
-[[async-delay]]
-=== Non-blocking Delay
-
-`Awaitable.delay()` pauses without blocking a thread:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=delay,indent=0]
-----
-
-[[async-or-timeout]]
-=== Fail-fast Timeout
-
-Apply a deadline to any task. If the task doesn't complete in time,
-a `TimeoutException` is thrown:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=timeout,indent=0]
-----
-
-[[async-complete-on-timeout]]
-=== Fallback on Timeout
-
-Use a fallback value instead of throwing:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=timeout_fallback,indent=0]
-----
-
 [[async-generators]]
-== Generators with `yield return`
+== Generators and Streaming
 
-Async closures containing `yield return` become _generators_ — functions that
-lazily produce a sequence of values. The generator runs on a background thread
-and each `yield return` hands a value to the consumer, blocking until the
-consumer is ready for the next one (natural back-pressure):
+=== Producing values with `yield return`
+
+An `async` closure containing `yield return` becomes a _generator_ — it lazily
+produces a sequence of values. The generator runs on a background thread and
+blocks on each `yield return` until the consumer is ready, providing natural
+back-pressure:
 
 [source,groovy]
 ----
-include::../test/AsyncAwaitSpecTest.groovy[tags=yield_return,indent=0]
+include::../test/AsyncAwaitSpecTest.groovy[tags=deck_generator,indent=0]
 ----
 
-Since generators return a standard `Iterable`, you can consume them with a
-regular `for` loop or any Groovy collection method — no special syntax needed:
+Generators return a standard `Iterable`, so regular `for` loops and Groovy
+collection methods (`collect`, `findAll`, `take`, etc.) work out of the box:
 
 [source,groovy]
 ----
 include::../test/AsyncAwaitSpecTest.groovy[tags=generator_regular_for,indent=0]
 ----
 
-With virtual threads (JDK 21+), blocking iteration is essentially free.
-On JDK 17-20, the generator runs on a platform thread from the cached pool.
+=== Consuming with `for await`
 
-[[async-for-await]]
-== Iterating with `for await`
-
-The `for await` loop works with any iterable source:
+`for await` iterates over any async source. For generators and plain collections,
+it works identically to a regular `for` loop:
 
 [source,groovy]
 ----
-include::../test/AsyncAwaitSpecTest.groovy[tags=for_await_no_generator,indent=0]
-----
-
-It also works with generators:
-
-[source,groovy]
-----
-include::../test/AsyncAwaitSpecTest.groovy[tags=for_await,indent=0]
+include::../test/AsyncAwaitSpecTest.groovy[tags=for_await_generator,indent=0]
 ----
 
 The key value of `for await` is with **reactive types** (Reactor `Flux`, RxJava
 `Observable`) where it automatically converts the source to a blocking iterable
-via the `AwaitableAdapter` SPI. Without `for await`, you would need to call the
-conversion manually (e.g., `flux.toIterable()` or `observable.blockingIterable()`).
-For generators and plain collections, a regular `for` loop works identically.
+via the adapter SPI. Without `for await`, you would need to call the conversion
+manually (e.g., `flux.toIterable()`). For generators and plain collections,
+a regular `for` loop works identically.
+
+[[async-channels]]
+== Channels
+
+Channels provide Go-style inter-task communication. A producer sends values
+into a channel; a consumer receives them as they arrive. The channel handles
+synchronization and optional buffering — no shared mutable state needed:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=channel,indent=0]
+----
+
+Channels support unbuffered (rendezvous, `create()`) and buffered (`create(n)`)
+modes. Sending blocks when the buffer is full; receiving blocks when empty.
+With virtual threads, this blocking is essentially free.
+
+Since channels implement `Iterable`, they also work with regular `for` loops
+and Groovy collection methods.
 
 [[async-defer]]
 == Deferred Cleanup with `defer`
 
 The `defer` keyword schedules a cleanup action to run when the enclosing
-`async` closure completes, regardless of whether it succeeds or throws.
-Deferred actions execute in LIFO (last-in, first-out) order, making it
-natural to pair resource acquisition with cleanup:
+`async` closure completes, regardless of success or failure. Multiple
+deferred actions execute in LIFO order — last registered, first to run —
+making it natural to pair resource acquisition with cleanup:
 
 [source,groovy]
 ----
@@ -344,36 +204,71 @@ Deferred actions always run, even when an exception occurs:
 include::../test/AsyncAwaitSpecTest.groovy[tags=defer_exception,indent=0]
 ----
 
-If a deferred action itself returns an `Awaitable` or `Future`, the result
-is awaited before the next deferred action runs, ensuring orderly cleanup
-of asynchronous resources.
+If a deferred action returns an `Awaitable` or `Future`, the result is awaited
+before the next deferred action runs, ensuring orderly cleanup of asynchronous
+resources.
 
-[[async-executor]]
-== Executor Configuration
+[[async-diving-deeper]]
+== Diving Deeper
 
-By default, `async` uses:
+[[async-structured]]
+=== Structured Concurrency
 
-* **JDK 21+**: a virtual-thread-per-task executor (essentially unlimited,
-  near-zero overhead per task)
-* **JDK 17–20**: a cached daemon thread pool (max 256 threads by default,
-  configurable via the `groovy.async.parallelism` system property)
-
-You can override the executor for specific needs:
+`AsyncScope` binds the lifetime of child tasks to a scope. When the scope
+exits, all children are guaranteed complete (or cancelled). This prevents
+orphaned tasks and silent failures:
 
 [source,groovy]
 ----
-import org.apache.groovy.runtime.async.AsyncSupport
-import java.util.concurrent.Executors
-
-// Use a custom executor
-AsyncSupport.setExecutor(Executors.newFixedThreadPool(4))
-
-// Reset to the default
-AsyncSupport.resetExecutor()
+include::../test/AsyncAwaitSpecTest.groovy[tags=structured_concurrency,indent=0]
 ----
 
-[[async-adapter]]
-== Framework Extensibility
+By default, the scope uses **fail-fast** semantics — if any child fails,
+all siblings are cancelled immediately:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=scope_fail_fast,indent=0]
+----
+
+The scope waits for every child to finish, even without explicit `await` calls:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=scope_waits,indent=0]
+----
+
+On JDK 25+, scope tracking uses `ScopedValue` for optimal virtual thread
+performance (no per-thread storage, automatic inheritance). On JDK 17–24,
+a `ThreadLocal` fallback is used transparently.
+
+[[async-timeouts]]
+=== Timeouts and Delays
+
+Apply a deadline to any task. If it doesn't complete in time, a
+`TimeoutException` is thrown:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=timeout,indent=0]
+----
+
+Or use a fallback value instead of throwing:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=timeout_fallback,indent=0]
+----
+
+`Awaitable.delay()` pauses without blocking a thread:
+
+[source,groovy]
+----
+include::../test/AsyncAwaitSpecTest.groovy[tags=delay,indent=0]
+----
+
+[[async-adapters]]
+=== Framework Adapters
 
 `await` natively understands `Awaitable`, `CompletableFuture`, `CompletionStage`,
 and `Future`. Third-party async types can be supported by implementing the
@@ -390,47 +285,139 @@ For example, without the adapter you must manually convert RxJava types:
 
 [source,groovy]
 ----
-// Without groovy-rxjava — manual conversion boilerplate
-def result = Single.just('hello')
-    .toCompletionStage()
-    .toCompletableFuture()
-    .join()
-
-def items = []
-for (item in Observable.just(1, 2, 3).blockingIterable()) {
-    items << item
-}
+// Without groovy-rxjava — manual conversion
+def result = Single.just('hello').toCompletionStage().toCompletableFuture().join()
 ----
 
-With `groovy-rxjava` on the classpath, the adapter is auto-discovered and
-the conversion happens transparently:
+With `groovy-rxjava` on the classpath, the conversion is transparent:
 
 [source,groovy]
 ----
-// With groovy-rxjava — await and for-await handle the plumbing
+// With groovy-rxjava — adapter handles the plumbing
 def result = await Awaitable.from(Single.just('hello'))
-
-def items = []
-for await (item in Observable.just(1, 2, 3)) {
-    items << item
-}
 ----
 
+[[async-executor]]
+=== Executor Configuration
+
+By default, `async` uses:
+
+* **JDK 21+**: a virtual-thread-per-task executor
+* **JDK 17–20**: a cached daemon thread pool (max 256 threads, configurable
+  via `groovy.async.parallelism` system property)
+
+You can override the executor:
+
+[source,groovy]
+----
+import org.apache.groovy.runtime.async.AsyncSupport
+import java.util.concurrent.Executors
+
+AsyncSupport.setExecutor(Executors.newFixedThreadPool(4))
+AsyncSupport.resetExecutor()  // restore default
+----
+
+[[async-best-practices]]
+== Best Practices
+
+[[async-prefer-values]]
+=== Prefer returning values over mutating shared state
+
+Async closures run on separate threads. Mutating shared variables from multiple
+closures is a race condition:
+
+[source,groovy]
+----
+// UNSAFE — shared mutation without synchronization
+var count = 0
+def tasks = (1..100).collect { async { count++ } }
+tasks.each { await it }
+// count may not be 100!
+----
+
+Instead, return values and collect results:
+
+[source,groovy]
+----
+// SAFE — no shared mutation
+def tasks = (1..100).collect { n -> async { n } }
+def results = await Awaitable.all(*tasks)
+assert results.sum() == 5050
+----
+
+When shared mutable state is unavoidable, use the appropriate concurrency-aware
+type, e.g. `AtomicInteger` for a shared counter, or thread-safe types from
+`java.util.concurrent` for players concurrently drawing cards from a shared deck.
+
+[[async-choose-right-tool]]
+=== Choosing the right tool
+
+[cols="2,3", options="header"]
+|===
+| Feature | Use when...
+
+| `async`/`await`
+| You have sequential steps involving I/O or blocking work and want code that reads top-to-bottom.
+
+| `Awaitable.all` / `any` / `first`
+| You need to launch independent tasks and collect all results, race them, or take the first success.
+
+| `yield return` / `for await`
+| You're producing or consuming a stream of values — paginated APIs, card dealing, log tailing.
+
+| `defer`
+| You acquire resources at different points and want guaranteed cleanup without nested `try`/`finally`.
+
+| `AsyncChannel`
+| Two or more tasks need to communicate — producer/consumer, fan-out/fan-in, or hand-off.
+
+| `AsyncScope`
+| You want child task lifetimes tied to a scope with automatic cancellation on failure.
+
+| Framework adapters
+| You're already using Reactor or RxJava and want `await` / `for await` to work with their types.
+|===
+
 [[async-summary]]
-== Summary of Keywords
+== Quick Reference
 
 [cols="1,3"]
 |===
-| Keyword | Description
+| Construct | Description
 
-| `async { ... }` | Execute a closure asynchronously, returning an `Awaitable`
-| `await expr` | Block until the result is available; rethrows original exceptions
-| `await(a, b, c)` | Wait for all — syntactic sugar for `await Awaitable.all(a, b, c)`
-| `yield return expr` | Produce a value from an async generator
-| `for await (x in source)` | Iterate over an async source (generator, Flux, Observable, etc.)
-| `defer expr` | Schedule a cleanup action (LIFO order) inside an `async` closure
-| `AsyncScope.withScope { scope -> ... }` | Structured concurrency scope — all children complete on exit
+| `async { ... }`
+| Start a closure on a background thread. Returns `Awaitable` (or `Iterable` for generators).
+
+| `await expr`
+| Block until the result is available. Rethrows the original exception.
+
+| `await(a, b, c)`
+| Wait for all — syntactic sugar for `await Awaitable.all(a, b, c)`.
+
+| `yield return expr`
+| Produce a value from an async generator. Consumer blocks until ready.
+
+| `for await (x in src)`
+| Iterate over an async source (generator, channel, Flux, Observable, etc.).
+
+| `defer expr`
+| Schedule a cleanup action (LIFO order) inside an `async` closure.
+
+| `AsyncChannel.create(n)`
+| Create a buffered (or unbuffered) channel for inter-task communication.
+
+| `AsyncScope.withScope { ... }`
+| Structured concurrency — all children complete (or are cancelled) on scope exit.
+
+| `Awaitable.orTimeoutMillis`
+| Apply a deadline. Throws `TimeoutException` if the task exceeds it.
+
+| `Awaitable.completeOnTimeoutMillis`
+| Apply a deadline with a fallback value instead of throwing.
+
+| `Awaitable.delay(ms)`
+| Non-blocking pause.
 |===
 
-All three keywords (`async`, `await`, `defer`) are contextual — they can
-still be used as variable or method names in existing code.
+All keywords (`async`, `await`, `defer`) are contextual — they can still be
+used as variable or method names in existing code.

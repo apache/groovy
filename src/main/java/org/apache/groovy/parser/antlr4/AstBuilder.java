@@ -2971,10 +2971,10 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             ClosureExpression genClosure = new ClosureExpression(newParams, closure.getCode());
             genClosure.setVariableScope(closure.getVariableScope());
             genClosure.setSourcePosition(closure);
-            return configureAST(AsyncTransformHelper.buildWrapAsyncGeneratorCall(
+            return configureAST(AsyncTransformHelper.buildAsyncGeneratorCall(
                     new ArgumentListExpression(genClosure)), ctx);
         } else {
-            return configureAST(AsyncTransformHelper.buildWrapAsyncCall(
+            return configureAST(AsyncTransformHelper.buildAsyncCall(
                     new ArgumentListExpression(closure)), ctx);
         }
     }

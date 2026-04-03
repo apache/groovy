@@ -28,12 +28,10 @@ final class AsyncAwaitTest {
     // === Layer 1: basic async/await ===
 
     @Test
-    void testAsyncClosureAndAwait() {
+    void testAsyncAndAwait() {
         assertScript '''
-            import groovy.concurrent.Awaitable
-
             def task = async { 21 * 2 }
-            def result = await task()
+            def result = await task
             assert result == 42
         '''
     }
@@ -54,7 +52,7 @@ final class AsyncAwaitTest {
         assertScript '''
             def task = async { throw new IOException('test error') }
             try {
-                await task()
+                await task
             } catch (IOException e) {
                 assert e.message == 'test error'
                 return
@@ -71,20 +69,11 @@ final class AsyncAwaitTest {
             def counter = new AtomicInteger(0)
             def task1 = async { Thread.sleep(50); counter.incrementAndGet(); 'a' }
             def task2 = async { Thread.sleep(50); counter.incrementAndGet(); 'b' }
-            def r1 = await task1()
-            def r2 = await task2()
+            def r1 = await task1
+            def r2 = await task2
             assert counter.get() == 2
             assert r1 == 'a'
             assert r2 == 'b'
-        '''
-    }
-
-    @Test
-    void testAsyncWithClosureArgs() {
-        assertScript '''
-            def multiply = async { x, y -> x * y }
-            def result = await multiply(6, 7)
-            assert result == 42
         '''
     }
 
@@ -98,7 +87,6 @@ final class AsyncAwaitTest {
 
     @Test
     void testAsyncKeywordAsVariable() {
-        // 'async' can still be used as a variable name
         assertScript '''
             def async = 'hello'
             assert async.toUpperCase() == 'HELLO'
@@ -121,7 +109,7 @@ final class AsyncAwaitTest {
             def a = async { 1 }
             def b = async { 2 }
             def c = async { 3 }
-            def results = await(a(), b(), c())
+            def results = await(a, b, c)
             assert results == [1, 2, 3]
         '''
     }
@@ -133,7 +121,7 @@ final class AsyncAwaitTest {
 
             def a = async { 'x' }
             def b = async { 'y' }
-            def results = await Awaitable.all(a(), b())
+            def results = await Awaitable.all(a, b)
             assert results == ['x', 'y']
         '''
     }
@@ -145,7 +133,7 @@ final class AsyncAwaitTest {
 
             def fast = async { 'fast' }
             def slow = async { Thread.sleep(500); 'slow' }
-            def result = await Awaitable.any(fast(), slow())
+            def result = await Awaitable.any(fast, slow)
             assert result == 'fast'
         '''
     }
@@ -157,7 +145,7 @@ final class AsyncAwaitTest {
 
             def fail1 = async { throw new RuntimeException('fail') }
             def success = async { 'ok' }
-            def result = await Awaitable.first(fail1(), success())
+            def result = await Awaitable.first(fail1, success)
             assert result == 'ok'
         '''
     }
@@ -169,7 +157,7 @@ final class AsyncAwaitTest {
 
             def ok = async { 42 }
             def fail = async { throw new RuntimeException('boom') }
-            def results = await Awaitable.allSettled(ok(), fail())
+            def results = await Awaitable.allSettled(ok, fail)
             assert results.size() == 2
             assert results[0].success
             assert results[0].value == 42
@@ -186,7 +174,7 @@ final class AsyncAwaitTest {
             long start = System.currentTimeMillis()
             await Awaitable.delay(100)
             long elapsed = System.currentTimeMillis() - start
-            assert elapsed >= 90 // allow small timing variance
+            assert elapsed >= 90
         '''
     }
 
@@ -198,7 +186,7 @@ final class AsyncAwaitTest {
 
             def slow = async { Thread.sleep(5000); 'done' }
             try {
-                await Awaitable.orTimeoutMillis(slow(), 100)
+                await Awaitable.orTimeoutMillis(slow, 100)
                 assert false : 'Should have timed out'
             } catch (TimeoutException e) {
                 assert true
@@ -212,7 +200,7 @@ final class AsyncAwaitTest {
             import groovy.concurrent.Awaitable
 
             def slow = async { Thread.sleep(5000); 'done' }
-            def result = await Awaitable.completeOnTimeoutMillis(slow(), 'fallback', 100)
+            def result = await Awaitable.completeOnTimeoutMillis(slow, 'fallback', 100)
             assert result == 'fallback'
         '''
     }
@@ -261,7 +249,6 @@ final class AsyncAwaitTest {
     void testScopeFailFastCancelsSiblings() {
         assertScript '''
             import groovy.concurrent.AsyncScope
-            import java.util.concurrent.CancellationException
 
             def slowStarted = new java.util.concurrent.CountDownLatch(1)
             def result = null
@@ -297,7 +284,6 @@ final class AsyncAwaitTest {
                 scope.async { Thread.sleep(50); counter.incrementAndGet() }
                 scope.async { Thread.sleep(50); counter.incrementAndGet() }
             }
-            // All three must have completed by the time withScope returns
             assert counter.get() == 3
         '''
     }
@@ -325,8 +311,6 @@ final class AsyncAwaitTest {
 
             assert AsyncScope.current() == null
             AsyncScope.withScope { scope ->
-                // Inside the scope, current() returns the scope
-                // (but we're on the calling thread, not a child thread)
                 def childSaw = scope.async {
                     AsyncScope.current() != null
                 }
@@ -373,13 +357,13 @@ final class AsyncAwaitTest {
     @Test
     void testYieldReturnBasic() {
         assertScript '''
-            def gen = async {
+            def items = async {
                 yield return 1
                 yield return 2
                 yield return 3
             }
             def results = []
-            for (item in gen()) {
+            for (item in items) {
                 results << item
             }
             assert results == [1, 2, 3]
@@ -389,37 +373,121 @@ final class AsyncAwaitTest {
     @Test
     void testYieldReturnWithLoop() {
         assertScript '''
-            def range = async {
+            def items = async {
                 for (i in 1..5) {
                     yield return i * 10
                 }
             }
-            assert range().collect() == [10, 20, 30, 40, 50]
+            assert items.collect() == [10, 20, 30, 40, 50]
+        '''
+    }
+
+    // === channels ===
+
+    @Test
+    void testChannelBasic() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+
+            def ch = AsyncChannel.create(2)
+            async {
+                await ch.send('a')
+                await ch.send('b')
+                ch.close()
+            }
+            def results = []
+            for await (item in ch) {
+                results << item
+            }
+            assert results == ['a', 'b']
         '''
     }
 
     @Test
-    void testYieldReturnWithArgs() {
+    void testChannelUnbuffered() {
         assertScript '''
-            def repeat = async { value, times ->
-                for (i in 1..times) {
-                    yield return value
-                }
+            import groovy.concurrent.AsyncChannel
+
+            def ch = AsyncChannel.create()  // rendezvous
+            async {
+                await ch.send(1)
+                await ch.send(2)
+                await ch.send(3)
+                ch.close()
             }
-            assert repeat('x', 3).collect() == ['x', 'x', 'x']
+            def results = []
+            for (item in ch) {
+                results << item
+            }
+            assert results == [1, 2, 3]
+        '''
+    }
+
+    @Test
+    void testChannelProducerConsumer() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+
+            def ch = AsyncChannel.create(3)
+            // Producer
+            async {
+                for (i in 1..5) {
+                    await ch.send(i * 10)
+                }
+                ch.close()
+            }
+            // Consumer
+            def sum = 0
+            for await (value in ch) {
+                sum += value
+            }
+            assert sum == 150
+        '''
+    }
+
+    @Test
+    void testChannelClosedForSend() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+            import groovy.concurrent.ChannelClosedException
+
+            def ch = AsyncChannel.create(1)
+            ch.close()
+            try {
+                await ch.send('too late')
+                assert false : 'Should have thrown'
+            } catch (ChannelClosedException e) {
+                assert e.message.contains('closed')
+            }
+        '''
+    }
+
+    @Test
+    void testChannelQueryMethods() {
+        assertScript '''
+            import groovy.concurrent.AsyncChannel
+
+            def ch = AsyncChannel.create(5)
+            assert ch.capacity == 5
+            assert ch.bufferedSize == 0
+            assert !ch.closed
+            await ch.send('x')
+            assert ch.bufferedSize == 1
+            ch.close()
+            assert ch.closed
         '''
     }
 
     @Test
     void testYieldReturnExceptionPropagation() {
         assertScript '''
-            def gen = async {
+            def items = async {
                 yield return 1
                 throw new RuntimeException('generator error')
             }
             def results = []
             try {
-                for (item in gen()) {
+                for (item in items) {
                     results << item
                 }
                 assert false : 'Should have thrown'
@@ -446,13 +514,13 @@ final class AsyncAwaitTest {
     @Test
     void testForAwaitWithGenerator() {
         assertScript '''
-            def gen = async {
+            def items = async {
                 yield return 'a'
                 yield return 'b'
                 yield return 'c'
             }
             def results = []
-            for await (item in gen()) {
+            for await (item in items) {
                 results << item.toUpperCase()
             }
             assert results == ['A', 'B', 'C']
@@ -471,19 +539,18 @@ final class AsyncAwaitTest {
         '''
     }
 
-    // === regular for loop with generators (no for-await needed) ===
+    // === regular for loop with generators ===
 
     @Test
     void testRegularForLoopWithGenerator() {
-        // Generators return Iterable, so regular for loop works too
         assertScript '''
-            def gen = async {
+            def items = async {
                 yield return 'a'
                 yield return 'b'
                 yield return 'c'
             }
             def results = []
-            for (item in gen()) {
+            for (item in items) {
                 results << item
             }
             assert results == ['a', 'b', 'c']
@@ -492,15 +559,13 @@ final class AsyncAwaitTest {
 
     @Test
     void testCollectWithGenerator() {
-        // Standard Groovy collection methods work on generator output
         assertScript '''
             def squares = async {
                 for (i in 1..5) {
                     yield return i * i
                 }
             }
-            assert squares().collect() == [1, 4, 9, 16, 25]
-            assert squares().collect { it * 2 } == [2, 8, 18, 32, 50]
+            assert squares.collect() == [1, 4, 9, 16, 25]
         '''
     }
 
@@ -515,7 +580,7 @@ final class AsyncAwaitTest {
                 log << 'work'
                 'result'
             }
-            def result = await task()
+            def result = await task
             assert result == 'result'
             assert log == ['work', 'cleanup']
         '''
@@ -531,7 +596,7 @@ final class AsyncAwaitTest {
                 log << 'body'
                 'done'
             }
-            await task()
+            await task
             assert log == ['body', 'second registered, first to run', 'first registered, last to run']
         '''
     }
@@ -545,7 +610,7 @@ final class AsyncAwaitTest {
                 throw new RuntimeException('oops')
             }
             try {
-                await task()
+                await task
             } catch (RuntimeException e) {
                 assert e.message == 'oops'
             }
@@ -562,7 +627,7 @@ final class AsyncAwaitTest {
                 log << 'body'
                 42
             }
-            assert await(task()) == 42
+            assert await(task) == 42
             assert log == ['body', 'deferred closure']
         '''
     }
@@ -575,7 +640,6 @@ final class AsyncAwaitTest {
             import org.apache.groovy.runtime.async.AsyncSupport
             import java.util.concurrent.Executors
 
-            def threadNames = Collections.synchronizedList([])
             def exec = Executors.newFixedThreadPool(2) { r ->
                 def t = new Thread(r, 'custom-pool')
                 t.daemon = true
@@ -584,7 +648,7 @@ final class AsyncAwaitTest {
             try {
                 AsyncSupport.setExecutor(exec)
                 def task = async { Thread.currentThread().name }
-                def name = await task()
+                def name = await task
                 assert name == 'custom-pool'
             } finally {
                 AsyncSupport.resetExecutor()
@@ -598,7 +662,6 @@ final class AsyncAwaitTest {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncSupport
 
-            // Just verify this doesn't throw — actual value depends on JDK version
             def available = AsyncSupport.isVirtualThreadsAvailable()
             assert available instanceof Boolean
         '''

@@ -26,19 +26,17 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.TryCatchStatement;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.Types;
 
 import static org.codehaus.groovy.ast.tools.GeneralUtils.args;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.classX;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.declS;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.stmt;
+import static org.codehaus.groovy.ast.tools.GeneralUtils.tryCatchS;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 
 /**
@@ -57,8 +55,8 @@ public final class AsyncTransformHelper {
     private static final String ASYNC_GEN_PARAM_NAME = "$__asyncGen__";
     private static final String AWAIT_METHOD = "await";
     private static final String YIELD_RETURN_METHOD = "yieldReturn";
-    private static final String WRAP_ASYNC_METHOD = "wrapAsync";
-    private static final String WRAP_ASYNC_GENERATOR_METHOD = "wrapAsyncGenerator";
+    private static final String ASYNC_METHOD = "async";
+    private static final String ASYNC_GENERATOR_METHOD = "asyncGenerator";
     private static final String TO_BLOCKING_ITERABLE_METHOD = "toBlockingIterable";
     private static final String CLOSE_ITERABLE_METHOD = "closeIterable";
     private static final String CREATE_DEFER_SCOPE_METHOD = "createDeferScope";
@@ -100,17 +98,17 @@ public final class AsyncTransformHelper {
     }
 
     /**
-     * Builds {@code AsyncSupport.wrapAsync(closure)}.
+     * Builds {@code AsyncSupport.async(closure)} — starts immediately, returns Awaitable.
      */
-    public static Expression buildWrapAsyncCall(Expression closure) {
-        return callX(ASYNC_SUPPORT_TYPE, WRAP_ASYNC_METHOD, ensureArgs(closure));
+    public static Expression buildAsyncCall(Expression closure) {
+        return callX(ASYNC_SUPPORT_TYPE, ASYNC_METHOD, ensureArgs(closure));
     }
 
     /**
-     * Builds {@code AsyncSupport.wrapAsyncGenerator(closure)}.
+     * Builds {@code AsyncSupport.asyncGenerator(closure)} — starts immediately, returns Iterable.
      */
-    public static Expression buildWrapAsyncGeneratorCall(Expression closure) {
-        return callX(ASYNC_SUPPORT_TYPE, WRAP_ASYNC_GENERATOR_METHOD, ensureArgs(closure));
+    public static Expression buildAsyncGeneratorCall(Expression closure) {
+        return callX(ASYNC_SUPPORT_TYPE, ASYNC_GENERATOR_METHOD, ensureArgs(closure));
     }
 
     /**
@@ -210,21 +208,13 @@ public final class AsyncTransformHelper {
      */
     public static Statement wrapWithDeferScope(Statement body) {
         // var $__deferScope__ = AsyncSupport.createDeferScope()
-        Expression createScope = callX(ASYNC_SUPPORT_TYPE, CREATE_DEFER_SCOPE_METHOD);
-        DeclarationExpression decl = new DeclarationExpression(
-                varX(DEFER_SCOPE_VAR),
-                Token.newSymbol(Types.ASSIGN, -1, -1),
-                createScope);
-        Statement declStmt = new ExpressionStatement(decl);
+        Statement declStmt = declS(varX(DEFER_SCOPE_VAR),
+                callX(ASYNC_SUPPORT_TYPE, CREATE_DEFER_SCOPE_METHOD));
 
-        // finally { AsyncSupport.executeDeferScope($__deferScope__) }
-        Expression executeScope = callX(ASYNC_SUPPORT_TYPE, EXECUTE_DEFER_SCOPE_METHOD,
-                args(varX(DEFER_SCOPE_VAR)));
-        Statement finallyStmt = block(new ExpressionStatement(executeScope));
+        // try { body } finally { AsyncSupport.executeDeferScope($__deferScope__) }
+        Statement finallyStmt = stmt(callX(ASYNC_SUPPORT_TYPE, EXECUTE_DEFER_SCOPE_METHOD,
+                args(varX(DEFER_SCOPE_VAR))));
 
-        // try { body } finally { ... }
-        TryCatchStatement tryCatch = new TryCatchStatement(body, finallyStmt);
-
-        return block(declStmt, tryCatch);
+        return block(declStmt, tryCatchS(body, finallyStmt));
     }
 }

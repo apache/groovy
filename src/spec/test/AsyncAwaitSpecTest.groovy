@@ -23,52 +23,79 @@ import static groovy.test.GroovyAssert.assertScript
 
 class AsyncAwaitSpecTest {
 
+    // === Getting started ===
+
     @Test
     void testBasicAsyncAwait() {
         assertScript '''
         // tag::basic_async_await[]
         def task = async { 21 * 2 }
-        assert await(task()) == 42
+        assert await(task) == 42
         // end::basic_async_await[]
         '''
     }
 
     @Test
-    void testSequentialWorkflow() {
+    void testDrawCard() {
         assertScript '''
-        // tag::sequential_workflow[]
-        def fetchUserId = { String token -> 'user-42' }
-        def fetchUserName = { String id -> 'Alice' }
-        def loadProfile = { String name -> [name: name, level: 10] }
-
-        def task = async {
-            var userId  = fetchUserId('token-abc')
-            var name    = fetchUserName(userId)
-            var profile = loadProfile(name)
-            profile
-        }
-        def profile = await task()
-        assert profile.name == 'Alice'
-        assert profile.level == 10
-        // end::sequential_workflow[]
+        // tag::draw_card[]
+        def deck = ['2♠', '3♥', 'K♦', 'A♣']
+        def card = async { deck.shuffled()[0] }
+        println "You drew: ${await card}"
+        // end::draw_card[]
         '''
     }
 
     @Test
-    void testParallelTasks() {
+    void testExceptionHandling() {
+        assertScript '''
+        // tag::exception_handling[]
+        def drawFromEmpty = async {
+            throw new IllegalStateException('deck is empty')
+        }
+        try {
+            await drawFromEmpty
+        } catch (IllegalStateException e) {
+            // Original exception — no CompletionException wrapper
+            assert e.message == 'deck is empty'
+        }
+        // end::exception_handling[]
+        '''
+    }
+
+    @Test
+    void testCfInterop() {
+        assertScript '''
+        import java.util.concurrent.CompletableFuture
+
+        // tag::cf_interop[]
+        // await works with CompletableFuture from Java libraries
+        def future = CompletableFuture.supplyAsync { 'A♠' }
+        assert await(future) == 'A♠'
+        // end::cf_interop[]
+        '''
+    }
+
+    // === Parallel tasks and combinators ===
+
+    @Test
+    void testDealHands() {
         assertScript '''
         import groovy.concurrent.Awaitable
 
-        // tag::parallel_tasks[]
-        def stats     = async { [hp: 100, mp: 50] }
-        def inventory = async { ['sword', 'shield'] }
-        def villain   = async { [name: 'Dragon', level: 20] }
+        // tag::deal_hands[]
+        // Deal cards to three players concurrently
+        def deck = ('A'..'K').collectMany { r -> ['♠','♥','♦','♣'].collect { "$r$it" } }.shuffled()
+        int i = 0
+        def draw5 = { -> deck[i..<(i+5)].tap { i += 5 } }
 
-        def (s, inv, v) = await Awaitable.all(stats(), inventory(), villain())
-        assert s.hp == 100
-        assert inv.size() == 2
-        assert v.name == 'Dragon'
-        // end::parallel_tasks[]
+        def alice = async { draw5() }
+        def bob   = async { draw5() }
+        def carol = async { draw5() }
+
+        def (a, b, c) = await Awaitable.all(alice, bob, carol)
+        assert a.size() == 5 && b.size() == 5 && c.size() == 5
+        // end::deal_hands[]
         '''
     }
 
@@ -80,25 +107,26 @@ class AsyncAwaitSpecTest {
         def b = async { 2 }
         def c = async { 3 }
 
-        // These three forms are equivalent:
-        def r1 = await(a(), b(), c())    // parenthesized multi-arg
-        assert r1 == [1, 2, 3]
+        // Parenthesized multi-arg await (sugar for Awaitable.all):
+        def results = await(a, b, c)
+        assert results == [1, 2, 3]
         // end::multi_arg_await[]
         '''
     }
 
     @Test
-    void testRacingTasks() {
+    void testFastestServer() {
         assertScript '''
         import groovy.concurrent.Awaitable
 
-        // tag::racing_tasks[]
-        def fast = async { 'fast' }
-        def slow = async { Thread.sleep(500); 'slow' }
+        // tag::fastest_server[]
+        // Race two servers — use whichever responds first
+        def primary  = async { Thread.sleep(200); 'primary-response' }
+        def fallback = async { 'fallback-response' }
 
-        def winner = await Awaitable.any(fast(), slow())
-        assert winner == 'fast'
-        // end::racing_tasks[]
+        def response = await Awaitable.any(primary, fallback)
+        assert response == 'fallback-response'
+        // end::fastest_server[]
         '''
     }
 
@@ -108,12 +136,12 @@ class AsyncAwaitSpecTest {
         import groovy.concurrent.Awaitable
 
         // tag::first_success[]
-        def failing  = async { throw new RuntimeException('fail') }
-        def succeeding = async { 'ok' }
+        // Try multiple sources — use the first that succeeds
+        def failing    = async { throw new RuntimeException('server down') }
+        def succeeding = async { 'card-data-from-cache' }
 
-        // Awaitable.first returns the first *successful* result
-        def result = await Awaitable.first(failing(), succeeding())
-        assert result == 'ok'
+        def result = await Awaitable.first(failing, succeeding)
+        assert result == 'card-data-from-cache'
         // end::first_success[]
         '''
     }
@@ -124,76 +152,112 @@ class AsyncAwaitSpecTest {
         import groovy.concurrent.Awaitable
 
         // tag::all_settled[]
-        def ok   = async { 42 }
-        def fail = async { throw new RuntimeException('boom') }
+        def save1 = async { 42 }
+        def save2 = async { throw new RuntimeException('db error') }
 
-        def results = await Awaitable.allSettled(ok(), fail())
+        def results = await Awaitable.allSettled(save1, save2)
         assert results[0].success && results[0].value == 42
-        assert !results[1].success && results[1].error.message == 'boom'
+        assert !results[1].success && results[1].error.message == 'db error'
         // end::all_settled[]
         '''
     }
 
+    // === Generators and for await ===
+
     @Test
-    void testExceptionHandling() {
+    void testDeckGenerator() {
         assertScript '''
-        // tag::exception_handling[]
-        def task = async {
-            throw new IOException('network error')
+        // tag::deck_generator[]
+        def dealCards = async {
+            def suits = ['♠', '♥', '♦', '♣']
+            def ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+            for (suit in suits) {
+                for (rank in ranks) {
+                    yield return "$rank$suit"
+                }
+            }
         }
-        try {
-            await task()
-        } catch (IOException e) {
-            // Original exception is rethrown — no wrapper layers
-            assert e.message == 'network error'
+        def cards = dealCards.collect()
+        assert cards.size() == 52
+        assert cards.first() == 'A♠'
+        assert cards.last() == 'K♣'
+        // end::deck_generator[]
+        '''
+    }
+
+    @Test
+    void testForAwaitGenerator() {
+        assertScript '''
+        // tag::for_await_generator[]
+        def topCards = async {
+            for (card in ['A♠', 'K♥', 'Q♦']) {
+                yield return card
+            }
         }
-        // end::exception_handling[]
-        '''
-    }
-
-    @Test
-    void testTimeout() {
-        assertScript '''
-        import groovy.concurrent.Awaitable
-        import java.util.concurrent.TimeoutException
-
-        // tag::timeout[]
-        def slow = async { Thread.sleep(5000); 'done' }
-        try {
-            await Awaitable.orTimeoutMillis(slow(), 100)
-        } catch (TimeoutException e) {
-            assert true  // timed out as expected
+        def hand = []
+        for await (card in topCards) {
+            hand << card
         }
-        // end::timeout[]
+        assert hand == ['A♠', 'K♥', 'Q♦']
+        // end::for_await_generator[]
         '''
     }
 
     @Test
-    void testTimeoutWithFallback() {
+    void testForAwaitPlainCollection() {
         assertScript '''
-        import groovy.concurrent.Awaitable
-
-        // tag::timeout_fallback[]
-        def slow = async { Thread.sleep(5000); 'done' }
-        def result = await Awaitable.completeOnTimeoutMillis(slow(), 'fallback', 100)
-        assert result == 'fallback'
-        // end::timeout_fallback[]
+        // tag::for_await_collection[]
+        def results = []
+        for await (card in ['A♠', 'K♥', 'Q♦']) {
+            results << card
+        }
+        assert results == ['A♠', 'K♥', 'Q♦']
+        // end::for_await_collection[]
         '''
     }
 
     @Test
-    void testDelay() {
+    void testGeneratorRegularFor() {
         assertScript '''
-        import groovy.concurrent.Awaitable
-
-        // tag::delay[]
-        long start = System.currentTimeMillis()
-        await Awaitable.delay(100)
-        long elapsed = System.currentTimeMillis() - start
-        assert elapsed >= 90
-        // end::delay[]
+        // tag::generator_regular_for[]
+        def scores = async {
+            for (s in [100, 250, 75]) { yield return s }
+        }
+        // Generators return Iterable — regular for and collect work
+        assert scores.collect { it * 2 } == [200, 500, 150]
+        // end::generator_regular_for[]
         '''
     }
+
+    // === Channels ===
+
+    @Test
+    void testChannel() {
+        assertScript '''
+        import groovy.concurrent.AsyncChannel
+
+        // tag::channel[]
+        def cardStream = AsyncChannel.create(3)
+
+        // Dealer — sends cards concurrently
+        async {
+            for (card in ['A♠', 'K♥', 'Q♦', 'J♣']) {
+                await cardStream.send(card)
+            }
+            cardStream.close()
+        }
+
+        // Player — receives cards as they arrive
+        def hand = []
+        for await (card in cardStream) {
+            hand << card
+        }
+        assert hand == ['A♠', 'K♥', 'Q♦', 'J♣']
+        // end::channel[]
+        '''
+    }
+
+    // === Defer ===
 
     @Test
     void testDeferBasic() {
@@ -201,14 +265,17 @@ class AsyncAwaitSpecTest {
         // tag::defer_basic[]
         def log = []
         def task = async {
-            defer { log << 'cleanup 1' }
-            defer { log << 'cleanup 2' }
-            log << 'work'
-            'done'
+            log << 'open connection'
+            defer { log << 'close connection' }
+            log << 'open transaction'
+            defer { log << 'close transaction' }
+            log << 'save game state'
+            'saved'
         }
-        assert await(task()) == 'done'
-        // Deferred actions run in LIFO order
-        assert log == ['work', 'cleanup 2', 'cleanup 1']
+        assert await(task) == 'saved'
+        // Deferred actions run in LIFO order — last registered, first to run
+        assert log == ['open connection', 'open transaction', 'save game state',
+                       'close transaction', 'close connection']
         // end::defer_basic[]
         '''
     }
@@ -220,58 +287,37 @@ class AsyncAwaitSpecTest {
         def cleaned = false
         def task = async {
             defer { cleaned = true }
-            throw new RuntimeException('oops')
+            throw new RuntimeException('save failed')
         }
         try {
-            await task()
+            await task
         } catch (RuntimeException e) {
-            assert e.message == 'oops'
+            assert e.message == 'save failed'
         }
-        // Deferred actions still run even when an exception occurs
+        // Deferred actions run even when an exception occurs
         assert cleaned
         // end::defer_exception[]
         '''
     }
 
-    @Test
-    void testGoSpawn() {
-        assertScript '''
-        import groovy.concurrent.Awaitable
-
-        // tag::go_spawn[]
-        def task = Awaitable.go { 'spawned' }
-        assert await(task) == 'spawned'
-        // end::go_spawn[]
-        '''
-    }
+    // === Structured concurrency ===
 
     @Test
-    void testCompletableFutureInterop() {
-        assertScript '''
-        import java.util.concurrent.CompletableFuture
-
-        // tag::cf_interop[]
-        // await works with CompletableFuture from Java libraries
-        def future = CompletableFuture.supplyAsync { 'from Java' }
-        assert await(future) == 'from Java'
-        // end::cf_interop[]
-        '''
-    }
-
-    @Test
-    void testStructuredConcurrency() {
+    void testTournamentScope() {
         assertScript '''
         import groovy.concurrent.AsyncScope
 
         // tag::structured_concurrency[]
-        def result = AsyncScope.withScope { scope ->
-            def user   = scope.async { [name: 'Alice'] }
-            def orders = scope.async { ['order-1', 'order-2'] }
-            [user: await(user), orders: await(orders)]
+        // Run a tournament round — all tables play concurrently
+        def results = AsyncScope.withScope { scope ->
+            def table1 = scope.async { [winner: 'Alice',  score: 320] }
+            def table2 = scope.async { [winner: 'Bob',    score: 280] }
+            def table3 = scope.async { [winner: 'Carol',  score: 410] }
+            [await(table1), await(table2), await(table3)]
         }
-        // Both tasks guaranteed complete when withScope returns
-        assert result.user.name == 'Alice'
-        assert result.orders.size() == 2
+        // All tables guaranteed complete when withScope returns
+        assert results.size() == 3
+        assert results.max { it.score }.winner == 'Carol'
         // end::structured_concurrency[]
         '''
     }
@@ -284,12 +330,12 @@ class AsyncAwaitSpecTest {
         // tag::scope_fail_fast[]
         try {
             AsyncScope.withScope { scope ->
-                scope.async { Thread.sleep(5000); 'slow' }
-                scope.async { throw new RuntimeException('fail!') }
+                scope.async { Thread.sleep(5000); 'still playing' }
+                scope.async { throw new RuntimeException('player disconnected') }
             }
         } catch (RuntimeException e) {
-            // The first failure cancels siblings and propagates
-            assert e.message == 'fail!'
+            // First failure cancels all siblings and propagates
+            assert e.message == 'player disconnected'
         }
         // end::scope_fail_fast[]
         '''
@@ -302,85 +348,59 @@ class AsyncAwaitSpecTest {
         import java.util.concurrent.atomic.AtomicInteger
 
         // tag::scope_waits[]
-        def counter = new AtomicInteger(0)
+        def completed = new AtomicInteger(0)
         AsyncScope.withScope { scope ->
-            3.times { scope.async { Thread.sleep(50); counter.incrementAndGet() } }
+            3.times { scope.async { Thread.sleep(50); completed.incrementAndGet() } }
         }
-        // All children have completed
-        assert counter.get() == 3
+        // All children have completed — even without explicit await
+        assert completed.get() == 3
         // end::scope_waits[]
         '''
     }
 
+    // === Timeouts and delays ===
+
     @Test
-    void testYieldReturn() {
+    void testTimeout() {
         assertScript '''
-        // tag::yield_return[]
-        def fibonacci = async {
-            long a = 0, b = 1
-            for (i in 1..10) {
-                yield return a
-                (a, b) = [b, a + b]
-            }
+        import groovy.concurrent.Awaitable
+        import java.util.concurrent.TimeoutException
+
+        // tag::timeout[]
+        def slowPlayer = async { Thread.sleep(5000); 'finally played' }
+        try {
+            await Awaitable.orTimeoutMillis(slowPlayer, 100)
+        } catch (TimeoutException e) {
+            // Player took too long — turn forfeited
+            assert true
         }
-        assert fibonacci().collect() == [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
-        // end::yield_return[]
+        // end::timeout[]
         '''
     }
 
     @Test
-    void testGeneratorWithRegularFor() {
+    void testTimeoutFallback() {
         assertScript '''
-        // tag::generator_regular_for[]
-        def countdown = async {
-            for (i in 5..1) {
-                yield return i
-            }
-        }
-        // Generators return Iterable — regular for loop works
-        def results = []
-        for (n in countdown()) {
-            results << n
-        }
-        assert results == [5, 4, 3, 2, 1]
+        import groovy.concurrent.Awaitable
 
-        // Collection methods work too
-        assert countdown().collect { it * 10 } == [50, 40, 30, 20, 10]
-        // end::generator_regular_for[]
+        // tag::timeout_fallback[]
+        def slowPlayer = async { Thread.sleep(5000); 'deliberate move' }
+        def move = await Awaitable.completeOnTimeoutMillis(slowPlayer, 'auto-pass', 100)
+        assert move == 'auto-pass'
+        // end::timeout_fallback[]
         '''
     }
 
     @Test
-    void testForAwaitWithoutGenerator() {
+    void testDelay() {
         assertScript '''
-        import java.util.concurrent.CompletableFuture
+        import groovy.concurrent.Awaitable
 
-        // tag::for_await_no_generator[]
-        // for await works with any iterable — no generator needed
-        def results = []
-        for await (item in ['alpha', 'beta', 'gamma']) {
-            results << item.toUpperCase()
-        }
-        assert results == ['ALPHA', 'BETA', 'GAMMA']
-        // end::for_await_no_generator[]
-        '''
-    }
-
-    @Test
-    void testForAwait() {
-        assertScript '''
-        // tag::for_await[]
-        def squares = async {
-            for (i in 1..5) {
-                yield return i * i
-            }
-        }
-        def results = []
-        for await (n in squares()) {
-            results << n
-        }
-        assert results == [1, 4, 9, 16, 25]
-        // end::for_await[]
+        // tag::delay[]
+        long start = System.currentTimeMillis()
+        await Awaitable.delay(100)   // pause without blocking a thread
+        assert System.currentTimeMillis() - start >= 90
+        // end::delay[]
         '''
     }
 }

@@ -328,6 +328,33 @@ public class AsyncSupport {
         };
     }
 
+    /**
+     * Starts a generator immediately, returning an {@link Iterable} backed by a
+     * {@link GeneratorBridge}. This is the runtime entry point for
+     * {@code async { ... yield return ... }} expressions.
+     *
+     * @param closure the generator closure; receives a GeneratorBridge as first parameter
+     * @param <T>     the element type
+     * @return an Iterable that yields values from the generator
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Iterable<T> asyncGenerator(Closure<?> closure) {
+        Objects.requireNonNull(closure, "closure must not be null");
+        GeneratorBridge<T> bridge = new GeneratorBridge<>();
+        Object[] args = new Object[]{bridge};
+        defaultExecutor.execute(() -> {
+            try {
+                closure.call(args);
+                bridge.complete();
+            } catch (GeneratorBridge.GeneratorClosedException ignored) {
+                // Consumer closed early — normal for break in for-await
+            } catch (Throwable t) {
+                bridge.completeExceptionally(t);
+            }
+        });
+        return () -> bridge;
+    }
+
     // ---- for-await (blocking iterable conversion) -----------------------
 
     /**
@@ -467,12 +494,26 @@ public class AsyncSupport {
         CompletableFuture<?>[] futures = Arrays.stream(sources)
                 .map(s -> Awaitable.from(s).toCompletableFuture())
                 .toArray(CompletableFuture[]::new);
-        CompletableFuture<List<Object>> combined = CompletableFuture.allOf(futures)
-                .thenApply(v -> {
-                    List<Object> results = new ArrayList<>(futures.length);
-                    for (CompletableFuture<?> f : futures) results.add(f.join());
-                    return results;
-                });
+
+        // Track the temporally-first failure explicitly, since
+        // CompletableFuture.allOf() doesn't guarantee which exception
+        // propagates when multiple futures fail.
+        var firstError = new java.util.concurrent.atomic.AtomicReference<Throwable>();
+        for (CompletableFuture<?> f : futures) {
+            f.whenComplete((v, e) -> {
+                if (e != null) firstError.compareAndSet(null, e);
+            });
+        }
+
+        CompletableFuture<List<Object>> combined = CompletableFuture.allOf(
+                Arrays.stream(futures).map(f -> f.handle((v, e) -> null)).toArray(CompletableFuture[]::new)
+        ).thenApply(v -> {
+            Throwable err = firstError.get();
+            if (err != null) throw err instanceof CompletionException ce ? ce : new CompletionException(err);
+            List<Object> results = new ArrayList<>(futures.length);
+            for (CompletableFuture<?> f : futures) results.add(f.join());
+            return results;
+        });
         return GroovyPromise.of(combined);
     }
 
