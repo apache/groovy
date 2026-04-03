@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.CodeSource;
@@ -231,9 +232,9 @@ public class GroovyCodeSource {
             sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
         }
         try {
-            return new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[]) null);
+            return new CodeSource(new URI("file", "", codeBase, null).toURL(), (java.security.cert.Certificate[]) null);
         }
-        catch (MalformedURLException e) {
+        catch (MalformedURLException | URISyntaxException e) {
             throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
         }
     }

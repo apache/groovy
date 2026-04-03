@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -349,7 +350,13 @@ public class XmlSlurper extends DefaultHandler {
      * @param base The URL used to resolve relative URLs
      */
     public void setEntityBaseUrl(final URL base) {
-        reader.setEntityResolver((publicId, systemId) -> new InputSource(new URL(base, systemId).openStream()));
+        reader.setEntityResolver((publicId, systemId) -> {
+            try {
+                return new InputSource(base.toURI().resolve(systemId).toURL().openStream());
+            } catch (URISyntaxException e) {
+                throw new SAXException(e);
+            }
+        });
     }
 
     /* (non-Javadoc)
