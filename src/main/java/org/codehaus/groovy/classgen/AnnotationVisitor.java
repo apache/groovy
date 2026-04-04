@@ -134,8 +134,9 @@ public class AnnotationVisitor {
     private boolean checkIfMandatoryAnnotationValuesPassed(final AnnotationNode node) {
         boolean ok = true;
         for (MethodNode mn : node.getClassNode().getMethods()) {
-            if (!mn.hasAnnotationDefault() && !node.getMembers().containsKey(mn.getName()) && !"dataVariableNames".equals(mn.getName())) {
-                // TODO: https://github.com/spockframework/spock/issues/1549               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            // "dataVariableNames" was an incorrectly set up variable in Spock, now removed, but exclusion kept for legacy versions
+            // https://github.com/spockframework/spock/pull/1596/changes/513bb6e7e19
+            if (!mn.hasAnnotationDefault() && !mn.isStaticConstructor() && !node.getMembers().containsKey(mn.getName()) && !"dataVariableNames".equals(mn.getName())) {
                 addError("No explicit/default value found for annotation attribute '" + mn.getName() + "'", node);
                 ok = false;
             }
