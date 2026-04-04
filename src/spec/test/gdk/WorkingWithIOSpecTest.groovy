@@ -79,6 +79,17 @@ Le bruit de l'eau.''')
             // tag::file_bytes[]
             byte[] contents = file.bytes
             // end::file_bytes[]
+
+            // tag::async_read[]
+            def path = file.toPath()
+            def future = path.textAsync           // returns CompletableFuture<String>
+            // end::async_read[]
+            /*
+            // tag::async_read[]
+            println future.get()                  // blocks until content is available
+            // end::async_read[]
+            */
+            println future.get(5, java.util.concurrent.TimeUnit.SECONDS)
         }
     }
 
