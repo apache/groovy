@@ -21,6 +21,7 @@ package gls.syntax
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class Gep3OrderDslTest {
     @BeforeEach
@@ -37,6 +38,7 @@ class Gep3OrderDslTest {
 
     }
 
+    @Test
     void testDsl() {
         // use the script binding for silent sentence words like "to", "the"
         def binding = new CustomBinding()

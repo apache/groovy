@@ -21,11 +21,13 @@ package org.codehaus.groovy.classgen
 import org.codehaus.groovy.control.CompilerConfiguration
 import org.codehaus.groovy.tools.FileSystemCompiler
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Test
 
 import static org.junit.jupiter.api.Assertions.assertNotNull
 
 class GenericsGenTest {
 
+    @Test
     void testCompile() {
         File dir = createTempDir("groovy-src-", "-src")
         assertNotNull dir

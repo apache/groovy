@@ -18,12 +18,17 @@
  */
 package org.codehaus.groovy.runtime.memoize
 
+import org.junit.jupiter.api.Test
+
+import static groovy.test.GroovyAssert.assertScript
+
 class MemoizeTest extends AbstractMemoizeTestCase {
 
     Closure buildMemoizeClosure(Closure cl) {
         cl.memoize()
     }
 
+    @Test
     void testMemoizeWithInject() {
         int maxExecutionCount = 0
         Closure max = { int a, int b ->
@@ -46,6 +51,7 @@ class MemoizeTest extends AbstractMemoizeTestCase {
     }
 
     // GROOVY-6584
+    @Test
     void testMemoizeFunctionClosure() {
         int timesMethodBodyExecuted = 0
         def lst = []
@@ -91,6 +97,7 @@ class MemoizeTest extends AbstractMemoizeTestCase {
         assert timesMethodBodyExecuted == 4
     }
 
+    @Test
     void testMemoizeClosureParameters() {
         def clo = { String a, Date b, c -> 42 }.memoize()
         assert clo.maximumNumberOfParameters == 3
@@ -107,6 +114,7 @@ class MemoizeTest extends AbstractMemoizeTestCase {
     }
 
     // GROOVY-6175
+    @Test
     void testMemoizeClosureAsProperty() {
         def c = new ClassWithMemoizeClosureProperty();
 
@@ -118,6 +126,7 @@ class MemoizeTest extends AbstractMemoizeTestCase {
     }
 
     // GROOVY-8486
+    @Test
     void testMemoizeConcurrently() {
         assertScript '''
         // http://groovy.329449.n5.nabble.com/ConcurrentModificationException-with-use-of-memoize-tp5736788.html

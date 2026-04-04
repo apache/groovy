@@ -17,6 +17,9 @@
  *  under the License.
  */
 package groovy.lang
+
+import org.junit.jupiter.api.Test
+
 /**
  * GROOVY-4305: Make groovy.lang.Reference implement Serializable
  */
@@ -40,6 +43,7 @@ class ReferenceSerializationTest implements Serializable {
         return ois.readObject()
     }
 
+    @Test
     void testSimplePogoSerializationToObjectOutputStream() {
         int age = 33
         String name = "Guillaume"
@@ -54,6 +58,7 @@ class ReferenceSerializationTest implements Serializable {
         assert personDeserialized.pet.kind == "cat"
     }
 
+    @Test
     void testClosureSerializationWithAReferenceToALocalVariable() {
         int number = 2
         def doubler = { it * number }
@@ -64,6 +69,7 @@ class ReferenceSerializationTest implements Serializable {
         assert closure(3) == 6
     }
 
+    @Test
     void testAICReferencingLocalVariableTest() {
         long count = 0
         def button = new Button()
