@@ -10700,36 +10700,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a Set composed of the elements of the first Set minus the
      * elements of the given Collection.
      *
-     * @param self     a Set object
-     * @param removeMe the items to remove from the Set
-     * @return the resulting Set
+     * @param self     a Set
+     * @param removeMe the elements to exclude
+     * @return a new Set
      * @since 1.5.0
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> minus(Set<T> self, Collection<?> removeMe) {
-        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
-        final Set<T> ansSet = createSimilarSet(self);
-        ansSet.addAll(self);
+        Comparator comparator = self instanceof SortedSet set ? set.comparator() : null;
+        Set<T> answer = createSimilarSet(self);
+        answer.addAll(self);
         if (removeMe != null) {
             for (T o1 : self) {
                 for (Object o2 : removeMe) {
                     boolean areEqual = (comparator != null) ? (comparator.compare(o1, o2) == 0) : coercedEquals(o1, o2);
                     if (areEqual) {
-                        ansSet.remove(o1);
+                        answer.remove(o1);
                     }
                 }
             }
         }
-        return ansSet;
+        return answer;
     }
 
     /**
      * Create a Set composed of the elements of the first Set minus the
      * elements from the given Iterable.
      *
-     * @param self     a Set object
-     * @param removeMe the items to remove from the Set
-     * @return the resulting Set
+     * @param self     a Set
+     * @param removeMe the elements to exclude
+     * @return a new Set
      * @since 1.8.7
      */
     public static <T> Set<T> minus(Set<T> self, Iterable<?> removeMe) {
@@ -10739,29 +10739,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Set composed of the elements of the first Set minus the given element.
      *
-     * @param self     a Set object
-     * @param removeMe the element to remove from the Set
-     * @return the resulting Set
+     * @param self     a Set
+     * @param removeMe the element to exclude
+     * @return a new Set
      * @since 1.5.0
      */
     @SuppressWarnings("unchecked")
     public static <T> Set<T> minus(Set<T> self, Object removeMe) {
-        Comparator comparator = (self instanceof SortedSet) ? ((SortedSet) self).comparator() : null;
-        final Set<T> ansSet = createSimilarSet(self);
+        Comparator comparator = self instanceof SortedSet set ? set.comparator() : null;
+        Set<T> answer = createSimilarSet(self);
         for (T t : self) {
-            boolean areEqual = (comparator != null)? (comparator.compare(t, removeMe) == 0) : coercedEquals(t, removeMe);
-            if (!areEqual) ansSet.add(t);
+            boolean areEqual = (comparator != null) ? (comparator.compare(t, removeMe) == 0) : coercedEquals(t, removeMe);
+            if (!areEqual) answer.add(t);
         }
-        return ansSet;
+        return answer;
     }
 
     /**
      * Create a SortedSet composed of the elements of the first SortedSet minus the
      * elements of the given Collection.
      *
-     * @param self     a SortedSet object
-     * @param removeMe the items to remove from the SortedSet
-     * @return the resulting SortedSet
+     * @param self     a SortedSet
+     * @param removeMe the elements to exclude
+     * @return a new SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> minus(SortedSet<T> self, Collection<?> removeMe) {
@@ -10772,9 +10772,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a SortedSet composed of the elements of the first SortedSet minus the
      * elements of the given Iterable.
      *
-     * @param self     a SortedSet object
-     * @param removeMe the items to remove from the SortedSet
-     * @return the resulting SortedSet
+     * @param self     a SortedSet
+     * @param removeMe the elements to exclude
+     * @return a new SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> minus(SortedSet<T> self, Iterable<?> removeMe) {
@@ -10784,9 +10784,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a SortedSet composed of the elements of the first SortedSet minus the given element.
      *
-     * @param self     a SortedSet object
-     * @param removeMe the element to remove from the SortedSet
-     * @return the resulting SortedSet
+     * @param self     a SortedSet
+     * @param removeMe the element to exclude
+     * @return a new SortedSet
      * @since 2.4.0
      */
     public static <T> SortedSet<T> minus(SortedSet<T> self, Object removeMe) {
@@ -10799,8 +10799,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a List
-     * @param removeMe a Collection of elements to remove
-     * @return a List with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new List
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Collection<?> removeMe) {
@@ -10813,8 +10813,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a Collection
-     * @param removeMe a Collection of elements to remove
-     * @return a Collection with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new Collection
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Collection<T> self, Collection<?> removeMe) {
@@ -10827,8 +10827,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a List
-     * @param removeMe an Iterable of elements to remove
-     * @return a new List with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new List
      * @since 1.8.7
      */
     public static <T> List<T> minus(List<T> self, Iterable<?> removeMe) {
@@ -10843,8 +10843,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
-     * @return a new Collection with the given elements removed
+     * @param removeMe the elements to exclude
+     * @return a new Collection
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe) {
@@ -10858,10 +10858,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D']) { it.toLowerCase() } == ['a', 'E']
      * </pre>
      *
-     * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
-     * @param condition a Closure used to determine unique items
-     * @return a new Collection with the given elements removed
+     * @param self      an Iterable
+     * @param removeMe  the elements to exclude
+     * @param condition a Closure used to determine uniqueness
+     * @return a new Collection
      * @since 4.0.0
      */
     public static <T> Collection<T> minus(Iterable<T> self, Iterable<?> removeMe, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure condition) {
@@ -10878,10 +10878,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert ['a', 'B', 'c', 'D', 'E'].minus(['b', 'C', 'D'], {@code (i, j) -> i.toLowerCase() <=> j.toLowerCase()}) == ['a', 'E']
      * </pre>
      *
-     * @param self     an Iterable
-     * @param removeMe an Iterable of elements to remove
+     * @param self       an Iterable
+     * @param removeMe   the elements to exclude
      * @param comparator a Comparator
-     * @return a new Collection with the given elements removed
+     * @return a new Collection
      * @since 4.0.0
      */
     @SuppressWarnings("unchecked")
@@ -10933,9 +10933,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * given element to remove.
      * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
      *
-     * @param self     a List object
-     * @param removeMe an element to remove from the List
-     * @return the resulting List with the given element removed
+     * @param self     a List
+     * @param removeMe the element to exclude
+     * @return a new List
      * @since 1.0
      */
     public static <T> List<T> minus(List<T> self, Object removeMe) {
@@ -10947,41 +10947,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * given element to remove.
      * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
      *
-     * @param self     an Iterable object
-     * @param removeMe an element to remove from the Iterable
-     * @return the resulting Collection with the given element removed
+     * @param self     an Iterable
+     * @param removeMe an element to exclude
+     * @return a new Collection
      * @since 2.4.0
      */
     public static <T> Collection<T> minus(Iterable<T> self, Object removeMe) {
-        Collection<T> ansList = createSimilarCollection(self);
+        Collection<T> answer = createSimilarCollection(self);
         for (T t : self) {
-            if (!coercedEquals(t, removeMe)) ansList.add(t);
+            if (!coercedEquals(t, removeMe)) {
+                answer.add(t);
+            }
         }
-        return ansList;
+        return answer;
     }
 
     /**
      * Create a Map composed of the entries of the first map minus the
      * entries of the given map.
      *
-     * @param self     a map object
-     * @param removeMe the entries to remove from the map
-     * @return the resulting map
+     * @param self     a Map
+     * @param removeMe the entries to exclude
+     * @return a new Map
      * @since 1.7.4
      */
     public static <K,V> Map<K,V> minus(Map<K,V> self, Map removeMe) {
-        final Map<K,V> ansMap = createSimilarMap(self);
-        ansMap.putAll(self);
+        Map<K,V> answer = createSimilarMap(self);
+        answer.putAll(self);
         if (removeMe != null && !removeMe.isEmpty()) {
-            for (Map.Entry<K, V> e1 : self.entrySet()) {
-                for (Object e2 : removeMe.entrySet()) {
+            for (var e1 : self.entrySet()) {
+                for (var e2 : removeMe.entrySet()) {
                     if (DefaultTypeTransformation.compareEqual(e1, e2)) {
-                        ansMap.remove(e1.getKey());
+                        answer.remove(e1.getKey());
                     }
                 }
             }
         }
-        return ansMap;
+        return answer;
     }
 
     /**
