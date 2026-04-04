@@ -205,6 +205,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         Collection<Map<String,Object>> grabExcludeMaps = new ArrayList<>();
 
         for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
+            if (classNode.isAnnotationDefinition()) continue; // GROOVY-11900
+
             grabAnnotations         = new ArrayList<>();
             grabExcludeAnnotations  = new ArrayList<>();
             grabConfigAnnotations   = new ArrayList<>();
