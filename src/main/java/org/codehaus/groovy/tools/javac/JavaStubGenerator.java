@@ -720,6 +720,7 @@ public class JavaStubGenerator {
         if (methodNode.isStaticConstructor()) return;
         if (methodNode.isPrivate() || !Utilities.isJavaIdentifier(methodNode.getName())) return;
         if (methodNode.isSynthetic() && ("$getStaticMetaClass".equals(methodNode.getName()))) return;
+        if (methodNode.isStatic() && Traits.isTrait(classNode)) return; // GROOVY-11899
 
         printAnnotations(out, methodNode);
         if (!isInterfaceOrTrait(classNode)) {
