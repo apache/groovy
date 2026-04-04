@@ -24,8 +24,8 @@ import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ModifierNode;
+import org.codehaus.groovy.runtime.ArrayGroovyMethods;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -151,9 +151,6 @@ public class SemanticPredicates {
                 && LPAREN == (ts.LT(2).getType());
     }
 
-    private static final int[] MODIFIER_ARRAY =
-            ModifierNode.MODIFIER_OPCODE_MAP.keySet().stream()
-                    .mapToInt(Integer::intValue).sorted().toArray();
     /**
      * Distinguish between local variable declaration and method call, e.g. `a b`
      */
@@ -188,12 +185,28 @@ public class SemanticPredicates {
         int nextCodePoint = token.getText().codePointAt(0);
 
         return // VOID == tokenType ||
-                !(BuiltInPrimitiveType == tokenType || Arrays.binarySearch(MODIFIER_ARRAY, tokenType) >= 0)
+                !(BuiltInPrimitiveType == tokenType || isModifier(tokenType))
                         && !Character.isUpperCase(nextCodePoint)
                         && nextCodePoint != '@'
                         && !(ASSIGN == tokenType3 || (LT == tokenType2 || LBRACK == tokenType2))
                 || (nextCodePoint == '@' && isAnnotatedLoopStatement(ts));
 
+    }
+
+    private static final boolean[] MODIFIER_LOOKUP_TABLE;
+    static {
+        int[] modifierArray = ModifierNode.MODIFIER_OPCODE_MAP.keySet().stream().mapToInt(Integer::intValue).toArray();
+        int max = ArrayGroovyMethods.max(modifierArray);
+        boolean[] table = new boolean[max + 1];
+        for (int t : modifierArray) {
+            if (t >= 0) { // skip special values like ANNOTATION_TYPE (-999)
+                table[t] = true;
+            }
+        }
+        MODIFIER_LOOKUP_TABLE = table;
+    }
+    private static boolean isModifier(int tokenType) {
+        return tokenType >= 0 && tokenType < MODIFIER_LOOKUP_TABLE.length && MODIFIER_LOOKUP_TABLE[tokenType];
     }
 
     /**
