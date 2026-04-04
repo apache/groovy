@@ -88,6 +88,17 @@ makes it very easy actually:
 include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=file_bytes,indent=0]
 ----
 
+Groovy also provides asynchronous variants for reading and writing files via the `groovy-nio` module.
+These return a `CompletableFuture`, making them composable and easy to use with async frameworks.
+
+[source,groovy]
+----
+include::../test/gdk/WorkingWithIOSpecTest.groovy[tags=async_read,indent=0]
+----
+
+Similarly, `path.bytesAsync` returns a `CompletableFuture<byte[]>`, and
+`path.writeAsync(text)` writes content asynchronously.
+
 Working with I/O is not limited to dealing with files. In fact, a lot of operations rely on input/output streams,
 hence why Groovy adds a lot of support methods to those, as you can see in the
 http://docs.groovy-lang.org/latest/html/groovy-jdk/java/io/InputStream.html[documentation].
