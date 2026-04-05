@@ -62,7 +62,7 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     private int hashCode;
     private boolean skipCompiled;
-    private boolean accessAllowed;
+
     private boolean makeAccessibleDone;
     private CachedMethod transformedMethod;
     private SoftReference<Constructor<CallSite>> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
@@ -169,10 +169,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
 
     public Method getCachedMethod() {
         makeAccessibleIfNecessary();
-        if (!accessAllowed) {
-            AccessPermissionChecker.checkAccessPermission(cachedMethod);
-            accessAllowed = true;
-        }
         return cachedMethod;
     }
 
@@ -325,14 +321,6 @@ public class CachedMethod extends MetaMethod implements Comparable {
     @Override
     public final Object invoke(final Object object, final Object[] arguments) {
         makeAccessibleIfNecessary();
-        if (!accessAllowed) {
-            try {
-                AccessPermissionChecker.checkAccessPermission(cachedMethod);
-                accessAllowed = true;
-            } catch (CacheAccessControlException ex) {
-                throw new InvokerInvocationException(ex);
-            }
-        }
 
         try {
             return cachedMethod.invoke(object, arguments);

@@ -20,8 +20,10 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.GroovyRuntimeException;
 
+import java.io.Serial;
+
 public class CacheAccessControlException extends GroovyRuntimeException {
-    private static final long serialVersionUID = -5315107566539656474L;
+    @Serial private static final long serialVersionUID = -5315107566539656474L;
 
     public CacheAccessControlException(String message, Throwable cause) {
         super(message, cause);

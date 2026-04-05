@@ -45,6 +45,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.CodeSource;
@@ -363,11 +365,11 @@ public class GroovyScriptEngine implements ResourceConnector {
         for (URL root : roots) {
             URL scriptURL = null;
             try {
-                scriptURL = new URL(root, resourceName);
+                scriptURL = root.toURI().resolve(resourceName).toURL();
                 groovyScriptConn = openConnection(scriptURL);
 
                 break; // Now this is a bit unusual
-            } catch (MalformedURLException e) {
+            } catch (MalformedURLException | URISyntaxException e) {
                 String message = "Malformed URL: with context=" + root + " and spec=" + resourceName + " because " + e.getMessage();
                 if (se == null) {
                     se = new ResourceException(message);
@@ -464,7 +466,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         URL[] roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
             if (urls[i].contains("://")) {
-                roots[i] = new URL(urls[i]);
+                roots[i] = URI.create(urls[i]).toURL();
             } else {
                 roots[i] = new File(urls[i]).toURI().toURL();
             }

@@ -23,6 +23,8 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.lang.reflect.Array;
+
 public class ArrayCachedClass extends CachedClass {
     public ArrayCachedClass(Class klazz, ClassInfo classInfo) {
         super(klazz, classInfo);
@@ -36,7 +38,7 @@ public class ArrayCachedClass extends CachedClass {
 
         Class paramComponent = getTheClass().getComponentType();
         if (paramComponent.isPrimitive()) {
-            argument = DefaultTypeTransformation.convertToPrimitiveArray(argument, paramComponent);
+            argument = convertToPrimitiveArray(argument, paramComponent);
         } else if (paramComponent == String.class && argument instanceof GString[] strings) {
             String[] ret = new String[strings.length];
             for (int i = 0; i < strings.length; i++) {
@@ -47,6 +49,23 @@ public class ArrayCachedClass extends CachedClass {
             argument = DefaultTypeTransformation.primitiveArrayBox(argument);
         }
         return argument;
+    }
+
+    /**
+     * Converts a boxed object array (e.g. Integer[]) to a primitive array (e.g. int[]).
+     * If the source is already the correct primitive array type, it is returned as-is.
+     */
+    private static Object convertToPrimitiveArray(Object array, Class<?> primitiveType) {
+        if (array.getClass().getComponentType() == primitiveType) return array;
+        Object[] source = (Object[]) array;
+        int length = source.length;
+        Object result = Array.newInstance(primitiveType, length);
+        for (int i = 0; i < length; i++) {
+            if (source[i] != null) {
+                Array.set(result, i, DefaultTypeTransformation.castToType(source[i], primitiveType));
+            }
+        }
+        return result;
     }
 
 }

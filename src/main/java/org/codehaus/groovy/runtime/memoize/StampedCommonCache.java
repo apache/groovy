@@ -19,6 +19,8 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import javax.annotation.concurrent.ThreadSafe;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
@@ -39,7 +41,7 @@ import java.util.concurrent.locks.StampedLock;
 @ThreadSafe
 public class StampedCommonCache<K, V> implements FlexibleCache<K, V>, ValueConvertable<V, Object>, Serializable {
 
-    private static final long serialVersionUID = 6760742552334555146L;
+    @Serial private static final long serialVersionUID = 6760742552334555146L;
     private final StampedLock sl = new StampedLock();
     private final CommonCache<K, V> commonCache;
 

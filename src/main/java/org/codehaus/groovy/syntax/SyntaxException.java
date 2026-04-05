@@ -21,12 +21,14 @@ package org.codehaus.groovy.syntax;
 import org.codehaus.groovy.GroovyException;
 import org.codehaus.groovy.ast.ASTNode;
 
+import java.io.Serial;
+
 /**
  * Base exception indicating a syntax error.
  */
 public class SyntaxException extends GroovyException {
 
-    private static final long serialVersionUID = 7447641806794047013L;
+    @Serial private static final long serialVersionUID = 7447641806794047013L;
     /** Line upon which the error occurred. */
     private final int startLine;
     private final int endLine;

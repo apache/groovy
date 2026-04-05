@@ -18,8 +18,10 @@
  */
 package org.codehaus.groovy.syntax;
 
+import java.io.Serial;
+
 public class TokenException extends SyntaxException {
-    private static final long serialVersionUID = 6850594285972085144L;
+    @Serial private static final long serialVersionUID = 6850594285972085144L;
 
     public TokenException(String message, Token token) {
         super(

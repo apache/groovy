@@ -88,6 +88,8 @@ menuBar {
         menuItem(compileAction)
         menuItem(compileJavaAction)
         separator()
+        menuItem(setScriptArgsAction)
+        separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)
         menuItem(listClasspath)

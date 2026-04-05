@@ -19,13 +19,15 @@
 
 package groovy.lang;
 
+import java.io.Serial;
+
 /**
  * Represents a list of 5 typed Objects.
  *
  * @since 2.5.0
  */
 public final class Tuple5<T1, T2, T3, T4, T5> extends Tuple {
-    private static final long serialVersionUID = 6722094358774027115L;
+    @Serial private static final long serialVersionUID = 6722094358774027115L;
     private final T1 v1;
     private final T2 v2;
     private final T3 v3;

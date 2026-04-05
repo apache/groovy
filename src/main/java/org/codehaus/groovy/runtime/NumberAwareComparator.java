@@ -21,6 +21,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -30,7 +31,7 @@ import java.util.Comparator;
  * performs numeric type coercion if required.
  */
 public class NumberAwareComparator<T> implements Comparator<T>, Serializable {
-    private static final long serialVersionUID = 9017657289076651660L;
+    @Serial private static final long serialVersionUID = 9017657289076651660L;
     private boolean ignoreZeroSign;
 
     public NumberAwareComparator() {

@@ -134,7 +134,7 @@ public class IndyInterface {
                 enableLogger = true;
             }
         } catch (SecurityException e) {
-            // Allow security managers to prevent system property access
+            // Allow security managers to prevent system property access (legacy comment)
         }
 
         LOG_ENABLED = enableLogger;

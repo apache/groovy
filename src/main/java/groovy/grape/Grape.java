@@ -26,10 +26,16 @@ import java.util.Map;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.ERROR;
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Facade to GrapeEngine.
  */
 public class Grape {
+
+    private static final System.Logger LOGGER = System.getLogger(Grape.class.getName());
 
     public static final String AUTO_DOWNLOAD_SETTING = "autoDownload";
     public static final String DISABLE_CHECKSUMS_SETTING = "disableChecksums";
@@ -128,7 +134,7 @@ public class Grape {
                 instance = createEngineFromProvider(provider);
             }
             if (instance == null) {
-                System.err.println("Grape: Grapes disabled.");
+                LOGGER.log(WARNING, "Grapes disabled");
             }
         }
         return instance;
@@ -151,7 +157,7 @@ public class Grape {
             }
             providers = discovered.values().stream().toList();
         } catch (ServiceConfigurationError sce) {
-            System.err.println("Grape: failed to discover service providers for " + GrapeEngine.class.getName() + ": " + sce.getMessage());
+            LOGGER.log(ERROR, "Failed to discover service providers for {0}: {1}", GrapeEngine.class.getName(), sce.getMessage());
             return null;
         }
 
@@ -160,13 +166,12 @@ public class Grape {
                 if (provider.type().getName().equals(configuredImpl)) {
                     providers.stream()
                             .filter(p -> !p.type().getName().equals(configuredImpl))
-                            .forEach(p -> System.err.println("Grape: ignoring provider '" + p.type().getName()
-                                    + "' ('" + configuredImpl + "' configured via -D" + GRAPE_IMPL_SYSTEM_PROPERTY + ")."));
+                            .forEach(p -> LOGGER.log(DEBUG, "Ignoring provider ''{0}'' (''{1}'' configured via -D{2})",
+                                    p.type().getName(), configuredImpl, GRAPE_IMPL_SYSTEM_PROPERTY));
                     return provider;
                 }
             }
-            System.err.println("Grape: configured implementation '" + configuredImpl
-                    + "' not found via service loader.");
+            LOGGER.log(WARNING, "Configured implementation ''{0}'' not found via service loader", configuredImpl);
             return null;
         }
 
@@ -179,17 +184,15 @@ public class Grape {
                 if (provider.type().getName().equals(DEFAULT_GRAPE_ENGINE)) {
                     providers.stream()
                             .filter(p -> !p.type().getName().equals(DEFAULT_GRAPE_ENGINE))
-                            .forEach(p -> System.err.println("Grape: ignoring provider '" + p.type().getName()
-                                    + "' in favour of default '" + DEFAULT_GRAPE_ENGINE
-                                    + "' (set -D" + GRAPE_IMPL_SYSTEM_PROPERTY + " to override)."));
+                            .forEach(p -> LOGGER.log(DEBUG, "Ignoring provider ''{0}'' in favour of default ''{1}'' (set -D{2} to override)",
+                                    p.type().getName(), DEFAULT_GRAPE_ENGINE, GRAPE_IMPL_SYSTEM_PROPERTY));
                     return provider;
                 }
             }
             // Multiple providers discovered but the default is not among them.
             List<String> names = providers.stream().map(p -> p.type().getName()).toList();
-            System.err.println("Grape: " + providers.size() + " providers discovered " + names
-                    + " but default '" + DEFAULT_GRAPE_ENGINE + "' is not among them;"
-                    + " set -D" + GRAPE_IMPL_SYSTEM_PROPERTY + " to select one.");
+            LOGGER.log(WARNING, "{0} providers discovered {1} but default ''{2}'' is not among them; set -D{3} to select one",
+                    providers.size(), names, DEFAULT_GRAPE_ENGINE, GRAPE_IMPL_SYSTEM_PROPERTY);
         }
 
         // No system property set: empty list means security lockdown — return null silently.
@@ -200,7 +203,7 @@ public class Grape {
         try {
             return provider.get();
         } catch (ServiceConfigurationError sce) {
-            System.err.println("Grape: failed to instantiate service provider '" + provider.type().getName() + "': " + sce.getMessage());
+            LOGGER.log(ERROR, "Failed to instantiate service provider ''{0}'': {1}", provider.type().getName(), sce.getMessage());
             return null;
         }
     }

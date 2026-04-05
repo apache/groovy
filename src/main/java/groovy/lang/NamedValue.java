@@ -21,6 +21,7 @@ package groovy.lang;
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.runtime.FormatHelper;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +34,7 @@ import java.util.Objects;
  */
 @Incubating
 public class NamedValue<T> implements Serializable {
-    private static final long serialVersionUID = 8853713635573845253L;
+    @Serial private static final long serialVersionUID = 8853713635573845253L;
     private final String name;
     private final T val;
 

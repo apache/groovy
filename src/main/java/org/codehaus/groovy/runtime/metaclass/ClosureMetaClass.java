@@ -145,8 +145,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
         public Object chooseMethod(final Class<?>[] arguments, final boolean coerce) {
             if (arguments.length == 0) {
                 return MetaClassHelper.chooseEmptyMethodParams(methods);
-            } else if (arguments.length == 1 && arguments[0] == null) {
-                return MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
             } else {
                 int methodCount = methods.size();
                 List<Object> matchingMethods = new ArrayList<>(methodCount);

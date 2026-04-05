@@ -5123,6 +5123,66 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // isSorted
+
+    /**
+     * Determines if the array is sorted in natural order using a {@link NumberAwareComparator}.
+     * <pre class="groovyTestCase">
+     * Integer[] nums = [1, 2, 3]
+     * assert nums.isSorted()
+     * Integer[] unsorted = [3, 1, 2]
+     * assert !unsorted.isSorted()
+     * </pre>
+     *
+     * @param self the array to check
+     * @return true if the array elements are sorted in non-descending order
+     * @see #isSorted(Object[], Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(T[] self) {
+        return isSorted(self, new NumberAwareComparator<>());
+    }
+
+    /**
+     * Determines if the array is sorted according to the given Comparator.
+     * This is efficient — it checks adjacent pairs in a single pass and
+     * short-circuits on the first out-of-order pair.
+     * <pre class="groovyTestCase">
+     * String[] words = ["hello","Hey","hi"]
+     * assert words.isSorted(String.CASE_INSENSITIVE_ORDER)
+     * </pre>
+     *
+     * @param self       the array to check
+     * @param comparator a Comparator used for the comparison
+     * @return true if the array elements are sorted according to the comparator
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(T[] self, Comparator<? super T> comparator) {
+        for (int i = 1; i < self.length; i++) {
+            if (comparator.compare(self[i - 1], self[i]) > 0) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Determines if the array is sorted using the given Closure to determine order.
+     * <p>
+     * If the Closure has two parameters it is used like a traditional Comparator.
+     * Otherwise, the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for further comparison.
+     *
+     * @param self    the array to check
+     * @param closure a 1 or 2 arg Closure used to determine the ordering
+     * @return true if the array elements are sorted according to the closure
+     * @see #isSorted(Object[], Comparator)
+     * @since 6.0.0
+     */
+    public static <T> boolean isSorted(T[] self, @ClosureParams(value=FromString.class, options={"T","T,T"}) Closure<?> closure) {
+        Comparator<T> comparator = (closure.getMaximumNumberOfParameters() == 1) ? new OrderBy<>(closure) : new ClosureComparator<>(closure);
+        return isSorted(self, comparator);
+    }
+
+    //--------------------------------------------------------------------------
     // iterator
 
     /**

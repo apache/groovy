@@ -58,6 +58,7 @@ import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.io.Serial;
 import java.util.Calendar;
 import java.util.regex.Pattern;
 
@@ -65,7 +66,7 @@ import java.util.regex.Pattern;
  * A simple text pane that is printable and wrapping is optional.
  */
 public class TextEditor extends JTextPane implements Pageable, Printable {
-    private static final long serialVersionUID = 8478062945229999402L;
+    @Serial private static final long serialVersionUID = 8478062945229999402L;
 
     public static final String FIND = "Find...";
     public static final String FIND_NEXT = "Find Next";

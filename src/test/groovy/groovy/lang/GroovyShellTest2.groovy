@@ -18,7 +18,10 @@
  */
 package groovy.lang
 
+import org.junit.jupiter.api.Test
+
 class GroovyShellTest2 {
+    @Test
     void testBindingsInBaseScriptInitializers() {
         def shell = new GroovyShell();
         def scriptText = '''
@@ -40,6 +43,7 @@ class GroovyShellTest2 {
         assert result == arg0
     }
 
+    @Test
     void testBindingsInScriptFieldInitializers() {
         def shell = new GroovyShell();
         def scriptText = '''
@@ -54,6 +58,7 @@ class GroovyShellTest2 {
         assert result == arg0
     }
 
+    @Test
     void testEvalBindingsInBaseScriptInitializers() {
         def context = new Binding()
         def arg0 = 'Hello Groovy Eval'
@@ -76,6 +81,7 @@ class GroovyShellTest2 {
         assert result == arg0
     }
 
+    @Test
     void testEvalBindingsInScriptFieldInitializers() {
         def context = new Binding()
         def arg0 = 'Rehi Groovy Eval'

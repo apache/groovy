@@ -137,9 +137,9 @@ public class GroovySocketServer implements Runnable {
         this.source = source;
         this.autoOutput = autoOutput;
         try {
-            url = new URL("http", InetAddress.getLocalHost().getHostAddress(), port, "/");
+            url = new URI("http", null, InetAddress.getLocalHost().getHostAddress(), port, "/", null, null).toURL();
             System.out.println("groovy is listening on port " + port);
-        } catch (IOException e) {
+        } catch (IOException | URISyntaxException e) {
             e.printStackTrace();
         }
         new Thread(this).start();

@@ -20,17 +20,24 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
+import groovy.transform.NamedParam;
+import groovy.transform.NamedParams;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class defines new groovy methods which appear on normal JDK
@@ -280,6 +287,103 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Executes the process and waits for it to complete, capturing
+     * the standard output, standard error, and exit code into a
+     * {@link ProcessResult}.
+     *
+     * <pre>
+     * def result = "ls -la".execute().waitForResult()
+     * if (result.ok) println result.out
+     * else System.err.println result.err
+     * </pre>
+     *
+     * @param self a Process
+     * @return a ProcessResult containing stdout, stderr, and exit code
+     * @throws InterruptedException if the current thread is interrupted.
+     * @since 6.0.0
+     */
+    public static ProcessResult waitForResult(Process self) throws InterruptedException {
+        StringBuilder sout = new StringBuilder();
+        StringBuilder serr = new StringBuilder();
+        Thread tout = consumeProcessOutputStream(self, sout);
+        Thread terr = consumeProcessErrorStream(self, serr);
+        boolean interrupted = false;
+        try {
+            try { tout.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            try { terr.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            try { self.waitFor(); } catch (InterruptedException ignore) { interrupted = true; }
+            closeStreams(self);
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
+        }
+        return new ProcessResult(sout.toString(), serr.toString(), self.exitValue());
+    }
+
+    /**
+     * Executes the process and waits for it to complete within the given timeout,
+     * capturing the standard output, standard error, and exit code into a
+     * {@link ProcessResult}. If the process does not complete within the timeout,
+     * it is forcibly destroyed.
+     *
+     * <pre>
+     * def result = "cmd".execute().waitForResult(30, TimeUnit.SECONDS)
+     * </pre>
+     *
+     * @param self a Process
+     * @param timeout the maximum time to wait
+     * @param unit the time unit of the timeout argument
+     * @return a ProcessResult containing stdout, stderr, and exit code
+     * @throws InterruptedException if the current thread is interrupted.
+     * @since 6.0.0
+     */
+    public static ProcessResult waitForResult(Process self, long timeout, TimeUnit unit) throws InterruptedException {
+        StringBuilder sout = new StringBuilder();
+        StringBuilder serr = new StringBuilder();
+        Thread tout = consumeProcessOutputStream(self, sout);
+        Thread terr = consumeProcessErrorStream(self, serr);
+        boolean interrupted = false;
+        try {
+            try {
+                boolean finished = self.waitFor(timeout, unit);
+                if (!finished) {
+                    self.destroyForcibly();
+                    self.waitFor();
+                }
+            } catch (InterruptedException ignore) {
+                interrupted = true;
+                self.destroyForcibly();
+                try { self.waitFor(); } catch (InterruptedException ie) { /* best effort */ }
+            }
+            try { tout.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            try { terr.join(); } catch (InterruptedException ignore) { interrupted = true; }
+            closeStreams(self);
+        } finally {
+            if (interrupted) Thread.currentThread().interrupt();
+        }
+        return new ProcessResult(sout.toString(), serr.toString(), self.exitValue());
+    }
+
+    /**
+     * Registers a closure to be called when the process terminates.
+     * Uses {@link Process#onExit()} to asynchronously notify completion.
+     *
+     * <pre>
+     * "cmd".execute().onExit { proc -&gt;
+     *     println "Exited with code: ${proc.exitValue()}"
+     * }
+     * </pre>
+     *
+     * @param self a Process
+     * @param action a closure to call with the completed Process
+     * @return the Process to allow chaining
+     * @since 6.0.0
+     */
+    public static Process onExit(final Process self, final Closure action) {
+        self.onExit().thenAccept(action::call);
+        return self;
+    }
+
+    /**
      * Gets the error stream from a process and reads it
      * to keep the process from blocking due to a full buffer.
      * The processed stream data is appended to the supplied OutputStream.
@@ -431,6 +535,43 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a native OS pipeline from a list of commands, using
+     * {@link ProcessBuilder#startPipeline(List)}. Each element in the list
+     * can be a String (tokenized on whitespace), a List (elements converted
+     * to Strings via {@code toString()}), a String array, or a {@link ProcessBuilder}
+     * for full control.
+     *
+     * <pre>
+     * def procs = ["ps aux", "grep java", "wc -l"].pipeline()
+     * println procs.last().text
+     * </pre>
+     *
+     * @param commands a list of commands, each a String, List, String[], or ProcessBuilder
+     * @return the list of started {@link Process} instances
+     * @throws IOException if an IOException occurs.
+     * @since 6.0.0
+     */
+    public static List<Process> pipeline(final List<?> commands) throws IOException {
+        List<ProcessBuilder> builders = new ArrayList<>();
+        for (Object cmd : commands) {
+            if (cmd instanceof ProcessBuilder) {
+                builders.add((ProcessBuilder) cmd);
+            } else if (cmd instanceof String) {
+                builders.add(toProcessBuilder((String) cmd));
+            } else if (cmd instanceof String[]) {
+                builders.add(toProcessBuilder((String[]) cmd));
+            } else if (cmd instanceof List) {
+                builders.add(toProcessBuilder((List) cmd));
+            } else {
+                throw new IllegalArgumentException(
+                        "pipeline() elements must be String, List, String[], or ProcessBuilder; got: "
+                                + (cmd == null ? "null" : cmd.getClass().getName()));
+            }
+        }
+        return ProcessBuilder.startPipeline(builders);
+    }
+
+    /**
      * A Runnable which waits for a process to complete together with a notification scheme
      * allowing another thread to wait a maximum number of seconds for the process to complete
      * before killing it.
@@ -528,9 +669,52 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a {@link ProcessBuilder} from a command line String,
+     * tokenized on whitespace. This bridges Groovy's convenient string
+     * syntax with ProcessBuilder's full feature set.
+     *
+     * <pre>
+     * def pb = "find . -name '*.groovy'".toProcessBuilder()
+     * pb.directory(new File("/project"))
+     * pb.redirectErrorStream(true)
+     * def proc = pb.start()
+     * </pre>
+     *
+     * @param self a command line String
+     * @return a ProcessBuilder ready to be configured further or started
+     * @since 6.0.0
+     */
+    public static ProcessBuilder toProcessBuilder(final String self) {
+        return new ProcessBuilder(tokenize(self));
+    }
+
+    /**
+     * Creates a {@link ProcessBuilder} from a command array.
+     *
+     * @param commandArray an array of Strings containing the command name and parameters
+     * @return a ProcessBuilder ready to be configured further or started
+     * @since 6.0.0
+     */
+    public static ProcessBuilder toProcessBuilder(final String[] commandArray) {
+        return new ProcessBuilder(commandArray);
+    }
+
+    /**
+     * Creates a {@link ProcessBuilder} from a command list. The toString() method
+     * is called for each item in the list to convert into a resulting String.
+     *
+     * @param commands a list containing the command name and parameters
+     * @return a ProcessBuilder ready to be configured further or started
+     * @since 6.0.0
+     */
+    public static ProcessBuilder toProcessBuilder(final List commands) {
+        return new ProcessBuilder(stringify(commands));
+    }
+
+    /**
      * Executes the command specified by <code>self</code> as a command-line process.
      * <p>For more control over Process construction you can use
-     * <code>java.lang.ProcessBuilder</code>.
+     * <code>java.lang.ProcessBuilder</code> or {@link #toProcessBuilder(String)}.
      *
      * @param self a command line String
      * @return the Process which has just started for this command line representation
@@ -538,7 +722,7 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Process execute(final String self) throws IOException {
-        return Runtime.getRuntime().exec(self);
+        return new ProcessBuilder(tokenize(self)).start();
     }
 
     /**
@@ -561,7 +745,17 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Process execute(final String self, final String[] envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(self, envp, dir);
+        ProcessBuilder pb = new ProcessBuilder(tokenize(self));
+        if (dir != null) pb.directory(dir);
+        if (envp != null) {
+            Map<String, String> env = pb.environment();
+            env.clear();
+            for (String e : envp) {
+                int idx = e.indexOf('=');
+                if (idx >= 0) env.put(e.substring(0, idx), e.substring(idx + 1));
+            }
+        }
+        return pb.start();
     }
 
     /**
@@ -722,6 +916,106 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
         return Runtime.getRuntime().exec(stringify(commands), stringify(envp), dir);
     }
 
+    /**
+     * Executes the command specified by <code>self</code> with options provided
+     * as named parameters. Supported options:
+     * <ul>
+     *   <li><b>dir</b>: (File, Path, or String) the working directory</li>
+     *   <li><b>env</b>: (Map) environment variables to add (merged with inherited environment)</li>
+     *   <li><b>redirectErrorStream</b>: (boolean) merge stderr into stdout</li>
+     *   <li><b>inheritIO</b>: (boolean) inherit the parent process I/O streams</li>
+     *   <li><b>outputFile</b>: (File, Path, or String) redirect stdout to a file</li>
+     *   <li><b>errorFile</b>: (File, Path, or String) redirect stderr to a file</li>
+     *   <li><b>inputFile</b>: (File, Path, or String) redirect stdin from a file</li>
+     *   <li><b>appendOutput</b>: (File, Path, or String) append stdout to a file</li>
+     *   <li><b>appendError</b>: (File, Path, or String) append stderr to a file</li>
+     * </ul>
+     *
+     * <pre>
+     * "make test".execute(dir: new File("/project"), env: [CI: "true"])
+     * "cmd".execute(redirectErrorStream: true)
+     * </pre>
+     *
+     * @param self a command line String
+     * @param options a Map of options to configure the process
+     * @return the Process which has just started
+     * @throws IOException if an IOException occurs.
+     * @since 6.0.0
+     */
+    public static Process execute(final String self, @NamedParams({
+            @NamedParam(value = "dir"),
+            @NamedParam(value = "env", type = Map.class),
+            @NamedParam(value = "redirectErrorStream", type = Boolean.class),
+            @NamedParam(value = "inheritIO", type = Boolean.class),
+            @NamedParam(value = "outputFile"),
+            @NamedParam(value = "errorFile"),
+            @NamedParam(value = "inputFile"),
+            @NamedParam(value = "appendOutput"),
+            @NamedParam(value = "appendError")
+    }) Map<String, Object> options) throws IOException {
+        return configureProcessBuilder(toProcessBuilder(self), options).start();
+    }
+
+    /**
+     * Executes the command specified by the given <code>String</code> array with options
+     * provided as named parameters.
+     *
+     * @param commandArray an array of Strings containing the command name and parameters
+     * @param options a Map of options to configure the process (see {@link #execute(String, Map)})
+     * @return the Process which has just started
+     * @throws IOException if an IOException occurs.
+     * @since 6.0.0
+     * @see #execute(String, Map)
+     */
+    public static Process execute(final String[] commandArray, @NamedParams({
+            @NamedParam(value = "dir"),
+            @NamedParam(value = "env", type = Map.class),
+            @NamedParam(value = "redirectErrorStream", type = Boolean.class),
+            @NamedParam(value = "inheritIO", type = Boolean.class),
+            @NamedParam(value = "outputFile"),
+            @NamedParam(value = "errorFile"),
+            @NamedParam(value = "inputFile"),
+            @NamedParam(value = "appendOutput"),
+            @NamedParam(value = "appendError")
+    }) Map<String, Object> options) throws IOException {
+        return configureProcessBuilder(toProcessBuilder(commandArray), options).start();
+    }
+
+    /**
+     * Executes the command specified by the given list with options
+     * provided as named parameters.
+     *
+     * @param commands a list containing the command name and parameters
+     * @param options a Map of options to configure the process (see {@link #execute(String, Map)})
+     * @return the Process which has just started
+     * @throws IOException if an IOException occurs.
+     * @since 6.0.0
+     * @see #execute(String, Map)
+     */
+    public static Process execute(final List commands, @NamedParams({
+            @NamedParam(value = "dir"),
+            @NamedParam(value = "env", type = Map.class),
+            @NamedParam(value = "redirectErrorStream", type = Boolean.class),
+            @NamedParam(value = "inheritIO", type = Boolean.class),
+            @NamedParam(value = "outputFile"),
+            @NamedParam(value = "errorFile"),
+            @NamedParam(value = "inputFile"),
+            @NamedParam(value = "appendOutput"),
+            @NamedParam(value = "appendError")
+    }) Map<String, Object> options) throws IOException {
+        return configureProcessBuilder(toProcessBuilder(commands), options).start();
+    }
+
+    // just simple parsing otherwise use ProcessBuilder directly
+    private static List<String> tokenize(final String command) {
+        StringTokenizer st = new StringTokenizer(command);
+        List<String> tokens = new ArrayList<>();
+        while (st.hasMoreTokens()) {
+            tokens.add(st.nextToken());
+        }
+        return tokens;
+    }
+
     private static String[] stringify(final List orig) {
         if (orig == null) return null;
         String[] result = new String[orig.size()];
@@ -729,6 +1023,62 @@ public class ProcessGroovyMethods extends DefaultGroovyMethodsSupport {
             result[i] = orig.get(i).toString();
         }
         return result;
+    }
+
+    private static File toFile(Object obj) {
+        if (obj instanceof File) return (File) obj;
+        if (obj instanceof Path) return ((Path) obj).toFile();
+        return new File(obj.toString());
+    }
+
+    private static ProcessBuilder configureProcessBuilder(ProcessBuilder pb, Map<String, Object> options) {
+        if (options == null || options.isEmpty()) return pb;
+
+        Object dir = options.get("dir");
+        if (dir != null) {
+            pb.directory(toFile(dir));
+        }
+
+        Object env = options.get("env");
+        if (env instanceof Map) {
+            Map<String, String> pbEnv = pb.environment();
+            ((Map<?, ?>) env).forEach((k, v) -> pbEnv.put(String.valueOf(k), String.valueOf(v)));
+        }
+
+        if (Boolean.TRUE.equals(options.get("redirectErrorStream"))) {
+            pb.redirectErrorStream(true);
+        }
+
+        if (Boolean.TRUE.equals(options.get("inheritIO"))) {
+            pb.inheritIO();
+        }
+
+        Object outputFile = options.get("outputFile");
+        if (outputFile != null) {
+            pb.redirectOutput(toFile(outputFile));
+        }
+
+        Object appendOutput = options.get("appendOutput");
+        if (appendOutput != null) {
+            pb.redirectOutput(ProcessBuilder.Redirect.appendTo(toFile(appendOutput)));
+        }
+
+        Object errorFile = options.get("errorFile");
+        if (errorFile != null) {
+            pb.redirectError(toFile(errorFile));
+        }
+
+        Object appendError = options.get("appendError");
+        if (appendError != null) {
+            pb.redirectError(ProcessBuilder.Redirect.appendTo(toFile(appendError)));
+        }
+
+        Object inputFile = options.get("inputFile");
+        if (inputFile != null) {
+            pb.redirectInput(toFile(inputFile));
+        }
+
+        return pb;
     }
 
 }

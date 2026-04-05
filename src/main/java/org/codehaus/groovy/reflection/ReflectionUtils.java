@@ -201,14 +201,13 @@ public class ReflectionUtils {
     }
 
     // to be run in PrivilegedAction!
-    @SuppressWarnings("deprecation") // replace isAccessible with canAccess once min JDK version >= 9
     public static Optional<AccessibleObject> makeAccessible(final AccessibleObject ao) {
         try {
-            if (ao.isAccessible() || trySetAccessible(ao)) {
+            if (trySetAccessible(ao)) {
                 return Optional.of(ao);
             }
         } catch (Throwable ignore) {
-            // swallow for strict security managers, module systems, android, etc.
+            // swallow for module systems, android, etc.
         }
         return Optional.empty();
     }

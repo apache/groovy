@@ -38,7 +38,6 @@ public class CachedField extends MetaProperty {
     private boolean madeAccessible;
     private void makeAccessible() {
         ReflectionUtils.makeAccessibleInPrivilegedAction(field);
-        AccessPermissionChecker.checkAccessPermission(field);
         madeAccessible = true;
     }
 

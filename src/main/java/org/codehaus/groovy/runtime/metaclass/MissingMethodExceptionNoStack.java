@@ -20,9 +20,11 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MissingMethodException;
 
+import java.io.Serial;
+
 public class MissingMethodExceptionNoStack extends MissingMethodException {
 
-    private static final long serialVersionUID = -4567395518573062216L;
+    @Serial private static final long serialVersionUID = -4567395518573062216L;
 
     public MissingMethodExceptionNoStack(String method, Class type, Object[] arguments) {
         this(method,type,arguments,false);

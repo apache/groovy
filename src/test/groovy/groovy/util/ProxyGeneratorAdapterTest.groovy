@@ -19,10 +19,12 @@
 package groovy.util
 
 import org.codehaus.groovy.runtime.ProxyGeneratorAdapter
+import org.junit.jupiter.api.Test
 
 import static groovy.test.GroovyAssert.assertScript
 
 class ProxyGeneratorAdapterTest {
+    @Test
     void testShouldCreateProxy() {
         def map = ['toString': { 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Object, null, this.class.classLoader, false, null)
@@ -31,11 +33,13 @@ class ProxyGeneratorAdapterTest {
         assert obj.toString() == 'HELLO'
     }
 
+    @Test
     void testShouldCreateProxyWithArrayDelegate() {
         def adapter = new ProxyGeneratorAdapter([:], Map$Entry, [Map$Entry] as Class[], null, false, String[])
         assert adapter.proxyName() =~ /String_array\d+_groovyProxy/
     }
 
+    @Test
     void testImplementSingleAbstractMethod() {
         def map = ['m': { 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false, null)
@@ -45,6 +49,7 @@ class ProxyGeneratorAdapterTest {
         assert obj.m() == 'HELLO'
     }
 
+    @Test
     void testImplementSingleAbstractMethodReturningVoid() {
         def map = ['bar': { println 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, null, this.class.classLoader, false, null)
@@ -54,6 +59,7 @@ class ProxyGeneratorAdapterTest {
         obj.bar()
     }
 
+    @Test
     void testImplementSingleAbstractMethodReturningVoidAndSharedVariable() {
         def x = null
         def map = ['bar': { x = 'HELLO' }]
@@ -66,6 +72,7 @@ class ProxyGeneratorAdapterTest {
         assert x == 'HELLO'
     }
 
+    @Test
     void testImplementMethodFromInterface() {
         def map = ['foo': { 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Object, [FooInterface] as Class[], this.class.classLoader, false, null)
@@ -75,6 +82,7 @@ class ProxyGeneratorAdapterTest {
         assert obj.foo() == 'HELLO'
     }
 
+    @Test
     void testImplementMethodFromInterfaceUsingInterfaceAsSuperClass() {
         def map = ['foo': { 'HELLO' }]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, FooInterface, null, this.class.classLoader, false, null)
@@ -84,6 +92,7 @@ class ProxyGeneratorAdapterTest {
         assert obj.foo() == 'HELLO'
     }
 
+    @Test
     void testImplementMethodFromInterfaceAndSuperClass() {
         def x = null
         def map = ['foo': { 'HELLO' }, 'bar': { x='WORLD'} ]
@@ -98,6 +107,7 @@ class ProxyGeneratorAdapterTest {
         assert x == 'WORLD'
     }
 
+    @Test
     void testImplementMethodFromInterfaceWithPrimitiveTypes() {
         def map = ['calc': { x -> x*2 } ]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Bar, [OtherInterface] as Class[], this.class.classLoader, false, null)
@@ -107,6 +117,7 @@ class ProxyGeneratorAdapterTest {
         assert obj.calc(3) == 6
     }
 
+    @Test
     void testWildcardProxy() {
         def map = ['*': { '1' } ]
         ProxyGeneratorAdapter adapter = new ProxyGeneratorAdapter(map, Foo, null, this.class.classLoader, false, null)
@@ -116,6 +127,7 @@ class ProxyGeneratorAdapterTest {
         assert obj.m() == '1'
     }
 
+    @Test
     void testDelegatingProxy() {
         assertScript '''
         public abstract class A { abstract protected String doIt() }
@@ -131,6 +143,7 @@ class ProxyGeneratorAdapterTest {
     }
 
     // GROOVY-5925
+    @Test
     void testProxyForLongConstructor() {
 
         def map =  [nextInt: { x -> return 0 }]
@@ -142,6 +155,7 @@ class ProxyGeneratorAdapterTest {
         assert proxy.nextInt() == 0
     }
 
+    @Test
     void testProxyForDoubleConstructor() {
         assertScript '''
         public class A {
@@ -162,6 +176,7 @@ class ProxyGeneratorAdapterTest {
     }
 
     // GROOVY-7146
+    @Test
     void testShouldNotThrowVerifyErrorBecauseOfStackSize() {
         assertScript '''
             interface DoStuff {
@@ -178,6 +193,7 @@ class ProxyGeneratorAdapterTest {
     static trait Trait1 { def method1() { 'Trait1 method' } }
 
     // GROOVY-7443
+    @Test
     void testTraitFromDifferentClassloader() {
         def aWith1 = new ClassA().withTraits(Trait1)
         assert aWith1.method1() == 'Trait1 method'
@@ -192,6 +208,7 @@ class ProxyGeneratorAdapterTest {
         assert aWith2.method2() == 'Trait2 method'
     }
 
+    @Test
     void testGetTypeArgsRegisterLength() {
         def types = { list -> list as org.objectweb.asm.Type[] }
         def proxyGeneratorAdapter = new ProxyGeneratorAdapter([:], Object, [] as Class[], null, false, Object)

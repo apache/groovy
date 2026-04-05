@@ -24,10 +24,7 @@ import org.codehaus.groovy.runtime.GStringUtil;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import java.io.*;
 import java.util.regex.Pattern;
 
 /**
@@ -42,7 +39,7 @@ import java.util.regex.Pattern;
  */
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
-    private static final long serialVersionUID = -2638020355892246323L;
+    @Serial private static final long serialVersionUID = -2638020355892246323L;
 
     public static final String[] EMPTY_STRING_ARRAY = new String[0];
     public static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
@@ -51,7 +48,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
      * A GString containing a single empty String and no values.
      */
     public static final GString EMPTY = new GString(EMPTY_OBJECT_ARRAY) {
-        private static final long serialVersionUID = -7676746462783374250L;
+        @Serial private static final long serialVersionUID = -7676746462783374250L;
         private static final String EMPTY_STRING = "";
 
         @Override

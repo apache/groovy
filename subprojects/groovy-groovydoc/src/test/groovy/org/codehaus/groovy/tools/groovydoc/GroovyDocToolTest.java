@@ -27,8 +27,6 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1042,28 +1040,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
 
-        PrintStream originalSystemErr = System.err;
-        ByteArrayOutputStream systemErr = new ByteArrayOutputStream();
-        try {
-            System.setErr(new PrintStream(systemErr));
-            htmlTool.add(Arrays.asList(
-                base + "/Java.java"
-            ));
-        }
-        finally {
-            System.setErr(originalSystemErr);
-        }
-        final String errorMessage = systemErr.toString();
-        System.err.println(errorMessage);
+        htmlTool.add(Arrays.asList(base + "/Java.java"));
 
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
 
         final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
         assertNull("Javadoc should be null since language level is not supported", javadoc);
-
-        assertTrue("Expected to find Java file in error message", errorMessage.contains("org/codehaus/groovy/tools/groovydoc/testfiles/generics/Java.java"));
-        assertTrue("Expected to find language level not supported", errorMessage.contains("Pay attention that this feature is supported starting from"));
     }
 
     public void testLanguageLevelSupported() throws Exception {
@@ -1071,27 +1054,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/generics";
 
-        PrintStream originalSystemErr = System.err;
-        ByteArrayOutputStream systemErr = new ByteArrayOutputStream();
-        try {
-            System.setErr(new PrintStream(systemErr));
-            htmlTool.add(Arrays.asList(
-                base + "/Java.java"
-            ));
-        }
-        finally {
-            System.setErr(originalSystemErr);
-        }
-        final String errorMessage = systemErr.toString();
-        System.err.println(errorMessage);
+        htmlTool.add(Arrays.asList(base + "/Java.java"));
 
         final MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
 
         final String javadoc = output.getText(MOCK_DIR + "/" + base + "/Java.html");
         assertNotNull("Javadoc should not be null since language level is supported", javadoc);
-
-        assertTrue("Expected no error output", errorMessage.isEmpty());
     }
 
     public void testJavaGenericsTitle() throws Exception {

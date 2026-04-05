@@ -18,6 +18,8 @@
  */
 package groovy.lang;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
@@ -115,6 +117,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE, ElementType.FIELD, ElementType.LOCAL_VARIABLE})
+@ExtendedTarget(ExtendedElementType.IMPORT)
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.NewifyASTTransformation")
 public @interface Newify {
     /**

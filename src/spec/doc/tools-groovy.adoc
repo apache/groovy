@@ -61,3 +61,207 @@ int (disable any int based optimizations) |
 | -pa | --parameters | Generates metadata for reflection on method parameter names on JDK 8 and above. Defaults to false. | groovy --parameters Person.groovy
 | -pr | --enable-preview | Enable preview Java features (jdk12+ only). | groovy --enable-preview Person.groovy
 |=======================================================================
+
+=== Configuring logging
+
+Groovy's command-line tools use https://docs.oracle.com/en/java/javase/17/docs/api/java.logging/java/lang/System.Logger.html[JDK Platform Logging] (`System.Logger`)
+for diagnostic messages. By default, this is backed by `java.util.logging` (JUL).
+
+==== Logging configuration file
+
+JUL reads its configuration from exactly one source.
+The source is resolved in the following order:
+
+1. The file specified by `-Djava.util.logging.config.file=...` on the command line (via `JAVA_OPTS`).
+2. The file `~/.groovy/logging.properties`, if it exists. Groovy automatically loads this at startup.
+3. The JDK default at `$JAVA_HOME/conf/logging.properties`.
+
+The first source found is used and the rest are ignored.
+
+==== Example configuration
+
+[source,properties]
+----
+# ~/.groovy/logging.properties
+.level=INFO
+handlers=java.util.logging.ConsoleHandler
+java.util.logging.ConsoleHandler.level=ALL
+java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter
+java.util.logging.SimpleFormatter.format=%1$tT %4$s [%3$s] %5$s%6$s%n
+
+# Show Grape provider discovery details
+groovy.grape.Grape.level=FINE
+----
+
+==== Logger reference
+
+The following table lists all classes that emit log messages,
+grouped by module. The _JUL level_ column shows the `java.util.logging`
+level to set in `logging.properties` (the Platform Logging level is shown in parentheses).
+
+===== Core (`groovy`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `groovy.grape.Grape`
+| FINE (DEBUG), WARNING, SEVERE (ERROR)
+| GrapeEngine provider discovery, selection, and instantiation failures
+
+| `groovy.ui.GroovyMain`
+| SEVERE (ERROR)
+| Script execution errors and uncaught exceptions
+
+| `org.apache.groovy.antlr.LexerFrame`
+| SEVERE (ERROR)
+| Parser errors in the lexer debugging tool
+
+| `org.codehaus.groovy.classgen.asm.OperandStack`
+| SEVERE (ERROR)
+| Stack operation errors during bytecode generation
+
+| `org.codehaus.groovy.classgen.asm.util.LoggableTextifier`
+| FINE (DEBUG)
+| ASM bytecode disassembly output
+
+| `org.codehaus.groovy.control.XStreamUtils`
+| FINE (DEBUG), WARNING
+| XStream serialization availability and failures
+
+| `org.codehaus.groovy.tools.DgmConverter`
+| INFO
+| DGM method stub generation progress
+
+| `org.codehaus.groovy.tools.FileSystemCompiler`
+| WARNING, SEVERE (ERROR)
+| Compilation errors and warnings
+
+| `org.codehaus.groovy.tools.GroovyStarter`
+| SEVERE (ERROR)
+| Startup configuration errors
+
+| `org.codehaus.groovy.tools.javac.JavacJavaCompiler`
+| INFO
+| Joint compilation progress
+|===
+
+===== Grape Ivy (`groovy-grape-ivy`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `groovy.grape.ivy`
+| INFO, FINE (DEBUG), FINEST (TRACE)
+| Ivy dependency resolution, downloads, and cache operations
+|===
+
+===== Ant tasks (`groovy-ant`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `org.codehaus.groovy.ant.Groovyc`
+| WARNING
+| Ant task compilation warnings
+
+| `org.codehaus.groovy.ant.Groovydoc`
+| WARNING
+| Ant task groovydoc warnings
+|===
+
+===== Console (`groovy-console`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `groovy.console.ui.ConsoleTextEditor`
+| WARNING
+| Text editor component warnings
+|===
+
+===== GroovyDoc (`groovy-groovydoc`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `org.codehaus.groovy.tools.groovydoc.FileOutputTool`
+| WARNING
+| File output warnings
+
+| `org.codehaus.groovy.tools.groovydoc.antlr4.GroovyDocParser`
+| WARNING
+| Doc parsing warnings
+
+| `org.codehaus.groovy.tools.groovydoc.GroovyDocTemplateEngine`
+| WARNING, SEVERE (ERROR)
+| Template processing errors
+
+| `org.codehaus.groovy.tools.groovydoc.GroovyRootDocBuilder`
+| WARNING
+| Doc building warnings
+|===
+
+===== JSON (`groovy-json`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `org.apache.groovy.json.internal.Exceptions`
+| SEVERE (ERROR)
+| JSON parsing exception details
+
+| `org.apache.groovy.json.internal.Sys`
+| WARNING
+| System property access warnings
+|===
+
+===== Servlet (`groovy-servlet`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `groovy.servlet.GroovyServlet`
+| SEVERE (ERROR)
+| Servlet script execution errors
+|===
+
+===== Swing (`groovy-swing`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `groovy.swing.table.TableSorter`
+| WARNING
+| Table sorting comparison warnings
+|===
+
+===== Testing (`groovy-test`, `groovy-test-junit5`)
+
+[cols="<3,<1,<3",options="header"]
+|===
+| Logger name | JUL level | What is logged
+
+| `groovy.test.GroovyTestSuite`
+| INFO
+| Test suite class loading info
+
+| `groovy.junit5.plugin.JUnit5Runner`
+| WARNING
+| JUnit5 runner warnings
+|===
+
+TIP: To enable all diagnostic logging, set `.level=FINE` in your configuration file.
+To focus on a specific area, set the logger name to `FINE` (or `FINER`/`FINEST` for trace-level detail)
+and leave the root level at `INFO` or `WARNING`.
+
+NOTE: If a different `System.LoggerFinder` is on the classpath (e.g., via SLF4J/Logback or Log4j2),
+platform logging calls are routed to that backend instead, and `logging.properties` has no effect.
+Configure the alternative backend using its own mechanism (e.g., `logback.xml` or `log4j2.xml`).

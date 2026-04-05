@@ -61,6 +61,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Compiles Groovy source files using Ant.
  * <p>
@@ -173,6 +175,8 @@ import java.util.StringTokenizer;
  * Can also be used from {@link groovy.ant.AntBuilder} to allow the build file to be scripted in Groovy.
  */
 public class Groovyc extends MatchingTask {
+
+    private static final System.Logger LOGGER = System.getLogger(Groovyc.class.getName());
 
     private static final File[] EMPTY_FILE_ARRAY = {};
 
@@ -1343,7 +1347,7 @@ public class Groovyc extends MatchingTask {
                 try {
                     FileSystemCompiler.deleteRecursive(temporaryFile);
                 } catch (Throwable t) {
-                    System.err.println("error: could not delete temp files - " + temporaryFile.getPath());
+                    LOGGER.log(WARNING, "Could not delete temp files - {0}", temporaryFile.getPath());
                 }
             }
         }

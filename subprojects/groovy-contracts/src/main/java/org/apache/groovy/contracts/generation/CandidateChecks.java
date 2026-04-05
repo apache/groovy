@@ -18,6 +18,9 @@
  */
 package org.apache.groovy.contracts.generation;
 
+import groovy.contracts.Invariant;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
@@ -41,7 +44,19 @@ public class CandidateChecks {
      * @return whether the given <tt>type</tt> is a candidate for applying contract assertions
      */
     public static boolean isContractsCandidate(final ClassNode type) {
-        return type != null && !type.isSynthetic() && !type.isInterface() && !type.isEnum() && !type.isGenericsPlaceHolder() && !type.isScript() && !type.isScriptBody() && !isRuntimeClass(type);
+        if (type == null || type.isSynthetic() || type.isInterface() || type.isEnum() || type.isGenericsPlaceHolder() || isRuntimeClass(type)) return false;
+        if ((type.isScript() || type.isScriptBody()) && !hasContractAnnotations(type)) return false;
+        return true;
+    }
+
+    private static boolean hasContractAnnotations(final ClassNode type) {
+        if (!type.getAnnotations(ClassHelper.makeWithoutCaching(Invariant.class)).isEmpty()) return true;
+        for (MethodNode method : type.getMethods()) {
+            for (AnnotationNode annotation : method.getAnnotations()) {
+                if (annotation.getClassNode().getName().startsWith("groovy.contracts.")) return true;
+            }
+        }
+        return false;
     }
 
     /**

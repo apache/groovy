@@ -18,9 +18,11 @@
  */
 package groovy.util;
 
+import java.io.Serial;
+
 public class ScriptException extends Exception {
 
-    private static final long serialVersionUID = 3447547760007143671L;
+    @Serial private static final long serialVersionUID = 3447547760007143671L;
 
     /**
      *

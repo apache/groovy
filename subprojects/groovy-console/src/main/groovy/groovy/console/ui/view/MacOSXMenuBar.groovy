@@ -214,6 +214,8 @@ menuBar {
         menuItem(compileAction, icon:null)
         menuItem(compileJavaAction, icon:null)
         separator()
+        menuItem(setScriptArgsAction, icon:null)
+        separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)
         menuItem(listClasspath)

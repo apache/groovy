@@ -18,6 +18,9 @@
  */
 package groovy.lang;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -78,6 +81,7 @@ import java.lang.annotation.Target;
         ElementType.METHOD,
         ElementType.PARAMETER,
         ElementType.TYPE})
+@ExtendedTarget(ExtendedElementType.IMPORT)
 public @interface GrabConfig {
     /**
      * Set to true if you want to use the system classloader when loading the grape.

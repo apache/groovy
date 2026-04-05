@@ -218,8 +218,9 @@ public class GroovyClassLoader extends URLClassLoader {
     public Class defineClass(final ClassNode classNode, final String file, final String newCodeBase) {
         CodeSource codeSource = null;
         try {
-            codeSource = new CodeSource(new URL("file", "", newCodeBase), (java.security.cert.Certificate[]) null);
-        } catch (MalformedURLException ignore) {
+            String path = newCodeBase.startsWith("/") ? newCodeBase : "/" + newCodeBase;
+            codeSource = new CodeSource(new URI("file", "", path, null).toURL(), (java.security.cert.Certificate[]) null);
+        } catch (MalformedURLException | URISyntaxException ignore) {
         }
 
         CompilationUnit unit = createCompilationUnit(config, codeSource);

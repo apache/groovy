@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.util.ListHashMap;
 
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -58,7 +59,7 @@ public class Node implements Serializable, Cloneable {
         setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(Node.class), Node.class);
     }
 
-    private static final long serialVersionUID = 4121134753270542643L;
+    @Serial private static final long serialVersionUID = 4121134753270542643L;
 
     private Node parent;
 

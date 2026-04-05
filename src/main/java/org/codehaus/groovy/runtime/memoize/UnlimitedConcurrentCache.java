@@ -19,6 +19,8 @@
 package org.codehaus.groovy.runtime.memoize;
 
 import javax.annotation.concurrent.ThreadSafe;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.Collection;
@@ -32,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @ThreadSafe
 public final class UnlimitedConcurrentCache<K, V> implements EvictableCache<K, V>, Serializable {
-    private static final long serialVersionUID = -857220494475488328L;
+    @Serial private static final long serialVersionUID = -857220494475488328L;
     private final ConcurrentHashMap<K, V> map;
 
     /**

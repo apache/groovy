@@ -20,10 +20,13 @@ package bugs
 
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 
+import org.junit.jupiter.api.Test
+
 import static groovy.test.GroovyAssert.shouldFail
 
 final class Groovy4116Bug {
 
+    @Test
     void testAnInterfaceMethodNotImplementedPublic() {
         def err = shouldFail MultipleCompilationErrorsException, '''
             class C4116 implements I4116 {
@@ -36,6 +39,7 @@ final class Groovy4116Bug {
         assert err.message =~ /The method foo should be public as it implements the corresponding method from interface I4116/
     }
 
+    @Test
     void testAnInterfaceMethodNotImplementedPublicV2SuperClassInterface() {
         def err = shouldFail MultipleCompilationErrorsException, '''
             abstract class A4116 implements I4116 {

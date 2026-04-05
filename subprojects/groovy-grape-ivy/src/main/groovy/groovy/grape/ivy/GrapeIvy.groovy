@@ -49,7 +49,6 @@ import org.apache.ivy.plugins.matcher.PatternMatcher
 import org.apache.ivy.plugins.resolver.ChainResolver
 import org.apache.ivy.plugins.resolver.IBiblioResolver
 import org.apache.ivy.plugins.resolver.ResolverSettings
-import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
 import org.w3c.dom.Element
@@ -89,7 +88,7 @@ class GrapeIvy implements GrapeEngine {
     final Set<IvyGrabRecord> grabRecordsForCurrDependencies = [] as LinkedHashSet
 
     GrapeIvy() {
-        Message.setDefaultLogger(new DefaultMessageLogger(System.getProperty('ivy.message.logger.level', '-1') as int))
+        Message.setDefaultLogger(new PlatformLoggingMessageLogger())
 
         settings = new IvySettings()
         settings.setVariable('user.home.url', new File(System.getProperty('user.home')).toURI().toURL() as String)
@@ -637,29 +636,30 @@ class GrapeIvy implements GrapeEngine {
 
     @Override
     void setLoggingLevel(int level) {
-        // Map numeric level to Ivy logging level
+        // Map numeric level (from grape -q/-w/-i/-V/-d flags) to JUL level
+        // for the platform logging backed Ivy logger.
         // 0=quiet/errors only, 1=warn, 2=info, 3=verbose, 4=debug
-        int ivyLevel
+        java.util.logging.Level julLevel
         switch (level) {
             case 0:
-                ivyLevel = Message.MSG_ERR
+                julLevel = java.util.logging.Level.SEVERE
                 break
             case 1:
-                ivyLevel = Message.MSG_WARN
+                julLevel = java.util.logging.Level.WARNING
                 break
             case 2:
-                ivyLevel = Message.MSG_INFO
+                julLevel = java.util.logging.Level.INFO
                 break
             case 3:
-                ivyLevel = Message.MSG_VERBOSE
+                julLevel = java.util.logging.Level.FINE
                 break
             case 4:
-                ivyLevel = Message.MSG_DEBUG
+                julLevel = java.util.logging.Level.FINEST
                 break
             default:
-                ivyLevel = Message.MSG_INFO
+                julLevel = java.util.logging.Level.INFO
         }
-        Message.setDefaultLogger(new DefaultMessageLogger(ivyLevel))
+        java.util.logging.Logger.getLogger('groovy.grape.ivy').setLevel(julLevel)
     }
 }
 

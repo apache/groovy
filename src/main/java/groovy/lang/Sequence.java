@@ -21,6 +21,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.List;
  */
 public class Sequence extends ArrayList implements GroovyObject {
 
-    private static final long serialVersionUID = 5697409354934589471L;
+    @Serial private static final long serialVersionUID = 5697409354934589471L;
     private transient MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
     private final Class type;
     private int hashCode;

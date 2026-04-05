@@ -18,13 +18,14 @@
  */
 package groovy.lang;
 
+import java.io.Serial;
 import java.util.EventObject;
 
 /**
  * An event used to propagate metaclass updates
  */
 public class MetaClassRegistryChangeEvent extends EventObject {
-    private static final long serialVersionUID = 1647849176793457976L;
+    @Serial private static final long serialVersionUID = 1647849176793457976L;
     private final Class clazz;
     private final Object instance;
     private final MetaClass metaClass;

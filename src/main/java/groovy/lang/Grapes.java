@@ -18,6 +18,9 @@
  */
 package groovy.lang;
 
+import groovy.lang.annotation.ExtendedElementType;
+import groovy.lang.annotation.ExtendedTarget;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -61,6 +64,7 @@ import java.lang.annotation.RetentionPolicy;
  * are grabbed. See {@code @GrabConfig} for further information.
  */
 @Retention(RetentionPolicy.SOURCE)
+@ExtendedTarget(ExtendedElementType.IMPORT)
 public @interface Grapes {
     Grab[] value();
 

@@ -26,7 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 public class FileOutputTool implements OutputTool {
+
+    private static final System.Logger LOGGER = System.getLogger(FileOutputTool.class.getName());
     @Override
     public void makeOutputArea(String filename) {
         Path path = Paths.get(filename);
@@ -36,7 +40,7 @@ public class FileOutputTool implements OutputTool {
         try {
             Files.createDirectories(path);
         } catch (IOException e) {
-            System.err.println("Unable to create directory '" + filename + "' due to '" + e.getMessage() + "'; attempting to continue...");
+            LOGGER.log(WARNING, "Unable to create directory ''{0}'' due to ''{1}''; attempting to continue...", filename, e.getMessage());
         }
     }
 
@@ -48,7 +52,7 @@ public class FileOutputTool implements OutputTool {
             try {
                 Files.createDirectories(path);
             } catch (IOException e) {
-                System.err.println("Unable to create parent directory '" + path + "' due to '" + e.getMessage() + "'; attempting to continue...");
+                LOGGER.log(WARNING, "Unable to create parent directory ''{0}'' due to ''{1}''; attempting to continue...", path, e.getMessage());
             }
         }
         ResourceGroovyMethods.write(file, text, charset, true);

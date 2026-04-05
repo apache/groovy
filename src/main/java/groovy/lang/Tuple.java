@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Arrays;
@@ -31,7 +32,7 @@ import java.util.RandomAccess;
  * Represents a list of Objects.
  */
 public class Tuple<E> extends AbstractList<E> implements Serializable, Cloneable, Comparable<Tuple<E>>, RandomAccess {
-    private static final long serialVersionUID = -6707770506387821031L;
+    @Serial private static final long serialVersionUID = -6707770506387821031L;
     private final E[] contents;
 
     @SafeVarargs

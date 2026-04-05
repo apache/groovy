@@ -27,3 +27,9 @@ dependencies {
     }
     testImplementation projects.groovyTest
 }
+
+// The only Java source is a package-private implementation class;
+// exclude it from javadoc to avoid "no public classes found" error.
+tasks.withType(Javadoc).configureEach {
+    exclude '**/PlatformLoggingMessageLogger.java'
+}

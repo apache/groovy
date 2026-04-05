@@ -21,6 +21,7 @@ package org.codehaus.groovy.control;
 import org.apache.groovy.io.StringBuilderWriter;
 
 import java.io.PrintWriter;
+import java.io.Serial;
 import java.io.Writer;
 
 /**
@@ -29,7 +30,7 @@ import java.io.Writer;
 public class MultipleCompilationErrorsException extends
         CompilationFailedException {
 
-    private static final long serialVersionUID = 8583586586290252555L;
+    @Serial private static final long serialVersionUID = 8583586586290252555L;
     protected ErrorCollector collector;
 
     public MultipleCompilationErrorsException(ErrorCollector ec) {

@@ -119,7 +119,7 @@ class GroovySecurityManager {
             }
         }
         catch (Throwable ex) {
-            throw new RuntimeException("Could not initialize the security manager", ex);
+            throw new RuntimeException("exception trying to initialize test", ex);
         }
     }
 

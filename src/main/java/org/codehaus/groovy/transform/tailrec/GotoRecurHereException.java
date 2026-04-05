@@ -18,9 +18,11 @@
  */
 package org.codehaus.groovy.transform.tailrec;
 
+import java.io.Serial;
+
 /**
  * Exception will be thrown by recursive calls in closures and caught in while loop to continue to LOOP_LABEL
  */
 public class GotoRecurHereException extends Exception {
-    private static final long serialVersionUID = -193137033604506378L;
+    @Serial private static final long serialVersionUID = -193137033604506378L;
 }

@@ -587,9 +587,7 @@ public class Java8 implements VMPlugin {
         try {
             return newLookup(receiverClass).unreflectSpecial(method, receiverClass).bindTo(receiver);
         } catch (ReflectiveOperationException e1) {
-            if (!method.isAccessible()) {
-                ReflectionUtils.trySetAccessible(method);
-            }
+            ReflectionUtils.trySetAccessible(method);
             final Class<?> declaringClass = method.getDeclaringClass();
             try {
                 return newLookup(declaringClass).unreflectSpecial(method, declaringClass).bindTo(receiver);

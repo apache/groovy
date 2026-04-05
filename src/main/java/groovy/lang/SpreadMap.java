@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
+import java.io.Serial;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Map;
  * Helper to turn a list with an even number of elements into a Map.
  */
 public class SpreadMap extends HashMap {
-    private static final long serialVersionUID = 3827653766235954251L;
+    @Serial private static final long serialVersionUID = 3827653766235954251L;
     private int hashCode;
 
     public SpreadMap(Object[] values) {

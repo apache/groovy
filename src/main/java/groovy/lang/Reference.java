@@ -20,6 +20,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -27,7 +28,7 @@ import java.io.Serializable;
  */
 public class Reference<T> extends GroovyObjectSupport implements Serializable {
 
-    private static final long serialVersionUID = 4963704631487573488L;
+    @Serial private static final long serialVersionUID = 4963704631487573488L;
     private T value;
 
     public Reference() {

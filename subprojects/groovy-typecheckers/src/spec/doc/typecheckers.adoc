@@ -368,3 +368,301 @@ The complete list of errors detected include:
 * illegal format conversions
 * format flags conversion mismatches
 * missing arguments
+
+== Checking Null Safety (Incubating)
+
+Null pointer dereferences are one of the most common sources of runtime errors.
+The `NullChecker` performs compile-time null-safety analysis, detecting potential
+null dereferences and null-safety violations before code is executed.
+
+Two checkers are provided:
+
+* `NullChecker` — *Annotation-based*: Checks code annotated with `@Nullable` and
+  `@NonNull` (or equivalent) annotations.
+* `StrictNullChecker` — *Annotation-based + flow-sensitive*: Includes all checks from
+  `NullChecker` plus flow-sensitive tracking through assignments and control flow,
+  detecting potential null dereferences even in unannotated code.
+
+For code bases with a mix of strictness requirements, apply `NullChecker` to relaxed
+code and `StrictNullChecker` to strict code via per-class or per-method `@TypeChecked` annotations.
+
+=== Typical usage
+
+Here is an example showing a method that safely handles a `@Nullable` parameter:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=intro_example,indent=0]
+----
+
+The checker verifies that `text` is only dereferenced inside the null guard.
+Without the `if (text != null)` guard, the checker would report a compile-time error.
+
+=== Supported annotations
+
+The checker recognizes nullability annotations by their simple name, so annotations from
+any package are supported. The following annotation names are recognized:
+
+|===
+| Nullable | `@Nullable`, `@CheckForNull`, `@MonotonicNonNull`
+| Non-null | `@NonNull`, `@NotNull`, `@Nonnull`
+| Non-null by default (class-level) | `@NonNullByDefault`, `@NullMarked`, `@ParametersAreNonnullByDefault`
+| Opt-out (class-level) | `@NullUnmarked`
+|===
+
+The annotation classes must be on the compile classpath so the Groovy compiler can resolve them.
+Since the checker matches by simple name, you are free to choose any annotation library:
+
+* https://jspecify.dev/[JSpecify]: `@Nullable` / `@NullMarked` / `@NullUnmarked`
+* `javax.annotation.Nullable` / `javax.annotation.Nonnull` (JSR-305)
+* `org.jetbrains.annotations.Nullable` / `org.jetbrains.annotations.NotNull`
+* `edu.umd.cs.findbugs.annotations.Nullable` / `edu.umd.cs.findbugs.annotations.NonNull`
+* `org.checkerframework.checker.nullness.qual.Nullable` / `org.checkerframework.checker.nullness.qual.NonNull`
+
+If you prefer not to add an external dependency, you can define your own minimal annotations:
+
+[source,groovy]
+----
+import java.lang.annotation.*
+
+@Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+@Retention(RetentionPolicy.CLASS)
+@interface Nullable {}
+
+@Target([ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD])
+@Retention(RetentionPolicy.CLASS)
+@interface NonNull {}
+----
+
+The following class-level annotations are also recognized:
+
+* `@NullMarked` (https://jspecify.dev/[JSpecify]) — when applied to a class, all parameters,
+  return types, and fields are treated as `@NonNull` unless explicitly annotated `@Nullable`.
+  Use `@NullUnmarked` on a nested class to opt out of this default.
+* `@NonNullByDefault` (SpotBugs, Eclipse JDT) — same semantics as `@NullMarked`.
+* `@ParametersAreNonnullByDefault` (JSR-305) — when applied to a class, all non-primitive
+  parameters are treated as `@NonNull` unless explicitly annotated `@Nullable`.
+* `@groovy.transform.NullCheck` — when applied to a method or class, all non-primitive
+  parameters are treated as effectively `@NonNull` (unless explicitly annotated `@Nullable`).
+  This provides compile-time null checking complementing the runtime checks that `@NullCheck` generates.
+
+=== Null-safe access patterns
+
+The checker recognizes several patterns for safely working with nullable values.
+
+*Safe navigation* using the `?.` operator:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=safe_navigation,indent=0]
+----
+
+*Null guards* using `if (x != null)`:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=null_guard,indent=0]
+----
+
+*Early exit* using `if (x == null) return` or `throw`:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=early_return,indent=0]
+----
+
+*Ternary and elvis expressions*: in flow-sensitive mode (`StrictNullChecker`), the checker
+examines both branches of ternary (`condition ? a : b`) and elvis (`x ?: fallback`) expressions.
+If either branch can be null, the result is treated as nullable. The elvis assignment
+`x ?= nonNullValue` clears any nullable state on `x`.
+
+=== Errors detected
+
+Here are some examples of the kinds of errors detected.
+
+* Dereferencing a `@Nullable` variable without a null check:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_dereference,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_dereference_message,indent=0]
+----
+
+* Passing `null` to a `@NonNull` parameter:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=null_to_nonnull,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=null_to_nonnull_message,indent=0]
+----
+
+* Returning `null` from a `@NonNull` method:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=null_return,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=null_return_message,indent=0]
+----
+
+* Assigning `null` to a `@NonNull` field:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_assign,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_assign_message,indent=0]
+----
+
+* Dereferencing the return value of a `@Nullable` method:
++
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_return_deref,indent=0]
+----
++
+We would see the following error at compile-time:
++
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nullable_return_deref_message,indent=0]
+----
+
+=== @MonotonicNonNull and @Lazy
+
+The `@MonotonicNonNull` annotation is useful for lazy initialization patterns.
+A field annotated with `@MonotonicNonNull` starts as `null` but once assigned
+a non-null value, it must remain non-null. The checker treats such fields as
+nullable (requiring null checks before use) but prevents re-assignment to `null`
+after initialization:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=monotonic_nonnull,indent=0]
+----
+
+Re-assigning `null` to a `@MonotonicNonNull` field after it has been set is an error:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=monotonic_reassign,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=monotonic_reassign_message,indent=0]
+----
+
+Groovy's `@Lazy` annotation is recognized as an implicit `@MonotonicNonNull`. A `@Lazy` field
+starts as `null` internally but once its generated getter initializes it, it stays non-null —
+exactly the monotonic non-null contract. Since `@Lazy` generates a getter that handles
+initialization automatically, property access to a `@Lazy` field is always safe and will not
+trigger null dereference warnings. The monotonic guarantee means the checker will also prevent
+re-assignment to `null` on the backing field after initialization.
+
+=== Integration with @NullCheck
+
+Groovy's `@NullCheck` annotation generates runtime null checks for method parameters.
+When the null checkers see `@NullCheck` on a method or class, they treat all non-primitive
+parameters as effectively `@NonNull`, catching violations at compile time before they would
+fail at runtime:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nullcheck_integration,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nullcheck_integration_message,indent=0]
+----
+
+Parameters explicitly annotated `@Nullable` override the `@NullCheck` behavior
+for the purpose of the null checkers (though `@NullCheck` will still generate
+a runtime check for those parameters).
+
+=== Integration with @NonNullByDefault
+
+Class-level `@NonNullByDefault` (from SpotBugs, Eclipse JDT, or your own definition) makes
+all parameters, return types, and fields in a class effectively `@NonNull`. Members explicitly
+annotated `@Nullable` override this default. Similarly, `@ParametersAreNonnullByDefault`
+(JSR-305) applies only to parameters.
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_by_default,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=nonnull_by_default_message,indent=0]
+----
+
+=== Flow-sensitive mode with StrictNullChecker
+
+`NullChecker` only flags issues involving annotated code. `StrictNullChecker` adds
+flow-sensitive tracking, detecting potential null dereferences in unannotated code
+by tracking nullability through variable assignments and control flow:
+
+With `StrictNullChecker`, the following code would be flagged:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=flow_sensitive,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=flow_sensitive_message,indent=0]
+----
+
+Reassigning a non-null value clears the nullable state:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=flow_reassign,indent=0]
+----
+
+The complete list of errors detected include:
+
+* assigning `null` to a `@NonNull` field or variable (including implicit `@NonNull` from `@NonNullByDefault`)
+* passing `null` or a `@Nullable` value to a `@NonNull` parameter (including implicit `@NonNull` from `@NullCheck`, `@NonNullByDefault`, or `@ParametersAreNonnullByDefault`)
+* returning `null` or a `@Nullable` value from a `@NonNull` method (including implicit `@NonNull` from `@NonNullByDefault`)
+* dereferencing a `@Nullable` variable without a null check or safe navigation
+* dereferencing the return value of a `@Nullable` method without a null check
+* re-assigning `null` to a `@MonotonicNonNull` or `@Lazy` field after initialization
+* dereferencing a variable known to be null through flow analysis (`StrictNullChecker` only)
+
+NOTE: For complementary null-related checks such as detecting broken null-check logic,
+unnecessary null guards before `instanceof`, or `Boolean` methods returning `null`,
+consider using https://codenarc.org/[CodeNarc]'s null-related rules alongside these type checkers.

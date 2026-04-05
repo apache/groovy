@@ -953,11 +953,11 @@ public abstract class StaticTypeCheckingSupport {
 
         // GROOVY-8965: type disjunction
         boolean duckType = receiver instanceof UnionTypeClassNode;
-        if (methods.size() > 1 && !first(methods).isConstructor())
-            methods = removeCovariantsAndInterfaceEquivalents(methods, duckType);
-
-        if (!duckType && argumentTypes == null) {
-            return asList(methods); // GROOVY-11683: no covariants or equivalents
+        if (!duckType) {
+            if (methods.size() > 1 && !first(methods).isConstructor())
+                methods = removeCovariantsAndInterfaceEquivalents(methods, false);
+            if (argumentTypes == null)
+                return asList(methods); // GROOVY-11683: no covariants or equivalents
         }
 
         Set<MethodNode> bestMethods = new HashSet<>(); // choose best method(s) for each possible receiver
@@ -965,6 +965,9 @@ public abstract class StaticTypeCheckingSupport {
             var view = methods;
             if (duckType) {
                 view = methods.stream().filter(m -> implementsInterfaceOrSubclassOf(rcvr, m.getDeclaringClass())).toList();
+                if (view.size() > 1) { // GROOVY-11888
+                    view = removeCovariantsAndInterfaceEquivalents(view, true);
+                }
             }
             view = chooseBestMethods(rcvr, view, argumentTypes);
             if (view.isEmpty()) {

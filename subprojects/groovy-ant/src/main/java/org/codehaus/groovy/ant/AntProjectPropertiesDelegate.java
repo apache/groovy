@@ -21,6 +21,7 @@ package org.codehaus.groovy.ant;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.tools.ant.Project;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -31,7 +32,7 @@ public class AntProjectPropertiesDelegate extends Hashtable<String, Object> {
 
     private final transient Project project;
 
-    private static final long serialVersionUID = -8311751517184349962L;
+    @Serial private static final long serialVersionUID = -8311751517184349962L;
 
     public AntProjectPropertiesDelegate(Project project) {
         super();
