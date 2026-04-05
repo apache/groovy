@@ -42,6 +42,7 @@ group = 'org.apache.groovy'
 version = sharedConfiguration.groovyVersion.get()
 
 tasks.named('rat') {
+    verbose = true
     inputDir = projectDir
     excludes = ['subprojects/**', // covered above
                 'benchmark/**', // benchmarking files excluded from src zip
