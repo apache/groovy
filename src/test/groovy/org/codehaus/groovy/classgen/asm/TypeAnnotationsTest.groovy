@@ -299,7 +299,7 @@ final class TypeAnnotationsTest extends AbstractBytecodeTestCase {
             }
         ''')
         assert bytecode.hasStrictSequence([
-                'public doCall(I)I',
+                'public static doCall(I)I',
                 '@LTypeAnno1;() : METHOD_FORMAL_PARAMETER 0, null',
                 'L0'
         ])
