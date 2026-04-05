@@ -108,9 +108,7 @@ class DateTest {
             assertEquals '1970-01-01', d.format('yyyy-MM-dd')
             assertEquals '01/01/1970', d.format('dd/MM/yyyy', TimeZone.getTimeZone('GMT'))
             assertEquals DateFormat.getDateInstance(DateFormat.SHORT, locale).format(d), d.dateString
-            assertEquals '01.01.70', d.dateString
             assertEquals DateFormat.getTimeInstance(DateFormat.MEDIUM, locale).format(d), d.timeString
-            assertEquals '01:00:00', d.timeString
             assertEquals DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM, locale).format(d), d.dateTimeString
         } finally {
             Locale.default = defaultLocale

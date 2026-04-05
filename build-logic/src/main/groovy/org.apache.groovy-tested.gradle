@@ -45,7 +45,7 @@ dependencies {
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
     def grapeDirectory = new File(temporaryDir, '.groovy')
-    def options = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en', '-Djava.locale.providers=COMPAT,SPI']
+    def options = ['-ea', "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", '-Duser.language=en', '-Duser.country=US']
     jvmArgs(*options)
     systemProperty 'groovy.force.illegal.access', findProperty('groovy.force.illegal.access')
     def testdb = System.properties['groovy.testdb.props']
