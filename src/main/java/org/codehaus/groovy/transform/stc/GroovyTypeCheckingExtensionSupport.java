@@ -49,6 +49,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +86,12 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     private final String scriptPath;
 
+    /** The class/script path with any parameter suffix removed. */
+    private final String resolvedPath;
+
+    /** Parameters parsed from the extension spec, e.g. {@code (strict: true)}. */
+    private final Map<String, Object> extensionParameters;
+
     private final CompilationUnit compilationUnit;
 
     private TypeCheckingExtension delegateExtension;
@@ -94,9 +101,11 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
 
     /**
      * Builds a type checking extension relying on a Groovy script (type checking DSL).
+     * The {@code scriptPath} may include parameters in Groovy named-argument style, e.g.
+     * {@code "groovy.typecheckers.NullChecker(strict: true)"}.
      *
      * @param typeCheckingVisitor the type checking visitor
-     * @param scriptPath the path to the type checking script (in classpath)
+     * @param scriptPath the path to the type checking script (in classpath), optionally with parameters
      * @param compilationUnit
      */
     public GroovyTypeCheckingExtensionSupport(
@@ -105,6 +114,54 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         super(typeCheckingVisitor);
         this.scriptPath = scriptPath;
         this.compilationUnit = compilationUnit;
+        int parenIdx = scriptPath.indexOf('(');
+        if (parenIdx >= 0 && scriptPath.endsWith(")")) {
+            this.resolvedPath = scriptPath.substring(0, parenIdx).trim();
+            this.extensionParameters = parseParameters(scriptPath.substring(parenIdx + 1, scriptPath.length() - 1));
+        } else {
+            this.resolvedPath = scriptPath;
+            this.extensionParameters = Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Parses a parameter string of the form {@code "key1: value1, key2: value2"} into a map.
+     * Supports boolean, integer, long, double, and string (quoted) values.
+     * String values cannot contain commas or colons since these are used as delimiters.
+     */
+    private static Map<String, Object> parseParameters(final String paramStr) {
+        if (paramStr == null || paramStr.isBlank()) return Collections.emptyMap();
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (String pair : paramStr.split(",")) {
+            pair = pair.trim();
+            if (pair.isEmpty()) continue;
+            int colonIdx = pair.indexOf(':');
+            if (colonIdx < 0) continue;
+            String key = pair.substring(0, colonIdx).trim();
+            String value = pair.substring(colonIdx + 1).trim();
+            result.put(key, parseValue(value));
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    private static Object parseValue(final String value) {
+        if ("true".equals(value)) return Boolean.TRUE;
+        if ("false".equals(value)) return Boolean.FALSE;
+        if ("null".equals(value)) return null;
+        if (value.length() >= 2
+                && ((value.startsWith("'") && value.endsWith("'"))
+                 || (value.startsWith("\"") && value.endsWith("\"")))) {
+            return value.substring(1, value.length() - 1);
+        }
+        try { return Integer.valueOf(value); } catch (NumberFormatException ignored) { }
+        try { return Long.valueOf(value); } catch (NumberFormatException ignored) { }
+        try { return Double.valueOf(value); } catch (NumberFormatException ignored) { }
+        return value;
+    }
+
+    @Override
+    public Map<String, Object> getOptions() {
+        return extensionParameters;
     }
 
     @Override
@@ -144,7 +201,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         // since Groovy 2.2, it is possible to use FQCN for type checking extension scripts
         TypeCheckingDSL script = null;
         try {
-            Class<?> clazz = transformLoader.loadClass(scriptPath, false, true);
+            Class<?> clazz = transformLoader.loadClass(resolvedPath, false, true);
             if (TypeCheckingDSL.class.isAssignableFrom(clazz)) {
                 script = (TypeCheckingDSL) clazz.getDeclaredConstructor().newInstance();
             } else if (TypeCheckingExtension.class.isAssignableFrom(clazz)) {
@@ -152,6 +209,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                 try {
                     Constructor<?> declaredConstructor = clazz.getDeclaredConstructor(StaticTypeCheckingVisitor.class);
                     delegateExtension = (TypeCheckingExtension) declaredConstructor.newInstance(typeCheckingVisitor);
+                    delegateExtension.setOptions(extensionParameters);
                     typeCheckingVisitor.addTypeCheckingExtension(delegateExtension);
                     delegateExtension.setup();
                     return;
@@ -159,7 +217,7 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
                     addLoadingError(config);
                 } catch (NoSuchMethodException e) {
                     context.getErrorCollector().addFatalError(
-                            new SimpleMessage("Static type checking extension '" + scriptPath + "' could not be loaded because it doesn't have a constructor accepting StaticTypeCheckingVisitor.",
+                            new SimpleMessage("Static type checking extension '" + resolvedPath + "' could not be loaded because it doesn't have a constructor accepting StaticTypeCheckingVisitor.",
                                     config.getDebug(), typeCheckingVisitor.getSourceUnit())
                     );
                 }
@@ -172,20 +230,20 @@ public class GroovyTypeCheckingExtensionSupport extends AbstractTypeCheckingExte
         if (script == null) {
             ClassLoader cl = typeCheckingVisitor.getSourceUnit().getClassLoader();
             // cast to prevent incorrect @since 1.7 warning
-            InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(scriptPath);
+            InputStream is = ((ClassLoader)transformLoader).getResourceAsStream(resolvedPath);
             if (is == null) {
                 // fallback to the source unit classloader
-                is = cl.getResourceAsStream(scriptPath);
+                is = cl.getResourceAsStream(resolvedPath);
             }
             if (is == null) {
                 // fallback to the compiler classloader
                 cl = GroovyTypeCheckingExtensionSupport.class.getClassLoader();
-                is = cl.getResourceAsStream(scriptPath);
+                is = cl.getResourceAsStream(resolvedPath);
             }
             if (is == null) {
                 // if the input stream is still null, we've not found the extension
                 context.getErrorCollector().addFatalError(
-                        new SimpleMessage("Static type checking extension '" + scriptPath + "' was not found on the classpath.",
+                        new SimpleMessage("Static type checking extension '" + resolvedPath + "' was not found on the classpath.",
                                 config.getDebug(), typeCheckingVisitor.getSourceUnit()));
             }
             try {
