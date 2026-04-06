@@ -16,32 +16,23 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.vmplugin.v10;
+package org.codehaus.groovy.vmplugin.v17;
 
-import org.codehaus.groovy.vmplugin.v9.Java9;
-
-import java.util.Arrays;
+import org.codehaus.groovy.vmplugin.v16.Java16;
 
 /**
- * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
+ * Java 17 based functions. Groovy 6.0 requires JDK 17 as the minimum version.
+ * <p>
+ * This plugin subsumes all functionality from earlier version-specific plugins
+ * (Java8 through Java16) into a single entry point for the VM plugin system.
+ *
+ * @since 6.0.0
  */
-@Deprecated(since = "6.0.0", forRemoval = true)
 @SuppressWarnings("removal")
-public class Java10 extends Java9 {
+public class Java17 extends Java16 {
 
     @Override
     public int getVersion() {
-        return 10;
-    }
-
-    @Override
-    public Class<?>[] getPluginDefaultGroovyMethods() {
-        Class<?>[] answer = super.getPluginDefaultGroovyMethods();
-
-        final int n = answer.length;
-        answer = Arrays.copyOf(answer, n + 1);
-        answer[n] = PluginDefaultGroovyMethods.class;
-
-        return answer;
+        return 17;
     }
 }

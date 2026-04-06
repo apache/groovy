@@ -31,9 +31,7 @@ import java.util.Map;
 public class VMPluginFactory {
 
     private static final Map<Integer,String> PLUGIN_MAP = Maps.of(
-        // NOTE: Declare the vm plugin entries in *descending* order!
-        16, "org.codehaus.groovy.vmplugin.v16.Java16",
-        10, "org.codehaus.groovy.vmplugin.v10.Java10"
+        17, "org.codehaus.groovy.vmplugin.v17.Java17"
     );
 
     private static final VMPlugin PLUGIN = createPlugin();

@@ -63,11 +63,9 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.ReflectPermission;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
-import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
 
@@ -75,12 +73,14 @@ import java.util.List;
  * Java 8 based functions.
  *
  * @since 2.5.0
+ * @deprecated Use {@link org.codehaus.groovy.vmplugin.v17.Java17} instead. Groovy 6.0 requires JDK 17+.
  */
+@Deprecated(since = "6.0.0", forRemoval = true)
 public class Java8 implements VMPlugin {
 
     private static final Method[] EMPTY_METHOD_ARRAY = new Method[0];
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
-    private static final Permission ACCESS_PERMISSION = new ReflectPermission("suppressAccessChecks");
+
 
     public static GenericsType configureTypeVariableDefinition(final ClassNode base, final ClassNode[] bounds) {
         ClassNode redirect = base.redirect();
@@ -529,17 +529,7 @@ public class Java8 implements VMPlugin {
      * @return the check result
      */
     @Override
-    @SuppressWarnings("removal") // TODO a future Groovy version should skip the permission check
     public boolean checkCanSetAccessible(final AccessibleObject accessibleObject, final Class<?> callerClass) {
-        SecurityManager sm = System.getSecurityManager();
-        try {
-            if (sm != null) {
-                sm.checkPermission(ACCESS_PERMISSION);
-            }
-        } catch (SecurityException e) {
-            return false;
-        }
-
         if (accessibleObject instanceof Constructor<?> c) {
             if (c.getDeclaringClass() == Class.class) {
                 return false; // Cannot make a java.lang.Class constructor accessible
@@ -607,6 +597,7 @@ public class Java8 implements VMPlugin {
     //--------------------------------------------------------------------------
 
     @Deprecated(since = "5.0.0")
+    @SuppressWarnings("removal")
     public static MethodHandles.Lookup of(final Class<?> targetClass) {
         return ((Java8) VMPluginFactory.getPlugin()).newLookup(targetClass);
     }

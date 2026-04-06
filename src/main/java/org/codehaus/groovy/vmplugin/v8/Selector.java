@@ -325,6 +325,7 @@ public abstract class Selector {
             } else if (mp instanceof CachedField && !mp.isStatic()) {
                 try {
                     // GROOVY-9144, GROOVY-9596: get lookup for sender and unreflect before forcing access
+                    @SuppressWarnings("removal")
                     MethodHandles.Lookup lookup = ((Java8) VMPluginFactory.getPlugin()).newLookup(sender);
                     handle = ((CachedField) mp).asAccessMethod(lookup);
                 } catch (IllegalAccessException e) {

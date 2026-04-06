@@ -41,6 +41,7 @@ abstract class FormalParameterParser extends SignatureVisitor {
         this.resolver = resolver;
     }
 
+    @SuppressWarnings("removal")
     protected void flushTypeParameter() {
         if (currentTypeParameter != null) {
             ClassNode ref = Java8.configureTypeVariableReference(currentTypeParameter);
