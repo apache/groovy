@@ -4053,4 +4053,45 @@ final class TraitASTTransformationTest {
             new C().test()
         '''
     }
+
+    // GROOVY-11907
+    @Test
+    void testTraitStaticFieldHelperGetClassMarkedDynamic() {
+        // When a global AST transform alters class processing order (e.g. Spock's SpockTransform),
+        // TraitTypeCheckingExtension.handleMissingMethod is invoked for the static field helper.
+        // It calls makeDynamic() on the outer MCE, but the inner getClass() sub-expression was
+        // not marked, producing incompatible stack frame types. Verify the fix: asClass(e, fn)
+        // must mark the getClass() call with DYNAMIC_RESOLUTION for static fields.
+        def cu = new org.codehaus.groovy.control.CompilationUnit()
+        cu.addSource('MyTrait.groovy', '''
+            @groovy.transform.CompileStatic
+            trait MyTrait {
+                static String myField
+            }
+        ''')
+        cu.compile(org.codehaus.groovy.control.Phases.CANONICALIZATION)
+
+        // Find the helper class that accesses the static field
+        def allClasses = cu.AST.modules.collectMany { it.classes }
+        def traitHelper = allClasses.find { it.name.contains('Helper') }
+        assert traitHelper != null, "Trait helper class not found in: ${allClasses*.name}"
+
+        // Walk the AST to find getClass() calls in the helper methods
+        def getClassCalls = []
+        def visitor = new org.codehaus.groovy.ast.CodeVisitorSupport() {
+            void visitMethodCallExpression(org.codehaus.groovy.ast.expr.MethodCallExpression mce) {
+                if (mce.methodAsString == 'getClass') {
+                    getClassCalls << mce
+                }
+                super.visitMethodCallExpression(mce)
+            }
+        }
+        traitHelper.methods.each { it.code?.visit(visitor) }
+
+        assert !getClassCalls.isEmpty(), 'Expected getClass() call in trait helper for static field'
+        getClassCalls.each { mce ->
+            assert mce.getNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION) != null,
+                'getClass() sub-expression must be marked with DYNAMIC_RESOLUTION for static trait fields'
+        }
+    }
 }

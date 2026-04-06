@@ -220,7 +220,7 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     private Expression transformFieldReference(final Expression exp, final FieldNode fn, final boolean isStatic) {
         Expression receiver = createFieldHelperReceiver();
         if (isStatic) {
-            receiver = asClass(receiver);
+            receiver = asClass(receiver, fn); // GROOVY-11907
         }
 
         MethodCallExpression mce = callX(receiver, Traits.helperGetterName(fn));
@@ -352,7 +352,17 @@ class TraitReceiverTransformer extends ClassCodeExpressionTransformer {
     }
 
     private Expression asClass(final Expression e) {
+        return asClass(e, null);
+    }
+
+    private Expression asClass(final Expression e, final FieldNode fn) {
         ClassNode rawClass = ClassHelper.CLASS_Type.getPlainNodeReference();
-        return ternaryX(isInstanceOfX(e, rawClass), e, callX(e, "getClass"));
+        MethodCallExpression getClassCall = callX(e, "getClass");
+        if (fn != null && fn.isStatic()) {
+            // GROOVY-11907: mark sub-expression for dynamic dispatch so that
+            // GROOVY-11817's per-expression DYNAMIC_RESOLUTION check handles it
+            getClassCall.putNodeMetaData(org.codehaus.groovy.transform.stc.StaticTypesMarker.DYNAMIC_RESOLUTION, rawClass);
+        }
+        return ternaryX(isInstanceOfX(e, rawClass), e, getClassCall);
     }
 }
