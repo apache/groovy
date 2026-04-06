@@ -55,6 +55,7 @@ abstract class TypeSignatureParser extends SignatureVisitor {
     private final List<GenericsType> arguments = new ArrayList<>();
 
     @Override
+    @SuppressWarnings("removal")
     public void visitTypeVariable(final String name) {
         finished(Java8.configureTypeVariableReference(name));
     }
