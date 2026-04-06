@@ -351,6 +351,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
   }
 
   /** Returns the index to the read buffer to record into. */
+  @SuppressWarnings("deprecation")
   static int readBufferIndex() {
     // A buffer is chosen by the thread's id so that tasks are distributed in a
     // pseudo evenly manner. This helps avoid hot entries causing contention
@@ -432,6 +433,7 @@ public final class ConcurrentLinkedHashMap<K, V> extends AbstractMap<K, V>
 
   /** Drains the read buffers, each up to an amortized threshold. */
   @GuardedBy("evictionLock")
+  @SuppressWarnings("deprecation")
   void drainReadBuffers() {
     final int start = (int) Thread.currentThread().getId();
     final int end = start + NUMBER_OF_READ_BUFFERS;

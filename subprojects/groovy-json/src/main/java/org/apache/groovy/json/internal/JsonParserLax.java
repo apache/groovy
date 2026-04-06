@@ -51,6 +51,7 @@ public class JsonParserLax extends JsonParserCharArray {
         this.defaultCheckDates = defaultCheckDates;
     }
 
+    @SuppressWarnings("unchecked")
     private Value decodeJsonObjectLax() {
         if (__currentChar == '{')
             this.nextChar();
@@ -597,7 +598,7 @@ public class JsonParserLax extends JsonParserCharArray {
 
         if (__currentChar == ']') {
             __index++;
-            return new ValueContainer(new ArrayList());
+            return new ValueContainer(new ArrayList<>());
         }
 
         List<Object> list;

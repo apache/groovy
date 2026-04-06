@@ -171,6 +171,7 @@ public class DefaultJsonGenerator implements JsonGenerator {
     /**
      * Serializes object and writes it into specified buffer.
      */
+    @SuppressWarnings("unchecked")
     protected void writeObject(String key, Object object, CharBuf buffer) {
 
         if (isExcludingValues(object)) {

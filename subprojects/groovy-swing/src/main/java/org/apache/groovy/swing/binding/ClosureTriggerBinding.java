@@ -68,10 +68,10 @@ public class ClosureTriggerBinding implements TriggerBinding, SourceBinding {
         final BindPathSnooper delegate = new BindPathSnooper();
         try {
             // create our own local copy of the closure
-            final Class closureClass = closure.getClass();
+            final Class<?> closureClass = closure.getClass();
 
             // assume closures have only 1 constructor, of the form (Object, Reference*)
-            Constructor constructor = closureClass.getConstructors()[0];
+            Constructor<?> constructor = closureClass.getConstructors()[0];
             int paramCount = constructor.getParameterTypes().length;
             Object[] args = new Object[paramCount];
             args[0] = delegate;

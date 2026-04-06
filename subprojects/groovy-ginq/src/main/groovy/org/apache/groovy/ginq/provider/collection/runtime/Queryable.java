@@ -49,7 +49,7 @@ public interface Queryable<T> {
      * Represents the empty Queryable instance
      * @since 4.0.0
      */
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     Queryable EMPTY_QUERYABLE = from(new Object[0]);
 
     /**
@@ -59,6 +59,7 @@ public interface Queryable<T> {
      * @return the empty Queryable instance
      * @since 4.0.0
      */
+    @SuppressWarnings("unchecked")
     static <T> Queryable<T> emptyQueryable() {
         return (Queryable<T>) EMPTY_QUERYABLE;
     }
@@ -252,6 +253,7 @@ public interface Queryable<T> {
      * @return the result of order by
      * @since 4.0.0
      */
+    @SuppressWarnings("unchecked")
     <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders);
 
     /**
@@ -262,6 +264,7 @@ public interface Queryable<T> {
      * @return the result of order by
      * @since 4.0.0
      */
+    @SuppressWarnings("unchecked")
     default <U extends Comparable<? super U>> Queryable<T> orderBy(List<? extends Order<? super T, ? extends U>> orders) {
         return orderBy(orders.toArray(Order.EMPTY_ARRAY));
     }
@@ -520,6 +523,7 @@ public interface Queryable<T> {
      * @since 4.0.0
      */
     class Order<T, U extends Comparable<? super U>> {
+        @SuppressWarnings("rawtypes")
         public static final Order[] EMPTY_ARRAY = new Order[0];
         private final Function<? super T, ? extends U> keyExtractor;
         private final boolean asc;

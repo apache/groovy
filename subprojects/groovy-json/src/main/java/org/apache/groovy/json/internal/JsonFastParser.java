@@ -55,6 +55,7 @@ public class JsonFastParser extends JsonParserCharArray {
         this.checkDates = checkDates;
     }
 
+    @SuppressWarnings("unchecked")
     protected final Value decodeJsonObjectLazyFinalParse() {
         char[] array = charArray;
 
@@ -236,7 +237,7 @@ public class JsonFastParser extends JsonParserCharArray {
         /* the list might be empty  */
         if (__currentChar == ']') {
             __index++;
-            return new ValueContainer(new ArrayList());
+            return new ValueContainer(new ArrayList<>());
         }
 
         List<Object> list;

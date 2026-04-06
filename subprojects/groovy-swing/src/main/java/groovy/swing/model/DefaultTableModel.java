@@ -49,6 +49,7 @@ public class DefaultTableModel extends AbstractTableModel {
     /**
      * @return the column definitions.
      */
+    @SuppressWarnings("rawtypes")
     public List getColumnList() {
         return columnModel.getColumnList();
     }
@@ -126,6 +127,7 @@ public class DefaultTableModel extends AbstractTableModel {
         return answer;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Class getColumnClass(int columnIndex) {
         return getColumnModel(columnIndex).getType();
@@ -136,6 +138,7 @@ public class DefaultTableModel extends AbstractTableModel {
         return getColumnModel(columnIndex).isEditable();
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         List rows = getRows();
@@ -155,6 +158,7 @@ public class DefaultTableModel extends AbstractTableModel {
         return column.getValue(row, rowIndex, columnIndex);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
         List rows = getRows();
@@ -178,6 +182,7 @@ public class DefaultTableModel extends AbstractTableModel {
         return column.getValueModel();
     }
 
+    @SuppressWarnings("rawtypes")
     protected List getRows() {
         Object value = rowsModel.getValue();
         if (value == null) {
@@ -187,6 +192,7 @@ public class DefaultTableModel extends AbstractTableModel {
     }
 
     protected static class MyTableColumnModel extends DefaultTableColumnModel {
+        @SuppressWarnings("rawtypes")
         public List getColumnList() {
             return tableColumns;
         }

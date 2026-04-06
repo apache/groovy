@@ -24,6 +24,7 @@ import javax.swing.*
 
 public class ComboBoxFactory extends AbstractFactory {
 
+    @SuppressWarnings("unchecked")
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsType(value, name, JComboBox)
         //TODO expand to allow the value arg to be items

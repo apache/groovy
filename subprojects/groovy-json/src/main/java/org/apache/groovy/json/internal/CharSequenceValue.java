@@ -93,6 +93,7 @@ public class CharSequenceValue implements Value, CharSequence {
         return null;
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public static <T extends Enum> T toEnum(Class<T> cls, String value) {
         try {
             return (T) Enum.valueOf(cls, value);

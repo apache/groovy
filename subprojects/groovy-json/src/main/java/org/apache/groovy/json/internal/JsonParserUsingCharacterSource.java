@@ -206,10 +206,10 @@ public class JsonParserUsingCharacterSource extends BaseJsonParser {
         /* the list might be empty  */
             if (this.characterSource.currentChar() == ']') {
                 characterSource.nextChar();
-                return new ArrayList();
+                return new ArrayList<>();
             }
 
-            list = new ArrayList();
+            list = new ArrayList<>();
 
             do {
                 characterSource.skipWhiteSpace();

@@ -398,6 +398,7 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object parse(URL url, Map params) {
         return parseURL(url, params);
     }
@@ -469,6 +470,7 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object parse(URL url, Map params, String charset) {
         return parseURL(url, params, charset);
     }
@@ -482,10 +484,12 @@ public class JsonSlurper {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object parse(Map params, URL url, String charset) {
         return parseURL(url, params, charset);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private Object parseURL(URL url, Map params, String charset) {
         Reader reader = null;
         try {

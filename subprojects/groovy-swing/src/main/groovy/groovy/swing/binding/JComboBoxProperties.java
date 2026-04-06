@@ -55,6 +55,7 @@ public class JComboBoxProperties {
 }
 
 
+@SuppressWarnings("rawtypes")
 class JComboBoxSelectedElementBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ItemListener {
     JComboBox boundComboBox;
 
@@ -93,6 +94,7 @@ class JComboBoxSelectedElementBinding extends AbstractSyntheticBinding implement
 
 }
 
+@SuppressWarnings("rawtypes")
 class JComboBoxSelectedIndexBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ItemListener {
     JComboBox boundComboBox;
 
@@ -131,6 +133,7 @@ class JComboBoxSelectedIndexBinding extends AbstractSyntheticBinding implements 
 
 }
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 class JComboBoxElementsBinding extends AbstractSyntheticBinding implements ListDataListener, PropertyChangeListener {
     JComboBox boundComboBox;
 

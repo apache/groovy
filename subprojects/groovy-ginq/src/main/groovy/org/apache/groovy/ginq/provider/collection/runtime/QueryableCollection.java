@@ -262,8 +262,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return Group.of(stream);
     }
 
+    @SafeVarargs
     @Override
-    public <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {
+    public final <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {
         Comparator<T> comparator = makeComparator(orders);
         if (null == comparator) {
             return this;
@@ -272,10 +273,12 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(this.stream().sorted(comparator));
     }
 
+    @SuppressWarnings("unchecked")
     protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(List<? extends Order<? super T, ? extends U>> orders) {
         return makeComparator(orders.toArray(Order.EMPTY_ARRAY));
     }
 
+    @SafeVarargs
     protected static <T, U extends Comparable<? super U>> Comparator<T> makeComparator(Order<? super T, ? extends U>... orders) {
         if (null == orders || 0 == orders.length) {
             return null;
@@ -300,6 +303,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return from(stream);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <U> Queryable<U> select(BiFunction<? super T, ? super Queryable<? extends T>, ? extends U> mapper) {
         final String originalParallel = QueryableHelper.getVar(PARALLEL);
@@ -325,7 +329,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
                 stream = stream.collect(Collectors.toList()).parallelStream().map((U u) -> {
                     boolean interrupted = false;
                     try {
-                        return (U) ((CompletableFuture) u).get();
+                        @SuppressWarnings("unchecked")
+                        U result = (U) ((CompletableFuture) u).get();
+                        return result;
                     } catch (InterruptedException | ExecutionException ex) {
                         if (ex instanceof InterruptedException) interrupted = true;
                         throw new GroovyRuntimeException(ex);
@@ -575,7 +581,9 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         writeLock.lock();
         try {
             if (sourceIterable instanceof List) {
-                return (List<T>) sourceIterable;
+                @SuppressWarnings("unchecked")
+                List<T> list = (List<T>) sourceIterable;
+                return list;
             }
 
             final List<T> result = stream().collect(Collectors.toList());
@@ -612,6 +620,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
 
     @Override
     public <U extends Comparable<? super U>> Window<T> over(Tuple2<T, Long> currentRecord, WindowDefinition<T, U> windowDefinition) {
+        @SuppressWarnings("unchecked")
         final Tuple3<String, String, String> idTuple = (Tuple3<String, String, String>) windowDefinition.getId(); // (partitionId, orderId, windowDefinitionId)
         final String partitionId = idTuple.getV1();
 
@@ -681,6 +690,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
             this.orderId = orderId;
         }
 
+        @SuppressWarnings("rawtypes")
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

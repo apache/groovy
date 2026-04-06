@@ -145,6 +145,7 @@ public class LazyMap extends AbstractMap<String, Object> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void putAll(Map m) {
         buildIfNeeded();
         map.putAll(m);
@@ -190,6 +191,7 @@ public class LazyMap extends AbstractMap<String, Object> {
     }
 
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
     protected Object clone() throws CloneNotSupportedException {
         if (map == null) {
             return null;
@@ -211,6 +213,7 @@ public class LazyMap extends AbstractMap<String, Object> {
         return map;
     }
 
+    @SuppressWarnings("unchecked")
     public static <V> V[] grow(V[] array) {
         Object newArray = Array.newInstance(array.getClass().getComponentType(), array.length * 2);
         System.arraycopy(array, 0, newArray, 0, array.length);

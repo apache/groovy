@@ -165,6 +165,7 @@ public class JsonSlurperClassic {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object parse(URL url, Map params) {
         return parseURL(url, params);
     }
@@ -177,10 +178,12 @@ public class JsonSlurperClassic {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object parse(Map params, URL url) {
         return parseURL(url, params);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private Object parseURL(URL url, Map params) {
         Reader reader = null;
         try {
@@ -220,6 +223,7 @@ public class JsonSlurperClassic {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object parse(URL url, Map params, String charset) {
         return parseURL(url, params, charset);
     }
@@ -233,10 +237,12 @@ public class JsonSlurperClassic {
      * @return a data structure of lists and maps
      * @since 2.2.0
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object parse(Map params, URL url, String charset) {
         return parseURL(url, params, charset);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private Object parseURL(URL url, Map params, String charset) {
         Reader reader = null;
         try {
@@ -261,8 +267,8 @@ public class JsonSlurperClassic {
      * @param lexer the lexer
      * @return a list of JSON values
      */
-    private List parseArray(JsonLexer lexer) {
-        List content = new ArrayList();
+    private List<Object> parseArray(JsonLexer lexer) {
+        List<Object> content = new ArrayList<>();
 
         JsonToken currentToken;
 
@@ -329,8 +335,8 @@ public class JsonSlurperClassic {
      * @param lexer the lexer
      * @return a Map representing a JSON object
      */
-    private Map parseObject(JsonLexer lexer) {
-        Map content = new HashMap();
+    private Map<String, Object> parseObject(JsonLexer lexer) {
+        Map<String, Object> content = new HashMap<>();
 
         JsonToken previousToken = null;
         JsonToken currentToken = null;

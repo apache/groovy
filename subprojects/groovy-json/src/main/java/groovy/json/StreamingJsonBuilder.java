@@ -244,6 +244,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
     /**
      * Delegates to {@link #call(Iterable, Closure)}
      */
+    @SuppressWarnings("unchecked")
     public Object call(Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
         return call((Iterable) coll, c);
     }
@@ -335,6 +336,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
     /**
      * Delegates to {@link #call(String, Iterable, Closure)}
      */
+    @SuppressWarnings("unchecked")
     public void call(String name, Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
         call(name, (Iterable) coll, c);
     }
@@ -361,6 +363,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param callable Additional attributes of the JSON object represented by the closure
      * @throws IOException
      */
+    @SuppressWarnings("unchecked")
     public void call(String name, Map map, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure callable) throws IOException {
         writer.write(JsonOutput.OPEN_BRACE);
         writer.write(generator.toJson(name));
@@ -452,6 +455,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
      * @param name the single key
      * @param args the value associated with the key
      */
+    @SuppressWarnings("unchecked")
     @Override
     public Object invokeMethod(String name, Object args) {
         boolean notExpectedArgs = false;
@@ -539,6 +543,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             return writer;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Object invokeMethod(String name, Object args) {
             if (args != null && Object[].class.isAssignableFrom(args.getClass())) {
@@ -654,6 +659,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
         /**
          * Delegates to {@link #call(String, Iterable, Closure)}
          */
+        @SuppressWarnings("unchecked")
         public void call(String name, Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure c) throws IOException {
             call(name, (Iterable)coll, c);
         }
@@ -791,6 +797,7 @@ public class StreamingJsonBuilder extends GroovyObjectSupport {
             return args.length == 2 && args[0] instanceof Iterable && args[1] instanceof Closure;
         }
 
+        @SuppressWarnings("unchecked")
         public static Object writeCollectionWithClosure(Writer writer, Collection coll, @DelegatesTo(value = StreamingJsonDelegate.class, strategy = Closure.DELEGATE_FIRST) Closure closure) throws IOException {
             return writeCollectionWithClosure(writer, (Iterable) coll, closure, JsonOutput.DEFAULT_GENERATOR);
         }

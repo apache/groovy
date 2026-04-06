@@ -157,6 +157,7 @@ public class TableSorter extends TableMap {
         return Double.compare(d1, d2);
     }
 
+    @SuppressWarnings("unchecked")
     public int compare(int row1, int row2) {
         for (int level = 0; level < sortingColumns.size(); level++) {
             Integer column = (Integer) sortingColumns.elementAt(level);

@@ -69,6 +69,7 @@ class TableModelFactory extends AbstractFactory {
 
 class PropertyColumnFactory extends AbstractFactory {
 
+    @SuppressWarnings("unchecked")
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name)
         Object current = builder.getCurrent()
@@ -99,6 +100,7 @@ class PropertyColumnFactory extends AbstractFactory {
 
 class ClosureColumnFactory extends AbstractFactory {
 
+    @SuppressWarnings("unchecked")
     Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         FactoryBuilderSupport.checkValueIsNull(value, name)
         Object current = builder.getCurrent()

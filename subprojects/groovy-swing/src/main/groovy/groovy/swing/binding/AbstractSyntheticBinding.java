@@ -26,8 +26,9 @@ import org.apache.groovy.swing.binding.TargetBinding;
 public abstract class AbstractSyntheticBinding extends AbstractFullBinding {
     boolean bound;
     String propertyName;
-    Class klass;
+    Class<?> klass;
 
+    @SuppressWarnings("rawtypes")
     public AbstractSyntheticBinding(PropertyBinding source, TargetBinding target, Class klass, String propertyName) {
         this.propertyName = propertyName;
         this.klass = klass;

@@ -294,10 +294,10 @@ public class JsonParserCharArray extends BaseJsonParser {
         /* the list might be empty  */
             if (__currentChar == ']') {
                 __index++;
-                return new ArrayList();
+                return new ArrayList<>();
             }
 
-            list = new ArrayList();
+            list = new ArrayList<>();
 
             while (this.hasMore()) {
                 Object arrayItem = decodeValueInternal();

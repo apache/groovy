@@ -114,6 +114,7 @@ public class GinqASTTransformation extends AbstractASTTransformation {
                     .collect(Collectors.toList()));
     }
 
+    @SuppressWarnings("unchecked")
     private static Object getDefaultOptionValue(String optionName) {
         try {
             return GQ_CLASS_NODE.getTypeClass().getMethod(optionName).getDefaultValue();

@@ -281,6 +281,7 @@ public class SwingExtensions {
      * @return the item count of the comboBox
      * @since 1.6.4
      */
+    @SuppressWarnings("rawtypes")
     public static int size(JComboBox self) {
         return self.getItemCount();
     }
@@ -293,6 +294,7 @@ public class SwingExtensions {
      * @return the tem at the given index
      * @since 1.6.4
      */
+    @SuppressWarnings("rawtypes")
     public static Object getAt(JComboBox self, int index) {
         return self.getItemAt(index);
     }

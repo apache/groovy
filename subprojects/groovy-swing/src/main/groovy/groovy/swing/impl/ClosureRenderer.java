@@ -28,6 +28,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class ClosureRenderer implements ListCellRenderer, TableCellRenderer, TreeCellRenderer {
 
     Closure update;
