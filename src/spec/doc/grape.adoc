@@ -325,6 +325,11 @@ the classloader of the groovy compiler. This annotation is detected and
 evaluated before any other resolution of classes in the script, so
 imported classes can be properly resolved by a `@Grab` annotation.
 
+Supported annotation targets include imports (recommended), classes,
+methods, constructors, fields, parameters, and local variables.
+
+Here is an example placing `@Grab` on a class:
+
 [source,groovy]
 -----------------------------------------------------------------------
 import com.jidesoft.swing.JideSplitButton
@@ -334,6 +339,15 @@ public class TestClassAnnotation {
         return JideSplitButton.class.name
     }
 }
+-----------------------------------------------------------------------
+
+Here is an example placing `@Grab` on a local variable:
+
+[source,groovy]
+-----------------------------------------------------------------------
+@Grab('commons-lang:commons-lang:2.4')
+var input = 'hello world'
+println org.apache.commons.lang.WordUtils.capitalize(input)
 -----------------------------------------------------------------------
 
 An appropriate `grab(...)` call will be added to the static initializer
