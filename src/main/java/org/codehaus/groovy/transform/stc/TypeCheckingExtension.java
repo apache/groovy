@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This interface defines a high-level API for handling type checking errors. As a dynamic language and a platform
@@ -55,8 +56,32 @@ public class TypeCheckingExtension {
 
     protected final StaticTypeCheckingVisitor typeCheckingVisitor;
 
+    private Map<String, Object> options = Collections.emptyMap();
+
     public TypeCheckingExtension(final StaticTypeCheckingVisitor typeCheckingVisitor) {
         this.typeCheckingVisitor = typeCheckingVisitor;
+    }
+
+    /**
+     * Returns the options passed to this extension via the parameterized extension syntax,
+     * e.g. {@code @TypeChecked(extensions='my.Extension(key: value)')}.
+     *
+     * @return the options map, never null
+     * @since 6.0.0
+     */
+    public Map<String, Object> getOptions() {
+        return options;
+    }
+
+    /**
+     * Sets the options for this extension. Called by the framework when loading
+     * a parameterized extension.
+     *
+     * @param options the options map
+     * @since 6.0.0
+     */
+    public void setOptions(final Map<String, Object> options) {
+        this.options = options != null ? options : Collections.emptyMap();
     }
 
     /**

@@ -375,16 +375,16 @@ Null pointer dereferences are one of the most common sources of runtime errors.
 The `NullChecker` performs compile-time null-safety analysis, detecting potential
 null dereferences and null-safety violations before code is executed.
 
-Two checkers are provided:
+Two modes are provided:
 
 * `NullChecker` — *Annotation-based*: Checks code annotated with `@Nullable` and
   `@NonNull` (or equivalent) annotations.
-* `StrictNullChecker` — *Annotation-based + flow-sensitive*: Includes all checks from
+* `NullChecker(strict: true)` — *Annotation-based + flow-sensitive*: Includes all checks from
   `NullChecker` plus flow-sensitive tracking through assignments and control flow,
   detecting potential null dereferences even in unannotated code.
 
 For code bases with a mix of strictness requirements, apply `NullChecker` to relaxed
-code and `StrictNullChecker` to strict code via per-class or per-method `@TypeChecked` annotations.
+code and `NullChecker(strict: true)` to strict code via per-class or per-method `@TypeChecked` annotations.
 
 === Typical usage
 
@@ -471,7 +471,7 @@ include::../test/NullCheckerTest.groovy[tags=null_guard,indent=0]
 include::../test/NullCheckerTest.groovy[tags=early_return,indent=0]
 ----
 
-*Ternary and elvis expressions*: in flow-sensitive mode (`StrictNullChecker`), the checker
+*Ternary and elvis expressions*: in flow-sensitive mode (`NullChecker(strict: true)`), the checker
 examines both branches of ternary (`condition ? a : b`) and elvis (`x ?: fallback`) expressions.
 If either branch can be null, the result is treated as nullable. The elvis assignment
 `x ?= nonNullValue` clears any nullable state on `x`.
@@ -626,13 +626,13 @@ We would see the following error at compile-time:
 include::../test/NullCheckerTest.groovy[tags=nonnull_by_default_message,indent=0]
 ----
 
-=== Flow-sensitive mode with StrictNullChecker
+=== Flow-sensitive mode with strict option
 
-`NullChecker` only flags issues involving annotated code. `StrictNullChecker` adds
+`NullChecker` only flags issues involving annotated code. `NullChecker(strict: true)` adds
 flow-sensitive tracking, detecting potential null dereferences in unannotated code
 by tracking nullability through variable assignments and control flow:
 
-With `StrictNullChecker`, the following code would be flagged:
+With `NullChecker(strict: true)`, the following code would be flagged:
 
 [source,groovy]
 ----
@@ -661,7 +661,7 @@ The complete list of errors detected include:
 * dereferencing a `@Nullable` variable without a null check or safe navigation
 * dereferencing the return value of a `@Nullable` method without a null check
 * re-assigning `null` to a `@MonotonicNonNull` or `@Lazy` field after initialization
-* dereferencing a variable known to be null through flow analysis (`StrictNullChecker` only)
+* dereferencing a variable known to be null through flow analysis (`strict` mode only)
 
 NOTE: For complementary null-related checks such as detecting broken null-check logic,
 unnecessary null guards before `instanceof`, or `Boolean` methods returning `null`,

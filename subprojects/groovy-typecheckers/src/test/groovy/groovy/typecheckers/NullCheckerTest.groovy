@@ -53,7 +53,7 @@ final class NullCheckerTest {
         })
         strictShell = new GroovyShell(new CompilerConfiguration().tap {
             def customizer = new ASTTransformationCustomizer(groovy.transform.TypeChecked)
-            customizer.annotationParameters = [extensions: 'groovy.typecheckers.StrictNullChecker']
+            customizer.annotationParameters = [extensions: 'groovy.typecheckers.NullChecker(strict: true)']
             addCompilationCustomizers(customizer)
         })
     }
@@ -804,7 +804,7 @@ final class NullCheckerTest {
         assert err.message.contains("Cannot assign null to @MonotonicNonNull variable 'name' after non-null assignment")
     }
 
-    // === StrictNullChecker: flow-sensitive checks ===
+    // === NullChecker(strict: true): flow-sensitive checks ===
 
     @Test
     void testStrictFlowNullReassignInsideGuard() {

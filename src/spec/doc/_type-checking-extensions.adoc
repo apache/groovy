@@ -112,6 +112,48 @@ checker supports multiple mechanisms to implement type checking
 extensions (including plain old java code), the recommended way is to
 use those type checking extension scripts.
 
+==== Parameterized extensions
+
+Extensions can accept named parameters using Groovy's named-argument style within the extension string:
+
+[source,groovy]
+------------------------------------------------------
+@TypeChecked(extensions = 'groovy.typecheckers.NullChecker(strict: true)')
+void foo() { ... }
+------------------------------------------------------
+
+Parameters are passed as `key: value` pairs inside parentheses appended to the extension name.
+Supported value types include booleans (`true`/`false`), integers, strings (single or double quoted), and `null`.
+Multiple parameters are separated by commas.
+Note that string values cannot contain commas or colons since these are used as delimiters:
+
+[source,groovy]
+------------------------------------------------------
+@TypeChecked(extensions = 'com.example.MyChecker(strict: true, threshold: 5, mode: "lenient")')
+void foo() { ... }
+------------------------------------------------------
+
+Within an extension, the parameters are available via the `options` property, which returns an unmodifiable `Map<String, Object>`:
+
+[source,groovy]
+------------------------------------------------------
+// in a TypeCheckingDSL extension:
+Object run() {
+    boolean strict = options?.strict ?: false
+    // ...
+}
+------------------------------------------------------
+
+For precompiled Java extensions (subclasses of `TypeCheckingExtension` or `AbstractTypeCheckingExtension`),
+options are accessible via the `getOptions()` method.
+
+The parameterized syntax also works when configuring extensions programmatically:
+
+[source,groovy]
+------------------------------------------------------
+new ASTTransformationCustomizer(TypeChecked, extensions: ['my.Extension(debug: true)'])
+------------------------------------------------------
+
 === A DSL for type checking
 The idea behind type checking extensions is to use a DSL to extend the
 type checker capabilities. This DSL allows you to hook into the

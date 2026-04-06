@@ -384,7 +384,7 @@ class NullCheckerTest {
         def err = shouldFail('''
         import groovy.transform.TypeChecked
 
-        @TypeChecked(extensions='groovy.typecheckers.StrictNullChecker')
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker(strict: true)')
         static main(args) {
             // tag::flow_sensitive[]
             def x = null
@@ -406,7 +406,7 @@ class NullCheckerTest {
         import groovy.transform.TypeChecked
 
         // tag::flow_reassign[]
-        @TypeChecked(extensions='groovy.typecheckers.StrictNullChecker')
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker(strict: true)')
         static main(args) {
             def x = null
             x = 'hello'
