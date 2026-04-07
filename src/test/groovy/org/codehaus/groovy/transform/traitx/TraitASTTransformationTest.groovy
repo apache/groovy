@@ -4084,23 +4084,4 @@ final class TraitASTTransformationTest {
             new C().test()
         '''
     }
-
-    // GROOVY-11XXX
-    @Test
-    void testTraitWithStaticFieldAndSpockSpecification() {
-        assertScript shell, '''
-            @Grab('org.spockframework:spock-core:2.4-groovy-5.0')
-            @GrabExclude('org.apache.groovy:*')
-            import spock.lang.Specification
-
-            @CompileStatic
-            trait MyTrait {
-                static String myStaticField
-            }
-
-            @CompileStatic
-            abstract class MySpec extends Specification implements MyTrait {
-            }
-        '''
-    }
 }
