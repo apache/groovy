@@ -16,52 +16,47 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.callsite;
+package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
- * Helper class for internal use only. This allows to call a {@link Closure} and
- * convert the result to a boolean. It will do this by caching the possible "doCall"
- * as well as the "asBoolean" in CallSiteArray fashion. "asBoolean" will not be
- * called if the result is null or a Boolean. In case of null we return false and
- * in case of a Boolean we simply unbox. This logic is designed after the one present
- * in {@link org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#castToBoolean(Object)}. The purpose of
- * this class is to avoid the slow "asBoolean" call in that method.
- * {@link BooleanReturningMethodInvoker} is used for caching.
+ * Helper class for internal use only. This allows calling a {@link Closure} and
+ * converting the result to a boolean using Groovy truth semantics:
+ * null returns false, Boolean is unboxed, and for other types
+ * {@code asBoolean()} is called.
  *
- * @deprecated Use {@link org.codehaus.groovy.runtime.BooleanClosureWrapper} instead.
+ * @since 6.0.0
  */
-@Deprecated(since = "6.0.0", forRemoval = true)
-@SuppressWarnings("removal")
 public class BooleanClosureWrapper {
-    private final BooleanReturningMethodInvoker bmi;
     private final Closure wrapped;
     private final int numberOfArguments;
 
     public BooleanClosureWrapper(Closure wrapped) {
         this.wrapped = wrapped;
-        this.bmi = new BooleanReturningMethodInvoker("call");
-        numberOfArguments = wrapped.getMaximumNumberOfParameters();
+        this.numberOfArguments = wrapped.getMaximumNumberOfParameters();
     }
 
     /**
-     * normal closure call
+     * Normal closure call with boolean conversion.
      */
     public boolean call(Object... args) {
-        return bmi.invoke(wrapped, args);
+        Object result = wrapped.call(args);
+        if (result == null) return false;
+        if (result instanceof Boolean) return (Boolean) result;
+        return DefaultTypeTransformation.castToBoolean(result);
     }
 
     /**
      * Bridge for a call based on a map entry. If the call is done on a {@link Closure}
-     * taking one argument, then we give in the {@link Entry}, otherwise we will
+     * taking one argument, then we give in the {@link Map.Entry}, otherwise we will
      * give in the key and value.
      */
-    public <K,V> boolean callForMap(Map.Entry<K, V> entry) {
-        if (numberOfArguments==2) {
+    public <K, V> boolean callForMap(Map.Entry<K, V> entry) {
+        if (numberOfArguments == 2) {
             return call(entry.getKey(), entry.getValue());
         } else {
             return call(entry);

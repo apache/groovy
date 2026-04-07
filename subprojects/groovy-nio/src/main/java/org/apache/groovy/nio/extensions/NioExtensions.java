@@ -35,7 +35,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.FormatHelper;
 import org.codehaus.groovy.runtime.IOGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
@@ -1326,12 +1325,11 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
         checkDir(self);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
             Iterator<Path> itr = stream.iterator();
-            BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
             while (itr.hasNext()) {
                 Path currentPath = itr.next();
                 if ((fileType != FileType.FILES && Files.isDirectory(currentPath)) ||
                         (fileType != FileType.DIRECTORIES && Files.isRegularFile(currentPath))) {
-                    if (bmi.invoke(nameFilter, currentPath.getFileName().toString()))
+                    if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(nameFilter, "isCase", currentPath.getFileName().toString())))
                         closure.call(currentPath);
                 }
             }

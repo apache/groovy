@@ -38,10 +38,10 @@ import groovy.util.function.FloatUnaryOperator;
 import groovy.util.function.IntComparator;
 import groovy.util.function.LongComparator;
 import org.apache.groovy.lang.annotation.Incubating;
-import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
-import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
+import org.codehaus.groovy.runtime.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.util.ArrayIterable;
 import org.codehaus.groovy.util.ArrayIterator;
 import org.codehaus.groovy.util.BooleanArrayIterator;
@@ -4319,9 +4319,8 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> List<T> grep(T[] self, Object filter) {
         List<T> answer = new ArrayList<>();
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (T element : self) {
-            if (bmi.invoke(filter, element)) {
+            if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(filter, "isCase", element))) {
                 answer.add(element);
             }
         }

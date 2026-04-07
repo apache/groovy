@@ -63,10 +63,9 @@ import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 import org.codehaus.groovy.reflection.stdclasses.CachedSAMClass;
-import org.codehaus.groovy.runtime.callsite.BooleanClosureForMapPredicate;
-import org.codehaus.groovy.runtime.callsite.BooleanClosurePredicate;
-import org.codehaus.groovy.runtime.callsite.BooleanClosureWrapper;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
+import org.codehaus.groovy.runtime.BooleanClosureForMapPredicate;
+import org.codehaus.groovy.runtime.BooleanClosurePredicate;
+import org.codehaus.groovy.runtime.BooleanClosureWrapper;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -574,9 +573,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static boolean any(Object self) {
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
         for (var iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
-            if (bmi.convertToBoolean(iter.next())) {
+            if (DefaultTypeTransformation.castToBoolean(iter.next())) {
                 return true;
             }
         }
@@ -5301,9 +5299,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static boolean every(Object self) {
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); ) {
-            if (!bmi.convertToBoolean(iter.next())) {
+            if (!DefaultTypeTransformation.castToBoolean(iter.next())) {
                 return false;
             }
         }
@@ -7578,10 +7575,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     @SuppressWarnings("unchecked")
     public static Collection grep(Object self, Object filter) {
         Collection answer = createSimilarOrDefaultCollection(self);
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object object = iter.next();
-            if (bmi.invoke(filter, object)) {
+            if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(filter, "isCase", object))) {
                 answer.add(object);
             }
         }
@@ -7609,9 +7605,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> grep(Collection<T> self, Object filter) {
         Collection<T> answer = createSimilarCollection(self);
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (T element : self) {
-            if (bmi.invoke(filter, element)) {
+            if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(filter, "isCase", element))) {
                 answer.add(element);
             }
         }
