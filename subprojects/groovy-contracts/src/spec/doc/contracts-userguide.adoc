@@ -22,8 +22,8 @@
 = Groovy Contracts – design by contract support for Groovy
 
 This module provides contract annotations that support the specification of class-invariants,
-pre- and post-conditions on Groovy classes and interfaces, and loop invariants on
-`for`, `while`, and `do-while` loops.
+pre- and post-conditions on Groovy classes and interfaces, loop invariants on
+`for`, `while`, and `do-while` loops, and frame conditions declaring which fields a method may modify.
 Special support is provided so that post-conditions may refer to the old value of variables
 or to the result value associated with calling a method.
 
@@ -44,6 +44,7 @@ Groovy contracts supports the following feature set:
 
 * definition of class invariants, pre- and post-conditions via @Invariant, @Requires and @Ensures
 * definition of loop invariants on `for`, `while`, and `do-while` loops via @Invariant
+* declaration of frame conditions (which fields a method may modify) via @Modifies
 * inheritance of class invariants, pre- and post-conditions of concrete predecessor classes
 * inheritance of class invariants, pre- and post-conditions in implemented interfaces
 * usage of old and result variable in post-condition assertions
@@ -139,4 +140,94 @@ include::../test/ContractsTest.groovy[tags=loop_invariant_multiple_example,inden
   including the loop variable.
 * Assignment operators and state-changing postfix/prefix operators are
   not supported inside the closure.
+
+== Frame Conditions with @Modifies
+
+The `@Modifies` annotation declares which fields or parameters a method is allowed to modify.
+All other state is implicitly declared unchanged. This is known as a _frame condition_ in
+design-by-contract terminology, inspired by similar constructs in Dafny and JML.
+
+`@Modifies` does not generate runtime assertion code — it serves as a specification
+for humans and tools (including AI) to reason about what a method changes.
+
+=== Basic usage
+
+Use `this.fieldName` to declare that a field may be modified:
+
+[source,groovy]
+----
+@Modifies({ this.items })
+void addItem(String item) {
+    items.add(item)
+}
+----
+
+For multiple fields, use a list expression:
+
+[source,groovy]
+----
+@Modifies({ [this.items, this.count] })
+void addAndCount(String item) {
+    items.add(item)
+    count++
+}
+----
+
+Or use multiple `@Modifies` annotations (via `@Repeatable`):
+
+[source,groovy]
+----
+@Modifies({ this.items })
+@Modifies({ this.count })
+void addAndCount(String item) { ... }
+----
+
+=== Parameter references
+
+Method parameters can also be declared as modifiable:
+
+[source,groovy]
+----
+@Modifies({ arr })
+void fillArray(int[] arr) {
+    for (int i = 0; i < arr.length; i++) {
+        arr[i] = i
+    }
+}
+----
+
+=== Interaction with @Ensures
+
+When both `@Modifies` and `@Ensures` are present on a method, a compile-time check
+ensures that the `old` variable in the postcondition only references fields declared
+in `@Modifies`. Referencing a field via `old` that is not in the modification set
+produces a compile error:
+
+[source,groovy]
+----
+@Modifies({ this.items })
+@Ensures({ old -> old.items.size() < items.size() })  // OK: items is declared
+void addItem(String item) { ... }
+
+@Modifies({ this.items })
+@Ensures({ old -> old.count == count })  // ERROR: count not declared in @Modifies
+void addItem(String item) { ... }
+----
+
+=== Compile-time validation
+
+The `@Modifies` annotation validates at compile time that:
+
+* Field references (`this.fieldName`) refer to fields that exist on the class.
+* Parameter references refer to actual parameters of the method.
+* If `@Ensures` is also present, `old.fieldName` references only access fields
+  declared in `@Modifies`.
+
+=== Rules for @Modifies closures
+
+* The closure must contain a single field reference (`this.field`), parameter
+  reference (`param`), or a list of such references.
+* Field references use the `this.fieldName` syntax.
+* Parameter references use the bare parameter name.
+* The closure is not executed at runtime — it is only analyzed at compile time.
 

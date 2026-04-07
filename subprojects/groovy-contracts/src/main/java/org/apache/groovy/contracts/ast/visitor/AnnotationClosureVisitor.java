@@ -459,6 +459,9 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
         }
     }
 
+    /** Node metadata key for the set of field names referenced via {@code old.xxx} in postconditions. */
+    public static final String OLD_REFERENCES_KEY = "groovy.contracts.oldReferences";
+
     private static class OldPropertyExpressionTransformer extends ClassCodeExpressionTransformer {
         private final MethodNode methodNode;
         private CastExpression currentCast;
@@ -472,6 +475,7 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
             return null;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public Expression transform(Expression expr) {
             if (expr instanceof CastExpression) {
@@ -488,6 +492,13 @@ public class AnnotationClosureVisitor extends BaseVisitor implements ASTNodeMeta
                 if (objExpr instanceof VariableExpression varExpr) {
                     if ("old".equals(varExpr.getName())) {
                         String propName = propExpr.getPropertyAsString();
+                        // Record the old reference for @Modifies validation
+                        java.util.Set<String> oldRefs = (java.util.Set<String>) methodNode.getNodeMetaData(OLD_REFERENCES_KEY);
+                        if (oldRefs == null) {
+                            oldRefs = new java.util.LinkedHashSet<>();
+                            methodNode.putNodeMetaData(OLD_REFERENCES_KEY, oldRefs);
+                        }
+                        oldRefs.add(propName);
                         ClassNode declaringClass = methodNode.getDeclaringClass();
                         if (declaringClass != null && declaringClass.getField(propName) != null) {
                             CastExpression adjusted = new CastExpression(declaringClass.getField(propName).getType(), expr);
