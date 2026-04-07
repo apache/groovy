@@ -300,7 +300,6 @@ class SwingBuilder extends FactoryBuilderSupport {
         } else if (JTable.isAssignableFrom(klass)) {
             registerFactory(nodeName, groupName, new TableFactory(klass))
         } else if (JComponent.isAssignableFrom(klass)
-            || JApplet.isAssignableFrom(klass)
             || JDialog.isAssignableFrom(klass)
             || JFrame.isAssignableFrom(klass)
             || JWindow.isAssignableFrom(klass)
