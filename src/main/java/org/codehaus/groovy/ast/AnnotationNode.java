@@ -59,8 +59,11 @@ public class AnnotationNode extends ASTNode {
     public static final int IMPORT_TARGET           = 1 << 12;
     public static final int TYPE_TARGET             = ANNOTATION_TARGET | 1; // GROOVY-7151
 
+    private static final int UNINITIALIZED = -1;
+
     private final ClassNode classNode;
     private Map<String, Expression> members;
+    private int allowedTargets = UNINITIALIZED;
 
     public AnnotationNode(final ClassNode type) {
         classNode = requireNonNull(type);
@@ -88,7 +91,8 @@ public class AnnotationNode extends ASTNode {
     }
 
     @Deprecated(since = "6.0.0")
-    public void setAllowedTargets(final int ignored) {
+    public void setAllowedTargets(final int bitmap) {
+        allowedTargets = bitmap;
     }
 
     @Deprecated(since = "6.0.0")
@@ -129,11 +133,20 @@ public class AnnotationNode extends ASTNode {
     }
 
     public boolean isTargetAllowed(final int target) {
+        int cached = allowedTargets;
+        if (cached == UNINITIALIZED) {
+            cached = computeAllowedTargets();
+            allowedTargets = cached;
+        }
+        return (target & cached) == target;
+    }
+
+    private int computeAllowedTargets() {
         if (!(classNode.isPrimaryClassNode() || classNode.isResolved()))
             throw new IllegalStateException("cannot check target at this time");
 
         // GROOVY-6526: check class for @Target
-        int allowedTargets = classNode.redirect().getNodeMetaData(Target.class, (k) -> {
+        int targets = classNode.redirect().getNodeMetaData(Target.class, (k) -> {
             for (AnnotationNode an : classNode.getAnnotations()) {
                 if ("java.lang.annotation.Target".equals(an.getClassNode().getName())
                         && an.getMember("value") instanceof ListExpression list) {
@@ -165,7 +178,7 @@ public class AnnotationNode extends ASTNode {
         });
 
         // check @ExtendedTarget for Groovy-specific element types
-        allowedTargets |= classNode.redirect().getNodeMetaData(ExtendedTarget.class, (k) -> {
+        targets |= classNode.redirect().getNodeMetaData(ExtendedTarget.class, (k) -> {
             for (AnnotationNode an : classNode.getAnnotations()) {
                 if ("groovy.lang.annotation.ExtendedTarget".equals(an.getClassNode().getName())) {
                     Expression member = an.getMember("value");
@@ -183,7 +196,7 @@ public class AnnotationNode extends ASTNode {
             return 0;
         });
 
-        return (target & allowedTargets) == target;
+        return targets;
     }
 
     private static int extendedElementTypeBits(final Expression e) {
