@@ -16,10 +16,27 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.callsite;
+package org.codehaus.groovy.runtime;
 
-public class DummyCallSite extends AbstractCallSite {
-    public DummyCallSite(CallSiteArray array, int index, String name) {
-        super(array, index,name);
+import groovy.lang.Closure;
+
+import java.util.function.Predicate;
+
+/**
+ * Adapts a {@link Closure} to a {@link Predicate}, converting the closure's
+ * return value to a boolean using Groovy truth semantics.
+ *
+ * @since 6.0.0
+ */
+public class BooleanClosurePredicate<T> implements Predicate<T> {
+    private final BooleanClosureWrapper bcw;
+
+    public BooleanClosurePredicate(Closure wrapped) {
+        this.bcw = new BooleanClosureWrapper(wrapped);
+    }
+
+    @Override
+    public boolean test(T arg) {
+        return bcw.call(arg);
     }
 }

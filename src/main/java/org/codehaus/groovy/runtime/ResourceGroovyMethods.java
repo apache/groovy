@@ -31,7 +31,6 @@ import groovy.transform.stc.FromString;
 import groovy.transform.stc.PickFirstResolver;
 import groovy.transform.stc.SimpleType;
 import groovy.util.CharsetToolkit;
-import org.codehaus.groovy.runtime.callsite.BooleanReturningMethodInvoker;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.BufferedInputStream;
@@ -1651,12 +1650,11 @@ public class ResourceGroovyMethods extends DefaultGroovyMethodsSupport {
         final File[] files = self.listFiles();
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (files == null) return;
-        BooleanReturningMethodInvoker bmi = new BooleanReturningMethodInvoker("isCase");
         for (final File currentFile : files) {
             if (fileType == FileType.ANY ||
                     (fileType != FileType.FILES && currentFile.isDirectory()) ||
                     (fileType != FileType.DIRECTORIES && currentFile.isFile())) {
-                if (bmi.invoke(nameFilter, currentFile.getName()))
+                if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(nameFilter, "isCase", currentFile.getName())))
                     closure.call(currentFile);
             }
         }

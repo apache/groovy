@@ -16,7 +16,7 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.runtime.callsite;
+package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
@@ -24,27 +24,27 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 /**
- * @deprecated Use {@link org.codehaus.groovy.runtime.BooleanClosureForMapPredicate} instead.
+ * Adapts a {@link Closure} to a {@link Predicate} over {@link Map.Entry} values.
+ * If the closure takes two parameters, the key and value are passed separately;
+ * otherwise the {@link Map.Entry} itself is passed.
+ *
+ * @since 6.0.0
  */
-@Deprecated(since = "6.0.0", forRemoval = true)
-@SuppressWarnings("removal")
 public class BooleanClosureForMapPredicate<K, V> implements Predicate<Map.Entry<K, V>> {
-    private final BooleanReturningMethodInvoker bmi;
-    private final Closure wrapped;
+    private final BooleanClosureWrapper bcw;
     private final int numberOfArguments;
 
     public BooleanClosureForMapPredicate(Closure wrapped) {
-        this.wrapped = wrapped;
-        bmi = new BooleanReturningMethodInvoker("call");
-        numberOfArguments = wrapped.getMaximumNumberOfParameters();
+        this.bcw = new BooleanClosureWrapper(wrapped);
+        this.numberOfArguments = wrapped.getMaximumNumberOfParameters();
     }
 
     @Override
     public boolean test(Map.Entry<K, V> entry) {
         if (numberOfArguments == 2) {
-            return bmi.invoke(wrapped, entry.getKey(), entry.getValue());
+            return bcw.call(entry.getKey(), entry.getValue());
         } else {
-            return bmi.invoke(wrapped, entry);
+            return bcw.call(entry);
         }
     }
 }
