@@ -433,20 +433,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         run(frameConsoleDelegates)
     }
 
-    @Deprecated
-    @SuppressWarnings("removal") // TODO a future Groovy version will remove this method
-    void run(javax.swing.JApplet applet) {
-        run([
-                rootContainerDelegate: {
-                    containingWindows += SwingUtilities.getRoot(applet.getParent())
-                    applet
-                },
-                menuBarDelegate      : { arg ->
-                    current.JMenuBar = build(arg)
-                }
-        ])
-    }
-
     void run(Map defaults) {
 
         swing = new SwingBuilder()

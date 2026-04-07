@@ -19,11 +19,7 @@
 package groovy.console.ui
 
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledForJreRange
-import org.junit.jupiter.api.condition.JRE
 
-// javax.swing.JApplet was removed in JDK 26; Console introspection via GroovyShell pulls it in
-@EnabledForJreRange(max = JRE.JAVA_25)
 class HistoryRecordGetTextToRunTests {
 
     @Test
