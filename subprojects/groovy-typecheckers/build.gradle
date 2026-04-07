@@ -24,6 +24,7 @@ dependencies {
     implementation rootProject
     api projects.groovyMacro
     testImplementation projects.groovyTest
+    testImplementation projects.groovyContracts
     testImplementation 'org.jspecify:jspecify:1.0.0'
 }
 

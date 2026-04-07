@@ -20,6 +20,7 @@ package org.apache.groovy.contracts.ast;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -74,6 +75,10 @@ public class ModifiesASTTransformation implements ASTTransformation {
         }
 
         extractFromAnnotation(annotation, methodNode, modifiesSet, source);
+
+        // Replace the closure with a class reference so the type checker
+        // doesn't try to type-check the specification closure
+        annotation.setMember("value", new org.codehaus.groovy.ast.expr.ClassExpression(ClassHelper.OBJECT_TYPE));
 
         if (!modifiesSet.isEmpty()) {
             methodNode.putNodeMetaData(MODIFIES_FIELDS_KEY, modifiesSet);

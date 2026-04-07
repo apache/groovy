@@ -231,3 +231,18 @@ The `@Modifies` annotation validates at compile time that:
 * Parameter references use the bare parameter name.
 * The closure is not executed at runtime — it is only analyzed at compile time.
 
+=== Verifying method bodies with ModifiesChecker
+
+While `@Modifies` alone is a compile-time-checked specification (validating field/parameter
+existence and `@Ensures` consistency), it does not verify the method body itself. For that,
+the `groovy-typecheckers` module provides the `ModifiesChecker` type checking extension:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.ModifiesChecker')
+----
+
+When enabled, the checker verifies that method bodies only modify fields declared in
+`@Modifies`, and that method calls on non-modifiable receivers use only non-mutating
+operations. See the _Type Checkers_ documentation for details.
+

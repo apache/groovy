@@ -666,3 +666,110 @@ The complete list of errors detected include:
 NOTE: For complementary null-related checks such as detecting broken null-check logic,
 unnecessary null guards before `instanceof`, or `Boolean` methods returning `null`,
 consider using https://codenarc.org/[CodeNarc]'s null-related rules alongside these type checkers.
+
+== Checking @Modifies Frame Conditions (Incubating)
+
+The `ModifiesChecker` verifies that method bodies comply with their `@Modifies` frame
+condition declarations from the `groovy-contracts` module. It checks that methods only
+modify the fields and parameters they declare, helping both humans and AI reason about
+what a method changes -- and crucially, what it does not.
+
+This checker is opt-in and only activates for methods annotated with `@Modifies`:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.ModifiesChecker')
+class InventoryItem {
+    int quantity = 0
+    int reserved = 0
+
+    @Modifies({ [this.quantity, this.reserved] })
+    void restock(int amount) {
+        quantity += amount       // OK: quantity is declared
+        reserved = 0             // OK: reserved is declared
+    }
+}
+----
+
+=== What the checker verifies
+
+==== Direct field assignments
+
+Assignments to fields (via `this.field = ...`, `field = ...`, `field++`, `field += ...`)
+must target fields listed in `@Modifies`. Local variable assignments are always allowed.
+
+[source,groovy]
+----
+@Modifies({ this.count })
+void increment() {
+    count++            // OK: count is declared
+    def temp = count   // OK: local variable
+}
+
+@Modifies({ this.count })
+void broken() {
+    other = 5          // ERROR: 'other' not declared in @Modifies
+}
+----
+
+==== Method calls on `this`
+
+When a method calls another method on `this`, the checker verifies compatibility:
+
+* If the callee has `@Modifies`, its frame must be a subset of the caller's frame.
+* If the callee is annotated `@Pure`, the call is always safe.
+* If the callee's name is in a known-safe list (e.g., `toString`, `hashCode`), the call is allowed.
+* Otherwise, a warning is produced.
+
+[source,groovy]
+----
+@Modifies({ [this.items, this.count] })
+void addItem(String item) {
+    doAdd(item)                  // OK if doAdd has compatible @Modifies
+    def n = currentCount()       // OK if currentCount() is @Pure
+}
+----
+
+==== Method calls on parameters and variables
+
+When a method calls a method on a variable or parameter:
+
+* If the receiver is in the `@Modifies` set, any call is allowed (the contract declares
+  the caller may modify it).
+* If the receiver is *not* in the `@Modifies` set, the checker determines whether the
+  call is non-mutating using a layered approach:
+  1. *Immutable receiver type*: calls on `String`, `Integer`, `BigDecimal`, `LocalDate`, etc.
+     are always safe.
+  2. *`@Pure` method*: if the called method is annotated `@Pure`, it is safe.
+  3. *Known-safe method name*: a curated whitelist of non-mutating method names including
+     `size`, `get`, `contains`, `isEmpty`, `toString`, `iterator`, `stream`, `toList`, etc.
+  4. *Unknown*: a warning is produced suggesting the method may modify the receiver.
+
+[source,groovy]
+----
+@Modifies({ this.count })
+void countItems(List items) {
+    count = items.size()         // OK: size() is known-safe
+    count = items.toString().length()  // OK: String is immutable
+}
+
+@Modifies({ list1 })
+void process(List list1, List list2) {
+    list1.add('x')               // OK: list1 is in @Modifies
+    list2.size()                  // OK: size() is known-safe
+    list2.clear()                 // WARNING: clear() may modify list2
+}
+----
+
+=== Interaction with other contract annotations
+
+The `ModifiesChecker` works alongside the other design-by-contract annotations to provide
+a complete specification for modular reasoning:
+
+* `@Requires` declares what must be true before a call
+* `@Ensures` declares what is guaranteed after a call
+* `@Modifies` declares what may change (and implicitly, what does not)
+* `@Pure` declares a method has no side effects
+
+Together, these annotations allow analysis of method call sequences without reading
+method bodies -- each method becomes a self-contained specification.
