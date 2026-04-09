@@ -773,3 +773,219 @@ a complete specification for modular reasoning:
 
 Together, these annotations allow analysis of method call sequences without reading
 method bodies -- each method becomes a self-contained specification.
+
+== Checking @Pure Purity (Incubating)
+
+The `PurityChecker` verifies that `@Pure` methods have no side effects. By default, strict
+purity is enforced. The `allows` option declares which effect categories are tolerated.
+
+=== Basic usage
+
+[source,groovy]
+----
+// Strict: no side effects at all
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker')
+class Calculator {
+    @Pure
+    int add(int a, int b) { a + b }              // OK: no effects
+
+    @Pure
+    int broken() { count++; return count }         // ERROR: field mutation
+}
+----
+
+=== Effect categories
+
+The `allows` option accepts a `|`-separated list of effect categories:
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker(allows: "LOGGING|METRICS")')
+----
+
+[cols="1,3,3",options="header"]
+|===
+| Category | What it allows | Examples
+
+| `LOGGING`
+| Calls to logging frameworks and `println`/`print`
+| `log.debug(...)`, `println(...)`, `System.out.println(...)`
+
+| `METRICS`
+| Calls to metrics instruments
+| Micrometer counters/timers, OpenTelemetry metrics
+
+| `IO`
+| File, network, database, and console I/O
+| `new File(...)`, `Files.readAllLines(...)`, JDBC calls
+
+| `NONDETERMINISM`
+| Time-dependent, random, and environment-dependent calls
+| `System.nanoTime()`, `Math.random()`, `new Date()`, `UUID.randomUUID()`
+|===
+
+=== Supported annotations
+
+The checker recognises purity annotations from multiple libraries by simple name:
+
+[cols="2,2,3",options="header"]
+|===
+| Annotation | Library | Semantics
+
+| `@Pure`
+| Groovy, Checker Framework, Xtext
+| Strict purity (side-effect-free + deterministic)
+
+| `@SideEffectFree`
+| Checker Framework
+| No mutations, but non-determinism is implicitly allowed
+
+| `@Contract(pure = true)`
+| JetBrains Annotations
+| Strict purity (works with CLASS retention)
+
+| `@Memoized`
+| Groovy
+| Effectively pure (checked for side effects)
+|===
+
+Annotations are matched by simple name, so `@Pure` from any package is recognised. The
+`@Contract` annotation is checked for its `pure` attribute being `true`.
+
+=== How calls are classified
+
+The checker uses a layered approach to determine if a call is pure:
+
+1. *Callee has `@Pure`, `@SideEffectFree`, or `@Contract(pure = true)`* -- the call is pure
+2. *Callee has `@Memoized`* -- the call is effectively pure
+3. *Receiver type is immutable* (String, Integer, BigDecimal, etc.) -- all calls are pure
+4. *Method is in the known-pure list* (`size`, `get`, `contains`, `isEmpty`, `toString`, etc.) -- pure
+5. *Call matches an effect category* -- error unless that category is in `allows`
+6. *None of the above* -- warning: purity cannot be verified
+
+=== Reasoning guarantees
+
+The `allows` declaration is machine-readable, enabling both humans and AI to derive
+precise guarantees about `@Pure` methods:
+
+[cols="3,1,1,1,1,1",options="header"]
+|===
+| Property | strict | +LOGGING | +METRICS | +IO | +NONDETERMINISM
+
+| No field mutations
+| Yes | Yes | Yes | Yes | Yes
+
+| Can carry forward state across call
+| Yes | Yes | Yes | Yes | Yes
+
+| Deterministic (same inputs -> same output)
+| Yes | Yes | Yes | Yes | *No*
+
+| Can cache/memoize result
+| Yes | Yes | Yes | Yes | *No*
+
+| Can reorder call freely
+| Yes | Yes | Yes | *No* | Yes
+
+| Can eliminate dead call
+| Yes | *No* | *No* | *No* | Yes
+
+| No observable output
+| Yes | *No* | *No* | *No* | Yes
+|===
+
+Each column represents a different `allows` configuration. For example, a `@Pure` method
+under `PurityChecker(allows: "LOGGING")` is guaranteed to have no field mutations, be
+deterministic, and be safely reorderable -- but may produce log output, so dead call
+elimination would lose that output.
+
+=== Examples
+
+*Strict purity (default):*
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker')
+class MathUtils {
+    @Pure
+    int square(int x) { x * x }                             // OK
+
+    @Pure
+    long timestamp() { System.nanoTime() }                   // ERROR: non-deterministic
+
+    @Pure
+    int logged(int x) { println("x=$x"); x * 2 }            // ERROR: logging
+}
+----
+
+*Allowing logging:*
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker(allows: "LOGGING")')
+class Service {
+    @Pure
+    int compute(int x) {
+        println("computing $x")          // OK: logging allowed
+        return x * x
+    }
+
+    @Pure
+    long getTime() { System.nanoTime() } // ERROR: non-deterministic (not allowed)
+}
+----
+
+*Allowing logging and non-determinism:*
+
+[source,groovy]
+----
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker(allows: "LOGGING|NONDETERMINISM")')
+class Diagnostics {
+    @Pure
+    String snapshot(Map state) {
+        println("snapshot at ${System.nanoTime()}")   // OK: both allowed
+        return state.toString()
+    }
+}
+----
+
+=== What the checker detects
+
+The checker flags:
+
+* Direct field assignments on `this` (`this.x = ...`, `x++` where `x` is a field)
+* Property assignments on parameters and local variables (`param.x = 1`)
+* Calls to methods not known to be pure
+* Calls matching effect categories (logging, metrics, I/O, non-determinism) unless allowed
+* Construction of non-deterministic or I/O types
+
+The checker does *not* currently detect:
+
+* Mutation through aliases (`def ref = this.list; ref.clear()`)
+* Deep heap mutation (`this.items.get(0).setName("x")`)
+* Mutation via chained property access (`a.b.c = 1`)
+* Side effects within closures passed to higher-order methods
+
+These limitations are acceptable for an opt-in checker -- the common cases are caught,
+and unverifiable calls produce warnings.
+
+=== Relationship to @Modifies and ModifiesChecker
+
+`@Pure` implies `@Modifies({})` -- a method with no field mutations. The `ModifiesChecker`
+recognises `@Pure` and verifies the no-mutation guarantee. The `PurityChecker` goes further,
+verifying additional purity properties (no impure calls, no I/O, etc.).
+
+Both checkers can be used independently or together:
+
+[source,groovy]
+----
+// Just frame conditions
+@TypeChecked(extensions = 'groovy.typecheckers.ModifiesChecker')
+
+// Just purity
+@TypeChecked(extensions = 'groovy.typecheckers.PurityChecker')
+
+// Both -- ModifiesChecker handles @Modifies, PurityChecker handles @Pure
+@TypeChecked(extensions = ['groovy.typecheckers.ModifiesChecker',
+                           'groovy.typecheckers.PurityChecker'])
+----
