@@ -248,7 +248,44 @@ final class ModifiesCheckerTest {
         '''
     }
 
-    // === No @Modifies — checker is silent ===
+    // === @Pure implies @Modifies({}) ===
+
+    @Test
+    void pure_method_with_no_field_writes_passes() {
+        assertScript shell, '''
+            import groovy.transform.Pure
+
+            class A {
+                int count = 0
+
+                @Pure
+                int currentCount() {
+                    return count
+                }
+            }
+            assert new A().currentCount() == 0
+        '''
+    }
+
+    @Test
+    void pure_method_with_field_write_fails() {
+        def err = shouldFail shell, '''
+            import groovy.transform.Pure
+
+            class A {
+                int count = 0
+
+                @Pure
+                int increment() {
+                    count++
+                    return count
+                }
+            }
+        '''
+        assert err.message.contains('@Modifies violation')
+    }
+
+    // === No @Modifies or @Pure — checker is silent ===
 
     @Test
     void no_modifies_annotation_no_checking() {

@@ -97,10 +97,17 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
         afterVisitMethod { MethodNode mn ->
             // Key matches ModifiesASTTransformation.MODIFIES_FIELDS_KEY — no hard dependency on groovy-contracts
             Set<String> modifiesSet = mn.getNodeMetaData('groovy.contracts.modifiesFields') as Set<String>
-            if (modifiesSet == null) return // no @Modifies on this method — nothing to check
+            if (modifiesSet == null && hasPureAnno(mn)) {
+                modifiesSet = Collections.emptySet() // @Pure implies @Modifies({})
+            }
+            if (modifiesSet == null) return // no @Modifies or @Pure on this method — nothing to check
 
             mn.code?.visit(makeVisitor(modifiesSet, mn))
         }
+    }
+
+    private static boolean hasPureAnno(MethodNode method) {
+        method.annotations?.any { it.classNode?.nameWithoutPackage in PURE_ANNOS } ?: false
     }
 
     private CheckingVisitor makeVisitor(Set<String> modifiesSet, MethodNode methodNode) {
@@ -234,9 +241,6 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
                 null
             }
 
-            private static boolean hasPureAnno(MethodNode method) {
-                method.annotations?.any { it.classNode?.nameWithoutPackage in PURE_ANNOS } ?: false
-            }
         }
     }
 }
