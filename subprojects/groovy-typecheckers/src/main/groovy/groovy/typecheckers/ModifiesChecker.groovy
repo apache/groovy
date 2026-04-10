@@ -91,23 +91,80 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
     )
 
     private static final Set<String> PURE_ANNOS = Set.of('Pure')
+    private static final Set<String> SIDE_EFFECT_FREE_ANNOS = Set.of('SideEffectFree')
+    private static final Set<String> CONTRACT_ANNOS = Set.of('Contract')
 
     @Override
     Object run() {
         afterVisitMethod { MethodNode mn ->
             // Key matches ModifiesASTTransformation.MODIFIES_FIELDS_KEY — no hard dependency on groovy-contracts
             Set<String> modifiesSet = mn.getNodeMetaData('groovy.contracts.modifiesFields') as Set<String>
-            if (modifiesSet == null && hasPureAnno(mn)) {
-                modifiesSet = Collections.emptySet() // @Pure implies @Modifies({})
+            if (modifiesSet == null && isPureEquivalent(mn)) {
+                modifiesSet = Collections.emptySet() // @Pure/@SideEffectFree/@Contract(pure=true) implies @Modifies({})
             }
-            if (modifiesSet == null) return // no @Modifies or @Pure on this method — nothing to check
+            if (modifiesSet == null) return // no @Modifies or purity annotation — nothing to check
 
             mn.code?.visit(makeVisitor(modifiesSet, mn))
         }
     }
 
+    /** Checks for @Pure, @SideEffectFree, or @Contract(pure=true). */
+    private static boolean isPureEquivalent(MethodNode method) {
+        hasPureAnno(method) || hasSideEffectFreeAnno(method) || hasContractPureAnno(method)
+    }
+
     private static boolean hasPureAnno(MethodNode method) {
         method.annotations?.any { it.classNode?.nameWithoutPackage in PURE_ANNOS } ?: false
+    }
+
+    private static boolean hasSideEffectFreeAnno(MethodNode method) {
+        method.annotations?.any { it.classNode?.nameWithoutPackage in SIDE_EFFECT_FREE_ANNOS } ?: false
+    }
+
+    /**
+     * Checks for {@code @Contract(pure = true)} (JetBrains annotations).
+     */
+    private static boolean hasContractPureAnno(MethodNode method) {
+        method.annotations?.any { anno ->
+            anno.classNode?.nameWithoutPackage in CONTRACT_ANNOS &&
+                    anno.getMember('pure')?.text == 'true'
+        } ?: false
+    }
+
+    /**
+     * Parses {@code @Contract(mutates = "this,param1")} into a set of mutation targets.
+     * Returns null if no mutates attribute is present.
+     * Maps "this" to field names (all fields) and "param1","param2" etc. to parameter names.
+     */
+    private static Set<String> parseContractMutates(MethodNode callee) {
+        for (anno in callee.annotations) {
+            if (anno.classNode?.nameWithoutPackage in CONTRACT_ANNOS) {
+                def mutatesExpr = anno.getMember('mutates')
+                if (mutatesExpr != null) {
+                    String mutatesStr = mutatesExpr.text
+                    if (mutatesStr == null || mutatesStr.isEmpty()) return Collections.emptySet()
+                    Set<String> result = new LinkedHashSet<>()
+                    def params = callee.parameters
+                    for (String token : mutatesStr.split(',')) {
+                        token = token.trim()
+                        if (token == 'this') {
+                            // "this" means the callee mutates its own receiver
+                            result.add('this')
+                        } else if (token.startsWith('param')) {
+                            // "param1" = first parameter (1-based)
+                            try {
+                                int idx = Integer.parseInt(token.substring(5)) - 1
+                                if (idx >= 0 && idx < params.length) {
+                                    result.add(params[idx].name)
+                                }
+                            } catch (NumberFormatException ignored) {}
+                        }
+                    }
+                    return result
+                }
+            }
+        }
+        null
     }
 
     private CheckingVisitor makeVisitor(Set<String> modifiesSet, MethodNode methodNode) {
@@ -145,6 +202,12 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
             void visitMethodCallExpression(MethodCallExpression call) {
                 super.visitMethodCallExpression(call)
                 checkMethodCall(call.objectExpression, call)
+            }
+
+            @Override
+            void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+                super.visitStaticMethodCallExpression(call)
+                checkStaticCall(call)
             }
 
             // ---- helpers ----
@@ -193,13 +256,26 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
                             addStaticTypeError("@Modifies violation: call to '${targetMethod.name}()' modifies '${field}' which is not in this method's @Modifies", call)
                         }
                     }
-                } else if (hasPureAnno(targetMethod)) {
-                    // @Pure methods are safe
-                } else if (SAFE_METHOD_NAMES.contains(call.methodAsString)) {
-                    // Known-safe method name
+                } else if (isPureEquivalent(targetMethod)) {
+                    // @Pure, @SideEffectFree, @Contract(pure=true) methods are safe
                 } else {
-                    // Unknown effects — warn
-                    addStaticTypeError("@Modifies warning: call to 'this.${call.methodAsString}()' has unknown effects (consider adding @Modifies or @Pure)", call)
+                    // Check @Contract(mutates=...) on callee
+                    Set<String> contractMutates = parseContractMutates(targetMethod)
+                    if (contractMutates != null) {
+                        if (contractMutates.isEmpty()) return // mutates nothing — pure
+                        // Check parameter mutations (arguments that map to mutated params)
+                        checkContractParamMutations(contractMutates, targetMethod, call)
+                        // "this" in mutates means the callee mutates its receiver
+                        if (contractMutates.contains('this')) {
+                            addStaticTypeError("@Modifies warning: call to 'this.${call.methodAsString}()' declares @Contract(mutates=\"this\") — may modify fields not in @Modifies", call)
+                        }
+                        return
+                    } else if (SAFE_METHOD_NAMES.contains(call.methodAsString)) {
+                        // Known-safe method name
+                    } else {
+                        // Unknown effects — warn
+                        addStaticTypeError("@Modifies warning: call to 'this.${call.methodAsString}()' has unknown effects (consider adding @Modifies or @Pure)", call)
+                    }
                 }
             }
 
@@ -216,8 +292,29 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
                 ClassNode receiverType = getType(receiver)
                 if (receiverType && ImmutablePropertyUtils.isBuiltinImmutable(receiverType.name)) return
 
-                // @Pure method
-                if (targetMethod instanceof MethodNode && hasPureAnno(targetMethod)) return
+                // @Pure, @SideEffectFree, @Contract(pure=true) method
+                if (targetMethod instanceof MethodNode && isPureEquivalent(targetMethod)) return
+
+                // @Contract(mutates=...) — check if this call mutates the receiver
+                if (targetMethod instanceof MethodNode) {
+                    Set<String> contractMutates = parseContractMutates(targetMethod)
+                    if (contractMutates != null) {
+                        if (contractMutates.isEmpty()) return // mutates nothing
+                        // Check if the callee mutates "this" (the receiver variable)
+                        // and map paramN to the actual argument expressions
+                        if (!contractMutates.contains('this')) {
+                            // Callee doesn't mutate its receiver — safe for our variable
+                            // But check if any mutated params map to our non-modifiable variables
+                            checkContractParamMutations(contractMutates, targetMethod, call)
+                            return
+                        }
+                        // Callee mutates "this" = our receiver variable
+                        if (receiverName) {
+                            addStaticTypeError("@Modifies warning: call to '${receiverName}.${call.methodAsString}()' may modify '${receiverName}' which is not in @Modifies", call)
+                        }
+                        return
+                    }
+                }
 
                 // Known-safe method name
                 if (SAFE_METHOD_NAMES.contains(call.methodAsString)) return
@@ -225,6 +322,51 @@ class ModifiesChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL
                 // Unknown — warn
                 if (receiverName) {
                     addStaticTypeError("@Modifies warning: call to '${receiverName}.${call.methodAsString}()' may modify '${receiverName}' which is not in @Modifies", call)
+                }
+            }
+
+            private void checkStaticCall(StaticMethodCallExpression call) {
+                def targetMethod = call.getNodeMetaData(StaticTypesMarker.DIRECT_METHOD_CALL_TARGET)
+                if (!(targetMethod instanceof MethodNode)) return
+
+                // Check @Contract(mutates=...) on static callee
+                Set<String> contractMutates = parseContractMutates(targetMethod)
+                if (contractMutates != null && !contractMutates.isEmpty()) {
+                    // Static methods can't mutate "this", but can mutate params
+                    def args = call.arguments
+                    if (args instanceof org.codehaus.groovy.ast.expr.TupleExpression) {
+                        def argList = args.expressions
+                        def params = targetMethod.parameters
+                        for (int i = 0; i < params.length && i < argList.size(); i++) {
+                            if (contractMutates.contains(params[i].name)) {
+                                String argName = resolveReceiverName(argList[i])
+                                if (argName && !modifiesSet.contains(argName)) {
+                                    addStaticTypeError("@Modifies warning: argument '${argName}' passed to '${call.methodAsString}()' parameter '${params[i].name}' which is declared as mutated", call)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            /**
+             * For @Contract(mutates="param1,param2"), check if the actual arguments
+             * at the call site are variables not in our modifies set.
+             */
+            private void checkContractParamMutations(Set<String> contractMutates, MethodNode callee, MethodCallExpression call) {
+                def args = call.arguments
+                if (!(args instanceof org.codehaus.groovy.ast.expr.TupleExpression)) return
+                def argList = args.expressions
+                def params = callee.parameters
+
+                for (int i = 0; i < params.length && i < argList.size(); i++) {
+                    if (contractMutates.contains(params[i].name)) {
+                        // This parameter is mutated — check what argument was passed
+                        String argName = resolveReceiverName(argList[i])
+                        if (argName && !modifiesSet.contains(argName)) {
+                            addStaticTypeError("@Modifies warning: argument '${argName}' passed to '${call.methodAsString}()' parameter '${params[i].name}' which is declared as mutated", call)
+                        }
+                    }
                 }
             }
 

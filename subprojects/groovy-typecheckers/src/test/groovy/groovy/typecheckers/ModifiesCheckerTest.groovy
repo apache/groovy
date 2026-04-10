@@ -304,4 +304,262 @@ final class ModifiesCheckerTest {
             assert a.count == 1
         '''
     }
+
+    // === @SideEffectFree implies @Modifies({}) ===
+
+    @Test
+    void side_effect_free_method_checked_for_field_writes() {
+        def err = shouldFail shell, '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.METHOD)
+            @interface SideEffectFree {}
+
+            class A {
+                int count = 0
+
+                @SideEffectFree
+                int broken() {
+                    count++
+                    return count
+                }
+            }
+        '''
+        assert err.message.contains('@Modifies violation')
+    }
+
+    @Test
+    void side_effect_free_method_without_writes_passes() {
+        assertScript shell, '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.METHOD)
+            @interface SideEffectFree {}
+
+            class A {
+                int value = 42
+
+                @SideEffectFree
+                int doubled() { return value * 2 }
+            }
+            assert new A().doubled() == 84
+        '''
+    }
+
+    // === @Contract(pure=true) implies @Modifies({}) ===
+
+    @Test
+    void contract_pure_implies_empty_modifies() {
+        def err = shouldFail shell, '''
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.CLASS)
+            @Target(ElementType.METHOD)
+            @interface Contract {
+                String value() default ""
+                boolean pure() default false
+                String mutates() default ""
+            }
+
+            class A {
+                int count = 0
+
+                @Contract(pure = true)
+                int broken() {
+                    count++
+                    return count
+                }
+            }
+        '''
+        assert err.message.contains('@Modifies violation')
+    }
+
+    // === @Contract(mutates=...) on callees ===
+
+    @Test
+    void contract_mutates_empty_is_safe() {
+        assertScript shell, '''
+            import groovy.contracts.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.CLASS)
+            @Target(ElementType.METHOD)
+            @interface Contract {
+                String value() default ""
+                boolean pure() default false
+                String mutates() default ""
+            }
+
+            class A {
+                int count = 0
+
+                @Modifies({ this.count })
+                void increment() {
+                    count = helper(count)
+                }
+
+                @Contract(mutates = "")
+                int helper(int x) { return x + 1 }
+            }
+            def a = new A()
+            a.increment()
+            assert a.count == 1
+        '''
+    }
+
+    @Test
+    void contract_mutates_this_warns_on_callee() {
+        def err = shouldFail shell, '''
+            import groovy.contracts.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.CLASS)
+            @Target(ElementType.METHOD)
+            @interface Contract {
+                String value() default ""
+                boolean pure() default false
+                String mutates() default ""
+            }
+
+            class A {
+                int count = 0
+                int cache = 0
+
+                @Modifies({ this.count })
+                void increment() {
+                    count++
+                    updateCache()
+                }
+
+                @Contract(mutates = "this")
+                void updateCache() { cache = count * 2 }
+            }
+        '''
+        assert err.message.contains('@Modifies warning')
+        assert err.message.contains('mutates')
+    }
+
+    @Test
+    void contract_mutates_param_warns_when_arg_not_in_modifies() {
+        def err = shouldFail shell, '''
+            import groovy.contracts.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.CLASS)
+            @Target(ElementType.METHOD)
+            @interface Contract {
+                String value() default ""
+                boolean pure() default false
+                String mutates() default ""
+            }
+
+            class A {
+                List items = []
+                List other = []
+
+                @Modifies({ this.items })
+                void process() {
+                    addToList(other, 'x')
+                }
+
+                @Contract(mutates = "param1")
+                static void addToList(List list, String item) { list.add(item) }
+            }
+        '''
+        assert err.message.contains('@Modifies warning')
+        assert err.message.contains("'other'")
+    }
+
+    @Test
+    void contract_mutates_param_passes_when_arg_in_modifies() {
+        assertScript shell, '''
+            import groovy.contracts.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.CLASS)
+            @Target(ElementType.METHOD)
+            @interface Contract {
+                String value() default ""
+                boolean pure() default false
+                String mutates() default ""
+            }
+
+            class A {
+                List items = []
+
+                @Modifies({ this.items })
+                void process() {
+                    addToList(items, 'x')
+                }
+
+                @Contract(mutates = "param1")
+                static void addToList(List list, String item) { list.add(item) }
+            }
+            def a = new A()
+            a.process()
+            assert a.items == ['x']
+        '''
+    }
+
+    // === Callee recognition of @SideEffectFree and @Contract(pure=true) ===
+
+    @Test
+    void callee_with_side_effect_free_is_safe() {
+        assertScript shell, '''
+            import groovy.contracts.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.RUNTIME)
+            @Target(ElementType.METHOD)
+            @interface SideEffectFree {}
+
+            class A {
+                int count = 0
+
+                @Modifies({ this.count })
+                void increment() {
+                    count = helper(count)
+                }
+
+                @SideEffectFree
+                int helper(int x) { return x + 1 }
+            }
+            def a = new A()
+            a.increment()
+            assert a.count == 1
+        '''
+    }
+
+    @Test
+    void callee_with_contract_pure_is_safe() {
+        assertScript shell, '''
+            import groovy.contracts.*
+            import java.lang.annotation.*
+
+            @Retention(RetentionPolicy.CLASS)
+            @Target(ElementType.METHOD)
+            @interface Contract {
+                String value() default ""
+                boolean pure() default false
+                String mutates() default ""
+            }
+
+            class A {
+                int count = 0
+
+                @Modifies({ this.count })
+                void increment() {
+                    count = helper(count)
+                }
+
+                @Contract(pure = true)
+                int helper(int x) { return x + 1 }
+            }
+            def a = new A()
+            a.increment()
+            assert a.count == 1
+        '''
+    }
 }

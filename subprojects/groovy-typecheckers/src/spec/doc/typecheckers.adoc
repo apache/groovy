@@ -761,6 +761,57 @@ void process(List list1, List list2) {
 }
 ----
 
+=== Supported annotations from other libraries
+
+The `ModifiesChecker` recognises purity and frame condition annotations from multiple
+libraries by simple name:
+
+[cols="2,2,3",options="header"]
+|===
+| Annotation | Library | Semantics
+
+| `@Pure`
+| Groovy, Checker Framework, Xtext
+| Implies `@Modifies({})` -- no field mutations
+
+| `@SideEffectFree`
+| Checker Framework
+| Implies `@Modifies({})` -- no field mutations
+
+| `@Contract(pure = true)`
+| JetBrains Annotations
+| Implies `@Modifies({})` -- works with CLASS retention
+
+| `@Contract(mutates = "...")`
+| JetBrains Annotations
+| Parsed as a frame condition on callees (see below)
+|===
+
+==== @Contract(mutates) support
+
+When a callee has `@Contract(mutates = "...")`, the checker parses the mutates string
+to determine what the callee modifies:
+
+* `mutates = ""` -- callee mutates nothing (equivalent to `@Pure`)
+* `mutates = "this"` -- callee mutates its receiver
+* `mutates = "param1"` -- callee mutates its first parameter
+* `mutates = "this,param1"` -- callee mutates both
+
+The checker maps `param1`, `param2`, etc. to the actual arguments at the call site
+and warns if a mutated argument is not in the caller's `@Modifies` set:
+
+[source,groovy]
+----
+@Modifies({ this.items })
+void process() {
+    addToList(items, 'x')   // OK: items is in @Modifies
+    addToList(other, 'x')   // WARNING: other is not in @Modifies
+}
+
+@Contract(mutates = "param1")
+static void addToList(List list, String item) { list.add(item) }
+----
+
 === Interaction with other contract annotations
 
 The `ModifiesChecker` works alongside the other design-by-contract annotations to provide
