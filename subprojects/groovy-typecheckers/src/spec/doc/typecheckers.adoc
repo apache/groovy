@@ -21,6 +21,7 @@
 ifndef::reldir_typecheckers[]
 :reldir_typecheckers: .
 endif::[]
+:icons: font
 
 = Built-in auxiliary type checkers
 
@@ -30,15 +31,146 @@ Groovy's static nature includes an extensible type-checking mechanism.
 This mechanism allows users to selectively strengthen or weaken type checking
 as needed to cater for scenarios where the standard type checking isn't sufficient.
 
-In addition to allowing you to write your own customer checkers,
-Groovy offers a handful of useful built-in type checkers.
-These provide additional checks for specific scenarios.
+In addition to allowing you to write your own custom checkers,
+Groovy offers a suite of built-in type checkers that provide additional
+compile-time verification for specific concerns:
 
-In the examples which follow, we'll explicitly show declaring
-the type checker we want to use.
-As usual, Groovy's compiler customization mechanisms would allow you to
-simplify application of such checkers, e.g. make it apply globally
-using a compiler configuration script, as just one example.
+[cols="3,10",options="header"]
+|===
+| Checker | What it does
+
+| <<Checking Regular Expressions,RegexChecker>>
+a| Validates regex patterns at compile time -- no more `PatternSyntaxException` at runtime
+
+[listing,subs="+quotes,macros"]
+----
+assert 'Apple' =~ /(a\|A).*/    [.green]#// icon:check[] okay#
+assert 'apple' =~ /(a\|A.*/     [.red]#// icon:times[] compile error: unclosed group#
+----
+
+| <<Checking Format Strings,FormatStringChecker>>
+a| Validates `printf`/`format` specifiers against argument types -- catches mismatches at compile time
+
+[listing,subs="+quotes,macros"]
+----
+String.format('%d: %s', 42, 'ok')  [.green]#// icon:check[] okay#
+String.format('%d: %s', 'x', 42)   [.red]#// icon:times[] IllegalFormatConversion: d != String#
+----
+
+| <<Checking Null Safety (Incubating),NullChecker>>
+a| Detects potential null dereferences using annotations and optional flow analysis
+
+[listing,subs="+quotes,macros"]
+----
+if (name != null) name.size()   [.green]#// icon:check[] null guard#
+name?.size()                    [.green]#// icon:check[] safe navigation#
+name.size()                     [.red]#// icon:times[] potential null dereference#
+----
+
+| <<Checking @Modifies Frame Conditions (Incubating),ModifiesChecker>>
+a| Verifies methods only modify declared fields -- humans and AI know what changed and what didn't
+
+[listing,subs="+quotes,macros"]
+----
+@Modifies({ this.balance })
+void deposit(n) { balance += n }   [.green]#// icon:check[] balance is declared#
+
+@Modifies({ })
+void withdraw(n) { balance -= n }  [.red]#// icon:times[] balance not in @Modifies#
+----
+
+| <<Checking @Pure Purity (Incubating),PurityChecker>>
+a| Enforces that `@Pure` methods have no side effects, with configurable strictness
+
+[listing,subs="+quotes,macros"]
+----
+@Pure int twice() { value * 2 }  [.green]#// icon:check[] reads only#
+@Pure int bad()   { count++ }    [.red]#// icon:times[] field mutation#
+----
+|===
+
+These checkers work with annotations from multiple libraries (JSpecify, JetBrains,
+Checker Framework, and others) -- matching by simple name so you can use whichever
+annotation library your project already depends on.
+
+=== Why these checkers matter
+
+In a world which seems to be having an ever-increasing focus on AI,
+here are numerous reasons you might want to make liberal use of checkers and their annotations:
+
+* The checker declarations and associated annotations, along with other Groovy annotations
+used with AST transforms, e.g. `@Invariant` from `groovy-contracts`, form a declarative
+specification of program behavior. This specification replaces "read the body" reasoning allowing humans and AI to understand system behavior at scale.
+* When an AI agent generates or modifies code, no human may fully understand the result. Type checkers act as a compile-time safety net on what those programs can do.
+* If we can treat our systems as composable black boxes each with well specified behavior we can more easily start to apply compositional reasoning to our systems.
+* Groovy's dynamic features (metaprogramming, runtime dispatch, invokeMethod) are powerful
+but can make static reasoning hard. AI models can hallucinate about what dynamic code does.
+Type checkers let teams selectively fill in the missing gaps in static reasoning,
+that AI would otherwise struggle with.
+* As AI agents increasingly write, review, and deploy code autonomously, we need machine-checkable invariants which form trust boundaries in agentic workflows.
+
+As an example, let's explore how combining some checkers and design-by-contract annotations
+allow both humans and AI to reason about method behavior
+without reading method implementations. Consider this annotated class:
+
+[source,groovy]
+----
+@Invariant({ balance >= 0 })
+class Account {
+    BigDecimal balance = 0
+    List<String> log = []
+
+    @Requires({ amount > 0 })
+    @Ensures({ balance == old.balance + amount })
+    @Modifies({ [this.balance, this.log] })
+    void deposit(BigDecimal amount) {
+        balance += amount
+        log.add("deposit $amount")
+    }
+
+    @Requires({ amount > 0 && amount <= balance })
+    @Ensures({ balance == old.balance - amount })
+    @Modifies({ [this.balance, this.log] })
+    void withdraw(BigDecimal amount) {
+        balance -= amount
+        log.add("withdraw $amount")
+    }
+
+    @Pure
+    BigDecimal available() { balance }
+}
+----
+
+When analyzing a sequence of calls:
+
+[source,groovy]
+----
+account.deposit(100)
+account.withdraw(30)
+def bal = account.available()
+----
+
+*With annotations*, each call is a self-contained specification -- 3 linear reasoning steps:
+
+1. `deposit(100)`: `@Requires` met (100 > 0), `@Ensures` gives `balance == old + 100`,
+   `@Modifies` proves only `balance` and `log` changed
+2. `withdraw(30)`: `@Requires` met (30 > 0, 30 <= 100), `@Ensures` gives `balance == 100 - 30 = 70`,
+   `@Modifies` proves `withdraw` didn't undo the deposit
+3. `available()`: `@Pure` proves no side effects -- just returns `balance` (70)
+
+This is human and AI reasoning that scales!
+
+*Without annotations*, the analyzer must read every method body, verify what each one
+modifies (2 fields × 3 calls = 6 "did this change?" questions), re-verify earlier state
+after later calls, and check whether `available()` has hidden side effects. This grows
+as _O(fields × calls × call_depth)_.
+
+=== Using the checkers
+
+In the examples which follow, we explicitly show declaring the type checker to use.
+Groovy's compiler customization mechanisms allow you to simplify application of
+such checkers, e.g. make it apply globally using a compiler configuration script,
+as just one example.
 
 == Checking Regular Expressions
 
@@ -375,6 +507,13 @@ Null pointer dereferences are one of the most common sources of runtime errors.
 The `NullChecker` performs compile-time null-safety analysis, detecting potential
 null dereferences and null-safety violations before code is executed.
 
+Languages like Kotlin and Swift distinguish nullable and non-nullable types throughout
+the type system, eliminating null errors by construction. Groovy takes a more pragmatic
+approach: flow analysis can catch many null issues without annotations (in `strict` mode),
+and `@Nullable`/`@NonNull` annotations provide additional precision where needed.
+This lets you adopt null safety incrementally -- annotate the critical boundaries first,
+and let flow analysis handle the rest.
+
 Two modes are provided:
 
 * `NullChecker` — *Annotation-based*: Checks code annotated with `@Nullable` and
@@ -674,6 +813,13 @@ condition declarations from the `groovy-contracts` module. It checks that method
 modify the fields and parameters they declare, helping both humans and AI reason about
 what a method changes -- and crucially, what it does not.
 
+Frame conditions are a well-established concept in formal verification. Dafny's `modifies`
+clause and JML's `assignable` clause serve the same purpose -- declaring what a method may
+change so that everything else is known to be preserved. Groovy's `@Modifies` brings this
+idea to the JDK ecosystem in a pragmatic, opt-in form. For projects already using JetBrains
+annotations, the checker also recognises `@Contract(mutates = "...")` which expresses
+similar semantics.
+
 This checker is opt-in and only activates for methods annotated with `@Modifies`:
 
 [source,groovy]
@@ -829,6 +975,17 @@ method bodies -- each method becomes a self-contained specification.
 
 The `PurityChecker` verifies that `@Pure` methods have no side effects. By default, strict
 purity is enforced. The `allows` option declares which effect categories are tolerated.
+
+Languages like Haskell enforce purity through the type system -- all side effects must be
+expressed via IO and State monads, making impure code structurally impossible. Frege (a
+Haskell dialect for the JVM) takes the same approach. This is powerful but requires
+incorporating these patterns into your application's type hierarchies, which can be
+impractical when integrating with JDK libraries that don't follow these conventions.
+
+Groovy's `PurityChecker` provides an opt-in way to achieve similar levels of reasoning about
+method purity while staying pragmatic about the JDK ecosystem. The `allows` option
+acknowledges that real-world "pure" methods sometimes log or emit metrics -- effects that
+don't affect program correctness but would violate strict Haskell-style purity.
 
 === Basic usage
 
