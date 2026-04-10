@@ -130,7 +130,7 @@ Fin.''')
             new File(baseDir,'haiku.txt').withWriter('utf-8') { writer ->
                 writer.writeLine 'Into the ancient pond'
                 writer.writeLine 'A frog jumps'
-                writer.writeLine 'Water’s sound!'
+                writer.writeLine "Water's sound!"
             }
             // end::withwriter_example[]
         }
@@ -143,7 +143,7 @@ Fin.''')
             // tag::file_leftshift[]
             new File(baseDir,'haiku.txt') << '''Into the ancient pond
             A frog jumps
-            Water’s sound!'''
+            Water's sound!'''
             // end::file_leftshift[]
         }
     }

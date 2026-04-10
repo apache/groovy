@@ -42,9 +42,9 @@ import static org.codehaus.groovy.ast.ClassHelper.makeCached
 
 /**
  * Checks at compile-time for incorrect format strings in format methods such as {@code printf} and {@code String.format}.
- * A format method’s specification requires that:
+ * A format method's specification requires that:
  * <ul>
- • <li>The format string’s syntax is valid</li>
+ • <li>The format string's syntax is valid</li>
  • <li>The correct number of arguments is passed</li>
  • <li>Each argument has the appropriate type</li>
  * </ul>
