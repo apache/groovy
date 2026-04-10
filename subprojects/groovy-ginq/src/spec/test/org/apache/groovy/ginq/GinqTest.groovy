@@ -57,13 +57,11 @@ class GinqTest {
     @Test
     void "testGinq - from select - 1"() {
         assertGinqScript '''
-// tag::ginq_execution_01[]
             def numbers = [0, 1, 2]
             assert [0, 1, 2] == GQ {
                 from n in numbers
                 select n
             }.toList()
-// end::ginq_execution_01[]
         '''
     }
 
@@ -3469,6 +3467,146 @@ class GinqTest {
         '''
     }
 
+    // groupby...into tests
+
+    @Test
+    void "testGinq - from groupby into select - 1"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 2], [6, 3]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 2"() {
+        assertGinqScript '''
+            assert [[1, [1, 1]], [3, [3, 3]], [6, [6, 6, 6]]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.toList()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 3"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 6], [6, 18]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.sum(n -> n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into having select - 1"() {
+        assertGinqScript '''
+            assert [[6, 3]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                having g.count() > 2
+                select g.key, g.count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with property access"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name as name, n.val as val into g
+                select g.name, g.val, g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with subscript"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name as name, n.val as val into g
+                select g["name"], g["val"], g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - complex example for intro"() {
+        assertGinqScript '''
+            def sales = [
+                [customer: 'Alice', product: 'Laptop',   amount: 1200],
+                [customer: 'Alice', product: 'Keyboard', amount: 80],
+                [customer: 'Bob',   product: 'Laptop',   amount: 1500],
+                [customer: 'Bob',   product: 'Mouse',    amount: 25],
+                [customer: 'Bob',   product: 'Monitor',  amount: 450],
+                [customer: 'Carol', product: 'Mouse',    amount: 30],
+            ]
+            def result = GQ {
+// tag::ginq_complex[]
+                from s in sales
+                where s.amount > 50
+                groupby s.customer as customer into g
+                having g.count() > 1
+                orderby g.customer
+                select g.customer, g.count() as items, g.sum(s -> s.amount) as total
+// end::ginq_complex[]
+            }.toList()
+            assert result[0].toList() == ['Alice', 2, 1280]
+            assert result[1].toList() == ['Bob', 2, 1950]
+        '''
+    }
+
+    @Test
+    void "testGinq - complex example transformed"() {
+        assertScript '''
+            import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
+            import org.apache.groovy.ginq.provider.collection.runtime.Queryable.Order
+
+            def sales = [
+                [customer: 'Alice', product: 'Laptop',   amount: 1200],
+                [customer: 'Alice', product: 'Keyboard', amount: 80],
+                [customer: 'Bob',   product: 'Laptop',   amount: 1500],
+                [customer: 'Bob',   product: 'Mouse',    amount: 25],
+                [customer: 'Bob',   product: 'Monitor',  amount: 450],
+                [customer: 'Carol', product: 'Mouse',    amount: 30],
+            ]
+            def result =
+// tag::ginq_transformed[]
+            from(sales)
+                .where(s -> s.amount > 50)
+                .groupByInto(s -> s.customer, g -> g.count() > 1)
+                .orderBy(new Order(g -> g.key, true))
+                .select((g, q) -> Tuple.tuple(g.key, g.count(), g.sum(s -> s.amount)))
+// end::ginq_transformed[]
+                .toList()
+            assert result[0].toList() == ['Alice', 2, 1280]
+            assert result[1].toList() == ['Bob', 2, 1950]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - direct API"() {
+        assertScript '''
+            import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
+// tag::ginq_groupby_into_api[]
+            def nums = [1, 2, 2, 3, 3, 4, 4, 5]
+            def result = from(nums)
+                .groupByInto(e -> e, g -> g.count() > 1)
+                .select((g, q) -> Tuple.tuple(g.key, g.count()))
+                .toList()
+            assert [[2, 2], [3, 2], [4, 2]] == result
+// end::ginq_groupby_into_api[]
+        '''
+    }
+
     @Test
     void "testGinq - query json - 1"() {
         assertGinqScript """
@@ -3509,24 +3647,23 @@ class GinqTest {
     @Test
     void "testGinq - query json - 2"() {
         assertGinqScript """
-// tag::ginq_tips_04[]
             import groovy.json.JsonSlurper
+// tag::ginq_tips_04[]
             def json = new JsonSlurper().parseText('''
                 {
                     "fruits": [
                         {"name": "Orange", "price": 11},
                         {"name": "Apple", "price": 6},
                         {"name": "Banana", "price": 4},
-                        {"name": "Mongo", "price": 29},
+                        {"name": "Mango", "price": 28},
                         {"name": "Durian", "price": 32}
                     ]
                 }
             ''')
 
-            def expected = [['Mongo', 29], ['Orange', 11], ['Apple', 6], ['Banana', 4]]
-            assert expected == GQ {
+            assert [['Mango', 28], ['Orange', 11], ['Apple', 6], ['Banana', 4]] == GQ {
                 from f in json.fruits
-                where f.price < 32
+                where f.price < 30
                 orderby f.price in desc
                 select f.name, f.price
             }.toList()
