@@ -231,6 +231,12 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
             if (latestGinqExpressionClause instanceof JoinExpression && filterExpression instanceof OnExpression) {
                 ((JoinExpression) latestGinqExpressionClause).setOnExpression((OnExpression) filterExpression);
+            } else if (latestGinqExpressionClause instanceof GroupExpression && filterExpression instanceof WhereExpression
+                    && ((GroupExpression) latestGinqExpressionClause).getIntoAlias() != null) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "`where` after `groupby...into` is not yet supported; use `having` instead",
+                        call.getLineNumber(), call.getColumnNumber()
+                ));
             } else if (latestGinqExpressionClause instanceof DataSourceHolder && filterExpression instanceof WhereExpression) {
                 if (null != currentGinqExpression.getGroupExpression() || null != currentGinqExpression.getOrderExpression() || null != currentGinqExpression.getLimitExpression()) {
                     this.collectSyntaxError(new GinqSyntaxError(
@@ -294,6 +300,27 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
             }
             setLatestGinqExpressionClause(groupExpression);
 
+            return;
+        }
+
+        if (KW_INTO.equals(methodName)) {
+            if (!(latestGinqExpressionClause instanceof GroupExpression)) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "`into` is only supported after `groupby`",
+                        call.getLineNumber(), call.getColumnNumber()
+                ));
+                return;
+            }
+            ArgumentListExpression arguments = (ArgumentListExpression) call.getArguments();
+            if (arguments.getExpressions().size() != 1 || !(arguments.getExpression(0) instanceof VariableExpression)) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "`into` requires a single alias name, e.g. `groupby x into g`",
+                        call.getLineNumber(), call.getColumnNumber()
+                ));
+                return;
+            }
+            String aliasName = ((VariableExpression) arguments.getExpression(0)).getName();
+            ((GroupExpression) latestGinqExpressionClause).setIntoAlias(aliasName);
             return;
         }
 
@@ -491,12 +518,13 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private static final String KW_WITHINGROUP = "withingroup"; // reserved keyword
     private static final String KW_OVER = "over";
     private static final String KW_AS = "as";
+    private static final String KW_INTO = "into";
     private static final String KW_SHUTDOWN = "shutdown";
     private static final Set<String> KEYWORD_SET;
     static {
         Set<String> keywordSet = new HashSet<>();
         keywordSet.addAll(Arrays.asList(KW_WITH, KW_FROM, KW_IN, KW_ON, KW_WHERE, KW_EXISTS, KW_GROUPBY, KW_HAVING, KW_ORDERBY,
-                                         KW_LIMIT, KW_OFFSET, KW_SELECT, KW_DISTINCT, KW_WITHINGROUP, KW_OVER, KW_AS, KW_SHUTDOWN));
+                                         KW_LIMIT, KW_OFFSET, KW_SELECT, KW_DISTINCT, KW_WITHINGROUP, KW_OVER, KW_AS, KW_INTO, KW_SHUTDOWN));
         keywordSet.addAll(JoinExpression.JOIN_NAME_LIST);
         KEYWORD_SET = Collections.unmodifiableSet(keywordSet);
     }

@@ -3469,6 +3469,92 @@ class GinqTest {
         '''
     }
 
+    // groupby...into tests
+
+    @Test
+    void "testGinq - from groupby into select - 1"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 2], [6, 3]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 2"() {
+        assertGinqScript '''
+            assert [[1, [1, 1]], [3, [3, 3]], [6, [6, 6, 6]]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.toList()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - 3"() {
+        assertGinqScript '''
+            assert [[1, 2], [3, 6], [6, 18]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                select g.key, g.sum(n -> n)
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into having select - 1"() {
+        assertGinqScript '''
+            assert [[6, 3]] == GQ {
+                from n in [1, 1, 3, 3, 6, 6, 6]
+                groupby n into g
+                having g.count() > 2
+                select g.key, g.count()
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with property access"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name as name, n.val as val into g
+                select g.name, g.val, g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - multi-key with subscript"() {
+        assertGinqScript '''
+            def result = GQ {
+                from n in [[name: 'a', val: 1], [name: 'b', val: 2]]
+                groupby n.name as name, n.val as val into g
+                select g["name"], g["val"], g.count()
+            }.toList().collect { it.toList() }.sort()
+            assert result == [['a', 1, 1], ['b', 2, 1]]
+        '''
+    }
+
+    @Test
+    void "testGinq - from groupby into select - direct API"() {
+        assertScript '''
+            import static org.apache.groovy.ginq.provider.collection.runtime.Queryable.from
+// tag::ginq_groupby_into_api[]
+            def nums = [1, 2, 2, 3, 3, 4, 4, 5]
+            def result = from(nums)
+                .groupByInto(e -> e, g -> g.count() > 1)
+                .select((g, q) -> Tuple.tuple(g.key, g.count()))
+                .toList()
+            assert [[2, 2], [3, 2], [4, 2]] == result
+// end::ginq_groupby_into_api[]
+        '''
+    }
+
     @Test
     void "testGinq - query json - 1"() {
         assertGinqScript """

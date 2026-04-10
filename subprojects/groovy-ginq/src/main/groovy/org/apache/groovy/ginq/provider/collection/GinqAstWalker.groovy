@@ -588,6 +588,24 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
         getCurrentGinqExpression().putNodeMetaData(__GROUPBY_VISITED, true)
 
+        String intoAlias = groupExpression.intoAlias
+        if (intoAlias) {
+            getCurrentGinqExpression().putNodeMetaData(__GROUPBY_INTO_ALIAS, intoAlias)
+
+            HavingExpression havingExpression = groupExpression.havingExpression
+            if (havingExpression) {
+                // In into-mode, the having lambda parameter is the alias (a GroupResult)
+                def havingLambda = lambdaX(
+                        params(param(dynamicType(), intoAlias)),
+                        stmt(havingExpression.filterExpr))
+                argList << havingLambda
+            }
+
+            MethodCallExpression groupMethodCallExpression = callX(groupMethodCallReceiver, "groupByInto", args(argList))
+            groupMethodCallExpression.setSourcePosition(groupExpression)
+            return groupMethodCallExpression
+        }
+
         HavingExpression havingExpression = groupExpression.havingExpression
         if (havingExpression) {
             Expression filterExpr = havingExpression.filterExpr
@@ -1015,6 +1033,9 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     }
 
     private void validateGroupCols(List<Expression> expressionList) {
+        if (groupByIntoAlias) {
+            return // In into-mode, access is through the alias; validation handled by the type system
+        }
         if (groupByVisited) {
             for (Expression expression : expressionList) {
                 new ListExpression(Collections.singletonList(expression)).transformExpression(new ExpressionTransformer() {
@@ -1451,6 +1472,11 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private String getLambdaParamName(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
         boolean groupByVisited = isGroupByVisited()
+        String intoAlias = groupByIntoAlias
+        if (groupByVisited && intoAlias) {
+            lambdaCode.putNodeMetaData(__LAMBDA_PARAM_NAME, intoAlias)
+            return intoAlias
+        }
         String lambdaParamName
         if (dataSourceExpression instanceof JoinExpression || groupByVisited || visitingWindowFunction) {
             lambdaParamName = lambdaCode.getNodeMetaData(__LAMBDA_PARAM_NAME)
@@ -1466,8 +1492,16 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private Tuple3<String, List<DeclarationExpression>, Expression> correctVariablesOfLambdaExpression(DataSourceExpression dataSourceExpression, Expression lambdaCode) {
         boolean groupByVisited = isGroupByVisited()
+        String intoAlias = groupByIntoAlias
         List<DeclarationExpression> declarationExpressionList = Collections.emptyList()
         String lambdaParamName = getLambdaParamName(dataSourceExpression, lambdaCode)
+
+        // In into-mode, the lambda parameter IS the alias (a GroupResult).
+        // No variable rewriting or __sourceRecord/__group injection needed.
+        if (groupByVisited && intoAlias) {
+            return tuple(lambdaParamName, declarationExpressionList, lambdaCode)
+        }
+
         if (dataSourceExpression instanceof JoinExpression || groupByVisited) {
             Tuple2<List<DeclarationExpression>, Expression> declarationAndLambdaCode = correctVariablesOfGinqExpression(dataSourceExpression, lambdaCode)
             if (!visitingAggregateFunctionStack) {
@@ -1514,6 +1548,10 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
 
     private boolean isGroupByVisited() {
         return currentGinqExpression.getNodeMetaData(__GROUPBY_VISITED)
+    }
+
+    private String getGroupByIntoAlias() {
+        return (String) currentGinqExpression.getNodeMetaData(__GROUPBY_INTO_ALIAS)
     }
 
     private boolean isVisitingSelect() {
@@ -1613,6 +1651,7 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
     private static final String __SUPPLY_ASYNC_LAMBDA_PARAM_NAME_PREFIX = "__salp_"
     private static final String __SOURCE_RECORD = "__sourceRecord"
     private static final String __GROUP = "__group"
+    private static final String __GROUPBY_INTO_ALIAS = "__GROUPBY_INTO_ALIAS"
     private static final String MD_GROUP_NAME_LIST = "groupNameList"
     private static final String MD_SELECT_NAME_LIST = "selectNameList"
     private static final String MD_ALIAS_NAME_LIST = 'aliasNameList'

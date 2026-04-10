@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class GroupExpression extends ProcessExpression {
     private final Expression classifierExpr;
     private HavingExpression havingExpression;
+    private String intoAlias;
 
     public GroupExpression(Expression classifierExpr) {
         this.classifierExpr = classifierExpr;
@@ -51,9 +52,18 @@ public class GroupExpression extends ProcessExpression {
         this.havingExpression = havingExpression;
     }
 
+    public String getIntoAlias() {
+        return intoAlias;
+    }
+
+    public void setIntoAlias(String intoAlias) {
+        this.intoAlias = intoAlias;
+    }
+
     @Override
     public String getText() {
         return "groupby " + classifierExpr.getText() +
+                (null == intoAlias ? "" : " into " + intoAlias) +
                 (null == havingExpression ? "" : " " + havingExpression.getText());
     }
 
