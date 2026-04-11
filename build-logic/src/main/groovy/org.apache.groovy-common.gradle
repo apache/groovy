@@ -53,6 +53,7 @@ tasks.named('rat') {
                 '**/.gradle/**', '**/wrapper/**', 'gradlew*',  // gradle wrapper files excluded from src zip
                 'artifactory.properties',  // potential file on CI server
                 'gradle.properties',  // artifactory release plugin removes header when bumping version
+                'gradle/verification-keyring.keys', // PGP keyring for dependency verification
                 '**/build/**', '**/target/**', 'licenses/**', 'notices/**',
                 'out/**', '*.ipr', '**/*.iml', '*.iws', '.idea/**', // Intellij files
                 '**/style.css', // MIT license as per NOTICE/LICENSE files
