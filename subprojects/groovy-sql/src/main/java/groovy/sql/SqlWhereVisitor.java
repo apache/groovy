@@ -18,6 +18,7 @@
  */
 package groovy.sql;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -37,6 +38,7 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
 
     private final StringBuffer buffer = new StringBuffer();
     private final List<Object> parameters = new ArrayList<Object>();
+    private Closure<?> closure;
 
     public String getWhere() {
         return buffer.toString();
@@ -81,9 +83,34 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
         buffer.append(expression.getPropertyAsString());
     }
 
+    public void setClosure(Closure<?> closure) {
+        this.closure = closure;
+    }
+
     @Override
     public void visitVariableExpression(VariableExpression expression) {
-        throw new GroovyRuntimeException("DataSet currently doesn't support arbitrary variables, only literals: found attempted reference to variable '" + expression.getName() + "'");
+        // Try to resolve captured variables from the closure's context
+        if (closure != null) {
+            String name = expression.getName();
+            try {
+                java.lang.reflect.Field field = closure.getClass().getDeclaredField(name);
+                if (!field.trySetAccessible()) {
+                    throw new GroovyRuntimeException("DataSet unable to access captured variable '" + name + "'");
+                }
+                Object value = field.get(closure);
+                // Groovy wraps shared (mutable) variables in a Reference
+                if (value instanceof groovy.lang.Reference) {
+                    value = ((groovy.lang.Reference<?>) value).get();
+                }
+                getParameters().add(value);
+                buffer.append("?");
+                return;
+            } catch (ReflectiveOperationException ignored) {
+                // fall through to error
+            }
+        }
+        throw new GroovyRuntimeException("DataSet unable to resolve variable '" + expression.getName()
+                + "'. Supported: literals and variables captured from the enclosing scope.");
     }
 
     public List<Object> getParameters() {

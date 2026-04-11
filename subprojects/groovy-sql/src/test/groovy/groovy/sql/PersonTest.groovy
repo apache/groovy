@@ -78,13 +78,20 @@ order by firstName DESC, age'''
         assertSql(complexBlogs, expectedSql, expectedParams)
     }
 
-    // GROOVY-5371 can be removed once GROOVY-5375 is completed and this is supported
-    void testNonLiteralExpressionsCurrentlyNotSupported() {
+    // GROOVY-5373: variables from enclosing scope are now supported
+    void testVariablesFromEnclosingScope() {
         def cutoff = 10
-        def message = shouldFail {
-            people.findAll { it.size < cutoff && it.lastName == "Bloggs" }.rows()
-        }
-        assert message.contains("DataSet currently doesn't support arbitrary variables, only literals")
+        def blogs = people.findAll { it.size < cutoff && it.lastName == "Bloggs" }
+        assertSql(blogs, "select * from person where ((size < ?) and lastName = ?)", [cutoff, 'Bloggs'])
+    }
+
+    // GROOVY-5373: shared (mutable) captured variables unwrapped from Reference
+    void testSharedVariableFromEnclosingScope() {
+        def cutoff = 10
+        def blogs = people.findAll { it.size < cutoff && it.lastName == "Bloggs" }
+        cutoff = 20 // modification after capture makes cutoff a shared Reference variable
+        // Reference resolves to current value (20) at query time, not capture time (10)
+        assertSql(blogs, "select * from person where ((size < ?) and lastName = ?)", [20, 'Bloggs'])
     }
 
     void testDataSetSourceNotAvailable() {

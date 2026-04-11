@@ -67,9 +67,10 @@ import java.util.Set;
  * }
  * </pre>
  * Currently, the Groovy source code for any accessed POGO must be on the
- * classpath at runtime. Also, at the moment, the expressions (or nested expressions) can only contain
- * references to fields of the POGO or literals (i.e. constant Strings or numbers). This limitation
- * may be removed in a future version of Groovy.
+ * classpath at runtime. The expressions (or nested expressions) can contain
+ * references to fields of the POGO, literals (i.e. constant Strings or numbers),
+ * and variables captured from the enclosing scope. Method calls, arithmetic,
+ * and other complex expressions are not currently supported.
  */
 public class DataSet extends Sql {
 
@@ -414,6 +415,7 @@ public class DataSet extends Sql {
     protected SqlWhereVisitor getSqlWhereVisitor() {
         if (visitor == null) {
             visitor = new SqlWhereVisitor();
+            visitor.setClosure(where);
             visit(where, visitor);
         }
         return visitor;
