@@ -16,21 +16,19 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.ginq.provider.collection.runtime;
+plugins {
+    id 'org.apache.groovy-common'
+    id 'java-library'
+}
 
-import groovy.lang.GroovyRuntimeException;
+repositories {
+    mavenCentral()
+}
 
-import java.io.Serial;
+dependencies {
+    compileOnly "org.asciidoctor:asciidoctorj:${versions.asciidoctorj}"
+}
 
-/**
- * Thrown when too many values returned by sub-query in the {@code select} clause
- *
- * @since 4.0.0
- */
-public class TooManyValuesException extends GroovyRuntimeException {
-    @Serial private static final long serialVersionUID = -2479599910868287387L;
-
-    public TooManyValuesException(String msg) {
-        super(msg);
-    }
+sonarqube {
+    skipProject = true
 }

@@ -16,21 +16,22 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.groovy.ginq.provider.collection.runtime;
+package org.apache.groovy.asciidoctor;
 
-import groovy.lang.GroovyRuntimeException;
-
-import java.io.Serial;
+import org.asciidoctor.Asciidoctor;
+import org.asciidoctor.jruby.extension.spi.ExtensionRegistry;
 
 /**
- * Thrown when too many values returned by sub-query in the {@code select} clause
- *
- * @since 4.0.0
+ * Automatically registers the documentation link inline macros
+ * (jdk, gjdk, gapi, gapid) when this JAR is on the AsciidoctorJ classpath.
  */
-public class TooManyValuesException extends GroovyRuntimeException {
-    @Serial private static final long serialVersionUID = -2479599910868287387L;
-
-    public TooManyValuesException(String msg) {
-        super(msg);
+public class DocLinkExtensionRegistry implements ExtensionRegistry {
+    @Override
+    public void register(Asciidoctor asciidoctor) {
+        asciidoctor.javaExtensionRegistry()
+                .inlineMacro(new DocLinkMacroProcessor("jdk", false))
+                .inlineMacro(new DocLinkMacroProcessor("gjdk", false))
+                .inlineMacro(new DocLinkMacroProcessor("gapi", false))
+                .inlineMacro(new DocLinkMacroProcessor("gapid", true));
     }
 }

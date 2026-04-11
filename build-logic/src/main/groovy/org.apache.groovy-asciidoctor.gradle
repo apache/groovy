@@ -42,11 +42,15 @@ configurations {
 tasks.withType(AbstractAsciidoctorTask).configureEach {
     outputs.cacheIf { true }
     usesService(ConcurrentExecutionControlBuildService.restrict(AbstractAsciidoctorTask, gradle))
+    configurations 'asciidocExtensions'
+    jvm {
+        jvmArgs("--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED")
+        jvmArgs("-Xmx2g")
+    }
 }
 
 asciidoctor {
     baseDirFollowsSourceFile()
-    configurations 'asciidocExtensions'
     def (full, major, minor, patch, flavor) = (groovyVersion =~ /(\d+)\.(\d++)\.(\d+)(?:-(.+))?/)[0]
     logDocuments = true
     sourceDir = project.file('src/spec/doc')
@@ -63,9 +67,6 @@ asciidoctor {
         }
         into 'assets'
     }
-    jvm {
-        jvmArgs("--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED")
-    }
     attributes 'source-highlighter': 'prettify',
             groovyversion: groovyVersion,
             'groovy-major-version': major,
@@ -74,6 +75,10 @@ asciidoctor {
             'groovy-full-version': groovyVersion,
             'groovy-short-version': "${major}.${minor}",
             'javaParserVersion': versions.javaParser,
+            'jdk-base-url': "https://docs.oracle.com/en/java/javase/${17}/docs/api/index.html",
+            'gjdk-base-url': "https://docs.groovy-lang.org/${versions.groovy}/html/groovy-jdk/index.html",
+            'gapi-base-url': "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/index.html",
+            'gapid-base-url': "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/",
             doctype: 'book',
             revnumber: groovyVersion,
             icons: 'font',
@@ -93,32 +98,15 @@ asciidoctorj {
     resolutionStrategy {
         it.disableDependencyVerification()
     }
-    def baseUrls = [
-        jdk  : "https://docs.oracle.com/en/java/javase/${17}/docs/api/index.html",
-        gjdk : "https://docs.groovy-lang.org/${versions.groovy}/html/groovy-jdk/index.html",
-        gapi : "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/index.html",
-        gapid: "https://docs.groovy-lang.org/${versions.groovy}/html/gapi/",
-    ]
-    for (def entry : baseUrls.entrySet()) {
-        def macroName = entry.key
-        def baseUrl = entry.value
-        docExtensions """
-            inline_macro(name: '${macroName}') { parent, target, attributes ->
-                def classNameAndAnchor = target.split('#')
-                def className = classNameAndAnchor[0]
-                def anchor = classNameAndAnchor.length > 1 ? classNameAndAnchor[1] : null
-                def baseURL = '${baseUrl}'
-                def base = className == 'index' ?
-                        baseURL : baseURL + '?' + className.replace('.', '/') + '.html' + (anchor ? '#' + anchor : '')
-                createPhraseNode(parent, 'anchor', attributes.text ?: target, attributes, [type: ':link', target: base])
-            }
-        """
-    }
+    docExtensions project(':asciidoc-extensions')
     modules {
         diagram.version(versions.asciidoctorDiagram)
         pdf.version(versions.asciidoctorPdf)
-        groovyDsl.version(versions.asciidoctorGroovyDsl)
     }
+}
+
+dependencies {
+    asciidocExtensions "org.asciidoctor:asciidoctorj-diagram-plantuml:${versions.asciidoctorDiagramPlantuml}"
 }
 
 // skip the asciidoctor task if there's no directory with asciidoc files

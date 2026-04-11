@@ -82,6 +82,7 @@ def subprojects = [
         'groovy-typecheckers',
         'groovy-xml',
         'groovy-yaml',
+        'asciidoc-extensions',
         'performance',
         'tests-preview',
         'binary-compatibility',
