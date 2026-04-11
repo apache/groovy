@@ -29,7 +29,7 @@ rather than Java code.
 * An `AbstractHttpServlet` class for defining traditional Servlets.
 * Helper classes like `ServletBinding` and `ServletCategory` which let you access some of the features offered by the `groovy-servlet` module in additional contexts.
 
-From Groovy 5, `groovy-servlet` supports Jakarta EE Servlet specifications. Javax EE servlet specifications are supported in version before Groovy 5 or with Groovy 5 by using the `javax` classifier when specifying your dependency.
+From Groovy 6, `groovy-servlet` targets Jakarta EE 11 (Servlet 6.1). It is compatible with Jakarta EE 10 (Servlet 6.0) containers as it does not use Servlet 6.1-exclusive APIs. The `javax` classifier is available for pre-Jakarta containers (e.g. Tomcat 9, Jetty 9).
 
 == Groovlets
 
