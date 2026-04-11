@@ -39,6 +39,7 @@
 -->
 <verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.3.xsd">
    <configuration>
+      <keyring-format>armored</keyring-format>
       <verify-metadata>false</verify-metadata>
       <verify-signatures>true</verify-signatures>
       <ignored-keys>
