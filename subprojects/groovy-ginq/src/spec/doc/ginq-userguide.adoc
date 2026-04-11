@@ -24,95 +24,114 @@
 GINQ (Groovy-Integrated Query) lets you query in-memory collections using familiar SQL-like syntax.
 It also works with parsed XML, JSON, YAML, and other formats that produce collections.
 
-Here is a quick taste:
-[source, groovy]
+The heart of GINQ is its query-like expressions, which can be very simple:
+[source, sql]
 ----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_01,indent=0]
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_simplest,indent=0]
 ----
 
-For a list result, use `GQL` (short for `GQ {...}.toList()`):
+Or involve multiple clauses:
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_complex,indent=0]
+----
+
+A GINQ expression can include the following clauses:
+
+* **`from`** — the data source (required). Accepts any `Iterable`, `Stream`, array, or GINQ result set.
+* **`join`** — combines data from additional sources (`join`, `leftjoin`, `rightjoin`, `fulljoin`, `crossjoin`), matched using an `on` condition.
+* **`where`** — filters rows before grouping, as `s.amount > 50` does above.
+* **`groupby`** — groups rows by one or more expressions. The `into` clause binds the group to a variable (like `g` above) that supports aggregate methods such as `count()`, `sum()`, `min()`, `max()`, `avg()`, and `toList()`. Named keys (via `as`) can be accessed as properties, e.g. `g.customer`.
+* **`having`** — filters groups after aggregation, as `g.count() > 1` does above.
+* **`orderby`** — sorts results in ascending (`in asc`, the default) or descending (`in desc`) order, with `nullslast`/`nullsfirst` control.
+* **`limit`** — restricts output to a given size, with optional offset for pagination.
+* **`select`** — the projection (required). Defines the output columns, with optional `as` aliases.
+
+GINQ also supports window functions, nested subqueries, and set operations (`union`, `intersect`, `minus`) — see <<Advanced Topics>> for details.
+
+****
+*How it works*: Under the covers GINQ transforms the query into calls within a fluent API. For example, the above query is transformed into:
+
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_transformed,indent=0]
+----
+
+You normally never see this transformed code, but if you are debugging or looking at stacktraces,
+don't be surprised to see fluent API calls instead of an exact match to the terms in the SQL-like syntax.
+****
+
+== Basics
+
+This section covers how to embed GINQ in your code and walks through each
+clause: data sources, projection, filtering, joining, grouping with aggregation,
+sorting, and pagination.
+
+=== Integration
+
+Other code in your scripts and classes may use the same names as the SQL-like syntax, such as `from`, `select`, `where`, etc. To avoid conflicts, GINQ expressions must be wrapped in a `GQ` block, which serves as a marker for the GINQ parser to recognize and transform the SQL-like syntax into the underlying fluent API calls.
+
+A GINQ expression is wrapped in a `GQ` block and returns a lazy `Queryable` result:
+```groovy
+def result = GQ {
+    /* GINQ SQL-LIKE EXPRESSION */
+}
+def stream = result.stream() // get the stream from GINQ result
+def list = result.toList() // get the list from GINQ result
+```
+
+Since the result is a standard `Queryable`/`Stream`, it composes naturally with other Groovy and JDK library calls:
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_execution_02,indent=0]
 ----
 
-== GINQ a.k.a. Groovy-Integrated Query
-
-A GINQ expression is wrapped in a `GQ` block and returns a lazy `Queryable` result:
+Two other markers, `GQL` and `@GQ`, are also supported.
+`GQL` is a shorthand that returns a `List` directly (equivalent to `GQ {...}.toList()`):
 ```groovy
-def result = GQ {
-    /* GINQ CODE */
+def list = GQL {
+    /* GINQ SQL-LIKE EXPRESSION */
 }
-def stream = result.stream() // get the stream from GINQ result
-def list = result.toList() // get the list from GINQ result
 ```
-[WARNING]
-Currently GINQ can not work well when STC is enabled.
 
-=== GINQ Syntax
-
-GINQ consists of the following clauses, which must appear in this order:
-```sql
-GQ, i.e. abbreviation for GINQ
-|__ from
-|   |__ <data_source_alias> in <data_source>
-|__ [join/innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
-|   |__ <data_source_alias> in <data_source>
-|   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need `on` clause)
-|__ [where]
-|   |__ <condition> ((&& | ||) <condition>)*
-|__ [groupby]
-|   |__ <expression> [as <alias>] (, <expression> [as <alias>])* [into <group_alias>]
-|   |__ [having]
-|       |__ <condition> ((&& | ||) <condition>)*
-|__ [orderby]
-|   |__ <expression> [in (asc|desc)] (, <expression> [in (asc|desc)])*
-|__ [limit]
-|   |__ [<offset>,] <size>
-|__ select
-    |__ <expression> [as <alias>] (, <expression> [as <alias>])*
+GINQ can also be used as a method annotation — see <<`@GQ` Annotation>> in Advanced Topics:
+```groovy
+@GQ
+def queryMethod() {
+    /* GINQ SQL-LIKE EXPRESSION */
+}
 ```
-[NOTE]
-`[]` means the related clause is optional, `*` means zero or more times, and `+` means one or more times. Also, the clauses of GINQ are order sensitive,
-so the order of clauses should be kept as the above structure
 
-The simplest GINQ consists of a `from` clause and a `select` clause:
-[source, sql]
-----
-include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_simplest,indent=0]
-----
-[NOTE]
-__ONLY ONE__ `from` clause is required in GINQ. Also, GINQ supports multiple data sources through `from` and the related joins.
-
-==== Data Source
+=== Data Source
 The data source for GINQ could be specified by `from` clause, which is equivalent to SQL's `FROM`.
 Currently GINQ supports `Iterable`, `Stream`, array and GINQ result set as its data source:
 
-===== `Iterable` Data Source
+==== `Iterable` Data Source
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_03,indent=0]
 ----
 
-===== `Stream` Data Source
+==== `Stream` Data Source
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_01,indent=0]
 ----
 
-===== Array Data Source
+==== Array Data Source
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_02,indent=0]
 ----
 
-===== GINQ Result Set Data Source
+==== GINQ Result Set Data Source
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_datasource_04,indent=0]
 ----
 
-==== Projection
+=== Projection
 The column names could be renamed with `as` clause:
 [source, groovy]
 ----
@@ -137,7 +156,7 @@ Construct new objects as column values:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_projection_02,indent=0]
 ----
 
-===== Distinct
+==== Distinct
 `distinct` is equivalent to SQL's `DISTINCT`
 [source, groovy]
 ----
@@ -149,7 +168,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_distinct_1,ind
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_distinct_2,indent=0]
 ----
 
-==== Filtering
+=== Filtering
 `where` is equivalent to SQL's `WHERE`
 
 [source, sql]
@@ -157,7 +176,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_distinct_2,ind
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_01,indent=0]
 ----
 
-===== In
+==== In
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_08,indent=0]
@@ -173,7 +192,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_07,i
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_09,indent=0]
 ----
 
-===== Not In
+==== Not In
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_05,indent=0]
@@ -188,19 +207,19 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_06,i
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_10,indent=0]
 ----
-===== Exists
+==== Exists
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_02,indent=0]
 ----
 
-===== Not Exists
+==== Not Exists
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_03,indent=0]
 ----
 
-==== Joining
+=== Joining
 
 More data sources for GINQ could be specified by join clauses.
 
@@ -262,7 +281,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_joining_09,ind
 Only binary expressions(`==`, `&&`) are allowed in the `on` clause of hash join
 
 
-==== Grouping
+=== Grouping
 `groupby` is equivalent to SQL's `GROUP BY`, and `having` is equivalent to SQL's `HAVING`.
 The `into` clause binds the grouped result to a named variable, enabling direct
 method calls for key access and aggregates. The variable is a `GroupResult` which
@@ -314,7 +333,7 @@ assert [[6, 3]] == GQ {
 NOTE: The `where` clause after `groupby...into` is reserved for future use;
 use `having` for now.
 
-===== Aggregate Functions
+==== Aggregate Functions
 GINQ provides some built-in aggregate functions:
 |===
 |Function|Argument Type(s)|Return Type|Description
@@ -470,7 +489,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_05
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_aggfunction_06,indent=0]
 ----
 
-==== Sorting
+=== Sorting
 `orderby` is equivalent to SQL's `ORDER BY`
 
 [source, sql]
@@ -523,7 +542,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_08,ind
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_sorting_09,indent=0]
 ----
 
-==== Pagination
+=== Pagination
 `limit` is similar to the `limit` clause of MySQL, which could specify the `offset`(first argument) and `size`(second argument) for paginating,
 or just specify the only one argument as `size`
 [source, sql]
@@ -536,15 +555,19 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_pagination_01,
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_pagination_02,indent=0]
 ----
 
-=== Common Patterns
-==== Row Number
+== Common Recipes
+
+Recipes for everyday tasks: row numbering, list comprehensions, querying JSON,
+updating collections, and workarounds for SQL features not yet in GINQ.
+
+=== Row Number
 `_rn` is the implicit variable representing row number for each record in the result set. It starts with `0`
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_05,indent=0]
 ----
 
-==== List Comprehension
+=== List Comprehension
 List comprehension is an elegant way to define and create lists based on existing lists:
 [source, groovy]
 ----
@@ -569,36 +592,40 @@ GINQ could be used as list comprehension in the loops directly:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_03,indent=0]
 ----
 
-==== Query JSON
+=== Query JSON
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_04,indent=0]
 ----
 
-==== Query & Update
+=== Query & Update
 This is like `update` statement in SQL
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_07,indent=0]
 ----
 
-==== Alternative for `with` clause
+=== Alternative for `with` clause
 GINQ does not support `with` clause for now, but we could define a temporary variable to workaround:
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_12,indent=0]
 ----
 
-==== Alternative for `case-when`
+=== Alternative for `case-when`
 `case-when` of SQL could be replaced with switch expression:
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_13,indent=0]
 ----
 
-=== Advanced Topics
+== Advanced Topics
 
-==== Window Functions
+This section covers window functions, nested subqueries, the classic (pre-`into`) groupby style,
+the `@GQ` annotation for declaring GINQ methods, parallel querying, and options for customizing
+and optimizing GINQ. It also includes the full syntax reference.
+
+=== Window Functions
 
 Window can be defined by `partitionby`, `orderby`, `rows` and `range`:
 ```sql
@@ -735,7 +762,7 @@ Also, GINQ provides some built-in window functions:
 |===
 
 
-===== `rowNumber`
+==== `rowNumber`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_24,indent=0]
@@ -748,7 +775,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_34
 [NOTE]
 The parentheses around the window function is required.
 
-===== `rank`, `denseRank`, `percentRank`, `cumeDist` and `ntile`
+==== `rank`, `denseRank`, `percentRank`, `cumeDist` and `ntile`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_25,indent=0]
@@ -764,7 +791,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_41
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_39,indent=0]
 ----
 
-===== `lead` and `lag`
+==== `lead` and `lag`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_02,indent=0]
@@ -816,7 +843,7 @@ The default value can be returned when the index specified by offset is out of w
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_21,indent=0]
 ----
-===== `firstValue`, `lastValue` and `nthValue`
+==== `firstValue`, `lastValue` and `nthValue`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_09,indent=0]
@@ -877,7 +904,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_11
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_40,indent=0]
 ----
 
-===== `min`, `max`, `count`, `sum`, `avg`, `median`, `stdev`, `stdevp`, `var` ,`varp` and `agg`
+==== `min`, `max`, `count`, `sum`, `avg`, `median`, `stdev`, `stdevp`, `var` ,`varp` and `agg`
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_22,indent=0]
@@ -953,15 +980,15 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_38
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_winfunction_42,indent=0]
 ----
 
-==== Nested GINQ
+=== Nested GINQ
 
-===== Nested GINQ in `from` clause
+==== Nested GINQ in `from` clause
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_01,indent=0]
 ----
 
-===== Nested GINQ in `where` clause
+==== Nested GINQ in `where` clause
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_02,indent=0]
@@ -972,7 +999,7 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_02,inde
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_filtering_04,indent=0]
 ----
 
-===== Nested GINQ in `select` clause
+==== Nested GINQ in `select` clause
 [source, groovy]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_03,indent=0]
@@ -987,7 +1014,7 @@ We could use `as` clause to name the sub-query result
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_nested_04,indent=0]
 ----
 
-==== Classic groupby style
+=== Classic groupby style
 GINQ also supports an older style without the `into` keyword which looks simpler
 for some cases but has some limitations — aggregate functions use a special syntax
 rather than real method calls, and the group cannot be accessed as a composable collection.
@@ -1019,7 +1046,8 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_08,in
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_grouping_09,indent=0]
 ----
 
-==== Using the Queryable API directly
+=== Using the Queryable API directly
+
 The `groupByInto` method is also available on the `Queryable` API directly,
 which can be useful when building queries programmatically:
 [source, groovy]
@@ -1027,7 +1055,8 @@ which can be useful when building queries programmatically:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_groupby_into_api,indent=0]
 ----
 
-==== `@GQ` Annotation
+=== `@GQ` Annotation
+
 GINQ could be written in a method marked with `@GQ`:
 ```groovy
 @GQ
@@ -1060,7 +1089,8 @@ GINQ supports many result types, e.g. `List`, `Set`, `Collection`, `Iterable`, `
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_method_02,indent=0]
 ----
 
-==== Parallel Querying
+=== Parallel Querying
+
 Parallel querying is especially efficient when querying big data sources. It is disabled by default, but we could enable it by hand:
 [source, groovy]
 ----
@@ -1087,7 +1117,7 @@ Shutdown without waiting tasks to complete:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_tips_11,indent=0]
 ----
 
-==== Customize GINQ
+=== Customize GINQ
 
 For advanced users, you could customize GINQ behaviour by specifying your own target code generator.
 For example, we could specify the qualified class name `org.apache.groovy.ginq.provider.collection.GinqAstWalker` as the target code generator to generate GINQ method calls for querying collections,
@@ -1097,7 +1127,7 @@ which is the default behaviour of GINQ:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_customize_01,indent=0]
 ----
 
-==== Optimize GINQ
+=== Optimize GINQ
 
 GINQ optimizer is enabled by default for better performance. It will transform the GINQ AST to achieve better execution plan.
 We could disable it by hand:
@@ -1106,14 +1136,51 @@ We could disable it by hand:
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_optimize_01,indent=0]
 ----
 
-=== GINQ Examples
-==== Generate Multiplication Table
+=== GINQ Syntax Reference
+
+The full GINQ clause structure for reference:
+```sql
+GQ, i.e. abbreviation for GINQ
+|__ from
+|   |__ <data_source_alias> in <data_source>
+|__ [join/innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
+|   |__ <data_source_alias> in <data_source>
+|   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need `on` clause)
+|__ [where]
+|   |__ <condition> ((&& | ||) <condition>)*
+|__ [groupby]
+|   |__ <expression> [as <alias>] (, <expression> [as <alias>])* [into <group_alias>]
+|   |__ [having]
+|       |__ <condition> ((&& | ||) <condition>)*
+|__ [orderby]
+|   |__ <expression> [in (asc|desc)] (, <expression> [in (asc|desc)])*
+|__ [limit]
+|   |__ [<offset>,] <size>
+|__ select
+    |__ <expression> [as <alias>] (, <expression> [as <alias>])*
+```
+[NOTE]
+`[]` means the related clause is optional, `*` means zero or more times, and `+` means one or more times. Also, the clauses of GINQ are order sensitive,
+so the order of clauses should be kept as the above structure.
+__ONLY ONE__ `from` clause is required in GINQ. Multiple data sources are supported through `from` and the related joins.
+
+=== Known Limitations
+
+[WARNING]
+Currently GINQ can not work well when STC is enabled.
+
+== GINQ Examples
+
+Complete worked examples showing GINQ in action.
+
+=== Generate Multiplication Table
+
 [source, sql]
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_examples_01,indent=0]
 ----
 
-==== More examples
+=== More examples
 link: the latest https://github.com/apache/groovy/blob/master/subprojects/groovy-ginq/src/spec/test/org/apache/groovy/ginq/GinqTest.groovy[GINQ examples]
 [NOTE]
 Some examples in the above link require the latest SNAPSHOT version of Groovy to run.
