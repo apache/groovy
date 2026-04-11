@@ -3845,6 +3845,100 @@ class GinqTest {
         '''
     }
 
+    // set operation tests
+
+    @Test
+    void "testGinq - union"() {
+        assertGinqScript '''
+// tag::ginq_setop_union[]
+            assert [1, 2, 3, 4, 5] == GQ {
+                from n in [1, 2, 3]
+                select n
+                union
+                from m in [3, 4, 5]
+                select m
+            }.toList()
+// end::ginq_setop_union[]
+        '''
+    }
+
+    @Test
+    void "testGinq - unionall"() {
+        assertGinqScript '''
+// tag::ginq_setop_unionall[]
+            assert [1, 2, 3, 3, 4, 5] == GQ {
+                from n in [1, 2, 3]
+                select n
+                unionall
+                from m in [3, 4, 5]
+                select m
+            }.toList()
+// end::ginq_setop_unionall[]
+        '''
+    }
+
+    @Test
+    void "testGinq - intersect"() {
+        assertGinqScript '''
+// tag::ginq_setop_intersect[]
+            assert [3, 4] == GQ {
+                from n in [1, 2, 3, 4]
+                select n
+                intersect
+                from m in [3, 4, 5, 6]
+                select m
+            }.toList()
+// end::ginq_setop_intersect[]
+        '''
+    }
+
+    @Test
+    void "testGinq - minus"() {
+        assertGinqScript '''
+// tag::ginq_setop_minus[]
+            assert [1, 2] == GQ {
+                from n in [1, 2, 3, 4]
+                select n
+                minus
+                from m in [3, 4, 5, 6]
+                select m
+            }.toList()
+// end::ginq_setop_minus[]
+        '''
+    }
+
+    @Test
+    void "testGinq - chained set operations"() {
+        assertGinqScript '''
+            // [1,2,3] union [3,4,5] = [1,2,3,4,5], then minus [4,5,6] = [1,2,3]
+            assert [1, 2, 3] == GQ {
+                from n in [1, 2, 3]
+                select n
+                union
+                from m in [3, 4, 5]
+                select m
+                minus
+                from k in [4, 5, 6]
+                select k
+            }.toList()
+        '''
+    }
+
+    @Test
+    void "testGinq - union with where"() {
+        assertGinqScript '''
+            assert [2, 4, 5] == GQ {
+                from n in [1, 2, 3]
+                where n % 2 == 0
+                select n
+                union
+                from m in [3, 4, 5]
+                where m > 3
+                select m
+            }.toList()
+        '''
+    }
+
     @Test
     void "testGinq - GINQ examples - 1"() {
         assertGinqScript '''

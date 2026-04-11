@@ -31,6 +31,7 @@ import org.apache.groovy.ginq.dsl.expression.LimitExpression;
 import org.apache.groovy.ginq.dsl.expression.OnExpression;
 import org.apache.groovy.ginq.dsl.expression.OrderExpression;
 import org.apache.groovy.ginq.dsl.expression.SelectExpression;
+import org.apache.groovy.ginq.dsl.expression.SetOperationExpression;
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 import org.codehaus.groovy.ast.ASTNode;
@@ -77,6 +78,8 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     }
 
     private final List<MethodCallExpression> ignoredMethodCallExpressionList = new ArrayList<>();
+    private AbstractGinqExpression setOperationLeft;
+    private String setOperationOp;
 
     private static final List<String> SHUTDOWN_OPTION_LIST = Arrays.asList("immediate", "abort");
     public AbstractGinqExpression buildAST(ASTNode astNode) {
@@ -110,20 +113,39 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
         return getGinqExpression(astNode);
     }
 
-    private GinqExpression getGinqExpression(ASTNode astNode) {
+    private AbstractGinqExpression getGinqExpression(ASTNode astNode) {
         if (null == latestGinqExpression) {
             ASTNode node = ginqExpressionStack.isEmpty() ? astNode : ginqExpressionStack.peek();
-            this.collectSyntaxError(new GinqSyntaxError("`select` clause is missing",
-                    node.getLineNumber(), node.getColumnNumber()));
+            if (setOperationLeft != null) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "Right-hand query is missing after `" + setOperationOp + "`",
+                        node.getLineNumber(), node.getColumnNumber()));
+            } else {
+                this.collectSyntaxError(new GinqSyntaxError("`select` clause is missing",
+                        node.getLineNumber(), node.getColumnNumber()));
+            }
+            return setOperationLeft != null ? setOperationLeft : new GinqExpression();
         }
 
-        latestGinqExpression.visit(new GinqAstBaseVisitor() {
+        AbstractGinqExpression result;
+        if (setOperationLeft != null) {
+            latestGinqExpression.putNodeMetaData(ROOT_GINQ_EXPRESSION, latestGinqExpression);
+            SetOperationExpression setOpExpr = new SetOperationExpression(setOperationLeft, setOperationOp, latestGinqExpression);
+            setOpExpr.setSourcePosition(setOperationLeft);
+            result = setOpExpr;
+        } else {
+            latestGinqExpression.putNodeMetaData(ROOT_GINQ_EXPRESSION, latestGinqExpression);
+            result = latestGinqExpression;
+        }
+
+        GinqAstBaseVisitor cleanupVisitor = new GinqAstBaseVisitor() {
             @Override
             public void visitMethodCallExpression(MethodCallExpression call) {
                 ignoredMethodCallExpressionList.remove(call);
                 super.visitMethodCallExpression(call);
             }
-        });
+        };
+        result.accept(cleanupVisitor);
 
         if (!ignoredMethodCallExpressionList.isEmpty()) {
             MethodCallExpression methodCallExpression = ignoredMethodCallExpressionList.get(0);
@@ -131,9 +153,7 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
                     methodCallExpression.getLineNumber(), methodCallExpression.getColumnNumber()));
         }
 
-        latestGinqExpression.putNodeMetaData(ROOT_GINQ_EXPRESSION, latestGinqExpression);
-
-        return latestGinqExpression;
+        return result;
     }
 
     private void setLatestGinqExpressionClause(AbstractGinqExpression ginqExpressionClause) {
@@ -420,6 +440,28 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
 
     @Override
     public void visitVariableExpression(VariableExpression expression) {
+        if (SET_OP_SET.contains(expression.getText())) {
+            if (latestGinqExpression == null) {
+                this.collectSyntaxError(new GinqSyntaxError(
+                        "`" + expression.getText() + "` must follow a complete GINQ expression (from...select)",
+                        expression.getLineNumber(), expression.getColumnNumber()));
+            } else {
+                if (setOperationLeft != null) {
+                    // chaining: wrap previous left + op + current right into a SetOperationExpression
+                    latestGinqExpression.putNodeMetaData(ROOT_GINQ_EXPRESSION, latestGinqExpression);
+                    SetOperationExpression prev = new SetOperationExpression(setOperationLeft, setOperationOp, latestGinqExpression);
+                    prev.setSourcePosition(setOperationLeft);
+                    setOperationLeft = prev;
+                } else {
+                    latestGinqExpression.putNodeMetaData(ROOT_GINQ_EXPRESSION, latestGinqExpression);
+                    setOperationLeft = latestGinqExpression;
+                }
+                setOperationOp = expression.getText();
+                latestGinqExpression = null;
+            }
+            return;
+        }
+
         if (KEYWORD_SET.contains(expression.getText())) {
             this.collectSyntaxError(
                     new GinqSyntaxError(
@@ -519,12 +561,19 @@ public class GinqAstBuilder extends CodeVisitorSupport implements SyntaxErrorRep
     private static final String KW_OVER = "over";
     private static final String KW_AS = "as";
     private static final String KW_INTO = "into";
+    private static final String KW_UNION = "union";
+    private static final String KW_UNIONALL = "unionall";
+    private static final String KW_INTERSECT = "intersect";
+    private static final String KW_MINUS = "minus";
     private static final String KW_SHUTDOWN = "shutdown";
     private static final Set<String> KEYWORD_SET;
+    private static final Set<String> SET_OP_SET = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(KW_UNION, KW_UNIONALL, KW_INTERSECT, KW_MINUS)));
     static {
         Set<String> keywordSet = new HashSet<>();
         keywordSet.addAll(Arrays.asList(KW_WITH, KW_FROM, KW_IN, KW_ON, KW_WHERE, KW_EXISTS, KW_GROUPBY, KW_HAVING, KW_ORDERBY,
                                          KW_LIMIT, KW_OFFSET, KW_SELECT, KW_DISTINCT, KW_WITHINGROUP, KW_OVER, KW_AS, KW_INTO, KW_SHUTDOWN));
+        keywordSet.addAll(SET_OP_SET);
         keywordSet.addAll(JoinExpression.JOIN_NAME_LIST);
         KEYWORD_SET = Collections.unmodifiableSet(keywordSet);
     }
