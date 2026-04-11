@@ -78,6 +78,7 @@ def subprojects = [
         'groovy-test-junit5',
         'groovy-test-junit6',
         'groovy-testng',
+        'groovy-csv',
         'groovy-toml',
         'groovy-typecheckers',
         'groovy-xml',

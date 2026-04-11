@@ -1,0 +1,112 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Processing CSV
+
+Groovy has an optional `groovy-csv` module which provides support for reading and writing
+https://datatracker.ietf.org/doc/html/rfc4180[CSV (RFC 4180)] data. The classes are found
+in the `groovy.csv` package.
+
+[[csv_csvslurper]]
+== CsvSlurper
+
+`CsvSlurper` parses CSV text into a list of maps, where each row becomes a map keyed
+by the column headers from the first row. Values are returned as strings.
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=parse_text,indent=0]
+----
+
+Rows support dynamic property access using the header names:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=property_access,indent=0]
+----
+
+=== Configuration
+
+The separator character and quote character can be customised:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=custom_separator,indent=0]
+----
+
+Quoted fields follow RFC 4180 — fields containing the separator, newlines, or the quote
+character are enclosed in quotes, with embedded quotes doubled:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=quoted_fields,indent=0]
+----
+
+=== Typed parsing
+
+`CsvSlurper` can parse CSV directly into typed objects using Jackson databinding.
+Standard Jackson annotations such as `@JsonProperty` and `@JsonFormat` are supported
+for column name mapping and type conversion:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_parsing,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvSlurperTest.groovy[tags=typed_parsing_usage,indent=0]
+----
+
+[[csv_csvbuilder]]
+== CsvBuilder
+
+`CsvBuilder` converts collections of maps or typed objects to CSV. The keys of the first
+map are used as column headers.
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=to_csv_maps,indent=0]
+----
+
+=== Typed writing
+
+`CsvBuilder` can also write typed objects. Jackson annotations are supported for
+column naming and formatting:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=typed_writing,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=typed_writing_usage,indent=0]
+----
+
+=== Round-trip
+
+CSV written by `CsvBuilder` can be read back with `CsvSlurper`:
+
+[source,groovy]
+----
+include::../test/groovy/csv/CsvBuilderTest.groovy[tags=round_trip,indent=0]
+----
