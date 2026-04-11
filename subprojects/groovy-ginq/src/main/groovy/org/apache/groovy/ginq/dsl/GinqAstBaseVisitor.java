@@ -28,6 +28,7 @@ import org.apache.groovy.ginq.dsl.expression.LimitExpression;
 import org.apache.groovy.ginq.dsl.expression.OnExpression;
 import org.apache.groovy.ginq.dsl.expression.OrderExpression;
 import org.apache.groovy.ginq.dsl.expression.SelectExpression;
+import org.apache.groovy.ginq.dsl.expression.SetOperationExpression;
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression;
 import org.apache.groovy.ginq.dsl.expression.WhereExpression;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -125,6 +126,13 @@ public class GinqAstBaseVisitor extends CodeVisitorSupport implements GinqAstVis
     @Override
     public Void visitSelectExpression(SelectExpression selectExpression) {
         visit(selectExpression.getProjectionExpr());
+        return null;
+    }
+
+    @Override
+    public Void visitSetOperationExpression(SetOperationExpression setOperationExpression) {
+        setOperationExpression.getLeft().accept(this);
+        visit(setOperationExpression.getRight());
         return null;
     }
 

@@ -36,6 +36,7 @@ import org.apache.groovy.ginq.dsl.expression.LimitExpression
 import org.apache.groovy.ginq.dsl.expression.OnExpression
 import org.apache.groovy.ginq.dsl.expression.OrderExpression
 import org.apache.groovy.ginq.dsl.expression.SelectExpression
+import org.apache.groovy.ginq.dsl.expression.SetOperationExpression
 import org.apache.groovy.ginq.dsl.expression.ShutdownExpression
 import org.apache.groovy.ginq.dsl.expression.WhereExpression
 import org.apache.groovy.ginq.provider.collection.runtime.NamedRecord
@@ -868,6 +869,23 @@ class GinqAstWalker implements GinqAstVisitor<Expression>, SyntaxErrorReportable
         currentGinqExpression.putNodeMetaData(__VISITING_SELECT, false)
 
         return selectMethodCallExpression
+    }
+
+    @Override
+    Expression visitSetOperationExpression(SetOperationExpression setOperationExpression) {
+        Expression leftExpr = visit(setOperationExpression.left)
+        Expression rightExpr = visitGinqExpression(setOperationExpression.right)
+
+        String methodName
+        switch (setOperationExpression.operation) {
+            case 'union': methodName = 'union'; break
+            case 'unionall': methodName = 'unionAll'; break
+            case 'intersect': methodName = 'intersect'; break
+            case 'minus': methodName = 'minus'; break
+            default: throw new GroovyBugError("Unknown set operation: ${setOperationExpression.operation}")
+        }
+
+        return callX(leftExpr, methodName, args(rightExpr))
     }
 
     @Override

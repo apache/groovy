@@ -48,7 +48,9 @@ A GINQ expression can include the following clauses:
 * **`limit`** — restricts output to a given size, with optional offset for pagination.
 * **`select`** — the projection (required). Defines the output columns, with optional `as` aliases.
 
-GINQ also supports window functions, nested subqueries, and set operations (`union`, `intersect`, `minus`) — see <<Advanced Topics>> for details.
+* **`union`**, **`unionall`**, **`intersect`**, **`minus`** — set operations that combine two complete `from...select` expressions.
+
+GINQ also supports window functions and nested subqueries — see <<Advanced Topics>> for details.
 
 ****
 *How it works*: Under the covers GINQ transforms the query into calls within a fluent API. For example, the above query is transformed into:
@@ -554,6 +556,36 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_pagination_01,
 ----
 include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_pagination_02,indent=0]
 ----
+
+=== Set Operations
+Set operations combine the results of two complete GINQ expressions.
+
+`union` returns distinct rows from both queries (duplicates removed):
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_setop_union,indent=0]
+----
+
+`unionall` returns all rows from both queries (duplicates preserved):
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_setop_unionall,indent=0]
+----
+
+`intersect` returns only rows that appear in both queries:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_setop_intersect,indent=0]
+----
+
+`minus` returns rows from the first query that do not appear in the second:
+[source, groovy]
+----
+include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_setop_minus,indent=0]
+----
+
+Each side of a set operation is a complete `from...select` expression and can include
+`where`, `groupby`, `orderby`, `limit`, and any other clauses.
 
 == Common Recipes
 
@@ -1141,28 +1173,32 @@ include::../test/org/apache/groovy/ginq/GinqTest.groovy[tags=ginq_optimize_01,in
 The full GINQ clause structure for reference:
 ```sql
 GQ, i.e. abbreviation for GINQ
-|__ from
-|   |__ <data_source_alias> in <data_source>
-|__ [join/innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
-|   |__ <data_source_alias> in <data_source>
-|   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need `on` clause)
-|__ [where]
-|   |__ <condition> ((&& | ||) <condition>)*
-|__ [groupby]
-|   |__ <expression> [as <alias>] (, <expression> [as <alias>])* [into <group_alias>]
-|   |__ [having]
-|       |__ <condition> ((&& | ||) <condition>)*
-|__ [orderby]
-|   |__ <expression> [in (asc|desc)] (, <expression> [in (asc|desc)])*
-|__ [limit]
-|   |__ [<offset>,] <size>
-|__ select
-    |__ <expression> [as <alias>] (, <expression> [as <alias>])*
+|__ <query>
+|   |__ from
+|   |   |__ <data_source_alias> in <data_source>
+|   |__ [join/innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
+|   |   |__ <data_source_alias> in <data_source>
+|   |   |__ on <condition> ((&& | ||) <condition>)* (NOTE: `crossjoin` does not need `on` clause)
+|   |__ [where]
+|   |   |__ <condition> ((&& | ||) <condition>)*
+|   |__ [groupby]
+|   |   |__ <expression> [as <alias>] (, <expression> [as <alias>])* [into <group_alias>]
+|   |   |__ [having]
+|   |       |__ <condition> ((&& | ||) <condition>)*
+|   |__ [orderby]
+|   |   |__ <expression> [in (asc|desc)] (, <expression> [in (asc|desc)])*
+|   |__ [limit]
+|   |   |__ [<offset>,] <size>
+|   |__ select
+|       |__ <expression> [as <alias>] (, <expression> [as <alias>])*
+|__ [union/unionall/intersect/minus]*
+    |__ <query>
 ```
 [NOTE]
-`[]` means the related clause is optional, `*` means zero or more times, and `+` means one or more times. Also, the clauses of GINQ are order sensitive,
+`[]` means the related clause is optional, `*` means zero or more times, and `+` means one or more times. Also, the clauses within each query are order sensitive,
 so the order of clauses should be kept as the above structure.
-__ONLY ONE__ `from` clause is required in GINQ. Multiple data sources are supported through `from` and the related joins.
+__ONLY ONE__ `from` clause is required per query. Multiple data sources are supported through `from` and the related joins.
+Set operations chain left-to-right, so `Q1 union Q2 minus Q3` is evaluated as `(Q1 union Q2) minus Q3`.
 
 === Known Limitations
 
