@@ -262,6 +262,24 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
         return Group.of(stream);
     }
 
+    @Override
+    public <K> Queryable<GroupResult<K, T>> groupByInto(Function<? super T, ? extends K> classifier, Predicate<? super GroupResult<K, T>> having) {
+        Collector<T, ?, ? extends Map<K, List<T>>> groupingBy =
+                isParallel() ? Collectors.groupingByConcurrent(classifier, Collectors.toList())
+                             : Collectors.groupingBy(classifier, Collectors.toList());
+
+        // Materialize group elements as lists so they can be iterated multiple times
+        // (e.g., having g.count() > 1 followed by select g.count())
+        Stream<GroupResult<K, T>> stream =
+                this.stream()
+                        .collect(groupingBy)
+                        .entrySet().stream()
+                        .map(m -> GroupResult.<K, T>of(m.getKey(), from(m.getValue())))
+                        .filter(gr -> null == having || having.test(gr));
+
+        return from(stream);
+    }
+
     @SafeVarargs
     @Override
     public final <U extends Comparable<? super U>> Queryable<T> orderBy(Order<? super T, ? extends U>... orders) {

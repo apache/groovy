@@ -246,6 +246,30 @@ public interface Queryable<T> {
     }
 
     /**
+     * Group by {@link Queryable} instance, returning {@link GroupResult} instances
+     * for use with the {@code groupby...into} syntax.
+     *
+     * @param classifier the classifier for group by
+     * @param having the filter condition (may be null)
+     * @param <K> the type of the group key
+     * @return the result of group by as GroupResult instances
+     * @since 6.0.0
+     */
+    <K> Queryable<GroupResult<K, T>> groupByInto(Function<? super T, ? extends K> classifier, Predicate<? super GroupResult<K, T>> having);
+
+    /**
+     * Group by {@link Queryable} instance without {@code having} clause, returning {@link GroupResult} instances.
+     *
+     * @param classifier the classifier for group by
+     * @param <K> the type of the group key
+     * @return the result of group by as GroupResult instances
+     * @since 6.0.0
+     */
+    default <K> Queryable<GroupResult<K, T>> groupByInto(Function<? super T, ? extends K> classifier) {
+        return groupByInto(classifier, null);
+    }
+
+    /**
      * Sort {@link Queryable} instance, similar to SQL's {@code order by}
      *
      * @param orders the order rules for sorting
