@@ -42,8 +42,8 @@ class GroupResultImpl<K, T> extends QueryableCollection<T> implements GroupResul
     public K getKey() {
         // For single-key groupby, the classifier wraps the key in a NamedRecord;
         // unwrap it so g.key returns the raw value rather than a single-element tuple
-        if (key instanceof NamedRecord && ((NamedRecord<?, ?>) key).size() == 1) {
-            return (K) ((NamedRecord<?, ?>) key).get(0);
+        if (key instanceof NamedRecord k && k.size() == 1) {
+            return (K) k.get(0);
         }
         return key;
     }

@@ -32,7 +32,7 @@ import groovy.transform.stc.POJO
 @POJO
 class NamedRecord<E, T> extends NamedTuple<E> {
 
-    private static final long serialVersionUID = -2554041223576761912L
+    @Serial private static final long serialVersionUID = -2554041223576761912L
 
     private final List<String> aliasList
     private SourceRecord<T> sourceRecord
