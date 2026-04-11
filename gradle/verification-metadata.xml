@@ -34,6 +34,11 @@
    Then check the diff, remove the unnecessary entries (for old dependencies) and make sure
    the new ones are correct.
 
+   Keys file can be kept manually up-to-date using:
+
+   gpg --keyserver hkps://keyserver.ubuntu.com --recv-keys <KEY_ID> # fetch to local gpg
+   gpg --export --armor > gradle/verification-keyring.keys # regenerate the whole file
+
    Do not remove this header.
 
 -->
@@ -49,6 +54,9 @@
       <ignored-keys>
       </ignored-keys>
       <trusted-keys>
+         <trusted-key id="5A022DE16956DECDAD4EBC161FE771E34EF57D42">
+            <trusting group="jakarta.servlet.jsp"/>
+         </trusted-key>
          <trusted-key id="0181A4828FA27B6BE6F1F5A68611CD28F472E006">
             <trusting group="org.apache.maven"/>
             <trusting group="org.jline"/>
