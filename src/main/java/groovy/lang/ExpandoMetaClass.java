@@ -1381,7 +1381,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 if (obj instanceof Object[] args) {
                     if (STATIC_QUALIFIER.equals(name)) {
                         final StaticDefiningClosure staticDef = new StaticDefiningClosure();
-                        var c = (Closure<?>) ((Object[]) obj)[0];
+                        var c = (Closure<?>) args[0];
                         c.setDelegate(staticDef);
                         c.setResolveStrategy(Closure.DELEGATE_ONLY);
                         c.call((Object)null);
@@ -1392,7 +1392,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     } else if (args.length == 2 && args[0] instanceof Class clazz && args[1] instanceof Closure closure)
                         registerSubclassInstanceMethod(name, clazz, closure);
                     else
-                        ExpandoMetaClass.this.setProperty(name, ((Object[]) obj)[0]);
+                        ExpandoMetaClass.this.setProperty(name, args[0]);
 
                     return null;
                 }

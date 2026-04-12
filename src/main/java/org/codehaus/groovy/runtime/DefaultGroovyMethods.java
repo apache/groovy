@@ -6717,7 +6717,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                                     returnedSelf = true;
                                 }
                                 if (!returnedSelf) {
-                                    cache.push(flatten((Collection<?>) transformed, flattenOptionals).iterator());
+                                    cache.push(flatten(c, flattenOptionals).iterator());
                                     flattenUsingStack.push(null);
                                     continue outer;
                                 }

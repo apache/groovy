@@ -598,9 +598,7 @@ class QueryableCollection<T> implements Queryable<T>, Serializable {
     public List<T> toList() {
         writeLock.lock();
         try {
-            if (sourceIterable instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<T> list = (List<T>) sourceIterable;
+            if (sourceIterable instanceof @SuppressWarnings("unchecked")List<T> list) {
                 return list;
             }
 

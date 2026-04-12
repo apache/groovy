@@ -5284,7 +5284,7 @@ trying: for (ClassNode[] signature : signatures) {
                     storeType(vexp, type);
                     return type;
                 }
-                return getType((Parameter) variable);
+                return getType(parameter);
             }
             return vexp.getOriginType();
         }

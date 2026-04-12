@@ -84,7 +84,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
 
         if (parent instanceof ClassNode || parent instanceof MethodNode) {
             if (parent instanceof ClassNode cn) {
-                if (!checkNotInterface((ClassNode) parent, MY_TYPE_NAME)) {
+                if (!checkNotInterface(cn, MY_TYPE_NAME)) {
                     return;
                 }
                 if (hasAnnotation(cn, RECORD_TYPE)) {
