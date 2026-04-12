@@ -81,13 +81,13 @@ class PlatformLoggingMessageLogger extends AbstractMessageLogger {
     }
 
     private static System.Logger.Level toSystemLevel(int ivyLevel) {
-        switch (ivyLevel) {
-            case Message.MSG_ERR:     return ERROR;
-            case Message.MSG_WARN:    return WARNING;
-            case Message.MSG_INFO:    return INFO;
-            case Message.MSG_VERBOSE: return DEBUG;
-            case Message.MSG_DEBUG:   return TRACE;
-            default:                  return INFO;
-        }
+        return switch (ivyLevel) {
+            case Message.MSG_ERR -> ERROR;
+            case Message.MSG_WARN -> WARNING;
+            case Message.MSG_INFO -> INFO;
+            case Message.MSG_VERBOSE -> DEBUG;
+            case Message.MSG_DEBUG -> TRACE;
+            default -> INFO;
+        };
     }
 }
