@@ -39,10 +39,10 @@ public final class YamlConverter {
      * @return the text of json
      */
     public static String convertYamlToJson(Reader yamlReader) {
-        try (Reader reader = yamlReader) {
+        try {
             List<Object> resultList =
                     new ObjectMapper()
-                            .readValues(new YAMLFactory().createParser(reader), Object.class)
+                            .readValues(new YAMLFactory().createParser(yamlReader), Object.class)
                             .readAll();
             Object yaml = 1 == resultList.size() ? resultList.get(0) : resultList;
             return new ObjectMapper().writeValueAsString(yaml);
@@ -57,8 +57,8 @@ public final class YamlConverter {
      * @return the text of yaml
      */
     public static String convertJsonToYaml(Reader jsonReader) {
-        try (Reader reader = jsonReader) {
-            JsonNode json = new ObjectMapper().readTree(reader);
+        try {
+            JsonNode json = new ObjectMapper().readTree(jsonReader);
 
             return new YAMLMapper().writeValueAsString(json);
         } catch (IOException e) {

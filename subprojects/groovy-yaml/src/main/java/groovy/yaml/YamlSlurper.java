@@ -21,7 +21,6 @@ package groovy.yaml;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import groovy.json.JsonSlurper;
-import groovy.yaml.YamlRuntimeException;
 import org.apache.groovy.yaml.util.YamlConverter;
 
 import java.io.File;
@@ -92,8 +91,9 @@ public class YamlSlurper {
      * @return the root node of the parsed tree of Nodes
      */
     public Object parse(Path path) throws IOException {
-        // note: convert to an input stream to allow the support of foreign file objects
-        return parse(Files.newInputStream(path));
+        try (InputStream stream = Files.newInputStream(path)) {
+            return parse(new InputStreamReader(stream));
+        }
     }
 
     /**
@@ -121,8 +121,8 @@ public class YamlSlurper {
      * @since 6.0.0
      */
     public <T> T parseAs(Class<T> type, Reader reader) {
-        try (Reader r = reader) {
-            return new ObjectMapper(new YAMLFactory()).readValue(r, type);
+        try {
+            return new ObjectMapper(new YAMLFactory()).readValue(reader, type);
         } catch (IOException e) {
             throw new YamlRuntimeException(e);
         }
@@ -164,6 +164,8 @@ public class YamlSlurper {
      * @since 6.0.0
      */
     public <T> T parseAs(Class<T> type, Path path) throws IOException {
-        return parseAs(type, Files.newInputStream(path));
+        try (InputStream stream = Files.newInputStream(path)) {
+            return parseAs(type, new InputStreamReader(stream));
+        }
     }
 }
