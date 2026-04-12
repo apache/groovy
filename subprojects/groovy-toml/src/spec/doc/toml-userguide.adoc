@@ -90,6 +90,22 @@ The following table gives an overview of the TOML types and the corresponding Gr
 Whenever a value in TOML is `null`, `TomlSlurper` supplements it with the Groovy `null` value. This is in contrast to other
 TOML parsers that represent a `null` value with a library-provided singleton object.
 
+=== Typed parsing
+
+`TomlSlurper` can parse TOML directly into typed objects using Jackson databinding.
+Standard Jackson annotations such as `@JsonProperty` and `@JsonFormat` are supported
+for property mapping and type conversion:
+
+[source,groovy]
+----
+include::../test/groovy/toml/TomlParserTest.groovy[tags=typed_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/toml/TomlParserTest.groovy[tags=typed_parsing,indent=0]
+----
+
 === Builders
 
 Another way to create TOML from Groovy is to use `TomlBuilder`. The builder provide a
@@ -98,4 +114,13 @@ DSL which allows to formulate an object graph which is then converted to TOML.
 [source,groovy]
 ----
 include::../test/groovy/toml/TomlBuilderTest.groovy[tags=build_text,indent=0]
+----
+
+=== Typed writing
+
+`TomlBuilder.toToml(object)` serializes a typed object directly to TOML using Jackson databinding:
+
+[source,groovy]
+----
+include::../test/groovy/toml/TomlBuilderTest.groovy[tags=typed_writing,indent=0]
 ----

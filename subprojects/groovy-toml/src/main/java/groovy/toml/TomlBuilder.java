@@ -18,6 +18,7 @@
  */
 package groovy.toml;
 
+import com.fasterxml.jackson.dataformat.toml.TomlMapper;
 import groovy.json.JsonBuilder;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
@@ -43,6 +44,22 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
 
     public TomlBuilder() {
         this.jsonBuilder = new JsonBuilder();
+    }
+
+    /**
+     * Serializes a typed object to a TOML string using Jackson databinding.
+     * Supports {@code @JsonProperty} and {@code @JsonFormat} annotations.
+     *
+     * @param object the object to serialize
+     * @return the TOML string
+     * @since 6.0.0
+     */
+    public static String toToml(Object object) {
+        try {
+            return new TomlMapper().writeValueAsString(object);
+        } catch (IOException e) {
+            throw new TomlRuntimeException(e);
+        }
     }
 
     public Object getContent() {
