@@ -40,10 +40,10 @@ public final class TomlConverter {
      * @return the text of json
      */
     public static String convertTomlToJson(Reader tomlReader) {
-        try (Reader reader = tomlReader) {
-            Object yaml = new ObjectMapper(new TomlFactory()).readValue(reader, Object.class);
+        try {
+            Object toml = new ObjectMapper(new TomlFactory()).readValue(tomlReader, Object.class);
 
-            return new ObjectMapper().writeValueAsString(yaml);
+            return new ObjectMapper().writeValueAsString(toml);
         } catch (IOException e) {
             throw new TomlRuntimeException(e);
         }
@@ -55,8 +55,8 @@ public final class TomlConverter {
      * @return the text of toml
      */
     public static String convertJsonToToml(Reader jsonReader) {
-        try (Reader reader = jsonReader) {
-            JsonNode json = new ObjectMapper().readTree(reader);
+        try {
+            JsonNode json = new ObjectMapper().readTree(jsonReader);
 
             return new TomlMapper().writeValueAsString(json);
         } catch (IOException e) {
