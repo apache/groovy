@@ -92,8 +92,9 @@ public class TomlSlurper {
      * @return the root node of the parsed tree of Nodes
      */
     public Object parse(Path path) throws IOException {
-        // note: convert to an input stream to allow the support of foreign file objects
-        return parse(Files.newInputStream(path));
+        try (InputStream stream = Files.newInputStream(path)) {
+            return parse(new InputStreamReader(stream));
+        }
     }
 
     /**
@@ -121,8 +122,8 @@ public class TomlSlurper {
      * @since 6.0.0
      */
     public <T> T parseAs(Class<T> type, Reader reader) {
-        try (Reader r = reader) {
-            return new TomlMapper().readValue(r, type);
+        try {
+            return new TomlMapper().readValue(reader, type);
         } catch (IOException e) {
             throw new TomlRuntimeException(e);
         }
@@ -164,6 +165,8 @@ public class TomlSlurper {
      * @since 6.0.0
      */
     public <T> T parseAs(Class<T> type, Path path) throws IOException {
-        return parseAs(type, Files.newInputStream(path));
+        try (InputStream stream = Files.newInputStream(path)) {
+            return parseAs(type, new InputStreamReader(stream));
+        }
     }
 }
