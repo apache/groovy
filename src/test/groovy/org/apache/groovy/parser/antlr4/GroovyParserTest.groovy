@@ -483,6 +483,11 @@ final class GroovyParserTest {
     }
 
     @Test
+    void 'groovy core - val'() {
+        doRunAndTestAntlr4('core/Val_01x.groovy')
+    }
+
+    @Test
     void 'groovy core - var'() {
         doRunAndTestAntlr4('core/Var_01x.groovy')
     }

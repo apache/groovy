@@ -110,6 +110,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.TRAIT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.TRANSIENT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.TRY;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.UNEXPECTED_CHAR;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.VAL;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.VAR;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.VOID;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.VOLATILE;
@@ -124,7 +125,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.YIELD;
  */
 public class SmartDocumentFilter extends DocumentFilter {
     public static final List<Integer> HIGHLIGHTED_TOKEN_TYPE_LIST = Arrays.asList(AS, DEF, IN, TRAIT, THREADSAFE,
-            VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
+            VAL, VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
             ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
             NATIVE, NEW, NON_SEALED, NOT_IN, NOT_INSTANCEOF, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC,
             RECORD, RETURN, SEALED, STATIC, STRICTFP, SUPER, SWITCH, SYNCHRONIZED,

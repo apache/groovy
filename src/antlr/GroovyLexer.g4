@@ -479,6 +479,7 @@ THROW         : 'throw';
 THROWS        : 'throws';
 TRANSIENT     : 'transient';
 TRY           : 'try';
+VAL           : 'val';
 VAR           : 'var';
 VOID          : 'void';
 VOLATILE      : 'volatile';
