@@ -66,10 +66,8 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map<String, 
         if (!(key instanceof CharSequence))
             return null;
         String keyStr = key.toString();
-        for (Object next : result.keySet()) {
-            if (!(next instanceof String))
-                continue;
-            if (keyStr.equalsIgnoreCase((String)next))
+        for (String next : result.keySet()) {
+            if (keyStr.equalsIgnoreCase(next))
                 return next;
         }
         return null;
