@@ -16,19 +16,24 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
-}
+package groovy.http;
 
-dependencies {
-    api rootProject
-    implementation projects.groovyJson
-    implementation projects.groovyXml
-    testRuntimeOnly "org.jsoup:jsoup:1.22.1"
-    testImplementation projects.groovyTest
-}
+import org.apache.groovy.lang.annotation.Incubating;
 
-groovyLibrary {
-    optionalModule()
-    withoutBinaryCompatibilityChecks()
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Marks a method parameter as an HTTP query parameter.
+ *
+ * @since 6.0.0
+ */
+@Incubating
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+public @interface Query {
+    /** The query parameter name. Defaults to the method parameter name if empty. */
+    String value() default "";
 }

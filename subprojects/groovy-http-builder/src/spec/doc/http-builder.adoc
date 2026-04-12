@@ -180,4 +180,102 @@ include::../test/HttpBuilderSpecTest.groovy[tags=html_login,indent=0]
 | raw string body
 |===
 
+== Declarative HTTP Clients
+
+For APIs with multiple endpoints, you can define a typed interface and let
+Groovy generate the implementation at compile time. Annotate an interface with
+`@HttpBuilderClient` and each method with an HTTP method annotation:
+
+[source,groovy]
+----
+@HttpBuilderClient('https://api.example.com')
+@Header(name = 'Accept', value = 'application/json')
+interface BookApi {
+    @Get('/books/{id}')
+    Map getBook(String id)
+
+    @Get('/books')
+    List searchBooks(@Query('q') String query)
+
+    @Post('/books')
+    Map createBook(@Body Map book)
+
+    @Delete('/books/{id}')
+    void deleteBook(String id)
+}
+
+def api = BookApi.create()
+def book = api.getBook('978-0-321-12521-7')
+----
+
+The AST transform generates an implementation class that uses `HttpBuilder`
+under the hood. A `create()` factory method is added to the interface, with
+an overload `create(String baseUrl)` for overriding the base URL at runtime.
+
+=== Parameter Mapping
+
+Method parameters are mapped automatically:
+
+[cols="1,2"]
+|===
+| Condition | Mapping
+
+| Name matches `{placeholder}` in URL
+| Path variable — substituted into the URL
+
+| `@Body` annotation
+| Request body — serialized as JSON
+
+| `@Query` annotation (or no match)
+| Query parameter
+
+|===
+
+=== Headers
+
+`@Header` annotations can be placed on the interface (applies to all methods)
+or on individual methods. Method-level headers are merged with interface-level headers.
+
+=== Return Types
+
+The return type of each method determines how the response is processed:
+
+[cols="1,2"]
+|===
+| Return type | Behaviour
+
+| `Map` or `List`
+| Response parsed as JSON
+
+| `String`
+| Raw response body
+
+| `HttpResult`
+| Full response (status, headers, body)
+
+| `void`
+| Response discarded
+
+| `CompletableFuture<T>`
+| Asynchronous execution; inner type determines parsing
+
+|===
+
+=== Async
+
+Methods returning `CompletableFuture` execute asynchronously:
+
+[source,groovy]
+----
+@HttpBuilderClient('https://api.example.com')
+interface AsyncApi {
+    @Get('/data/{id}')
+    CompletableFuture<Map> getData(String id)
+}
+
+def api = AsyncApi.create()
+def future = api.getData('42')
+// ... do other work ...
+def data = future.get()
+----
 

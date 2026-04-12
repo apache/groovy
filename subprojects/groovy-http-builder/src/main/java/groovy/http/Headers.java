@@ -16,19 +16,20 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-plugins {
-    id 'org.apache.groovy-library'
-}
+package groovy.http;
 
-dependencies {
-    api rootProject
-    implementation projects.groovyJson
-    implementation projects.groovyXml
-    testRuntimeOnly "org.jsoup:jsoup:1.22.1"
-    testImplementation projects.groovyTest
-}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-groovyLibrary {
-    optionalModule()
-    withoutBinaryCompatibilityChecks()
+/**
+ * Container annotation for repeatable {@link Header} annotations.
+ *
+ * @since 6.0.0
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+public @interface Headers {
+    Header[] value();
 }
