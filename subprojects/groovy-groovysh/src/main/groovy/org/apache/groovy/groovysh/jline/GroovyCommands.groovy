@@ -413,8 +413,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     def parser = getParser(format, slurpers[format])
                     out = parser.parse(source)
                 } else if (format == 'CSV') {
-                    def parser = getCsvParser(format)
-                    out = parser.parse(source).toList()*.toMap()
+                    out = parseCsv(source)
                 } else if (format == 'PROPERTIES') {
                     out = new Properties().tap {load(source) }
                 } else {
@@ -429,8 +428,7 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
                     def parser = getParser(format, slurpers[format])
                     out = parser.parseText(arg)
                 } else if (format == 'CSV') {
-                    def parser = getCsvParser(format)
-                    out = parser.parse(new StringReader(arg)).toList()*.toMap()
+                    out = parseCsv(new StringReader(arg))
                 } else {
                     out = engine.deserialize(arg, 'AUTO')
                 }
@@ -442,12 +440,20 @@ class GroovyCommands extends JlineCommandRegistry implements CommandRegistry {
         out
     }
 
-    private getCsvParser(String format) {
-        def parserName = 'org.apache.commons.csv.CSVFormat'
-        if (!ClassUtils.lookFor(engine, parserName)) {
-            throw new IllegalArgumentException("$format format requires $parserName to be available")
+    private static final String GROOVY_CSV_SLURPER = 'groovy.csv.CsvSlurper'
+    private static final String COMMONS_CSV_FORMAT = 'org.apache.commons.csv.CSVFormat'
+
+    private parseCsv(Reader source) {
+        // Try groovy-csv (CsvSlurper) first, then fall back to Apache Commons CSV
+        if (ClassUtils.lookFor(GROOVY_CSV_SLURPER)) {
+            def parser = engine.execute("new ${GROOVY_CSV_SLURPER}()")
+            return parser.parse(source)
         }
-        engine.execute("${parserName}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
+        if (ClassUtils.lookFor(engine, COMMONS_CSV_FORMAT)) {
+            def parser = engine.execute("${COMMONS_CSV_FORMAT}.DEFAULT.builder().setHeader().setSkipHeaderRecord(true).build()")
+            return parser.parse(source).toList()*.toMap()
+        }
+        throw new IllegalArgumentException("CSV format requires $GROOVY_CSV_SLURPER or $COMMONS_CSV_FORMAT to be available")
     }
 
     Object getParser(String format, String parserName) {
