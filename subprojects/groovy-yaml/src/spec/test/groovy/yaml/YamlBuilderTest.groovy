@@ -53,4 +53,28 @@ records:
 '''
         // end::build_text[]
     }
+
+    // tag::typed_writing[]
+    static class ServerConfig {
+        String host
+        int port
+    }
+
+    void testToYaml() {
+        def config = new ServerConfig(host: 'localhost', port: 8080)
+        def yaml = YamlBuilder.toYaml(config)
+        assert yaml.contains('host:')
+        assert yaml.contains('localhost')
+        assert yaml.contains('port:')
+        assert yaml.contains('8080')
+    }
+    // end::typed_writing[]
+
+    void testTypedRoundTrip() {
+        def original = new ServerConfig(host: 'example.com', port: 443)
+        def yaml = YamlBuilder.toYaml(original)
+        def parsed = new YamlSlurper().parseTextAs(ServerConfig, yaml)
+        assert parsed.host == 'example.com'
+        assert parsed.port == 443
+    }
 }

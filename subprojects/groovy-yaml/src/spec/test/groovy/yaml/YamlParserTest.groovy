@@ -106,6 +106,54 @@ matrix:
 
     }
 
+    // tag::typed_class[]
+    static class ServerConfig {
+        String host
+        int port
+    }
+    // end::typed_class[]
+
+    void testParseTextAs() {
+        // tag::typed_parsing[]
+        def config = new YamlSlurper().parseTextAs(ServerConfig, '''\
+host: localhost
+port: 8080
+''')
+        assert config.host == 'localhost'
+        assert config.port == 8080
+        // end::typed_parsing[]
+    }
+
+    void testParseAsFromReader() {
+        def reader = new StringReader('host: localhost\nport: 8080')
+        def config = new YamlSlurper().parseAs(ServerConfig, reader)
+        assert config instanceof ServerConfig
+        assert config.host == 'localhost'
+        assert config.port == 8080
+    }
+
+    void testParseAsFromFile() {
+        def file = File.createTempFile('test', '.yml')
+        file.deleteOnExit()
+        file.text = 'host: localhost\nport: 9090'
+        def config = new YamlSlurper().parseAs(ServerConfig, file)
+        assert config.port == 9090
+    }
+
+    void testParseAsFromPath() {
+        def file = File.createTempFile('test', '.yml')
+        file.deleteOnExit()
+        file.text = 'host: example.com\nport: 443'
+        def config = new YamlSlurper().parseAs(ServerConfig, file.toPath())
+        assert config.host == 'example.com'
+    }
+
+    void testParseAsFromInputStream() {
+        def stream = new ByteArrayInputStream('host: localhost\nport: 3000'.bytes)
+        def config = new YamlSlurper().parseAs(ServerConfig, stream)
+        assert config.port == 3000
+    }
+
     void testParseMultiDocs() {
         def ys = new YamlSlurper()
         def yaml = ys.parseText '''\

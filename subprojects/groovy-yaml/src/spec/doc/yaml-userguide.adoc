@@ -90,6 +90,22 @@ The following table gives an overview of the YAML types and the corresponding Gr
 Whenever a value in YAML is `null`, `YamlSlurper` supplements it with the Groovy `null` value. This is in contrast to other
 YAML parsers that represent a `null` value with a library-provided singleton object.
 
+=== Typed parsing
+
+`YamlSlurper` can parse YAML directly into typed objects using Jackson databinding.
+Standard Jackson annotations such as `@JsonProperty` and `@JsonFormat` are supported
+for property mapping and type conversion:
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=typed_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlParserTest.groovy[tags=typed_parsing,indent=0]
+----
+
 === Builders
 
 Another way to create YAML from Groovy is to use `YamlBuilder`. The builder provide a
@@ -98,4 +114,13 @@ DSL which allows to formulate an object graph which is then converted to YAML.
 [source,groovy]
 ----
 include::../test/groovy/yaml/YamlBuilderTest.groovy[tags=build_text,indent=0]
+----
+
+=== Typed writing
+
+`YamlBuilder.toYaml(object)` serializes a typed object directly to YAML using Jackson databinding:
+
+[source,groovy]
+----
+include::../test/groovy/yaml/YamlBuilderTest.groovy[tags=typed_writing,indent=0]
 ----

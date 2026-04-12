@@ -18,9 +18,13 @@
  */
 package groovy.yaml;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import groovy.json.JsonSlurper;
+import groovy.yaml.YamlRuntimeException;
 import org.apache.groovy.yaml.util.YamlConverter;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -90,5 +94,76 @@ public class YamlSlurper {
     public Object parse(Path path) throws IOException {
         // note: convert to an input stream to allow the support of foreign file objects
         return parse(Files.newInputStream(path));
+    }
+
+    /**
+     * Parse the content of the specified YAML text into a typed object using Jackson databinding.
+     * Supports {@code @JsonProperty} and {@code @JsonFormat} annotations for
+     * property mapping and type conversion.
+     *
+     * @param type the target type
+     * @param yaml the content of YAML
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseTextAs(Class<T> type, String yaml) {
+        return parseAs(type, new StringReader(yaml));
+    }
+
+    /**
+     * Parse YAML from a reader into a typed object.
+     *
+     * @param type the target type
+     * @param reader the reader of YAML
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Reader reader) {
+        try (Reader r = reader) {
+            return new ObjectMapper(new YAMLFactory()).readValue(r, type);
+        } catch (IOException e) {
+            throw new YamlRuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse YAML from an input stream into a typed object.
+     *
+     * @param type the target type
+     * @param stream the input stream of YAML
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, InputStream stream) {
+        return parseAs(type, new InputStreamReader(stream));
+    }
+
+    /**
+     * Parse YAML from a file into a typed object.
+     *
+     * @param type the target type
+     * @param file the YAML file
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, File file) throws IOException {
+        return parseAs(type, file.toPath());
+    }
+
+    /**
+     * Parse YAML from a path into a typed object.
+     *
+     * @param type the target type
+     * @param path the path to the YAML file
+     * @param <T> the target type
+     * @return a typed object
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Path path) throws IOException {
+        return parseAs(type, Files.newInputStream(path));
     }
 }

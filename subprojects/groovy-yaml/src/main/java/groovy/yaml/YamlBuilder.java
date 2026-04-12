@@ -18,6 +18,9 @@
  */
 package groovy.yaml;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import groovy.json.JsonBuilder;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
@@ -41,6 +44,24 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
 
     public YamlBuilder() {
         this.jsonBuilder = new JsonBuilder();
+    }
+
+    /**
+     * Serializes a typed object to a YAML string using Jackson databinding.
+     * Supports {@code @JsonProperty} and {@code @JsonFormat} annotations.
+     *
+     * @param object the object to serialize
+     * @return the YAML string
+     * @since 6.0.0
+     */
+    public static String toYaml(Object object) {
+        try {
+            return new ObjectMapper(new YAMLFactory()
+                    .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER))
+                    .writeValueAsString(object);
+        } catch (IOException e) {
+            throw new YamlRuntimeException(e);
+        }
     }
 
     public Object getContent() {
