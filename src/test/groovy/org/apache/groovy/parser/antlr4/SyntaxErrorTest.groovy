@@ -481,6 +481,13 @@ final class SyntaxErrorTest {
     }
 
     @Test
+    void 'groovy core - val'() {
+        TestUtils.doRunAndShouldFail('fail/Val_01x.groovy')
+        TestUtils.doRunAndShouldFail('fail/Val_02x.groovy')
+        TestUtils.doRunAndShouldFail('fail/Val_03x.groovy')
+    }
+
+    @Test
     void 'groovy core - var'() {
         TestUtils.doRunAndShouldFail('fail/Var_01x.groovy')
         TestUtils.doRunAndShouldFail('fail/Var_02x.groovy')

@@ -817,7 +817,7 @@ final class LambdaTest {
                     this.val = v
                 }
                 String toString() {
-                    val as String
+                    this.val as String
                 }
                 def <Out> Value<Out> replace(Supplier<Out> supplier) {
                     new Value<>(supplier.get())
