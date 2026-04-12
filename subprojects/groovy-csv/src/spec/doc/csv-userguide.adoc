@@ -64,7 +64,9 @@ include::../test/groovy/csv/CsvSlurperTest.groovy[tags=quoted_fields,indent=0]
 
 `CsvSlurper` can parse CSV directly into typed objects using Jackson databinding.
 Standard Jackson annotations such as `@JsonProperty` and `@JsonFormat` are supported
-for column name mapping and type conversion:
+for column name mapping and type conversion.
+This is particularly useful for CSV since all values are strings — Jackson handles
+the conversion to numeric, date, and other types automatically:
 
 [source,groovy]
 ----
