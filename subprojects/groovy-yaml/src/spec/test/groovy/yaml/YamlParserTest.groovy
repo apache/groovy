@@ -19,10 +19,11 @@
 package groovy.yaml
 
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class YamlParserTest extends GroovyTestCase {
+class YamlParserTest {
 
+    @Test
     void testParse() {
         // tag::parse_text[]
         def ys = new YamlSlurper()
@@ -51,6 +52,7 @@ before_script:
         // end::parse_text[]
     }
 
+    @Test
     void testBuildAndParse() {
         def builder = new YamlBuilder()
         builder.records {
@@ -80,6 +82,7 @@ before_script:
     }
 
 
+    @Test
     void testParsePath() {
         def file = File.createTempFile('test','yml')
         file.deleteOnExit()
@@ -113,6 +116,7 @@ matrix:
     }
     // end::typed_class[]
 
+    @Test
     void testParseTextAs() {
         // tag::typed_parsing[]
         def config = new YamlSlurper().parseTextAs(ServerConfig, '''\
@@ -124,6 +128,7 @@ port: 8080
         // end::typed_parsing[]
     }
 
+    @Test
     void testParseAsFromReader() {
         def reader = new StringReader('host: localhost\nport: 8080')
         def config = new YamlSlurper().parseAs(ServerConfig, reader)
@@ -132,6 +137,7 @@ port: 8080
         assert config.port == 8080
     }
 
+    @Test
     void testParseAsFromFile() {
         def file = File.createTempFile('test', '.yml')
         file.deleteOnExit()
@@ -140,6 +146,7 @@ port: 8080
         assert config.port == 9090
     }
 
+    @Test
     void testParseAsFromPath() {
         def file = File.createTempFile('test', '.yml')
         file.deleteOnExit()
@@ -148,12 +155,14 @@ port: 8080
         assert config.host == 'example.com'
     }
 
+    @Test
     void testParseAsFromInputStream() {
         def stream = new ByteArrayInputStream('host: localhost\nport: 3000'.bytes)
         def config = new YamlSlurper().parseAs(ServerConfig, stream)
         assert config.port == 3000
     }
 
+    @Test
     void testParseMultiDocs() {
         def ys = new YamlSlurper()
         def yaml = ys.parseText '''\

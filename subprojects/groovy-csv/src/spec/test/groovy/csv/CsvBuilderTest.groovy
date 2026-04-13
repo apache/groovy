@@ -18,10 +18,11 @@
  */
 package groovy.csv
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class CsvBuilderTest extends GroovyTestCase {
+class CsvBuilderTest {
 
+    @Test
     void testToCsvFromMaps() {
         // tag::to_csv_maps[]
         def data = [
@@ -35,11 +36,13 @@ class CsvBuilderTest extends GroovyTestCase {
         // end::to_csv_maps[]
     }
 
+    @Test
     void testToCsvEmpty() {
         assert CsvBuilder.toCsv([]) == ''
         assert CsvBuilder.toCsv(null) == ''
     }
 
+    @Test
     void testToCsvQuotesSpecialChars() {
         def data = [[name: 'Alice, Jr.', note: 'said "hi"']]
         def csv = CsvBuilder.toCsv(data)
@@ -47,6 +50,7 @@ class CsvBuilderTest extends GroovyTestCase {
         assert csv.contains('"said ""hi"""')
     }
 
+    @Test
     void testBuilderInstance() {
         def builder = new CsvBuilder()
         builder.call([[name: 'Alice', age: 30], [name: 'Bob', age: 25]])
@@ -55,6 +59,7 @@ class CsvBuilderTest extends GroovyTestCase {
         assert csv.contains('Alice,30')
     }
 
+    @Test
     void testWritable() {
         def builder = new CsvBuilder()
         builder.call([[x: 1, y: 2]])
@@ -63,6 +68,7 @@ class CsvBuilderTest extends GroovyTestCase {
         assert out.toString().contains('x,y')
     }
 
+    @Test
     void testRoundTrip() {
         // tag::round_trip[]
         def original = [[name: 'Alice', age: '30'], [name: 'Bob', age: '25']]
@@ -80,6 +86,7 @@ class CsvBuilderTest extends GroovyTestCase {
     }
     // end::typed_writing[]
 
+    @Test
     void testToCsvFromTypedObjects() {
         // tag::typed_writing_usage[]
         def products = [new Product(name: 'Widget', price: 9.99),
@@ -91,6 +98,7 @@ class CsvBuilderTest extends GroovyTestCase {
         // end::typed_writing_usage[]
     }
 
+    @Test
     void testTypedRoundTrip() {
         def products = [new Product(name: 'Widget', price: 9.99)]
         def csv = CsvBuilder.toCsv(products, Product)

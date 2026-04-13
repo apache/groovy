@@ -19,10 +19,11 @@
 package groovy.toml
 
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class TomlParserTest extends GroovyTestCase {
+class TomlParserTest {
 
+    @Test
     void testParse() {
         // tag::parse_text[]
         def ts = new TomlSlurper()
@@ -50,6 +51,7 @@ jdk = "oraclejdk8"
         // end::parse_text[]
     }
 
+    @Test
     void testBuildAndParse() {
         def builder = new TomlBuilder()
         builder.records {
@@ -79,6 +81,7 @@ jdk = "oraclejdk8"
     }
 
 
+    @Test
     void testParsePath() {
         def file = File.createTempFile('test','yml')
         file.deleteOnExit()
@@ -115,6 +118,7 @@ jdk = "oraclejdk8"
     }
     // end::typed_class[]
 
+    @Test
     void testParseTextAs() {
         // tag::typed_parsing[]
         def config = new TomlSlurper().parseTextAs(ServerConfig, '''
@@ -126,6 +130,7 @@ port = 8080
         // end::typed_parsing[]
     }
 
+    @Test
     void testParseAsFromReader() {
         def reader = new StringReader('host = "localhost"\nport = 8080')
         def config = new TomlSlurper().parseAs(ServerConfig, reader)
@@ -134,6 +139,7 @@ port = 8080
         assert config.port == 8080
     }
 
+    @Test
     void testParseAsFromFile() {
         def file = File.createTempFile('test', '.toml')
         file.deleteOnExit()
@@ -142,6 +148,7 @@ port = 8080
         assert config.port == 9090
     }
 
+    @Test
     void testParseAsFromPath() {
         def file = File.createTempFile('test', '.toml')
         file.deleteOnExit()
@@ -150,6 +157,7 @@ port = 8080
         assert config.host == 'example.com'
     }
 
+    @Test
     void testParseAsFromInputStream() {
         def stream = new ByteArrayInputStream('host = "localhost"\nport = 3000'.bytes)
         def config = new TomlSlurper().parseAs(ServerConfig, stream)

@@ -18,10 +18,11 @@
  */
 package groovy.yaml
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class YamlBuilderTest extends GroovyTestCase {
+class YamlBuilderTest {
 
+    @Test
     void testBuild() {
         // tag::build_text[]
         def builder = new YamlBuilder()
@@ -60,6 +61,7 @@ records:
         int port
     }
 
+    @Test
     void testToYaml() {
         def config = new ServerConfig(host: 'localhost', port: 8080)
         def yaml = YamlBuilder.toYaml(config)
@@ -70,6 +72,7 @@ records:
     }
     // end::typed_writing[]
 
+    @Test
     void testTypedRoundTrip() {
         def original = new ServerConfig(host: 'example.com', port: 443)
         def yaml = YamlBuilder.toYaml(original)

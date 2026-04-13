@@ -18,10 +18,11 @@
  */
 package groovy.toml
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class TomlBuilderTest extends GroovyTestCase {
+class TomlBuilderTest {
 
+    @Test
     void testBuild() {
         // tag::build_text[]
         def builder = new TomlBuilder()
@@ -57,6 +58,7 @@ records.car.record.description = 'production pickup truck with speed of 271kph'
         int port
     }
 
+    @Test
     void testToToml() {
         def config = new ServerConfig(host: 'localhost', port: 8080)
         def toml = TomlBuilder.toToml(config)
@@ -67,6 +69,7 @@ records.car.record.description = 'production pickup truck with speed of 271kph'
     }
     // end::typed_writing[]
 
+    @Test
     void testTypedRoundTrip() {
         def original = new ServerConfig(host: 'example.com', port: 443)
         def toml = TomlBuilder.toToml(original)

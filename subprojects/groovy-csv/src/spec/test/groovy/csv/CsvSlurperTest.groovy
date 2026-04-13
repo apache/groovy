@@ -18,10 +18,11 @@
  */
 package groovy.csv
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class CsvSlurperTest extends GroovyTestCase {
+class CsvSlurperTest {
 
+    @Test
     void testParseText() {
         // tag::parse_text[]
         def csv = new CsvSlurper().parseText('name,age\nAlice,30\nBob,25')
@@ -32,6 +33,7 @@ class CsvSlurperTest extends GroovyTestCase {
         // end::parse_text[]
     }
 
+    @Test
     void testPropertyAccess() {
         // tag::property_access[]
         def csv = new CsvSlurper().parseText('''\
@@ -43,6 +45,7 @@ class CsvSlurperTest extends GroovyTestCase {
         // end::property_access[]
     }
 
+    @Test
     void testCustomSeparator() {
         // tag::custom_separator[]
         def csv = new CsvSlurper().setSeparator((char) '\t').parseText('name\tage\nAlice\t30')
@@ -51,6 +54,7 @@ class CsvSlurperTest extends GroovyTestCase {
         // end::custom_separator[]
     }
 
+    @Test
     void testQuotedFields() {
         // tag::quoted_fields[]
         def csv = new CsvSlurper().parseText('name,note\nAlice,"hello, world"\nBob,"say ""hi"""')
@@ -59,22 +63,26 @@ class CsvSlurperTest extends GroovyTestCase {
         // end::quoted_fields[]
     }
 
+    @Test
     void testEmptyInput() {
         def csv = new CsvSlurper().parseText('')
         assert csv.isEmpty()
     }
 
+    @Test
     void testSingleRow() {
         def csv = new CsvSlurper().parseText('name,age\nAlice,30')
         assert csv.size() == 1
         assert csv[0].name == 'Alice'
     }
 
+    @Test
     void testSemicolonSeparator() {
         def csv = new CsvSlurper().setSeparator((char) ';').parseText('name;age\nAlice;30')
         assert csv[0].name == 'Alice'
     }
 
+    @Test
     void testParseFromReader() {
         def reader = new StringReader('name,age\nAlice,30')
         def csv = new CsvSlurper().parse(reader)
@@ -88,6 +96,7 @@ class CsvSlurperTest extends GroovyTestCase {
     }
     // end::typed_parsing[]
 
+    @Test
     void testTypedParsing() {
         // tag::typed_parsing_usage[]
         def sales = new CsvSlurper().parseAs(Sale, 'customer,amount\nAcme,1500.00\nGlobex,250.50')
@@ -98,6 +107,7 @@ class CsvSlurperTest extends GroovyTestCase {
         // end::typed_parsing_usage[]
     }
 
+    @Test
     void testTypedParsingMultipleFields() {
         def items = new CsvSlurper().parseAs(Sale, 'customer,amount\nAlice,99.99')
         assert items[0] instanceof Sale
