@@ -51,4 +51,23 @@ class UserGuideXmlUtilTest extends GroovyTestCase {
         // end::testGettingANode[]
     }
 
+    void testSerializeOptions() {
+        // tag::testSerializeOptions[]
+        def response = new XmlParser().parseText(xml)
+
+        // Custom encoding
+        def latin1 = XmlUtil.serialize(response, new SerializeOptions(encoding: 'ISO-8859-1'))
+        assert latin1.contains('encoding="ISO-8859-1"')
+
+        // Custom indent (4 spaces instead of default 2)
+        def wideIndent = XmlUtil.serialize(response, new SerializeOptions(indent: 4))
+        assert wideIndent.contains('    <value>')
+
+        // Multiple options
+        def custom = XmlUtil.serialize(response, new SerializeOptions(encoding: 'ISO-8859-1', indent: 4))
+        assert custom.contains('encoding="ISO-8859-1"')
+        assert custom.contains('    <value>')
+        // end::testSerializeOptions[]
+    }
+
 }

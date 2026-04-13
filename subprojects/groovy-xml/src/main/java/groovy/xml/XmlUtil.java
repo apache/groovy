@@ -55,7 +55,7 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.Writer;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 
 /**
  * Used for pretty printing XML content and other XML related utilities.
@@ -281,6 +281,138 @@ public class XmlUtil {
      */
     public static void serialize(String xmlString, Writer w, boolean allowDocTypeDeclaration) {
         serialize(asStreamSource(xmlString), w, allowDocTypeDeclaration);
+    }
+
+    // --- SerializeOptions overloads ---
+
+    /**
+     * Return a pretty String version of the Element using the specified options.
+     *
+     * @param element the Element to serialize
+     * @param options the serialization options
+     * @return the pretty String representation of the Element
+     * @since 6.0.0
+     */
+    public static String serialize(Element element, SerializeOptions options) {
+        Writer sw = new StringBuilderWriter();
+        serialize(new DOMSource(element), sw, options);
+        return sw.toString();
+    }
+
+    /**
+     * Write a pretty version of the Element to the OutputStream using the specified options.
+     *
+     * @param element the Element to serialize
+     * @param os      the OutputStream to write to
+     * @param options the serialization options
+     * @since 6.0.0
+     */
+    public static void serialize(Element element, OutputStream os, SerializeOptions options) {
+        serialize(new DOMSource(element), os, options);
+    }
+
+    /**
+     * Return a pretty String version of the Node using the specified options.
+     *
+     * @param node    the Node to serialize
+     * @param options the serialization options
+     * @return the pretty String representation of the Node
+     * @since 6.0.0
+     */
+    public static String serialize(Node node, SerializeOptions options) {
+        Writer sw = new StringBuilderWriter();
+        serialize(asStreamSource(asString(node)), sw, options);
+        return sw.toString();
+    }
+
+    /**
+     * Write a pretty version of the Node to the OutputStream using the specified options.
+     *
+     * @param node    the Node to serialize
+     * @param os      the OutputStream to write to
+     * @param options the serialization options
+     * @since 6.0.0
+     */
+    public static void serialize(Node node, OutputStream os, SerializeOptions options) {
+        serialize(asStreamSource(asString(node)), os, options);
+    }
+
+    /**
+     * Return a pretty String version of the GPathResult using the specified options.
+     *
+     * @param node    a GPathResult to serialize to a String
+     * @param options the serialization options
+     * @return the pretty String representation of the GPathResult
+     * @since 6.0.0
+     */
+    public static String serialize(GPathResult node, SerializeOptions options) {
+        Writer sw = new StringBuilderWriter();
+        serialize(asStreamSource(asString(node)), sw, options);
+        return sw.toString();
+    }
+
+    /**
+     * Write a pretty version of the GPathResult to the OutputStream using the specified options.
+     *
+     * @param node    a GPathResult to serialize
+     * @param os      the OutputStream to write to
+     * @param options the serialization options
+     * @since 6.0.0
+     */
+    public static void serialize(GPathResult node, OutputStream os, SerializeOptions options) {
+        serialize(asStreamSource(asString(node)), os, options);
+    }
+
+    /**
+     * Return a pretty String version of the XML content produced by the Writable using the specified options.
+     *
+     * @param writable the Writable to serialize
+     * @param options  the serialization options
+     * @return the pretty String representation of the content from the Writable
+     * @since 6.0.0
+     */
+    public static String serialize(Writable writable, SerializeOptions options) {
+        Writer sw = new StringBuilderWriter();
+        serialize(asStreamSource(asString(writable)), sw, options);
+        return sw.toString();
+    }
+
+    /**
+     * Write a pretty version of the XML content produced by the Writable to the OutputStream using the specified options.
+     *
+     * @param writable the Writable to serialize
+     * @param os       the OutputStream to write to
+     * @param options  the serialization options
+     * @since 6.0.0
+     */
+    public static void serialize(Writable writable, OutputStream os, SerializeOptions options) {
+        serialize(asStreamSource(asString(writable)), os, options);
+    }
+
+    /**
+     * Return a pretty version of the XML content contained in the given String using the specified options.
+     *
+     * @param xmlString the String to serialize
+     * @param options   the serialization options
+     * @return the pretty String representation of the original content
+     * @since 6.0.0
+     */
+    public static String serialize(String xmlString, SerializeOptions options) {
+        Writer sw = new StringBuilderWriter();
+        serialize(asStreamSource(xmlString), sw, options);
+        return sw.toString();
+    }
+
+    /**
+     * Write a pretty version of the given XML string to the OutputStream using the specified options.
+     *
+     * @param xmlString the String to serialize
+     * @param os        the OutputStream to write to
+     * @param options   the serialization options
+     * @since 6.0.0
+     */
+    public static void serialize(String xmlString, OutputStream os, SerializeOptions options) {
+        serialize(asStreamSource(xmlString), os, options);
     }
 
     /**
@@ -526,22 +658,39 @@ public class XmlUtil {
     }
 
     private static void serialize(Source source, OutputStream os, boolean allowDocTypeDeclaration) {
-        serialize(source, new StreamResult(new OutputStreamWriter(os, StandardCharsets.UTF_8)), allowDocTypeDeclaration);
+        serialize(source, os, SerializeOptions.DEFAULT);
+    }
+
+    private static void serialize(Source source, OutputStream os, SerializeOptions options) {
+        serialize(source, new StreamResult(new OutputStreamWriter(os, options.getCharset())), options);
     }
 
     private static void serialize(Source source, Writer w, boolean allowDocTypeDeclaration) {
-        serialize(source, new StreamResult(w), allowDocTypeDeclaration);
+        SerializeOptions options = new SerializeOptions();
+        options.setAllowDocTypeDeclaration(allowDocTypeDeclaration);
+        serialize(source, new StreamResult(w), options);
+    }
+
+    private static void serialize(Source source, Writer w, SerializeOptions options) {
+        serialize(source, new StreamResult(w), options);
     }
 
     private static void serialize(Source source, StreamResult target, boolean allowDocTypeDeclaration) {
+        SerializeOptions options = new SerializeOptions();
+        options.setAllowDocTypeDeclaration(allowDocTypeDeclaration);
+        serialize(source, target, options);
+    }
+
+    private static void serialize(Source source, StreamResult target, SerializeOptions options) {
         TransformerFactory factory = TransformerFactory.newInstance();
-        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
-        setIndent(factory, 2);
+        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !options.isAllowDocTypeDeclaration());
+        setIndent(factory, options.getIndent());
         try {
             Transformer transformer = factory.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty(OutputKeys.METHOD, "xml");
             transformer.setOutputProperty(OutputKeys.MEDIA_TYPE, "text/xml");
+            transformer.setOutputProperty(OutputKeys.ENCODING, options.getEncoding());
             transformer.transform(source, target);
         }
         catch (TransformerException e) {

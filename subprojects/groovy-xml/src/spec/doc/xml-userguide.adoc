@@ -641,3 +641,12 @@ methods to serialize the xml fragment from several type of sources
 include::../test/UserGuideXmlUtilTest.groovy[tags=testGettingANode,indent=0]
 ----
 
+Serialization can be customized using `SerializeOptions` to control
+encoding, indentation, and DOCTYPE handling:
+
+[source,groovy]
+.Customizing serialization
+----
+include::../test/UserGuideXmlUtilTest.groovy[tags=testSerializeOptions,indent=0]
+----
+
