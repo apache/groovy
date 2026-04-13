@@ -299,4 +299,30 @@ final class XmlSlurperTest {
         assert xml.message.part.lookupNamespace("undefinedPrefix") == null
         xml.message.findAll { true }.each { assert it.name() == "message"}
     }
+
+    @Test
+    void testNamedParameterConstruction() {
+        def xml = '<root><item name="test">value</item></root>'
+
+        // named parameters via setters
+        def slurper = new XmlSlurper(namespaceAware: false, keepIgnorableWhitespace: true)
+        def result = slurper.parseText(xml)
+        assert result.item.text() == 'value'
+        assert result.item.@name == 'test'
+
+        // setter after boolean constructor, before first parse
+        def slurper2 = new XmlSlurper(false, false)
+        slurper2.allowDocTypeDeclaration = true
+        assert slurper2.parseText(xml).item.text() == 'value'
+
+        // setter after parse should fail
+        def slurper3 = new XmlSlurper()
+        slurper3.parseText(xml)
+        try {
+            slurper3.namespaceAware = false
+            assert false, 'should have thrown'
+        } catch (IllegalStateException e) {
+            assert e.message.contains('must be set before parsing')
+        }
+    }
 }

@@ -85,22 +85,29 @@ import static groovy.xml.XmlUtil.setFeatureQuietly;
  * @see GPathResult
  */
 public class XmlSlurper extends DefaultHandler {
-    private final XMLReader reader;
+    private XMLReader reader;
     private Node currentNode = null;
     private final Stack<Node> stack = new Stack<>();
     private final StringBuilder charBuffer = new StringBuilder();
     private final Map<String, String> namespaceTagHints = new HashMap<>();
     private boolean keepIgnorableWhitespace = false;
-    private boolean namespaceAware = false;
+    private boolean namespaceAware = true;
+    private boolean validating = false;
+    private boolean allowDocTypeDeclaration = false;
 
     /**
      * Creates a non-validating and namespace-aware <code>XmlSlurper</code> which does not allow DOCTYPE declarations in documents.
+     * <p>
+     * Parser options can be configured via setters before the first parse call:
+     * <pre>
+     * // Using Groovy named parameters:
+     * def slurper = new XmlSlurper(namespaceAware: false, keepIgnorableWhitespace: true)
+     * </pre>
      *
      * @throws ParserConfigurationException if no parser which satisfies the requested configuration can be created.
      * @throws SAXException for SAX errors.
      */
     public XmlSlurper() throws ParserConfigurationException, SAXException {
-        this(false, true);
     }
 
     /**
@@ -127,13 +134,9 @@ public class XmlSlurper extends DefaultHandler {
      * @throws SAXException for SAX errors.
      */
     public XmlSlurper(final boolean validating, final boolean namespaceAware, boolean allowDocTypeDeclaration) throws ParserConfigurationException, SAXException {
-        SAXParserFactory factory = FactorySupport.createSaxParserFactory();
-        factory.setNamespaceAware(namespaceAware);
+        this.validating = validating;
         this.namespaceAware = namespaceAware;
-        factory.setValidating(validating);
-        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
-        reader = factory.newSAXParser().getXMLReader();
+        this.allowDocTypeDeclaration = allowDocTypeDeclaration;
     }
 
     public XmlSlurper(final XMLReader reader) {
@@ -142,6 +145,36 @@ public class XmlSlurper extends DefaultHandler {
 
     public XmlSlurper(final SAXParser parser) throws SAXException {
         this(parser.getXMLReader());
+    }
+
+    private void initReader() throws ParserConfigurationException, SAXException {
+        SAXParserFactory factory = FactorySupport.createSaxParserFactory();
+        factory.setNamespaceAware(namespaceAware);
+        factory.setValidating(validating);
+        setFeatureQuietly(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        setFeatureQuietly(factory, "http://apache.org/xml/features/disallow-doctype-decl", !allowDocTypeDeclaration);
+        reader = factory.newSAXParser().getXMLReader();
+    }
+
+    private XMLReader getReader() throws ParserConfigurationException, SAXException {
+        if (reader == null) {
+            initReader();
+        }
+        return reader;
+    }
+
+    private XMLReader ensureReader() {
+        try {
+            return getReader();
+        } catch (ParserConfigurationException | SAXException e) {
+            throw new RuntimeException("Failed to initialize XML reader", e);
+        }
+    }
+
+    private void checkNotInitialized(String property) {
+        if (reader != null) {
+            throw new IllegalStateException(property + " must be set before parsing");
+        }
     }
 
     /**
@@ -167,6 +200,74 @@ public class XmlSlurper extends DefaultHandler {
      */
     public boolean isKeepIgnorableWhitespace() {
         return keepIgnorableWhitespace;
+    }
+
+    /**
+     * Determine if namespace handling is enabled.
+     *
+     * @return true if namespace handling is enabled
+     */
+    public boolean isNamespaceAware() {
+        return namespaceAware;
+    }
+
+    /**
+     * Enable and/or disable namespace handling.
+     * Must be set before the first parse call.
+     *
+     * @param namespaceAware the new desired value
+     * @throws IllegalStateException if called after parsing has started
+     * @since 6.0.0
+     */
+    public void setNamespaceAware(boolean namespaceAware) {
+        checkNotInitialized("namespaceAware");
+        this.namespaceAware = namespaceAware;
+    }
+
+    /**
+     * Determine if the parser validates documents.
+     *
+     * @return true if validation is enabled
+     * @since 6.0.0
+     */
+    public boolean isValidating() {
+        return validating;
+    }
+
+    /**
+     * Enable and/or disable validation.
+     * Must be set before the first parse call.
+     *
+     * @param validating the new desired value
+     * @throws IllegalStateException if called after parsing has started
+     * @since 6.0.0
+     */
+    public void setValidating(boolean validating) {
+        checkNotInitialized("validating");
+        this.validating = validating;
+    }
+
+    /**
+     * Determine if DOCTYPE declarations are allowed.
+     *
+     * @return true if DOCTYPE declarations are allowed
+     * @since 6.0.0
+     */
+    public boolean isAllowDocTypeDeclaration() {
+        return allowDocTypeDeclaration;
+    }
+
+    /**
+     * Enable and/or disable DOCTYPE declaration support.
+     * Must be set before the first parse call.
+     *
+     * @param allowDocTypeDeclaration the new desired value
+     * @throws IllegalStateException if called after parsing has started
+     * @since 6.0.0
+     */
+    public void setAllowDocTypeDeclaration(boolean allowDocTypeDeclaration) {
+        checkNotInitialized("allowDocTypeDeclaration");
+        this.allowDocTypeDeclaration = allowDocTypeDeclaration;
     }
 
     /**
@@ -196,9 +297,14 @@ public class XmlSlurper extends DefaultHandler {
      *         or character stream supplied by the application.
      */
     public GPathResult parse(final InputSource input) throws IOException, SAXException {
-        reader.setContentHandler(this);
-        reader.parse(input);
-        return getDocument();
+        try {
+            XMLReader r = getReader();
+            r.setContentHandler(this);
+            r.parse(input);
+            return getDocument();
+        } catch (ParserConfigurationException e) {
+            throw new SAXException(e);
+        }
     }
 
     /**
@@ -299,49 +405,49 @@ public class XmlSlurper extends DefaultHandler {
     * @see org.xml.sax.XMLReader#getDTDHandler()
     */
     public DTDHandler getDTDHandler() {
-        return reader.getDTDHandler();
+        return ensureReader().getDTDHandler();
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#getEntityResolver()
     */
     public EntityResolver getEntityResolver() {
-        return reader.getEntityResolver();
+        return ensureReader().getEntityResolver();
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#getErrorHandler()
     */
     public ErrorHandler getErrorHandler() {
-        return reader.getErrorHandler();
+        return ensureReader().getErrorHandler();
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#getFeature(java.lang.String)
     */
     public boolean getFeature(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
-        return reader.getFeature(uri);
+        return ensureReader().getFeature(uri);
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#getProperty(java.lang.String)
     */
     public Object getProperty(final String uri) throws SAXNotRecognizedException, SAXNotSupportedException {
-        return reader.getProperty(uri);
+        return ensureReader().getProperty(uri);
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#setDTDHandler(org.xml.sax.DTDHandler)
     */
     public void setDTDHandler(final DTDHandler dtdHandler) {
-        reader.setDTDHandler(dtdHandler);
+        ensureReader().setDTDHandler(dtdHandler);
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#setEntityResolver(org.xml.sax.EntityResolver)
     */
     public void setEntityResolver(final EntityResolver entityResolver) {
-        reader.setEntityResolver(entityResolver);
+        ensureReader().setEntityResolver(entityResolver);
     }
 
     /**
@@ -350,7 +456,7 @@ public class XmlSlurper extends DefaultHandler {
      * @param base The URL used to resolve relative URLs
      */
     public void setEntityBaseUrl(final URL base) {
-        reader.setEntityResolver((publicId, systemId) -> {
+        ensureReader().setEntityResolver((publicId, systemId) -> {
             try {
                 return new InputSource(base.toURI().resolve(systemId).toURL().openStream());
             } catch (URISyntaxException e) {
@@ -363,21 +469,21 @@ public class XmlSlurper extends DefaultHandler {
     * @see org.xml.sax.XMLReader#setErrorHandler(org.xml.sax.ErrorHandler)
     */
     public void setErrorHandler(final ErrorHandler errorHandler) {
-        reader.setErrorHandler(errorHandler);
+        ensureReader().setErrorHandler(errorHandler);
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#setFeature(java.lang.String, boolean)
     */
     public void setFeature(final String uri, final boolean value) throws SAXNotRecognizedException, SAXNotSupportedException {
-        reader.setFeature(uri, value);
+        ensureReader().setFeature(uri, value);
     }
 
     /* (non-Javadoc)
     * @see org.xml.sax.XMLReader#setProperty(java.lang.String, java.lang.Object)
     */
     public void setProperty(final String uri, final Object value) throws SAXNotRecognizedException, SAXNotSupportedException {
-        reader.setProperty(uri, value);
+        ensureReader().setProperty(uri, value);
     }
 
     // ContentHandler interface
