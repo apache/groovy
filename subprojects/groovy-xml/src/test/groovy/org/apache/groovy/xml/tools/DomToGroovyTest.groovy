@@ -92,14 +92,14 @@ class DomToGroovyTest {
     protected File dir = new File("build/generated-groovyxml")
 
     @Test
-    void testConversion() {
+    void conversion() {
         convert("test1.xml", "test1.groovy")
         convert("po.xsd", "poSchema.groovy")
         convert("swing.xml", "swing.groovy")
     }
 
     @Test
-    void testConversionFormat() {
+    void conversionFormat() {
         checkConversion(TEST_XML_1, EXPECTED_BUILDER_SCRIPT_1)
         checkConversion(TEST_XML_2, EXPECTED_BUILDER_SCRIPT_2)
         checkConversion(TEST_XML_3, EXPECTED_BUILDER_SCRIPT_3)

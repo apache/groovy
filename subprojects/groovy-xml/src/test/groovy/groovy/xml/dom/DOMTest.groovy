@@ -28,7 +28,7 @@ class DOMTest {
     def benchmark = false
 
     @Test
-    void testDOMParser() {
+    void domParser() {
         def xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>")
         def doc = DOMBuilder.parse(xml)
         def html = doc.documentElement
@@ -36,7 +36,7 @@ class DOMTest {
     }
 
     @Test
-    void testDOMBuilder() {
+    void domBuilder() {
         def html = DOMBuilder.newInstance().
                 html {
                     head {
@@ -50,7 +50,7 @@ class DOMTest {
     }
 
     @Test
-    void testDOMBuilderWithNullValue() {
+    void domBuilderWithNullValue() {
         def html = DOMBuilder.newInstance().
                 html {
                     head {
@@ -63,7 +63,7 @@ class DOMTest {
     }
 
     @Test
-    void testStreamingDOMBuilder() {
+    void streamingDomBuilder() {
         def builder = new StreamingDOMBuilder()
         def make = builder.bind {
             html {
@@ -100,9 +100,9 @@ class DOMTest {
         def mydomtest = new DOMTest()
         def standard = 0
         mydomtest.benchmark = true
-        [{ mydomtest.testDOMParser() },
-                { mydomtest.testDOMBuilder() },
-                { mydomtest.testStreamingDOMBuilder() }].eachWithIndex { testMethod, index ->
+        [{ mydomtest.dOMParser() },
+                { mydomtest.domBuilder() },
+                { mydomtest.streamingDomBuilder() }].eachWithIndex { testMethod, index ->
             // Run the method once to fill any caches and to load classes
             testMethod()
             def start = System.currentTimeMillis()

@@ -62,7 +62,7 @@ final class NamespaceDOMTest extends TestXmlSupport {
     '''
 
     @Test
-    void testXsdSchemaWithBuilderHavingAutoPrefix() {
+    void xsdSchemaWithBuilderHavingAutoPrefix() {
         def builder = DOMBuilder.newInstance()
         def xsd = NamespaceBuilder.newInstance(builder, 'http://www.w3.org/2001/XMLSchema', 'xsd')
         def root = xsd.schema {
@@ -82,7 +82,7 @@ final class NamespaceDOMTest extends TestXmlSupport {
     }
 
     @Test
-    void testXsdSchemaWithBuilderHavingMultipleNamespaces() {
+    void xsdSchemaWithBuilderHavingMultipleNamespaces() {
         def builder = DOMBuilder.newInstance()
         def multi = NamespaceBuilder.newInstance(builder)
         multi.namespace('http://example.org/ord')
@@ -91,7 +91,7 @@ final class NamespaceDOMTest extends TestXmlSupport {
     }
 
     @Test
-    void testXsdSchemaWithBuilderHavingDeclareNamespace() {
+    void xsdSchemaWithBuilderHavingDeclareNamespace() {
         def builder = DOMBuilder.newInstance()
         def multi = NamespaceBuilder.newInstance(builder)
         multi.declareNamespace(

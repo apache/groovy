@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 class SafeNumberXmlSlurperTest {
 
     @Test
-    void testSafetyWhenConvertingToNumbers() {
+    void safetyWhenConvertingToNumbers() {
         def xmlText = '''
                 <someNumberValues>
                 <someBigDecimal>123.4</someBigDecimal>

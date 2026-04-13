@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 class StaticMarkupBug {
 
     @Test
-    void testBug() {
+    void bug() {
         doMarkup(new MarkupBuilder())
     }
 

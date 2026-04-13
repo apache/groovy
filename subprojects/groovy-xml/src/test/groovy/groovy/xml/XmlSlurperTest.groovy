@@ -29,7 +29,7 @@ final class XmlSlurperTest {
     final Closure<GPathResult> getRoot = { String xml -> new XmlSlurper().parseText(xml) }
 
     @Test
-    void testWsdl() {
+    void wsdl() {
         def wsdl = '''
             <definitions name="AgencyManagementService"
                          xmlns:ns1="http://www.example.org/NS1"
@@ -58,7 +58,7 @@ final class XmlSlurperTest {
     }
 
     @Test
-    void testElement() {
+    void element() {
         // can't update value directly with XmlSlurper, use replaceNode instead
         // GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
         GpathSyntaxTestSupport.checkElement(getRoot)
@@ -70,7 +70,7 @@ final class XmlSlurperTest {
     }
 
     @Test
-    void testAttribute() {
+    void attribute() {
         GpathSyntaxTestSupport.checkAttribute(getRoot)
         GpathSyntaxTestSupport.checkAttributes(getRoot)
         GpathSyntaxTestSupport.checkAttributeTruth(getRoot)
@@ -78,7 +78,7 @@ final class XmlSlurperTest {
 
     // GROOVY-11667
     @Test
-    void testAttribute2() {
+    void attribute2() {
         def xml = '''
             <person>
                 <name>John Doe</name>
@@ -99,39 +99,39 @@ final class XmlSlurperTest {
     }
 
     @Test
-    void testNavigation() {
+    void navigation() {
         GpathSyntaxTestSupport.checkChildren(getRoot)
         GpathSyntaxTestSupport.checkParent(getRoot)
         GpathSyntaxTestSupport.checkNestedSizeExpressions(getRoot)
     }
 
     @Test
-    void testTraversal() {
+    void traversal() {
         TraversalTestSupport.checkDepthFirst(getRoot)
         TraversalTestSupport.checkBreadthFirst(getRoot)
     }
 
     @Test
-    void testIndices() {
+    void indices() {
         GpathSyntaxTestSupport.checkNegativeIndices(getRoot)
         GpathSyntaxTestSupport.checkRangeIndex(getRoot)
     }
 
     @Test
-    void testReplacementsAndAdditions() {
+    void replacementsAndAdditions() {
         GpathSyntaxTestSupport.checkReplaceNode(getRoot)
         GpathSyntaxTestSupport.checkReplaceMultipleNodes(getRoot)
         GpathSyntaxTestSupport.checkPlus(getRoot)
     }
 
     @Test
-    void testMixedMarkup() {
+    void mixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
         MixedMarkupTestSupport.checkMixedMarkupText(getRoot)
     }
 
     @Test
-    void testReplace() {
+    void replace() {
         def input = "<doc><sec>Hello<p>World</p></sec></doc>"
         def replaceSlurper = new XmlSlurper().parseText(input)
         replaceSlurper.sec.replaceNode { node ->
@@ -143,7 +143,7 @@ final class XmlSlurperTest {
     }
 
     @Test
-    void testNamespacedName() {
+    void namespacedName() {
         def wsdl = '''
         <definitions name="AgencyManagementService"
             xmlns:ns1="http://www.example.org/NS1"
@@ -165,7 +165,7 @@ final class XmlSlurperTest {
 
     // GROOVY-4637
     @Test
-    void testNamespacedAttributes() {
+    void namespacedAttributes() {
         def xml = """
         <RootElement xmlns="http://www.ivan.com/ns1" xmlns:two="http://www.ivan.com/ns2">
             <ChildElement ItemId="FirstItemId" two:ItemId="SecondItemId">Child element data</ChildElement>
@@ -180,7 +180,7 @@ final class XmlSlurperTest {
 
     // GROOVY-6255
     @Test
-    void testXmlNamespacedAttributes() {
+    void xmlNamespacedAttributes() {
         def xml = '''
         <appendix version="5.0" xmlns="http://docbook.org/ns/docbook" xmlns:xml="http://www.w3.org/XML/1998/namespace">
             <section xml:id="a"/>
@@ -194,7 +194,7 @@ final class XmlSlurperTest {
 
     // GROOVY-6356
     @Test
-    void testSetAndRemoveAttributesWithNamespace() {
+    void setAndRemoveAttributesWithNamespace() {
         def xmlSource = '''<bob:root
                 xmlns:bob="stuff"
                 xmlns:gmi="http://www.isotc211.org/2005/gmi"
@@ -217,7 +217,7 @@ final class XmlSlurperTest {
 
     // GROOVY-6356
     @Test
-    void testSetAndRemoveAttributesNamespaceUnaware() {
+    void setAndRemoveAttributesNamespaceUnaware() {
         def xmlSource = '''<bob:root
                 xmlns:bob="stuff"
                 xmlns:gmi="http://www.isotc211.org/2005/gmi"
@@ -237,7 +237,7 @@ final class XmlSlurperTest {
 
     // GROOVY-5931
     @Test
-    void testIterableGPathResult() {
+    void iterableGPathResult() {
         def xml = '''
             <RootElement>
                 <ChildElement ItemId="FirstItemId">Child element data</ChildElement>
@@ -256,7 +256,7 @@ final class XmlSlurperTest {
 
     // GROOVY-7781
     @Test
-    void testNamespacedAttributesAccessedWithDifferentPrefix() {
+    void namespacedAttributesAccessedWithDifferentPrefix() {
         def xml = '''
             <x:root xmlns:x="blah">
                 <x:child x:id="1">c</x:child>
@@ -269,7 +269,7 @@ final class XmlSlurperTest {
     }
 
     @Test
-    void testParsePath() {
+    void parsePath() {
         File file = File.createTempFile('test','xml')
         file.deleteOnExit()
         file.text = '''
@@ -301,7 +301,7 @@ final class XmlSlurperTest {
     }
 
     @Test
-    void testNamedParameterConstruction() {
+    void namedParameterConstruction() {
         def xml = '<root><item name="test">value</item></root>'
 
         // named parameters via setters

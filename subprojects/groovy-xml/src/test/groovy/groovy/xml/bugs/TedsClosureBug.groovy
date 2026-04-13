@@ -52,7 +52,7 @@ class TedsClosureBug {
 </atom>'''
 
     @Test
-    void testBug() {
+    void bug() {
         def f = new Feed()
         f.author = new Person(name:'Ted Leung',url:'http://www.sauria.com/blog', email:'twl@sauria.com')
         f.entries = [ new Entry(title:'one',summary:'first post'), new Entry(title:'two',summary:'the second post'), new Entry(title:'three', summary:'post the third'), new Entry(title:'four',summary:'the ponderous fourth post') ]

@@ -33,13 +33,13 @@ public class FactorySupportTest {
     private static final ParserConfigurationException PARSER_CONFIGURATION_EXCEPTION = new ParserConfigurationException();
 
     @Test
-    public void testCreatesFactories() throws Exception {
+    public void createsFactories() throws Exception {
         assertNotNull(FactorySupport.createDocumentBuilderFactory());
         assertNotNull(FactorySupport.createSaxParserFactory());
     }
 
     @Test
-    public void testParserConfigurationExceptionNotWrapped() throws ParserConfigurationException {
+    public void parserConfigurationExceptionNotWrapped() throws ParserConfigurationException {
         try {
             FactorySupport.createFactory(new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
@@ -53,7 +53,7 @@ public class FactorySupportTest {
     }
 
     @Test
-    public void testOtherExceptionsWrappedAsUnchecked() throws ParserConfigurationException {
+    public void otherExceptionsWrappedAsUnchecked() throws ParserConfigurationException {
         try {
             FactorySupport.createFactory(new PrivilegedExceptionAction() {
                 public Object run() throws Exception {

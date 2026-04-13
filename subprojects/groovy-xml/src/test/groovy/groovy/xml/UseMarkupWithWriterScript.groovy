@@ -18,7 +18,7 @@
  */
 package groovy.xml
 
-// used by MarkupWithWriterTest.testWriterUseInScriptFile
+// used by MarkupWithWriterTest.writerUseInScriptFile
 
 writer = new StringWriter()
 b = new MarkupBuilder(writer)

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test
 
 class XmlParserFactoryTest {
     @Test
-    void testCreateParser() {
+    void createParser() {
         def xml = '<root><old/></root>'
         def parser = XmlParserFactory.newParser()
         def root = parser.parseText(xml)

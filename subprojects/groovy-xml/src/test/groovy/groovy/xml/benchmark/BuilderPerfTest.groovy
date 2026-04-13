@@ -39,7 +39,7 @@ class BuilderPerfTest {
     }
 
     @Test
-    void testMe () {
+    void me () {
         long start = System.currentTimeMillis()
         def writer
         5000.times({

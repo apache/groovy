@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test
  */
 class NavigationXmlTest {
     @Test
-    void testPrePostOrder() {
+    void prePostOrder() {
         def root = createTreeFromXmlParser()
         def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
         def actual = combos.collect{ preorder, type ->
@@ -44,7 +44,7 @@ class NavigationXmlTest {
     }
 
     @Test
-    void testPrePostOrderWithClosure() {
+    void prePostOrderWithClosure() {
         def root = createTreeFromXmlParser()
         def combos = [[false, true], ['depthFirst', 'breadthFirst']].combinations()
         def actual = combos.collect{ preorder, type ->
@@ -62,7 +62,7 @@ class NavigationXmlTest {
     }
 
     @Test
-    void testLevelWithClosure() {
+    void levelWithClosure() {
         def root = createTreeFromXmlParser()
         def result = [:].withDefault { [] }
         root.depthFirst { node, index ->

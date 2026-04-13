@@ -29,7 +29,7 @@ import javax.xml.transform.stream.StreamResult
 class StreamingSAXBuilderTest {
 
     @Test
-    void testDefaultSerialization() {
+    void defaultSerialization() {
         def handler = TransformerFactory.newInstance().newTransformerHandler()
         def outstream = new ByteArrayOutputStream()
         handler.setResult(new StreamResult(outstream))
@@ -48,7 +48,7 @@ class StreamingSAXBuilderTest {
     }
 
     @Test
-    void testDefaultSerializationNamespaces() {
+    void defaultSerializationNamespaces() {
         def handler = TransformerFactory.newInstance().newTransformerHandler()
         def outstream = new ByteArrayOutputStream()
         handler.setResult(new StreamResult(outstream))
@@ -69,7 +69,7 @@ class StreamingSAXBuilderTest {
     }
 
     @Test
-    void testCustomHandler() {
+    void customHandler() {
         def visited = []
         def handler = [
                 startDocument: {->

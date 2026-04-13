@@ -55,7 +55,7 @@ class XmlParserTest {
 """
 
     @Test
-    void testNodePrinter() {
+    void nodePrinter() {
         def text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
@@ -76,7 +76,7 @@ p() {
     }
 
     @Test
-    void testXmlNodePrinter() {
+    void xmlNodePrinter() {
         def text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
 """
@@ -97,7 +97,7 @@ p() {
     }
 
     @Test
-    void testXmlNodePrinterNamespaces() {
+    void xmlNodePrinterNamespaces() {
         def html = new XmlParser(trimWhitespace: true).parseText(bookXml)
         StringWriter sw = new StringWriter()
         new XmlNodePrinter(new PrintWriter(sw)).print(html)
@@ -178,7 +178,7 @@ p() {
     }
 
     @Test
-    void testNamespaceGPath() {
+    void namespaceGPath() {
         def anyName = new QName("*", "*")
         def anyHtml = new QName("http://www.w3.org/HTML/1998/html4", "*")
         def anyTitle = new QName("*", "title")
@@ -205,7 +205,7 @@ p() {
     }
 
     @Test
-    void testElement() {
+    void element() {
         GpathSyntaxTestSupport.checkUpdateElementValue(getRoot)
         GpathSyntaxTestSupport.checkElement(getRoot)
         GpathSyntaxTestSupport.checkFindElement(getRoot)
@@ -216,46 +216,46 @@ p() {
     }
 
     @Test
-    void testAttribute() {
+    void attribute() {
         GpathSyntaxTestSupport.checkAttribute(getRoot)
         GpathSyntaxTestSupport.checkAttributes(getRoot)
         GpathSyntaxTestSupport.checkAttributeTruth(getRoot)
     }
 
     @Test
-    void testNavigation() {
+    void navigation() {
         GpathSyntaxTestSupport.checkChildren(getRoot)
         GpathSyntaxTestSupport.checkParent(getRoot)
         GpathSyntaxTestSupport.checkNestedSizeExpressions(getRoot)
     }
 
     @Test
-    void testTraversal() {
+    void traversal() {
         TraversalTestSupport.checkDepthFirst(getRoot)
         TraversalTestSupport.checkBreadthFirst(getRoot)
     }
 
     @Test
-    void testIndices() {
+    void indices() {
         GpathSyntaxTestSupport.checkNegativeIndices(getRoot)
         GpathSyntaxTestSupport.checkRangeIndex(getRoot)
     }
 
     @Test
-    void testReplacementsAndAdditions() {
+    void replacementsAndAdditions() {
         GpathSyntaxTestSupport.checkReplaceNode(getRoot)
         GpathSyntaxTestSupport.checkReplaceMultipleNodes(getRoot)
         GpathSyntaxTestSupport.checkPlus(getRoot)
     }
 
     @Test
-    void testMixedMarkup() {
+    void mixedMarkup() {
         MixedMarkupTestSupport.checkMixedMarkup(getRoot)
         MixedMarkupTestSupport.checkMixedMarkupText(getRoot)
     }
 
     @Test
-    void testWhitespaceTrimming() {
+    void whitespaceTrimming() {
         def text = '<outer><inner>   Here is some text    </inner></outer>'
         def parser = new XmlParser(trimWhitespace: true)
         def outer = parser.parseText(text)
@@ -266,7 +266,7 @@ p() {
     }
 
     @Test
-    void testUpdate() {
+    void update() {
         def xml = '<root></root>'
         def parser = new XmlParser()
         def root = parser.parseText(xml)
@@ -296,7 +296,7 @@ p() {
     }
 
     @Test
-    void testReplaceNode() {
+    void replaceNode() {
         def xml = '<root><old/></root>'
         def parser = new XmlParser()
         def root = parser.parseText(xml)
@@ -319,14 +319,14 @@ p() {
     }
 
     @Test
-    void testXmlParserExtensionPoints() {
+    void xmlParserExtensionPoints() {
         def html = new CustomXmlParser().parseText(bookXml)
         assert html.getClass() == CustomNode
         assert html.name() == new Integer(42)
     }
 
     @Test
-    void testCloning() {
+    void cloning() {
         def xml = '<root><foo bar="baz"><inner/></foo></root>'
         def parser = new XmlParser()
         def root = parser.parseText(xml)
@@ -345,7 +345,7 @@ p() {
     }
 
     @Test
-    void testNamedParameterConstruction() {
+    void namedParameterConstruction() {
         def xml = '<root><item name="test">value</item></root>'
 
         // named parameters via setters

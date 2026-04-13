@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 class Groovy249_Bug {
 
     @Test
-    void testBug() {
+    void bug() {
         def t = new Bean249()
         t.b = "hello"
 
@@ -44,7 +44,7 @@ class Groovy249_Bug {
 /** @todo don't know why this fails
 
     @Test
-    void testBugInScript() {
+    void bugInScript() {
         assertScript <<<EOF
             import groovy.xml.MarkupBuilder;
 
