@@ -343,4 +343,30 @@ p() {
         def result = writer.toString()
         assert result == '<root><foo bar="baz"><inner/></foo><foo bar="zab"><inner>text</inner></foo></root>'
     }
+
+    @Test
+    void testNamedParameterConstruction() {
+        def xml = '<root><item name="test">value</item></root>'
+
+        // named parameters via setters
+        def parser = new XmlParser(namespaceAware: false, trimWhitespace: true)
+        def result = parser.parseText(xml)
+        assert result.item[0].text() == 'value'
+        assert result.item[0].@name == 'test'
+
+        // setter after boolean constructor, before first parse
+        def parser2 = new XmlParser(false, false)
+        parser2.allowDocTypeDeclaration = true
+        assert parser2.parseText(xml).item[0].text() == 'value'
+
+        // setter after parse should fail
+        def parser3 = new XmlParser()
+        parser3.parseText(xml)
+        try {
+            parser3.namespaceAware = false
+            assert false, 'should have thrown'
+        } catch (IllegalStateException e) {
+            assert e.message.contains('must be set before parsing')
+        }
+    }
 }

@@ -121,4 +121,12 @@ class UserGuideXmlParserTest extends GroovyTestCase {
         // end::testSettingAttributes1[]
     }
 
+    void testNamedParameters() {
+        // tag::testNamedParameters[]
+        def parser = new XmlParser(namespaceAware: false, trimWhitespace: true)
+        def result = parser.parseText('<root><item>value</item></root>')
+        assert result.item[0].text() == 'value'
+        // end::testNamedParameters[]
+    }
+
 }

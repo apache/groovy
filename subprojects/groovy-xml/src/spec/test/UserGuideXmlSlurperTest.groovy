@@ -189,4 +189,12 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testSettingAttributes1[]
     }
 
+    void testNamedParameters() {
+        // tag::testNamedParameters[]
+        def slurper = new XmlSlurper(namespaceAware: false, keepIgnorableWhitespace: true)
+        def result = slurper.parseText('<root><item>value</item></root>')
+        assert result.item.text() == 'value'
+        // end::testNamedParameters[]
+    }
+
 }

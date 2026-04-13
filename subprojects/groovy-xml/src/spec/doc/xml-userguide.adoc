@@ -95,6 +95,54 @@ GPath expressions with them are the same (both use `breadthFirst()` and
 `depthFirst()` expressions). So I guess it depends on the write/read
 frequency.
 
+=== Parser configuration with named parameters
+
+Both `XmlParser` and `XmlSlurper` support Groovy's named parameter syntax
+for configuration, making it easy to set options without remembering
+positional boolean argument order:
+
+[source,groovy]
+.XmlSlurper
+----
+include::../test/UserGuideXmlSlurperTest.groovy[tags=testNamedParameters,indent=0]
+----
+
+[source,groovy]
+.XmlParser
+----
+include::../test/UserGuideXmlParserTest.groovy[tags=testNamedParameters,indent=0]
+----
+
+Available options for both parsers:
+
+[cols="1,3,1",options="header"]
+|===
+| Option | Description | Default
+
+| `namespaceAware`
+| Enable XML namespace handling
+| `true`
+
+| `validating`
+| Validate documents against a DTD
+| `false`
+
+| `allowDocTypeDeclaration`
+| Allow DOCTYPE declarations in documents
+| `false`
+
+| `keepIgnorableWhitespace`
+| Preserve whitespace before elements
+| `false`
+|===
+
+`XmlParser` additionally supports `trimWhitespace` (default `false`)
+to trim whitespace from element text content.
+
+NOTE: Options that affect the underlying SAX parser (`namespaceAware`,
+`validating`, `allowDocTypeDeclaration`) must be set before the first
+parse call. Setting them afterwards throws an `IllegalStateException`.
+
 === DOMCategory
 
 There is another way of parsing XML documents with Groovy with the
