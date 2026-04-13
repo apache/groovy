@@ -56,6 +56,7 @@ include::../../../../../src/spec/doc/core-introduction.adoc[]
 :groovyc-ant-task:
 :guide-integrating:
 :jmx:
+:tools-groovy:
 :tools-groovyc:
 :xml-userguide:
 :sql-userguide:

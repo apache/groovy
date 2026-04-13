@@ -296,7 +296,7 @@ if (explicitMethods) {
 
     explicitMethods.keySet().sort().each { methodName ->
         def desc = methodDescriptions[methodName] ?: ''
-        out << "| `${methodName}()`\n"
+        out << "| [[swing-widget-${methodName}]]`${methodName}()`\n"
         out << "| ${desc}\n\n"
     }
     out << "|===\n"

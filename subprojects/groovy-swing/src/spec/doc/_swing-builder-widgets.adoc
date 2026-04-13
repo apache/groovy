@@ -617,19 +617,19 @@ These are explicit methods (not node factories) available on `SwingBuilder`:
 |===
 | Method | Description
 
-| `doLater()`
+| [[swing-widget-doLater]]`doLater()`
 | Run a closure on the EDT asynchronously (non-blocking)
 
-| `doOutside()`
+| [[swing-widget-doOutside]]`doOutside()`
 | Run a closure outside the EDT in a new thread
 
-| `edt()`
+| [[swing-widget-edt]]`edt()`
 | Run a closure on the Event Dispatch Thread (blocking)
 
-| `keyStrokeAction()`
+| [[swing-widget-keyStrokeAction]]`keyStrokeAction()`
 | Create keyboard shortcut bindings on a component
 
-| `shortcut()`
+| [[swing-widget-shortcut]]`shortcut()`
 | Create a platform-appropriate KeyStroke (uses Cmd on Mac, Ctrl elsewhere)
 
 |===
@@ -14842,11 +14842,6 @@ swing.splitPane()
 | `int`
 | icon:check[]
 | 
-
-| `componentOrientation`
-| `awt.ComponentOrientation`
-| 
-| icon:check[]
 
 | `componentPopupMenu`
 | `JPopupMenu`

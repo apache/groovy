@@ -100,6 +100,7 @@ Script examples might distinguish between local variables with a type and script
 binding variables where no type, nor the `def` or `var` type placeholders,
 are given. The script binding is the exact equivalent to the shell's shared variables.
 
+[[GroovyShell-InterpreterMode]]
 Because such statements are so common, the shell has a special mode
 called _interpreter mode_ which allows you to use typed variables.
 The following table summarizes the differences between the two modes:

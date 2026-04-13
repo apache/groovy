@@ -18,6 +18,9 @@
   under the License.
 
 //////////////////////////////////////////
+ifndef::tools-groovy[]
+:tools-groovy: tools-groovy.adoc
+endif::[]
 
 [[section-grape]]
 = Dependency management with Grape
@@ -130,7 +133,7 @@ JAVA_OPTS = -Dhttp.proxyHost=yourproxy -Dhttp.proxyPort=8080
 The Grape facade (`groovy.grape.Grape`) uses
 https://docs.oracle.com/en/java/javase/17/docs/api/java.logging/java/lang/System.Logger.html[JDK Platform Logging]
 and can be configured through `~/.groovy/logging.properties`
-(see <<section-groovy-commandline>> for details).
+(see <<{tools-groovy}#section-groovy-commandline,the groovy command>> for details).
 
 Logging of the underlying engine depends on which Grape implementation is active.
 
