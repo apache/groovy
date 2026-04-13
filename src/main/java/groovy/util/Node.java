@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -868,6 +869,90 @@ public class Node implements Serializable, Cloneable {
             return null;
         }
         return StringGroovyMethods.toBigInteger((CharSequence)text());
+    }
+
+    /**
+     * The key used for text content when a node has both attributes and text.
+     *
+     * @since 6.0.0
+     */
+    public static final String TEXT_KEY = "_text";
+
+    /**
+     * Converts this Node tree into a nested {@code Map<String, Object>}.
+     * <p>
+     * Attributes and child elements are merged into a single map keyed by name.
+     * If a child element name collides with an attribute name, the child element wins.
+     * Leaf child elements (text only, no attributes) become String values.
+     * Non-leaf child elements and leaf elements with attributes become nested Maps (recursive).
+     * Repeated same-name sibling elements become Lists.
+     * Elements with both attributes and text content use the {@value #TEXT_KEY} key for the text.
+     *
+     * @return a Map representation of this Node
+     * @since 6.0.0
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new LinkedHashMap<>();
+
+        // copy attributes, tracking which keys came from attributes
+        java.util.Set<String> attributeKeys = new java.util.HashSet<>();
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) attributes()).entrySet()) {
+            String key = nameAsString(entry.getKey());
+            map.put(key, entry.getValue());
+            attributeKeys.add(key);
+        }
+
+        // process child nodes
+        boolean hasChildElements = false;
+        for (Object child : children()) {
+            if (child instanceof Node childNode) {
+                hasChildElements = true;
+                String key = nameAsString(childNode.name());
+                Object childValue;
+                if (childNode.isLeaf() && childNode.attributes().isEmpty()) {
+                    childValue = childNode.text();
+                } else {
+                    childValue = childNode.toMap();
+                }
+                Object existing = map.get(key);
+                if (existing == null || attributeKeys.remove(key)) {
+                    // first child element with this name (or replacing an attribute)
+                    map.put(key, childValue);
+                } else if (existing instanceof List) {
+                    ((List<Object>) existing).add(childValue);
+                } else {
+                    List<Object> list = new ArrayList<>();
+                    list.add(existing);
+                    list.add(childValue);
+                    map.put(key, list);
+                }
+            }
+        }
+
+        // if this node has attributes AND direct text, add _text entry
+        if (!attributes().isEmpty() && !hasChildElements) {
+            String text = text();
+            if (!text.isEmpty()) {
+                map.put(TEXT_KEY, text);
+            }
+        }
+
+        return map;
+    }
+
+    private static String nameAsString(Object name) {
+        if (name instanceof QName qn) {
+            return qn.getLocalPart();
+        }
+        return name.toString();
+    }
+
+    private boolean isLeaf() {
+        for (Object child : children()) {
+            if (child instanceof Node) return false;
+        }
+        return true;
     }
 
     private boolean textIsEmptyOrNull() {

@@ -20,6 +20,7 @@ package groovy.xml;
 
 import groovy.namespace.QName;
 import groovy.util.Node;
+import org.apache.groovy.xml.util.JacksonHelper;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
@@ -209,10 +210,12 @@ public class XmlParser implements ContentHandler {
      *                      supplied by the application.
      */
     public Node parse(File file) throws IOException, SAXException {
-        InputSource input = new InputSource(Files.newInputStream(file.toPath()));
-        input.setSystemId("file://" + file.getAbsolutePath());
-        getXMLReader().parse(input);
-        return parent;
+        try (InputStream stream = Files.newInputStream(file.toPath())) {
+            InputSource input = new InputSource(stream);
+            input.setSystemId("file://" + file.getAbsolutePath());
+            getXMLReader().parse(input);
+            return parent;
+        }
     }
 
     /**
@@ -228,10 +231,12 @@ public class XmlParser implements ContentHandler {
      *                      supplied by the application.
      */
     public Node parse(Path path) throws IOException, SAXException {
-        InputSource input = new InputSource(Files.newInputStream(path));
-        input.setSystemId("file://" + path.toAbsolutePath());
-        getXMLReader().parse(input);
-        return parent;
+        try (InputStream stream = Files.newInputStream(path)) {
+            InputSource input = new InputSource(stream);
+            input.setSystemId("file://" + path.toAbsolutePath());
+            getXMLReader().parse(input);
+            return parent;
+        }
     }
 
     /**
@@ -320,6 +325,104 @@ public class XmlParser implements ContentHandler {
      */
     public Node parseText(String text) throws IOException, SAXException {
         return parse(new StringReader(text));
+    }
+
+    /**
+     * Parse the content of the specified XML text into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     * Supports {@code @JsonProperty} and {@code @JsonFormat} annotations.
+     *
+     * @param type the target type
+     * @param text the XML text to parse
+     * @param <T>  the target type
+     * @return a typed object
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseTextAs(Class<T> type, String text) {
+        return parseAs(type, new StringReader(text));
+    }
+
+    /**
+     * Parse XML from a reader into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type   the target type
+     * @param reader the reader of XML
+     * @param <T>    the target type
+     * @return a typed object
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Reader reader) {
+        try {
+            Node root = parse(reader);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (IOException | SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse XML from an input stream into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type   the target type
+     * @param stream the input stream of XML
+     * @param <T>    the target type
+     * @return a typed object
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, InputStream stream) {
+        try {
+            Node root = parse(stream);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (IOException | SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse XML from a file into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type the target type
+     * @param file the XML file
+     * @param <T>  the target type
+     * @return a typed object
+     * @throws IOException if the file cannot be read
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, File file) throws IOException {
+        try {
+            Node root = parse(file);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
+    }
+
+    /**
+     * Parse XML from a path into a typed object.
+     * Requires jackson-databind on the classpath for type conversion.
+     *
+     * @param type the target type
+     * @param path the path to the XML file
+     * @param <T>  the target type
+     * @return a typed object
+     * @throws IOException if the file cannot be read
+     * @throws XmlRuntimeException if parsing or conversion fails, or jackson-databind is absent
+     * @since 6.0.0
+     */
+    public <T> T parseAs(Class<T> type, Path path) throws IOException {
+        try {
+            Node root = parse(path);
+            return JacksonHelper.convertMapToType(root.toMap(), type);
+        } catch (SAXException e) {
+            throw new XmlRuntimeException(e);
+        }
     }
 
     /**

@@ -25,6 +25,7 @@ dependencies {
 
     testImplementation projects.groovyTest
     testImplementation "xmlunit:xmlunit:${versions.xmlunit}"
+    testRuntimeOnly "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
     testImplementation("org.spockframework:spock-core:${versions.spock}") {
         exclude group: 'org.apache.groovy'
     }
