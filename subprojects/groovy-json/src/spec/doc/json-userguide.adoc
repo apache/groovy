@@ -217,6 +217,50 @@ include::../test/json/JsonTest.groovy[tags=pretty_print,indent=0]
 `prettyPrint` takes a `String` as single parameter; therefore, it can be applied on arbitrary JSON `String` instances, not only the result of
 `JsonOutput.toJson`.
 
+== Typed JSON Parsing
+
+Since `JsonSlurper` parses JSON values into their natural JVM types
+(`Integer`, `BigDecimal`, `Boolean`, `List`, `Map`), Groovy's built-in
+`as` coercion works well for converting parsed JSON directly into
+typed objects -- no additional dependencies are required:
+
+[source,groovy]
+----
+include::../test/json/JsonTest.groovy[tags=typed_classes,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/json/JsonTest.groovy[tags=typed_coercion,indent=0]
+----
+
+Nested objects are automatically coerced:
+
+[source,groovy]
+----
+include::../test/json/JsonTest.groovy[tags=typed_coercion_nested,indent=0]
+----
+
+Enum values are also handled:
+
+[source,groovy]
+----
+include::../test/json/JsonTest.groovy[tags=typed_coercion_enum,indent=0]
+----
+
+This covers most common use cases. For advanced scenarios -- such as
+typed element collections (`List<Item>`), date/time parsing, or
+annotation-driven property mapping (`@JsonProperty`, `@JsonFormat`) --
+use `jackson-databind` directly:
+
+[source,groovy]
+----
+@Grab('com.fasterxml.jackson.core:jackson-databind')
+import com.fasterxml.jackson.databind.ObjectMapper
+
+def config = new ObjectMapper().readValue(jsonString, ServerConfig)
+----
+
 === Builders
 
 Another way to create JSON from Groovy is to use `JsonBuilder` or `StreamingJsonBuilder`. Both builders provide a
