@@ -8167,7 +8167,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns Groovy's default string representation for a Range.
-     * By default, it delegates to {@link Range#toString()},
+     * By default, it delegates to {@code Range#toString()},
      * producing the compact {@code from..to} notation.
      * <p>
      * <pre class="groovyTestCase">
