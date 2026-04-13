@@ -180,7 +180,7 @@ public class GroovyPromise<T> implements Awaitable<T> {
      * <p>
      * Returns a new {@code GroovyPromise} whose result is obtained by applying
      * the given function to this promise's result.  The current
-     * {@link AsyncContext} snapshot is captured when the continuation is
+     * {@code AsyncContext} snapshot is captured when the continuation is
      * registered and restored when it executes.
      */
     @Override
@@ -193,7 +193,7 @@ public class GroovyPromise<T> implements Awaitable<T> {
      * <p>
      * Returns a new {@code GroovyPromise} that is the result of composing this
      * promise with the async function, enabling flat-mapping of awaitables.
-     * The current {@link AsyncContext} snapshot is captured when the
+     * The current {@code AsyncContext} snapshot is captured when the
      * continuation is registered and restored when it executes.
      */
     @Override
@@ -208,7 +208,7 @@ public class GroovyPromise<T> implements Awaitable<T> {
      * Returns a new {@code GroovyPromise} that handles exceptions thrown by this promise.
      * The throwable passed to the handler is deeply unwrapped to strip JDK
      * wrapper layers ({@code CompletionException}, {@code ExecutionException}).
-     * The handler runs with the {@link AsyncContext} snapshot that was active
+     * The handler runs with the {@code AsyncContext} snapshot that was active
      * when the recovery continuation was registered.
      */
     @Override
