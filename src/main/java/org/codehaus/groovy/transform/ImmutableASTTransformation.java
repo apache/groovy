@@ -24,6 +24,7 @@ import groovy.lang.MissingPropertyException;
 import groovy.transform.CompilationUnitAware;
 import groovy.transform.ImmutableBase;
 import groovy.transform.options.PropertyHandler;
+import org.apache.groovy.ast.tools.AnnotatedNodeUtils;
 import org.apache.groovy.ast.tools.ImmutablePropertyUtils;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
@@ -185,8 +186,7 @@ public class ImmutableASTTransformation extends AbstractASTTransformation implem
 
     private static void ensureNotPublic(final AbstractASTTransformation xform, final String cNode, final FieldNode fNode) {
         String fName = fNode.getName();
-        // TODO: Do we need to lock down things like: $ownClass?
-        if (fNode.isPublic() && !fName.contains("$") && !(fNode.isStatic() && fNode.isFinal())) {
+        if (fNode.isPublic() && !AnnotatedNodeUtils.deemedInternal(fNode) && !(fNode.isStatic() && fNode.isFinal())) {
             xform.addError("Public field '" + fName + "' not allowed for " + MY_TYPE_NAME + " class '" + cNode + "'.", fNode);
         }
     }

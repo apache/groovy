@@ -225,7 +225,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         for (PropertyNode pNode : superList) {
             String name = pNode.getName();
             FieldNode fNode = pNode.getField();
-            if (!shouldSkipUndefinedAware(name, excludes, includes, allNames)) {
+            if (!shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) {
                 params.add(createParam(fNode, name, defaultsMode, xform, makeImmutable));
                 if (callSuper) {
                     superParams.add(varX(name));
@@ -245,7 +245,7 @@ public class TupleConstructorASTTransformation extends AbstractASTTransformation
         }
         for (PropertyNode pNode : list) {
             String name = pNode.getName();
-            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             Statement propInit = handler.createPropInit(xform, anno, cNode, pNode, null);
             if (propInit != null) {
                 body.addStatement(propInit);

@@ -19,10 +19,14 @@
 package org.apache.groovy.ast.tools;
 
 import groovy.transform.Generated;
+import groovy.transform.Internal;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.PropertyNode;
 
 import java.util.List;
 
@@ -31,6 +35,7 @@ import java.util.List;
  */
 public class AnnotatedNodeUtils {
     private static final ClassNode GENERATED_TYPE = ClassHelper.make(Generated.class);
+    private static final ClassNode INTERNAL_TYPE = ClassHelper.make(Internal.class);
 
     private AnnotatedNodeUtils() { }
 
@@ -53,5 +58,47 @@ public class AnnotatedNodeUtils {
 
     public static boolean isGenerated(final AnnotatedNode node) {
         return hasAnnotation(node, GENERATED_TYPE);
+    }
+
+    /**
+     * Marks a node with the {@link Internal @Internal} annotation.
+     *
+     * @since 6.0.0
+     */
+    public static <T extends AnnotatedNode> T markAsInternal(final T nodeToMark) {
+        if (!isInternal(nodeToMark)) {
+            nodeToMark.addAnnotation(new AnnotationNode(INTERNAL_TYPE));
+        }
+        return nodeToMark;
+    }
+
+    /**
+     * Checks whether a node is annotated with {@link Internal @Internal}.
+     *
+     * @since 6.0.0
+     */
+    public static boolean isInternal(final AnnotatedNode node) {
+        return hasAnnotation(node, INTERNAL_TYPE);
+    }
+
+    /**
+     * Checks whether an AST node is deemed internal, either by name convention
+     * (contains {@code $}) or by being annotated with {@link Internal @Internal}.
+     *
+     * @since 6.0.0
+     */
+    public static boolean deemedInternal(final AnnotatedNode node) {
+        if (isInternal(node)) return true;
+        String name;
+        if (node instanceof FieldNode fn) {
+            name = fn.getName();
+        } else if (node instanceof PropertyNode pn) {
+            name = pn.getName();
+        } else if (node instanceof MethodNode mn) {
+            name = mn.getName();
+        } else {
+            return false;
+        }
+        return name.contains("$");
     }
 }

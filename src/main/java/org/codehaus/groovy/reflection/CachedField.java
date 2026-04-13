@@ -51,6 +51,16 @@ public class CachedField extends MetaProperty {
     }
 
     /**
+     * Checks whether the underlying field has the specified annotation.
+     * Unlike {@link #getCachedField()}, this does not trigger accessibility changes.
+     *
+     * @since 6.0.0
+     */
+    public boolean isAnnotationPresent(Class<? extends java.lang.annotation.Annotation> annotationType) {
+        return field.isAnnotationPresent(annotationType);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
