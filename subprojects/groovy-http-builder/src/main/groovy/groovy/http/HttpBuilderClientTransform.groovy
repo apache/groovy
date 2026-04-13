@@ -71,18 +71,24 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
             return
         }
 
+        int connectTimeout = getMemberIntValue(anno, 'connectTimeout')
+        int requestTimeout = getMemberIntValue(anno, 'requestTimeout')
+        boolean followRedirects = memberHasValue(anno, 'followRedirects', true)
+
         // Collect interface-level @Header annotations
         Map<String, String> interfaceHeaders = collectHeaders(interfaceNode)
 
         // Generate the implementation class
-        ClassNode implClass = generateImplClass(interfaceNode, baseUrl, interfaceHeaders)
+        ClassNode implClass = generateImplClass(interfaceNode, baseUrl, interfaceHeaders,
+                connectTimeout, requestTimeout, followRedirects)
         source.AST.addClass(implClass)
 
         // Add static create() factory method to the interface
         addCreateMethod(interfaceNode, implClass, baseUrl)
     }
 
-    private ClassNode generateImplClass(ClassNode interfaceNode, String baseUrl, Map<String, String> interfaceHeaders) {
+    private ClassNode generateImplClass(ClassNode interfaceNode, String baseUrl, Map<String, String> interfaceHeaders,
+                                          int connectTimeout, int requestTimeout, boolean followRedirects) {
         String implName = interfaceNode.name + '$Client'
         ClassNode implClass = new ClassNode(implName, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC,
                 OBJECT_TYPE, [interfaceNode.getPlainNodeReference()] as ClassNode[], null)
@@ -97,9 +103,26 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
         baseUrlParam.setInitialExpression(constX(baseUrl))
         BlockStatement ctorBody = block(
             assignS(fieldX(helperField),
-                ctorX(HELPER_TYPE, args(varX(baseUrlParam), buildHeadersMapExpression(interfaceHeaders))))
+                ctorX(HELPER_TYPE, args(
+                    varX(baseUrlParam),
+                    buildHeadersMapExpression(interfaceHeaders),
+                    constX(connectTimeout),
+                    constX(requestTimeout),
+                    constX(followRedirects)
+                )))
         )
         implClass.addConstructor(Opcodes.ACC_PUBLIC, params(baseUrlParam), ClassNode.EMPTY_ARRAY, ctorBody)
+
+        // Constructor: takes pre-built HttpBuilder (for create(Closure) factory)
+        Parameter httpBuilderParam = param(make(HttpBuilder), 'httpBuilder')
+        BlockStatement ctorBody2 = block(
+            assignS(fieldX(helperField),
+                ctorX(HELPER_TYPE, args(
+                    varX(httpBuilderParam),
+                    buildHeadersMapExpression(interfaceHeaders)
+                )))
+        )
+        implClass.addConstructor(Opcodes.ACC_PUBLIC, params(httpBuilderParam), ClassNode.EMPTY_ARRAY, ctorBody2)
 
         // Generate a method for each abstract interface method
         for (MethodNode method : interfaceNode.abstractMethods) {
@@ -121,8 +144,9 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
             }
 
             Map<String, String> methodHeaders = collectHeaders(method)
+            int methodTimeout = getMethodTimeout(method)
             MethodNode implMethod = generateMethod(method, httpMethod, urlTemplate,
-                    methodHeaders, helperField)
+                    methodHeaders, helperField, methodTimeout)
             implClass.addMethod(implMethod)
         }
 
@@ -130,14 +154,19 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
     }
 
     private MethodNode generateMethod(MethodNode method, String httpMethod, String urlTemplate,
-                                       Map<String, String> methodHeaders, FieldNode helperField) {
+                                       Map<String, String> methodHeaders, FieldNode helperField,
+                                       int methodTimeout) {
         Parameter[] params = method.parameters
         boolean isAsync = isAsyncReturn(method.returnType)
         String returnTypeName = resolveReturnTypeName(method.returnType)
+        boolean isForm = !method.getAnnotations(make(Form)).isEmpty()
+
+        // Determine body mode: 'json' (default), 'form', or 'text'
+        String bodyMode = isForm ? 'form' : 'json'
 
         // Build path params map: params whose names appear as {name} in the URL
         MapExpression pathParams = new MapExpression()
-        MapExpression queryParams = new MapExpression()
+        MapExpression queryOrFormParams = new MapExpression()
         Expression bodyExpr = constX(null)
 
         for (Parameter p : params) {
@@ -146,13 +175,19 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
                     new MapEntryExpression(constX(p.name), varX(p)))
             } else if (hasAnnotation(p, Body)) {
                 bodyExpr = varX(p)
+            } else if (hasAnnotation(p, BodyText)) {
+                bodyExpr = varX(p)
+                bodyMode = 'text'
             } else {
-                // Query parameter — use @Query name if specified, else param name
+                // Query parameter (or form field if @Form) — use @Query name if specified, else param name
                 String queryName = getQueryParamName(p)
-                queryParams.addMapEntryExpression(
+                queryOrFormParams.addMapEntryExpression(
                     new MapEntryExpression(constX(queryName), varX(p)))
             }
         }
+
+        // Error type from throws clause (first declared exception with HttpException-compatible constructor)
+        String errorTypeName = resolveErrorTypeName(method)
 
         String executeMethod = isAsync ? 'executeAsync' : 'execute'
         Expression callExpr = callX(fieldX(helperField), executeMethod, args(
@@ -160,16 +195,22 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
             constX(urlTemplate),
             constX(returnTypeName),
             pathParams,
-            queryParams,
+            queryOrFormParams,
             buildHeadersMapExpression(methodHeaders),
-            bodyExpr
+            bodyExpr,
+            constX(methodTimeout),
+            constX(bodyMode),
+            constX(errorTypeName)
         ))
 
         boolean isVoid = method.returnType == VOID_TYPE || method.returnType.name == 'void'
         Statement body = isVoid ? block(stmt(callExpr), returnS(constX(null))) : returnS(callExpr)
 
+        // Preserve declared exceptions on the generated method
+        ClassNode[] exceptions = method.exceptions ?: ClassNode.EMPTY_ARRAY
+
         return new MethodNode(method.name, Opcodes.ACC_PUBLIC, method.returnType,
-                cloneParams(params), ClassNode.EMPTY_ARRAY, body)
+                cloneParams(params), exceptions, body)
     }
 
     private void addCreateMethod(ClassNode interfaceNode, ClassNode implClass, String baseUrl) {
@@ -191,6 +232,19 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
                     params(baseUrlParam), ClassNode.EMPTY_ARRAY, withArgBody)
             interfaceNode.addMethod(createWithArg)
         }
+
+        // create(Closure config) — advanced configuration
+        // The closure delegates to HttpBuilder.Config, giving access to
+        // baseUri, headers, timeouts, redirects, clientConfig, etc.
+        ClassNode closureType = make(Closure).getPlainNodeReference()
+        Parameter configParam = param(closureType, 'config')
+        // HttpBuilder.http(config) returns an HttpBuilder; pass it to the HttpBuilder constructor
+        Expression httpBuilderExpr = callX(make(HttpBuilder), 'http', args(varX(configParam)))
+        Statement configBody = returnS(ctorX(implClass, args(httpBuilderExpr)))
+        MethodNode createWithConfig = new MethodNode('create',
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, interfaceNode.getPlainNodeReference(),
+                params(configParam), ClassNode.EMPTY_ARRAY, configBody)
+        interfaceNode.addMethod(createWithConfig)
     }
 
     private static Map<String, String> collectHeaders(AnnotatedNode node) {
@@ -244,6 +298,25 @@ class HttpBuilderClientTransform extends AbstractASTTransformation {
             return name ?: p.name
         }
         return p.name
+    }
+
+    private static String resolveErrorTypeName(MethodNode method) {
+        ClassNode[] exceptions = method.exceptions
+        if (exceptions != null && exceptions.length > 0) {
+            return exceptions[0].name
+        }
+        return ''
+    }
+
+    private static int getMethodTimeout(MethodNode method) {
+        AnnotationNode timeoutAnno = method.getAnnotations(make(Timeout)).find()
+        if (timeoutAnno) {
+            Expression expr = timeoutAnno.getMember('value')
+            if (expr instanceof ConstantExpression) {
+                return ((Number) ((ConstantExpression) expr).value).intValue()
+            }
+        }
+        return 0
     }
 
     private static boolean hasAnnotation(Parameter p, Class<?> annoType) {

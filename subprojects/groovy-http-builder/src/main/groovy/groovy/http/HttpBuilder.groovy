@@ -30,6 +30,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 
 /**
  * Tiny DSL over JDK {@link HttpClient}.
@@ -48,6 +49,12 @@ final class HttpBuilder {
         }
         if (config.followRedirects) {
             clientBuilder.followRedirects(HttpClient.Redirect.NORMAL)
+        }
+        if (config.clientConfigurer != null) {
+            Closure<?> code = (Closure<?>) config.clientConfigurer.clone()
+            code.resolveStrategy = Closure.DELEGATE_FIRST
+            code.delegate = clientBuilder
+            code.call(clientBuilder)
         }
         client = clientBuilder.build()
         baseUri = config.baseUri
@@ -97,10 +104,69 @@ final class HttpBuilder {
         return request('DELETE', uri, spec)
     }
 
+    HttpResult patch(final Object uri = null,
+                     @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                     final Closure<?> spec = null) {
+        return request('PATCH', uri, spec)
+    }
+
     HttpResult request(final String method,
                        final Object uri,
                        @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
                        final Closure<?> spec = null) {
+        def (HttpRequest httpRequest, HttpResponse.BodyHandler<String> bodyHandler) = buildRequest(method, uri, spec)
+        HttpResponse<String> response
+        try {
+            response = client.send(httpRequest, bodyHandler)
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt()
+            throw new RuntimeException("HTTP request " + method + " " + httpRequest.uri() + " was interrupted", e)
+        } catch (IOException e) {
+            throw new RuntimeException("I/O error during HTTP request " + method + " " + httpRequest.uri(), e)
+        }
+        return new HttpResult(response)
+    }
+
+    CompletableFuture<HttpResult> requestAsync(final String method,
+                                                final Object uri,
+                                                @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                                final Closure<?> spec = null) {
+        def (HttpRequest httpRequest, HttpResponse.BodyHandler<String> bodyHandler) = buildRequest(method, uri, spec)
+        return client.sendAsync(httpRequest, bodyHandler)
+                .thenApply { HttpResponse<String> response -> new HttpResult(response) }
+    }
+
+    CompletableFuture<HttpResult> getAsync(final Object uri = null,
+                                            @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                            final Closure<?> spec = null) {
+        return requestAsync('GET', uri, spec)
+    }
+
+    CompletableFuture<HttpResult> postAsync(final Object uri = null,
+                                             @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                             final Closure<?> spec = null) {
+        return requestAsync('POST', uri, spec)
+    }
+
+    CompletableFuture<HttpResult> putAsync(final Object uri = null,
+                                            @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                            final Closure<?> spec = null) {
+        return requestAsync('PUT', uri, spec)
+    }
+
+    CompletableFuture<HttpResult> deleteAsync(final Object uri = null,
+                                               @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                               final Closure<?> spec = null) {
+        return requestAsync('DELETE', uri, spec)
+    }
+
+    CompletableFuture<HttpResult> patchAsync(final Object uri = null,
+                                              @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                              final Closure<?> spec = null) {
+        return requestAsync('PATCH', uri, spec)
+    }
+
+    private List buildRequest(final String method, final Object uri, final Closure<?> spec) {
         RequestSpec requestSpec = new RequestSpec()
         if (spec != null) {
             Closure<?> code = (Closure<?>) spec.clone()
@@ -126,16 +192,7 @@ final class HttpBuilder {
 
         requestBuilder.method(method, bodyPublisher(method, requestSpec.body))
 
-        HttpResponse<String> response
-        try {
-            response = client.send(requestBuilder.build(), requestSpec.bodyHandler)
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt()
-            throw new RuntimeException("HTTP request " + method + " " + resolvedUri + " was interrupted", e)
-        } catch (IOException e) {
-            throw new RuntimeException("I/O error during HTTP request " + method + " " + resolvedUri, e)
-        }
-        return new HttpResult(response)
+        return [requestBuilder.build(), requestSpec.bodyHandler]
     }
 
     private URI resolveUri(final Object uri, final Map<String, Object> query) {
@@ -215,6 +272,7 @@ final class HttpBuilder {
         Duration requestTimeout
         boolean followRedirects
         final Map<String, String> headers = [:]
+        Closure<?> clientConfigurer
 
         void baseUri(final Object value) {
             URI candidate = value instanceof URI ? (URI) value : URI.create(value.toString())
@@ -239,6 +297,18 @@ final class HttpBuilder {
 
         void headers(final Map<String, ?> values) {
             values.each { String name, Object value -> header(name, value) }
+        }
+
+        /**
+         * Provides direct access to the underlying {@code HttpClient.Builder}
+         * for advanced configuration (authenticator, SSL context, proxy, cookie handler, etc.).
+         *
+         * @param configurer a closure taking an {@code HttpClient.Builder}
+         */
+        void clientConfig(
+                @DelegatesTo(value = HttpClient.Builder, strategy = Closure.DELEGATE_FIRST)
+                final Closure<?> configurer) {
+            this.clientConfigurer = configurer
         }
     }
 

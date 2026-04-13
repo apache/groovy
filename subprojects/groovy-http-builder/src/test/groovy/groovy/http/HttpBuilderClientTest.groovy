@@ -75,9 +75,48 @@ class HttpBuilderClientTest {
                 respond(exchange, 200, body)
             } else if (method == 'DELETE' && path =~ '/items/\\d+') {
                 respond(exchange, 204, null)
+            } else if (method == 'PATCH' && path =~ '/items/\\d+') {
+                def body = new JsonSlurper().parseText(exchange.requestBody.text)
+                body.patched = true
+                respond(exchange, 200, body)
             } else {
                 respond(exchange, 404, [error: 'not found'])
             }
+        }
+
+        server.createContext('/form-echo') { HttpExchange exchange ->
+            if (exchange.requestMethod == 'POST') {
+                String body = exchange.requestBody.text
+                // Parse form-encoded body
+                def params = body.split('&').collectEntries { String pair ->
+                    def parts = pair.split('=', 2)
+                    [(URLDecoder.decode(parts[0], 'UTF-8')): parts.length > 1 ? URLDecoder.decode(parts[1], 'UTF-8') : '']
+                }
+                respond(exchange, 200, params)
+            } else {
+                respond(exchange, 405, [error: 'method not allowed'])
+            }
+        }
+
+        server.createContext('/text-echo') { HttpExchange exchange ->
+            if (exchange.requestMethod == 'POST') {
+                String body = exchange.requestBody.text
+                respond(exchange, 200, [text: body])
+            } else {
+                respond(exchange, 405, [error: 'method not allowed'])
+            }
+        }
+
+        server.createContext('/xml-data') { HttpExchange exchange ->
+            exchange.responseHeaders.set('Content-Type', 'application/xml')
+            byte[] xml = '<root><name>Groovy</name><version>6</version></root>'.bytes
+            exchange.sendResponseHeaders(200, xml.length)
+            exchange.responseBody.write(xml)
+            exchange.close()
+        }
+
+        server.createContext('/not-found') { HttpExchange exchange ->
+            respond(exchange, 404, [error: 'resource not found', code: 404])
         }
 
         server.start()
@@ -224,6 +263,288 @@ class HttpBuilderClientTest {
 
             // void delete should not throw
             api.deleteItem('123')
+        """
+    }
+
+    @Test
+    void testImpliedQueryParams() {
+        // No @Query annotation needed — non-path, non-body params are implied query params
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface ImpliedApi {
+                @Get('/users')
+                List searchUsers(String name)
+            }
+
+            def api = ImpliedApi.create()
+            def users = api.searchUsers('Alice')
+            assert users.size() == 1
+            assert users[0].name == 'Alice'
+        """
+    }
+
+    @Test
+    void testPatch() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface PatchApi {
+                @Patch('/items/{id}')
+                Map patchItem(String id, @Body Map updates)
+            }
+
+            def api = PatchApi.create()
+            def result = api.patchItem('42', [name: 'Updated'])
+            assert result.name == 'Updated'
+            assert result.patched == true
+        """
+    }
+
+    @Test
+    void testPatchOnBuilder() {
+        def http = HttpBuilder.http("http://127.0.0.1:${port}")
+        def result = http.patch('/items/42') {
+            json([name: 'Patched'])
+        }
+        assert result.json.patched == true
+    }
+
+    @Test
+    void testTimeoutAndRedirectConfig() {
+        // Verify that the timeout and redirect attributes compile and don't break anything
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient(value = 'http://127.0.0.1:${port}',
+                               connectTimeout = 5,
+                               requestTimeout = 10,
+                               followRedirects = true)
+            interface ConfiguredApi {
+                @Get('/users/{username}')
+                Map getUser(String username)
+            }
+
+            def api = ConfiguredApi.create()
+            def user = api.getUser('alice')
+            assert user.name == 'alice'
+        """
+    }
+
+    @Test
+    void testFormPost() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface FormApi {
+                @Post('/form-echo')
+                @Form
+                Map login(String username, String password)
+            }
+
+            def api = FormApi.create()
+            def result = api.login('alice', 's3cret')
+            assert result.username == 'alice'
+            assert result.password == 's3cret'
+        """
+    }
+
+    @Test
+    void testBodyText() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface TextApi {
+                @Post('/text-echo')
+                Map sendText(@BodyText String content)
+            }
+
+            def api = TextApi.create()
+            def result = api.sendText('Hello, World!')
+            assert result.text.contains('Hello')
+        """
+    }
+
+    @Test
+    void testXmlResponse() {
+        assertScript """
+            import groovy.http.*
+            import groovy.xml.slurpersupport.GPathResult
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface XmlApi {
+                @Get('/xml-data')
+                GPathResult getData()
+            }
+
+            def api = XmlApi.create()
+            def xml = api.getData()
+            assert xml instanceof GPathResult
+            assert xml.name.text() == 'Groovy'
+            assert xml.version.text() == '6'
+        """
+    }
+
+    @Test
+    void testTypedResponse() {
+        assertScript """
+            import groovy.http.*
+
+            class UserInfo {
+                String name
+                String bio
+            }
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface TypedApi {
+                @Get('/users/{username}')
+                UserInfo getUser(String username)
+            }
+
+            def api = TypedApi.create()
+            def user = api.getUser('alice')
+            assert user instanceof UserInfo
+            assert user.name == 'alice'
+            assert user.bio == 'Bio of alice'
+        """
+    }
+
+    @Test
+    void testErrorMappingViaThrows() {
+        // Error mapping uses the throws clause to determine exception type.
+        // The exception class must be visible to the helper's classloader,
+        // so we test with a RuntimeException subclass (always loadable).
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface ErrorApi {
+                @Get('/not-found')
+                Map getData() throws IllegalStateException
+            }
+
+            def api = ErrorApi.create()
+            try {
+                api.getData()
+                assert false, 'should have thrown'
+            } catch (IllegalStateException e) {
+                assert e.message.contains('404')
+            }
+        """
+    }
+
+    @Test
+    void testErrorDefaultsToRuntimeException() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface DefaultErrorApi {
+                @Get('/not-found')
+                Map getData()
+            }
+
+            def api = DefaultErrorApi.create()
+            try {
+                api.getData()
+                assert false, 'should have thrown'
+            } catch (RuntimeException e) {
+                assert e.message.contains('404')
+            }
+        """
+    }
+
+    @Test
+    void testImperativeAsync() {
+        def http = HttpBuilder.http("http://127.0.0.1:${port}")
+        def future = http.getAsync('/users/alice')
+        assert future instanceof java.util.concurrent.CompletableFuture
+        def result = future.get(5, java.util.concurrent.TimeUnit.SECONDS)
+        assert result.json.name == 'alice'
+    }
+
+    @Test
+    void testClientConfig() {
+        // Imperative: clientConfig gives access to HttpClient.Builder
+        def http = HttpBuilder.http {
+            baseUri "http://127.0.0.1:${port}"
+            clientConfig { builder ->
+                // Can set authenticator, SSL, proxy, etc.
+                builder.followRedirects(java.net.http.HttpClient.Redirect.NORMAL)
+            }
+        }
+        def result = http.get('/users/alice')
+        assert result.json.name == 'alice'
+    }
+
+    @Test
+    void testDeclarativeCreateWithClosure() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://wrong-host:9999')
+            interface ConfigApi {
+                @Get('/users/{username}')
+                Map getUser(String username)
+            }
+
+            // create(Closure) overrides everything — base URL, headers, etc.
+            def api = ConfigApi.create {
+                baseUri 'http://127.0.0.1:${port}'
+                header 'X-Custom', 'from-closure'
+            }
+            def user = api.getUser('alice')
+            assert user.name == 'alice'
+        """
+    }
+
+    @Test
+    void testDeclarativeCreateWithAuth() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient('http://127.0.0.1:${port}')
+            interface AuthApi {
+                @Get('/echo-headers')
+                Map echoHeaders()
+            }
+
+            def api = AuthApi.create {
+                baseUri 'http://127.0.0.1:${port}'
+                header 'Authorization', 'Bearer my-secret-token'
+            }
+            def headers = api.echoHeaders()
+            def lc = headers.collectKeys(String::toLowerCase)
+            assert lc['authorization'] == 'Bearer my-secret-token'
+        """
+    }
+
+    @Test
+    void testPerMethodTimeout() {
+        assertScript """
+            import groovy.http.*
+
+            @HttpBuilderClient(value = 'http://127.0.0.1:${port}',
+                               requestTimeout = 5)
+            interface TimeoutApi {
+                @Get('/users/{username}')
+                Map getUser(String username)              // uses default 5s
+
+                @Get('/users/{username}')
+                @Timeout(30)
+                Map getUserSlow(String username)           // overrides to 30s
+            }
+
+            def api = TimeoutApi.create()
+            def user = api.getUser('alice')
+            assert user.name == 'alice'
+
+            def slow = api.getUserSlow('bob')
+            assert slow.name == 'bob'
         """
     }
 }

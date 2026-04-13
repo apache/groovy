@@ -20,6 +20,7 @@ package groovy.http
 
 import org.apache.groovy.lang.annotation.Incubating
 
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -34,7 +35,27 @@ final class HttpClientHelper {
     private final Map<String, String> defaultHeaders
 
     HttpClientHelper(String baseUrl, Map<String, String> defaultHeaders) {
-        this.http = HttpBuilder.http(baseUrl)
+        this(baseUrl, defaultHeaders, 0, 0, false)
+    }
+
+    HttpClientHelper(String baseUrl, Map<String, String> defaultHeaders,
+                     int connectTimeoutSeconds, int requestTimeoutSeconds,
+                     boolean followRedirects) {
+        this.http = HttpBuilder.http {
+            baseUri(baseUrl)
+            if (connectTimeoutSeconds > 0) connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
+            if (requestTimeoutSeconds > 0) requestTimeout(Duration.ofSeconds(requestTimeoutSeconds))
+            if (followRedirects) delegate.followRedirects(true)
+        }
+        this.defaultHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(defaultHeaders))
+    }
+
+    /**
+     * Constructor accepting a pre-configured HttpBuilder instance.
+     * Used by the create(Closure) factory for advanced configuration.
+     */
+    HttpClientHelper(HttpBuilder http, Map<String, String> defaultHeaders) {
+        this.http = http
         this.defaultHeaders = Collections.unmodifiableMap(new LinkedHashMap<>(defaultHeaders))
     }
 
@@ -51,16 +72,29 @@ final class HttpClientHelper {
      * @return the converted response
      */
     Object execute(String method, String urlTemplate, String returnTypeName,
-                   Map<String, Object> pathParams, Map<String, Object> queryParams,
-                   Map<String, String> headers, Object body) {
+                   Map<String, Object> pathParams, Map<String, Object> queryOrFormParams,
+                   Map<String, String> headers, Object body, int timeoutSeconds = 0,
+                   String bodyMode = 'json', String errorTypeName = '') {
         String url = resolveUrl(urlTemplate, pathParams)
+        boolean isForm = bodyMode == 'form'
         HttpResult result = http.request(method, url) {
             defaultHeaders.each { k, v -> header(k, v) }
             headers.each { k, v -> header(k, v) }
-            queryParams.each { k, v -> query(k, v) }
-            if (body != null) { json(body) }
+            if (isForm) {
+                form(queryOrFormParams)
+            } else {
+                queryOrFormParams.each { k, v -> query(k, v) }
+            }
+            if (timeoutSeconds > 0) timeout(Duration.ofSeconds(timeoutSeconds))
+            if (body != null) {
+                switch (bodyMode) {
+                    case 'text': text(body); break
+                    case 'form': break // already handled above
+                    default: json(body)
+                }
+            }
         }
-        return convertResult(result, returnTypeName)
+        return convertResult(result, returnTypeName, errorTypeName)
     }
 
     /**
@@ -69,10 +103,29 @@ final class HttpClientHelper {
      * @return a CompletableFuture containing the converted response
      */
     CompletableFuture<Object> executeAsync(String method, String urlTemplate, String returnTypeName,
-                                           Map<String, Object> pathParams, Map<String, Object> queryParams,
-                                           Map<String, String> headers, Object body) {
-        CompletableFuture.supplyAsync {
-            execute(method, urlTemplate, returnTypeName, pathParams, queryParams, headers, body)
+                                           Map<String, Object> pathParams, Map<String, Object> queryOrFormParams,
+                                           Map<String, String> headers, Object body, int timeoutSeconds = 0,
+                                           String bodyMode = 'json', String errorTypeName = '') {
+        String url = resolveUrl(urlTemplate, pathParams)
+        boolean isForm = bodyMode == 'form'
+        return http.requestAsync(method, url) {
+            defaultHeaders.each { k, v -> header(k, v) }
+            headers.each { k, v -> header(k, v) }
+            if (isForm) {
+                form(queryOrFormParams)
+            } else {
+                queryOrFormParams.each { k, v -> query(k, v) }
+            }
+            if (timeoutSeconds > 0) timeout(Duration.ofSeconds(timeoutSeconds))
+            if (body != null) {
+                switch (bodyMode) {
+                    case 'text': text(body); break
+                    case 'form': break
+                    default: json(body)
+                }
+            }
+        }.thenApply { HttpResult result ->
+            convertResult(result, returnTypeName, errorTypeName)
         }
     }
 
@@ -84,14 +137,64 @@ final class HttpClientHelper {
         url
     }
 
-    private static Object convertResult(HttpResult result, String returnTypeName) {
+    private static Object convertResult(HttpResult result, String returnTypeName, String errorTypeName) {
         if (result.status() >= 400) {
-            throw new RuntimeException("HTTP ${result.status()}: ${result.body()}")
+            handleError(result, errorTypeName)
         }
-        if (returnTypeName == HttpResult.name) return result
-        if (returnTypeName == String.name || returnTypeName == 'java.lang.String') return result.body()
-        if (returnTypeName == 'void') return null
-        // Map, List, Object — parse as JSON
-        return result.json
+        switch (returnTypeName) {
+            case 'void': return null
+            case String.name:
+            case 'java.lang.String': return result.body()
+            case HttpResult.name: return result
+            case 'groovy.xml.slurpersupport.GPathResult': return result.xml
+            case 'org.jsoup.nodes.Document': return result.html
+            case Map.name:
+            case 'java.util.Map':
+            case List.name:
+            case 'java.util.List':
+            case Object.name: return result.json
+            default:
+                // Typed response — parse JSON then coerce to target type
+                def json = result.json
+                try {
+                    return json.asType(Class.forName(returnTypeName))
+                } catch (Exception e) {
+                    return json // fallback: return raw parsed JSON
+                }
+        }
+    }
+
+    private static void handleError(HttpResult result, String errorTypeName) {
+        if (errorTypeName) {
+            try {
+                Class<?> errorType = Class.forName(errorTypeName)
+                Exception error = createError(errorType, result)
+                if (error != null) throw error
+            } catch (ClassNotFoundException ignored) {
+                // fall through to default
+            }
+        }
+        throw new RuntimeException("HTTP ${result.status()}: ${result.body()}")
+    }
+
+    private static Exception createError(Class<?> errorType, HttpResult result) {
+        String message = "HTTP ${result.status()}: ${result.body()}"
+        // Try constructor(int status, String body)
+        try {
+            return (Exception) errorType.getConstructor(int, String).newInstance(result.status(), result.body())
+        } catch (ReflectiveOperationException ignored) {}
+        // Try constructor(Integer status, String body)
+        try {
+            return (Exception) errorType.getConstructor(Integer, String).newInstance(result.status(), result.body())
+        } catch (ReflectiveOperationException ignored) {}
+        // Try constructor(String message)
+        try {
+            return (Exception) errorType.getConstructor(String).newInstance(message)
+        } catch (ReflectiveOperationException ignored) {}
+        // Try no-arg constructor
+        try {
+            return (Exception) errorType.getDeclaredConstructor().newInstance()
+        } catch (ReflectiveOperationException ignored) {}
+        return null
     }
 }

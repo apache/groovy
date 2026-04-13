@@ -19,7 +19,6 @@
 package groovy.http;
 
 import org.apache.groovy.lang.annotation.Incubating;
-import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -27,38 +26,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks an interface as a declarative HTTP client. An implementation class
- * is generated at compile time via AST transform, using {@link HttpBuilder}
- * for request execution.
- * <p>
- * Example:
- * <pre>
- * {@code @HttpBuilderClient}('https://api.example.com')
- * interface MyApi {
- *     {@code @Get}('/users/{id}')
- *     Map getUser(String id)
- * }
- *
- * def api = MyApi.create()
- * def user = api.getUser('123')
- * </pre>
+ * Marks a method parameter as a plain text request body.
+ * Unlike {@link Body}, the parameter is sent as-is without JSON serialization.
  *
  * @since 6.0.0
  */
 @Incubating
-@Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.TYPE)
-@GroovyASTTransformationClass("groovy.http.HttpBuilderClientTransform")
-public @interface HttpBuilderClient {
-    /** The base URL for all requests. */
-    String value();
-
-    /** Connection timeout in seconds. Default 0 means no timeout. */
-    int connectTimeout() default 0;
-
-    /** Request timeout in seconds. Default 0 means no timeout. */
-    int requestTimeout() default 0;
-
-    /** Whether to follow HTTP redirects. Default is false. */
-    boolean followRedirects() default false;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+public @interface BodyText {
 }
