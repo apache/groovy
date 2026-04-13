@@ -18,21 +18,27 @@
  */
 package groovy.xml;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
-public class FactorySupportTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class FactorySupportTest {
     private static final PrivilegedActionException PRIVILEGED_ACTION_EXCEPTION = new PrivilegedActionException(new IllegalStateException());
     private static final ParserConfigurationException PARSER_CONFIGURATION_EXCEPTION = new ParserConfigurationException();
 
+    @Test
     public void testCreatesFactories() throws Exception {
         assertNotNull(FactorySupport.createDocumentBuilderFactory());
         assertNotNull(FactorySupport.createSaxParserFactory());
     }
 
+    @Test
     public void testParserConfigurationExceptionNotWrapped() throws ParserConfigurationException {
         try {
             FactorySupport.createFactory(new PrivilegedExceptionAction() {
@@ -46,6 +52,7 @@ public class FactorySupportTest extends TestCase {
         }
     }
 
+    @Test
     public void testOtherExceptionsWrappedAsUnchecked() throws ParserConfigurationException {
         try {
             FactorySupport.createFactory(new PrivilegedExceptionAction() {

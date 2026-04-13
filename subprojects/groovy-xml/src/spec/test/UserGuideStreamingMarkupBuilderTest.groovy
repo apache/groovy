@@ -18,13 +18,14 @@
  */
 package groovy.xml
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for the Groovy Xml user guide related to StreamingMarkupBuilderTest.
  */
-class UserGuideStreamingMarkupBuilderTest extends GroovyTestCase {
+class UserGuideStreamingMarkupBuilderTest {
 
+    @Test
     void testSimpleExample() {
         // tag::testSimpleExample[]
         def xml = new StreamingMarkupBuilder().bind { // <1>
@@ -51,6 +52,7 @@ class UserGuideStreamingMarkupBuilderTest extends GroovyTestCase {
         // end::testSimpleExample[]
     }
 
+    @Test
     void testMkp() {
         // tag::testMkp[]
         def xml = new StreamingMarkupBuilder().bind {

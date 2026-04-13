@@ -16,10 +16,11 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class DOMBuilderTest extends GroovyTestCase {
+class DOMBuilderTest {
 
+    @Test
     void testParse() {
         // tag::xml_string[]
         String recordsXML = '''

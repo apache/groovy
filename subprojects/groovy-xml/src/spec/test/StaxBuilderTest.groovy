@@ -17,10 +17,13 @@
  *  under the License.
  */
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class StaxBuilderTest extends GroovyTestCase {
+import static groovy.test.GroovyAssert.assertScript
 
+class StaxBuilderTest {
+
+    @Test
     void testStaxBuilder() {
         // tag::stax_builder[]
         def factory = javax.xml.stream.XMLOutputFactory.newInstance()
@@ -38,6 +41,7 @@ class StaxBuilderTest extends GroovyTestCase {
         // end::stax_builder[]
     }
 
+    @Test
     void testStaxBuilderExternalLibrary() {
         assertScript '''
             // tag::stax_builder_external_library[]

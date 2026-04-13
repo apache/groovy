@@ -19,12 +19,12 @@
 package groovy.xml
 
 import groovy.namespace.QName
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for the Groovy Xml user guide related to XmlParser.
  */
-class UserGuideXmlParserTest extends GroovyTestCase {
+class UserGuideXmlParserTest {
 
     // tag::responseBookXml[]
     def xml = """
@@ -41,6 +41,7 @@ class UserGuideXmlParserTest extends GroovyTestCase {
     """
     // end::responseBookXml[]
 
+    @Test
     void testParseText() {
         // tag::testParseText[]
         def text = '''
@@ -58,6 +59,7 @@ class UserGuideXmlParserTest extends GroovyTestCase {
         // end::testParseText[]
     }
 
+    @Test
     void testAddingNodes1() {
         // tag::testAddingNodes1[]
         def parser = new XmlParser()
@@ -73,6 +75,7 @@ class UserGuideXmlParserTest extends GroovyTestCase {
         // end::testAddingNodes1[]
     }
 
+    @Test
     void testAddingNodes2() {
         // tag::testAddingNodes2[]
         def parser = new XmlParser()
@@ -88,6 +91,7 @@ class UserGuideXmlParserTest extends GroovyTestCase {
         // end::testAddingNodes2[]
     }
 
+    @Test
     void testModifyingNodes1() {
         // tag::testModifyingNodes1[]
         def response = new XmlParser().parseText(xml)
@@ -110,6 +114,7 @@ class UserGuideXmlParserTest extends GroovyTestCase {
         // end::testModifyingNodes1[]
     }
 
+    @Test
     void testSettingAttributes1() {
         // tag::testSettingAttributes1[]
         def parser = new XmlParser()
@@ -121,6 +126,7 @@ class UserGuideXmlParserTest extends GroovyTestCase {
         // end::testSettingAttributes1[]
     }
 
+    @Test
     void testNamedParameters() {
         // tag::testNamedParameters[]
         def parser = new XmlParser(namespaceAware: false, trimWhitespace: true)

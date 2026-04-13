@@ -18,13 +18,13 @@
  */
 package groovy.xml
 
-import groovy.test.GroovyTestCase
 import groovy.xml.dom.DOMCategory
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for the Groovy Xml user guide related to DOMCategory.
  */
-class UserGuideDOMCategoryTest extends GroovyTestCase {
+class UserGuideDOMCategoryTest {
 
     // tag::testXML[]
     static def CAR_RECORDS = '''
@@ -45,6 +45,7 @@ class UserGuideDOMCategoryTest extends GroovyTestCase {
     '''
     // end::testXML[]
 
+    @Test
     void testExample1() {
         // tag::testExample1[]
         def reader = new StringReader(CAR_RECORDS)

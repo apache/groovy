@@ -18,12 +18,12 @@
  */
 package groovy.xml
 
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
 /**
  * Tests for the Groovy Xml user guide related to XmlUtil.
  */
-class UserGuideXmlUtilTest extends GroovyTestCase {
+class UserGuideXmlUtilTest {
 
     // tag::responseBookXml[]
     def xml = """
@@ -40,6 +40,7 @@ class UserGuideXmlUtilTest extends GroovyTestCase {
     """
     // end::responseBookXml[]
 
+    @Test
     void testGettingANode() {
         // tag::testGettingANode[]
         def response = new XmlParser().parseText(xml)
@@ -51,6 +52,7 @@ class UserGuideXmlUtilTest extends GroovyTestCase {
         // end::testGettingANode[]
     }
 
+    @Test
     void testSerializeOptions() {
         // tag::testSerializeOptions[]
         def response = new XmlParser().parseText(xml)

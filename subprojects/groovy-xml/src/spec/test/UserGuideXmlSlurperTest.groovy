@@ -21,9 +21,9 @@
  */
 import groovy.xml.StreamingMarkupBuilder
 import groovy.xml.XmlSlurper
-import groovy.test.GroovyTestCase
+import org.junit.jupiter.api.Test
 
-class UserGuideXmlSlurperTest extends GroovyTestCase {
+class UserGuideXmlSlurperTest {
 
     // tag::books[]
     static final String books = '''
@@ -52,6 +52,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
     '''
     // end::books[]
 
+    @Test
     void testParseText() {
         // tag::testParseText[]
         def text = '''
@@ -69,6 +70,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testParseText[]
     }
 
+    @Test
     void testGettingANodeText() {
         // tag::testGettingANodeText[]
         def response = new XmlSlurper().parseText(books)
@@ -78,6 +80,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testGettingANodeText[]
     }
 
+    @Test
     void testGettingAnAttributeText() {
         // tag::testGettingAnAttributeText[]
         def response = new XmlSlurper().parseText(books)
@@ -92,6 +95,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testGettingAnAttributeText[]
     }
 
+    @Test
     void testChildren() {
         // tag::testChildren[]
         def response = new XmlSlurper().parseText(books)
@@ -106,6 +110,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testChildren[]
     }
 
+    @Test
     void testDepthFirst1() {
         // tag::testDepthFirst1[]
         def response = new XmlSlurper().parseText(books)
@@ -119,6 +124,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testDepthFirst1[]
     }
 
+    @Test
     void testDepthFirst2() {
         // tag::testDepthFirst2[]
         def response = new XmlSlurper().parseText(books)
@@ -129,6 +135,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testDepthFirst2[]
     }
 
+    @Test
     void testDepthVsBreadth() {
         // tag::testDepthVsBreadth[]
         def response = new XmlSlurper().parseText(books)
@@ -142,6 +149,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testDepthVsBreadth[]
     }
 
+    @Test
     void testHelpers() {
         // tag::testHelpers[]
         def response = new XmlSlurper().parseText(books)
@@ -155,6 +163,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testHelpers[]
     }
 
+    @Test
     void testModifyingNodes1() {
         // tag::testModifyingNodes1[]
         def response = new XmlSlurper().parseText(books)
@@ -180,6 +189,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testModifyingNodes1[]
     }
 
+    @Test
     void testSettingAttributes1() {
         // tag::testSettingAttributes1[]
         def response = new XmlSlurper().parseText(books)
@@ -189,6 +199,7 @@ class UserGuideXmlSlurperTest extends GroovyTestCase {
         // end::testSettingAttributes1[]
     }
 
+    @Test
     void testNamedParameters() {
         // tag::testNamedParameters[]
         def slurper = new XmlSlurper(namespaceAware: false, keepIgnorableWhitespace: true)
