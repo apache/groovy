@@ -32,9 +32,9 @@ one of:
 * `groovy.xml.XmlParser`
 * `groovy.xml.XmlSlurper`
 
-Both have the same approach to parse an XML. Both come with a bunch of
-overloaded parse methods plus some special methods such as `parseText`,
-parseFile and others. For the next example we will use the `parseText`
+Both have a similar approach to parsing XML. Both come with a bunch of
+overloaded parse methods plus some special methods such as `parseText`
+and others. For the next example we will use the `parseText`
 method. It parses an XML `String` and recursively converts it to a list
 or map of objects.
 
@@ -58,9 +58,9 @@ include::../test/UserGuideXmlParserTest.groovy[tags=testParseText,indent=0]
 <2> Checking we're using a Node
 <3> Traversing the tree in a GPath style
 
-Let's see the *similarities* between `XMLParser` and `XMLSlurper` first:
+Let's see the *similarities* between `XmlParser` and `XmlSlurper` first:
 
-* Both are based on `SAX` so they both are low memory footprint
+* Both are based on SAX so both have a low memory footprint
 * Both can update/transform the XML
 
 But they have key *differences*:
@@ -70,7 +70,7 @@ you'll have to evaluate the whole tree again.
 * `XmlSlurper` returns `GPathResult` instances when parsing XML
 * `XmlParser` returns `Node` objects when parsing XML
 
-When to use one or the another?
+When to use one or the other?
 
 NOTE: There is a discussion at
 http://stackoverflow.com/questions/7558019/groovy-xmlslurper-vs-xmlparser[StackOverflow]. The
@@ -83,16 +83,15 @@ the choice.
 
 The rationale behind this is that every time you create a node with
 `XmlSlurper` it won't be available until you parse the document again
-with another `XmlSlurper` instance.  Need to read just a few nodes
-XmlSlurper is for you ".
+with another `XmlSlurper` instance.
 
 * *If you just have to read a few nodes* `XmlSlurper` should be your
 choice, since it will not have to create a complete structure in
-memory"
+memory.
 
-In general both classes perform similar way. Even the way of using
-GPath expressions with them are the same (both use `breadthFirst()` and
-`depthFirst()` expressions). So I guess it depends on the write/read
+In general both classes perform in a similar way. Even the way of using
+GPath expressions with them is the same (both use `breadthFirst()` and
+`depthFirst()` expressions). So it depends on the write/read
 frequency.
 
 === Parser configuration with named parameters
@@ -603,10 +602,10 @@ include::../test/UserGuideXmlSlurperTest.groovy[tags=testModifyingNodes1,indent=
 
 Notice how using `XmlSlurper` we have to parse the transformed document
 again in order to find the created nodes. In this particular example
-could be a little bit annoying isn't it?
+this could be a little bit annoying.
 
 Finally both parsers also use the same approach for adding a new
-attribute to a given attribute. This time again the difference is
+attribute to a given node. This time again the difference is
 whether you want the new nodes to be available right away or
 not. First `XmlParser`:
 
@@ -628,11 +627,11 @@ When using `XmlSlurper`, adding a new attribute does *not* require you to perfor
 
 ==== XmlUtil
 
-Sometimes is useful to get not only the value of a given node but the
+Sometimes it's useful to get not only the value of a given node but the
 node itself (for instance to add this node to another XML).
 
 For that you can use `groovy.xml.XmlUtil` class. It has several static
-methods to serialize the xml fragment from several type of sources
+methods to serialize the xml fragment from several types of sources
 (Node, GPathResult, String...)
 
 [source,groovy]
