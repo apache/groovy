@@ -143,6 +143,8 @@ public class DomToGroovy {
             case Node.COMMENT_NODE :
                 printComment((Comment) node, endWithComma);
                 break;
+            default:
+                break;
         }
     }
 

@@ -55,7 +55,6 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.io.Writer;
 import java.net.URL;
-import java.nio.charset.Charset;
 
 /**
  * Used for pretty printing XML content and other XML related utilities.

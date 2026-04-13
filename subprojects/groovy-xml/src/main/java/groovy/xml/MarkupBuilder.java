@@ -463,6 +463,8 @@ public class MarkupBuilder extends BuilderSupport {
                         break;
                     case 3:
                         throw new Error();
+                    default:
+                        break;
                 }
                 break;
             case 1:
@@ -491,6 +493,8 @@ public class MarkupBuilder extends BuilderSupport {
                             }
                         }
                         break;
+                    default:
+                        break;
                 }
                 break;
             case 2:
@@ -509,6 +513,8 @@ public class MarkupBuilder extends BuilderSupport {
                         out.print("</");
                         print(name);
                         out.print(">");
+                        break;
+                    default:
                         break;
                 }
                 break;
@@ -537,7 +543,11 @@ public class MarkupBuilder extends BuilderSupport {
                         print(name);
                         out.print(">");
                         break;
+                    default:
+                        break;
                 }
+                break;
+            default:
                 break;
         }
         state = next;
