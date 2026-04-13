@@ -122,7 +122,7 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
         protected static List<PropertyInfo> getPropertyInfoFromClassNode(ClassNode cNode, List<String> includes, List<String> excludes, boolean allNames) {
             List<PropertyInfo> props = new ArrayList<>();
             for (FieldNode fNode : getInstancePropertyFields(cNode)) {
-                if (shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
+                if (shouldSkip(fNode, excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
             return props;
@@ -223,12 +223,12 @@ public class BuilderASTTransformation extends AbstractASTTransformation implemen
             List<PropertyInfo> props = new ArrayList<>();
             List<String> seen = new ArrayList<>();
             for (PropertyNode pNode : BeanUtils.getAllProperties(cNode, false, false, allProperties)) {
-                if (shouldSkip(pNode.getName(), excludes, includes, allNames)) continue;
+                if (shouldSkip(pNode, excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(pNode.getName(), pNode.getType()));
                 seen.add(pNode.getName());
             }
             for (FieldNode fNode : getFields(transform, anno, cNode)) {
-                if (seen.contains(fNode.getName()) || shouldSkip(fNode.getName(), excludes, includes, allNames)) continue;
+                if (seen.contains(fNode.getName()) || shouldSkip(fNode, excludes, includes, allNames)) continue;
                 props.add(new PropertyInfo(fNode.getName(), fNode.getType()));
             }
             return props;

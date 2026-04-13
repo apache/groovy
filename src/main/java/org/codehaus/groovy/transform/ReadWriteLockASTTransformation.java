@@ -36,6 +36,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.codehaus.groovy.ast.ClassHelper.make;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsInternal;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.block;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.callX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.ctorX;
@@ -118,6 +119,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
             if (field == null) {
                 int visibility = ACC_PRIVATE | ACC_STATIC | ACC_FINAL;
                 field = targetClass.addField(DEFAULT_STATIC_LOCKNAME, visibility, LOCK_TYPE, createLockObject());
+                markAsInternal(field);
             } else if (!field.isStatic()) {
                 addError("Error during " + myTypeName + " processing: " + DEFAULT_STATIC_LOCKNAME + " field must be static", field);
                 return null;
@@ -128,6 +130,7 @@ public class ReadWriteLockASTTransformation extends AbstractASTTransformation {
         if (field == null) {
             int visibility = ACC_PRIVATE | ACC_FINAL;
             field = targetClass.addField(DEFAULT_INSTANCE_LOCKNAME, visibility, LOCK_TYPE, createLockObject());
+            markAsInternal(field);
         } else if (field.isStatic()) {
             addError("Error during " + myTypeName + " processing: " + DEFAULT_INSTANCE_LOCKNAME + " field must not be static", field);
             return null;

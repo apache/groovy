@@ -18,6 +18,7 @@
  */
 package groovy.lang;
 
+import groovy.transform.Internal;
 import org.apache.groovy.internal.util.UncheckedThrow;
 import org.apache.groovy.util.BeanUtils;
 import org.apache.groovy.util.SystemUtil;
@@ -2253,13 +2254,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // simply return the values of the metaproperty map as a List
         List<MetaProperty> ret = new ArrayList<>(propertyMap.size());
         for (MetaProperty mp : propertyMap.values()) {
-            if (mp instanceof CachedField) {
-                if (mp.isSynthetic()
+            if (mp instanceof CachedField cf) {
+                if (cf.isSynthetic()
+                        || cf.isAnnotationPresent(Internal.class)
                         // GROOVY-5169, GROOVY-9081, GROOVY-9103, GROOVY-10438, GROOVY-10555, et al.
-                        || (!permissivePropertyAccess && !checkAccessible(getClass(), ((CachedField) mp).getDeclaringClass(), mp.getModifiers(), false))) {
+                        || (!permissivePropertyAccess && !checkAccessible(getClass(), cf.getDeclaringClass(), cf.getModifiers(), false))) {
                     continue;
                 }
             } else if (mp instanceof MetaBeanProperty mbp) {
+                if (isMarkedInternal(mbp)) continue;
                 // filter out extrinsic properties (DGM, ...)
                 boolean getter = true, setter = true;
                 MetaMethod getterMetaMethod = mbp.getGetter();
@@ -2289,6 +2292,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static boolean canAccessLegally(final MetaMethod method) {
         return !(method instanceof CachedMethod)
             || ((CachedMethod) method).canAccessLegally(MetaClassImpl.class);
+    }
+
+    private static boolean isMarkedInternal(final MetaBeanProperty mbp) {
+        CachedField field = mbp.getField();
+        if (field != null && field.isAnnotationPresent(Internal.class)) {
+            return true;
+        }
+        MetaMethod getter = mbp.getGetter();
+        if (getter instanceof CachedMethod cm && cm.getAnnotation(Internal.class) != null) {
+            return true;
+        }
+        MetaMethod setter = mbp.getSetter();
+        if (setter instanceof CachedMethod cm && cm.getAnnotation(Internal.class) != null) {
+            return true;
+        }
+        return false;
     }
 
     /**

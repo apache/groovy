@@ -88,6 +88,7 @@ import static org.codehaus.groovy.ast.tools.GeneralUtils.sameX;
 import static org.codehaus.groovy.ast.tools.GeneralUtils.varX;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.makeClassSafe;
 import static org.codehaus.groovy.ast.tools.GenericsUtils.nonGeneric;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsInternal;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
@@ -178,6 +179,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         // TODO use pList and fList
         if (cacheResult) {
             final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
+            markAsInternal(hashField);
             final Expression hash = varX(hashField);
             body.addStatement(ifS(
                     isZeroX(hash),
@@ -217,7 +219,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         body.addStatement(declS(result, callX(HASHUTIL_TYPE, "initHash")));
 
         for (PropertyNode pNode : pList) {
-            if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             // _result = HashCodeHelper.updateHash(_result, getProperty()) // plus self-reference checking
             Expression prop = useGetter ? getterThisX(cNode, pNode) : propX(varX("this"), pNode.getName());
             final Expression current = callX(HASHUTIL_TYPE, UPDATE_HASH, args(result, prop));
@@ -227,7 +229,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
 
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(fNode, excludes, includes, allNames)) continue;
             // _result = HashCodeHelper.updateHash(_result, field) // plus self-reference checking
             final Expression fieldExpr = varX(fNode);
             final Expression current = callX(HASHUTIL_TYPE, UPDATE_HASH, args(result, fieldExpr));
@@ -259,7 +261,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         final BlockStatement body = new BlockStatement();
         final ArgumentListExpression args = new ArgumentListExpression();
         for (PropertyNode pNode : pList) {
-            if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             if (useGetter) {
                 args.addExpression(getterThisX(cNode, pNode));
             } else {
@@ -267,7 +269,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             }
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(fNode, excludes, includes, allNames)) continue;
             args.addExpression(varX(fNode));
         }
         if (callSuper) {
@@ -357,7 +359,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
         final Set<String> names = new HashSet<>();
         final List<PropertyNode> pList = getAllProperties(names, cNode, true, includeFields, allProperties, false, false, false);
         for (PropertyNode pNode : pList) {
-            if (shouldSkipUndefinedAware(pNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             boolean canBeSelf = StaticTypeCheckingSupport.implementsInterfaceOrIsSubclassOf(
                     pNode.getOriginType(), cNode
             );
@@ -385,7 +387,7 @@ public class EqualsAndHashCodeASTTransformation extends AbstractASTTransformatio
             fList.addAll(getInstanceNonPropertyFields(cNode));
         }
         for (FieldNode fNode : fList) {
-            if (shouldSkipUndefinedAware(fNode.getName(), excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(fNode, excludes, includes, allNames)) continue;
             Expression fieldsEqual = pojo
                     ? callX(OBJECTS_TYPE, EQUALS, args(varX(fNode), propX(otherTyped, fNode.getName())))
                     : hasEqualFieldX(fNode, otherTyped);

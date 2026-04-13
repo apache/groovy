@@ -269,7 +269,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         methods.removeIf(candidate -> {
             if (!candidate.isPublic() || candidate.isStatic() || (candidate.getModifiers () & ACC_SYNTHETIC) != 0) return true;
 
-            if (shouldSkip(candidate.getName(), delegate.excludes, delegate.includes, allNames)) return true;
+            if (shouldSkip(candidate, delegate.excludes, delegate.includes, allNames)) return true;
 
             if (!includeDeprecated && !candidate.getAnnotations(DEPRECATED_TYPE).isEmpty()) return true;
 
@@ -320,7 +320,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         String setterName = getSetterName(name);
         if (!prop.isFinal()
                 && delegate.owner.getSetterMethod(setterName) == null && delegate.owner.getProperty(name) == null
-                && !shouldSkipPropertyMethod(name, setterName, delegate.excludes, delegate.includes, allNames)) {
+                && !shouldSkipPropertyMethod(prop, setterName, delegate.excludes, delegate.includes, allNames)) {
             addGeneratedMethod(
                     delegate.owner,
                     setterName,
@@ -352,7 +352,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         extractAccessorInfo(delegate.owner, name, ownerWillHaveGetAccessor, ownerWillHaveIsAccessor);
 
         if (willHaveGetAccessor && !ownerWillHaveGetAccessor.get()
-                && !shouldSkipPropertyMethod(name, getterName, delegate.excludes, delegate.includes, allNames)) {
+                && !shouldSkipPropertyMethod(prop, getterName, delegate.excludes, delegate.includes, allNames)) {
             addGeneratedMethod(
                     delegate.owner,
                     getterName,
@@ -365,7 +365,7 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         }
 
         if (willHaveIsAccessor && !ownerWillHaveIsAccessor.get()
-                && !shouldSkipPropertyMethod(name, getterName, delegate.excludes, delegate.includes, allNames)) {
+                && !shouldSkipPropertyMethod(prop, isserName, delegate.excludes, delegate.includes, allNames)) {
             addGeneratedMethod(
                     delegate.owner,
                     isserName,
@@ -386,8 +386,9 @@ public class DelegateASTTransformation extends AbstractASTTransformation {
         willHaveIsAccessor.set(hasIsAccessor || (prop != null && !hasGetAccessor && isPrimitiveBoolean(prop.getOriginType())));
     }
 
-    private static boolean shouldSkipPropertyMethod(final String propertyName, final String methodName, final List<String> excludes, final List<String> includes, final boolean allNames) {
-        return ((!allNames && deemedInternalName(propertyName))
+    private static boolean shouldSkipPropertyMethod(final PropertyNode prop, final String methodName, final List<String> excludes, final List<String> includes, final boolean allNames) {
+        String propertyName = prop.getName();
+        return ((!allNames && deemedInternal(prop))
                     || excludes != null && (excludes.contains(propertyName) || excludes.contains(methodName))
                     || (includes != null && !includes.isEmpty() && !includes.contains(propertyName) && !includes.contains(methodName)));
     }

@@ -252,8 +252,24 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
         return rawExcludes == null ? new ArrayList<>() : StringGroovyMethods.tokenize(rawExcludes, ", ");
     }
 
+    /**
+     * @see org.apache.groovy.ast.tools.AnnotatedNodeUtils#markAsInternal(AnnotatedNode)
+     * @since 6.0.0
+     */
+    public static void markAsInternal(AnnotatedNode node) {
+        AnnotatedNodeUtils.markAsInternal(node);
+    }
+
     public static boolean deemedInternalName(String name) {
         return name.contains("$");
+    }
+
+    /**
+     * @see org.apache.groovy.ast.tools.AnnotatedNodeUtils#deemedInternal(AnnotatedNode)
+     * @since 6.0.0
+     */
+    public static boolean deemedInternal(AnnotatedNode node) {
+        return AnnotatedNodeUtils.deemedInternal(node);
     }
 
     public static boolean shouldSkipUndefinedAware(String name, List<String> excludes, List<String> includes) {
@@ -266,6 +282,18 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
             (includes != null && !includes.contains(name));
     }
 
+    /**
+     * Variant that checks both the name and {@link groovy.transform.Internal @Internal} annotation.
+     *
+     * @since 6.0.0
+     */
+    public static boolean shouldSkipUndefinedAware(AnnotatedNode node, List<String> excludes, List<String> includes, boolean allNames) {
+        String name = nodeName(node);
+        return (excludes != null && excludes.contains(name)) ||
+            (!allNames && deemedInternal(node)) ||
+            (includes != null && !includes.contains(name));
+    }
+
     public static boolean shouldSkip(String name, List<String> excludes, List<String> includes) {
         return shouldSkip(name, excludes, includes, false);
     }
@@ -274,6 +302,25 @@ public abstract class AbstractASTTransformation implements ASTTransformation, Er
         return (excludes != null && excludes.contains(name)) ||
             (!allNames && deemedInternalName(name)) ||
             (includes != null && !includes.isEmpty() && !includes.contains(name));
+    }
+
+    /**
+     * Variant that checks both the name and {@link groovy.transform.Internal @Internal} annotation.
+     *
+     * @since 6.0.0
+     */
+    public static boolean shouldSkip(AnnotatedNode node, List<String> excludes, List<String> includes, boolean allNames) {
+        String name = nodeName(node);
+        return (excludes != null && excludes.contains(name)) ||
+            (!allNames && deemedInternal(node)) ||
+            (includes != null && !includes.isEmpty() && !includes.contains(name));
+    }
+
+    private static String nodeName(AnnotatedNode node) {
+        if (node instanceof FieldNode fn) return fn.getName();
+        if (node instanceof PropertyNode pn) return pn.getName();
+        if (node instanceof MethodNode mn) return mn.getName();
+        return "";
     }
 
     public static boolean shouldSkipOnDescriptorUndefinedAware(boolean checkReturn, Map genericsSpec, MethodNode mNode,

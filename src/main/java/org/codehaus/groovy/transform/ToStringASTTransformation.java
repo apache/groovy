@@ -244,7 +244,7 @@ public class ToStringASTTransformation extends AbstractASTTransformation {
 
         for (PropertyNode pNode : list) {
             String name = pNode.getName();
-            if (shouldSkipUndefinedAware(name, excludes, includes, allNames)) continue;
+            if (shouldSkipUndefinedAware(pNode, excludes, includes, allNames)) continue;
             FieldNode fNode = pNode.getField();
             if (!cNode.hasProperty(name) && fNode.getDeclaringClass() != null) {
                 // it's really just a field
