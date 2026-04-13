@@ -650,3 +650,140 @@ encoding, indentation, and DOCTYPE handling:
 include::../test/UserGuideXmlUtilTest.groovy[tags=testSerializeOptions,indent=0]
 ----
 
+== Typed XML Conversion
+
+Groovy 6 adds support for converting XML nodes into typed objects,
+complementing the dynamic GPath-style navigation that `XmlParser` and
+`XmlSlurper` already provide.
+
+=== Converting Nodes to Maps
+
+The `toMap()` method on `Node` converts an XML node tree into a nested
+`Map<String, Object>`. This requires no additional dependencies.
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=toMap,indent=0]
+----
+
+Attributes and child elements are merged into a single map.
+Nested elements become nested maps:
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=toMap_nested,indent=0]
+----
+
+Attributes are also included:
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=toMap_attributes,indent=0]
+----
+
+Repeated same-name elements become lists:
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=toMap_repeated,indent=0]
+----
+
+If a child element name collides with an attribute name, the child element wins.
+
+When an element has both attributes and text content, the text is stored
+under the `_text` key (available as the `Node.TEXT_KEY` constant):
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=toMap_text_key,indent=0]
+----
+
+=== Type coercion with `as`
+
+Because `toMap()` produces a standard Groovy `Map`, you can use Groovy's
+built-in `as` coercion to convert a node directly to a typed object.
+No additional dependencies are required:
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=simple_config_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=as_coercion,indent=0]
+----
+
+You can also coerce to `Map` directly:
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=as_map,indent=0]
+----
+
+NOTE: The `as` coercion uses Groovy's standard named-parameter constructor,
+which works well when target properties are `String`-typed. For richer
+type conversion (e.g. `String` to `int`, `boolean`, `BigDecimal`), use
+`parseTextAs` described below.
+
+=== Typed parsing with `parseTextAs`
+
+The `parseTextAs` and `parseAs` methods on `XmlParser` parse XML directly
+into typed objects using Jackson's `ObjectMapper.convertValue`, which
+handles type conversion automatically. This requires `jackson-databind`
+on the classpath -- a clear error is thrown if it is absent.
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=server_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=parseTextAs,indent=0]
+----
+
+Nested objects are supported:
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=app_class,indent=0]
+----
+
+[source,groovy]
+----
+include::../test/UserGuideXmlTypedTest.groovy[tags=parseTextAs_nested,indent=0]
+----
+
+Standard Jackson annotations such as `@JsonProperty` and `@JsonFormat`
+are supported for property name mapping and type conversion.
+
+Overloaded variants of `parseAs` accept a `Reader`, `InputStream`,
+`File`, or `Path` in addition to the `String`-based `parseTextAs`.
+
+=== Full Jackson XML support
+
+The `parseTextAs` method uses `jackson-databind` (not `jackson-dataformat-xml`),
+so XML-specific Jackson annotations like `@JacksonXmlText` and
+`@JacksonXmlElementWrapper` are not available through this path.
+
+If you need the full Jackson XML experience, use `jackson-dataformat-xml`
+directly:
+
+[source,groovy]
+----
+@Grab('com.fasterxml.jackson.dataformat:jackson-dataformat-xml')
+import com.fasterxml.jackson.dataformat.xml.XmlMapper
+
+def config = new XmlMapper().readValue(xmlString, ServerConfig)
+----
+
+Or parse first with `XmlParser` for inspection or validation,
+then re-serialize and hand off to Jackson:
+
+[source,groovy]
+----
+def node = new XmlParser().parseText(xmlString)
+// ... inspect or validate node ...
+def config = new XmlMapper().readValue(XmlUtil.serialize(node), ServerConfig)
+----
