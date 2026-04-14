@@ -18,36 +18,46 @@
  */
 package groovy.transform;
 
-import groovy.lang.annotation.ExtendedElementType;
-import groovy.lang.annotation.ExtendedTarget;
-import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Runs each iteration of an annotated {@code for} loop in parallel
- * using the current pool or default executor, with structured completion.
+ * Marks a class as an active object whose {@link ActiveMethod}-annotated
+ * methods are automatically routed through an internal actor for
+ * thread-safe, serialised execution.
  * <p>
- * Uses {@link groovy.concurrent.Pool#current()} if inside a
- * {@link groovy.concurrent.ParallelScope#withPool} block, otherwise
- * falls back to {@code ForkJoinPool.commonPool()}.
- * <p>
- * While {@code @Parallel} provides a convenient way to parallelise
- * {@code for} loops, using the {@code *Parallel} collection methods
- * (e.g. {@code collectParallel}, {@code eachParallel}) directly may
- * offer a better debugging experience, as {@code @Parallel} performs
- * internal variable renaming in its generated code.
+ * All {@code @ActiveMethod} calls on the same instance are processed
+ * one at a time — no locks needed.
  *
+ * <pre>{@code
+ * {@literal @}ActiveObject
+ * class Account {
+ *     private double balance = 0
+ *
+ *     {@literal @}ActiveMethod
+ *     void deposit(double amount) { balance += amount }
+ *
+ *     {@literal @}ActiveMethod(blocking = false)
+ *     Awaitable<Double> getBalance() { balance }
+ * }
+ * }</pre>
+ *
+ * @see ActiveMethod
  * @since 6.0.0
- * @see org.codehaus.groovy.transform.ParallelASTTransformation
  */
-@Incubating
 @Documented
 @Retention(RetentionPolicy.SOURCE)
-@ExtendedTarget(ExtendedElementType.LOOP)
-@GroovyASTTransformationClass("org.codehaus.groovy.transform.ParallelASTTransformation")
-public @interface Parallel {
+@Target(ElementType.TYPE)
+@GroovyASTTransformationClass("org.codehaus.groovy.transform.ActiveObjectASTTransformation")
+public @interface ActiveObject {
+
+    /**
+     * The name of the generated actor field.
+     */
+    String actorName() default "internalActiveObjectActor";
 }

@@ -82,11 +82,16 @@ final class FlowPublisherAdapterTest {
 
     @Test
     void testForAwaitIteratesAllValues() {
+        // SubmissionPublisher.submit delivers only to subscribers present at
+        // submit-time, so we must wait for `for await` to subscribe before
+        // the producer starts — otherwise on fast CI the producer races ahead
+        // and all 5 values are dropped before the consumer ever sees them.
         assertScript '''
             import java.util.concurrent.SubmissionPublisher
 
             def publisher = new SubmissionPublisher<Integer>()
             async {
+                while (publisher.numberOfSubscribers == 0) Thread.sleep(1)
                 (1..5).each { publisher.submit(it) }
                 publisher.close()
             }

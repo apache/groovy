@@ -95,11 +95,6 @@ dependencies {
     }
     distributions(project(":")) {
         capabilities {
-            requireCapability 'org.apache.groovy:groovy-gpars'
-        }
-    }
-    distributions(project(":")) {
-        capabilities {
             requireCapability 'org.apache.groovy:groovy-grapes'
         }
     }

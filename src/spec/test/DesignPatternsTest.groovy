@@ -970,12 +970,10 @@ final class DesignPatternsTest extends CompilableTestSupport {
     }
 
     @Test
-    void testDecoratorGpars() {
+    void testDecoratorAsync() {
         shouldCompile '''
-            @GrabExclude('org.codehaus.groovy:groovy-all')
-            // tag::decorator_gpars[]
-            @Grab('org.codehaus.gpars:gpars:1.2.1')
-            import static groovyx.gpars.GParsPool.withPool
+            // tag::decorator_async[]
+            import groovy.concurrent.Awaitable
 
             interface Document {
                 void print()
@@ -1006,11 +1004,9 @@ final class DesignPatternsTest extends CompilableTestSupport {
 
             def asyncDecorator(Document d, Closure c) {
                 ProxyGenerator.INSTANCE.instantiateDelegate([print: {
-                    withPool {
-                        def result = c.callAsync(d)
-                        d.print()
-                        println result.get()
-                    }
+                    def result = Awaitable.go { c(d) }
+                    d.print()
+                    println await(result)
                 }], [Document], d)
             }
 
@@ -1019,7 +1015,7 @@ final class DesignPatternsTest extends CompilableTestSupport {
             //        new DocumentImpl(document: new File('AsyncDecorator.groovy').text),
                     wordCount), modeWord), avgWordLength)
             d.print()
-            // end::decorator_gpars[]
+            // end::decorator_async[]
         '''
     }
 
@@ -1292,15 +1288,15 @@ final class DesignPatternsTest extends CompilableTestSupport {
         // end::monoids_lambdas[]
         '''
         assertScript '''
-        import groovyx.gpars.GParsPool
+        import groovy.concurrent.ParallelScope
+        import groovy.concurrent.Pool
 
-        // tag::monoids_gpars[]
+        // tag::monoids_parallel[]
         def nums = 10..16
-        GParsPool.withPool {
-            assert 91 == nums.injectParallel(0){ total, next -> total + next }
-            assert 91 == nums.parallel.reduce(0, (total, next) -> total + next)
+        ParallelScope.withPool(Pool.cpu()) {
+            assert 91 == nums.toList().injectParallel(0){ total, next -> total + next }
         }
-        // end::monoids_gpars[]
+        // end::monoids_parallel[]
         // tag::monoids_average_1to10[]
         assert (1..10).average() == 5.5
         // end::monoids_average_1to10[]
@@ -1324,12 +1320,13 @@ final class DesignPatternsTest extends CompilableTestSupport {
         def avg = total / nums.size()
         assert avg == 5.5
         // end::monoids_average_split[]
-        import static groovyx.gpars.GParsPool.withPool
-        // tag::monoids_average_split_gpars[]
-        withPool {
-            assert 5.5 == nums.sumParallel() / nums.size()
+        import groovy.concurrent.ParallelScope
+        import groovy.concurrent.Pool
+        // tag::monoids_average_split_parallel[]
+        ParallelScope.withPool(Pool.cpu()) {
+            assert 5.5 == nums.toList().sumParallel{ a, b -> a + b } / nums.size()
         }
-        // end::monoids_average_split_gpars[]
+        // end::monoids_average_split_parallel[]
         '''
         assertScript '''
         def nums = 1..10
@@ -1342,9 +1339,10 @@ final class DesignPatternsTest extends CompilableTestSupport {
         // end::monoids_average_reworked_simple[]
         '''
         assertScript '''
-        import static groovyx.gpars.GParsPool.withPool
+        import groovy.concurrent.ParallelScope
+        import groovy.concurrent.Pool
         def nums = 1..10
-        // tag::monoids_average_reworked_gpars[]
+        // tag::monoids_average_reworked_parallel[]
         class AverageHolder {
             int total
             int count
@@ -1362,12 +1360,12 @@ final class DesignPatternsTest extends CompilableTestSupport {
         def pairwiseAggregate = { aggregate, next ->
             asHolder(aggregate) + asHolder(next)
         }
-        withPool {
-            def holder = nums.injectParallel(AverageHolder.ZERO, pairwiseAggregate)
+        ParallelScope.withPool(Pool.cpu()) {
+            def holder = nums.toList().injectParallel(AverageHolder.ZERO, pairwiseAggregate)
             def avg = holder.with{ total / count }
             assert avg == 5.5
         }
-        // end::monoids_average_reworked_gpars[]
+        // end::monoids_average_reworked_parallel[]
         '''
     }
 

@@ -133,6 +133,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
             ExtensionModuleScanner scanner = new ExtensionModuleScanner(new DefaultModuleListener(map), this.getClass().getClassLoader());
             scanner.scanClasspathModules();
 
+            checkForDuplicateConcurrentModule();
+
             refreshMopMethods(map);
 
         }
@@ -186,6 +188,30 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      *
      * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
      */
+    /**
+     * Detects when both Groovy core and groovy-concurrent-java are on the
+     * classpath — the same classes would exist in two jars. Logs a warning
+     * so Maven users (who lack Gradle's capability mechanism) are alerted.
+     */
+    private static void checkForDuplicateConcurrentModule() {
+        try {
+            var coreSource = groovy.lang.GroovyObject.class.getProtectionDomain().getCodeSource();
+            var concurrentSource = groovy.concurrent.AsyncScope.class.getProtectionDomain().getCodeSource();
+            if (coreSource != null && concurrentSource != null) {
+                var coreLoc = coreSource.getLocation();
+                var concurrentLoc = concurrentSource.getLocation();
+                if (coreLoc != null && concurrentLoc != null && !coreLoc.equals(concurrentLoc)) {
+                    java.util.logging.Logger.getLogger(MetaClassRegistryImpl.class.getName()).warning(
+                            "Both Groovy core (" + coreLoc + ") and groovy-concurrent-java (" + concurrentLoc
+                            + ") are on the classpath. The concurrent API classes exist in both jars. "
+                            + "Remove groovy-concurrent-java when using the full Groovy runtime.");
+                }
+            }
+        } catch (Exception ignored) {
+            // SecurityManager or other restriction — skip check
+        }
+    }
+
     private void installMetaClassCreationHandle() {
            try {
                final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");

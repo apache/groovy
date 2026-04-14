@@ -20,16 +20,13 @@ package org.apache.groovy.runtime.async;
 
 import groovy.concurrent.AwaitResult;
 import groovy.concurrent.Awaitable;
-import groovy.lang.Closure;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -94,8 +91,7 @@ public class AsyncSupport {
         VIRTUAL_THREAD_EXECUTOR = vtExecutor;
         VIRTUAL_THREADS_AVAILABLE = vtAvailable;
 
-        FALLBACK_MAX_THREADS = org.apache.groovy.util.SystemUtil.getIntegerSafe(
-                "groovy.async.parallelism", 256);
+        FALLBACK_MAX_THREADS = getIntegerSafe("groovy.async.parallelism", 256);
         if (!VIRTUAL_THREADS_AVAILABLE) {
             FALLBACK_EXECUTOR = new ThreadPoolExecutor(
                     0, FALLBACK_MAX_THREADS,
@@ -128,6 +124,11 @@ public class AsyncSupport {
     private AsyncSupport() { }
 
     // ---- executor configuration -----------------------------------------
+
+    /** Returns the shared scheduler for delays, timeouts, and scope deadlines. */
+    public static ScheduledExecutorService getScheduler() {
+        return SCHEDULER;
+    }
 
     /** Returns {@code true} if running on JDK 21+ with virtual thread support. */
     public static boolean isVirtualThreadsAvailable() {
@@ -215,25 +216,21 @@ public class AsyncSupport {
         if (source instanceof CompletableFuture) return await((CompletableFuture<T>) source);
         if (source instanceof CompletionStage) return await((CompletionStage<T>) source);
         if (source instanceof Future) return await((Future<T>) source);
-        if (source instanceof Closure) {
-            throw new IllegalArgumentException(
-                    "Cannot await a Closure directly. Call the closure first: await myClosure()");
-        }
         return await(Awaitable.from(source));
     }
 
     // ---- async execution ------------------------------------------------
 
     /**
-     * Executes the given closure asynchronously on the specified executor,
+     * Executes the given supplier asynchronously on the specified executor,
      * returning an {@link Awaitable}.
      */
-    public static <T> Awaitable<T> executeAsync(Closure<T> closure, Executor executor) {
-        Objects.requireNonNull(closure, "closure must not be null");
+    public static <T> Awaitable<T> executeAsync(java.util.function.Supplier<T> supplier, Executor executor) {
+        java.util.Objects.requireNonNull(supplier, "supplier must not be null");
         Executor targetExecutor = executor != null ? executor : defaultExecutor;
         return GroovyPromise.of(CompletableFuture.supplyAsync(() -> {
             try {
-                return closure.call();
+                return supplier.get();
             } catch (Throwable t) {
                 throw wrapForFuture(t);
             }
@@ -241,43 +238,82 @@ public class AsyncSupport {
     }
 
     /**
-     * Executes the given closure asynchronously using the default executor.
+     * Executes the given supplier asynchronously using the default executor.
      */
-    public static <T> Awaitable<T> async(Closure<T> closure) {
-        return executeAsync(closure, defaultExecutor);
+    public static <T> Awaitable<T> async(java.util.function.Supplier<T> supplier) {
+        return executeAsync(supplier, defaultExecutor);
     }
 
     /**
-     * Lightweight task spawn. Executes the closure asynchronously using the default executor.
+     * Lightweight task spawn. Executes the supplier asynchronously using the default executor.
      */
-    public static <T> Awaitable<T> go(Closure<T> closure) {
-        return executeAsync(closure, defaultExecutor);
+    public static <T> Awaitable<T> go(java.util.function.Supplier<T> supplier) {
+        return executeAsync(supplier, defaultExecutor);
+    }
+
+    // ---- defer ----------------------------------------------------------
+
+    /**
+     * Creates a new defer scope (LIFO stack of cleanup actions).
+     * Called by compiler-generated code at the start of closures
+     * containing {@code defer} statements.
+     */
+    public static java.util.Deque<java.util.concurrent.Callable<?>> createDeferScope() {
+        return new java.util.ArrayDeque<>();
     }
 
     /**
-     * Wraps a closure so that each invocation executes the body asynchronously
-     * and returns an {@link Awaitable}. This is the runtime entry point for
-     * the {@code async { ... }} expression syntax.
-     * <pre>
-     * def task = async { expensiveWork() }
-     * def result = await task()  // explicit call required
-     * </pre>
+     * Registers a deferred action in the given scope. Actions execute in LIFO
+     * order when {@link #executeDeferScope} is called (in the finally block).
+     */
+    public static void defer(java.util.Deque<java.util.concurrent.Callable<?>> scope,
+                             java.util.concurrent.Callable<?> action) {
+        if (scope == null) {
+            throw new IllegalStateException("defer must be used inside an async closure");
+        }
+        if (action == null) {
+            throw new IllegalArgumentException("defer action must not be null");
+        }
+        scope.push(action);
+    }
+
+    /**
+     * Executes all deferred actions in LIFO order. If multiple actions throw,
+     * subsequent exceptions are added as suppressed. If a deferred action returns
+     * a Future/Awaitable, the result is awaited before continuing.
      */
     @SuppressWarnings("unchecked")
-    public static <T> Closure<Awaitable<T>> wrapAsync(Closure<T> closure) {
-        Objects.requireNonNull(closure, "closure must not be null");
-        return new Closure<Awaitable<T>>(closure.getOwner(), closure.getThisObject()) {
-            @SuppressWarnings("unused")
-            public Awaitable<T> doCall(Object... args) {
-                return GroovyPromise.of(CompletableFuture.supplyAsync(() -> {
-                    try {
-                        return closure.call(args);
-                    } catch (Throwable t) {
-                        throw wrapForFuture(t);
-                    }
-                }, defaultExecutor));
+    public static void executeDeferScope(java.util.Deque<java.util.concurrent.Callable<?>> scope) {
+        if (scope == null || scope.isEmpty()) return;
+        Throwable firstError = null;
+        while (!scope.isEmpty()) {
+            try {
+                Object result = scope.pop().call();
+                awaitDeferredResult(result);
+            } catch (Throwable t) {
+                if (firstError == null) {
+                    firstError = t;
+                } else {
+                    firstError.addSuppressed(t);
+                }
             }
-        };
+        }
+        if (firstError != null) {
+            if (firstError instanceof RuntimeException re) throw re;
+            if (firstError instanceof Error err) throw err;
+            throw new RuntimeException(firstError);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void awaitDeferredResult(Object result) {
+        if (result instanceof Awaitable<?>) {
+            await((Awaitable<Object>) result);
+        } else if (result instanceof CompletionStage<?>) {
+            await(((CompletionStage<Object>) result).toCompletableFuture());
+        } else if (result instanceof Future<?>) {
+            await((Future<Object>) result);
+        }
     }
 
     // ---- generators (yield return) ----------------------------------------
@@ -297,59 +333,25 @@ public class AsyncSupport {
     }
 
     /**
-     * Wraps a generator closure so that each invocation returns an {@link Iterable}
-     * backed by a {@link GeneratorBridge}. The generator runs on a background thread
-     * and yields values via the bridge.
+     * Starts a generator immediately, returning an {@link Iterable} backed by a
+     * {@link GeneratorBridge}. The consumer receives the bridge as its argument
+     * and should call {@link #yieldReturn} to produce values.
      * <p>
      * This is the runtime entry point for {@code async { ... yield return ... }}
-     * expressions that contain {@code yield return}.
+     * expressions. The compiler generates a closure that SAM-coerces to
+     * {@code Consumer<Object>}.
      *
-     * @param closure the generator closure; receives a GeneratorBridge as first parameter
-     * @param <T>     the element type
-     * @return a closure that produces an Iterable when called
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> Closure<Iterable<T>> wrapAsyncGenerator(Closure<?> closure) {
-        Objects.requireNonNull(closure, "closure must not be null");
-        return new Closure<Iterable<T>>(closure.getOwner(), closure.getThisObject()) {
-            @SuppressWarnings("unused")
-            public Iterable<T> doCall(Object... args) {
-                GeneratorBridge<T> bridge = new GeneratorBridge<>();
-                Object[] allArgs = new Object[args.length + 1];
-                allArgs[0] = bridge;
-                System.arraycopy(args, 0, allArgs, 1, args.length);
-                defaultExecutor.execute(() -> {
-                    try {
-                        closure.call(allArgs);
-                        bridge.complete();
-                    } catch (GeneratorBridge.GeneratorClosedException ignored) {
-                        // Consumer closed early — normal for break in for-await
-                    } catch (Throwable t) {
-                        bridge.completeExceptionally(t);
-                    }
-                });
-                return () -> bridge;
-            }
-        };
-    }
-
-    /**
-     * Starts a generator immediately, returning an {@link Iterable} backed by a
-     * {@link GeneratorBridge}. This is the runtime entry point for
-     * {@code async { ... yield return ... }} expressions.
-     *
-     * @param closure the generator closure; receives a GeneratorBridge as first parameter
-     * @param <T>     the element type
+     * @param body the generator body; receives a {@link GeneratorBridge}
+     * @param <T>  the element type
      * @return an Iterable that yields values from the generator
      */
     @SuppressWarnings("unchecked")
-    public static <T> Iterable<T> asyncGenerator(Closure<?> closure) {
-        Objects.requireNonNull(closure, "closure must not be null");
+    public static <T> Iterable<T> asyncGenerator(java.util.function.Consumer<Object> body) {
+        java.util.Objects.requireNonNull(body, "body must not be null");
         GeneratorBridge<T> bridge = new GeneratorBridge<>();
-        Object[] args = new Object[]{bridge};
         defaultExecutor.execute(() -> {
             try {
-                closure.call(args);
+                body.accept(bridge);
                 bridge.complete();
             } catch (GeneratorBridge.GeneratorClosedException ignored) {
                 // Consumer closed early — normal for break in for-await
@@ -663,75 +665,14 @@ public class AsyncSupport {
         return completeOnTimeout(source, fallback, millis, TimeUnit.MILLISECONDS);
     }
 
-    // ---- defer ----------------------------------------------------------
-
-    /**
-     * Creates a new defer scope (LIFO stack of cleanup actions).
-     * Called by compiler-generated code at the start of closures
-     * containing {@code defer} statements.
-     */
-    public static Deque<Closure<?>> createDeferScope() {
-        return new ArrayDeque<>();
-    }
-
-    /**
-     * Registers a deferred action in the given scope. Actions execute in LIFO
-     * order when {@link #executeDeferScope} is called (in the finally block).
-     */
-    public static void defer(Deque<Closure<?>> scope, Closure<?> action) {
-        if (scope == null) {
-            throw new IllegalStateException("defer must be used inside an async closure");
-        }
-        if (action == null) {
-            throw new IllegalArgumentException("defer action must not be null");
-        }
-        scope.push(action);
-    }
-
-    /**
-     * Executes all deferred actions in LIFO order. If multiple actions throw,
-     * subsequent exceptions are added as suppressed. If a deferred action returns
-     * a Future/Awaitable, the result is awaited before continuing.
-     */
-    public static void executeDeferScope(Deque<Closure<?>> scope) {
-        if (scope == null || scope.isEmpty()) return;
-        Throwable firstError = null;
-        while (!scope.isEmpty()) {
-            try {
-                Object result = scope.pop().call();
-                awaitDeferredResult(result);
-            } catch (Throwable t) {
-                if (firstError == null) {
-                    firstError = t;
-                } else {
-                    firstError.addSuppressed(t);
-                }
-            }
-        }
-        if (firstError != null) {
-            sneakyThrow(firstError);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void awaitDeferredResult(Object result) {
-        if (result instanceof Awaitable<?>) {
-            await((Awaitable<Object>) result);
-        } else if (result instanceof CompletionStage<?>) {
-            await(((CompletionStage<Object>) result).toCompletableFuture());
-        } else if (result instanceof Future<?>) {
-            await((Future<Object>) result);
-        }
-    }
-
     // ---- exception utilities --------------------------------------------
 
-    private static CompletionException wrapForFuture(Throwable t) {
+    public static CompletionException wrapForFuture(Throwable t) {
         if (t instanceof CompletionException ce) return ce;
         return new CompletionException(t);
     }
 
-    static RuntimeException rethrowUnwrapped(Throwable wrapper) {
+    private static RuntimeException rethrowUnwrapped(Throwable wrapper) {
         Throwable cause = unwrap(wrapper);
         sneakyThrow(cause);
         return null; // unreachable
@@ -750,5 +691,15 @@ public class AsyncSupport {
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
         throw (T) t;
+    }
+
+    // ---- internal utilities ---------------------------------------------
+
+    private static int getIntegerSafe(String name, int defaultValue) {
+        try {
+            return Integer.getInteger(name, defaultValue);
+        } catch (SecurityException ignore) {
+            return defaultValue;
+        }
     }
 }
