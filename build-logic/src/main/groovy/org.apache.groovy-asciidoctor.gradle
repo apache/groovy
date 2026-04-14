@@ -168,8 +168,10 @@ asciidoctor {
 
     doLast {
         def scripts = '''<link rel="stylesheet" href="assets/css/view-example.css">
+<link rel="stylesheet" href="assets/css/theme.css">
 <script src='assets/js/jquery-min-2.1.1.js'></script>
-<script src='assets/js/view-example.js'></script>'''
+<script src='assets/js/view-example.js'></script>
+<script src='assets/js/theme-switcher.js'></script>'''
 
         // gapi macro expansion
         outputDir.eachFileMatch(~'.*html') { File file ->
