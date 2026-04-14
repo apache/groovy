@@ -75,6 +75,14 @@ include::../../../../../src/spec/doc/core-semantics.adoc[leveloffset=+2]
 
 include::../../../../../src/spec/doc/core-async-await.adoc[leveloffset=+2]
 
+include::../../../../../src/spec/doc/core-parallel-collections.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-concurrent-dataflow.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-concurrent-actors.adoc[leveloffset=+2]
+
+include::../../../../../src/spec/doc/core-concurrent-java.adoc[leveloffset=+2]
+
 == Tools
 
 include::../../../../../src/spec/doc/tools-groovy.adoc[leveloffset=+2]

@@ -1,0 +1,267 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Concurrent Dataflow (Incubating)
+
+[[dataflow-intro]]
+== Introduction
+
+Dataflow programming lets you express dependencies between concurrent
+computations declaratively. Values are bound once and read many times —
+the runtime handles ordering automatically. You never need to think
+about which thread runs first.
+
+Groovy's dataflow support integrates natively with
+<<{core-async-await}#async-intro,async/await>> and the
+`Awaitable` API.
+
+[[dataflow-variables]]
+== DataflowVariable
+
+A `DataflowVariable` is a single-assignment variable. It starts unbound,
+can be written to exactly once, and any thread that reads it before
+binding will block until a value is available.
+
+[source,groovy]
+----
+import groovy.concurrent.DataflowVariable
+
+def x = new DataflowVariable()
+def y = new DataflowVariable()
+def z = new DataflowVariable()
+
+async {
+    z << await(x) + await(y)    // blocks until x and y are bound
+}
+
+async { x << 10 }              // bind x — order doesn't matter
+async { y << 5 }               // bind y
+
+println "Result: ${await(z)}"  // 15
+----
+
+Key properties:
+
+- **Write-once**: calling `bind()` or `<<` a second time throws `IllegalStateException`
+- **Implements `Awaitable`**: works with `await`, combinators (`Awaitable.all`), and `then` chaining
+- **Thread-safe**: safe to bind from one thread and read from any number of others
+
+=== Error binding
+
+[source,groovy]
+----
+def v = new DataflowVariable()
+v.bindError(new RuntimeException('computation failed'))
+// Any thread that awaits v will receive the exception
+----
+
+=== Chaining with `then`
+
+[source,groovy]
+----
+def v = new DataflowVariable()
+def doubled = v.then { it * 2 }
+
+async { v << 21 }
+assert await(doubled) == 42
+----
+
+=== Combining multiple variables
+
+[source,groovy]
+----
+def a = new DataflowVariable()
+def b = new DataflowVariable()
+def c = new DataflowVariable()
+
+async { a << 1 }
+async { b << 2 }
+async { c << 3 }
+
+def results = await(a, b, c)
+assert results == [1, 2, 3]
+----
+
+[[dataflow-dataflows]]
+== Dataflows
+
+`Dataflows` is a convenience class that auto-creates `DataflowVariable`
+instances on demand. Property reads block until bound; property writes
+bind the variable.
+
+[source,groovy]
+----
+import groovy.concurrent.Dataflows
+
+def df = new Dataflows()
+
+async { df.z = df.x + df.y }   // blocks on x and y, binds z
+async { df.x = 10 }
+async { df.y = 5 }
+
+println "Result: ${df.z}"      // 15
+----
+
+This is the most concise way to write dataflow programs in Groovy.
+Variables are created lazily — no declarations needed.
+
+[source,groovy]
+----
+def df = new Dataflows()
+
+async { df.fullName = "${df.first} ${df.last}" }
+async { df.first = 'John' }
+async { df.last = 'Doe' }
+
+assert df.fullName == 'John Doe'
+----
+
+=== Accessing the underlying variable
+
+Use `getVariable()` when you need the `DataflowVariable` itself
+(e.g., to pass to `Awaitable.all` or check `isBound`):
+
+[source,groovy]
+----
+def df = new Dataflows()
+def v = df.getVariable('x')   // DataflowVariable, does not block
+assert !v.isBound()
+async { df.x = 42 }
+assert await(v) == 42
+----
+
+[[dataflow-channels]]
+== Channel Composition
+
+`AsyncChannel` supports composable pipeline operations. Each
+composition method returns a new channel connected to the source
+by a background task.
+
+=== filter
+
+[source,groovy]
+----
+def source = AsyncChannel.create(10)
+def evens = source.filter { it % 2 == 0 }
+
+async {
+    (1..10).each { source.send(it) }
+    source.close()
+}
+
+for await (val in evens) { println val }  // 2, 4, 6, 8, 10
+----
+
+=== map
+
+[source,groovy]
+----
+def doubled = source.map { it * 2 }
+----
+
+=== Chaining
+
+Operations compose naturally:
+
+[source,groovy]
+----
+def pipeline = source
+    .filter { it > 50 }
+    .map { it * 2 }
+
+for await (val in pipeline) { process(val) }
+----
+
+=== merge
+
+Combines two channels into one, interleaving values as they arrive:
+
+[source,groovy]
+----
+def merged = channelA.merge(channelB)
+for await (event in merged) { handle(event) }
+----
+
+=== split
+
+Partitions a channel into two based on a predicate:
+
+[source,groovy]
+----
+def (highPriority, normal) = orders.split { it.priority > 5 }
+----
+
+=== tap
+
+Sends a copy of each value to a monitoring channel while passing
+through unchanged:
+
+[source,groovy]
+----
+def monitor = AsyncChannel.create(100)
+def output = source.tap(monitor)
+// output gets all values; monitor gets copies for logging
+----
+
+[[dataflow-select]]
+== Channel Select
+
+`ChannelSelect` waits for the first available value from multiple
+channels — like Go's `select` statement:
+
+[source,groovy]
+----
+import groovy.concurrent.ChannelSelect
+
+def prices = AsyncChannel.create(10)
+def alerts = AsyncChannel.create(10)
+
+def sel = ChannelSelect.from(prices, alerts)
+def result = await sel.select()
+println "Channel ${result.index}: ${result.value}"
+----
+
+[[dataflow-broadcast]]
+== BroadcastChannel
+
+A `BroadcastChannel` delivers every value to all subscribers
+(one-to-many), unlike `AsyncChannel` which is point-to-point:
+
+[source,groovy]
+----
+import groovy.concurrent.BroadcastChannel
+
+def broadcast = BroadcastChannel.create()
+def sub1 = broadcast.subscribe()
+def sub2 = broadcast.subscribe()
+
+async {
+    broadcast.send('hello')
+    broadcast.send('world')
+    broadcast.close()
+}
+
+// Both subscribers receive both messages
+for await (msg in sub1) { println "Sub1: $msg" }
+for await (msg in sub2) { println "Sub2: $msg" }
+----
+
+Late subscribers only receive messages sent after they subscribe.
