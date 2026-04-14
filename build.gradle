@@ -32,7 +32,6 @@ base {
 }
 
 groovyLibrary {
-    registerOptionalFeature 'gpars'
     registerOptionalFeature 'grapes'
     registerOptionalFeature 'logging'
     registerOptionalFeature 'xstreamAst'
@@ -77,6 +76,19 @@ groovyCore {
     excludeFromJavadoc '**/GroovyRecognizer.java', '*.g4' // generated file
 }
 
+// Core also provides the groovy-concurrent-api capability, preventing
+// both groovy (core) and groovy-concurrent-java from appearing together.
+/*
+afterEvaluate {
+    def capabilityVersion = sharedConfiguration.groovyVersion.get()
+    ['groovyApiElements', 'groovyRuntimeElements'].each { configName ->
+        configurations.findByName(configName)?.outgoing {
+            capability("org.apache.groovy:groovy-concurrent-api:${capabilityVersion}")
+        }
+    }
+}
+*/
+
 dependencies {
     // for internal CLI usage
     api "info.picocli:picocli:${versions.picocli}" // marked as api but manually excluded later in assemble.gradle - modules will use shaded version
@@ -91,10 +103,6 @@ dependencies {
     implementation "me.sunlan:antlr4-runtime:${versions.antlr4}"
 
     antlr "me.sunlan:antlr4:${versions.antlr4}"
-
-    gparsImplementation "org.codehaus.gpars:gpars:${versions.gpars}", {
-        exclude(group: 'org.codehaus.groovy', module: 'groovy-all')
-    }
 
     grapesImplementation "org.apache.ivy:ivy:${versions.ivy}", {
         transitive = false
@@ -149,24 +157,16 @@ dependencies {
         }
     }
     testRuntimeOnly projects.groovyGrapeIvy
-
-    testRuntimeOnly(project(':')) {
-        because 'Tests are using GPars'
-        capabilities {
-            requireCapability 'org.apache.groovy:groovy-gpars'
-        }
-    }
 }
 
 configurations {
     javadocClasspath.extendsFrom(
             loggingImplementation,
             xstreamAstImplementation,
-            gparsImplementation,
             grapesImplementation
     )
     groovyCompilerClasspath {
-        extendsFrom(implementation, compileOnly, gparsImplementation, grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
+        extendsFrom(implementation, compileOnly, grapesImplementation, loggingImplementation, xstreamAstImplementation, runtimeOnly)
     }
 }
 
@@ -276,7 +276,6 @@ sonarqube {
 artifacts {
     grapesRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
     xstreamAstRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
-    gparsRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
     loggingRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
 }
 

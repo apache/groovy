@@ -133,6 +133,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
             ExtensionModuleScanner scanner = new ExtensionModuleScanner(new DefaultModuleListener(map), this.getClass().getClassLoader());
             scanner.scanClasspathModules();
 
+            checkForDuplicateConcurrentModule();
+
             refreshMopMethods(map);
 
         }
@@ -186,6 +188,34 @@ public class MetaClassRegistryImpl implements MetaClassRegistry {
      *
      * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle
      */
+    /**
+     * Detects when the concurrent API classes appear in more than one
+     * classpath location — typically when both Groovy core and the
+     * standalone groovy-concurrent-java jar are present. Logs a warning
+     * so Maven users (who lack Gradle's capability mechanism) are alerted.
+     */
+    private static void checkForDuplicateConcurrentModule() {
+        try {
+            ClassLoader cl = MetaClassRegistryImpl.class.getClassLoader();
+            if (cl == null) return;
+            var locations = java.util.Collections.list(cl.getResources("groovy/concurrent/AsyncScope.class"));
+            // Only count packaged (jar) locations — a classes/ directory on the
+            // classpath alongside a jar is normal during the Groovy bootstrap
+            // build and not a deployment problem users can fix.
+            var jarLocations = locations.stream()
+                    .filter(u -> "jar".equals(u.getProtocol()))
+                    .toList();
+            if (jarLocations.size() > 1) {
+                Logger.getLogger(MetaClassRegistryImpl.class.getName()).warning(
+                        "groovy.concurrent.AsyncScope found in multiple classpath jars: " + jarLocations
+                        + ". The concurrent API classes are duplicated. "
+                        + "Remove groovy-concurrent-java when using the full Groovy runtime.");
+            }
+        } catch (Exception ignored) {
+            // SecurityManager or other restriction — skip check
+        }
+    }
+
     private void installMetaClassCreationHandle() {
            try {
                final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");

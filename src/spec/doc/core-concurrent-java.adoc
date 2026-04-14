@@ -1,0 +1,224 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Groovy Concurrent API for Java (Incubating)
+
+[[concurrent-java-intro]]
+== Introduction
+
+The `groovy-concurrent-java` module provides Groovy's concurrent and
+parallel API as a standalone Java library — no Groovy runtime required.
+
+Java developers get access to:
+
+- **Structured concurrency** — `AsyncScope`, `Awaitable`
+- **Pools** — `Pool`, `ParallelScope`, `ConcurrentConfig`
+- **Actors** — `Actor.reactor()`, `Actor.stateful()`
+- **Agents** — `Agent` (thread-safe mutable state)
+- **Dataflow** — `DataflowVariable`, `AsyncChannel`, `BroadcastChannel`, `ChannelSelect`
+
+This module is published as `org.apache.groovy:groovy-concurrent-java`
+and contains a filtered subset of the classes from Groovy core. It must
+not be used alongside the full Groovy runtime — Gradle enforces mutual
+exclusion via a shared capability, and a runtime warning is logged if
+both jars are detected on the classpath.
+
+[[concurrent-java-setup]]
+== Setup
+
+=== Gradle
+
+[source,groovy]
+----
+dependencies {
+    implementation 'org.apache.groovy:groovy-concurrent-java:6.0.0'
+}
+----
+
+=== Maven
+
+[source,xml]
+----
+<dependency>
+    <groupId>org.apache.groovy</groupId>
+    <artifactId>groovy-concurrent-java</artifactId>
+    <version>6.0.0</version>
+</dependency>
+----
+
+IMPORTANT: Do not add `groovy-concurrent-java` if you already depend on
+`groovy` (the full runtime). The concurrent classes are included in core.
+
+[[concurrent-java-scope]]
+== Structured Concurrency
+
+[source,java]
+----
+import groovy.concurrent.AsyncScope;
+import groovy.concurrent.Pool;
+import org.apache.groovy.runtime.async.AsyncSupport;
+
+// Basic scope — waits for all children before returning
+var result = AsyncScope.withScope(scope -> {
+    var a = scope.async(() -> fetchUser(id));
+    var b = scope.async(() -> fetchOrders(id));
+    return Map.of(
+        "user", AsyncSupport.await(a),
+        "orders", AsyncSupport.await(b)
+    );
+});
+
+// With a pool for executor isolation
+try (var pool = Pool.cpu()) {
+    AsyncScope.withScope(pool, scope -> {
+        var task = scope.async(() -> computeResult());
+        return AsyncSupport.await(task);
+    });
+}
+----
+
+[[concurrent-java-actors]]
+== Actors
+
+[source,java]
+----
+import groovy.concurrent.Actor;
+import org.apache.groovy.runtime.async.AsyncSupport;
+
+// Reactor — stateless, each message produces a reply
+var doubler = Actor.<Integer, Integer>reactor(n -> n * 2);
+int result = AsyncSupport.await(doubler.sendAndGet(21)); // 42
+doubler.stop();
+
+// Stateful — maintains state across messages
+var counter = Actor.<String, Integer>stateful(0, (state, msg) -> {
+    if ("increment".equals(msg)) return state + 1;
+    return state;
+});
+counter.send("increment");
+counter.send("increment");
+int count = AsyncSupport.await(counter.sendAndGet("increment")); // 3
+counter.stop();
+----
+
+[[concurrent-java-agents]]
+== Agents
+
+[source,java]
+----
+import groovy.concurrent.Agent;
+import org.apache.groovy.runtime.async.AsyncSupport;
+
+var counter = Agent.create(0);
+counter.send(n -> n + 1);
+counter.send(n -> n + 1);
+counter.send(n -> n + 1);
+
+int result = AsyncSupport.await(counter.getAsync()); // 3
+counter.shutdown();
+----
+
+[[concurrent-java-dataflow]]
+== Dataflow Variables
+
+[source,java]
+----
+import groovy.concurrent.Awaitable;
+import groovy.concurrent.DataflowVariable;
+import org.apache.groovy.runtime.async.AsyncSupport;
+
+var x = new DataflowVariable<Integer>();
+var y = new DataflowVariable<Integer>();
+
+// z depends on x and y — blocks until both are bound
+var z = Awaitable.<Integer>go(() ->
+    AsyncSupport.await(x) + AsyncSupport.await(y)
+);
+
+// Bind in any order
+AsyncSupport.getExecutor().execute(() -> x.bind(10));
+AsyncSupport.getExecutor().execute(() -> y.bind(5));
+
+int result = AsyncSupport.await(z); // 15
+----
+
+[[concurrent-java-pools]]
+== Pools
+
+[source,java]
+----
+import groovy.concurrent.ParallelScope;
+import groovy.concurrent.Pool;
+import org.apache.groovy.runtime.async.AsyncSupport;
+
+var result = ParallelScope.withPool(4, scope -> {
+    var tasks = new java.util.ArrayList<groovy.concurrent.Awaitable<Integer>>();
+    for (int i = 1; i <= 4; i++) {
+        int n = i;
+        tasks.add(scope.async(() -> n * 10));
+    }
+    int sum = 0;
+    for (var task : tasks) {
+        sum += (int) AsyncSupport.await(task);
+    }
+    return sum;
+}); // 100
+----
+
+[[concurrent-java-not-included]]
+== Features not available in the Java module
+
+The following features require the Groovy runtime and are only
+available when using the full `groovy` dependency:
+
+[cols="1,2"]
+|===
+|Feature |Reason
+
+|`Dataflows` class
+|Uses Groovy's `propertyMissing` for dynamic property access
+
+|`async { }` / `await` keywords
+|Groovy language syntax, transformed by the Groovy compiler
+
+|`defer { }` / `yield return`
+|Groovy language syntax
+
+|`for await (x in channel)`
+|Groovy compiler-generated iteration
+
+|`@ActiveObject` / `@ActiveMethod`
+|Groovy AST transformation
+
+|Parallel collection methods (`collectParallel`, etc.)
+|Registered as Groovy extension methods on `Collection`
+
+|`AsyncClosureUtils` (`wrapAsync`, `wrapAsyncGenerator`)
+|Return `Closure` subclasses
+
+|Closure-based APIs (e.g., `scope.async { }`)
+|Groovy SAM coercion from Closure to `Supplier`/`Function`
+|===
+
+Java users have full access to the underlying APIs using
+`java.util.function` types (`Supplier`, `Function`, `Consumer`,
+`Predicate`, etc.) and explicit `AsyncSupport.await()` calls
+instead of the `await` keyword.

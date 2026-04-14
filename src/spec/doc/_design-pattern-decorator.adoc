@@ -251,5 +251,5 @@ These days, you'll see this style used with async functions in JavaScript.
 
 [source,groovy]
 ----
-include::../test/DesignPatternsTest.groovy[tags=decorator_gpars,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=decorator_async,indent=0]
 ----

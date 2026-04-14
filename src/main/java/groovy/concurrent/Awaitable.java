@@ -18,7 +18,6 @@
  */
 package groovy.concurrent;
 
-import groovy.lang.Closure;
 import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
@@ -33,6 +32,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Core abstraction for asynchronous computations in Groovy.
@@ -76,7 +76,7 @@ import java.util.function.Function;
  *       value in a completed {@code Awaitable}</li>
  *   <li>{@link #failed(Throwable) Awaitable.failed(error)} — wraps an
  *       exception in an immediately-failed {@code Awaitable}</li>
- *   <li>{@link #go(Closure) Awaitable.go { ... }} — lightweight task spawn</li>
+ *   <li>{@code Awaitable.go { ... }} — lightweight task spawn (Groovy extension method)</li>
  * </ul>
  * <p>
  * <b>Instance continuations</b> provide ergonomic composition without exposing
@@ -364,31 +364,29 @@ public interface Awaitable<T> {
     }
 
     /**
-     * Spawns a lightweight task.
-     * <p>
-     * @param closure the task body
-     * @param <T>     the result type
+     * Spawns a lightweight task on the default executor.
+     *
+     * @param supplier the task body
+     * @param <T>      the result type
      * @return an awaitable representing the spawned task
      * @since 6.0.0
      */
-    static <T> Awaitable<T> go(Closure<T> closure) {
-        return AsyncSupport.go(closure);
+    static <T> Awaitable<T> go(Supplier<T> supplier) {
+        return GroovyPromise.of(CompletableFuture.supplyAsync(supplier, AsyncSupport.getExecutor()));
     }
 
-    // ---- Structured concurrency ----
-
     /**
-     * Convenience delegate to {@link AsyncScope#withScope(Closure)}.
-     * Creates a structured concurrency scope, executes the closure within it,
+     * Convenience delegate to {@link AsyncScope#withScope(Function)}.
+     * Creates a structured concurrency scope, executes the body within it,
      * and ensures all child tasks complete before returning.
      *
-     * @param body the closure receiving the scope
+     * @param body the function receiving the scope
      * @param <T>  the result type
-     * @return the closure's return value
-     * @see AsyncScope#withScope(Closure)
+     * @return the body's return value
+     * @see AsyncScope#withScope(Function)
      * @since 6.0.0
      */
-    static <T> T withScope(Closure<T> body) {
+    static <T> T withScope(Function<AsyncScope, T> body) {
         return AsyncScope.withScope(body);
     }
 

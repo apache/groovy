@@ -204,6 +204,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static final Class[] DGM_LIKE_CLASSES = {
             ArrayGroovyMethods.class,
             DefaultGroovyMethods.class,
+            ParallelCollectionExtensions.class,
             EncodingGroovyMethods.class,
             IOGroovyMethods.class,
             ProcessGroovyMethods.class,

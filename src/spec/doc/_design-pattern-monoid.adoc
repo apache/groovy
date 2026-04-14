@@ -162,12 +162,12 @@ hide empty members
 
 We have reduced the amount of code we need to write, and we also have potential performance gains.
 
-Here is how we might code the previous example using the http://gpars.org/[GPars]
-concurrency and parallelism framework (two alternatives shown):
+Here is how we might code the previous example using Groovy's
+parallel collections:
 
 [source,groovy]
 ----
-include::../test/DesignPatternsTest.groovy[tags=monoids_gpars,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=monoids_parallel,indent=0]
 ----
 
 == Working with Non-monoids
@@ -218,14 +218,14 @@ include::../test/DesignPatternsTest.groovy[tags=monoids_average_split,indent=0]
 ----
 
 The calculation of `sum()` can follow monoid rules and then our last step can calculate the average.
-We can even do a concurrent version with GPars:
+We can even do a parallel version:
 
 [source,groovy]
 ----
-include::../test/DesignPatternsTest.groovy[tags=monoids_average_split_gpars,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=monoids_average_split_parallel,indent=0]
 ----
 
-Here, we were using the built-in `sum()` method (and `sumParallel()` for the GPars example),
+Here, we were using the built-in `sum()` method (and `sumParallel()` for the parallel example),
 but if you were doing it by hand, the monoid nature of that part of your calculation would
 make it easier to write your own code for that step.
 
@@ -239,9 +239,9 @@ include::../test/DesignPatternsTest.groovy[tags=monoids_average_reworked_simple,
 ----
 
 Or, to be a little fancier, we could introduce a class for our data structure and even calculate
-concurrently:
+in parallel:
 
 [source,groovy]
 ----
-include::../test/DesignPatternsTest.groovy[tags=monoids_average_reworked_gpars,indent=0]
+include::../test/DesignPatternsTest.groovy[tags=monoids_average_reworked_parallel,indent=0]
 ----

@@ -20,11 +20,11 @@ package org.apache.groovy.runtime.async;
 
 import groovy.concurrent.AsyncScope;
 import groovy.concurrent.Awaitable;
-import groovy.lang.Closure;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,6 +32,10 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -99,14 +103,20 @@ public final class DefaultAsyncScope implements AsyncScope {
 
     private final Object lock = new Object();
     private final List<CompletableFuture<?>> children = new ArrayList<>();
+    private final List<DefaultAsyncScope> childScopes = new ArrayList<>();
     private boolean closed;
     private final Executor executor;
     private final boolean failFast;
+    private final AsyncScope parent;
 
     public DefaultAsyncScope(Executor executor, boolean failFast) {
         Objects.requireNonNull(executor, "executor must not be null");
         this.executor = executor;
         this.failFast = failFast;
+        this.parent = current();
+        if (parent instanceof DefaultAsyncScope parentScope) {
+            parentScope.registerChildScope(this);
+        }
     }
 
     public DefaultAsyncScope(Executor executor) {
@@ -173,9 +183,8 @@ public final class DefaultAsyncScope implements AsyncScope {
     // ---- Instance methods -----------------------------------------------
 
     @Override
-    public <T> Awaitable<T> async(Closure<T> body) {
-        Objects.requireNonNull(body, "body must not be null");
-        return launchChild(body::call);
+    public AsyncScope getParent() {
+        return parent;
     }
 
     @Override
@@ -193,12 +202,17 @@ public final class DefaultAsyncScope implements AsyncScope {
 
     @Override
     public void cancelAll() {
-        List<CompletableFuture<?>> snapshot;
+        List<CompletableFuture<?>> taskSnapshot;
+        List<DefaultAsyncScope> scopeSnapshot;
         synchronized (lock) {
-            snapshot = new ArrayList<>(children);
+            taskSnapshot = new ArrayList<>(children);
+            scopeSnapshot = new ArrayList<>(childScopes);
         }
-        for (CompletableFuture<?> child : snapshot) {
+        for (CompletableFuture<?> child : taskSnapshot) {
             child.cancel(true);
+        }
+        for (DefaultAsyncScope child : scopeSnapshot) {
+            child.cancelAll();
         }
     }
 
@@ -233,6 +247,10 @@ public final class DefaultAsyncScope implements AsyncScope {
                     firstError.addSuppressed(e);
                 }
             }
+        }
+        // Deregister from parent
+        if (parent instanceof DefaultAsyncScope parentScope) {
+            parentScope.deregisterChildScope(this);
         }
         if (firstError != null) {
             if (firstError instanceof RuntimeException re) throw re;
@@ -299,6 +317,59 @@ public final class DefaultAsyncScope implements AsyncScope {
     private void pruneCompleted() {
         if (children.size() >= PRUNE_THRESHOLD) {
             children.removeIf(CompletableFuture::isDone);
+        }
+    }
+
+    // ---- Child scope management -----------------------------------------
+
+    void registerChildScope(DefaultAsyncScope child) {
+        synchronized (lock) {
+            if (!closed) {
+                childScopes.add(child);
+            }
+        }
+    }
+
+    void deregisterChildScope(DefaultAsyncScope child) {
+        synchronized (lock) {
+            childScopes.remove(child);
+        }
+    }
+
+    // ---- Timeout support ------------------------------------------------
+
+    /**
+     * Creates a scope with a timeout. If the body does not complete within
+     * the duration, all children are cancelled and {@link TimeoutException}
+     * is thrown.
+     */
+    public static <T> T withScopeTimeout(Executor executor, Duration timeout,
+                                          Function<AsyncScope, T> body) throws TimeoutException {
+        Objects.requireNonNull(timeout, "timeout must not be null");
+        Objects.requireNonNull(body, "body must not be null");
+        var timedOut = new java.util.concurrent.atomic.AtomicBoolean(false);
+        Thread bodyThread = Thread.currentThread();
+        try (DefaultAsyncScope scope = new DefaultAsyncScope(executor)) {
+            ScheduledFuture<?> timer = AsyncSupport.getScheduler().schedule(() -> {
+                timedOut.set(true);
+                scope.cancelAll();
+                bodyThread.interrupt();
+            }, timeout.toMillis(), TimeUnit.MILLISECONDS);
+            try {
+                return withCurrent(scope, () -> body.apply(scope));
+            } catch (Exception e) {
+                if (timedOut.get()) {
+                    // Clear the interrupt flag set by the timeout
+                    Thread.interrupted();
+                    TimeoutException te = new TimeoutException("Scope timed out after " + timeout);
+                    te.initCause(e);
+                    throw te;
+                }
+                throw e;
+            } finally {
+                // Always cancel the timer — even if the body threw an Error
+                timer.cancel(false);
+            }
         }
     }
 

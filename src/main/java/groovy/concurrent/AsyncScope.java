@@ -18,14 +18,14 @@
  */
 package groovy.concurrent;
 
-import groovy.lang.Closure;
-import groovy.transform.stc.ClosureParams;
-import groovy.transform.stc.SimpleType;
 import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.DefaultAsyncScope;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -66,17 +66,24 @@ public interface AsyncScope extends AutoCloseable {
      * The task's lifetime is bound to the scope: when the scope is closed,
      * all incomplete child tasks are cancelled.
      *
-     * @param body the async body to execute
-     * @param <T>  the result type
+     * @param supplier the task body to execute
+     * @param <T>      the result type
      * @return an {@link Awaitable} representing the child task
      * @throws IllegalStateException if the scope has already been closed
      */
-    <T> Awaitable<T> async(Closure<T> body);
+    <T> Awaitable<T> async(Supplier<T> supplier);
 
     /**
-     * Launches a child task using a {@link Supplier} for Java interop.
+     * Returns the parent scope, or {@code null} if this is a root scope.
+     * <p>
+     * When a scope is created inside another scope (via {@link #withScope}),
+     * the outer scope becomes the parent. Cancelling a parent scope
+     * propagates cancellation to all child scopes.
+     *
+     * @return the parent scope, or {@code null}
+     * @since 6.0.0
      */
-    <T> Awaitable<T> async(Supplier<T> supplier);
+    AsyncScope getParent();
 
     /**
      * Returns the number of tracked child tasks (including completed ones
@@ -115,35 +122,94 @@ public interface AsyncScope extends AutoCloseable {
     }
 
     /**
-     * Creates a scope, executes the closure within it, and ensures the
-     * scope is closed on exit. The closure receives the scope as its
+     * Creates a scope, executes the body within it, and ensures the
+     * scope is closed on exit. The body receives the scope as its
      * argument for launching child tasks.
      *
      * <pre>{@code
+     * // Java:
+     * var result = AsyncScope.withScope(scope -> {
+     *     var a = scope.async(() -> computeA());
+     *     var b = scope.async(() -> computeB());
+     *     return List.of(AsyncSupport.await(a), AsyncSupport.await(b));
+     * });
+     *
+     * // Groovy (Closure overload added via extension method):
      * def result = AsyncScope.withScope { scope ->
      *     def a = scope.async { computeA() }
      *     def b = scope.async { computeB() }
      *     return [await(a), await(b)]
      * }
      * }</pre>
+     *
+     * @param body the function to execute within the scope
+     * @param <T>  the result type
+     * @return the body's return value
      */
-    @SuppressWarnings("unchecked")
-    static <T> T withScope(
-            @ClosureParams(value = SimpleType.class, options = "groovy.concurrent.AsyncScope") Closure<T> body) {
+    static <T> T withScope(Function<AsyncScope, T> body) {
         return withScope(AsyncSupport.getExecutor(), body);
     }
 
     /**
-     * Creates a scope with the given executor, executes the closure,
+     * Creates a scope with the given executor, executes the body,
      * and ensures the scope is closed on exit.
+     *
+     * @param executor the executor for child tasks
+     * @param body     the function to execute within the scope
+     * @param <T>      the result type
+     * @return the body's return value
      */
-    @SuppressWarnings("unchecked")
-    static <T> T withScope(Executor executor,
-            @ClosureParams(value = SimpleType.class, options = "groovy.concurrent.AsyncScope") Closure<T> body) {
+    static <T> T withScope(Executor executor, Function<AsyncScope, T> body) {
         Objects.requireNonNull(body, "body must not be null");
-        try (AsyncScope scope = create(executor)) {
-            return withCurrent(scope, () -> body.call(scope));
+        AsyncScope scope = create(executor);
+        T result;
+        try {
+            result = withCurrent(scope, () -> body.apply(scope));
+        } catch (Throwable bodyError) {
+            try {
+                scope.close();
+            } catch (Throwable closeError) {
+                if (closeError != bodyError) {
+                    bodyError.addSuppressed(closeError);
+                }
+            }
+            if (bodyError instanceof RuntimeException re) throw re;
+            if (bodyError instanceof Error err) throw err;
+            throw new RuntimeException(bodyError);
         }
+        scope.close();
+        return result;
+    }
+
+    /**
+     * Creates a scope with a timeout. If the body does not complete within
+     * the specified duration, all child tasks are cancelled and the scope
+     * throws {@link TimeoutException}.
+     *
+     * @param timeout the maximum duration for the scope
+     * @param body    the function to execute within the scope
+     * @param <T>     the result type
+     * @return the body's return value
+     * @throws TimeoutException if the timeout expires
+     * @since 6.0.0
+     */
+    static <T> T withScope(Duration timeout, Function<AsyncScope, T> body) throws TimeoutException {
+        return withScope(AsyncSupport.getExecutor(), timeout, body);
+    }
+
+    /**
+     * Creates a scope with the given executor and a timeout.
+     *
+     * @param executor the executor for child tasks
+     * @param timeout  the maximum duration for the scope
+     * @param body     the function to execute within the scope
+     * @param <T>      the result type
+     * @return the body's return value
+     * @throws TimeoutException if the timeout expires
+     * @since 6.0.0
+     */
+    static <T> T withScope(Executor executor, Duration timeout, Function<AsyncScope, T> body) throws TimeoutException {
+        return DefaultAsyncScope.withScopeTimeout(executor, timeout, body);
     }
 
     /** Creates a new scope with the default executor and fail-fast enabled. */

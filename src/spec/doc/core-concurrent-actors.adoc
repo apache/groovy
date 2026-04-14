@@ -1,0 +1,327 @@
+//////////////////////////////////////////
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+
+//////////////////////////////////////////
+
+= Actors and Agents (Incubating)
+
+[[actors-intro]]
+== Introduction
+
+Actors and agents provide thread-safe concurrent state management
+through message passing. Instead of protecting shared state with locks,
+you send messages to an actor or agent which processes them one at a
+time on a dedicated thread. This eliminates data races by design.
+
+Groovy provides two levels of abstraction:
+
+- **Agent** — a thread-safe mutable value updated via functions
+- **Actor** — a message-processing entity with flexible dispatch
+
+Both use virtual threads on JDK 21+ for efficient scaling.
+
+[[actors-agent]]
+== Agent
+
+An `Agent` wraps a value that can be read by any thread but modified
+only through serialised update functions:
+
+[source,groovy]
+----
+import groovy.concurrent.Agent
+
+def counter = Agent.create(0)
+counter.send { it + 1 }
+counter.send { it + 1 }
+counter.send { it + 1 }
+
+assert await(counter.getAsync()) == 3
+----
+
+=== Reading
+
+[source,groovy]
+----
+// Snapshot read — non-blocking, returns current value
+def current = counter.get()
+
+// Consistent read — waits for pending updates to complete
+def consistent = await(counter.getAsync())
+----
+
+=== Updating
+
+[source,groovy]
+----
+// Fire-and-forget update
+counter.send { it + 1 }
+
+// Update and get new value
+def newValue = await(counter.sendAndGet { it * 2 })
+----
+
+=== Complex state
+
+Agents work with any value type:
+
+[source,groovy]
+----
+def inventory = Agent.create([:])
+
+inventory.send { state -> state + [apples: 10] }
+inventory.send { state -> state + [bananas: 5] }
+inventory.send { state ->
+    state.collectEntries { k, v -> [k, v * 2] }
+}
+
+assert await(inventory.getAsync()) == [apples: 20, bananas: 10]
+----
+
+[[actors-actor]]
+== Actor
+
+An `Actor` processes messages from a queue on a dedicated thread.
+Two factory methods cover the common patterns:
+
+[[actors-reactor]]
+=== Reactor (stateless)
+
+A reactor applies a function to each message. The return value
+becomes the reply for `sendAndGet` callers:
+
+[source,groovy]
+----
+import groovy.concurrent.Actor
+
+def doubler = Actor.reactor { it * 2 }
+assert await(doubler.sendAndGet(5)) == 10
+assert await(doubler.sendAndGet(21)) == 42
+doubler.stop()
+----
+
+Reactors are ideal for pure-function message processing — validators,
+transformers, calculators:
+
+[source,groovy]
+----
+def validator = Actor.reactor { msg ->
+    if (msg instanceof String && msg.length() > 0) 'valid'
+    else 'invalid'
+}
+----
+
+[[actors-stateful]]
+=== Stateful
+
+A stateful actor maintains state across messages. The handler
+receives `(state, message)` and returns the new state:
+
+[source,groovy]
+----
+def counter = Actor.stateful(0) { state, msg ->
+    switch (msg) {
+        case 'increment': return state + 1
+        case 'decrement': return state - 1
+        case 'reset':     return 0
+        default:          return state
+    }
+}
+
+counter.send('increment')
+counter.send('increment')
+counter.send('decrement')
+assert await(counter.sendAndGet('increment')) == 2
+counter.stop()
+----
+
+For `sendAndGet`, the new state is the reply. This makes it easy
+to query the current state:
+
+[source,groovy]
+----
+// Send a no-op message to read the state
+def currentState = await(counter.sendAndGet('query'))
+----
+
+=== Typed message dispatch
+
+Use pattern matching for rich message protocols:
+
+[source,groovy]
+----
+def account = Actor.stateful(0.0) { balance, msg ->
+    switch (msg) {
+        case { it instanceof Map && it.deposit }:
+            return balance + msg.deposit
+        case { it instanceof Map && it.withdraw }:
+            if (msg.withdraw > balance)
+                throw new RuntimeException('Insufficient funds')
+            return balance - msg.withdraw
+        default:
+            return balance
+    }
+}
+
+account.send([deposit: 100])
+account.send([withdraw: 30])
+def balance = await(account.sendAndGet([deposit: 0]))
+assert balance == 70.0
+account.stop()
+----
+
+[[actors-lifecycle]]
+== Lifecycle
+
+Both actors and agents support lifecycle management:
+
+[source,groovy]
+----
+def actor = Actor.reactor { it }
+assert actor.isActive()
+
+actor.stop()       // graceful: processes remaining messages then exits
+Thread.sleep(50)
+assert !actor.isActive()
+----
+
+Actors implement `AutoCloseable`, so they work with
+try-with-resources (Groovy or Java):
+
+[source,groovy]
+----
+Actor.reactor { it * 2 }.withCloseable { actor ->
+    assert await(actor.sendAndGet(5)) == 10
+}
+// actor is stopped
+----
+
+[[actors-errors]]
+== Error Handling
+
+Exceptions in message handlers are captured and delivered to
+`sendAndGet` callers:
+
+[source,groovy]
+----
+def risky = Actor.reactor { throw new RuntimeException('oops') }
+try {
+    await(risky.sendAndGet('anything'))
+} catch (RuntimeException e) {
+    assert e.message == 'oops'
+}
+risky.stop()
+----
+
+For fire-and-forget `send` calls, exceptions are silently absorbed
+(the actor continues processing subsequent messages).
+
+[[actors-vs-agent]]
+== Choosing Between Agent and Actor
+
+[cols="1,1,1"]
+|===
+|Aspect |Agent |Actor
+
+|State
+|Single value, updated via function
+|Arbitrary, managed by handler
+
+|Messages
+|Update functions only
+|Any message type with dispatch
+
+|Reply
+|`getAsync()` / `sendAndGet(fn)` returns new value
+|`sendAndGet(msg)` returns handler result
+
+|Use case
+|Thread-safe counters, caches, accumulators
+|State machines, services, typed protocols
+|===
+
+Both guarantee sequential message processing — no locks needed.
+
+[[actors-active-object]]
+== @ActiveObject / @ActiveMethod
+
+For a more OOP approach, annotate a class with `@ActiveObject` and
+its methods with `@ActiveMethod`. The compiler automatically routes
+annotated method calls through an internal actor — callers just see
+a normal class:
+
+[source,groovy]
+----
+import groovy.transform.ActiveObject
+import groovy.transform.ActiveMethod
+
+@ActiveObject
+class Account {
+    private double balance = 0
+
+    @ActiveMethod
+    void deposit(double amount) { balance += amount }
+
+    @ActiveMethod
+    void withdraw(double amount) {
+        if (amount > balance) throw new RuntimeException('Insufficient funds')
+        balance -= amount
+    }
+
+    @ActiveMethod
+    double getBalance() { balance }
+}
+
+def account = new Account()
+account.deposit(100)         // async, serialised, blocks until done
+account.deposit(50)
+account.withdraw(30)
+assert account.getBalance() == 120.0
+----
+
+Methods without `@ActiveMethod` run on the caller's thread as normal.
+
+=== Blocking vs non-blocking
+
+By default, `@ActiveMethod` calls block until the actor processes
+them. For non-blocking calls, set `blocking = false`:
+
+[source,groovy]
+----
+@ActiveObject
+class Service {
+    @ActiveMethod(blocking = false)
+    def compute(int x) { x * x }
+}
+
+def svc = new Service()
+def result = svc.compute(7)  // returns Awaitable immediately
+assert await(result) == 49
+----
+
+=== Thread safety by annotation
+
+The key benefit: you write normal-looking classes with normal methods.
+Thread safety is guaranteed by the annotation — all `@ActiveMethod`
+calls are serialised through the actor. No locks, no concurrent
+collections, no race conditions.
+
+This also makes the code highly readable for AI tools — the
+`@ActiveObject` annotation explicitly declares the concurrency model,
+and each `@ActiveMethod` contains pure business logic without
+messaging boilerplate.
