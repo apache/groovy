@@ -271,7 +271,8 @@ table tr th, table tr td { color: var(--text-main); }
 table tr.even, table tr.alt, table tr:nth-of-type(even) { background: var(--bg-table-stripe); }
 tbody tr th { background: var(--bg-table-head); }
 tbody tr th, tbody tr th p, tfoot tr th, tfoot tr th p { color: var(--text-label); }
-table.tableblock.grid-all { border-color: var(--border-table); }
+table.tableblock.grid-all { border-color: var(--border-table); border-collapse: collapse; border-spacing: 0; }
+table.tableblock.grid-all th, table.tableblock.grid-all td { border: 1px solid var(--border-table); }
 
 /* Inline code */
 *:not(pre) > code {
