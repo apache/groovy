@@ -50,6 +50,7 @@ def subprojects = [
         'groovy-bom',
         'groovy-cli-commons',
         'groovy-cli-picocli',
+        'groovy-concurrent-java',
         'groovy-console',
         'groovy-contracts',
         'groovy-csv',
