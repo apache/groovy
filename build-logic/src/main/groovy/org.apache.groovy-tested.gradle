@@ -103,6 +103,17 @@ tasks.withType(Test).configureEach {
             delete(files(".").filter { it.name.endsWith '.class' })
         }
     }
+
+    afterSuite { desc, result ->
+        if (!desc.parent && result.resultType == TestResult.ResultType.SUCCESS) {
+            def green = '\u001B[32m'
+            def yellow = '\u001B[33m'
+            def reset = '\u001B[0m'
+            logger.lifecycle "${desc.name}: ${green}${result.successfulTestCount} passed${reset}, " +
+                "${yellow}${result.skippedTestCount} skipped${reset} " +
+                "(${result.testCount} tests)"
+        }
+    }
 }
 
 tasks.withType(GroovyCompile).configureEach {
