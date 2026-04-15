@@ -70,6 +70,7 @@ public class ModuleNode extends ASTNode {
     private final List<MethodNode> methods = new ArrayList<>();
     private final List<ImportNode> imports = new ArrayList<>();
     private final List<ImportNode> starImports = new ArrayList<>();
+    private final List<ImportNode> moduleStarImports = new ArrayList<>();
     private final Map<String, ImportNode> staticImports = new LinkedHashMap<>();
     private final Map<String, ImportNode> staticStarImports = new LinkedHashMap<>();
     private CompileUnit unit;
@@ -179,6 +180,23 @@ public class ModuleNode extends ASTNode {
         ImportNode importNode = new ImportNode(packageName);
         importNode.addAnnotations(annotations);
         starImports.add(importNode);
+
+        storeLastAddedImportNode(importNode);
+    }
+
+    /**
+     * @return star imports that originated from {@code import module M} declarations.
+     *         Separate from {@link #getStarImports()} so that resolution can apply
+     *         JLS 6.4.1 shadowing (type-import-on-demand shadows module-import).
+     */
+    public List<ImportNode> getModuleStarImports() {
+        return moduleStarImports;
+    }
+
+    public void addModuleStarImport(final String packageName, final List<AnnotationNode> annotations) {
+        ImportNode importNode = new ImportNode(packageName);
+        importNode.addAnnotations(annotations);
+        moduleStarImports.add(importNode);
 
         storeLastAddedImportNode(importNode);
     }

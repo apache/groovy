@@ -768,6 +768,31 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     }
                 }
             }
+            // Module-expanded star imports — lowest precedence per JLS 6.4.1.
+            // Only consulted if nothing above resolved the type, and ambiguity
+            // between two module-expanded packages is a compile-time error
+            // (matching Java's behavior per JLS 7.5.5 Example 7.5.5-3).
+            ClassNode moduleMatch = null;
+            String moduleMatchPkg = null;
+            for (ImportNode importNode : module.getModuleStarImports()) {
+                ClassNode tmp = new ConstructedClassWithPackage(importNode.getPackageName(), name);
+                if (resolve(tmp, false, false, true)) {
+                    ClassNode resolved = tmp.redirect();
+                    if (moduleMatch != null && !moduleMatch.getName().equals(resolved.getName())) {
+                        addError("reference to " + name + " is ambiguous, both "
+                                + moduleMatch.getName() + " (from " + moduleMatchPkg + ")"
+                                + " and " + resolved.getName()
+                                + " (from " + importNode.getPackageName() + ") match", type);
+                        return true;
+                    }
+                    moduleMatch = resolved;
+                    moduleMatchPkg = importNode.getPackageName();
+                }
+            }
+            if (moduleMatch != null) {
+                type.setRedirect(moduleMatch);
+                return true;
+            }
         }
 
         return false;
