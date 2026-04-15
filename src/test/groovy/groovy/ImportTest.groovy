@@ -272,4 +272,38 @@ final class ImportTest {
             assert module.toUpperCase() == 'HELLO'
         '''
     }
+
+    // GROOVY-11896: JLS 7.5.5 Example 7.5.5-3 — when a module import exposes
+    // two packages that both contain a public type with the same simple name,
+    // using that simple name must be a compile-time error, not a silent pick.
+    // Here, java.desktop exports both javax.swing.text (with Element interface)
+    // and javax.swing.text.html.parser (with Element class).
+    @Test
+    void testImportModuleAmbiguousSimpleName() {
+        def err = shouldFail '''
+            import module java.desktop
+            Element e = null
+        '''
+        assert err.message.contains('ambiguous'),
+                "expected ambiguity error, got: ${err.message}"
+    }
+
+    // GROOVY-11896: JLS 6.4.1 — a type-import-on-demand declaration shadows
+    // types imported by a single-module-import declaration. The `import module`
+    // is written FIRST so that without proper tier separation, the module-
+    // expanded java.awt.* would win by list ordering. With correct shadowing,
+    // the user's `import java.util.*` wins regardless of source order, and
+    // List resolves to java.util.List rather than java.awt.List.
+    @Test
+    void testImportModuleShadowedByStarImport() {
+        assertScript '''
+            import module java.desktop
+            assert List.name == 'java.awt.List'
+        '''
+        assertScript '''
+            import module java.desktop
+            import java.util.*
+            assert List.name == 'java.util.List'
+        '''
+    }
 }

@@ -410,14 +410,13 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
      * {@code module-info.class}) are supported — all packages in the JAR
      * are imported since automatic modules have no explicit exports.
      * <p>
-     * Known differences from Java's module import behavior:
-     * <ul>
-     * <li>Ambiguous class names from multiple module imports silently resolve
-     *     to the last match, consistent with Groovy's existing star import
-     *     semantics. Java reports a compile-time error for such ambiguities.</li>
-     * <li>Explicit single-type imports take priority over module-expanded
-     *     star imports (same as Java).</li>
-     * </ul>
+     * As per JLS 6.4.1, explicit single-type imports and type-on-demand (star)
+     * imports take priority over module-expanded imports. Ambiguous class names
+     * from multiple module imports produce a compile-time error (JLS 7.5.5).
+     * <p>
+     * Known difference from Java: Groovy's star imports (including module-expanded
+     * ones) can resolve package-private types, whereas Java only exposes public
+     * types from exported packages (see GROOVY-11916).
      */
     private ImportNode expandModuleImport(final String moduleName, final List<AnnotationNode> annotations, final ImportDeclarationContext ctx) {
         var finder = ModuleImportHelper.moduleFinder(sourceUnit);
@@ -430,18 +429,22 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         Set<String> skip = new HashSet<>(Arrays.asList(
                 org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS));
         moduleNode.getStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
+        moduleNode.getModuleStarImports().stream().map(ImportNode::getPackageName).forEach(skip::add);
         ImportNode lastImport = null;
         for (String pkg : packageNames) {
             String packageName = pkg + DOT_STR;
             if (!skip.contains(packageName)) {
-                moduleNode.addStarImport(packageName, annotations);
-                lastImport = last(moduleNode.getStarImports());
+                // Separate list so resolution can apply JLS 6.4.1 shadowing:
+                // a user-written `import foo.*` beats a module-expanded `foo.*`.
+                moduleNode.addModuleStarImport(packageName, annotations);
+                lastImport = last(moduleNode.getModuleStarImports());
                 skip.add(packageName);
             }
         }
         if (lastImport == null) {
             // All exported packages were already covered by existing imports
-            lastImport = last(moduleNode.getStarImports());
+            List<ImportNode> existing = moduleNode.getModuleStarImports();
+            lastImport = !existing.isEmpty() ? last(existing) : last(moduleNode.getStarImports());
         }
         return configureAST(lastImport, ctx);
     }
