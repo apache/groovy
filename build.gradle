@@ -227,11 +227,11 @@ tasks.named('test') {
     dependsOn testExtensionModuleJar
 }
 
-if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
+if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
     logger.lifecycle '''
 ************************************* WARNING ***********************************************
 ****  You're running the build with an older JDK. NEVER try to release with an old JDK!  ****
-****  You must use a JDK 16+ in order to compile all features of the language.           ****
+****  You must use a JDK 17+ in order to compile all features of the language.           ****
 *********************************************************************************************
 '''
 }
