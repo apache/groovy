@@ -19,6 +19,7 @@
 
 import org.apache.groovy.gradle.ConcurrentExecutionControlBuildService
 import org.apache.groovy.gradle.TargetJavaHomeSupport
+import org.apache.groovy.gradle.TestResultAggregatorService
 
 // TODO: Instead of adding to the test sources, these should be a
 // separate source set so that we can run spec tests in isolation
@@ -41,6 +42,9 @@ dependencies {
         exclude group: 'org.apiguardian', module: 'apiguardian-api'
     }
 }
+
+def aggregator = TestResultAggregatorService.register(
+    objects.newInstance(TestServices).buildEventsListenerRegistry, gradle)
 
 tasks.withType(Test).configureEach {
     def fs = objects.newInstance(TestServices).fileSystemOperations
@@ -88,6 +92,7 @@ tasks.withType(Test).configureEach {
     }
 
     useJUnitPlatform()
+    usesService(aggregator)
     usesService(ConcurrentExecutionControlBuildService.restrict(Test, gradle, 2))
 
     doFirst {
@@ -105,13 +110,16 @@ tasks.withType(Test).configureEach {
     }
 
     afterSuite { desc, result ->
-        if (!desc.parent && result.resultType == TestResult.ResultType.SUCCESS) {
-            def green = '\u001B[32m'
-            def yellow = '\u001B[33m'
-            def reset = '\u001B[0m'
-            logger.lifecycle "${desc.name}: ${green}${result.successfulTestCount} passed${reset}, " +
-                "${yellow}${result.skippedTestCount} skipped${reset} " +
-                "(${result.testCount} tests)"
+        if (!desc.parent) {
+            aggregator.get().recordSuite(result.successfulTestCount, result.failedTestCount, result.skippedTestCount)
+            if (result.resultType == TestResult.ResultType.SUCCESS) {
+                def green = '\u001B[32m'
+                def yellow = '\u001B[33m'
+                def reset = '\u001B[0m'
+                logger.lifecycle "${desc.name}: ${green}${result.successfulTestCount} passed${reset}, " +
+                    "${yellow}${result.skippedTestCount} skipped${reset} " +
+                    "(${result.testCount} tests)"
+            }
         }
     }
 }
@@ -170,4 +178,6 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
 interface TestServices {
     @javax.inject.Inject
     FileSystemOperations getFileSystemOperations()
+    @javax.inject.Inject
+    org.gradle.build.event.BuildEventsListenerRegistry getBuildEventsListenerRegistry()
 }
