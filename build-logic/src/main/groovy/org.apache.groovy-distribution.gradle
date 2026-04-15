@@ -206,6 +206,7 @@ tasks.register("asciidocAll", Copy) {
     from configurations.allAsciidoc
     from tasks.named('asciidoctor')
     into layout.buildDirectory.dir("asciidocAll/html5")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.named('asciidoctorPdf') {

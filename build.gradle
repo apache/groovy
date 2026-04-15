@@ -189,6 +189,9 @@ tasks.named('jar') {
     exclude '**/package-info.class'
 }
 
+tasks.named('sourcesJar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
 
 // some tests require Jars, but those are not allowed in the source directory
 // by the Apache policy, so we need to build them and add them to the test
