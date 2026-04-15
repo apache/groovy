@@ -42,12 +42,14 @@ abstract class TestResultAggregatorService implements BuildService<Params>, Oper
 
     interface Params extends BuildServiceParameters {}
 
+    private final AtomicLong suiteCount = new AtomicLong()
     private final AtomicLong totalPassed = new AtomicLong()
     private final AtomicLong totalFailed = new AtomicLong()
     private final AtomicLong totalSkipped = new AtomicLong()
 
     /** Called from afterSuite when a root suite completes. */
     void recordSuite(long passed, long failed, long skipped) {
+        suiteCount.incrementAndGet()
         totalPassed.addAndGet(passed)
         totalFailed.addAndGet(failed)
         totalSkipped.addAndGet(skipped)
@@ -65,7 +67,7 @@ abstract class TestResultAggregatorService implements BuildService<Params>, Oper
         long failed = totalFailed.get()
         long skipped = totalSkipped.get()
         long total = passed + failed + skipped
-        if (total == 0) return
+        if (total == 0 || suiteCount.get() <= 1) return
 
         String green = '\u001B[32m'
         String red = '\u001B[31m'
