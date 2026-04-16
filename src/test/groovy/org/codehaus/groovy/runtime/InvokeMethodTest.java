@@ -21,94 +21,110 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
-import groovy.test.GroovyTestCase;
-import junit.framework.AssertionFailedError;
+import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests method invocation
+ * Tests method invocation.
  */
-public class InvokeMethodTest extends GroovyTestCase {
+final class InvokeMethodTest {
 
-    // Method invocation tests
-    //-------------------------------------------------------------------------
-
-    public void testInvokeMethodNoParams() throws Throwable {
+    @Test
+    void testInvokeMethodNoParams() {
         Object value = invoke(this, "mockCallWithNoParams", null);
-        assertEquals("return value", "NoParams", value);
+        assertEquals("NoParams", value);
 
         value = invoke(this, "mockCallWithNoParams", new Object[0]);
-        assertEquals("return value", "NoParams", value);
+        assertEquals("NoParams", value);
     }
 
-    public void testInvokeMethodOneParam() throws Throwable {
+    @Test
+    void testInvokeMethodOneParam() {
         Object value = invoke(this, "mockCallWithOneParam", "abc");
-        assertEquals("return value", "OneParam", value);
+        assertEquals("OneParam", value);
     }
 
-    public void testInvokeMethodOneParamWhichIsNull() throws Throwable {
+    @Test
+    void testInvokeMethodOneParamWhichIsNull() {
         Object value = invoke(this, "mockCallWithOneNullParam", new Object[]{null});
-        assertEquals("return value", "OneParamWithNull", value);
+        assertEquals("OneParamWithNull", value);
 
         value = invoke(this, "mockCallWithOneNullParam", null);
-        assertEquals("return value", "OneParamWithNull", value);
+        assertEquals("OneParamWithNull", value);
     }
 
-    public void testInvokeOverloadedMethodWithOneParamWhichIsNull() throws Throwable {
+    @Test
+    void testInvokeOverloadedMethodWithOneParamWhichIsNull() {
         Object value = invoke(this, "mockOverloadedMethod", new Object[]{null});
-        assertEquals("return value", "Object", value);
+        assertEquals("Object", value);
     }
 
-    public void testInvokeMethodOneCollectionParameter() throws Throwable {
+    @Test
+    void testInvokeMethodOneCollectionParameter() {
         Object[] foo = {"a", "b", "c"};
 
         Object value = invoke(this, "mockCallWithOneCollectionParam", new Object[]{foo});
-        assertEquals("return value", Integer.valueOf(3), value);
+        assertEquals(Integer.valueOf(3), value);
 
-        List list = new ArrayList();
+        var list = new ArrayList<String>();
         list.add("a");
         list.add("b");
         value = invoke(this, "mockCallWithOneCollectionParam", list);
-        assertEquals("return value", Integer.valueOf(2), value);
+        assertEquals(Integer.valueOf(2), value);
     }
 
-    public void testInvokePrintlnMethod() throws Throwable {
+    @Test
+    void testInvokePrintlnMethod() {
         Object value = invoke(System.out, "println", "testing System.out.println...");
-        assertEquals("return value", null, value);
+        assertEquals(null, value);
     }
 
-    public void testMethodChooserNull() throws Throwable {
+    @Test
+    void testMethodChooserNull() {
         assertMethodChooser("Object", new Object[]{null});
     }
 
-    public void testMethodChooserNoParams() throws Throwable {
+    @Test
+    void testMethodChooserNoParams() {
         assertMethodChooser("void", null);
     }
 
-    public void testMethodChooserObject() throws Throwable {
+    @Test
+    void testMethodChooserObject() {
         assertMethodChooser("Object", new Object());
         assertMethodChooser("Object", new Date());
+        assertMethodChooser("Object", new StringBuffer());
+        assertMethodChooser("Object", Character.valueOf('a'));
     }
 
-    public void testMethodChooserString_FAILS() throws Throwable {
-        if (notYetImplemented()) return;
+    @Test
+    void testMethodChooserString() {
         assertMethodChooser("String", "foo");
-        assertMethodChooser("String", new StringBuffer());
-        assertMethodChooser("String", Character.valueOf('a'));
     }
 
-    public void testMethodChooserNumber() throws Throwable {
+    @Test
+    void testMethodChooserNumber() {
         assertMethodChooser("Number", Integer.valueOf(2));
         assertMethodChooser("Number", Double.valueOf(2));
     }
 
-    public void testMethodChooserTwoParams() throws Throwable {
-        List list = new ArrayList();
+    @Test
+    void testMethodChooserTwoParams() {
+        var list = new ArrayList<String>();
         list.add("foo");
         list.add("bar");
         assertMethodChooser("Object,Object", list.toArray());
@@ -117,251 +133,246 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertMethodChooser("Object,Object", blah);
     }
 
-    public void testInstanceofWorksForArray() {
-        Class type = Object[].class;
+    @Test
+    void testInstanceofWorksForArray() {
+        Class<?> type = Object[].class;
         Object value = new Object[1];
-        assertTrue("instanceof works for array", type.isInstance(value));
+        assertTrue(type.isInstance(value), "instanceof works for array");
     }
 
-    public void testMethodChooserTwoParamsWithSecondAnObjectArray() throws Throwable {
-        Object[] blah = {"a", new Object[]{"b"}
-        };
+    @Test
+    void testMethodChooserTwoParamsWithSecondAnObjectArray() {
+        Object[] blah = {"a", new Object[]{"b"}};
         assertMethodChooser("Object,Object[]", blah);
     }
 
-    public void testCollectionMethods() throws Throwable {
+    @Test
+    void testCollectionMethods() {
         Object list = InvokerHelper.createList(new Object[]{"a", "b"});
 
         Object value = invoke(list, "size", null);
-        assertEquals("size of collection", Integer.valueOf(2), value);
+        assertEquals(2, value, "size of collection");
 
         value = invoke(list, "contains", "a");
-        assertEquals("contains method", Boolean.TRUE, value);
+        assertEquals(true, value, "contains method");
     }
 
-    public void testNewMethods() throws Throwable {
+    @Test
+    void testNewMethods() {
         Object value = invoke("hello", "size", null);
-        assertEquals("size of string", Integer.valueOf(5), value);
+        assertEquals(5, value, "size of string");
     }
 
-    public void testStaticMethod() throws Throwable {
+    @Test
+    void testStaticMethod() {
         Object value = invoke(DummyBean.class, "dummyStaticMethod", "abc");
-        assertEquals("size of string", "ABC", value);
+        assertEquals("ABC", value);
     }
 
-    public void testBaseClassMethod() throws Throwable {
+    @Test
+    void testBaseClassMethod() {
         Object object = new DummyBean();
         Object value = invoke(object, "toString", null);
-        assertEquals("toString", object.toString(), value);
+        assertEquals(object.toString(), value);
     }
 
-    //SPG modified to reflect DefaultGroovyMethod name change and expected result from
-    //Integer/Integer division.
-    public void testDivideNumbers() throws Throwable {
-        assertMethodCall(Double.valueOf(10), "div", Double.valueOf(2), Double.valueOf(5));
-        assertMethodCall(Double.valueOf(10), "div", Integer.valueOf(2), Double.valueOf(5));
-        assertMethodCall(Integer.valueOf(10), "div", Double.valueOf(2), Double.valueOf(5));
-        assertMethodCall(Integer.valueOf(10), "div", Integer.valueOf(2), new java.math.BigDecimal("5"));
+    // SPG modified to reflect DefaultGroovyMethod name change and expected result from Integer/Integer division.
+    @Test
+    void testDivideNumbers() {
+        assertMethodCall(Double .valueOf(10), "div", Double .valueOf(2), Double.valueOf(5));
+        assertMethodCall(Double .valueOf(10), "div", Integer.valueOf(2), Double.valueOf(5));
+        assertMethodCall(Integer.valueOf(10), "div", Double .valueOf(2), Double.valueOf(5));
+        assertMethodCall(Integer.valueOf(10), "div", Integer.valueOf(2), new BigDecimal("5"));
     }
 
-    public void testBaseFailMethod() throws Throwable {
-        try {
-            invoke(this, "fail", "hello");
-        } catch (AssertionFailedError e) {
-            // worked
-        }
+    @Test
+    void testBaseFailMethod() {
+        assertThrows(MissingMethodException.class, () -> invoke(this, "fail", "hello"));
     }
 
-    public void testToArrayOnList() throws Throwable {
-        List object = new ArrayList();
-        object.add("Hello");
+    @Test
+    void testToArrayOnList() {
+        var list = new ArrayList<String>();
+        list.add("Hello");
 
-        Object[] value = (Object[]) invoke(object, "toArray", null);
-        assertArrayEquals(object.toArray(), value);
+        Object[] value = (Object[]) invoke(list, "toArray", null);
+        assertArrayEquals(list.toArray(), value);
         assertEquals(1, value.length);
         assertEquals("Hello", value[0]);
 
-        value = (Object[]) invoke(object, "toArray", new Object[0]);
-        assertArrayEquals(object.toArray(), value);
+        value = (Object[]) invoke(list, "toArray", new Object[0]);
+        assertArrayEquals(list.toArray(), value);
     }
 
-    public void testInvalidOverloading() throws Throwable {
-        try {
-            invoke(this, "badOverload", new Object[]{"a", "b"});
-            fail("Should fail as an unambiguous method is invoked");
-        }
-        catch (GroovyRuntimeException e) {
-            System.out.println("Caught: " + e);
-        }
+    @Test
+    void testInvalidOverloading() {
+        assertThrows(GroovyRuntimeException.class,
+                () -> invoke(this, "badOverload", new Object[]{"a", "b"}),
+                "Should fail as an ambiguous method is invoked");
     }
 
-    public void testPlusWithNull() throws Throwable {
+    @Test
+    void testPlusWithNull() {
         String param = "called with: ";
         Object value = invoke(param, "plus", new Object[]{null});
-        assertEquals("called with null", param + null, value);
+        assertEquals(param + null, value);
     }
 
-    public void testCallIntMethodWithInteger() throws Throwable {
+    @Test
+    void testCallIntMethodWithInteger() {
         Object value = invoke(this, "overloadedRemove", new Object[]{Integer.valueOf(5)});
-        assertEquals("called with integer", "int5", value);
+        assertEquals("int5", value);
     }
 
-    public void testCallListRemove() throws Throwable {
-        List list = new ArrayList();
+    @Test
+    void testCallListRemove() {
+        var list = new ArrayList<String>();
         list.add("foo");
         list.add("bar");
 
         invoke(list, "remove", new Object[]{Integer.valueOf(0)});
 
-        assertEquals("Should have just 1 item left: " + list, 1, list.size());
+        assertEquals(1, list.size(), () -> "Should have just 1 item left: " + list);
     }
 
-    public void testCoerceGStringToString() throws Throwable {
+    @Test
+    void testCoerceGStringToString() {
         GString param = new GString(new Object[]{"James"}) {
             public String[] getStrings() {
                 return new String[]{"Hello "};
             }
         };
         Object value = invoke(this, "methodTakesString", new Object[]{param});
-        assertEquals("converted GString to string", param.toString(), value);
+        assertEquals(param.toString(), value);
     }
 
-    public void testCoerceGStringToStringOnGetBytes() throws Throwable {
+    @Test
+    void testCoerceGStringToStringOnGetBytes() throws Exception {
         GString param = new GString(new Object[]{CompilerConfiguration.DEFAULT_SOURCE_ENCODING}) {
             public String[] getStrings() {
                 return new String[]{""};
             }
         };
         Object value = invoke("test", "getBytes", new Object[]{param});
-        assertEquals("converted GString to string", "test".getBytes(CompilerConfiguration.DEFAULT_SOURCE_ENCODING).getClass(), value.getClass());
+        assertEquals("test".getBytes(CompilerConfiguration.DEFAULT_SOURCE_ENCODING).getClass(), value.getClass());
     }
 
-    public void testBadBDToDoubleCoerce() throws Throwable {
-        try {
-            invoke(Math.class, "floor", new BigDecimal("1.7E309"));
-            fail("Math.floor(1.7E309) should fail because it is out of range for a Double.");
-        } catch (IllegalArgumentException e) {
-            assertTrue("Math.floor(1.7E309) should fail because it is out of range for a Double. " + e, e.getMessage().indexOf("out of range") > 0);
-        }
-    }
-
-    // GROOVY-11203
-    public void testBadNullToBoolCoerce() throws Throwable {
-        try {
-            invoke(Boolean.class, "toString", ScriptBytecodeAdapter.createPojoWrapper(null, boolean.class));
-            fail("Boolean.toString(null) should fail because null cannot be cast to boolean.");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Cannot call method with null for parameter 0, which expects boolean", e.getMessage());
-        }
+    @Test
+    void testBadBDToDoubleCoerce() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> invoke(Math.class, "floor", new BigDecimal("1.7E309")),
+                "Math.floor(1.7E309) should fail because it is out of range for a Double.");
+        assertTrue(e.getMessage().indexOf("out of range") > 0, "Math.floor(1.7E309) should fail because it is out of range for a Double. " + e);
     }
 
     // GROOVY-11203
-    public void testBadNullToIntCoerce() throws Throwable {
-        try {
-            invoke(Integer.class, "toString", ScriptBytecodeAdapter.createPojoWrapper(null, int.class));
-            fail("Integer.toString(null) should fail because null cannot be cast to int.");
-        } catch (IllegalArgumentException e) {
-            assertEquals("Cannot call method with null for parameter 0, which expects int", e.getMessage());
-        }
+    @Test
+    void testBadNullToBoolCoerce() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> invoke(Boolean.class, "toString", ScriptBytecodeAdapter.createPojoWrapper(null, boolean.class)),
+                "Boolean.toString(null) should fail because null cannot be cast to boolean.");
+        assertEquals("Cannot call method with null for parameter 0, which expects boolean", e.getMessage());
     }
 
-    public void testClassMethod() throws Throwable {
-        Class c = String.class;
+    // GROOVY-11203
+    @Test
+    void testBadNullToIntCoerce() {
+        var e = assertThrows(IllegalArgumentException.class,
+                () -> invoke(Integer.class, "toString", ScriptBytecodeAdapter.createPojoWrapper(null, int.class)),
+                "Integer.toString(null) should fail because null cannot be cast to int.");
+        assertEquals("Cannot call method with null for parameter 0, which expects int", e.getMessage());
+    }
+
+    @Test
+    void testClassMethod() {
+        Class<?> c = String.class;
         Object value = invoke(c, "getName", null);
-        assertEquals("Class.getName()", c.getName(), value);
+        assertEquals(c.getName(), value);
         c = getClass();
         value = invoke(c, "getName", null);
-        assertEquals("Class.getName()", c.getName(), value);
+        assertEquals(c.getName(), value);
     }
 
-    public void testProtectedMethod() throws Throwable {
+    @Test
+    void testProtectedMethod() {
         String param = "hello";
         Object value = invoke(this, "aProtectedMethod", param);
-        assertEquals("protected method call", aProtectedMethod(param), value);
+        assertEquals(aProtectedMethod(param), value);
     }
 
-    public void testPrivateMethod() throws Throwable {
+    @Test
+    void testPrivateMethod() {
         String param = "hello";
         Object value = invoke(this, "aPrivateMethod", param);
-        assertEquals("private method call", aPrivateMethod(param), value);
+        assertEquals(aPrivateMethod(param), value);
     }
 
-    public void testStringSubstringMethod() throws Throwable {
+    @Test
+    void testStringSubstringMethod() {
         String object = "hello";
         Object value = invoke(object, "substring", Integer.valueOf(2));
-        assertEquals("substring(2)", object.substring(2), value);
+        assertEquals(object.substring(2), value);
 
         value = invoke(object, "substring", new Object[]{Integer.valueOf(1), Integer.valueOf(3)});
-        assertEquals("substring(1,3)", object.substring(1, 3), value);
+        assertEquals(object.substring(1, 3), value);
     }
 
-    public void testListGetWithRange() throws Throwable {
-        List list = Arrays.asList(new Object[]{"a", "b", "c"});
+    @Test
+    void testListGetWithRange() {
+        var list = Arrays.<Object>asList("a", "b", "c");
         Object range = new IntRange(true, 0, 2);
         Object value = invoke(list, "getAt", range);
-        assertTrue("Returned List: " + value, value instanceof List);
-        List retList = (List) value;
-        assertEquals("List size", 3, retList.size());
+        assertTrue(value instanceof List);
+        assertEquals(3, ((List<?>) value).size());
     }
 
-    public void testSetLenientOnDateFormat() throws Throwable {
+    @Test
+    void testSetLenientOnDateFormat() {
         SimpleDateFormat a = new SimpleDateFormat("MM/dd/yyyy");
 
         Object value = invoke(a, "setLenient", new Object[]{Boolean.FALSE});
-        assertEquals("void method", null, value);
+        assertEquals(null, value);
     }
 
-    public void testInvokeUnknownMethod() throws Throwable {
-        try {
-            Object value = invoke(this, "unknownMethod", "abc");
-            fail("Should have thrown an exception");
-        }
-        catch (GroovyRuntimeException e) {
-            // worked
-        }
+    @Test
+    void testInvokeUnknownMethod() {
+        assertThrows(GroovyRuntimeException.class,
+            () -> invoke(this, "unknownMethod", "abc"));
     }
 
-    public void testInvokeMethodWithWrongNumberOfParameters() throws Throwable {
-        try {
-            Object[] args = {"a", "b"};
-            invoke(this, "unknownMethod", args);
-            fail("Should have thrown an exception");
-        }
-        catch (GroovyRuntimeException e) {
-            // worked
-        }
+    @Test
+    void testInvokeMethodWithWrongNumberOfParameters() {
+        Object[] args = {"a", "b"};
+        assertThrows(GroovyRuntimeException.class,
+                () -> invoke(this, "unknownMethod", args));
     }
 
-    public void testInvokeMethodOnNullObject() throws Throwable {
-        try {
-            invoke(null, "mockCallWithNoParams", null);
-            fail("Should have thrown an exception");
-        }
-        catch (NullPointerException e) {
-            // worked
-        }
+    @Test
+    void testInvokeMethodOnNullObject() {
+        assertThrows(NullPointerException.class,
+                () -> invoke(null, "mockCallWithNoParams", null));
     }
 
     // Mock methods used for testing
-    //-------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
 
     public Object mockCallWithNoParams() {
         return "NoParams";
     }
 
     public Object mockCallWithOneParam(Object value) {
-        assertEquals("Method not passed in the correct value", "abc", value);
+        assertEquals("abc", value, "Method not passed in the correct value");
         return "OneParam";
     }
 
     public Object mockCallWithOneNullParam(Object value) {
-        assertEquals("Method not passed in the correct value", null, value);
+        assertEquals(null, value, "Method not passed in the correct value");
         return "OneParamWithNull";
     }
 
     public Integer mockCallWithOneCollectionParam(Object collection) {
-        Collection coll = DefaultTypeTransformation.asCollection(collection);
-        return Integer.valueOf(coll.size());
+        var col = DefaultTypeTransformation.asCollection(collection);
+        return Integer.valueOf(col.size());
     }
 
     public Object mockOverloadedMethod() {
@@ -408,9 +419,6 @@ public class InvokeMethodTest extends GroovyTestCase {
         return "Object" + value;
     }
 
-    // Implementation methods
-    //-------------------------------------------------------------------------
-
     protected Object aProtectedMethod(String param) {
         return param + " there!";
     }
@@ -419,30 +427,32 @@ public class InvokeMethodTest extends GroovyTestCase {
         return param + " James!";
     }
 
-    protected void assertMethodCall(Object object, String method, Object param, Object expected) {
+    // Implementation methods
+    //--------------------------------------------------------------------------
+
+    private void assertMethodCall(Object object, String method, Object param, Object expected) {
         Object value = InvokerHelper.invokeMethod(object, method, new Object[]{param});
-        assertEquals("result of method: " + method, expected, value);
+        assertEquals(expected, value, () -> "result of method: " + method);
     }
 
     /**
      * Asserts that invoking the method chooser finds the right overloaded
      * method implementation
      *
-     * @param expected  is the expected value of the method
+     * @param expected  the expected value of the method
      * @param arguments the argument(s) to the method invocation
      */
-    protected void assertMethodChooser(Object expected, Object arguments) throws Throwable {
+    private void assertMethodChooser(Object expected, Object arguments) {
         Object value = invoke(this, "mockOverloadedMethod", arguments);
 
-        assertEquals("Invoking overloaded method for arguments: " + FormatHelper.toString(arguments), expected, value);
+        assertEquals(expected, value, () -> "Invoking overloaded method for arguments: " + FormatHelper.toString(arguments));
     }
 
-    protected Object invoke(Object object, String method, Object args) throws Throwable {
+    private Object invoke(Object object, String method, Object args) {
         try {
             return InvokerHelper.invokeMethod(object, method, args);
-        }
-        catch (InvokerInvocationException e) {
-            throw e.getCause();
+        } catch (InvokerInvocationException e) {
+            throw (RuntimeException) e.getCause();
         }
     }
 }
