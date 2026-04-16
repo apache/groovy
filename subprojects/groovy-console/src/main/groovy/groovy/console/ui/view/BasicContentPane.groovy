@@ -20,6 +20,7 @@ package groovy.console.ui.view
 
 import groovy.console.ui.Console
 import groovy.console.ui.ConsoleTextEditor
+import groovy.console.ui.ThemeManager
 import groovy.console.ui.text.SmartDocumentFilter
 
 import javax.swing.JSplitPane
@@ -64,7 +65,7 @@ private def buildOutputArea(prefs) {
                 editable: false,
                 name: 'outputArea',
                 contentType: 'text/html',
-                background: new Color(255, 255, 218),
+                background: ThemeManager.outputBackground,
                 font: new Font('Monospaced', Font.PLAIN, prefs.getInt('fontSize', 12)),
                 border: emptyBorder(4)
         )
@@ -73,6 +74,7 @@ private def buildOutputArea(prefs) {
 
 
 inputArea = inputEditor.textEditor
+inputArea.background = ThemeManager.inputBackground
 // attach ctrl-enter to input area
 // need to wrap in actions to keep it from being added as a component
 actions {

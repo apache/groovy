@@ -467,3 +467,28 @@ preferencesAction = action(
         mnemonic: 'S',
         shortDescription: 'Preference Settings'
 )
+
+lightThemeAction = action(
+        name: 'Light',
+        closure: controller.&lightTheme,
+        shortDescription: 'Light theme'
+)
+
+darkThemeAction = action(
+        name: 'Dark',
+        closure: controller.&darkTheme,
+        shortDescription: 'Dark theme'
+)
+
+systemThemeAction = action(
+        name: 'System',
+        closure: controller.&systemTheme,
+        shortDescription: 'Follow system theme'
+)
+
+cycleThemeAction = action(
+        name: 'Theme',
+        closure: controller.&cycleTheme,
+        smallIcon: imageIcon(resource: 'icons/page_refresh.png', class: this),
+        shortDescription: 'Cycle theme (' + groovy.console.ui.ThemeManager.themeLabel + ')'
+)

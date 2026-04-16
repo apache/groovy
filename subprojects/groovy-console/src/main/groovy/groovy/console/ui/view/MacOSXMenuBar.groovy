@@ -195,6 +195,13 @@ menuBar {
         checkBoxMenuItem(detachedOutputAction, selected: controller.detachedOutput)
         checkBoxMenuItem(autoClearOutputAction, selected: controller.autoClearOutput)
         checkBoxMenuItem(orientationVerticalAction, selected: controller.orientationVertical)
+        separator()
+        menu(text: 'Theme') {
+            buttonGroup(id: 'themeGroup')
+            lightThemeMenuItem = radioButtonMenuItem(lightThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'LIGHT')
+            darkThemeMenuItem = radioButtonMenuItem(darkThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'DARK')
+            systemThemeMenuItem = radioButtonMenuItem(systemThemeAction, buttonGroup: themeGroup, selected: controller.currentTheme == 'SYSTEM')
+        }
     }
 
     menu(text: 'History', mnemonic: 'I') {

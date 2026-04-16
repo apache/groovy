@@ -46,8 +46,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import groovy.console.ui.ThemeManager;
+
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ABSTRACT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.AS;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.AT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DOT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ASSERT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BREAK;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral;
@@ -216,12 +222,9 @@ public class SmartDocumentFilter extends DocumentFilter {
             this.setRenderRange(null);
         }
 
+        boolean inAnnotation = false;
         for (Token token : tokenListToRender) {
             int tokenType = token.getType();
-
-//                if (token instanceof CommonToken) {
-//                    System.out.println(((CommonToken) token).toString(lexer));
-//                }
 
             if (EOF == tokenType) {
                 continue;
@@ -231,9 +234,22 @@ public class SmartDocumentFilter extends DocumentFilter {
             int tokenStopIndex = token.getStopIndex();
             int tokenLength = tokenStopIndex - tokenStartIndex + 1;
 
+            // color annotation names (identifier/dot tokens after @) with annotation style
+            // handles @ToString, @groovy.transform.CompileStatic, etc.
+            boolean isAnnotationPart = inAnnotation
+                    && (tokenType == Identifier || tokenType == CapitalizedIdentifier || tokenType == DOT);
+            if (tokenType == AT) {
+                inAnnotation = true;
+            } else if (isAnnotationPart) {
+                // stay in annotation for dotted names
+                inAnnotation = (tokenType == DOT);
+            } else {
+                inAnnotation = false;
+            }
+
             styledDocument.setCharacterAttributes(tokenStartIndex,
                     tokenLength,
-                    findStyleByTokenType(tokenType),
+                    isAnnotationPart ? findStyleByTokenType(AT) : findStyleByTokenType(tokenType),
                     true);
 
             if (GStringBegin == tokenType || GStringPart == tokenType) {
@@ -366,42 +382,102 @@ public class SmartDocumentFilter extends DocumentFilter {
     }
 
     private void initStyles() {
-        Style comment = createDefaultStyleByTokenType(NL);
-        StyleConstants.setForeground(comment, Color.LIGHT_GRAY.darker().darker());
-        StyleConstants.setItalic(comment, true);
-
-        // gstrings, e.g. "${xxx}", /xxx/
+        // create styles (ensures they exist in the StyleContext)
+        createDefaultStyleByTokenType(NL);
         for (int t : Arrays.asList(GStringBegin, GStringPart, GStringEnd)) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setForeground(style, Color.MAGENTA.darker().darker());
+            createDefaultStyleByTokenType(t);
         }
-
-        // strings, e.g. 'xxx'
-        Style stringLiteral = createDefaultStyleByTokenType(StringLiteral);
-        StyleConstants.setForeground(stringLiteral, Color.GREEN.darker().darker());
-
-        // numbers, e.g. 123, 1.23
+        createDefaultStyleByTokenType(StringLiteral);
         for (int t : Arrays.asList(IntegerLiteral, FloatingPointLiteral)) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setForeground(style, Color.RED.darker());
+            createDefaultStyleByTokenType(t);
+        }
+        for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
+            createDefaultStyleByTokenType(t);
+        }
+        for (int t : Arrays.asList(COMMA, SEMI)) {
+            createDefaultStyleByTokenType(t);
+        }
+        createDefaultStyleByTokenType(AT);
+        createDefaultStyleByTokenType(UNEXPECTED_CHAR);
+
+        // apply theme colors
+        updateStyles();
+    }
+
+    /**
+     * Forces a full re-parse and re-render of the document with current styles.
+     */
+    public void reparseDocument() {
+        try {
+            parseDocument();
+        } catch (BadLocationException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Updates all SmartDocumentFilter styles with current theme colors.
+     * Can be called at init time and on theme switch.
+     */
+    public static void updateStyles() {
+        boolean dark = ThemeManager.isDark();
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+
+        // comments
+        Style comment = sc.getStyle(String.valueOf(NL));
+        if (comment != null) {
+            StyleConstants.setForeground(comment, dark ? new Color(180, 180, 180) : Color.LIGHT_GRAY.darker().darker());
+            StyleConstants.setItalic(comment, true);
         }
 
-        // reserved keywords, null literals, boolean literals
+        // gstrings
+        Color gstringColor = dark ? new Color(235, 200, 250) : new Color(140, 0, 140);
+        for (int t : Arrays.asList(GStringBegin, GStringPart, GStringEnd)) {
+            Style style = sc.getStyle(String.valueOf(t));
+            if (style != null) StyleConstants.setForeground(style, gstringColor);
+        }
+
+        // strings
+        Style stringLiteral = sc.getStyle(String.valueOf(StringLiteral));
+        if (stringLiteral != null) {
+            StyleConstants.setForeground(stringLiteral, dark ? new Color(180, 235, 175) : new Color(0, 120, 0));
+        }
+
+        // numbers
+        Color digitColor = dark ? new Color(235, 170, 170) : new Color(180, 0, 0);
+        for (int t : Arrays.asList(IntegerLiteral, FloatingPointLiteral)) {
+            Style style = sc.getStyle(String.valueOf(t));
+            if (style != null) StyleConstants.setForeground(style, digitColor);
+        }
+
+        // reserved keywords
+        Color keywordColor = dark ? new Color(200, 220, 245) : new Color(0, 0, 160);
         for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setBold(style, true);
-            StyleConstants.setForeground(style, Color.BLUE.darker().darker());
+            Style style = sc.getStyle(String.valueOf(t));
+            if (style != null) {
+                StyleConstants.setBold(style, true);
+                StyleConstants.setForeground(style, keywordColor);
+            }
         }
 
         // commas, semicolons
+        Color punctuationColor = dark ? new Color(200, 200, 200) : new Color(0, 0, 140);
         for (int t : Arrays.asList(COMMA, SEMI)) {
-            Style style = createDefaultStyleByTokenType(t);
-            StyleConstants.setForeground(style, Color.BLUE.darker());
+            Style style = sc.getStyle(String.valueOf(t));
+            if (style != null) StyleConstants.setForeground(style, punctuationColor);
         }
 
-        // unexpected char, e.g. `
-        Style unexpectedChar = createDefaultStyleByTokenType(UNEXPECTED_CHAR);
-        StyleConstants.setForeground(unexpectedChar, Color.CYAN.darker());
+        // annotations (@)
+        Style atStyle = sc.getStyle(String.valueOf(AT));
+        if (atStyle != null) {
+            StyleConstants.setForeground(atStyle, dark ? new Color(230, 230, 150) : new Color(100, 100, 0));
+        }
+
+        // unexpected char
+        Style unexpectedChar = sc.getStyle(String.valueOf(UNEXPECTED_CHAR));
+        if (unexpectedChar != null) {
+            StyleConstants.setForeground(unexpectedChar, dark ? Color.CYAN : Color.CYAN.darker());
+        }
     }
 
     private volatile boolean latest = false;
