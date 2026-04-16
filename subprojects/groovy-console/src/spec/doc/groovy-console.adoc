@@ -136,7 +136,13 @@ handle interruption, at the cost of extra execution time.
 
 * You can change the font size by selecting `Smaller Font` or `Larger
 Font` from the `Actions menu`
-* The console can be run as an Applet thanks to `groovy.ui.ConsoleApplet`
+* You can switch between Light, Dark, and System (if supported by your OS) themes from the
+`View -> Theme` menu or by clicking the theme cycle button in the toolbar.
+The theme preference is remembered across sessions. The System option
+follows your operating system's dark mode setting.
+
+image:{reldir_console}/assets/img/gconsole-dark-theme.png[Dark Theme]
+
 * Code is auto indented when you hit return
 * You can drag'n'drop a Groovy script over the text area to open a file
 * You can modify the classpath with which the script in the console is

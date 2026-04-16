@@ -43,4 +43,6 @@ toolbar = toolBar(rollover: true, visible: controller.showToolbar, constraints: 
     button(interruptAction, text: null)
     separator(orientation: SwingConstants.VERTICAL)
     button(clearOutputAction, text: null)
+    separator(orientation: SwingConstants.VERTICAL)
+    button(cycleThemeAction, text: null)
 }

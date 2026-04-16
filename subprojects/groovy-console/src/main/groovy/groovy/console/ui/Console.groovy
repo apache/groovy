@@ -163,6 +163,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     boolean loopMode = prefs.getBoolean('loopMode', false)
     int inputAreaContentHash
 
+    String currentTheme = ThemeManager.currentMode.name()
+
     //to allow loading classes dynamically when using @Grab (GROOVY-4877, GROOVY-5871)
     boolean useScriptClassLoaderForScriptExecution = false
 
@@ -283,8 +285,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         // full stack trace should not be logged to the output window - GROOVY-4663
         Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = false
 
-        //when starting via main set the look and feel to system
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+        //set the look and feel based on theme preference
+        ThemeManager.applyTheme(ThemeManager.currentMode)
 
         def baseConfig = new CompilerConfiguration(System.getProperties())
         String starterConfigScripts = System.getProperty("groovy.starter.configscripts", null)
@@ -728,6 +730,88 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void autoClearOutput(EventObject evt) {
         autoClearOutput = evt.source.selected
         prefs.putBoolean('autoClearOutput', autoClearOutput)
+    }
+
+    void lightTheme(EventObject evt = null) { switchTheme(ThemeManager.ThemeMode.LIGHT) }
+    void darkTheme(EventObject evt = null) { switchTheme(ThemeManager.ThemeMode.DARK) }
+    void systemTheme(EventObject evt = null) { switchTheme(ThemeManager.ThemeMode.SYSTEM) }
+    void cycleTheme(EventObject evt = null) { switchTheme(ThemeManager.cycleMode()) }
+
+    private void switchTheme(ThemeManager.ThemeMode mode) {
+        currentTheme = mode.name()
+        ThemeManager.applyTheme(mode)
+        // reapply custom styles for all open console windows
+        consoleControllers.each { Console console -> console.reapplyStyles() }
+    }
+
+    private void reapplyStyles() {
+        def fontFamily = prefs.get('fontName', 'Monospaced')
+        def newStyles = ThemeManager.getStyles(fontFamily)
+
+        // update output area styles
+        def doc = outputArea.styledDocument
+        def applyStyle = { javax.swing.text.Style style, Map values ->
+            // remove old foreground/background before applying new
+            style.removeAttribute(javax.swing.text.StyleConstants.Foreground)
+            style.removeAttribute(javax.swing.text.StyleConstants.Background)
+            values.each { k, v -> style.addAttribute(k, v) }
+        }
+        def regularStyle = doc.getStyle('regular')
+        if (regularStyle) applyStyle(regularStyle, newStyles.regular)
+        applyStyle(promptStyle, newStyles.prompt)
+        applyStyle(commandStyle, newStyles.command)
+        applyStyle(outputStyle, newStyles.output)
+        applyStyle(resultStyle, newStyles.result)
+        applyStyle(stacktraceStyle, newStyles.stacktrace)
+        applyStyle(hyperlinkStyle, newStyles.hyperlink)
+
+        // re-apply foreground color to all existing output text
+        // First set everything to the regular foreground, then let
+        // specifically-colored runs be re-colored on next output.
+        // This is the most reliable approach since Swing copies style
+        // attributes by value into character elements at insert time.
+        int docLen = doc.length
+        if (docLen > 0) {
+            doc.setCharacterAttributes(0, docLen, regularStyle, false)
+        }
+
+        // update area backgrounds
+        outputArea.background = ThemeManager.outputBackground
+        inputArea.background = ThemeManager.inputBackground
+
+        // update input area syntax highlighting styles (GroovyFilter styles)
+        def styleContext = javax.swing.text.StyleContext.defaultStyleContext
+        newStyles.each { styleName, defs ->
+            def style = styleContext.getStyle(styleName)
+            if (style) {
+                style.removeAttribute(javax.swing.text.StyleConstants.Foreground)
+                style.removeAttribute(javax.swing.text.StyleConstants.Background)
+                defs.each { k, v -> style.addAttribute(k, v) }
+            }
+        }
+
+        // update SmartDocumentFilter styles (ANTLR token-based highlighting)
+        groovy.console.ui.text.SmartDocumentFilter.updateStyles()
+
+        // force re-parse to apply new colors to existing text
+        def docFilter = (inputArea.document as javax.swing.text.DefaultStyledDocument).documentFilter
+        if (docFilter instanceof groovy.console.ui.text.SmartDocumentFilter) {
+            docFilter.reparseDocument()
+        }
+
+        // let FlatLaf update all Swing component UI delegates
+        com.formdev.flatlaf.FlatLaf.updateUI()
+
+        // update cycle theme button tooltip, menu radio buttons, and status
+        swing.cycleThemeAction.putValue(javax.swing.Action.SHORT_DESCRIPTION, 'Cycle theme (' + ThemeManager.themeLabel + ')')
+        swing.lightThemeMenuItem.selected = (currentTheme == 'LIGHT')
+        swing.darkThemeMenuItem.selected = (currentTheme == 'DARK')
+        swing.systemThemeMenuItem.selected = (currentTheme == 'SYSTEM')
+        statusLabel.text = 'Theme changed to: ' + ThemeManager.themeLabel
+
+        // repaint
+        inputEditor.textEditor.repaint()
+        outputArea.repaint()
     }
 
     void threadInterruption(EventObject evt) {

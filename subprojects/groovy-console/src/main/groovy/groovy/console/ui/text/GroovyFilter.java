@@ -58,6 +58,8 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
     public static final String DECIMAL_FLOATING_POINT_LITERAL = "(?:0|[1-9](?:[_0-9]*[0-9])?)?\\.?[0-9](?:[_0-9]*[0-9])?(?:[eE][+-]?[0-9]+(?:[_0-9]*[0-9])?)?[fFdD]?";
     public static final String HEXADECIMAL_FLOATING_POINT_LITERAL = "0[xX](?:[0-9a-fA-F](?:[0-9a-fA-F_]*[0-9a-fA-F])?)?\\.?(?:[0-9a-fA-F_]*[0-9a-fA-F])?(?:[pP][+-]?[0-9]+(?:[_0-9]*[0-9])?)?[fFdD]?";
 
+    public static final String ANNOTATION = "@[A-Za-z](?:[\\w.]*\\w)?";
+
     public static final String IDENT = "[\\w\\$&&[\\D]][\\w\\$]*";
     public static final String OPERATION = "[\\w\\$&&[\\D]][\\w\\$]* *\\(";
     public static final String LEFT_PARENS = "\\(";
@@ -133,30 +135,29 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
         StyleContext styleContext = StyleContext.getDefaultStyleContext();
         Style defaultStyle = styleContext.getStyle(StyleContext.DEFAULT_STYLE);
 
+        // Create styles with structural attributes only.
+        // Foreground colors are applied later by BasicContentPane
+        // from the theme-aware styles provided by ThemeManager.
         Style comment = styleContext.addStyle(COMMENT, defaultStyle);
-        StyleConstants.setForeground(comment, Color.LIGHT_GRAY.darker().darker());
         StyleConstants.setItalic(comment, true);
 
         Style quotes = styleContext.addStyle(QUOTES, defaultStyle);
-        StyleConstants.setForeground(quotes, Color.MAGENTA.darker().darker());
 
         Style charQuotes = styleContext.addStyle(SINGLE_QUOTES, defaultStyle);
-        StyleConstants.setForeground(charQuotes, Color.GREEN.darker().darker());
 
         Style slashyQuotes = styleContext.addStyle(SLASHY_QUOTES, defaultStyle);
-        StyleConstants.setForeground(slashyQuotes, Color.ORANGE.darker());
 
         Style digit = styleContext.addStyle(DIGIT, defaultStyle);
-        StyleConstants.setForeground(digit, Color.RED.darker());
 
         Style operation = styleContext.addStyle(OPERATION, defaultStyle);
         StyleConstants.setBold(operation, true);
+
+        Style annotation = styleContext.addStyle(ANNOTATION, defaultStyle);
 
         Style ident = styleContext.addStyle(IDENT, defaultStyle);
 
         Style reservedWords = styleContext.addStyle(RESERVED_WORD, defaultStyle);
         StyleConstants.setBold(reservedWords, true);
-        StyleConstants.setForeground(reservedWords, Color.BLUE.darker().darker());
 
         Style leftParens = styleContext.addStyle(IDENT, defaultStyle);
 
@@ -165,6 +166,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
         getRootNode().putStyle(QUOTES, quotes);
         getRootNode().putStyle(SINGLE_QUOTES, charQuotes);
         getRootNode().putStyle(SLASHY_QUOTES, slashyQuotes);
+        getRootNode().putStyle(ANNOTATION, annotation);
 
         getRootNode().putStyle(new String[] {
             HEX_INTEGER_LITERAL,
