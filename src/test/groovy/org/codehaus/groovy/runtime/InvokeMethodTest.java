@@ -283,6 +283,13 @@ final class InvokeMethodTest {
         assertEquals("Cannot call method with null for parameter 0, which expects int", e.getMessage());
     }
 
+    // GROOVY-11930
+    @Test
+    void testGoodNullToStringCoerce() {
+        assertThrows(NumberFormatException.class,
+                () -> invoke(Integer.class, "parseInt", ScriptBytecodeAdapter.createPojoWrapper(null, String.class)));
+    }
+
     @Test
     void testClassMethod() {
         Class<?> c = String.class;
