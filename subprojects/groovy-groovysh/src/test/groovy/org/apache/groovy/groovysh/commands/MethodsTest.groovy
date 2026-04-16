@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the {@code /methods} command.
  */
 class MethodsTest extends SystemTestSupport {
+    @Test
     void testImport() {
         system.execute('/methods')
         assert !printer.output.join().contains('twice')

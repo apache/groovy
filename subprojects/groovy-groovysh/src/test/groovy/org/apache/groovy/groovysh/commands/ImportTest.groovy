@@ -18,15 +18,24 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the {@code /imports} command.
  */
 class ImportTest extends SystemTestSupport {
+    @Test
     void testImport() {
         system.execute('/imports')
         assert !printer.output.join().contains('import java.awt.TextField')
         system.execute('import java.awt.TextField')
         system.execute('/imports')
         assert printer.output.join().contains('import java.awt.TextField')
+    }
+
+    @Test
+    void testModuleImport() {
+//        system.execute('import module java.sql')
+//        system.execute('assert Connection.name == "java.sql.Connection"')
     }
 }

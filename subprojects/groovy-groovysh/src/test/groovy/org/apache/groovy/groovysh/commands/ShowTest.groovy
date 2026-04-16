@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the /show command.
  */
 class ShowTest extends ConsoleTestSupport {
+    @Test
     void testShowVariable() {
         assert !console.hasVariable('foo')
         console.execute('dummyName', "foo = 'bar'")

@@ -18,11 +18,14 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the {@code /alias} command.
  */
 class AliasTest extends ConsoleTestSupport {
 
+    @Test
     void testAliasAndUnalias() {
         assert !console.hasAlias('foo')
         console.invoke(session, '/alias', 'foo', '/history')

@@ -18,10 +18,13 @@
  */
 package org.apache.groovy.groovysh.commands
 
+import org.junit.jupiter.api.Test
+
 /**
  * Tests for the {@code /types} command.
  */
 class TypesTest extends SystemTestSupport {
+    @Test
     void testImport() {
         def names = ['C', 'I', 'T', 'R', 'E', 'A']
         system.execute('/types')

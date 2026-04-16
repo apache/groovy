@@ -22,6 +22,8 @@ import org.apache.groovy.groovysh.jline.GroovySystemRegistry
 import org.jline.terminal.Terminal
 import org.jline.terminal.TerminalBuilder
 
+import org.junit.jupiter.api.BeforeEach
+
 import java.util.function.Supplier
 
 /**
@@ -31,6 +33,7 @@ abstract class SystemTestSupport extends ConsoleTestSupport {
 
     protected GroovySystemRegistry system
 
+    @BeforeEach
     @Override
     void setUp() {
         super.setUp()
