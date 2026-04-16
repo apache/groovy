@@ -149,6 +149,8 @@ public class ParameterTypes {
             } else if (parameterTypes[i].isPrimitive()) { // GROOVY-11203, et al.
                 throw new IllegalArgumentException("Cannot call method with null" +
                     " for parameter " + i + ", which expects " + parameterTypes[i]);
+            } else {
+                arguments[i] = null; // GROOVY-11930
             }
         }
         return arguments;
