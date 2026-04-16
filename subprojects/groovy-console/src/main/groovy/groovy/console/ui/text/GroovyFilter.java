@@ -62,10 +62,6 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
     public static final String OPERATION = "[\\w\\$&&[\\D]][\\w\\$]* *\\(";
     public static final String LEFT_PARENS = "\\(";
 
-    private static final Color COMMENT_COLOR =
-            Color.LIGHT_GRAY.darker().darker();
-
-
     public static final String RESERVED_WORD = "reserved";
     public static final String[] RESERVED_WORDS = {"\\babstract\\b",
             "\\bassert\\b",
@@ -138,7 +134,7 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
         Style defaultStyle = styleContext.getStyle(StyleContext.DEFAULT_STYLE);
 
         Style comment = styleContext.addStyle(COMMENT, defaultStyle);
-        StyleConstants.setForeground(comment, COMMENT_COLOR);
+        StyleConstants.setForeground(comment, Color.LIGHT_GRAY.darker().darker());
         StyleConstants.setItalic(comment, true);
 
         Style quotes = styleContext.addStyle(QUOTES, defaultStyle);
@@ -240,7 +236,9 @@ public class GroovyFilter extends StructuredSyntaxDocumentFilter {
                 Element el = doc.getCharacterElement(offset);
                 Object color =
                         el.getAttributes().getAttribute(StyleConstants.Foreground);
-                if (!COMMENT_COLOR.equals(color)) {
+                Color commentColor = StyleConstants.getForeground(
+                        StyleContext.getDefaultStyleContext().getStyle(COMMENT));
+                if (!commentColor.equals(color)) {
                     cont = segment.array[offset] != '{' &&
                             segment.array[offset] != '}';
                 }
