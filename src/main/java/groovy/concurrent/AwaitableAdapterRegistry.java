@@ -19,6 +19,7 @@
 package groovy.concurrent;
 
 import org.apache.groovy.runtime.async.AsyncSupport;
+import org.apache.groovy.runtime.async.FlowPublisherAdapter;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
 import java.util.Iterator;
@@ -34,11 +35,13 @@ import java.util.concurrent.Future;
  * Central registry for {@link AwaitableAdapter} instances.
  * <p>
  * On class-load, adapters are discovered via {@link ServiceLoader} from
- * {@code META-INF/services/groovy.concurrent.AwaitableAdapter}. A built-in
- * adapter is always present as the lowest-priority fallback, handling:
+ * {@code META-INF/services/groovy.concurrent.AwaitableAdapter}. Two built-in
+ * adapters are always present after SPI-loaded ones:
  * <ul>
- *   <li>{@link CompletableFuture} and {@link CompletionStage}</li>
- *   <li>{@link Future} (adapted via a blocking wrapper)</li>
+ *   <li>{@link FlowPublisherAdapter} for {@link java.util.concurrent.Flow.Publisher}
+ *       (single-value {@code await} and multi-value {@code for await}).</li>
+ *   <li>A {@code Future} fallback handling {@link CompletableFuture},
+ *       {@link CompletionStage}, and {@link Future} (via a blocking wrapper).</li>
  * </ul>
  *
  * @since 6.0.0
@@ -64,6 +67,9 @@ public final class AwaitableAdapterRegistry {
         } catch (Throwable ignored) {
             // ServiceLoader failure — continue with built-in adapter only
         }
+        // Built-in JDK Flow.Publisher adapter (after SPI, before Future fallback).
+        // SPI adapters take precedence so framework-specific types resolve first.
+        adapters.add(new FlowPublisherAdapter());
         // Built-in fallback adapter (lowest priority)
         adapters.add(new BuiltInAdapter());
     }
