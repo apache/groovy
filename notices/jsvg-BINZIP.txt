@@ -1,0 +1,3 @@
+This product bundles the JSVG jar (github.com/weisJ/jsvg)
+Copyright (c) 2021-2024 Jannis Weis
+which is available under the terms of the MIT License

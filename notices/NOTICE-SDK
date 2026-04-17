@@ -7,8 +7,15 @@ The Apache Software Foundation (http://www.apache.org/).
 This product includes/uses ANTLR4 (https://github.com/antlr/antlr4)
 Copyright (c) 2012-2017 The ANTLR Project. All rights reserved.
 
+This product bundles the FlatLaf and FlatLaf Extras jars (formdev.com)
+which are available under the terms of the Apache License 2.0
+
 This product bundles the JavaParser jar (javaparser.org)
 which is available under the terms of the Apache License 2.0
+
+This product bundles the JSVG jar (github.com/weisJ/jsvg)
+Copyright (c) 2021-2024 Jannis Weis
+which is available under the terms of the MIT License
 
 This product bundles the JUnit4 jar (junit.org)
 which is available under the terms of the Eclipse Public License v1.0
@@ -25,11 +32,6 @@ Contribution License Agreement" and for which the following copyright notices ap
     (C) Copyright 2005 Intel Corporation
     (C) Copyright 2005-2006 Intel Corporation
     (C) Copyright 2006 Intel Corporation
-
-This product bundles icons from the famfamfam.com silk icons set
-http://www.famfamfam.com/lab/icons/silk/
-Licensed under the Creative Commons Attribution Licence v2.5
-http://creativecommons.org/licenses/by/2.5/
 
 This convenience zip embeds Groovy's src and doc zips.
 See also src/NOTICE and doc/NOTICE files for additional notice information.

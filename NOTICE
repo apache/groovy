@@ -11,8 +11,3 @@ Copyright 2010-2012 Google Inc. All Rights Reserved.
 The Java source file src/main/java/org/apache/groovy/util/concurrent/ConcurrentReferenceHashMap
 is from https://github.com/hazelcast/hazelcast and the following notice applies:
 Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
-
-This product bundles icons from the famfamfam.com silk icons set
-http://www.famfamfam.com/lab/icons/silk/
-Licensed under the Creative Commons Attribution Licence v2.5
-http://creativecommons.org/licenses/by/2.5/

@@ -103,14 +103,13 @@ tasks.register('updateNotices') {
             include '*-GROOID*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
-        def groovyconsoleFiles = fileTree(noticesDir).include('silkicons-BINZIP-SRC.txt')
         [
             (noticeBinZipFile)       : binzipFiles,
             (noticeGrooidFile)       : grooidFiles,
             (noticeGrooidJarJarFile) : grooidJarjarFiles,
             (noticeJarJarFile)       : jarjarFiles,
             (noticeSrcFile)          : srcFiles,
-            (noticeGroovyConsoleFile): groovyconsoleFiles,
+            (noticeGroovyConsoleFile): files(),
         ].each { outFile, inFiles ->
             file(outFile).withWriter('utf-8') { writer ->
                 writer << ([file(noticeBaseFile)] + inFiles).collect {

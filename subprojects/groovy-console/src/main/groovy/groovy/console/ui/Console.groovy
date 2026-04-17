@@ -231,7 +231,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     public static URL ICON_PATH = Console.class.classLoader.getResource('groovy/console/ui/ConsoleIcon.png')
     // used by ObjectBrowser and AST Viewer
-    public static URL NODE_ICON_PATH = Console.class.classLoader.getResource('groovy/console/ui/icons/bullet_green.png')
+    static javax.swing.Icon getNodeIcon() { Icons.green('fiber_manual_record') }
     // used by AST Viewer
 
     static groovyFileFilter = new GroovyFileFilter()
@@ -453,6 +453,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         // add controller to the swingBuilder bindings
         swing.controller = this
+
+        // seed icon size from prefs before actions are built so they pick up the right size
+        Icons.setSize(initialIconSize())
 
         // create the actions
         swing.build(ConsoleActions)
@@ -793,14 +796,26 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         // update SmartDocumentFilter styles (ANTLR token-based highlighting)
         groovy.console.ui.text.SmartDocumentFilter.updateStyles()
 
-        // force re-parse to apply new colors to existing text
+        // force re-parse to apply new colors to existing text — suppress
+        // undo capture so the user's Undo history isn't polluted with a
+        // theme-driven attribute flip (otherwise an Undo after a theme
+        // switch would partially revert the new colors)
         def docFilter = (inputArea.document as javax.swing.text.DefaultStyledDocument).documentFilter
         if (docFilter instanceof groovy.console.ui.text.SmartDocumentFilter) {
-            docFilter.reparseDocument()
+            def um = inputEditor.undoManager
+            um?.recording = false
+            try {
+                docFilter.reparseDocument()
+            } finally {
+                um?.recording = true
+            }
         }
 
         // let FlatLaf update all Swing component UI delegates
         com.formdev.flatlaf.FlatLaf.updateUI()
+
+        // rebuild SVG icon rasters so accent-coloured and foreground-tracking icons pick up the new theme
+        Icons.refreshAll()
 
         // update cycle theme button tooltip, menu radio buttons, and status
         swing.cycleThemeAction.putValue(javax.swing.Action.SHORT_DESCRIPTION, 'Cycle theme (' + ThemeManager.themeLabel + ')')
@@ -1203,6 +1218,58 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def content = inputArea.getText()
         def lf = new LexerFrame(new StringReader(content))
         lf.visible = true
+    }
+
+    boolean isScaleIconsWithFont() { prefs.getBoolean('scaleIconsWithFont', false) }
+    int getCurrentIconSize() { Icons.currentSize }
+
+    void smallIcons(EventObject evt = null) { applyIconSize(Icons.SIZE_SMALL) }
+    void normalIcons(EventObject evt = null) { applyIconSize(Icons.SIZE_NORMAL) }
+    void largeIcons(EventObject evt = null) { applyIconSize(Icons.SIZE_LARGE) }
+
+    void scaleIconsWithFont(EventObject evt = null) {
+        boolean enabled = evt?.source?.isSelected()
+        prefs.putBoolean('scaleIconsWithFont', enabled)
+        if (enabled) {
+            applyIconSize(iconSizeFromFont(inputArea.font.size))
+        } else {
+            applyIconSize(prefs.getInt('iconSize', Icons.SIZE_NORMAL))
+        }
+        updateIconSizeMenuEnabled()
+    }
+
+    private void applyIconSize(int size) {
+        // only persist the preset when not tracking the font
+        if (!prefs.getBoolean('scaleIconsWithFont', false)) {
+            prefs.putInt('iconSize', size)
+        }
+        Icons.setSize(size)
+        toolbar?.revalidate()
+        toolbar?.repaint()
+    }
+
+    private static int iconSizeFromFont(int fontSize) {
+        Math.max(10, Math.min(48, Math.round(fontSize * 1.33f) as int))
+    }
+
+    /** HTMLEditorKit scales FontSize values up by ~4/3 (pt→px at 96/72);
+     *  compensate so the output pane visually matches the input pane. */
+    static int outputFontSizeFor(int inputFontSize) {
+        Math.max(1, Math.round(inputFontSize * 0.75f) as int)
+    }
+
+    private int initialIconSize() {
+        if (prefs.getBoolean('scaleIconsWithFont', false)) {
+            return iconSizeFromFont(prefs.getInt('fontSize', 12))
+        }
+        prefs.getInt('iconSize', Icons.SIZE_NORMAL)
+    }
+
+    private void updateIconSizeMenuEnabled() {
+        boolean scaling = prefs.getBoolean('scaleIconsWithFont', false)
+        swing.smallIconsAction.enabled = !scaling
+        swing.normalIconsAction.enabled = !scaling
+        swing.largeIconsAction.enabled = !scaling
     }
 
     void largerFont(EventObject evt = null) {
@@ -1859,6 +1926,28 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def newFont = new Font(inputEditor.defaultFamily, Font.PLAIN, newFontSize)
         inputArea.font = newFont
         outputArea.font = newFont
+
+        // outputArea is an HTMLDocument-backed JTextPane — push the new size
+        // onto every named style so future inserts pick it up, and merge it
+        // onto already-rendered text so prior output resizes too. HTMLEditorKit
+        // scales FontSize values (pt→px at 96/72 ≈ 1.33×) so compensate by
+        // multiplying by 3/4 to visually match the input pane.
+        int outputFontSize = outputFontSizeFor(newFontSize)
+        def doc = outputArea.styledDocument
+        ['regular', 'prompt', 'command', 'output', 'result', 'stacktrace', 'hyperlink'].each { name ->
+            def s = doc.getStyle(name)
+            if (s) javax.swing.text.StyleConstants.setFontSize(s, outputFontSize)
+        }
+        int docLen = doc.length
+        if (docLen > 0) {
+            def sizeAttr = new javax.swing.text.SimpleAttributeSet()
+            javax.swing.text.StyleConstants.setFontSize(sizeAttr, outputFontSize)
+            doc.setCharacterAttributes(0, docLen, sizeAttr, false)
+        }
+
+        if (prefs.getBoolean('scaleIconsWithFont', false)) {
+            applyIconSize(iconSizeFromFont(newFontSize))
+        }
     }
 
     void invokeTextAction(evt, closure, area = inputArea) {

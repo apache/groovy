@@ -17,8 +17,9 @@
  *  under the License.
  */
 
-These icons are from the famfamfam.com silk icons set
-http://www.famfamfam.com/lab/icons/silk/
+These icons are from Google's Material Symbols set
+https://fonts.google.com/icons
+https://github.com/google/material-design-icons
 
-Licensed under the Creative Commons Attribution Licence v2.5
-http://creativecommons.org/licenses/by/2.5/
+Licensed under the Apache License, Version 2.0
+http://www.apache.org/licenses/LICENSE-2.0

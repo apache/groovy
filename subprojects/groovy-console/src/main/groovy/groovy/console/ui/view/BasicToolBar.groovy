@@ -18,31 +18,39 @@
  */
 package groovy.console.ui.view
 
+import groovy.console.ui.Icons
+
 import javax.swing.SwingConstants
 import java.awt.BorderLayout
 
+// Toolbar buttons override each action's smallIcon with a resizable toolbar-only
+// icon — so View → Icon Size / Scale with Font affect toolbar icons only,
+// not the matching menu items (which keep the fixed-size menu icons).
 toolbar = toolBar(rollover: true, visible: controller.showToolbar, constraints: BorderLayout.NORTH) {
-    button(newFileAction, text: null)
-    button(openAction, text: null)
-    button(saveAction, text: null)
+    button(newFileAction,      text: null, icon: Icons.toolbar('note_add'))
+    button(openAction,         text: null, icon: Icons.toolbar('folder_open'))
+    button(saveAction,         text: null, icon: Icons.toolbar('save'))
     separator(orientation: SwingConstants.VERTICAL)
-    button(undoAction, text: null)
-    button(redoAction, text: null)
+    button(undoAction,         text: null, icon: Icons.toolbar('undo'))
+    button(redoAction,         text: null, icon: Icons.toolbar('redo'))
     separator(orientation: SwingConstants.VERTICAL)
-    button(cutAction, text: null)
-    button(copyAction, text: null)
-    button(pasteAction, text: null)
+    button(cutAction,          text: null, icon: Icons.toolbar('content_cut'))
+    button(copyAction,         text: null, icon: Icons.toolbar('content_copy'))
+    button(pasteAction,        text: null, icon: Icons.toolbar('content_paste'))
     separator(orientation: SwingConstants.VERTICAL)
-    button(findAction, text: null)
-    button(replaceAction, text: null)
+    button(findAction,         text: null, icon: Icons.toolbar('search'))
+    button(replaceAction,      text: null, icon: Icons.toolbar('find_replace'))
     separator(orientation: SwingConstants.VERTICAL)
-    button(historyPrevAction, text: null)
-    button(historyNextAction, text: null)
+    button(historyPrevAction,  text: null, icon: Icons.toolbar('chevron_left'))
+    button(historyNextAction,  text: null, icon: Icons.toolbar('chevron_right'))
     separator(orientation: SwingConstants.VERTICAL)
-    button(runAction, text: null)
-    button(interruptAction, text: null)
+    button(runAction,          text: null, icon: Icons.toolbarGreen('play_arrow'))
+    button(interruptAction,    text: null, icon: Icons.toolbarRed('stop_circle'))
     separator(orientation: SwingConstants.VERTICAL)
-    button(clearOutputAction, text: null)
+    button(clearOutputAction,  text: null, icon: Icons.toolbar('delete_sweep'))
     separator(orientation: SwingConstants.VERTICAL)
-    button(cycleThemeAction, text: null)
+    button(smallerFontAction,  text: null, icon: Icons.toolbar('text_decrease'))
+    button(largerFontAction,   text: null, icon: Icons.toolbar('text_increase'))
+    separator(orientation: SwingConstants.VERTICAL)
+    button(cycleThemeAction,   text: null, icon: Icons.toolbar('refresh'))
 }

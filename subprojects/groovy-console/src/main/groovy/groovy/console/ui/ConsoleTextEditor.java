@@ -151,6 +151,33 @@ public class ConsoleTextEditor extends JScrollPane {
     private TextUndoManager undoManager;
     private int fontSize;
 
+    public TextUndoManager getUndoManager() {
+        return undoManager;
+    }
+
+    /**
+     * Re-run the syntax highlighter on the full document so character
+     * attributes match the current theme. Undo recording is suppressed so
+     * this doesn't pollute the undo/redo stack. Used after undo/redo
+     * because UndoableEdits restore attributes captured at edit time,
+     * which may no longer match the active theme.
+     */
+    private void reapplyHighlighting() {
+        Document doc = textEditor.getDocument();
+        if (!(doc instanceof DefaultStyledDocument)) {
+            return;
+        }
+        DocumentFilter filter = ((DefaultStyledDocument) doc).getDocumentFilter();
+        if (filter instanceof SmartDocumentFilter) {
+            undoManager.setRecording(false);
+            try {
+                ((SmartDocumentFilter) filter).reparseDocument();
+            } finally {
+                undoManager.setRecording(true);
+            }
+        }
+    }
+
     /**
      * Creates a new instance of ConsoleTextEditor
      */
@@ -307,6 +334,7 @@ public class ConsoleTextEditor extends JScrollPane {
             undoManager.redo();
             setEnabled(undoManager.canRedo());
             undoAction.setEnabled(undoManager.canUndo());
+            reapplyHighlighting();
             super.actionPerformed(ae);
         }
 
@@ -351,6 +379,7 @@ public class ConsoleTextEditor extends JScrollPane {
             undoManager.undo();
             setEnabled(undoManager.canUndo());
             redoAction.setEnabled(undoManager.canRedo());
+            reapplyHighlighting();
             super.actionPerformed(ae);
         }
 

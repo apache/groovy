@@ -58,6 +58,7 @@ tasks.named('rat') {
                 'out/**', '*.ipr', '**/*.iml', '*.iws', '.idea/**', // Intellij files
                 '**/style.css', // MIT license as per NOTICE/LICENSE files
                 '**/jquery-2.1.1.min.js', // MIT license as per NOTICE/LICENSE files
+                '**/groovy/console/ui/icons/*.svg', // Material Symbols, Apache 2.0 (see credits.txt)
                 '.classpath', '.project', '.settings/**', 'bin/**', // Eclipse files
                 'bootstrap/settings.gradle', // empty file
                 '**/hs_err_pid**.log', // sometimes left over error files

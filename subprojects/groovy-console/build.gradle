@@ -24,6 +24,7 @@ dependencies {
     api rootProject // AstBrowser has methods with Closure params...
     api projects.groovySwing // SwingBuilder is used in public API
     implementation "com.formdev:flatlaf:${versions.flatLaf}"
+    implementation "com.formdev:flatlaf-extras:${versions.flatLaf}"
     implementation "com.github.javaparser:javaparser-core:${versions.javaParser}"
     implementation "org.ow2.asm:asm-util:${versions.asm}"
     implementation projects.groovyGrapeIvy

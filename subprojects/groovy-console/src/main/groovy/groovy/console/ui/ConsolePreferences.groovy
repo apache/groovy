@@ -70,40 +70,49 @@ class ConsolePreferences {
         dialog = console.swing.dialog(
                 title: T['prefs.dialog.title'], owner: console.frame, modal: true
         ) {
-            vbox {
-                vbox(border: titledBorder(T['prefs.output.settings.title'])) {
+            vbox(border: emptyBorder([12, 16, 12, 16])) {
+                vbox(border: compoundBorder([
+                        titledBorder(T['prefs.output.settings.title']),
+                        emptyBorder([6, 8, 8, 8])])) {
                     hbox {
                         label "${T['prefs.max.characters.output']}:"
-
+                        hstrut(6)
                         formattedTextField value: maxOutputChars, id: 'txtMaxOutputChars',
                                 text:
                                         bind(target: this, targetProperty: 'maxOutputChars',
                                                 validator: this.&isInteger, converter: Integer.&parseInt),
                                 columns: 6
+                        hglue()
                     }
+
+                    vstrut(8)
 
                     hbox {
                         label "${T['prefs.loop.mode.title']}:"
-
+                        hstrut(6)
                         formattedTextField value: loopModeDelay, id: 'txtLoopModeDelay',
                                 text:
                         bind(target: this, targetProperty: 'loopModeDelay',
                                 validator: this.&isInteger, converter: Integer.&parseInt),
                         columns: 8
+                        hglue()
                     }
+
+                    vstrut(8)
 
                     hbox {
                         checkBox T['prefs.output.file'], id: 'outputFileCheckBox', selected: false
-                        hglue()
+                        hstrut(8)
                         label T['prefs.output.file.name'], id: 'outputFileName',
                                 enabled: bind(source: outputFileCheckBox, sourceProperty: 'selected')
+                        hglue()
                         button T['prefs.output.file.select'], id: 'outputFileNameButton',
                                 enabled: bind(source: outputFileCheckBox, sourceProperty: 'selected'),
                                 actionPerformed: this.&onChooseFile
                     }
                 }
 
-                vglue()
+                vstrut(12)
 
                 hbox {
                     button T['prefs.reset.defaults'], id: 'resetPrefsButton', actionPerformed: this.&onReset
