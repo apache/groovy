@@ -286,3 +286,11 @@ artifacts {
     gparsRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
     loggingRuntimeElements file: jar.archiveFile.get().asFile, type: 'jar'
 }
+
+tasks.register('validateActions', org.apache.groovy.gradle.ValidateActionsTask) {
+    group = 'verification'
+    workflowFiles.from(fileTree(rootProject.file('.github/workflows')) {
+        include '*.yml'
+        include '*.yaml'
+    })
+}
