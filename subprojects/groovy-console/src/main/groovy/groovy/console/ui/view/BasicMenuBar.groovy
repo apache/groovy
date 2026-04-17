@@ -60,6 +60,14 @@ menuBar {
         menuItem(smallerFontAction)
         checkBoxMenuItem(smartHighlighterAction, selected: controller.smartHighlighter)
         separator()
+        menu(text: 'Icon Size') {
+            buttonGroup(id: 'iconSizeGroup')
+            smallIconsMenuItem  = radioButtonMenuItem(smallIconsAction,  buttonGroup: iconSizeGroup, selected: controller.currentIconSize == groovy.console.ui.Icons.SIZE_SMALL)
+            normalIconsMenuItem = radioButtonMenuItem(normalIconsAction, buttonGroup: iconSizeGroup, selected: controller.currentIconSize == groovy.console.ui.Icons.SIZE_NORMAL)
+            largeIconsMenuItem  = radioButtonMenuItem(largeIconsAction,  buttonGroup: iconSizeGroup, selected: controller.currentIconSize == groovy.console.ui.Icons.SIZE_LARGE)
+        }
+        checkBoxMenuItem(scaleIconsWithFontAction, selected: controller.scaleIconsWithFont)
+        separator()
         checkBoxMenuItem(captureStdOutAction, selected: controller.captureStdOut)
         checkBoxMenuItem(captureStdErrAction, selected: controller.captureStdErr)
         checkBoxMenuItem(fullStackTracesAction, selected: controller.fullStackTraces)

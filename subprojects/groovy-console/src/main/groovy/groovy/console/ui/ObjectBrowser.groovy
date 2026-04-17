@@ -102,7 +102,7 @@ class ObjectBrowser {
                     menuItem { action(name: 'Usage', closure: this.&usageAction) }
                     menuItem { action(
                             name: 'About',
-                            smallIcon: imageIcon(resource: 'icons/information.png', class: this),
+                            smallIcon: Icons.load('info'),
                             closure: this.&aboutAction)
                     }
                 }
@@ -287,13 +287,13 @@ class ObjectBrowser {
                     border: emptyBorder([5, 10, 5, 10]),
                     constraints: SOUTH) {
                 boxLayout(axis: 2)
-                button(icon: imageIcon(resource: 'icons/resultset_previous.png', class: this),
+                button(icon: Icons.load('arrow_back'),
                         margin: [5, 5, 5, 5] as Insets,
                         actionPerformed: { tracker.current--; show() },
                         enabled: bind { tracker.current > 0 })
                 label('Path:  ')
                 textField(editable: false, text: path)
-                button(icon: imageIcon(resource: 'icons/resultset_next.png', class: this),
+                button(icon: Icons.load('arrow_forward'),
                         margin: [5, 5, 5, 5] as Insets,
                         actionPerformed: { tracker.current++; show() },
                         enabled: bind { tracker.current < pathCount - 1 }
@@ -328,21 +328,21 @@ class ObjectBrowser {
                                 closure: outer.&copyAction.curry(table, e),
                                 mnemonic: 'C',
                                 accelerator: shortcut('C'),
-                                smallIcon: imageIcon(resource: 'icons/page_copy.png', class: this),
+                                smallIcon: Icons.load('content_copy'),
                                 shortDescription: 'Copy'
                         ))
                         menuItem(action(
                                 name: 'Browse',
                                 enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, false, pathClosure),
-                                smallIcon: imageIcon(resource: 'icons/page_white_stack.png', class: this),
+                                smallIcon: Icons.load('read_more'),
                                 shortDescription: 'Browse'
                         ))
                         menuItem(action(
                                 name: 'Browse in new window',
                                 enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, true, pathClosure),
-                                smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
+                                smallIcon: Icons.load('open_in_new'),
                                 shortDescription: 'Browse window'
                         ))
                     }

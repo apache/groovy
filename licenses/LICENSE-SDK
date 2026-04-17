@@ -234,7 +234,15 @@ The following source files within this product:
     org/apache/groovy/groovysh/jline/PackageHelper.java
 
 were derived from similarly named files in the JLine3 source repository which
-have a BSD-style license. Details can be found in: licenses/jline3-license.txt
+have a BSD-style license.
+
+Some parts of the source code from:
+
+    org/apache/groovy/groovysh/jline/GroovyPosixCommands.java
+
+were derived from the JLine3 PosixCommands class.
+
+Details can be found in: licenses/jline3-license.txt
 
 This product bundles several JLine3 jars (optional dependency used with groovysh),
 which are available under a BSD License.  For details, see licenses/jline3-license.txt.
@@ -260,6 +268,13 @@ The following classes within this product:
 were derived from reference implementation files developed by Sun in
 collaboration with the Groovy community. The reference implementation
 has a BSD-style license. Details can be found in: licenses/jsr223-license.txt
+
+------------------------------------------------------------------------
+
+JSVG License (used by groovyConsole for SVG toolbar icon rendering)
+
+This product bundles the JSVG jar, which is available under the MIT
+License.  For details, see licenses/jsvg-license.txt.
 
 ------------------------------------------------------------------------
 

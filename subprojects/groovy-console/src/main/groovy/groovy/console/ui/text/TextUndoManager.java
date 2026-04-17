@@ -41,10 +41,21 @@ public class TextUndoManager extends UndoManager {
 
     private UndoableEdit modificationMarker = editToBeUndone();
 
+    private boolean recording = true;
+
     /**
      * Creates a new instance of TextUndoManager.
      */
     public TextUndoManager() {
+    }
+
+    /**
+     * Toggle recording of undoable edits. Used to suppress capture of
+     * programmatic style changes (e.g. a theme switch re-parsing the
+     * document) that shouldn't be reachable via user-initiated Undo.
+     */
+    public void setRecording(boolean recording) {
+        this.recording = recording;
     }
 
     public void addPropertyChangeListener(PropertyChangeListener pcl) {
@@ -157,6 +168,9 @@ public class TextUndoManager extends UndoManager {
 
     @Override
     public void undoableEditHappened(UndoableEditEvent uee) {
+        if (!recording) {
+            return;
+        }
         UndoableEdit edit = uee.getEdit();
         boolean undoable = canUndo();
 

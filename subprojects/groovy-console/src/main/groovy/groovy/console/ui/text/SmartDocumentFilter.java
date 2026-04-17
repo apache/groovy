@@ -406,8 +406,11 @@ public class SmartDocumentFilter extends DocumentFilter {
 
     /**
      * Forces a full re-parse and re-render of the document with current styles.
+     * Clears the incremental-render cache first so every token is restyled,
+     * not just the ones that differ from the last parse.
      */
     public void reparseDocument() {
+        this.latestTokenList = Collections.emptyList();
         try {
             parseDocument();
         } catch (BadLocationException e) {

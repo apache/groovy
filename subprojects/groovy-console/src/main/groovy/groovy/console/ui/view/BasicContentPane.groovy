@@ -120,6 +120,14 @@ applyStyle(stacktraceStyle, styles.stacktrace)
 hyperlinkStyle = doc.addStyle('hyperlink', regular)
 applyStyle(hyperlinkStyle, styles.hyperlink)
 
+// seed FontSize on every output style so initial output renders at the user's
+// preferred size (the component Font is largely ignored by HTMLEditorKit).
+// HTMLEditorKit scales up pt→px by 96/72 (~1.33x) so scale down to match input.
+int initialFontSize = Console.outputFontSizeFor(prefs.getInt('fontSize', 12))
+[regular, promptStyle, commandStyle, outputStyle, resultStyle, stacktraceStyle, hyperlinkStyle].each {
+    StyleConstants.setFontSize(it, initialFontSize)
+}
+
 // redo styles for editor
 doc = inputArea.styledDocument
 StyleContext styleContext = StyleContext.defaultStyleContext

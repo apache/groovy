@@ -1,0 +1,4 @@
+JSVG License (used by groovyConsole for SVG toolbar icon rendering)
+
+This product bundles the JSVG jar, which is available under the MIT
+License.  For details, see licenses/jsvg-license.txt.

@@ -154,14 +154,14 @@ class AstBrowser {
                                 name: 'Larger Font',
                                 closure: this.&largerFont,
                                 mnemonic: 'L',
-                                smallIcon: imageIcon(resource: 'icons/font_up.png', class: this),
+                                smallIcon: Icons.load('text_increase'),
                                 accelerator: shortcut('shift L'))
                     }
                     menuItem {
                         action(name: 'Smaller Font',
                                 closure: this.&smallerFont,
                                 mnemonic: 'S',
-                                smallIcon: imageIcon(resource: 'icons/font_down.png', class: this),
+                                smallIcon: Icons.load('text_decrease'),
                                 accelerator: shortcut('shift S'))
                     }
                     menuItem {
@@ -173,7 +173,7 @@ class AstBrowser {
                                     initAuxViews()
                                 },
                                 mnemonic: 'R',
-                                smallIcon: imageIcon(resource: 'icons/page_refresh.png', class: this),
+                                smallIcon: Icons.load('refresh'),
                                 accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
                     }
                 }
@@ -181,7 +181,7 @@ class AstBrowser {
                     menuItem { action(
                             name: 'About',
                             closure: this.&aboutAction,
-                            smallIcon: imageIcon(resource: 'icons/information.png', class: this),
+                            smallIcon: Icons.load('info'),
                             mnemonic: 'A')
                     }
                 }
@@ -260,7 +260,7 @@ class AstBrowser {
 
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
 
-        jTree.cellRenderer.setLeafIcon(swing.imageIcon(Console.NODE_ICON_PATH))
+        jTree.cellRenderer.setLeafIcon(Console.nodeIcon)
         jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
 
@@ -383,14 +383,14 @@ class AstBrowser {
                                 closure: outer.&copyAction.curry(table, e),
                                 mnemonic: 'C',
                                 accelerator: shortcut('C'),
-                                smallIcon: imageIcon(resource: 'icons/page_copy.png', class: this),
+                                smallIcon: Icons.load('content_copy'),
                                 shortDescription: 'Copy'
                         ))
                         menuItem(action(
                                 name: 'Browse',
                                 enabled: table.model.getValueAt(table.selectedRow, valueCol) != null,
                                 closure: outer.&launchAction.curry(table, valueCol, pathClosure),
-                                smallIcon: imageIcon(resource: 'icons/page_white_go.png', class: this),
+                                smallIcon: Icons.load('open_in_new'),
                                 shortDescription: 'Browse'
                         ))
                     }
