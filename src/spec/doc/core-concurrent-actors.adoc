@@ -93,6 +93,40 @@ inventory.send { state ->
 assert await(inventory.getAsync()) == [apples: 20, bananas: 10]
 ----
 
+=== Observing state changes
+
+An agent exposes a `Flow.Publisher<T>` of state transitions via
+`changes()`. Each successful update emits the new value to every
+subscriber that is already subscribed at the time of the update. The
+stream is hot (no replay of prior state), per-subscriber buffered,
+and closes with `onComplete` when `shutdown()` is called:
+
+[source,groovy]
+----
+def agent = Agent.create(0)
+try {
+    async {
+        3.times { agent.send { it + 1 } }
+        Thread.sleep(50)
+        agent.shutdown()
+    }
+    def seen = []
+    for await (v in agent.changes()) {
+        seen << v
+    }
+    assert seen == [1, 2, 3]
+} finally {
+    agent.shutdown()
+}
+----
+
+Slow subscribers drop newly-offered values rather than backpressuring
+the agent's update loop — buffered values are still delivered in order,
+but the most recent update may be skipped if a subscriber's buffer is
+full (default size 256). If `changes()` is first called after
+`shutdown()`, the returned publisher is already closed and subscribers
+receive `onComplete` immediately.
+
 [[actors-actor]]
 == Actor
 

@@ -18,11 +18,16 @@
  */
 package groovy.concurrent;
 
+import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A one-to-many broadcast channel where each value sent is delivered
@@ -139,5 +144,183 @@ public final class BroadcastChannel<T> {
      */
     public int getSubscriberCount() {
         return subscribers.size();
+    }
+
+    /**
+     * Returns a {@link Flow.Publisher} view of this broadcast channel. Each
+     * call to {@link Flow.Publisher#subscribe(Flow.Subscriber)} on the returned
+     * publisher creates a new {@link AsyncChannel} subscriber under the hood,
+     * draining values to the downstream subscriber according to its requested
+     * demand.
+     * <p>
+     * Semantics:
+     * <ul>
+     *   <li>Cold per-subscribe binding: each subscription starts seeing values
+     *       from the moment it subscribes (consistent with
+     *       {@link #subscribe()}).</li>
+     *   <li>Backpressure: respects {@code request(n)}; the worker blocks the
+     *       broadcast send when no demand exists (sender-side backpressure).</li>
+     *   <li>Cancellation: closes this subscriber's channel and removes it
+     *       from the broadcast's subscriber set.</li>
+     *   <li>Completion: signals {@code onComplete} when the broadcast channel
+     *       is closed and the per-subscriber buffer drained.</li>
+     * </ul>
+     * <p>
+     * <b>Backpressure policy (important).</b> This bridge uses lossless,
+     * sender-gated backpressure: {@link #send(Object)} awaits delivery to
+     * every live subscriber, and each per-subscriber channel has a bounded
+     * buffer (default 16). A subscriber that never calls {@code request(n)},
+     * or that requests slowly, will fill its buffer; once full, the
+     * subscriber's channel suspends its backing {@code send}, which in turn
+     * stalls {@code BroadcastChannel.send(...)} for <em>all</em>
+     * subscribers. In other words, the slowest subscriber controls producer
+     * throughput.
+     * <p>
+     * This is intentional and matches the point-to-point semantics of
+     * {@link #subscribe()}: values are neither dropped nor reordered. If
+     * you need decoupled per-subscriber policies (drop-newest, drop-oldest,
+     * latest-only, or unbounded buffering), wrap the publisher with a
+     * Reactive Streams operator of your choice, or use a subscriber that
+     * drains promptly with {@code request(Long.MAX_VALUE)}.
+     *
+     * @return a {@code Flow.Publisher} backed by per-subscriber channels
+     * @since 6.0.0
+     */
+    public Flow.Publisher<T> asPublisher() {
+        return new BroadcastFlowPublisher();
+    }
+
+    private final class BroadcastFlowPublisher implements Flow.Publisher<T> {
+        @Override
+        public void subscribe(Flow.Subscriber<? super T> downstream) {
+            Objects.requireNonNull(downstream, "subscriber must not be null");
+            AsyncChannel<T> channel;
+            try {
+                channel = BroadcastChannel.this.subscribe();
+            } catch (ChannelClosedException e) {
+                downstream.onSubscribe(NOOP_SUBSCRIPTION);
+                downstream.onError(e);
+                return;
+            }
+            new BroadcastFlowSubscription<>(BroadcastChannel.this, channel, downstream).start();
+        }
+    }
+
+    private static final Flow.Subscription NOOP_SUBSCRIPTION = new Flow.Subscription() {
+        @Override public void request(long n) { }
+        @Override public void cancel() { }
+    };
+
+    /**
+     * Per-subscriber bridge that converts a backing {@link AsyncChannel} into
+     * a Reactive Streams subscription with demand tracking.
+     */
+    private static final class BroadcastFlowSubscription<T> implements Flow.Subscription {
+        private final BroadcastChannel<T> owner;
+        private final AsyncChannel<T> channel;
+        private final Flow.Subscriber<? super T> subscriber;
+        private final AtomicLong demand = new AtomicLong();
+        private final AtomicBoolean cancelled = new AtomicBoolean();
+        private final AtomicReference<Throwable> terminalError = new AtomicReference<>();
+        private final Object lock = new Object();
+
+        BroadcastFlowSubscription(BroadcastChannel<T> owner, AsyncChannel<T> channel, Flow.Subscriber<? super T> subscriber) {
+            this.owner = owner;
+            this.channel = channel;
+            this.subscriber = subscriber;
+        }
+
+        void start() {
+            subscriber.onSubscribe(this);
+            AsyncSupport.getExecutor().execute(this::drain);
+        }
+
+        @Override
+        public void request(long n) {
+            if (n <= 0) {
+                // Reactive Streams §3.9 violation. Route the terminal error
+                // through the drain thread (§1.3 requires onNext / onError /
+                // onComplete signals to be serialised); calling
+                // subscriber.onError here would race a concurrent onNext.
+                terminalError.compareAndSet(null, new IllegalArgumentException(
+                        "Reactive Streams §3.9: request must be positive, got " + n));
+                synchronized (lock) { lock.notifyAll(); }
+                return;
+            }
+            long prev, next;
+            do {
+                prev = demand.get();
+                next = prev + n;
+                if (next < 0) next = Long.MAX_VALUE; // saturate on overflow
+            } while (!demand.compareAndSet(prev, next));
+            synchronized (lock) { lock.notifyAll(); }
+        }
+
+        @Override
+        public void cancel() {
+            if (!cancelled.compareAndSet(false, true)) return;
+            owner.subscribers.remove(channel);
+            channel.close();
+            synchronized (lock) { lock.notifyAll(); }
+        }
+
+        private void drain() {
+            try {
+                while (!cancelled.get()) {
+                    // Caller injected a terminal error via request(n<=0) — emit and stop.
+                    Throwable terminal = terminalError.get();
+                    if (terminal != null) {
+                        subscriber.onError(terminal);
+                        cancel();
+                        return;
+                    }
+                    // RS §1.7: terminal completion must not depend on demand.
+                    // If the upstream channel has closed and drained, emit
+                    // onComplete even when demand == 0.
+                    if (channel.isClosed() && channel.getBufferedSize() == 0) {
+                        subscriber.onComplete();
+                        cancel();
+                        return;
+                    }
+                    if (demand.get() == 0) {
+                        synchronized (lock) {
+                            if (demand.get() == 0 && !cancelled.get()
+                                    && terminalError.get() == null
+                                    && !(channel.isClosed() && channel.getBufferedSize() == 0)) {
+                                // Bounded wait so we periodically re-check upstream
+                                // close even if no request(n) ever arrives.
+                                lock.wait(100L);
+                            }
+                        }
+                        continue;
+                    }
+                    T item;
+                    try {
+                        item = AsyncSupport.await(channel.receive());
+                    } catch (ChannelClosedException e) {
+                        if (!cancelled.get()) {
+                            subscriber.onComplete();
+                            cancel();
+                        }
+                        return;
+                    }
+                    if (cancelled.get()) return;
+                    subscriber.onNext(item);
+                    long current = demand.get();
+                    if (current != Long.MAX_VALUE) demand.decrementAndGet();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                if (!cancelled.get()) {
+                    subscriber.onError(e);
+                    cancel();
+                }
+            } catch (Throwable t) {
+                if (!cancelled.get()) {
+                    subscriber.onError(t);
+                    cancel();
+                }
+            }
+        }
     }
 }

@@ -265,3 +265,50 @@ for await (msg in sub2) { println "Sub2: $msg" }
 ----
 
 Late subscribers only receive messages sent after they subscribe.
+
+=== Flow.Publisher interop
+
+A `BroadcastChannel` can also be exposed as a `java.util.concurrent.Flow.Publisher`
+via `asPublisher()`. Each call to `subscribe(Flow.Subscriber)` on the returned
+publisher creates a new per-subscriber `AsyncChannel` under the hood and respects
+standard Reactive Streams demand (`request(n)`):
+
+[source,groovy]
+----
+def broadcast = BroadcastChannel.create()
+def publisher = broadcast.asPublisher()
+
+// Compose with any Reactive Streams operator, or consume with `for await`:
+for await (msg in publisher) {
+    println "Got: $msg"
+}
+----
+
+[WARNING]
+====
+*Backpressure policy.* The publisher bridge uses _lossless, sender-gated_
+backpressure: `send()` awaits delivery to every live subscriber, and each
+per-subscriber channel has a bounded buffer (default 16). A subscriber that
+never calls `request(n)` — or requests slowly — will fill its buffer, after
+which `broadcast.send(...)` stalls for *all* subscribers until that
+subscriber catches up. In other words, the slowest subscriber controls
+producer throughput.
+
+This matches the point-to-point semantics of `subscribe()` (values are
+neither dropped nor reordered). If you need decoupled per-subscriber
+policies (drop-newest, drop-oldest, latest-only, or unbounded buffering),
+wrap the publisher with a Reactive Streams operator of your choice, or use
+a subscriber that drains promptly with `request(Long.MAX_VALUE)`.
+====
+
+[NOTE]
+====
+*Terminal signals.* Per Reactive Streams §1.7, terminal completion is
+not gated by demand: once the underlying `BroadcastChannel` is closed
+and the per-subscriber buffer is drained, the subscriber receives
+`onComplete` even if it has no outstanding `request(n)`. Likewise,
+`onError` for a spec-violating `request(n <= 0)` (§3.9) is signalled
+through the same single-threaded delivery path as `onNext` /
+`onComplete`, preserving §1.3 signal serialisation; subscribers do
+not see those signals racing on the caller's thread.
+====

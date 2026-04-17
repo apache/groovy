@@ -273,10 +273,35 @@ include::../test/AsyncAwaitSpecTest.groovy[tags=for_await_generator,indent=0]
 ----
 
 The key value of `for await` is with **reactive types** (Reactor `Flux`, RxJava
-`Observable`) where it automatically converts the source to a blocking iterable
-via the adapter SPI. Without `for await`, you would need to call the conversion
-manually (e.g., `flux.toIterable()`). For generators and plain collections,
-a regular `for` loop works identically.
+`Observable`, `java.util.concurrent.Flow.Publisher`) where it automatically
+converts the source to a blocking iterable via the adapter SPI. Without
+`for await`, you would need to call the conversion manually (e.g.,
+`flux.toIterable()`). For generators and plain collections, a regular `for`
+loop works identically.
+
+The JDK's `Flow.Publisher` is supported out of the box — no adapter module
+needed. This means streams exposed by built-in sources such as
+`Agent.changes()` (see xref:actors-agent[]) and `BroadcastChannel.asPublisher()`
+(see xref:dataflow-broadcast[]), or any third-party publisher using the JDK
+interfaces, compose directly with `for await` and `await`:
+
+[source,groovy]
+----
+import groovy.concurrent.Agent
+
+def agent = Agent.create(0)
+try {
+    async {
+        3.times { agent.send { it + 1 } }
+        agent.shutdown()
+    }
+    for await (v in agent.changes()) {
+        println "value is now $v"
+    }
+} finally {
+    agent.shutdown()
+}
+----
 
 [[async-timeouts]]
 === Timeouts and Delays
@@ -307,8 +332,9 @@ include::../test/AsyncAwaitSpecTest.groovy[tags=delay,indent=0]
 === Framework Adapters
 
 `await` natively understands `Awaitable`, `CompletableFuture`, `CompletionStage`,
-and `Future`. Third-party async types can be supported by implementing the
-`AwaitableAdapter` SPI and registering it via
+and `Future`. `for await` natively understands `java.util.concurrent.Flow.Publisher`
+in addition to regular `Iterable` sources. Third-party async types can be
+supported by implementing the `AwaitableAdapter` SPI and registering it via
 `META-INF/services/groovy.concurrent.AwaitableAdapter`.
 
 Drop-in adapter modules are provided for:
