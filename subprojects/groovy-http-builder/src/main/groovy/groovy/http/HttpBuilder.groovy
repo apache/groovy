@@ -166,6 +166,65 @@ final class HttpBuilder {
         return requestAsync('PATCH', uri, spec)
     }
 
+    /**
+     * Streams the response body without buffering. Returns an
+     * {@link HttpStreamResult} whose {@code bodyAsPublisher()} delivers
+     * {@code List<ByteBuffer>} chunks as they arrive — enabling
+     * {@code for await (chunk in result.bodyAsPublisher())} via the
+     * {@code FlowPublisherAdapter}.
+     * <p>
+     * Streaming always uses {@code HttpResponse.BodyHandlers.ofPublisher()};
+     * any {@code bodyHandler} configured on the {@code RequestSpec} is ignored.
+     */
+    CompletableFuture<HttpStreamResult> streamAsync(final String method,
+                                                    final Object uri,
+                                                    @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                                    final Closure<?> spec = null) {
+        HttpRequest httpRequest = buildStreamRequest(method, uri, spec)
+        return client.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofPublisher())
+                .thenApply { HttpResponse response -> new HttpStreamResult(response) }
+    }
+
+    CompletableFuture<HttpStreamResult> getStreamAsync(final Object uri = null,
+                                                       @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                                       final Closure<?> spec = null) {
+        return streamAsync('GET', uri, spec)
+    }
+
+    CompletableFuture<HttpStreamResult> postStreamAsync(final Object uri = null,
+                                                        @DelegatesTo(value = RequestSpec, strategy = Closure.DELEGATE_FIRST)
+                                                        final Closure<?> spec = null) {
+        return streamAsync('POST', uri, spec)
+    }
+
+    private HttpRequest buildStreamRequest(final String method, final Object uri, final Closure<?> spec) {
+        RequestSpec requestSpec = new RequestSpec()
+        if (spec != null) {
+            Closure<?> code = (Closure<?>) spec.clone()
+            code.resolveStrategy = Closure.DELEGATE_FIRST
+            code.delegate = requestSpec
+            code.call()
+        }
+
+        URI resolvedUri = resolveUri(uri, requestSpec.queryParameters)
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(resolvedUri)
+
+        Duration timeout = requestSpec.timeout ?: defaultRequestTimeout
+        if (timeout != null) {
+            requestBuilder.timeout(timeout)
+        }
+
+        defaultHeaders.each { String name, String value ->
+            requestBuilder.header(name, value)
+        }
+        requestSpec.headers.each { String name, String value ->
+            requestBuilder.setHeader(name, value)
+        }
+
+        requestBuilder.method(method, bodyPublisher(method, requestSpec.body))
+        return requestBuilder.build()
+    }
+
     private List buildRequest(final String method, final Object uri, final Closure<?> spec) {
         RequestSpec requestSpec = new RequestSpec()
         if (spec != null) {
