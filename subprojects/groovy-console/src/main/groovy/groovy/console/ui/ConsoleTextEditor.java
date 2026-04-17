@@ -29,6 +29,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
+import javax.swing.text.DefaultEditorKit;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -229,6 +230,20 @@ public class ConsoleTextEditor extends JScrollPane {
         ks = KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK, false);
         im.put(ks, StructuredSyntaxResources.PRINT);
         am.put(StructuredSyntaxResources.PRINT, printAction);
+
+        // on macOS, remap Home/End to line start/end (Cmd+Home/End for document start/end)
+        if (System.getProperty("os.name", "").toLowerCase().contains("mac")) {
+            InputMap editorIm = textEditor.getInputMap(JComponent.WHEN_FOCUSED);
+            int meta = InputEvent.META_DOWN_MASK;
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, 0), DefaultEditorKit.beginLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, 0), DefaultEditorKit.endLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionBeginLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionEndLineAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, meta), DefaultEditorKit.beginAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, meta), DefaultEditorKit.endAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_HOME, meta | InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionBeginAction);
+            editorIm.put(KeyStroke.getKeyStroke(KeyEvent.VK_END, meta | InputEvent.SHIFT_DOWN_MASK), DefaultEditorKit.selectionEndAction);
+        }
     }
 
     public void setShowLineNumbers(boolean showLineNumbers) {
