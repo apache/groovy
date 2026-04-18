@@ -31,18 +31,16 @@ def jdkRejections = new java.util.concurrent.ConcurrentHashMap<String, Set<Strin
 // Used for two purposes:
 //   * hint-skip gate in depUpHints (suppress misleading cross-track bump hints)
 //   * in-track update detection in depUpCapped (proactively warn when a newer
-//     within-track version is available, e.g. binary-compat baseline drift)
-// TODO: migrate performance-test baselines ('3.0.25', '4.0.31', '5.0.5' currently hardcoded
-//       in subprojects/performance/build.gradle:24) into versions.properties and add
-//       matching cappedTracks entries so depUpCapped surfaces drift on those too.
+//     within-track version is available, e.g. Groovy baseline drift on each mainline)
 def cappedTracks = [
     [group: 'org.junit.jupiter',  name: 'junit-jupiter',           current: versions.junit5,         maxPrefix: '5.'],
     [group: 'org.junit.jupiter',  name: 'junit-jupiter-api',       current: versions.junit5,         maxPrefix: '5.'],
     [group: 'org.junit.jupiter',  name: 'junit-jupiter-engine',    current: versions.junit5,         maxPrefix: '5.'],
     [group: 'org.junit.jupiter',  name: 'junit-jupiter-params',    current: versions.junit5,         maxPrefix: '5.'],
     [group: 'org.junit.platform', name: 'junit-platform-launcher', current: versions.junit5Platform, maxPrefix: '1.'],
-    [group: 'org.apache.groovy',  name: 'groovy',
-     current: sharedConfiguration.binaryCompatibilityBaselineVersion.get(),                          maxPrefix: '5.0.'],
+    [group: 'org.codehaus.groovy', name: 'groovy',                 current: versions.latest3,        maxPrefix: '3.0.'],
+    [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest4,        maxPrefix: '4.0.'],
+    [group: 'org.apache.groovy',   name: 'groovy',                 current: versions.latest5,        maxPrefix: '5.0.'],
 ]
 def capByCoord = cappedTracks.collectEntries { [("${it.group}:${it.name}".toString()): it.maxPrefix] }
 
