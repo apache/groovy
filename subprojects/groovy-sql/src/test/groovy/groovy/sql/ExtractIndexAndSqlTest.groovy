@@ -20,6 +20,11 @@ package groovy.sql
 
 import org.junit.jupiter.api.Test
 
+import static groovy.sql.SqlTestConstants.DB_DATASOURCE
+import static groovy.sql.SqlTestConstants.DB_DS_KEY
+import static groovy.sql.SqlTestConstants.DB_PASSWORD
+import static groovy.sql.SqlTestConstants.DB_URL_PREFIX
+import static groovy.sql.SqlTestConstants.DB_USER
 import static groovy.test.GroovyAssert.shouldFail
 
 
@@ -240,6 +245,27 @@ and 3 = (12 / 4)
         String query = "select 1,2,3::text"
         assert query == ExtractIndexAndSql.from(query).newSql
         assert ExtractIndexAndSql.from(query).indexPropList.isEmpty()
+    }
+
+    // GROOVY-9295: end-to-end check via the Map-params path exercised by
+    // sql.eachRow(String, Map, Closure) — Map is wrapped in a singleton list
+    // and passed to checkForNamedParams, which must leave a cast-only query alone.
+    @Test
+    void testCheckForNamedParamsLeavesCastOnlyQueryAlone() {
+        def ds = DB_DATASOURCE.newInstance(
+                (DB_DS_KEY): DB_URL_PREFIX + 'testCheckForNamedParamsLeavesCastOnlyQueryAlone',
+                user: DB_USER,
+                password: DB_PASSWORD)
+        def sql = new Sql(ds.connection)
+        try {
+            String query = "select 1,2,3::text"
+            def params = [[a: 'b']]
+            def result = sql.checkForNamedParams(query, params)
+            assert result.sql == query
+            assert result.params == params
+        } finally {
+            sql.close()
+        }
     }
 
     @Test
