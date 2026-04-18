@@ -22,6 +22,10 @@ import groovy.xml.DOMBuilder
 import groovy.xml.StreamingDOMBuilder
 import org.junit.jupiter.api.Test
 
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+
 import static groovy.test.GroovyAssert.shouldFail
 
 class DOMTest {
@@ -76,6 +80,26 @@ class DOMTest {
             }
         }
         if (!benchmark) assertCorrect make().documentElement
+    }
+
+    // GROOVY-9698
+    @Test
+    void streamingDomBuilderSiblingsInheritNamespaces() {
+        def make = new StreamingDOMBuilder().bind {
+            mkp.declareNamespace("" : "uri:urn1")
+            mkp.declareNamespace("x" : "uri:urn2")
+            outer {
+                'x:inner'('hello')
+                'x:inner'('hello again')
+            }
+        }
+
+        def sw = new StringWriter()
+        TransformerFactory.newInstance().newTransformer()
+                .transform(new DOMSource(make()), new StreamResult(sw))
+        def output = sw.toString()
+        assert !output.replaceFirst(/xmlns="uri:urn1"/, '').contains('xmlns="uri:urn1"')
+        assert !output.replaceFirst(/xmlns:x="uri:urn2"/, '').contains('xmlns:x="uri:urn2"')
     }
 
     private def assertCorrect(html) {

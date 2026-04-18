@@ -136,7 +136,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
 
         if (body != null) {
             defaultNamespaceStack.push defaultNamespace
-            pendingStack.add pendingNamespaces.clone()
+            pendingStack.push pendingNamespaces.clone()
             pendingNamespaces.clear()
 
             if (body instanceof Closure) {

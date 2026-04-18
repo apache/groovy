@@ -79,7 +79,7 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
         }
         contentHandler.startElement(uri, tag, qualifiedName, attributes)
         if (body != null) {
-            pendingStack.add pendingNamespaces.clone()
+            pendingStack.push pendingNamespaces.clone()
             pendingNamespaces.clear()
             processBody(body, doc, contentHandler)
             pendingNamespaces.clear()
