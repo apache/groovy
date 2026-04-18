@@ -56,6 +56,7 @@ public class IndyInterface {
     public static final int SAFE_NAVIGATION=1, THIS_CALL=2, GROOVY_OBJECT=4, IMPLICIT_THIS=8, SPREAD_CALL=16, UNCACHED_CALL=32;
 
     private static final MethodHandleWrapper NULL_METHOD_HANDLE_WRAPPER = MethodHandleWrapper.getNullMethodHandleWrapper();
+    private static final String NULL_OBJECT_CLASS_NAME = "org.codehaus.groovy.runtime.NullObject";
 
     /**
      * Enum for easy differentiation between call types.
@@ -325,7 +326,7 @@ public class IndyInterface {
             mhw = NULL_METHOD_HANDLE_WRAPPER;
         } else {
             Object receiver = arguments[0];
-            String receiverClassName = receiver != null ? receiver.getClass().getName() : "org.codehaus.groovy.runtime.NullObject";
+            String receiverClassName = receiver != null ? receiver.getClass().getName() : NULL_OBJECT_CLASS_NAME;
 
             mhw = callSite.getAndPut(receiverClassName, (theName) -> {
                 MethodHandleWrapper fallback = fallbackSupplier.get();
@@ -389,7 +390,7 @@ public class IndyInterface {
             // correct the stale methodHandle in the inline cache of callsite
             // it is important but impacts the performance somehow when cache misses frequently
             Object receiver = arguments[0];
-            String key = receiver != null ? receiver.getClass().getName() : "org.codehaus.groovy.runtime.NullObject";
+            String key = receiver != null ? receiver.getClass().getName() : NULL_OBJECT_CLASS_NAME;
             callSite.put(key, mhw);
         }
 
