@@ -462,6 +462,26 @@ as parameters to the method call. For output parameters, the resulting type must
 include::../test/SqlTest.groovy[tags=sql_use_stored_proc_inout,indent=0]
 ----
 
+The `call`, `callWithRows`, and `callWithAllRows` methods also accept a `Map` of named parameters. Use
+`{call NAME(:paramName)}` placeholders in the SQL and supply the values — including any output-parameter
+type markers — as map entries. Map iteration order doesn't matter; bindings are resolved by name against
+the `:name` tokens in the SQL:
+
+[source,groovy]
+.Using a stored procedure with a map of named parameters
+----
+include::../test/SqlTest.groovy[tags=sql_use_stored_proc_inout_map,indent=0]
+----
+
+The same overloads support Groovy's named-argument call syntax (map entries written as
+`name: value` pairs before the SQL string):
+
+[source,groovy]
+.Using a stored procedure with Groovy named-argument syntax
+----
+include::../test/SqlTest.groovy[tags=sql_use_stored_proc_inout_named_args,indent=0]
+----
+
 [source,groovy]
 .Creating a stored procedure with an input/output parameter
 ----

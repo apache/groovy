@@ -3226,7 +3226,8 @@ public class Sql implements AutoCloseable {
         Connection connection = createConnection();
         CallableStatement statement = null;
         try {
-            statement = getCallableStatement(connection, sql, params);
+            SqlWithParams updated = checkForNamedParams(sql, params);
+            statement = getCallableStatement(connection, updated.getSql(), updated.getParams());
             int i = statement.executeUpdate();
             cleanup(statement);
             return i;
@@ -3251,6 +3252,35 @@ public class Sql implements AutoCloseable {
      */
     public int call(String sql, Object[] params) throws SQLException {
         return call(sql, Arrays.asList(params));
+    }
+
+    /**
+     * A variant of {@link #call(String, List)} useful when providing
+     * the named parameters as a map. The SQL may contain {@code :name} style
+     * placeholders looked up against the map.
+     *
+     * @param sql    the SQL statement
+     * @param params a map of named parameters
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public int call(String sql, Map params) throws SQLException {
+        return call(sql, singletonList(params));
+    }
+
+    /**
+     * A variant of {@link #call(String, List)} useful when providing the
+     * named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params a map of named parameters
+     * @param sql    the SQL statement
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public int call(Map params, String sql) throws SQLException {
+        return call(sql, singletonList(params));
     }
 
     /**
@@ -3377,6 +3407,38 @@ public class Sql implements AutoCloseable {
     }
 
     /**
+     * A variant of {@link #call(String, List, Closure)} useful when providing
+     * the named parameters as a map. The SQL may contain {@code :name} style
+     * placeholders looked up against the map. Out parameter markers (e.g.
+     * {@link #VARCHAR}) can appear as map values at their named positions.
+     *
+     * @param sql     the SQL statement
+     * @param params  a map of named parameters
+     * @param closure called once with all out parameter results
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public void call(String sql, Map params,
+                     @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        call(sql, singletonList(params), closure);
+    }
+
+    /**
+     * A variant of {@link #call(String, List, Closure)} useful when providing
+     * the named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params  a map of named parameters
+     * @param sql     the SQL statement
+     * @param closure called once with all out parameter results
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public void call(Map params, String sql,
+                     @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        call(sql, singletonList(params), closure);
+    }
+
+    /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects,
      * and also returning the rows of the ResultSet.
@@ -3436,6 +3498,39 @@ public class Sql implements AutoCloseable {
     }
 
     /**
+     * A variant of {@link #callWithRows(String, List, Closure)} useful when
+     * providing the named parameters as a map. The SQL may contain
+     * {@code :name} style placeholders looked up against the map.
+     *
+     * @param sql     the SQL statement
+     * @param params  a map of named parameters
+     * @param closure called once with all out parameter results
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<GroovyRowResult> callWithRows(String sql, Map params,
+                                              @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithRows(sql, singletonList(params), closure);
+    }
+
+    /**
+     * A variant of {@link #callWithRows(String, List, Closure)} useful when
+     * providing the named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params  a map of named parameters
+     * @param sql     the SQL statement
+     * @param closure called once with all out parameter results
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<GroovyRowResult> callWithRows(Map params, String sql,
+                                              @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithRows(sql, singletonList(params), closure);
+    }
+
+    /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects,
      * and also returning a list of lists with the rows of the ResultSet(s).
@@ -3492,6 +3587,39 @@ public class Sql implements AutoCloseable {
      */
     public List<List<GroovyRowResult>> callWithAllRows(String sql, List<?> params, @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
         return callWithRows(sql, params, ALL_RESULT_SETS, closure);
+    }
+
+    /**
+     * A variant of {@link #callWithAllRows(String, List, Closure)} useful when
+     * providing the named parameters as a map. The SQL may contain
+     * {@code :name} style placeholders looked up against the map.
+     *
+     * @param sql     the SQL statement
+     * @param params  a map of named parameters
+     * @param closure called once with all out parameter results
+     * @return a list containing lists of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<List<GroovyRowResult>> callWithAllRows(String sql, Map params,
+                                                       @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithAllRows(sql, singletonList(params), closure);
+    }
+
+    /**
+     * A variant of {@link #callWithAllRows(String, List, Closure)} useful when
+     * providing the named parameters as named arguments (Groovy named-argument syntax).
+     *
+     * @param params  a map of named parameters
+     * @param sql     the SQL statement
+     * @param closure called once with all out parameter results
+     * @return a list containing lists of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @since 6.0.0
+     */
+    public List<List<GroovyRowResult>> callWithAllRows(Map params, String sql,
+                                                       @ClosureParams(value=SimpleType.class, options="java.lang.Object[]") Closure closure) throws SQLException {
+        return callWithAllRows(sql, singletonList(params), closure);
     }
 
     /**
@@ -4025,6 +4153,12 @@ public class Sql implements AutoCloseable {
         CallableStatement statement = null;
         List<GroovyResultSet> resultSetResources = new ArrayList<>();
         try {
+            // Resolve :name-style placeholders before binding and before the
+            // OutParameter scan below — the scan needs to see markers in their
+            // final positional order, not inside a still-wrapped Map.
+            SqlWithParams updated = checkForNamedParams(sql, params);
+            sql = updated.getSql();
+            params = updated.getParams();
             statement = getCallableStatement(connection, sql, params);
             boolean hasResultSet = statement.execute();
             List<Object> results = new ArrayList<>();
