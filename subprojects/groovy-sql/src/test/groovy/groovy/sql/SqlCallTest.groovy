@@ -300,6 +300,20 @@ class SqlCallTest extends GroovyTestCase {
         assert lastRows[0].lastname == 'Ventura'
     }
 
+    // GROOVY-7768
+    void testCallWithAllRowsWithInputParamOnly() {
+        List<List<GroovyRowResult>> rowList = sql.callWithAllRows('{call FindAllByFirst(?)}', ['J'], { /* no out params */ })
+        assert rowList.size() == 1
+        def rows = rowList[0]
+        assert rows.size() == 2
+        assert rows[0].id == 1
+        assert rows[0].firstname == 'James'
+        assert rows[0].lastname == 'Strachan'
+        assert rows[1].id == 4
+        assert rows[1].firstname == 'Jean'
+        assert rows[1].lastname == 'Gabin'
+    }
+
     void testCallWithStatementCaching() {
         String sqlText = '{call FindByFirst(?, ?)}'
         CallableStatement statement = null
