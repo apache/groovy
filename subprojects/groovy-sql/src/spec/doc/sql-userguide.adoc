@@ -408,6 +408,45 @@ include::../test/SqlTest.groovy[tags=sql_named_ordinal1,indent=0]
 include::../test/SqlTest.groovy[tags=sql_named_ordinal2,indent=0]
 ----
 
+=== Collection parameters for IN clauses
+
+JDBC drivers generally don't support binding a collection directly to a single `?` placeholder in an
+`IN` clause — a query like `WHERE id IN (?)` with a list parameter either fails or, with GString
+parameters, binds the whole collection as a single value (which matches no rows).
+
+To pass a variable-length list of values to an `IN` clause, wrap the collection with `Sql.inList(...)`.
+The marker expands at prepare time to the correct number of placeholders and splices the values into
+the parameter list. It works across all three parameter styles — positional, GString, and named:
+
+[source,groovy]
+.IN clause using positional parameters
+----
+include::../test/SqlTest.groovy[tags=sql_in_list_positional,indent=0]
+----
+
+[source,groovy]
+.IN clause using GString parameters
+----
+include::../test/SqlTest.groovy[tags=sql_in_list_gstring,indent=0]
+----
+
+[source,groovy]
+.IN clause using named parameters
+----
+include::../test/SqlTest.groovy[tags=sql_in_list_named,indent=0]
+----
+
+`Sql.inList(...)` rejects null or empty collections with an `IllegalArgumentException` — callers must
+guard empty input explicitly. This matches the behaviour of Hibernate and Spring's
+`NamedParameterJdbcTemplate`, and makes "the form selected nothing" bugs easy to spot rather than
+silently returning zero rows. A typical guard looks like:
+
+[source,groovy]
+.Guarding against empty input
+----
+include::../test/SqlTest.groovy[tags=sql_in_list_empty_guard,indent=0]
+----
+
 === Stored procedures
 
 The exact syntax for creating a stored procedure or function varies slightly between different databases.
