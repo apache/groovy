@@ -4786,10 +4786,28 @@ public class Sql implements AutoCloseable {
             }
             return connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability);
         }
+    }
 
-        private boolean appearsLikeStoredProc(String sql) {
-            return sql.matches("\\s*[{]?\\s*[?]?\\s*[=]?\\s*[cC][aA][lL][lL].*");
+    // Detects a JDBC-style stored proc call prefix: optional whitespace, optional "{",
+    // optional "?", optional "=", then "call" (case-insensitive). Hand-rolled to avoid
+    // catastrophic regex backtracking on whitespace-heavy input (GROOVY-9992).
+    static boolean appearsLikeStoredProc(String sql) {
+        int i = skipWhitespace(sql, 0);
+        if (i < sql.length() && sql.charAt(i) == '{') {
+            i = skipWhitespace(sql, i + 1);
         }
+        if (i < sql.length() && sql.charAt(i) == '?') {
+            i = skipWhitespace(sql, i + 1);
+        }
+        if (i < sql.length() && sql.charAt(i) == '=') {
+            i = skipWhitespace(sql, i + 1);
+        }
+        return sql.regionMatches(true, i, "call", 0, 4);
+    }
+
+    private static int skipWhitespace(String s, int i) {
+        while (i < s.length() && Character.isWhitespace(s.charAt(i))) i++;
+        return i;
     }
 
     private class CreateCallableStatementCommand extends AbstractStatementCommand {
