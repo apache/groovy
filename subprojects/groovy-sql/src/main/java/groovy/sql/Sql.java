@@ -40,6 +40,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -925,15 +926,72 @@ public class Sql implements AutoCloseable {
      * // params will be [fieldVal]
      * </pre>
      *
+     * <p>
+     * For the common case of expanding a collection into an {@code IN (...)}
+     * clause, prefer {@link #inList(Collection)} — it produces proper
+     * placeholder-bound parameters rather than inlining values as literals
+     * and so is safe against SQL injection.
+     *
      * @param object the object of interest
      * @return the expanded variable
-     * @see #expand(Object)
+     * @see #inList(Collection)
      */
     public static ExpandedVariable expand(final Object object) {
         return new ExpandedVariable() {
             @Override
             public Object getObject() {
                 return object;
+            }
+        };
+    }
+
+    /**
+     * Wraps a collection so that it expands to a comma-separated list of
+     * positional placeholders when bound to a SQL {@code IN} clause.
+     * <p>
+     * Example usage:
+     * <pre>
+     * def ids = [1, 2, 3]
+     * sql.rows("SELECT name FROM t WHERE id IN (?)", [Sql.inList(ids)])
+     * // executed as: SELECT name FROM t WHERE id IN (?, ?, ?)
+     * // params:      [1, 2, 3]
+     *
+     * // GString form:
+     * sql.rows "SELECT name FROM t WHERE id IN (${Sql.inList(ids)})"
+     *
+     * // Named-parameter form:
+     * sql.rows("SELECT name FROM t WHERE id IN (:ids)", [ids: Sql.inList(ids)])
+     * </pre>
+     * <p>
+     * The collection is snapshotted at construction. Null or empty collections
+     * are rejected with an {@link IllegalArgumentException} — callers must
+     * guard empty input explicitly (e.g. return early or omit the clause).
+     * <p>
+     * Supported in the standard execution methods that route through
+     * {@code getPreparedStatement} or {@code getCallableStatement} — including
+     * {@code rows}, {@code eachRow}, {@code firstRow}, {@code query},
+     * {@code execute}, {@code executeInsert}, {@code executeUpdate}, and the
+     * {@code call} / {@code callWithRows} / {@code callWithAllRows} families.
+     * Not supported inside {@code withBatch} blocks: batch operations prepare
+     * the statement once and bind a fixed parameter shape, which is
+     * incompatible with per-call placeholder expansion.
+     *
+     * @param values the collection to expand; must be non-null and non-empty
+     * @return a marker usable as a parameter value in the methods listed above
+     * @throws IllegalArgumentException if {@code values} is null or empty
+     * @since 6.0.0
+     */
+    public static InListParameter inList(final Collection<?> values) {
+        if (values == null || values.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Sql.inList() requires a non-empty collection; " +
+                "check for empty input before building the query");
+        }
+        final List<Object> snapshot = Collections.unmodifiableList(new ArrayList<>(values));
+        return new InListParameter() {
+            @Override
+            public Collection<?> getValues() {
+                return snapshot;
             }
         };
     }
@@ -4611,6 +4669,7 @@ public class Sql implements AutoCloseable {
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, List<?> params, int returnGeneratedKeys) throws SQLException {
         SqlWithParams updated = checkForNamedParams(sql, params);
+        updated = InListExpander.expand(updated.getSql(), updated.getParams());
         LOG.fine(updated.getSql() + " | " + updated.getParams());
         PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, updated.getSql());
         setParameters(updated.getParams(), statement);
@@ -4619,9 +4678,10 @@ public class Sql implements AutoCloseable {
     }
 
     private CallableStatement getCallableStatement(Connection connection, String sql, List<?> params) throws SQLException {
-        LOG.fine(sql + " | " + params);
-        CallableStatement statement = (CallableStatement) getAbstractStatement(new CreateCallableStatementCommand(), connection, sql);
-        setParameters(params, statement);
+        SqlWithParams updated = InListExpander.expand(sql, params);
+        LOG.fine(updated.getSql() + " | " + updated.getParams());
+        CallableStatement statement = (CallableStatement) getAbstractStatement(new CreateCallableStatementCommand(), connection, updated.getSql());
+        setParameters(updated.getParams(), statement);
         configure(statement);
         return statement;
     }
