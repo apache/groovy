@@ -18,6 +18,8 @@
  */
 package org.codehaus.groovy.vmplugin.v8;
 
+import groovy.lang.MetaMethod;
+
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -29,12 +31,14 @@ import java.util.concurrent.atomic.AtomicLong;
 class MethodHandleWrapper {
     private final MethodHandle cachedMethodHandle;
     private final MethodHandle targetMethodHandle;
+    private final MetaMethod method;
     private final boolean canSetTarget;
     private final AtomicLong latestHitCount = new AtomicLong(0);
 
-    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, boolean canSetTarget) {
+    public MethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, MetaMethod method, boolean canSetTarget) {
         this.cachedMethodHandle = cachedMethodHandle;
         this.targetMethodHandle = targetMethodHandle;
+        this.method = method;
         this.canSetTarget = canSetTarget;
     }
 
@@ -44,6 +48,10 @@ class MethodHandleWrapper {
 
     public MethodHandle getTargetMethodHandle() {
         return targetMethodHandle;
+    }
+
+    public MetaMethod getMethod() {
+        return method;
     }
 
     public boolean isCanSetTarget() {
@@ -67,10 +75,10 @@ class MethodHandleWrapper {
     }
 
     private static class NullMethodHandleWrapper extends MethodHandleWrapper {
-        public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper(null, null, false);
+        public static final NullMethodHandleWrapper INSTANCE = new NullMethodHandleWrapper();
 
-        private NullMethodHandleWrapper(MethodHandle cachedMethodHandle, MethodHandle targetMethodHandle, boolean canSetTarget) {
-            super(cachedMethodHandle, targetMethodHandle, canSetTarget);
+        private NullMethodHandleWrapper() {
+            super(null, null, null, false);
         }
     }
 }
