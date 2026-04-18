@@ -4694,8 +4694,10 @@ public class Sql implements AutoCloseable {
             ExtractIndexAndSql extractIndexAndSql = ExtractIndexAndSql.from(sql);
             newSql = extractIndexAndSql.getNewSql();
             propList = extractIndexAndSql.getIndexPropList();
-            namedParamSqlCache.put(sql, newSql);
-            namedParamIndexPropCache.put(sql, propList);
+            if (cacheNamedQueries) {
+                namedParamSqlCache.put(sql, newSql);
+                namedParamIndexPropCache.put(sql, propList);
+            }
         }
 
         if (sql.equals(newSql)) {
