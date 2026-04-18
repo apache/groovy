@@ -233,6 +233,15 @@ and 3 = (12 / 4)
         assert !ExtractIndexAndSql.hasNamedParameters("select * from TABLE where TEXTFIELD::integer = 3")
     }
 
+    // GROOVY-9295
+    @Test
+    void testCastingWithoutSpacesNotConfusedWithNamedParameters() {
+        assert !ExtractIndexAndSql.hasNamedParameters("select 1,2,3::text")
+        String query = "select 1,2,3::text"
+        assert query == ExtractIndexAndSql.from(query).newSql
+        assert ExtractIndexAndSql.from(query).indexPropList.isEmpty()
+    }
+
     @Test
     void testGROOVY6625() {
         String query = """SELECT
