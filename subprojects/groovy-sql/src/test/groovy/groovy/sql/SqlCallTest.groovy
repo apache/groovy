@@ -300,6 +300,102 @@ class SqlCallTest extends GroovyTestCase {
         assert lastRows[0].lastname == 'Ventura'
     }
 
+    // GROOVY-11936
+    void testCallUsingMapNamedParams() {
+        String found
+        sql.call('{call FindByFirst(:first, :answer)}',
+                [first: 'James', answer: Sql.VARCHAR]) { ans ->
+            found = ans
+        }
+        assert found == 'Last Name is Strachan'
+    }
+
+    // GROOVY-11936
+    void testCallUsingMapFirstNamedArgs() {
+        String found
+        sql.call(first: 'Bob', answer: Sql.VARCHAR,
+                '{call FindByFirst(:first, :answer)}') { ans ->
+            found = ans
+        }
+        assert found == 'Last Name is Mcwhirter'
+    }
+
+    // GROOVY-11936
+    void testCallWithRowsUsingMap() {
+        String found
+        def rows = sql.callWithRows('{call FindAllByFirstWithTotal(:first, :total)}',
+                [first: 'J', total: Sql.VARCHAR]) { total ->
+            found = total
+        }
+        assert found == 'Found total 2'
+        assert rows.size() == 2
+        assert rows[0].firstname == 'James'
+        assert rows[1].firstname == 'Jean'
+    }
+
+    // GROOVY-11936
+    void testCallWithRowsUsingMapFirstNamedArgs() {
+        String found
+        def rows = sql.callWithRows(first: 'J', total: Sql.VARCHAR,
+                '{call FindAllByFirstWithTotal(:first, :total)}') { total ->
+            found = total
+        }
+        assert found == 'Found total 2'
+        assert rows.size() == 2
+    }
+
+    // GROOVY-11936
+    void testCallWithAllRowsUsingMap() {
+        String foundFirst
+        String foundLast
+        def rowList = sql.callWithAllRows(
+                '{call FindAllByFirstAndFindAllByLastWithTotals(:first, :last, :firstOut, :lastOut)}',
+                [first: 'J', last: 'V', firstOut: Sql.VARCHAR, lastOut: Sql.VARCHAR]) { firstTotal, lastTotal ->
+            foundFirst = firstTotal
+            foundLast = lastTotal
+        }
+        assert foundFirst == 'Found total 2'
+        assert foundLast == 'Found total 1'
+        assert rowList.size() == 2
+        assert rowList[0]*.firstname == ['James', 'Jean']
+        assert rowList[1]*.firstname == ['Lino']
+    }
+
+    // GROOVY-11936
+    void testCallWithAllRowsUsingMapFirstNamedArgs() {
+        String foundFirst
+        String foundLast
+        def rowList = sql.callWithAllRows(
+                first: 'J', last: 'V', firstOut: Sql.VARCHAR, lastOut: Sql.VARCHAR,
+                '{call FindAllByFirstAndFindAllByLastWithTotals(:first, :last, :firstOut, :lastOut)}') { firstTotal, lastTotal ->
+            foundFirst = firstTotal
+            foundLast = lastTotal
+        }
+        assert foundFirst == 'Found total 2'
+        assert foundLast == 'Found total 1'
+        assert rowList.size() == 2
+    }
+
+    // GROOVY-11936: Map values for IN-only stored procedure calls
+    void testCallWithAllRowsUsingMapInOnly() {
+        // FindAllByFirst has no OUT params — just IN and a ResultSet.
+        def rowList = sql.callWithAllRows('{call FindAllByFirst(:first)}',
+                [first: 'J']) { /* no out params */ }
+        assert rowList.size() == 1
+        assert rowList[0]*.firstname == ['James', 'Jean']
+    }
+
+    // GROOVY-11936: Map-key order should not affect binding — SQL text order wins.
+    void testCallMapKeyOrderIndependent() {
+        String found
+        // Reverse key order vs SQL occurrence order:
+        sql.call('{call FindByFirst(:first, :answer)}',
+                [answer: Sql.VARCHAR, first: 'Sam']) { ans ->
+            found = ans
+        }
+        assert found == 'Last Name is Pullara'
+    }
+
     // GROOVY-7768
     void testCallWithAllRowsWithInputParamOnly() {
         List<List<GroovyRowResult>> rowList = sql.callWithAllRows('{call FindAllByFirst(?)}', ['J'], { /* no out params */ })

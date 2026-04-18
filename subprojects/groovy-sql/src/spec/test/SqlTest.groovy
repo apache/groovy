@@ -728,6 +728,21 @@ class SqlTest extends GroovyTestCase {
             fullname -> assert fullname == 'Dierk Koenig'
           }
           // end::sql_use_stored_proc_inout[]
+
+          // tag::sql_use_stored_proc_inout_map[]
+          sql.call('{call CONCAT_NAME(:fullname, :first, :last)}',
+                   [fullname: Sql.VARCHAR, first: 'Dierk', last: 'Koenig']) {
+            fullname -> assert fullname == 'Dierk Koenig'
+          }
+          // end::sql_use_stored_proc_inout_map[]
+
+          // tag::sql_use_stored_proc_inout_named_args[]
+          sql.call(fullname: Sql.VARCHAR, first: 'Dierk', last: 'Koenig',
+                   '{call CONCAT_NAME(:fullname, :first, :last)}') {
+            fullname -> assert fullname == 'Dierk Koenig'
+          }
+          // end::sql_use_stored_proc_inout_named_args[]
+
           sql.execute "DROP PROCEDURE CONCAT_NAME"
         }
         '''
