@@ -274,4 +274,21 @@ class SqlCacheTest extends GroovyTestCase {
         }
     }
 
+    // GROOVY-10547
+    void testNamedQueryCacheRespectsFlag() {
+        def namedCache = Sql.class.getDeclaredField('namedParamSqlCache')
+        namedCache.accessible = true
+        def indexCache = Sql.class.getDeclaredField('namedParamIndexPropCache')
+        indexCache.accessible = true
+
+        sql.cacheNamedQueries = false
+        sql.firstRow('SELECT * FROM PERSON WHERE firstname=:name', [name: 'James'])
+        assert namedCache.get(sql).isEmpty()
+        assert indexCache.get(sql).isEmpty()
+
+        sql.cacheNamedQueries = true
+        sql.firstRow('SELECT * FROM PERSON WHERE firstname=:name', [name: 'James'])
+        assert namedCache.get(sql).size() == 1
+        assert indexCache.get(sql).size() == 1
+    }
 }
