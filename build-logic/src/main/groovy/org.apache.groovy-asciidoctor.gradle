@@ -95,9 +95,6 @@ asciidoctor {
 asciidoctorj {
     jrubyVersion = versions.jruby
     version = versions.asciidoctorj
-    resolutionStrategy {
-        it.disableDependencyVerification()
-    }
     docExtensions project(':asciidoc-extensions')
     modules {
         diagram.version(versions.asciidoctorDiagram)

@@ -1,0 +1,173 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+
+// Dependency-update workflow enhancements for `./gradlew depUp`:
+//   * reject candidate versions that aren't stable
+//   * reject candidate versions whose POM declares a JDK target above our floor
+//   * on finish, run depUpHints (git-log one-liner + Apache Jira link per outdated dep)
+//   * on finish, run depUpCapped (in-track updates for multi-track deps like junit5/junit6)
+
+def UNSTABLE = /^([\d.-]+(alpha|beta|rc|m)[\d.-]+(groovy[\d.-]+)?|20030203.000550|20031129.200437|200404\d\d|2004-03-19)$/
+def jdkFloor = sharedConfiguration.targetJavaVersion.get().toInteger()
+def jdkRejections = new java.util.concurrent.ConcurrentHashMap<String, Set<String>>()
+
+// Registry of dependencies whose updates must be tracked on a capped version line.
+// Used for two purposes:
+//   * hint-skip gate in depUpHints (suppress misleading cross-track bump hints)
+//   * in-track update detection in depUpCapped (proactively warn when a newer
+//     within-track version is available, e.g. binary-compat baseline drift)
+// TODO: migrate performance-test baselines ('3.0.25', '4.0.31', '5.0.5' currently hardcoded
+//       in subprojects/performance/build.gradle:24) into versions.properties and add
+//       matching cappedTracks entries so depUpCapped surfaces drift on those too.
+def cappedTracks = [
+    [group: 'org.junit.jupiter',  name: 'junit-jupiter',           current: versions.junit5,         maxPrefix: '5.'],
+    [group: 'org.junit.jupiter',  name: 'junit-jupiter-api',       current: versions.junit5,         maxPrefix: '5.'],
+    [group: 'org.junit.jupiter',  name: 'junit-jupiter-engine',    current: versions.junit5,         maxPrefix: '5.'],
+    [group: 'org.junit.jupiter',  name: 'junit-jupiter-params',    current: versions.junit5,         maxPrefix: '5.'],
+    [group: 'org.junit.platform', name: 'junit-platform-launcher', current: versions.junit5Platform, maxPrefix: '1.'],
+    [group: 'org.apache.groovy',  name: 'groovy',
+     current: sharedConfiguration.binaryCompatibilityBaselineVersion.get(),                          maxPrefix: '5.0.'],
+]
+def capByCoord = cappedTracks.collectEntries { [("${it.group}:${it.name}".toString()): it.maxPrefix] }
+
+def majorJdk = { String v ->
+    def m = (v =~ /(?:1\.)?(\d+)/)
+    m ? m[0][1].toInteger() : 0
+}
+
+def pomRequiredJdk = { String group, String name, String version ->
+    def url = "https://repo1.maven.org/maven2/${group.replace('.', '/')}/$name/$version/${name}-${version}.pom"
+    try {
+        def xml = new groovy.xml.XmlSlurper().parseText(new URL(url).text)
+        def vals = [
+            xml.properties.'maven.compiler.release'.text(),
+            xml.properties.'maven.compiler.target'.text(),
+            xml.properties.'maven.compiler.source'.text(),
+            xml.properties.'java.version'.text(),
+        ]
+        xml.build.plugins.plugin.findAll { it.artifactId.text() == 'maven-compiler-plugin' }.each { p ->
+            vals << p.configuration.release.text()
+            vals << p.configuration.target.text()
+            vals << p.configuration.source.text()
+        }
+        return vals.findAll { it }.collect(majorJdk).max() ?: 0
+    } catch (ignored) {
+        return 0  // fail-safe: network/parse errors never reject
+    }
+}
+
+tasks.named('dependencyUpdates')?.configure {
+    gradleReleaseChannel = 'current'
+    outputFormatter = 'plain,json'
+    rejectVersionIf {
+        def current = it.currentVersion.toLowerCase()
+        def candidate = it.candidate.version.toLowerCase()
+        if (!(current ==~ UNSTABLE) && candidate ==~ UNSTABLE) return true
+        def required = pomRequiredJdk(it.candidate.group, it.candidate.module, it.candidate.version)
+        if (required > jdkFloor) {
+            def key = "${it.candidate.group}:${it.candidate.module}".toString()
+            jdkRejections.computeIfAbsent(key) { java.util.Collections.synchronizedSet(new TreeSet<String>()) }
+                         .add("${it.candidate.version} (requires JDK $required)".toString())
+            return true
+        }
+        return false
+    }
+    finalizedBy 'depUpHints', 'depUpCapped'
+}
+
+tasks.register('depUpHints') {
+    doLast {
+        def report = new File(buildDir, 'dependencyUpdates/report.json')
+        if (!report.exists()) return
+        def outdated = new groovy.json.JsonSlurper().parse(report).outdated?.dependencies ?: []
+        if (!outdated) return
+        def hintSkipGroups = ['org.apache.groovy', 'org.codehaus.groovy'] as Set
+        def findJira = { String term ->
+            def proc = ['git', '-C', rootDir.absolutePath,
+                        'log', '--oneline', '-20', '--since=3 years ago', '-G', term].execute()
+            proc.waitFor()
+            for (line in proc.text.readLines()) {
+                def m = (line =~ /GROOVY-\d+/)
+                if (m.find()) return [ticket: m.group(), commit: line]
+            }
+            return null
+        }
+        println '\n--- depUpHints: latest prior bump + Jira link ---'
+        outdated.each { d ->
+            def newVer = d.available.release ?: d.available.milestone ?: d.available.integration
+            println "\n${d.group}:${d.name}: ${d.version} \u2192 $newVer"
+            if (d.group in hintSkipGroups) return
+            def cap = capByCoord["${d.group}:${d.name}".toString()]
+            if (cap && !newVer.startsWith(cap)) {
+                println "  (capped at ${cap}x \u2014 cross-track bump; in-track updates shown by :depUpCapped)"
+                return
+            }
+            def hit = findJira(d.name)
+            if (!hit && d.name.contains('-')) {
+                hit = findJira(d.name.substring(0, d.name.indexOf('-')))
+            }
+            if (hit) {
+                println "  ${hit.commit}"
+                println "  Latest Jira:  https://issues.apache.org/jira/browse/${hit.ticket}"
+            }
+        }
+        if (jdkRejections) {
+            println "\n--- Candidates rejected (JDK floor: $jdkFloor) ---"
+            jdkRejections.sort().each { key, versions ->
+                println "\n$key"
+                versions.each { println "  $it" }
+            }
+        }
+    }
+}
+
+tasks.register('depUpCapped') {
+    doLast {
+        def stableOnly = { String v -> v ==~ /\d+(\.\d+)*/ }
+        def versionCompare = { String a, String b ->
+            def pa = a.tokenize('.').collect { it.toInteger() }
+            def pb = b.tokenize('.').collect { it.toInteger() }
+            for (int i = 0; i < Math.max(pa.size(), pb.size()); i++) {
+                int ai = i < pa.size() ? pa[i] : 0
+                int bi = i < pb.size() ? pb[i] : 0
+                if (ai != bi) return ai <=> bi
+            }
+            0
+        }
+        def anyReported = false
+        cappedTracks.each { t ->
+            def url = "https://repo1.maven.org/maven2/${t.group.replace('.', '/')}/${t.name}/maven-metadata.xml"
+            try {
+                def xml = new groovy.xml.XmlSlurper().parseText(new URL(url).text)
+                def matching = xml.versioning.versions.version*.text().findAll {
+                    it.startsWith(t.maxPrefix) && stableOnly(it)
+                }
+                if (!matching) return
+                def latest = matching.max(versionCompare)
+                if (versionCompare(latest, t.current) > 0) {
+                    if (!anyReported) {
+                        println '\n--- Capped-track updates ---'
+                        anyReported = true
+                    }
+                    println "  ${t.group}:${t.name}: ${t.current} \u2192 ${latest} (capped at ${t.maxPrefix}x)"
+                }
+            } catch (ignored) { /* skip: network/parse errors don't matter here */ }
+        }
+    }
+}

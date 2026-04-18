@@ -54,6 +54,12 @@
       <ignored-keys>
          <ignored-key id="74DAFDFD6DAE2441" reason="Key not available on any key server"/>
       </ignored-keys>
+      <trusted-artifacts>
+         <trust group="org.apache.groovy" reason="binary compatibility and performance check baselines resolved against previously-released Groovy versions"/>
+         <trust group="org.asciidoctor" reason="asciidoctor documentation toolchain; plugin-internal configs resolve a large transitive tree including unsigned gem-related artifacts"/>
+         <trust group="org.jruby" reason="JRuby runtime pulled in by the asciidoctor toolchain"/>
+         <trust group="org.codehaus.groovy" reason="pre-4.x Groovy namespace: performance-check baselines against Groovy 3.x and transitive of org.asciidoctor:asciidoctorj-groovy-dsl"/>
+      </trusted-artifacts>
       <trusted-keys>
          <trusted-key id="5A022DE16956DECDAD4EBC161FE771E34EF57D42">
             <trusting group="jakarta.servlet.jsp"/>

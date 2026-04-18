@@ -76,9 +76,6 @@ class PerformanceTestsExtension {
         def groovyConf = configurations.create("perfGroovy$version") { Configuration conf ->
             conf.canBeResolved = true
             conf.canBeConsumed = false
-            conf.resolutionStrategy {
-                disableDependencyVerification()
-            }
             conf.extendsFrom(configurations.getByName("stats"))
             conf.attributes {
                 it.attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
