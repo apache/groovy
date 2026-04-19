@@ -552,24 +552,24 @@ final class RxJavaAwaitableAdapterTest {
     }
 
     @Test
-    void testAdapterToBlockingIterableObservable() {
+    void testAdapterToIterableObservable() {
         def adapter = new RxJavaAwaitableAdapter()
-        def iter = adapter.toBlockingIterable(Observable.just(1, 2, 3))
+        def iter = adapter.toIterable(Observable.just(1, 2, 3))
         assert iter.collect() == [1, 2, 3]
     }
 
     @Test
-    void testAdapterToBlockingIterableFlowable() {
+    void testAdapterToIterableFlowable() {
         def adapter = new RxJavaAwaitableAdapter()
-        def iter = adapter.toBlockingIterable(Flowable.just('a', 'b'))
+        def iter = adapter.toIterable(Flowable.just('a', 'b'))
         assert iter.collect() == ['a', 'b']
     }
 
     @Test
-    void testAdapterToBlockingIterableUnsupportedType() {
+    void testAdapterToIterableUnsupportedType() {
         def adapter = new RxJavaAwaitableAdapter()
         try {
-            adapter.toBlockingIterable('not-rx')
+            adapter.toIterable('not-rx')
             assert false : 'should have thrown'
         } catch (IllegalArgumentException e) {
             assert e.message.contains('Cannot convert')

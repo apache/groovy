@@ -85,11 +85,11 @@ public final class FlowPublisherAdapter implements AwaitableAdapter {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Iterable<T> toBlockingIterable(Object source) {
+    public <T> Iterable<T> toIterable(Object source) {
         if (!(source instanceof Flow.Publisher<?>)) {
             throw new IllegalArgumentException("Cannot convert to Iterable: " + source.getClass());
         }
-        return (Iterable<T>) publisherToBlockingIterable((Flow.Publisher<Object>) source, DEFAULT_BATCH_SIZE);
+        return (Iterable<T>) publisherToIterable((Flow.Publisher<Object>) source, DEFAULT_BATCH_SIZE);
     }
 
     // ---- single-value: first onNext wins ---------------------------------
@@ -139,7 +139,7 @@ public final class FlowPublisherAdapter implements AwaitableAdapter {
 
     // ---- multi-value: blocking iterable with bounded backpressure --------
 
-    private static <T> Iterable<T> publisherToBlockingIterable(Flow.Publisher<T> publisher, int batchSize) {
+    private static <T> Iterable<T> publisherToIterable(Flow.Publisher<T> publisher, int batchSize) {
         return new PublisherBlockingIterable<>(publisher, batchSize);
     }
 

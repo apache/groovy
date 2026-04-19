@@ -476,14 +476,14 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
         visitAnnotationsOpt(ctx.annotationsOpt()).forEach(forStatement::addStatementAnnotation);
 
         if (isForAwait) {
-            // Transform collection expression: wrap in AsyncSupport.toBlockingIterable()
+            // Transform collection expression: wrap in AsyncSupport.toIterable()
             // and wrap the loop in try/finally to ensure cleanup on break/exception
             Expression original = forStatement.getCollectionExpression();
             String tempVar = "__forAwaitSource" + ctx.hashCode();
-            Expression toBlockingCall = AsyncTransformHelper.buildToBlockingIterableCall(original);
+            Expression toIterableCall = AsyncTransformHelper.buildToIterableCall(original);
 
-            // var $temp = AsyncSupport.toBlockingIterable(original)
-            Statement declStmt = stmt(declX(varX(tempVar), toBlockingCall));
+            // var $temp = AsyncSupport.toIterable(original)
+            Statement declStmt = stmt(declX(varX(tempVar), toIterableCall));
             forStatement.setCollectionExpression(varX(tempVar));
 
             // try { for (...) { body } } finally { AsyncSupport.closeIterable($temp) }

@@ -113,17 +113,17 @@ public final class AwaitableAdapterRegistry {
     }
 
     /**
-     * Converts the given source to a blocking {@link Iterable} for {@code for await}.
+     * Converts the given source to an {@link Iterable} for {@code for await}.
      */
     @SuppressWarnings("unchecked")
-    public static <T> Iterable<T> toBlockingIterable(Object source) {
+    public static <T> Iterable<T> toIterable(Object source) {
         if (source == null) {
             throw new IllegalArgumentException("Cannot convert null to Iterable");
         }
         Class<?> type = source.getClass();
         for (AwaitableAdapter adapter : adapters) {
             if (adapter.supportsIterable(type)) {
-                return adapter.toBlockingIterable(source);
+                return adapter.toIterable(source);
             }
         }
         throw new IllegalArgumentException(

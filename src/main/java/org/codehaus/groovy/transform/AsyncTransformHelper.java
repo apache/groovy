@@ -58,7 +58,7 @@ public final class AsyncTransformHelper {
     private static final String YIELD_RETURN_METHOD = "yieldReturn";
     private static final String ASYNC_METHOD = "async";
     private static final String ASYNC_GENERATOR_METHOD = "asyncGenerator";
-    private static final String TO_BLOCKING_ITERABLE_METHOD = "toBlockingIterable";
+    private static final String TO_ITERABLE_METHOD = "toIterable";
     private static final String CLOSE_ITERABLE_METHOD = "closeIterable";
     private static final String CREATE_DEFER_SCOPE_METHOD = "createDeferScope";
     private static final String DEFER_METHOD = "defer";
@@ -117,10 +117,10 @@ public final class AsyncTransformHelper {
     }
 
     /**
-     * Builds {@code AsyncSupport.toBlockingIterable(source)}.
+     * Builds {@code AsyncSupport.toIterable(source)}.
      */
-    public static Expression buildToBlockingIterableCall(Expression source) {
-        return callX(ASYNC_SUPPORT_TYPE, TO_BLOCKING_ITERABLE_METHOD, ensureArgs(source));
+    public static Expression buildToIterableCall(Expression source) {
+        return callX(ASYNC_SUPPORT_TYPE, TO_ITERABLE_METHOD, ensureArgs(source));
     }
 
     /**

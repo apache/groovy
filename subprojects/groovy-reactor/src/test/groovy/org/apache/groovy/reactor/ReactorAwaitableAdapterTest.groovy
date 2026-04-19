@@ -417,16 +417,16 @@ final class ReactorAwaitableAdapterTest {
     }
 
     @Test
-    void testAdapterToBlockingIterableFlux() {
+    void testAdapterToIterableFlux() {
         def adapter = new ReactorAwaitableAdapter()
-        def iter = adapter.toBlockingIterable(Flux.just(1, 2, 3))
+        def iter = adapter.toIterable(Flux.just(1, 2, 3))
         assert iter.collect() == [1, 2, 3]
     }
 
     @Test
-    void testAdapterToBlockingIterableEmptyFlux() {
+    void testAdapterToIterableEmptyFlux() {
         def adapter = new ReactorAwaitableAdapter()
-        def iter = adapter.toBlockingIterable(Flux.empty())
+        def iter = adapter.toIterable(Flux.empty())
         assert iter.collect() == []
     }
 
@@ -442,10 +442,10 @@ final class ReactorAwaitableAdapterTest {
     }
 
     @Test
-    void testAdapterToBlockingIterableUnsupportedType() {
+    void testAdapterToIterableUnsupportedType() {
         def adapter = new ReactorAwaitableAdapter()
         try {
-            adapter.toBlockingIterable('not-reactor')
+            adapter.toIterable('not-reactor')
             assert false : 'should have thrown'
         } catch (IllegalArgumentException e) {
             assert e.message.contains('Cannot convert')

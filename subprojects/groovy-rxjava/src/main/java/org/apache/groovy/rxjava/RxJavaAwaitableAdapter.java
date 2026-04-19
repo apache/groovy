@@ -79,7 +79,7 @@ public class RxJavaAwaitableAdapter implements AwaitableAdapter {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Iterable<T> toBlockingIterable(Object source) {
+    public <T> Iterable<T> toIterable(Object source) {
         if (source instanceof Observable<?> observable) {
             return (Iterable<T>) observable.blockingIterable();
         }

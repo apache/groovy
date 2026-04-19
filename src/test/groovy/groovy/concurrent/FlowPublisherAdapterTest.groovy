@@ -197,7 +197,7 @@ final class FlowPublisherAdapterTest {
             })
         } as Flow.Publisher<Integer>
 
-        def iterable = AwaitableAdapterRegistry.toBlockingIterable(publisher)
+        def iterable = AwaitableAdapterRegistry.toIterable(publisher)
         assert iterable instanceof AutoCloseable
         def iter = iterable.iterator()
         assert requested.await(5, TimeUnit.SECONDS), 'subscriber never asked to request'
@@ -228,7 +228,7 @@ final class FlowPublisherAdapterTest {
             subscriber.set(sub) // defer onSubscribe
         } as Flow.Publisher<Integer>
 
-        def iterable = AwaitableAdapterRegistry.toBlockingIterable(publisher)
+        def iterable = AwaitableAdapterRegistry.toIterable(publisher)
         iterable.iterator()
         assert subscriber.get() != null
 
@@ -257,7 +257,7 @@ final class FlowPublisherAdapterTest {
             })
         } as Flow.Publisher<Integer>
 
-        def iterable = AwaitableAdapterRegistry.toBlockingIterable(publisher)
+        def iterable = AwaitableAdapterRegistry.toIterable(publisher)
         iterable.iterator()
 
         shouldFail(IllegalStateException) {
@@ -275,7 +275,7 @@ final class FlowPublisherAdapterTest {
         try {
             def awaitable = Awaitable.from(publisher)
             assert awaitable != null
-            def iter = AwaitableAdapterRegistry.toBlockingIterable(publisher)
+            def iter = AwaitableAdapterRegistry.toIterable(publisher)
             assert iter != null
         } finally {
             publisher.close()

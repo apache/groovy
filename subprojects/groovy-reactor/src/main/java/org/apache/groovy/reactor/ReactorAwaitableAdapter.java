@@ -59,7 +59,7 @@ public class ReactorAwaitableAdapter implements AwaitableAdapter {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Iterable<T> toBlockingIterable(Object source) {
+    public <T> Iterable<T> toIterable(Object source) {
         if (source instanceof Flux<?> flux) {
             return (Iterable<T>) flux.toIterable();
         }

@@ -360,19 +360,20 @@ public class AsyncSupport {
         return () -> bridge;
     }
 
-    // ---- for-await (blocking iterable conversion) -----------------------
+    // ---- for-await (iterable conversion) --------------------------------
 
     /**
-     * Converts an arbitrary source to a blocking {@link Iterable} for use
-     * in {@code for await} loops. Handles arrays, collections, iterables,
-     * iterators, and adapter-supported types.
+     * Converts an arbitrary source to an {@link Iterable} for use in
+     * {@code for await} loops. Handles arrays, collections, iterables,
+     * iterators, and adapter-supported types. The returned iterable may
+     * block on {@code next()} for async sources.
      *
      * @param source the source to convert
      * @param <T>    the element type
-     * @return a blocking iterable
+     * @return an iterable
      */
     @SuppressWarnings("unchecked")
-    public static <T> Iterable<T> toBlockingIterable(Object source) {
+    public static <T> Iterable<T> toIterable(Object source) {
         if (source == null) return Collections.emptyList();
         if (source instanceof Iterable) return (Iterable<T>) source;
         if (source instanceof Iterator) {
@@ -381,7 +382,7 @@ public class AsyncSupport {
         }
         if (source instanceof Object[]) return (Iterable<T>) Arrays.asList((Object[]) source);
         // Try adapter registry
-        return groovy.concurrent.AwaitableAdapterRegistry.toBlockingIterable(source);
+        return groovy.concurrent.AwaitableAdapterRegistry.toIterable(source);
     }
 
     /**

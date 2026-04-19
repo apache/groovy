@@ -2427,33 +2427,33 @@ final class AsyncAwaitTest {
     }
 
     @Test
-    void testToBlockingIterableNull() {
+    void testToIterableNull() {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncSupport
 
-            def result = AsyncSupport.toBlockingIterable(null)
+            def result = AsyncSupport.toIterable(null)
             assert result.collect() == []
         '''
     }
 
     @Test
-    void testToBlockingIterableIterator() {
+    void testToIterableIterator() {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncSupport
 
             def iter = [1, 2, 3].iterator()
-            def result = AsyncSupport.toBlockingIterable(iter)
+            def result = AsyncSupport.toIterable(iter)
             assert result.collect() == [1, 2, 3]
         '''
     }
 
     @Test
-    void testToBlockingIterableArray() {
+    void testToIterableArray() {
         assertScript '''
             import org.apache.groovy.runtime.async.AsyncSupport
 
             def arr = [10, 20, 30] as Object[]
-            def result = AsyncSupport.toBlockingIterable(arr)
+            def result = AsyncSupport.toIterable(arr)
             assert result.collect() == [10, 20, 30]
         '''
     }
@@ -3368,7 +3368,7 @@ final class AsyncAwaitTest {
     }
 
     @Test
-    void testAdapterRegistryToBlockingIterableWithAdapter() {
+    void testAdapterRegistryToIterableWithAdapter() {
         assertScript '''
             import groovy.concurrent.AwaitableAdapterRegistry
             import groovy.concurrent.AwaitableAdapter
@@ -3378,11 +3378,11 @@ final class AsyncAwaitTest {
                 boolean supportsAwaitable(Class type) { false }
                 Awaitable toAwaitable(Object source) { null }
                 boolean supportsIterable(Class type) { List.isAssignableFrom(type) }
-                Iterable toBlockingIterable(Object source) { (Iterable) source }
+                Iterable toIterable(Object source) { (Iterable) source }
             }
             AwaitableAdapterRegistry.register(adapter)
             try {
-                def iterable = AwaitableAdapterRegistry.toBlockingIterable([1, 2, 3])
+                def iterable = AwaitableAdapterRegistry.toIterable([1, 2, 3])
                 def items = []
                 for (item in iterable) {
                     items << item
@@ -3719,7 +3719,7 @@ final class AsyncAwaitTest {
     }
 
     @Test
-    void testAdapterRegistryToBlockingIterableWithRegisteredAdapter() {
+    void testAdapterRegistryToIterableWithRegisteredAdapter() {
         assertScript """
             import groovy.concurrent.AwaitableAdapterRegistry
             import groovy.concurrent.AwaitableAdapter
@@ -3735,12 +3735,12 @@ final class AsyncAwaitTest {
                 boolean supportsAwaitable(Class type) { false }
                 Awaitable toAwaitable(Object source) { null }
                 boolean supportsIterable(Class type) { type.name.contains('StringIterable') }
-                Iterable toBlockingIterable(Object source) { ((StringIterable)source) }
+                Iterable toIterable(Object source) { ((StringIterable)source) }
             }
             AwaitableAdapterRegistry.register(adapter)
             try {
                 def items = []
-                def iterable = AwaitableAdapterRegistry.toBlockingIterable(new StringIterable('abc'))
+                def iterable = AwaitableAdapterRegistry.toIterable(new StringIterable('abc'))
                 for (ch in iterable) items << ch
                 assert items.size() == 3
             } finally {

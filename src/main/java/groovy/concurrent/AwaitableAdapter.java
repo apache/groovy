@@ -20,7 +20,7 @@ package groovy.concurrent;
 
 /**
  * Service Provider Interface (SPI) for adapting third-party asynchronous types
- * to Groovy's {@link Awaitable} abstraction and to blocking iterables for
+ * to Groovy's {@link Awaitable} abstraction and to iterables for
  * {@code for await} loops.
  * <p>
  * Implementations are discovered automatically via {@link java.util.ServiceLoader}.
@@ -47,7 +47,7 @@ public interface AwaitableAdapter {
 
     /**
      * Returns {@code true} if this adapter can convert instances of the given
-     * type to a blocking {@link Iterable} for {@code for await} loops.
+     * type to an {@link Iterable} for {@code for await} loops.
      * Defaults to {@code false}; override for multi-value async types
      * (e.g., Reactor {@code Flux}, RxJava {@code Observable}).
      */
@@ -56,12 +56,12 @@ public interface AwaitableAdapter {
     }
 
     /**
-     * Converts the given source object to a blocking {@link Iterable}.
+     * Converts the given source object to an {@link Iterable}.
      * Called only when {@link #supportsIterable} returned {@code true}.
-     * The returned iterable should block on {@code next()} until the
+     * The returned iterable typically blocks on {@code next()} until the
      * next element is available — with virtual threads this is efficient.
      */
-    default <T> Iterable<T> toBlockingIterable(Object source) {
+    default <T> Iterable<T> toIterable(Object source) {
         throw new UnsupportedOperationException("Iterable conversion not supported by " + getClass().getName());
     }
 }
