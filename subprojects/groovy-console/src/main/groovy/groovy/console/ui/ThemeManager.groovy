@@ -22,6 +22,7 @@ import com.formdev.flatlaf.FlatDarkLaf
 import com.formdev.flatlaf.FlatLightLaf
 import groovy.console.ui.text.GroovyFilter
 
+import javax.swing.UIManager
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import java.awt.Color
@@ -38,6 +39,10 @@ class ThemeManager {
 
     private static final Preferences prefs = Preferences.userNodeForPackage(Console)
 
+    // cached result of the OS-appearance probe; isSystemDarkMode is on hot paths
+    // (icon color filters), so we avoid shelling out per call
+    private static volatile Boolean cachedSystemDark = null
+
     static ThemeMode getCurrentMode() {
         try {
             ThemeMode.valueOf(prefs.get('theme', 'SYSTEM').toUpperCase())
@@ -53,10 +58,49 @@ class ThemeManager {
 
     static void applyTheme(ThemeMode mode) {
         prefs.put('theme', mode.name())
+        refreshSystemDarkMode()
         if (mode == ThemeMode.DARK || (mode == ThemeMode.SYSTEM && isSystemDarkMode())) {
             FlatDarkLaf.setup()
         } else {
             FlatLightLaf.setup()
+        }
+    }
+
+    /** Re-probe OS appearance, update the cache, and report whether it changed. */
+    static boolean refreshSystemDarkMode() {
+        def prior = cachedSystemDark
+        cachedSystemDark = probeSystemDarkMode()
+        prior == null || prior != cachedSystemDark
+    }
+
+    static boolean isSystemDarkMode() {
+        if (cachedSystemDark == null) {
+            cachedSystemDark = probeSystemDarkMode()
+        }
+        cachedSystemDark
+    }
+
+    /**
+     * On macOS with {@code apple.laf.useScreenMenuBar=true} the menu bar is drawn
+     * by the OS rather than FlatLaf, so menu-item icons need to track the OS
+     * appearance instead of the app theme to stay legible.
+     */
+    static boolean isMenuDrawnByOS() {
+        String os = System.getProperty('os.name', '').toLowerCase()
+        os.contains('mac') && Boolean.parseBoolean(System.getProperty('apple.laf.useScreenMenuBar', 'false'))
+    }
+
+    /** True iff menu-item icons will paint against a dark background. */
+    static boolean isMenuDark() {
+        isMenuDrawnByOS() ? isSystemDarkMode() : isDark()
+    }
+
+    /** Foreground color for menu-item icons — OS-tinted on the mac screen menu bar, app-tinted otherwise. */
+    static Color getMenuIconForeground() {
+        if (isMenuDrawnByOS()) {
+            isSystemDarkMode() ? new Color(204, 204, 204) : Color.BLACK
+        } else {
+            UIManager.getColor('Label.foreground')
         }
     }
 
@@ -216,7 +260,7 @@ class ThemeManager {
         ]
     }
 
-    private static boolean isSystemDarkMode() {
+    private static boolean probeSystemDarkMode() {
         String os = System.getProperty('os.name', '').toLowerCase()
         if (os.contains('mac')) {
             try {

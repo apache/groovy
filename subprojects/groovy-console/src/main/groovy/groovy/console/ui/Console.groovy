@@ -96,6 +96,8 @@ import java.awt.event.ComponentEvent
 import java.awt.event.ComponentListener
 import java.awt.event.FocusEvent
 import java.awt.event.FocusListener
+import java.awt.event.WindowEvent
+import java.awt.event.WindowFocusListener
 import java.util.logging.Logger
 import java.util.prefs.Preferences
 
@@ -471,6 +473,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         if (swing.consoleFrame instanceof Window) {
             nativeFullScreenForMac(swing.consoleFrame)
+            installSystemThemeWatcher(swing.consoleFrame as Window)
             swing.consoleFrame.pack()
             swing.consoleFrame.show()
         }
@@ -495,6 +498,24 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                     }
                 ''')
         }
+    }
+
+    // Re-probes the OS appearance when the console regains focus so that
+    // SYSTEM mode tracks live OS theme changes, and so that menu-bar icons
+    // on macOS (drawn against the OS-themed screen menu bar) stay legible
+    // when the user flips the OS setting in another app.
+    private void installSystemThemeWatcher(Window frame) {
+        frame.addWindowFocusListener(new WindowFocusListener() {
+            @Override void windowGainedFocus(WindowEvent e) {
+                if (!ThemeManager.refreshSystemDarkMode()) return
+                if (ThemeManager.currentMode == ThemeManager.ThemeMode.SYSTEM) {
+                    switchTheme(ThemeManager.ThemeMode.SYSTEM)
+                } else if (ThemeManager.isMenuDrawnByOS()) {
+                    Icons.refreshAll()
+                }
+            }
+            @Override void windowLostFocus(WindowEvent e) {}
+        })
     }
 
     void installInterceptor() {

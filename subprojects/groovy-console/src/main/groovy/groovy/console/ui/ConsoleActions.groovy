@@ -30,7 +30,7 @@ newFileAction = action(
         closure: controller.&fileNewFile,
         mnemonic: 'N',
         accelerator: shortcut('N'),
-        smallIcon: Icons.load('note_add'),
+        smallIcon: Icons.menu('note_add'),
         shortDescription: 'New Groovy Script'
 )
 
@@ -46,7 +46,7 @@ openAction = action(
         closure: controller.&fileOpen,
         mnemonic: 'O',
         accelerator: shortcut('O'),
-        smallIcon: Icons.load('folder_open'),
+        smallIcon: Icons.menu('folder_open'),
         shortDescription: 'Open Groovy Script'
 )
 
@@ -55,7 +55,7 @@ saveAction = action(
         closure: controller.&fileSave,
         mnemonic: 'S',
         accelerator: shortcut('S'),
-        smallIcon: Icons.load('save'),
+        smallIcon: Icons.menu('save'),
         shortDescription: 'Save Groovy Script',
         enabled: false // controller will enable as needed
 )
@@ -70,7 +70,7 @@ printAction = action(
         name: 'Print...',
         closure: controller.&print,
         mnemonic: 'P',
-        smallIcon: Icons.load('print'),
+        smallIcon: Icons.menu('print'),
         accelerator: shortcut('P')
 )
 
@@ -89,7 +89,7 @@ undoAction = action(
         closure: controller.&undo,
         mnemonic: 'U',
         accelerator: shortcut('Z'),
-        smallIcon: Icons.load('undo'),
+        smallIcon: Icons.menu('undo'),
         shortDescription: 'Undo'
 )
 
@@ -98,7 +98,7 @@ redoAction = action(
         closure: controller.&redo,
         mnemonic: 'R',
         accelerator: shortcut('shift Z'), // is control-shift-Z or control-Y more common?
-        smallIcon: Icons.load('redo'),
+        smallIcon: Icons.menu('redo'),
         shortDescription: 'Redo'
 )
 
@@ -107,7 +107,7 @@ findAction = action(
         closure: controller.&find,
         mnemonic: 'F',
         accelerator: shortcut('F'),
-        smallIcon: Icons.load('search'),
+        smallIcon: Icons.menu('search'),
         shortDescription: 'Find'
 )
 
@@ -130,7 +130,7 @@ replaceAction = action(
         closure: controller.&replace,
         mnemonic: 'E',
         accelerator: shortcut('H'),
-        smallIcon: Icons.load('find_replace'),
+        smallIcon: Icons.menu('find_replace'),
         shortDescription: 'Replace'
 )
 
@@ -139,7 +139,7 @@ cutAction = action(
         closure: controller.&cut,
         mnemonic: 'T',
         accelerator: shortcut('X'),
-        smallIcon: Icons.load('content_cut'),
+        smallIcon: Icons.menu('content_cut'),
         shortDescription: 'Cut'
 )
 
@@ -148,7 +148,7 @@ copyAction = action(
         closure: controller.&copy,
         mnemonic: 'C',
         accelerator: shortcut('C'),
-        smallIcon: Icons.load('content_copy'),
+        smallIcon: Icons.menu('content_copy'),
         shortDescription: 'Copy'
 )
 
@@ -157,7 +157,7 @@ pasteAction = action(
         closure: controller.&paste,
         mnemonic: 'P',
         accelerator: shortcut('V'),
-        smallIcon: Icons.load('content_paste'),
+        smallIcon: Icons.menu('content_paste'),
         shortDescription: 'Paste'
 )
 
@@ -165,7 +165,7 @@ selectAllAction = action(
         name: 'Select All',
         closure: controller.&selectAll,
         mnemonic: 'A',
-        smallIcon: Icons.load('select_all'),
+        smallIcon: Icons.menu('select_all'),
         accelerator: shortcut('A')
 )
 
@@ -174,7 +174,7 @@ historyPrevAction = action(
         closure: controller.&historyPrev,
         mnemonic: 'P',
         accelerator: shortcut(KeyEvent.VK_COMMA),
-        smallIcon: Icons.load('chevron_left'),
+        smallIcon: Icons.menu('chevron_left'),
         shortDescription: 'Previous Groovy Script',
         enabled: false // controller will enable as needed
 )
@@ -184,7 +184,7 @@ historyNextAction = action(
         closure: controller.&historyNext,
         mnemonic: 'N',
         accelerator: shortcut(KeyEvent.VK_PERIOD),
-        smallIcon: Icons.load('chevron_right'),
+        smallIcon: Icons.menu('chevron_right'),
         shortDescription: 'Next Groovy Script',
         enabled: false // controller will enable as needed
 )
@@ -194,7 +194,7 @@ clearOutputAction = action(
         closure: controller.&clearOutput,
         mnemonic: 'C',
         accelerator: shortcut('W'),
-        smallIcon: Icons.load('delete_sweep'),
+        smallIcon: Icons.menu('delete_sweep'),
         shortDescription: 'Clear Output Area'
 )
 
@@ -204,7 +204,7 @@ runAction = action(
         mnemonic: 'R',
         keyStroke: shortcut('ENTER'),
         accelerator: shortcut('R'),
-        smallIcon: Icons.green('play_arrow'),
+        smallIcon: Icons.menuGreen('play_arrow'),
         shortDescription: 'Execute Groovy Script'
 )
 
@@ -213,7 +213,7 @@ runJavaAction = action(
         closure: controller.&runJava,
         mnemonic: 'J',
         accelerator: shortcut('alt R'),
-        smallIcon: Icons.load('coffee'),
+        smallIcon: Icons.menu('coffee'),
         shortDescription: 'Execute Java Code'
 )
 
@@ -246,14 +246,14 @@ setScriptArgsAction = action(
 addClasspathJar = action(
         name: 'Add Jar(s) to ClassPath',
         closure: controller.&addClasspathJar,
-        smallIcon: Icons.load('library_add'),
+        smallIcon: Icons.menu('library_add'),
         mnemonic: 'J',
 )
 
 addClasspathDir = action(
         name: 'Add Directory to ClassPath',
         closure: controller.&addClasspathDir,
-        smallIcon: Icons.load('create_new_folder'),
+        smallIcon: Icons.menu('create_new_folder'),
         mnemonic: 'D',
 )
 
@@ -265,7 +265,7 @@ listClasspath = action(
 clearClassloader = action(
         name: 'Clear Script Context',
         closure: controller.&clearContext,
-        smallIcon: Icons.load('bolt'),
+        smallIcon: Icons.menu('bolt'),
         mnemonic: 'C',
 )
 
@@ -393,7 +393,7 @@ largerFontAction = action(
         name: 'Larger Font',
         closure: controller.&largerFont,
         mnemonic: 'L',
-        smallIcon: Icons.load('text_increase'),
+        smallIcon: Icons.menu('text_increase'),
         accelerator: shortcut('shift L')
 )
 
@@ -401,7 +401,7 @@ smallerFontAction = action(
         name: 'Smaller Font',
         closure: controller.&smallerFont,
         mnemonic: 'S',
-        smallIcon: Icons.load('text_decrease'),
+        smallIcon: Icons.menu('text_decrease'),
         accelerator: shortcut('shift S')
 )
 
@@ -413,7 +413,7 @@ smartHighlighterAction = action(
 aboutAction = action(
         name: 'About',
         closure: controller.&showAbout,
-        smallIcon: Icons.load('info'),
+        smallIcon: Icons.menu('info'),
         mnemonic: 'A'
 )
 
@@ -427,7 +427,7 @@ interruptAction = action(
         name: 'Interrupt',
         closure: controller.&doInterrupt,
         mnemonic: 'T',
-        smallIcon: Icons.red('stop_circle'),
+        smallIcon: Icons.menuRed('stop_circle'),
         shortDescription: 'Interrupt Running Script',
         enabled: false // controller will enable as needed
 )
@@ -491,7 +491,7 @@ systemThemeAction = action(
 cycleThemeAction = action(
         name: 'Theme',
         closure: controller.&cycleTheme,
-        smallIcon: Icons.load('refresh'),
+        smallIcon: Icons.menu('refresh'),
         shortDescription: 'Cycle theme (' + groovy.console.ui.ThemeManager.themeLabel + ')'
 )
 

@@ -44,10 +44,10 @@ import java.util.function.Function
  * forces every icon (toolbar and menu) to re-render — use after a LaF switch.
  */
 class Icons {
-    static final int SIZE_SMALL = 14
-    static final int SIZE_NORMAL = 16
-    static final int SIZE_LARGE = 22
-    static final int MENU_SIZE = 16
+    static final int SIZE_SMALL = 16
+    static final int SIZE_NORMAL = 18
+    static final int SIZE_LARGE = 28
+    static final int MENU_SIZE = 18
 
     private static final String PATH = 'groovy/console/ui/icons/'
     private static int currentSize = SIZE_NORMAL
@@ -55,18 +55,32 @@ class Icons {
     private static final List<DynamicSVGIcon> allIcons = []
     private static final List<DynamicSVGIcon> toolbarIcons = []
 
-    // ---- menu / fixed-size ----
+    // ---- fixed-size icons (in-window menus, popups, AstBrowser/ObjectBrowser toolbars) ----
 
     static DynamicSVGIcon load(String name) {
         menuIcon(name, { Color c -> UIManager.getColor('Label.foreground') ?: c })
     }
 
     static DynamicSVGIcon green(String name) {
-        menuIcon(name, greenMapper())
+        menuIcon(name, greenMapper({ ThemeManager.isDark() }))
     }
 
     static DynamicSVGIcon red(String name) {
-        menuIcon(name, redMapper())
+        menuIcon(name, redMapper({ ThemeManager.isDark() }))
+    }
+
+    // ---- main menu-bar icons (tint follows the menu-bar background, which is OS-drawn on macOS) ----
+
+    static DynamicSVGIcon menu(String name) {
+        menuIcon(name, { Color c -> ThemeManager.menuIconForeground ?: c })
+    }
+
+    static DynamicSVGIcon menuGreen(String name) {
+        menuIcon(name, greenMapper({ ThemeManager.isMenuDark() }))
+    }
+
+    static DynamicSVGIcon menuRed(String name) {
+        menuIcon(name, redMapper({ ThemeManager.isMenuDark() }))
     }
 
     // ---- toolbar / resizable ----
@@ -76,23 +90,23 @@ class Icons {
     }
 
     static DynamicSVGIcon toolbarGreen(String name) {
-        toolbarIcon(name, greenMapper())
+        toolbarIcon(name, greenMapper({ ThemeManager.isDark() }))
     }
 
     static DynamicSVGIcon toolbarRed(String name) {
-        toolbarIcon(name, redMapper())
+        toolbarIcon(name, redMapper({ ThemeManager.isDark() }))
     }
 
-    private static Closure<Color> greenMapper() {
+    private static Closure<Color> greenMapper(Closure<Boolean> darkCheck) {
         Color light = new Color(0x2E7D32)
         Color dark = new Color(0x81C784)
-        return { Color c -> ThemeManager.isDark() ? dark : light }
+        return { Color c -> darkCheck() ? dark : light }
     }
 
-    private static Closure<Color> redMapper() {
+    private static Closure<Color> redMapper(Closure<Boolean> darkCheck) {
         Color light = new Color(0xC62828)
         Color dark = new Color(0xEF5350)
-        return { Color c -> ThemeManager.isDark() ? dark : light }
+        return { Color c -> darkCheck() ? dark : light }
     }
 
     private static DynamicSVGIcon menuIcon(String name, Closure<Color> mapper) {
