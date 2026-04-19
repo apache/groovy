@@ -154,6 +154,7 @@ class Icons {
         private final String path
         private final Closure<Color> colorMapper
         private FlatSVGIcon delegate
+        private Icon disabledDelegate
         private int size
 
         DynamicSVGIcon(String path, int size, Closure<Color> colorMapper) {
@@ -164,20 +165,33 @@ class Icons {
 
         void setSize(int newSize) {
             this.size = newSize
-            this.delegate = new FlatSVGIcon(path, newSize, newSize)
-            refreshColors()
+            rebuildDelegates()
         }
 
         void refreshColors() {
             // rebuild the FlatSVGIcon entirely — setColorFilter alone leaves the
             // internal raster cache in a state where some contexts (notably the
             // macOS screen menu bar) keep painting blank icons after a theme switch
+            rebuildDelegates()
+        }
+
+        private void rebuildDelegates() {
             this.delegate = new FlatSVGIcon(path, size, size)
             delegate.setColorFilter(new FlatSVGIcon.ColorFilter(colorMapper as Function<Color, Color>))
+            // FlatSVGIcon.getDisabledIcon() returns a grayscale variant; we
+            // dispatch to it in paintIcon when the target component is disabled,
+            // since Swing/FlatLaf can't derive one from a generic Icon wrapper
+            this.disabledDelegate = delegate.getDisabledIcon()
         }
 
         @Override int getIconWidth() { size }
         @Override int getIconHeight() { size }
-        @Override void paintIcon(Component c, Graphics g, int x, int y) { delegate.paintIcon(c, g, x, y) }
+        @Override void paintIcon(Component c, Graphics g, int x, int y) {
+            if (c != null && !c.isEnabled()) {
+                disabledDelegate.paintIcon(c, g, x, y)
+            } else {
+                delegate.paintIcon(c, g, x, y)
+            }
+        }
     }
 }
