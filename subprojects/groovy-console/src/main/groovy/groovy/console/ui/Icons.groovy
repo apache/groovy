@@ -61,13 +61,14 @@ class Icons {
         menuIcon(name, { Color c -> UIManager.getColor('Label.foreground') ?: c })
     }
 
-    static DynamicSVGIcon green(String name) {
-        menuIcon(name, greenMapper({ ThemeManager.isDark() }))
-    }
-
-    static DynamicSVGIcon red(String name) {
-        menuIcon(name, redMapper({ ThemeManager.isDark() }))
-    }
+    static DynamicSVGIcon green(String name)  { menuIcon(name, greenMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon red(String name)    { menuIcon(name, redMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon blue(String name)   { menuIcon(name, blueMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon amber(String name)  { menuIcon(name, amberMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon violet(String name) { menuIcon(name, violetMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon teal(String name)   { menuIcon(name, tealMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon javaBlue(String name) { menuIcon(name, javaBlueMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon subtleBlue(String name) { menuIcon(name, subtleBlueMapper({ ThemeManager.isDark() })) }
 
     // ---- main menu-bar icons (tint follows the menu-bar background, which is OS-drawn on macOS) ----
 
@@ -75,13 +76,14 @@ class Icons {
         menuIcon(name, { Color c -> ThemeManager.menuIconForeground ?: c })
     }
 
-    static DynamicSVGIcon menuGreen(String name) {
-        menuIcon(name, greenMapper({ ThemeManager.isMenuDark() }))
-    }
-
-    static DynamicSVGIcon menuRed(String name) {
-        menuIcon(name, redMapper({ ThemeManager.isMenuDark() }))
-    }
+    static DynamicSVGIcon menuGreen(String name)  { menuIcon(name, greenMapper({ ThemeManager.isMenuDark() })) }
+    static DynamicSVGIcon menuRed(String name)    { menuIcon(name, redMapper({ ThemeManager.isMenuDark() })) }
+    static DynamicSVGIcon menuBlue(String name)   { menuIcon(name, blueMapper({ ThemeManager.isMenuDark() })) }
+    static DynamicSVGIcon menuAmber(String name)  { menuIcon(name, amberMapper({ ThemeManager.isMenuDark() })) }
+    static DynamicSVGIcon menuViolet(String name) { menuIcon(name, violetMapper({ ThemeManager.isMenuDark() })) }
+    static DynamicSVGIcon menuTeal(String name)   { menuIcon(name, tealMapper({ ThemeManager.isMenuDark() })) }
+    static DynamicSVGIcon menuJavaBlue(String name) { menuIcon(name, javaBlueMapper({ ThemeManager.isMenuDark() })) }
+    static DynamicSVGIcon menuSubtleBlue(String name) { menuIcon(name, subtleBlueMapper({ ThemeManager.isMenuDark() })) }
 
     // ---- toolbar / resizable ----
 
@@ -89,24 +91,33 @@ class Icons {
         toolbarIcon(name, { Color c -> UIManager.getColor('Label.foreground') ?: c })
     }
 
-    static DynamicSVGIcon toolbarGreen(String name) {
-        toolbarIcon(name, greenMapper({ ThemeManager.isDark() }))
-    }
+    static DynamicSVGIcon toolbarGreen(String name)  { toolbarIcon(name, greenMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon toolbarRed(String name)    { toolbarIcon(name, redMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon toolbarBlue(String name)   { toolbarIcon(name, blueMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon toolbarAmber(String name)  { toolbarIcon(name, amberMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon toolbarViolet(String name) { toolbarIcon(name, violetMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon toolbarTeal(String name)   { toolbarIcon(name, tealMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon toolbarJavaBlue(String name) { toolbarIcon(name, javaBlueMapper({ ThemeManager.isDark() })) }
+    static DynamicSVGIcon toolbarSubtleBlue(String name) { toolbarIcon(name, subtleBlueMapper({ ThemeManager.isDark() })) }
 
-    static DynamicSVGIcon toolbarRed(String name) {
-        toolbarIcon(name, redMapper({ ThemeManager.isDark() }))
-    }
+    // Material "700" for light theme / "400" for dark — muted enough not to
+    // shout next to grayscale neighbours, lifted in value for dark readability
+    private static Closure<Color> greenMapper (Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0x2E7D32, 0x81C784) }
+    private static Closure<Color> redMapper   (Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0xC62828, 0xEF5350) }
+    private static Closure<Color> blueMapper  (Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0x1565C0, 0x64B5F6) }
+    private static Closure<Color> amberMapper (Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0xEF6C00, 0xFFB74D) }
+    private static Closure<Color> violetMapper(Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0x7E57C2, 0xB39DDB) }
+    private static Closure<Color> tealMapper  (Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0x00838F, 0x4DD0E1) }
+    // Official Java brand blue (#007396) for light; a lifted variant for dark
+    private static Closure<Color> javaBlueMapper(Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0x007396, 0x4DB6E3) }
+    // Blue-leaning slate — reads as "almost the text colour" but with enough
+    // blue to group related but unremarkable actions (cut/copy/paste).
+    private static Closure<Color> subtleBlueMapper(Closure<Boolean> darkCheck) { hueMapper(darkCheck, 0x4A6A8A, 0xA0B5CC) }
 
-    private static Closure<Color> greenMapper(Closure<Boolean> darkCheck) {
-        Color light = new Color(0x2E7D32)
-        Color dark = new Color(0x81C784)
-        return { Color c -> darkCheck() ? dark : light }
-    }
-
-    private static Closure<Color> redMapper(Closure<Boolean> darkCheck) {
-        Color light = new Color(0xC62828)
-        Color dark = new Color(0xEF5350)
-        return { Color c -> darkCheck() ? dark : light }
+    private static Closure<Color> hueMapper(Closure<Boolean> darkCheck, int light, int dark) {
+        Color lightColor = new Color(light)
+        Color darkColor = new Color(dark)
+        return { Color c -> darkCheck() ? darkColor : lightColor }
     }
 
     private static DynamicSVGIcon menuIcon(String name, Closure<Color> mapper) {

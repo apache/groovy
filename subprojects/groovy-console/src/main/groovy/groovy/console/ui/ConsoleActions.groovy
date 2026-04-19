@@ -139,7 +139,7 @@ cutAction = action(
         closure: controller.&cut,
         mnemonic: 'T',
         accelerator: shortcut('X'),
-        smallIcon: Icons.menu('content_cut'),
+        smallIcon: Icons.menuSubtleBlue('content_cut'),
         shortDescription: 'Cut'
 )
 
@@ -148,7 +148,7 @@ copyAction = action(
         closure: controller.&copy,
         mnemonic: 'C',
         accelerator: shortcut('C'),
-        smallIcon: Icons.menu('content_copy'),
+        smallIcon: Icons.menuSubtleBlue('content_copy'),
         shortDescription: 'Copy'
 )
 
@@ -157,7 +157,7 @@ pasteAction = action(
         closure: controller.&paste,
         mnemonic: 'P',
         accelerator: shortcut('V'),
-        smallIcon: Icons.menu('content_paste'),
+        smallIcon: Icons.menuSubtleBlue('content_paste'),
         shortDescription: 'Paste'
 )
 
@@ -165,7 +165,7 @@ selectAllAction = action(
         name: 'Select All',
         closure: controller.&selectAll,
         mnemonic: 'A',
-        smallIcon: Icons.menu('select_all'),
+        smallIcon: Icons.menuSubtleBlue('select_all'),
         accelerator: shortcut('A')
 )
 
@@ -213,7 +213,7 @@ runJavaAction = action(
         closure: controller.&runJava,
         mnemonic: 'J',
         accelerator: shortcut('alt R'),
-        smallIcon: Icons.menu('coffee'),
+        smallIcon: Icons.menuJavaBlue('coffee'),
         shortDescription: 'Execute Java Code'
 )
 
@@ -265,7 +265,7 @@ listClasspath = action(
 clearClassloader = action(
         name: 'Clear Script Context',
         closure: controller.&clearContext,
-        smallIcon: Icons.menu('bolt'),
+        smallIcon: Icons.menuAmber('bolt'),
         mnemonic: 'C',
 )
 
@@ -413,7 +413,7 @@ smartHighlighterAction = action(
 aboutAction = action(
         name: 'About',
         closure: controller.&showAbout,
-        smallIcon: Icons.menu('info'),
+        smallIcon: Icons.menuBlue('info'),
         mnemonic: 'A'
 )
 

@@ -76,10 +76,10 @@ container(consoleFrame) {
 // — override each action's smallIcon (which is OS-themed for the screen
 // menu bar) with an app-themed instance here.
 inputEditor.textEditor.componentPopupMenu = popupMenu {
-    menuItem(cutAction,          icon: Icons.load('content_cut'))
-    menuItem(copyAction,         icon: Icons.load('content_copy'))
-    menuItem(pasteAction,        icon: Icons.load('content_paste'))
-    menuItem(selectAllAction,    icon: Icons.load('select_all'))
+    menuItem(cutAction,          icon: Icons.subtleBlue('content_cut'))
+    menuItem(copyAction,         icon: Icons.subtleBlue('content_copy'))
+    menuItem(pasteAction,        icon: Icons.subtleBlue('content_paste'))
+    menuItem(selectAllAction,    icon: Icons.subtleBlue('select_all'))
     separator()
     menuItem(undoAction,         icon: Icons.load('undo'))
     menuItem(redoAction,         icon: Icons.load('redo'))
@@ -89,8 +89,8 @@ inputEditor.textEditor.componentPopupMenu = popupMenu {
 }
 
 outputArea.componentPopupMenu = popupMenu {
-    menuItem(copyAction,         icon: Icons.load('content_copy'))
-    menuItem(selectAllAction,    icon: Icons.load('select_all'))
+    menuItem(copyAction,         icon: Icons.subtleBlue('content_copy'))
+    menuItem(selectAllAction,    icon: Icons.subtleBlue('select_all'))
     menuItem(clearOutputAction,  icon: Icons.load('delete_sweep'))
 }
 
