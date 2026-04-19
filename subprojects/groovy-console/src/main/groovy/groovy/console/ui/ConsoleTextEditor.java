@@ -162,7 +162,7 @@ public class ConsoleTextEditor extends JScrollPane {
      * because UndoableEdits restore attributes captured at edit time,
      * which may no longer match the active theme.
      */
-    private void reapplyHighlighting() {
+    public void reapplyHighlighting() {
         Document doc = textEditor.getDocument();
         if (!(doc instanceof DefaultStyledDocument)) {
             return;

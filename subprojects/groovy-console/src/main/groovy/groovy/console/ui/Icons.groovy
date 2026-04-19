@@ -158,6 +158,10 @@ class Icons {
         }
 
         void refreshColors() {
+            // rebuild the FlatSVGIcon entirely — setColorFilter alone leaves the
+            // internal raster cache in a state where some contexts (notably the
+            // macOS screen menu bar) keep painting blank icons after a theme switch
+            this.delegate = new FlatSVGIcon(path, size, size)
             delegate.setColorFilter(new FlatSVGIcon.ColorFilter(colorMapper as Function<Color, Color>))
         }
 

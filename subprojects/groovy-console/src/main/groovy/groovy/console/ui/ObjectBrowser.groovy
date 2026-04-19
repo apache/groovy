@@ -102,7 +102,7 @@ class ObjectBrowser {
                     menuItem { action(name: 'Usage', closure: this.&usageAction) }
                     menuItem { action(
                             name: 'About',
-                            smallIcon: Icons.load('info'),
+                            smallIcon: Icons.menu('info'),
                             closure: this.&aboutAction)
                     }
                 }

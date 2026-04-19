@@ -77,6 +77,7 @@ class AstBrowser {
     def prefs = new AstBrowserUiPreferences()
     Action refreshAction
     private CompilerConfiguration config
+    private Runnable themeChangeListener
 
     AstBrowser(inputArea, rootElement, classLoader, config = null) {
         this.inputArea = inputArea
@@ -127,7 +128,10 @@ class AstBrowser {
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing: { event -> prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView) }) {
+                windowClosing: { event ->
+                    if (themeChangeListener) ThemeManager.removeThemeChangeListener(themeChangeListener)
+                    prefs.save(frame, splitterPane, mainSplitter, showScriptFreeForm, showScriptClass, showClosureClasses, phasePicker.selectedItem, showTreeView)
+                }) {
 
             menuBar {
                 menu(text: 'Show Script', mnemonic: 'S') {
@@ -154,14 +158,14 @@ class AstBrowser {
                                 name: 'Larger Font',
                                 closure: this.&largerFont,
                                 mnemonic: 'L',
-                                smallIcon: Icons.load('text_increase'),
+                                smallIcon: Icons.menu('text_increase'),
                                 accelerator: shortcut('shift L'))
                     }
                     menuItem {
                         action(name: 'Smaller Font',
                                 closure: this.&smallerFont,
                                 mnemonic: 'S',
-                                smallIcon: Icons.load('text_decrease'),
+                                smallIcon: Icons.menu('text_decrease'),
                                 accelerator: shortcut('shift S'))
                     }
                     menuItem {
@@ -173,7 +177,7 @@ class AstBrowser {
                                     initAuxViews()
                                 },
                                 mnemonic: 'R',
-                                smallIcon: Icons.load('refresh'),
+                                smallIcon: Icons.menu('refresh'),
                                 accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0))
                     }
                 }
@@ -181,7 +185,7 @@ class AstBrowser {
                     menuItem { action(
                             name: 'About',
                             closure: this.&aboutAction,
-                            smallIcon: Icons.load('info'),
+                            smallIcon: Icons.menu('info'),
                             mnemonic: 'A')
                     }
                 }
@@ -346,6 +350,31 @@ class AstBrowser {
         jTree.rootVisible = false
         jTree.showsRootHandles = true   // some OS's require this as a step to show nodes
 
+        themeChangeListener = { applyCurrentThemeToSelf() } as Runnable
+        ThemeManager.addThemeChangeListener(themeChangeListener)
+    }
+
+    private void applyCurrentThemeToSelf() {
+        def fg = ThemeManager.isDark() ? new java.awt.Color(204, 204, 204) : java.awt.Color.BLACK
+        def bg = ThemeManager.inputBackground
+        [decompiledSource, bytecodeView, asmifierView].each { editor ->
+            if (!editor) return
+            editor.textEditor.background = bg
+            editor.textEditor.foreground = fg
+            editor.reapplyHighlighting()
+        }
+        Icons.refreshAll()
+        // DefaultTreeCellRenderer.updateUI() — triggered by FlatLaf.updateUI's
+        // cascade — resets leaf/closed/open icons to LaF defaults, wiping our
+        // custom green circle. Defer re-apply onto the EDT so it runs after
+        // the cascade settles.
+        javax.swing.SwingUtilities.invokeLater {
+            if (jTree?.cellRenderer) {
+                try { jTree.cellRenderer.leafIcon = Console.nodeIcon } catch (ignored) {}
+                jTree.repaint()
+            }
+            frame?.repaint()
+        }
     }
 
     private static final int INITIAL_CAPACITY = 64 * 1024 // 64K

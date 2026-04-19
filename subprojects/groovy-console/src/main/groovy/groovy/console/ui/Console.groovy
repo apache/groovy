@@ -34,8 +34,8 @@ import groovy.transform.EqualsAndHashCode
 import groovy.transform.ThreadInterrupt
 import groovy.transform.TupleConstructor
 import groovy.ui.GroovyMain
-import org.antlr.v4.gui.TestRig
-import org.antlr.v4.runtime.CharStream
+import org.antlr.v4.gui.TreeViewer
+import org.antlr.v4.gui.Trees
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.groovy.antlr.LexerFrame
@@ -766,6 +766,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         ThemeManager.applyTheme(mode)
         // reapply custom styles for all open console windows
         consoleControllers.each { Console console -> console.reapplyStyles() }
+        // let auxiliary windows (AstBrowser, ObjectBrowser) retint themselves
+        ThemeManager.notifyThemeChanged()
     }
 
     private void reapplyStyles() {
@@ -1212,27 +1214,55 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         new AstBrowser(inputArea, rootElement, shell.getClassLoader(), config).run({ inputArea.getText() })
     }
 
-    @CompileStatic
-    private static class CstInspector extends TestRig {
-        CstInspector() throws Exception {
-            super(new String[] { 'Groovy', 'compilationUnit', '-gui' })
-        }
-
-        void inspectParseTree(String text) {
-            CharStream charStream = CharStreams.fromReader(new StringReader(text))
-            GroovyLangLexer lexer = new GroovyLangLexer(charStream)
-            CommonTokenStream tokens = new CommonTokenStream(lexer)
-            GroovyLangParser parser = new GroovyLangParser(tokens)
-            process(lexer, GroovyLangParser.class, parser, charStream)
+    void inspectCst(EventObject evt = null) {
+        String text = this.inputEditor.textEditor.text
+        def charStream = CharStreams.fromReader(new StringReader(text))
+        def lexer = new GroovyLangLexer(charStream)
+        def tokens = new CommonTokenStream(lexer)
+        def parser = new GroovyLangParser(tokens)
+        def tree = parser.compilationUnit()
+        // Trees.inspect spawns its own dialog on the EDT; we wait off-EDT then
+        // hop back on to theme it — ANTLR's TreeViewer defaults to black text
+        // on white/transparent boxes, which ignores the app theme otherwise.
+        def future = Trees.inspect(tree, parser)
+        Thread.start {
+            def dialog = future.get()
+            javax.swing.SwingUtilities.invokeLater { themeCstDialog(dialog) }
         }
     }
 
-    @CompileStatic
-    void inspectCst(EventObject evt = null) {
-        String text = this.inputEditor.textEditor.text
+    private void themeCstDialog(javax.swing.JDialog dialog) {
+        TreeViewer viewer = findTreeViewer(dialog)
+        if (!viewer) return
+        applyCstColors(viewer)
+        // track theme switches so an already-open CST dialog keeps pace
+        def listener = { javax.swing.SwingUtilities.invokeLater { applyCstColors(viewer); viewer.repaint() } } as Runnable
+        ThemeManager.addThemeChangeListener(listener)
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override void windowClosed(java.awt.event.WindowEvent e) {
+                ThemeManager.removeThemeChangeListener(listener)
+            }
+        })
+    }
 
-        def gtr = new CstInspector()
-        gtr.inspectParseTree(text)
+    private static void applyCstColors(TreeViewer viewer) {
+        boolean dark = ThemeManager.isDark()
+        viewer.textColor = dark ? new java.awt.Color(210, 210, 210) : java.awt.Color.BLACK
+        viewer.boxColor = dark ? new java.awt.Color(50, 55, 65) : java.awt.Color.WHITE
+        viewer.borderColor = null  // null = no box outline around each label (TreeViewer default)
+        viewer.highlightedBoxColor = dark ? new java.awt.Color(80, 120, 80) : new java.awt.Color(200, 255, 200)
+        viewer.background = dark ? new java.awt.Color(43, 43, 43) : java.awt.Color.WHITE
+    }
+
+    private static TreeViewer findTreeViewer(java.awt.Container container) {
+        for (Component comp : container.components) {
+            if (comp instanceof TreeViewer) return (TreeViewer) comp
+            if (comp instanceof java.awt.Container) {
+                TreeViewer found = findTreeViewer((java.awt.Container) comp)
+                if (found) return found
+            }
+        }
+        null
     }
 
     void inspectTokens(EventObject evt = null) {

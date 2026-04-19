@@ -71,23 +71,27 @@ container(consoleFrame) {
     build(statusBarClass)
 }
 
+// Popup menus are FlatLaf-drawn even on macOS (the screen menu bar only
+// captures JMenuBar), so popup menu-item icons must track the app theme
+// — override each action's smallIcon (which is OS-themed for the screen
+// menu bar) with an app-themed instance here.
 inputEditor.textEditor.componentPopupMenu = popupMenu {
-    menuItem(cutAction)
-    menuItem(copyAction)
-    menuItem(pasteAction)
-    menuItem(selectAllAction)
+    menuItem(cutAction,          icon: Icons.load('content_cut'))
+    menuItem(copyAction,         icon: Icons.load('content_copy'))
+    menuItem(pasteAction,        icon: Icons.load('content_paste'))
+    menuItem(selectAllAction,    icon: Icons.load('select_all'))
     separator()
-    menuItem(undoAction)
-    menuItem(redoAction)
+    menuItem(undoAction,         icon: Icons.load('undo'))
+    menuItem(redoAction,         icon: Icons.load('redo'))
     separator()
-    menuItem(runAction)
+    menuItem(runAction,          icon: Icons.green('play_arrow'))
     menuItem(runSelectionAction)
 }
 
 outputArea.componentPopupMenu = popupMenu {
-    menuItem(copyAction)
-    menuItem(selectAllAction)
-    menuItem(clearOutputAction)
+    menuItem(copyAction,         icon: Icons.load('content_copy'))
+    menuItem(selectAllAction,    icon: Icons.load('select_all'))
+    menuItem(clearOutputAction,  icon: Icons.load('delete_sweep'))
 }
 
 controller.promptStyle = promptStyle

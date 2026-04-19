@@ -26,6 +26,7 @@ import javax.swing.UIManager
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyleContext
 import java.awt.Color
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.prefs.Preferences
 
 /**
@@ -42,6 +43,22 @@ class ThemeManager {
     // cached result of the OS-appearance probe; isSystemDarkMode is on hot paths
     // (icon color filters), so we avoid shelling out per call
     private static volatile Boolean cachedSystemDark = null
+
+    // theme-change listeners — invoked after the LaF is installed so auxiliary
+    // frames (AstBrowser, ObjectBrowser) can retint their own text panes/icons
+    private static final List<Runnable> themeChangeListeners = new CopyOnWriteArrayList<>()
+
+    static void addThemeChangeListener(Runnable listener) {
+        themeChangeListeners << listener
+    }
+
+    static void removeThemeChangeListener(Runnable listener) {
+        themeChangeListeners.remove(listener)
+    }
+
+    static void notifyThemeChanged() {
+        themeChangeListeners.each { it.run() }
+    }
 
     static ThemeMode getCurrentMode() {
         try {
