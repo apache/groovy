@@ -63,6 +63,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 
 public class GroovydocJavaVisitor
     extends VoidVisitorAdapter<Object> {
@@ -72,11 +73,17 @@ public class GroovydocJavaVisitor
     private final String packagePath;
     private final Map<String, String> aliases = new LinkedHashMap<>();
     private final List<String> imports = new ArrayList<>();
+    private final Properties properties;
     private static final String FS = "/";
 
     public GroovydocJavaVisitor(String packagePath, List<LinkArgument> links) {
+        this(packagePath, links, new Properties());
+    }
+
+    public GroovydocJavaVisitor(String packagePath, List<LinkArgument> links, Properties properties) {
         this.packagePath = packagePath;
         this.links = links;
+        this.properties = properties;
     }
 
     @Override
@@ -315,6 +322,23 @@ public class GroovydocJavaVisitor
         return "";
     }
 
+    // GROOVY-9572: hide members annotated with groovy.transform.@Internal (per GEP-17)
+    // or deemed internal by name convention (contains '$'), unless the user opts
+    // in with -showInternal / showInternal=true. Mirrors the policy of
+    // {@link org.apache.groovy.ast.tools.AnnotatedNodeUtils#deemedInternal} on
+    // the Groovy-AST side, expressed against JavaParser AST nodes here.
+    private boolean isInternal(NodeWithAnnotations<?> n) {
+        if ("true".equals(properties.getProperty("showInternal", "false"))) return false;
+        for (AnnotationExpr an : n.getAnnotations()) {
+            String name = an.getNameAsString();
+            if ("Internal".equals(name) || name.endsWith(".Internal")) return true;
+        }
+        if (n instanceof FieldDeclaration fd && fd.getVariable(0).getNameAsString().contains("$")) return true;
+        if (n instanceof MethodDeclaration md && md.getNameAsString().contains("$")) return true;
+        if (n instanceof ConstructorDeclaration cd && cd.getNameAsString().contains("$")) return true;
+        return false;
+    }
+
     private void setModifiers(NodeList<Modifier> modifiers, SimpleGroovyAbstractableElementDoc elementDoc) {
         if (modifiers.contains(Modifier.publicModifier())) {
             elementDoc.setPublic(true);
@@ -342,6 +366,7 @@ public class GroovydocJavaVisitor
 
     @Override
     public void visit(MethodDeclaration m, Object arg) {
+        if (isInternal(m)) return;
         SimpleGroovyMethodDoc meth = new SimpleGroovyMethodDoc(m.getNameAsString(), currentClassDoc);
         meth.setTypeParameters(genericTypesAsString(m.getTypeParameters()));
         meth.setReturnType(makeType(m.getType()));
@@ -356,6 +381,7 @@ public class GroovydocJavaVisitor
 
     @Override
     public void visit(ConstructorDeclaration c, Object arg) {
+        if (isInternal(c)) return;
         SimpleGroovyConstructorDoc meth = new SimpleGroovyConstructorDoc(c.getNameAsString(), currentClassDoc);
         setConstructorOrMethodCommon(c, meth);
         currentClassDoc.add(meth);
@@ -398,6 +424,7 @@ public class GroovydocJavaVisitor
 
     @Override
     public void visit(FieldDeclaration f, Object arg) {
+        if (isInternal(f)) return;
         String name = f.getVariable(0).getNameAsString();
         SimpleGroovyFieldDoc field = new SimpleGroovyFieldDoc(name, currentClassDoc);
         field.setType(makeType(f.getVariable(0).getType()));

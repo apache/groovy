@@ -70,7 +70,7 @@ public class GroovyDocParser implements GroovyDocParserI {
     }
 
     private Map<String, GroovyClassDoc> parseJava(String packagePath, String file, String src) throws RuntimeException {
-        GroovydocJavaVisitor visitor = new GroovydocJavaVisitor(packagePath, links);
+        GroovydocJavaVisitor visitor = new GroovydocJavaVisitor(packagePath, links, properties);
         try {
             visitor.visit(StaticJavaParser.parse(src), null);
         } catch (Throwable t) {

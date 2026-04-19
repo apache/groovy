@@ -61,6 +61,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.deemedInternal;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
@@ -221,9 +222,18 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         }
     }
 
+    // GROOVY-9572: hide members annotated with groovy.transform.@Internal (per GEP-17)
+    // or deemed internal by name convention (contains '$'), unless the user opts
+    // in with -showInternal / showInternal=true.
+    private boolean isInternal(AnnotatedNode node) {
+        if ("true".equals(properties.getProperty("showInternal", "false"))) return false;
+        return deemedInternal(node);
+    }
+
     @Override
     public void visitConstructor(ConstructorNode node) {
         if (node.isSynthetic()) return;
+        if (isInternal(node)) return;
         SimpleGroovyConstructorDoc cons = new SimpleGroovyConstructorDoc(currentClassDoc.simpleTypeName(), currentClassDoc);
         setConstructorOrMethodCommon(node, cons);
         currentClassDoc.add(cons);
@@ -235,6 +245,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         if (currentClassDoc.isEnum() && "$INIT".equals(node.getName()))
             return;
         if (node.isSynthetic()) return;
+        if (isInternal(node)) return;
         if ("false".equals(properties.getProperty("includeMainForScripts", "true"))
                 && currentClassDoc.isScript() && "main".equals(node.getName()) && node.isStatic() && node.getParameters().length == 1)
             return;
@@ -321,6 +332,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitProperty(PropertyNode node) {
+        if (isInternal(node.getField())) return;
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
@@ -387,6 +399,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     @Override
     public void visitField(FieldNode node) {
         if (node.isSynthetic()) return;
+        if (isInternal(node)) return;
         String name = node.getName();
         SimpleGroovyFieldDoc fieldDoc = new SimpleGroovyFieldDoc(name, currentClassDoc);
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));

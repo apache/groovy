@@ -50,6 +50,7 @@ class Main {
     private static Boolean publicScope
     private static Boolean protectedScope
     private static Boolean debug = false
+    private static Boolean showInternal
     private static String[] sourcepath
     private static String javaVersion
     private static List<String> sourceFilesToDoc
@@ -92,6 +93,7 @@ class Main {
         cli.stylesheetfile(args:1, argName: 'path', messages['cli.option.stylesheetfile.description'])
         cli.sourcepath(args:1, argName: 'pathlist', messages['cli.option.sourcepath.description'])
         cli.javaVersion(args: 1, argName: 'javaVersion', messages['cli.option.javaVersion.description'])
+        cli.showInternal(messages['cli.option.showInternal.description'])
 
         def options = cli.parse(args)
 
@@ -133,6 +135,7 @@ class Main {
         noMainForScripts = Boolean.valueOf(options.nomainforscripts) ?: false
         noTimestamp = Boolean.valueOf(options.notimestamp) ?: false
         noVersionStamp = Boolean.valueOf(options.noversionstamp) ?: false
+        showInternal = Boolean.valueOf(options.showInternal) ?: false
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
         protectedScope = Boolean.valueOf(options.protected) ?: false
@@ -212,6 +215,7 @@ class Main {
         properties.put("author", author.toString())
         properties.put("processScripts", (!noScripts).toString())
         properties.put("includeMainForScripts", (!noMainForScripts).toString())
+        properties.put("showInternal", showInternal.toString())
         properties.put("timestamp", (!noTimestamp).toString())
         properties.put("versionStamp", (!noVersionStamp).toString())
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")

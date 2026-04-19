@@ -96,6 +96,7 @@ import static java.util.stream.Collectors.joining;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.hasAnnotation;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.isGenerated;
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated;
+import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsInternal;
 import static org.apache.groovy.ast.tools.ConstructorNodeUtils.getFirstIfSpecialConstructorCall;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.codehaus.groovy.ast.ClassHelper.isObjectType;
@@ -486,6 +487,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC | ACC_TRANSIENT,
                     ClassHelper.boolean_TYPE, null);
             stMCB.setSynthetic(true);
+            // GROOVY-9572: mark as @Internal (GEP-17) so groovydoc hides it from
+            // inherited-field listings. Skip for classes built programmatically
+            // without a module context (matches the guard used by markAsGenerated).
+            if (node.getModule() != null && node.getModule().getContext() != null) {
+                markAsInternal(stMCB);
+            }
         }
     }
 
