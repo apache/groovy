@@ -845,7 +845,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         swing.lightThemeMenuItem.selected = (currentTheme == 'LIGHT')
         swing.darkThemeMenuItem.selected = (currentTheme == 'DARK')
         swing.systemThemeMenuItem.selected = (currentTheme == 'SYSTEM')
-        statusLabel.text = 'Theme changed to: ' + ThemeManager.themeLabel
+        statusLabel.text = 'Theme changed to: ' + ThemeManager.themeLabel + (ThemeManager.isUsingCustomTheme() ? ' (custom)' : '')
 
         // repaint
         inputEditor.textEditor.repaint()
@@ -1279,17 +1279,19 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     void largeIcons(EventObject evt = null) { applyIconSize(Icons.SIZE_LARGE) }
 
     void scaleIconsWithFont(EventObject evt = null) {
-        boolean enabled = evt?.source?.isSelected()
+        setScaleIconsWithFont(evt?.source?.isSelected() as boolean)
+    }
+
+    void setScaleIconsWithFont(boolean enabled) {
         prefs.putBoolean('scaleIconsWithFont', enabled)
         if (enabled) {
             applyIconSize(iconSizeFromFont(inputArea.font.size))
         } else {
             applyIconSize(prefs.getInt('iconSize', Icons.SIZE_NORMAL))
         }
-        updateIconSizeMenuEnabled()
     }
 
-    private void applyIconSize(int size) {
+    void applyIconSize(int size) {
         // only persist the preset when not tracking the font
         if (!prefs.getBoolean('scaleIconsWithFont', false)) {
             prefs.putInt('iconSize', size)
@@ -1297,6 +1299,15 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         Icons.setSize(size)
         toolbar?.revalidate()
         toolbar?.repaint()
+    }
+
+    void reapplyTheme() {
+        switchTheme(ThemeManager.currentMode)
+    }
+
+    void reloadThemes() {
+        ThemeManager.reloadThemes()
+        reapplyTheme()
     }
 
     private static int iconSizeFromFont(int fontSize) {
@@ -1316,14 +1327,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         prefs.getInt('iconSize', Icons.SIZE_NORMAL)
     }
 
-    private void updateIconSizeMenuEnabled() {
-        boolean scaling = prefs.getBoolean('scaleIconsWithFont', false)
-        swing.smallIconsAction.enabled = !scaling
-        swing.normalIconsAction.enabled = !scaling
-        swing.largeIconsAction.enabled = !scaling
-    }
-
-    void largerFont(EventObject evt = null) {
+void largerFont(EventObject evt = null) {
         updateFontSize(inputArea.font.size + 2)
     }
 

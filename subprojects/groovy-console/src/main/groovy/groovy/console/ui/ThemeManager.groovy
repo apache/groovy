@@ -149,19 +149,69 @@ class ThemeManager {
         buildSwingStyles(activeTheme, fontFamily)
     }
 
+    /**
+     * Returns the attributes for a single theme style key as a plain map
+     * (foreground/background Colors plus bold/italic/underline Booleans).
+     * Consumed by SmartDocumentFilter so ANTLR-token-driven highlighting
+     * picks up the same theme values as the regex-based GroovyFilter styles.
+     * Returns an empty map if the theme doesn't define the key.
+     */
+    static Map getStyleAttrs(String key) {
+        if (!key) return [:]
+        activeTheme.styles[key.toLowerCase()] ?: [:]
+    }
+
     // --- theme loading + parsing ---
 
     private static final Map<String, Object> themeCache = [:]
 
+    static String getCustomLightPath() { prefs.get('themeCustomLightPath', null) }
+    static String getCustomDarkPath()  { prefs.get('themeCustomDarkPath',  null) }
+
+    static void setCustomLightPath(String path) {
+        path ? prefs.put('themeCustomLightPath', path) : prefs.remove('themeCustomLightPath')
+    }
+
+    static void setCustomDarkPath(String path) {
+        path ? prefs.put('themeCustomDarkPath', path) : prefs.remove('themeCustomDarkPath')
+    }
+
+    /** True iff the theme currently in use is loaded from a user-supplied file. */
+    static boolean isUsingCustomTheme() {
+        def file = customFileForCurrentMode()
+        file?.exists() && file.canRead()
+    }
+
+    /** Clear the parsed-theme cache so next lookup re-reads from disk/classpath. */
+    static void reloadThemes() {
+        synchronized (themeCache) { themeCache.clear() }
+    }
+
+    private static File customFileForCurrentMode() {
+        String path = isDark() ? customDarkPath : customLightPath
+        path ? new File(path) : null
+    }
+
     private static Map getActiveTheme() {
+        def file = customFileForCurrentMode()
+        if (file?.exists() && file.canRead()) {
+            try {
+                return themeCache.computeIfAbsent('custom:' + file.absolutePath) { key ->
+                    file.withReader('UTF-8') { r -> parseTheme(r) }
+                }
+            } catch (Exception ignored) {
+                // fall through to bundled on parse failure
+            }
+        }
         loadBundledTheme(isDark() ? 'dark' : 'light')
     }
 
     private static Map loadBundledTheme(String name) {
-        themeCache.computeIfAbsent(name) { key ->
-            def resource = ThemeManager.classLoader.getResourceAsStream("groovy/console/ui/themes/${key}.theme")
+        themeCache.computeIfAbsent('bundled:' + name) { key ->
+            String resourcePath = "groovy/console/ui/themes/${name}.theme"
+            def resource = ThemeManager.classLoader.getResourceAsStream(resourcePath)
             if (!resource) {
-                throw new IllegalStateException("Missing bundled theme resource: ${key}.theme")
+                throw new IllegalStateException("Missing bundled theme resource: ${resourcePath}")
             }
             resource.withStream { stream ->
                 parseTheme(new InputStreamReader(stream, 'UTF-8'))

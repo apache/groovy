@@ -44,6 +44,7 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import groovy.console.ui.ThemeManager;
@@ -424,67 +425,60 @@ public class SmartDocumentFilter extends DocumentFilter {
 
     /**
      * Updates all SmartDocumentFilter styles with current theme colors.
-     * Can be called at init time and on theme switch.
+     * Attribute values are sourced from ThemeManager so custom .theme files
+     * feed both this (ANTLR-token-driven) path and the regex-driven GroovyFilter
+     * path from one place. Called at init time and on theme switch.
      */
     public static void updateStyles() {
-        boolean dark = ThemeManager.isDark();
         StyleContext sc = StyleContext.getDefaultStyleContext();
 
-        // comments
-        Style comment = sc.getStyle(String.valueOf(NL));
-        if (comment != null) {
-            StyleConstants.setForeground(comment, dark ? new Color(180, 180, 180) : Color.LIGHT_GRAY.darker().darker());
-            StyleConstants.setItalic(comment, true);
-        }
+        applyThemeStyle(sc.getStyle(String.valueOf(NL)), "comment");
 
-        // gstrings
-        Color gstringColor = dark ? new Color(235, 200, 250) : new Color(140, 0, 140);
         for (int t : Arrays.asList(GStringBegin, GStringPart, GStringEnd)) {
-            Style style = sc.getStyle(String.valueOf(t));
-            if (style != null) StyleConstants.setForeground(style, gstringColor);
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "quotes");
         }
+        applyThemeStyle(sc.getStyle(String.valueOf(StringLiteral)), "single_quotes");
 
-        // strings
-        Style stringLiteral = sc.getStyle(String.valueOf(StringLiteral));
-        if (stringLiteral != null) {
-            StyleConstants.setForeground(stringLiteral, dark ? new Color(180, 235, 175) : new Color(0, 120, 0));
-        }
-
-        // numbers
-        Color digitColor = dark ? new Color(235, 170, 170) : new Color(180, 0, 0);
         for (int t : Arrays.asList(IntegerLiteral, FloatingPointLiteral)) {
-            Style style = sc.getStyle(String.valueOf(t));
-            if (style != null) StyleConstants.setForeground(style, digitColor);
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "digit");
         }
 
-        // reserved keywords
-        Color keywordColor = dark ? new Color(200, 220, 245) : new Color(0, 0, 160);
         for (int t : HIGHLIGHTED_TOKEN_TYPE_LIST) {
-            Style style = sc.getStyle(String.valueOf(t));
-            if (style != null) {
-                StyleConstants.setBold(style, true);
-                StyleConstants.setForeground(style, keywordColor);
-            }
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "reserved_word");
         }
 
-        // commas, semicolons
-        Color punctuationColor = dark ? new Color(200, 200, 200) : new Color(0, 0, 140);
+        // commas and semicolons reuse the "operation" theme key — closest semantic match
         for (int t : Arrays.asList(COMMA, SEMI)) {
-            Style style = sc.getStyle(String.valueOf(t));
-            if (style != null) StyleConstants.setForeground(style, punctuationColor);
+            applyThemeStyle(sc.getStyle(String.valueOf(t)), "operation");
         }
 
-        // annotations (@)
-        Style atStyle = sc.getStyle(String.valueOf(AT));
-        if (atStyle != null) {
-            StyleConstants.setForeground(atStyle, dark ? new Color(230, 230, 150) : new Color(100, 100, 0));
-        }
+        applyThemeStyle(sc.getStyle(String.valueOf(AT)), "annotation");
 
-        // unexpected char
+        // unexpected-char is a lexer-error indicator, not semantic syntax — stay hardcoded
         Style unexpectedChar = sc.getStyle(String.valueOf(UNEXPECTED_CHAR));
         if (unexpectedChar != null) {
-            StyleConstants.setForeground(unexpectedChar, dark ? Color.CYAN : Color.CYAN.darker());
+            StyleConstants.setForeground(unexpectedChar,
+                    ThemeManager.isDark() ? Color.CYAN : Color.CYAN.darker());
         }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static void applyThemeStyle(Style style, String themeKey) {
+        if (style == null) return;
+        // clear managed attributes so the previous theme's values don't linger
+        style.removeAttribute(StyleConstants.Foreground);
+        style.removeAttribute(StyleConstants.Background);
+        style.removeAttribute(StyleConstants.Bold);
+        style.removeAttribute(StyleConstants.Italic);
+        style.removeAttribute(StyleConstants.Underline);
+        Map attrs = ThemeManager.getStyleAttrs(themeKey);
+        Object fg = attrs.get("foreground");
+        if (fg instanceof Color)  StyleConstants.setForeground(style, (Color) fg);
+        Object bg = attrs.get("background");
+        if (bg instanceof Color)  StyleConstants.setBackground(style, (Color) bg);
+        if (Boolean.TRUE.equals(attrs.get("bold")))      StyleConstants.setBold(style, true);
+        if (Boolean.TRUE.equals(attrs.get("italic")))    StyleConstants.setItalic(style, true);
+        if (Boolean.TRUE.equals(attrs.get("underline"))) StyleConstants.setUnderline(style, true);
     }
 
     private volatile boolean latest = false;

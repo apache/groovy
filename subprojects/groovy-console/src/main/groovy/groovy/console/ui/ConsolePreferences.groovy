@@ -24,6 +24,8 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 
 import javax.swing.JDialog
 import javax.swing.JFileChooser
+import javax.swing.JOptionPane
+import javax.swing.filechooser.FileNameExtensionFilter
 import java.awt.Dimension
 
 class ConsolePreferences {
@@ -38,6 +40,18 @@ class ConsolePreferences {
     @Bindable
     int loopModeDelay
 
+    @Bindable
+    int iconSize
+
+    @Bindable
+    boolean scaleIconsWithFont
+
+    @Bindable
+    String customLightThemePath
+
+    @Bindable
+    String customDarkThemePath
+
     private final console
     private final MessageSource T
 
@@ -50,6 +64,10 @@ class ConsolePreferences {
 
         maxOutputChars = console.loadMaxOutputChars()
         loopModeDelay = console.prefs.getInt('loopModeDelay', DEFAULT_LOOP_MODE_DELAY_MILLIS)
+        iconSize = console.prefs.getInt('iconSize', Icons.SIZE_NORMAL)
+        scaleIconsWithFont = console.prefs.getBoolean('scaleIconsWithFont', false)
+        customLightThemePath = ThemeManager.customLightPath ?: ''
+        customDarkThemePath  = ThemeManager.customDarkPath  ?: ''
         console.maxOutputChars = maxOutputChars
     }
 
@@ -114,6 +132,79 @@ class ConsolePreferences {
 
                 vstrut(12)
 
+                vbox(border: compoundBorder([
+                        titledBorder(T['prefs.appearance.settings.title']),
+                        emptyBorder([6, 8, 8, 8])])) {
+                    hbox {
+                        label "${T['prefs.icon.size']}:"
+                        hstrut(8)
+                        buttonGroup(id: 'iconSizeGroup')
+                        radioButton(text: T['prefs.icon.size.small'],  id: 'iconSizeSmall',
+                                buttonGroup: iconSizeGroup, selected: iconSize == Icons.SIZE_SMALL,
+                                enabled: !scaleIconsWithFont,
+                                actionPerformed: { iconSize = Icons.SIZE_SMALL })
+                        hstrut(4)
+                        radioButton(text: T['prefs.icon.size.normal'], id: 'iconSizeNormal',
+                                buttonGroup: iconSizeGroup, selected: iconSize == Icons.SIZE_NORMAL,
+                                enabled: !scaleIconsWithFont,
+                                actionPerformed: { iconSize = Icons.SIZE_NORMAL })
+                        hstrut(4)
+                        radioButton(text: T['prefs.icon.size.large'],  id: 'iconSizeLarge',
+                                buttonGroup: iconSizeGroup, selected: iconSize == Icons.SIZE_LARGE,
+                                enabled: !scaleIconsWithFont,
+                                actionPerformed: { iconSize = Icons.SIZE_LARGE })
+                        hglue()
+                    }
+
+                    vstrut(4)
+
+                    hbox {
+                        checkBox(text: T['prefs.scale.icons.with.font'], id: 'scaleIconsCheckBox',
+                                selected: scaleIconsWithFont,
+                                actionPerformed: this.&onScaleWithFontToggled)
+                        hglue()
+                    }
+
+                    vstrut(10)
+
+                    hbox {
+                        label "${T['prefs.custom.light.theme']}:"
+                        hstrut(6)
+                        label(id: 'customLightPathLabel',
+                                text: customLightThemePath ?: T['prefs.no.file.selected'])
+                        hglue()
+                        button(text: T['prefs.select'], actionPerformed: this.&onSelectLightTheme)
+                        hstrut(4)
+                        button(text: T['prefs.clear'], id: 'clearLightButton',
+                                enabled: customLightThemePath as boolean,
+                                actionPerformed: this.&onClearLightTheme)
+                    }
+
+                    vstrut(4)
+
+                    hbox {
+                        label "${T['prefs.custom.dark.theme']}:"
+                        hstrut(6)
+                        label(id: 'customDarkPathLabel',
+                                text: customDarkThemePath ?: T['prefs.no.file.selected'])
+                        hglue()
+                        button(text: T['prefs.select'], actionPerformed: this.&onSelectDarkTheme)
+                        hstrut(4)
+                        button(text: T['prefs.clear'], id: 'clearDarkButton',
+                                enabled: customDarkThemePath as boolean,
+                                actionPerformed: this.&onClearDarkTheme)
+                    }
+
+                    vstrut(8)
+
+                    hbox {
+                        hglue()
+                        button(text: T['prefs.reload.themes'], actionPerformed: this.&onReloadThemes)
+                    }
+                }
+
+                vstrut(12)
+
                 hbox {
                     button T['prefs.reset.defaults'], id: 'resetPrefsButton', actionPerformed: this.&onReset
                     hglue()
@@ -144,6 +235,13 @@ class ConsolePreferences {
     private void onReset(EventObject event) {
         console.swing.txtMaxOutputChars.text = DEFAULT_MAX_OUTPUT_CHARS
         console.swing.txtLoopModeDelay.text = DEFAULT_LOOP_MODE_DELAY_MILLIS
+        iconSize = Icons.SIZE_NORMAL
+        scaleIconsWithFont = false
+        console.swing.iconSizeNormal.selected = true
+        console.swing.scaleIconsCheckBox.selected = false
+        setIconSizeRadiosEnabled(true)
+        updateLightPathLabel(null)
+        updateDarkPathLabel(null)
     }
 
     private void onClose(EventObject event) {
@@ -156,6 +254,26 @@ class ConsolePreferences {
         }
 
         console.setOutputPreferences(console.swing.outputFileCheckBox.enabled, outputFile)
+
+        // apply appearance settings
+        boolean previousScale = console.prefs.getBoolean('scaleIconsWithFont', false)
+        int previousIcon = console.prefs.getInt('iconSize', Icons.SIZE_NORMAL)
+        if (scaleIconsWithFont != previousScale) {
+            console.setScaleIconsWithFont(scaleIconsWithFont)
+        } else if (!scaleIconsWithFont && iconSize != previousIcon) {
+            console.applyIconSize(iconSize)
+        }
+
+        // apply custom theme paths — reapply theme only if something actually changed
+        String previousLight = ThemeManager.customLightPath ?: ''
+        String previousDark  = ThemeManager.customDarkPath  ?: ''
+        String newLight = customLightThemePath ?: ''
+        String newDark  = customDarkThemePath  ?: ''
+        if (newLight != previousLight || newDark != previousDark) {
+            ThemeManager.customLightPath = newLight ?: null
+            ThemeManager.customDarkPath  = newDark  ?: null
+            console.reloadThemes()
+        }
 
         dialog.dispose()
     }
@@ -171,6 +289,59 @@ class ConsolePreferences {
             outputFile = fileChooser.selectedFile
         }
         console.swing.outputFileName.text = outputFile.path
+    }
+
+    private void onScaleWithFontToggled(EventObject event) {
+        scaleIconsWithFont = event.source.selected
+        setIconSizeRadiosEnabled(!scaleIconsWithFont)
+    }
+
+    private void setIconSizeRadiosEnabled(boolean enabled) {
+        console.swing.iconSizeSmall.enabled = enabled
+        console.swing.iconSizeNormal.enabled = enabled
+        console.swing.iconSizeLarge.enabled = enabled
+    }
+
+    private void onSelectLightTheme(EventObject event) { pickThemeFile { it -> updateLightPathLabel(it) } }
+    private void onSelectDarkTheme (EventObject event) { pickThemeFile { it -> updateDarkPathLabel(it)  } }
+    private void onClearLightTheme (EventObject event) { updateLightPathLabel(null) }
+    private void onClearDarkTheme  (EventObject event) { updateDarkPathLabel(null)  }
+
+    private void onReloadThemes(EventObject event) {
+        // apply any staged path changes first so Reload uses current selections
+        ThemeManager.customLightPath = customLightThemePath ?: null
+        ThemeManager.customDarkPath  = customDarkThemePath  ?: null
+        console.reloadThemes()
+    }
+
+    private void pickThemeFile(Closure onPicked) {
+        JFileChooser fileChooser = new JFileChooser()
+        fileChooser.fileFilter = new FileNameExtensionFilter('Groovy theme files (*.theme)', 'theme')
+        def groovyDir = new File(System.getProperty('user.home'), '.groovy')
+        fileChooser.currentDirectory = groovyDir.isDirectory() ? groovyDir : new File(System.getProperty('user.home'))
+        if (fileChooser.showOpenDialog(dialog) != JFileChooser.APPROVE_OPTION) return
+        File picked = fileChooser.selectedFile
+        try {
+            picked.withReader('UTF-8') { r -> ThemeManager.parseTheme(r) }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(dialog,
+                    "Could not parse theme file:\n${picked.absolutePath}\n\n${ex.message}",
+                    'Invalid Theme File', JOptionPane.WARNING_MESSAGE)
+            return
+        }
+        onPicked(picked.absolutePath)
+    }
+
+    private void updateLightPathLabel(String path) {
+        customLightThemePath = path ?: ''
+        console.swing.customLightPathLabel.text = path ?: T['prefs.no.file.selected']
+        console.swing.clearLightButton.enabled = path as boolean
+    }
+
+    private void updateDarkPathLabel(String path) {
+        customDarkThemePath = path ?: ''
+        console.swing.customDarkPathLabel.text = path ?: T['prefs.no.file.selected']
+        console.swing.clearDarkButton.enabled = path as boolean
     }
 
     // Useful for testing gui
