@@ -1257,17 +1257,19 @@ public class GroovyDocToolTest extends GroovyTestCase {
                         "class Groovy"
         )).matcher(groovydoc).find());
 
-        assertTrue("The Java class declaration header should have the annotation in:\n" + javadoc, Pattern.compile(
+        // GROOVY-4634: @SuppressWarnings is not @Documented so is filtered out (matches Javadoc behavior)
+        assertTrue("The Java class declaration header should have only the @Documented annotation in:\n" + javadoc, Pattern.compile(
                 "<pre>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)\n" +
-                        "@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/SuppressWarnings.html' title='SuppressWarnings'>SuppressWarnings</a>|java.lang.SuppressWarnings)\\(\"foo\"\\)\n" +
                         "public class Java"
         ).matcher(javadoc).find());
+        assertFalse("@SuppressWarnings (not @Documented) should not appear in:\n" + javadoc,
+                javadoc.contains("SuppressWarnings"));
 
-        assertTrue("The Groovy field details should have the annotation in:" + groovydoc, Pattern.compile(
-                "<h4>@groovy.transform.Internal<br>" +
-                        "public&nbsp;(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a>|java.lang.String) " +
-                        "<strong>annotatedField</strong></h4>"
-        ).matcher(groovydoc).find());
+        // GROOVY-4634: @groovy.transform.Internal is not @Documented so is filtered out
+        assertFalse("@Internal (not @Documented) should not appear on annotatedField in:\n" + groovydoc,
+                Pattern.compile("<h4>@groovy.transform.Internal<br>\\s*public&nbsp;.*annotatedField").matcher(groovydoc).find());
+        assertTrue("The Groovy field details should still render the field itself in:\n" + groovydoc,
+                Pattern.compile("<strong>annotatedField</strong></h4>").matcher(groovydoc).find());
 
         assertTrue("The Java field details should have the annotation", Pattern.compile(
                 "<h4>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)<br>" +
@@ -1317,13 +1319,15 @@ public class GroovyDocToolTest extends GroovyTestCase {
                         "\\)</h4>"
         ).matcher(groovydoc).find());
 
-        assertTrue("The Java method details should have the annotations in:\n" + javadoc, Pattern.compile(
+        // GROOVY-4634: @CommandLine.Parameters (picocli) is not @Documented so is filtered out
+        assertTrue("The Java method details should have the @Documented annotation in:\n" + javadoc, Pattern.compile(
                 "<h4>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)<br>" +
                         "public&nbsp;void <strong>annotatedMethod</strong>\\(" +
-                        "@CommandLine.Parameters\\(hidden = true\\)<br>" +
                         "(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/String.html' title='String'>String</a>|java.lang.String) annotatedParam" +
                         "\\)</h4>"
         ).matcher(javadoc).find());
+        assertFalse("@CommandLine.Parameters (not @Documented) should not appear on annotatedParam in:\n" + javadoc,
+                javadoc.contains("@CommandLine.Parameters"));
     }
 
     public void testAbstractMethods() throws Exception {

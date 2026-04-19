@@ -193,6 +193,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private void processAnnotations(SimpleGroovyProgramElementDoc element, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
+            if (!shouldDocument(name)) continue;
             element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
         }
     }
@@ -200,7 +201,23 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private void processAnnotations(SimpleGroovyParameter param, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
+            if (!shouldDocument(name)) continue;
             param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
+        }
+    }
+
+    // GROOVY-4634: emit an annotation reference only when the annotation type is
+    // itself marked {@code @Documented}, matching Javadoc's behavior. When the
+    // annotation type cannot be resolved on the current classpath (common for
+    // user-defined annotations in the source tree being documented), default
+    // to including it so that groovydoc does not silently drop user annotations.
+    private static boolean shouldDocument(String fqn) {
+        try {
+            Class<?> c = Class.forName(fqn);
+            if (!c.isAnnotation()) return true;
+            return c.isAnnotationPresent(java.lang.annotation.Documented.class);
+        } catch (Throwable t) {
+            return true;
         }
     }
 
