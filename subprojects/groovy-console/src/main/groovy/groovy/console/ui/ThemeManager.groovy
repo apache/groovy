@@ -138,143 +138,140 @@ class ThemeManager {
     }
 
     static Color getInputBackground() {
-        isDark() ? new Color(30, 30, 30) : Color.WHITE
+        activeTheme.inputBackground
     }
 
     static Color getOutputBackground() {
-        isDark() ? new Color(43, 43, 43) : new Color(255, 255, 218)
+        activeTheme.outputBackground
     }
 
     static Map getStyles(String fontFamily) {
-        isDark() ? getDarkStyles(fontFamily) : getLightStyles(fontFamily)
+        buildSwingStyles(activeTheme, fontFamily)
     }
 
-    private static Map getLightStyles(String fontFamily) {
-        [
-            // output window styles
-            regular: [
-                (StyleConstants.FontFamily): fontFamily,
-                (StyleConstants.Foreground): Color.BLACK
-            ],
-            prompt: [
-                (StyleConstants.Foreground): new Color(0, 128, 0)
-            ],
-            command: [
-                (StyleConstants.Foreground): Color.BLUE
-            ],
-            stacktrace: [
-                (StyleConstants.Foreground): Color.RED.darker()
-            ],
-            hyperlink: [
-                (StyleConstants.Foreground): Color.BLUE,
-                (StyleConstants.Underline): true
-            ],
-            output: [
-                (StyleConstants.Foreground): Color.BLACK
-            ],
-            result: [
-                (StyleConstants.Foreground): Color.BLUE,
-                (StyleConstants.Background): Color.YELLOW
-            ],
+    // --- theme loading + parsing ---
 
-            // syntax highlighting styles
-            (StyleContext.DEFAULT_STYLE): [
-                (StyleConstants.FontFamily): fontFamily
-            ],
-            (GroovyFilter.COMMENT): [
-                (StyleConstants.Foreground): Color.LIGHT_GRAY.darker().darker(),
-                (StyleConstants.Italic): true
-            ],
-            (GroovyFilter.QUOTES): [
-                (StyleConstants.Foreground): Color.MAGENTA.darker().darker()
-            ],
-            (GroovyFilter.SINGLE_QUOTES): [
-                (StyleConstants.Foreground): Color.GREEN.darker().darker()
-            ],
-            (GroovyFilter.SLASHY_QUOTES): [
-                (StyleConstants.Foreground): Color.ORANGE.darker()
-            ],
-            (GroovyFilter.DIGIT): [
-                (StyleConstants.Foreground): Color.RED.darker()
-            ],
-            (GroovyFilter.ANNOTATION): [
-                (StyleConstants.Foreground): new Color(128, 128, 0)
-            ],
-            (GroovyFilter.OPERATION): [
-                (StyleConstants.Bold): true
-            ],
-            (GroovyFilter.IDENT): [:],
-            (GroovyFilter.RESERVED_WORD): [
-                (StyleConstants.Bold): true,
-                (StyleConstants.Foreground): Color.BLUE.darker().darker()
-            ]
-        ]
+    private static final Map<String, Object> themeCache = [:]
+
+    private static Map getActiveTheme() {
+        loadBundledTheme(isDark() ? 'dark' : 'light')
     }
 
-    private static Map getDarkStyles(String fontFamily) {
-        [
-            // output window styles
-            regular: [
-                (StyleConstants.FontFamily): fontFamily,
-                (StyleConstants.Foreground): new Color(204, 204, 204)
-            ],
-            prompt: [
-                (StyleConstants.Foreground): new Color(106, 180, 101)
-            ],
-            command: [
-                (StyleConstants.Foreground): new Color(104, 151, 187)
-            ],
-            stacktrace: [
-                (StyleConstants.Foreground): new Color(204, 102, 102)
-            ],
-            hyperlink: [
-                (StyleConstants.Foreground): new Color(104, 151, 187),
-                (StyleConstants.Underline): true
-            ],
-            output: [
-                (StyleConstants.Foreground): new Color(204, 204, 204)
-            ],
-            result: [
-                (StyleConstants.Foreground): new Color(169, 183, 198),
-                (StyleConstants.Background): new Color(50, 50, 80)
-            ],
+    private static Map loadBundledTheme(String name) {
+        themeCache.computeIfAbsent(name) { key ->
+            def resource = ThemeManager.classLoader.getResourceAsStream("groovy/console/ui/themes/${key}.theme")
+            if (!resource) {
+                throw new IllegalStateException("Missing bundled theme resource: ${key}.theme")
+            }
+            resource.withStream { stream ->
+                parseTheme(new InputStreamReader(stream, 'UTF-8'))
+            }
+        }
+    }
 
-            // syntax highlighting styles
-            (StyleContext.DEFAULT_STYLE): [
-                (StyleConstants.FontFamily): fontFamily,
-                (StyleConstants.Foreground): new Color(204, 204, 204)
-            ],
-            (GroovyFilter.COMMENT): [
-                (StyleConstants.Foreground): new Color(160, 160, 160),
-                (StyleConstants.Italic): true
-            ],
-            (GroovyFilter.QUOTES): [
-                (StyleConstants.Foreground): new Color(220, 175, 240)
-            ],
-            (GroovyFilter.SINGLE_QUOTES): [
-                (StyleConstants.Foreground): new Color(160, 225, 155)
-            ],
-            (GroovyFilter.SLASHY_QUOTES): [
-                (StyleConstants.Foreground): new Color(235, 190, 130)
-            ],
-            (GroovyFilter.DIGIT): [
-                (StyleConstants.Foreground): new Color(220, 150, 150)
-            ],
-            (GroovyFilter.ANNOTATION): [
-                (StyleConstants.Foreground): new Color(210, 210, 130)
-            ],
-            (GroovyFilter.OPERATION): [
-                (StyleConstants.Bold): true,
-                (StyleConstants.Foreground): new Color(204, 204, 204)
-            ],
-            (GroovyFilter.IDENT): [
-                (StyleConstants.Foreground): new Color(204, 204, 204)
-            ],
-            (GroovyFilter.RESERVED_WORD): [
-                (StyleConstants.Bold): true,
-                (StyleConstants.Foreground): new Color(180, 210, 240)
-            ]
-        ]
+    /**
+     * Parses a .theme file (java.util.Properties format with our value sub-syntax)
+     * into a structured theme: { inputBackground, outputBackground, styles: name→attrs }.
+     * Each attrs map may contain foreground/background Colors and bold/italic/underline flags.
+     * Unknown keys are silently ignored so theme files stay forward-compatible.
+     */
+    static Map parseTheme(Reader reader) {
+        def props = new Properties()
+        props.load(reader)
+        def result = [inputBackground: null, outputBackground: null, styles: [:]]
+        props.stringPropertyNames().each { key ->
+            def value = props.getProperty(key)?.trim() ?: ''
+            switch (key.trim().toLowerCase()) {
+                case 'input.background':
+                    result.inputBackground = parseHexColor(value)
+                    break
+                case 'output.background':
+                    result.outputBackground = parseHexColor(value)
+                    break
+                default:
+                    result.styles[key.trim().toLowerCase()] = parseStyleValue(value)
+            }
+        }
+        result
+    }
+
+    private static Map parseStyleValue(String raw) {
+        def attrs = [:]
+        if (!raw) return attrs
+        // split off "<fg> on <bg>"
+        int onIdx = raw.toLowerCase().indexOf(' on ')
+        String bg = null
+        if (onIdx >= 0) {
+            bg = raw.substring(onIdx + 4).trim()
+            raw = raw.substring(0, onIdx).trim()
+        }
+        for (String part : raw.split(',')) {
+            part = part.trim()
+            if (!part) continue
+            if (part.startsWith('#')) {
+                attrs.foreground = parseHexColor(part)
+            } else {
+                switch (part.toLowerCase()) {
+                    case 'bold':      attrs.bold = true;       break
+                    case 'italic':    attrs.italic = true;     break
+                    case 'underline': attrs.underline = true;  break
+                }
+            }
+        }
+        if (bg) attrs.background = parseHexColor(bg)
+        attrs
+    }
+
+    private static Color parseHexColor(String hex) {
+        hex = hex.trim()
+        if (hex.startsWith('#')) hex = hex.substring(1)
+        new Color(Integer.parseInt(hex, 16))
+    }
+
+    /**
+     * Converts a parsed theme into the Swing-shaped style map consumed by the
+     * output area (per-document styles keyed by String) and by the input area's
+     * syntax highlighter (global StyleContext styles keyed by GroovyFilter
+     * constants / StyleContext.DEFAULT_STYLE).
+     */
+    private static Map buildSwingStyles(Map theme, String fontFamily) {
+        def result = [:]
+        theme.styles.each { String name, Map attrs ->
+            def key = resolveStyleKey(name)
+            if (key == null) return
+            def styleAttrs = [:]
+            if (attrs.foreground) styleAttrs[StyleConstants.Foreground] = attrs.foreground
+            if (attrs.background) styleAttrs[StyleConstants.Background] = attrs.background
+            if (attrs.bold)       styleAttrs[StyleConstants.Bold]       = true
+            if (attrs.italic)     styleAttrs[StyleConstants.Italic]     = true
+            if (attrs.underline)  styleAttrs[StyleConstants.Underline]  = true
+            result[key] = styleAttrs
+        }
+        // ensure regular + default carry the user-configured monospaced family
+        result.computeIfAbsent('regular') { [:] }[StyleConstants.FontFamily] = fontFamily
+        result.computeIfAbsent(StyleContext.DEFAULT_STYLE) { [:] }[StyleConstants.FontFamily] = fontFamily
+        result
+    }
+
+    private static Object resolveStyleKey(String name) {
+        switch (name) {
+            // output window styles — literal String keys (per-document)
+            case 'regular': case 'prompt': case 'command': case 'stacktrace':
+            case 'hyperlink': case 'output': case 'result':
+                return name
+            // syntax-highlighting styles — global StyleContext keys
+            case 'default':       return StyleContext.DEFAULT_STYLE
+            case 'comment':       return GroovyFilter.COMMENT
+            case 'quotes':        return GroovyFilter.QUOTES
+            case 'single_quotes': return GroovyFilter.SINGLE_QUOTES
+            case 'slashy_quotes': return GroovyFilter.SLASHY_QUOTES
+            case 'digit':         return GroovyFilter.DIGIT
+            case 'annotation':    return GroovyFilter.ANNOTATION
+            case 'operation':     return GroovyFilter.OPERATION
+            case 'ident':         return GroovyFilter.IDENT
+            case 'reserved_word': return GroovyFilter.RESERVED_WORD
+            default:              return null
+        }
     }
 
     private static boolean probeSystemDarkMode() {
