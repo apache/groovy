@@ -1324,11 +1324,9 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
         // throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(self)) {
-            Iterator<Path> itr = stream.iterator();
-            while (itr.hasNext()) {
-                Path currentPath = itr.next();
+            for (Path currentPath : stream) {
                 if ((fileType != FileType.FILES && Files.isDirectory(currentPath)) ||
-                        (fileType != FileType.DIRECTORIES && Files.isRegularFile(currentPath))) {
+                    (fileType != FileType.DIRECTORIES && Files.isRegularFile(currentPath))) {
                     if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(nameFilter, "isCase", currentPath.getFileName().toString())))
                         closure.call(currentPath);
                 }
