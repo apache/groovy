@@ -94,6 +94,43 @@ public class GroovyDocToolTest extends GroovyTestCase {
         );
     }
 
+    // GROOVY-11682
+    public void testLinkArgumentModuleComposesJpmsStyleUrl() {
+        LinkArgument link = new LinkArgument();
+        link.setHref("https://docs.oracle.com/en/java/javase/17/docs/api/");
+        assertEquals("https://docs.oracle.com/en/java/javase/17/docs/api/", link.getHref());
+
+        link.setModule("java.base");
+        assertEquals("https://docs.oracle.com/en/java/javase/17/docs/api/java.base/", link.getHref());
+
+        LinkArgument noSlash = new LinkArgument();
+        noSlash.setHref("https://example.org/api");
+        noSlash.setModule("java.sql");
+        assertEquals("https://example.org/api/java.sql/", noSlash.getHref());
+    }
+
+    // GROOVY-11682
+    public void testLinkWithModuleProducesJpmsStyleUrlInRenderedDoc() throws Exception {
+        ArrayList<LinkArgument> links = new ArrayList<>();
+        LinkArgument link = new LinkArgument();
+        link.setHref("https://docs.oracle.com/en/java/javase/17/docs/api/");
+        link.setModule("java.base");
+        link.setPackages("java.,javax.");
+        links.add(link);
+
+        GroovyDocTool jpmsTool = makeHtmltool(links, null, new Properties());
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        jpmsTool.add(List.of(base + "/DocumentedClass.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        jpmsTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull("Expected DocumentedClass.html in output", doc);
+        assertTrue("Expected JPMS-style module segment in URL, got:\n" + doc,
+            doc.contains("https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html"));
+    }
+
     // GROOVY-9057
     public void testParseErrorIsTrackedInErrorCount() throws Exception {
         assertEquals("Initial error count should be zero", 0, xmlToolForTests.getErrorCount());
