@@ -67,6 +67,7 @@ public class Groovydoc extends Task {
     private boolean includeNoSourcePackages;
     private Boolean noTimestamp;
     private Boolean noVersionStamp;
+    private Boolean showInternal;
     private String javaVersion;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
@@ -95,6 +96,7 @@ public class Groovydoc extends Task {
         includeMainForScripts = true;
         noTimestamp = false;
         noVersionStamp = false;
+        showInternal = false;
     }
 
     /**
@@ -155,6 +157,17 @@ public class Groovydoc extends Task {
      */
     public void setJavaVersion(String javaVersion) {
         this.javaVersion = javaVersion;
+    }
+
+    /**
+     * If set to true, members annotated with {@code groovy.transform.@Internal}
+     * (per GEP-17) are still included in the generated documentation. Defaults
+     * to false, so internal members are hidden.
+     *
+     * @param showInternal new value
+     */
+    public void setShowInternal(boolean showInternal) {
+        this.showInternal = showInternal;
     }
 
     /**
@@ -464,6 +477,7 @@ public class Groovydoc extends Task {
         properties.setProperty("fileEncoding", fileEncoding != null ? fileEncoding : "");
         properties.setProperty("timestamp", Boolean.valueOf(!noTimestamp).toString());
         properties.setProperty("versionStamp", Boolean.valueOf(!noVersionStamp).toString());
+        properties.setProperty("showInternal", showInternal.toString());
         String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override");
         if (phaseOverride != null) properties.put("phaseOverride", phaseOverride);
 

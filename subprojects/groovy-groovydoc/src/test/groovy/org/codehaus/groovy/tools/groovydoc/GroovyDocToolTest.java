@@ -1265,11 +1265,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertFalse("@SuppressWarnings (not @Documented) should not appear in:\n" + javadoc,
                 javadoc.contains("SuppressWarnings"));
 
-        // GROOVY-4634: @groovy.transform.Internal is not @Documented so is filtered out
-        assertFalse("@Internal (not @Documented) should not appear on annotatedField in:\n" + groovydoc,
-                Pattern.compile("<h4>@groovy.transform.Internal<br>\\s*public&nbsp;.*annotatedField").matcher(groovydoc).find());
-        assertTrue("The Groovy field details should still render the field itself in:\n" + groovydoc,
-                Pattern.compile("<strong>annotatedField</strong></h4>").matcher(groovydoc).find());
+        // GROOVY-9572: @Internal-annotated members (per GEP-17) are hidden from groovydoc output
+        assertFalse("Field annotated with @Internal should be hidden in:\n" + groovydoc,
+                groovydoc.contains("<strong>annotatedField</strong>"));
 
         assertTrue("The Java field details should have the annotation", Pattern.compile(
                 "<h4>@(<a href='https://docs.oracle.com/javase/8/docs/api/java/lang/Deprecated.html' title='Deprecated'>Deprecated</a>|java.lang.Deprecated)<br>" +
@@ -1328,6 +1326,37 @@ public class GroovyDocToolTest extends GroovyTestCase {
         ).matcher(javadoc).find());
         assertFalse("@CommandLine.Parameters (not @Documented) should not appear on annotatedParam in:\n" + javadoc,
                 javadoc.contains("@CommandLine.Parameters"));
+    }
+
+    // GROOVY-9572A: members annotated with groovy.transform.@Internal are hidden,
+    // unless -showInternal / showInternal=true is set.
+    public void testInternalAnnotationHidesMembers() throws Exception {
+        final String base = "org/codehaus/groovy/tools/groovydoc/testfiles/anno";
+        Properties props = new Properties();
+        props.put("phaseOverride", "7");
+
+        // default: hidden
+        GroovyDocTool defaultTool = makeHtmltool(new ArrayList<>(), null, props);
+        defaultTool.add(Arrays.asList(base + "/Groovy.groovy"));
+        MockOutputTool defaultOut = new MockOutputTool();
+        defaultTool.renderToOutput(defaultOut, MOCK_DIR);
+        String defaultDoc = defaultOut.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+        assertNotNull(defaultDoc);
+        assertFalse("annotatedField is @Internal and should be hidden by default in:\n" + defaultDoc,
+                defaultDoc.contains("<strong>annotatedField</strong>"));
+
+        // opt-in: shown
+        Properties opted = new Properties();
+        opted.put("phaseOverride", "7");
+        opted.put("showInternal", "true");
+        GroovyDocTool optedTool = makeHtmltool(new ArrayList<>(), null, opted);
+        optedTool.add(Arrays.asList(base + "/Groovy.groovy"));
+        MockOutputTool optedOut = new MockOutputTool();
+        optedTool.renderToOutput(optedOut, MOCK_DIR);
+        String optedDoc = optedOut.getText(MOCK_DIR + "/" + base + "/Groovy.html");
+        assertNotNull(optedDoc);
+        assertTrue("annotatedField should reappear with showInternal=true in:\n" + optedDoc,
+                optedDoc.contains("<strong>annotatedField</strong>"));
     }
 
     public void testAbstractMethods() throws Exception {
