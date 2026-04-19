@@ -55,6 +55,8 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.CapitalizedIdentifier;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DOT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.Identifier;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ASSERT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.ASYNC;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.AWAIT;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BREAK;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BooleanLiteral;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.BuiltInPrimitiveType;
@@ -66,6 +68,7 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.CONST;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.CONTINUE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DEF;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DEFAULT;
+import static org.apache.groovy.parser.antlr4.GroovyLexer.DEFER;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.DO;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ELSE;
 import static org.apache.groovy.parser.antlr4.GroovyLexer.ENUM;
@@ -129,7 +132,8 @@ import static org.apache.groovy.parser.antlr4.GroovyLexer.YIELD;
  * @since 3.0.0
  */
 public class SmartDocumentFilter extends DocumentFilter {
-    public static final List<Integer> HIGHLIGHTED_TOKEN_TYPE_LIST = Arrays.asList(AS, DEF, IN, TRAIT, THREADSAFE,
+    public static final List<Integer> HIGHLIGHTED_TOKEN_TYPE_LIST =
+        Arrays.asList(AS, ASYNC, AWAIT, DEF, DEFER, IN, TRAIT, THREADSAFE,
             VAR, BuiltInPrimitiveType, ABSTRACT, ASSERT, BREAK, CASE, CATCH, CLASS, CONST, CONTINUE, DEFAULT, DO,
             ELSE, ENUM, EXTENDS, FINAL, FINALLY, FOR, IF, GOTO, IMPLEMENTS, IMPORT, INSTANCEOF, INTERFACE,
             NATIVE, NEW, NON_SEALED, NOT_IN, NOT_INSTANCEOF, PACKAGE, PERMITS, PRIVATE, PROTECTED, PUBLIC,
