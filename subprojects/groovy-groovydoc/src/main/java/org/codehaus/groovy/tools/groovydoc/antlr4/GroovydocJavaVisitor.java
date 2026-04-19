@@ -245,13 +245,66 @@ public class GroovydocJavaVisitor
 
     private void processAnnotations(SimpleGroovyProgramElementDoc element, NodeWithAnnotations<?> n) {
         for (AnnotationExpr an : n.getAnnotations()) {
-            element.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getNameAsString(), getAnnotationText(an)));
+            String name = an.getNameAsString();
+            if (!shouldDocument(name)) continue;
+            element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, getAnnotationText(an)));
         }
     }
 
     private void processAnnotations(SimpleGroovyParameter param, NodeWithAnnotations<?> n) {
         for (AnnotationExpr an : n.getAnnotations()) {
-            param.addAnnotationRef(new SimpleGroovyAnnotationRef(an.getNameAsString(), getAnnotationText(an)));
+            String name = an.getNameAsString();
+            if (!shouldDocument(name)) continue;
+            param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, getAnnotationText(an)));
+        }
+    }
+
+    // GROOVY-4634: emit an annotation reference only when the annotation type is
+    // itself marked {@code @Documented}, matching Javadoc's behavior. When the
+    // annotation type cannot be resolved on the current classpath, default to
+    // including it so that groovydoc does not silently drop user annotations.
+    private boolean shouldDocument(String name) {
+        String fqn = resolveAnnotationFqn(name);
+        if (fqn == null) return true; // unresolved — show
+        try {
+            Class<?> c = Class.forName(fqn);
+            if (!c.isAnnotation()) return true;
+            return c.isAnnotationPresent(java.lang.annotation.Documented.class);
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
+    private String resolveAnnotationFqn(String name) {
+        // already fully qualified
+        if (name.contains(".")) {
+            if (tryLoad(name) != null) return name;
+            // nested-name like "CommandLine.Parameters" — resolve outer via aliases
+            int dot = name.indexOf('.');
+            String outer = name.substring(0, dot);
+            String rest = name.substring(dot);
+            String outerFqn = aliases.get(outer);
+            if (outerFqn != null) {
+                String candidate = outerFqn.replace('/', '.') + rest.replace('.', '$');
+                if (tryLoad(candidate) != null) return candidate;
+            }
+            return null;
+        }
+        String importedFqn = aliases.get(name);
+        if (importedFqn != null) {
+            String candidate = importedFqn.replace('/', '.');
+            if (tryLoad(candidate) != null) return candidate;
+        }
+        String javaLang = "java.lang." + name;
+        if (tryLoad(javaLang) != null) return javaLang;
+        return null;
+    }
+
+    private static Class<?> tryLoad(String fqn) {
+        try {
+            return Class.forName(fqn);
+        } catch (Throwable t) {
+            return null;
         }
     }
 
