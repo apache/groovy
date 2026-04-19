@@ -77,7 +77,7 @@ public class JrtJavaBasePackages {
             try {
                 String name = file.toString().substring(18);
                 if (name.endsWith(".class") && (nestedClasses || !name.contains("$"))) {
-                    String className = name.substring(0, name.length() - 6).replaceAll("/", ".");
+                    String className = name.substring(0, name.length() - 6).replace('/', '.');
                     if (Character.isUpperCase(className.charAt(packageName.length() + 1))) {
                         classes.add(Class.forName(className));
                     } else {

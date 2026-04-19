@@ -409,7 +409,7 @@ public class GroovyEngine implements ScriptEngine {
         Object out = null;
         if (statement.matches("import\\s+module\\s+([^;\\s]+)\\s*(;)?")) {
             String[] p = statement.split("\\s+");
-            String moduleName = p[2].replaceAll(";", "");
+            String moduleName = p[2].replace(";", "");
             executeStatement(shell, snippets, EnumSet.of(SnippetType.IMPORT), statement);
             imports.put("module " + moduleName, addSnippet(SnippetType.IMPORT, statement));
             // Populate the completion cache with exported packages from the module
@@ -430,14 +430,14 @@ public class GroovyEngine implements ScriptEngine {
             }
             String classname = null;
             if (classIdx < p.length) {
-                classname = p[classIdx].replaceAll(";", "");
+                classname = p[classIdx].replace(";", "");
                 addToNameClass(classname);
                 if (isStatic) {
                     classname = "static " + classname;
                 }
                 // check for alias
                 if (p.length > 3) {
-                    classname = p[p.length - 1].replaceAll(";", "");
+                    classname = p[p.length - 1].replace(";", "");
                 }
             }
             executeStatement(shell, snippets, EnumSet.of(SnippetType.IMPORT), statement);
