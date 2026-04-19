@@ -52,6 +52,7 @@ public class GroovyRootDocBuilder {
     private final String[] sourcepaths;
     private final SimpleGroovyRootDoc rootDoc;
     private final Properties properties;
+    private int errorCount;
 
     @Deprecated
     public GroovyRootDocBuilder(GroovyDocTool tool, String[] sourcepaths, List<LinkArgument> links, Properties properties) {
@@ -142,10 +143,15 @@ public class GroovyRootDocBuilder {
             packageDoc.putAll(classDocs);
             rootDoc.put(packagePath, packageDoc);
         } catch (RuntimeException e) {
+            errorCount++;
             e.printStackTrace(System.err);
             log.error("ignored due to parsing exception: " + filename + " [" + e.getMessage() + "]");
             log.debug("ignored due to parsing exception: " + filename + " [" + e.getMessage() + "]", e);
         }
+    }
+
+    public int getErrorCount() {
+        return errorCount;
     }
 
     /* package private */ void processPackageInfo(String src, String filename, SimpleGroovyPackageDoc packageDoc) {

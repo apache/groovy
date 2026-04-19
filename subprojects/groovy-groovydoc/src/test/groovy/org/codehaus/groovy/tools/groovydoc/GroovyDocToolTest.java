@@ -94,6 +94,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
         );
     }
 
+    // GROOVY-9057
+    public void testParseErrorIsTrackedInErrorCount() throws Exception {
+        assertEquals("Initial error count should be zero", 0, xmlToolForTests.getErrorCount());
+        List<String> srcList = new ArrayList<>();
+        srcList.add("broken/BrokenSyntax.groovy");
+        xmlToolForTests.add(srcList);
+        assertTrue("Expected errorCount > 0 after parsing malformed source, was "
+                + xmlToolForTests.getErrorCount(), xmlToolForTests.getErrorCount() > 0);
+    }
+
     public void testPlainGroovyDocTool() throws Exception {
         List<String> srcList = new ArrayList<>();
         srcList.add("org/codehaus/groovy/tools/groovydoc/GroovyDocToolTest.java");

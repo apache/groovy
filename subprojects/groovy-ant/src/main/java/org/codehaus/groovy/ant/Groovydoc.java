@@ -488,7 +488,11 @@ public class Groovydoc extends Task {
             FileOutputTool output = new FileOutputTool();
             htmlTool.renderToOutput(output, destDir.getCanonicalPath()); // TODO push destDir through APIs?
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new BuildException("Groovydoc generation failed: " + e.getMessage(), e);
+        }
+        int errorCount = htmlTool.getErrorCount();
+        if (errorCount > 0) {
+            throw new BuildException("Groovydoc failed to parse " + errorCount + " source file(s).");
         }
         // try to override the default stylesheet with custom specified one if needed
         if (styleSheetFile != null) {

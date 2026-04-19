@@ -148,7 +148,7 @@ class Main {
         } else if (scopeCount > 1) {
             System.err.println "groovydoc: Error - More than one of -public, -private, -package, or -protected specified."
             cli.usage()
-            return
+            System.exit(1)
         }
 
         windowTitle = options.windowtitle ?: ''
@@ -181,12 +181,23 @@ class Main {
         if (!remainingArgs) {
             System.err.println "groovydoc: Error - No packages or classes specified."
             cli.usage()
+            System.exit(1)
+        }
+        int errorCount
+        try {
+            errorCount = execute()
+        } catch (Throwable t) {
+            t.printStackTrace(System.err)
+            System.exit(1)
             return
         }
-        execute()
+        if (errorCount > 0) {
+            System.err.println "groovydoc: Error - $errorCount source file(s) failed to parse."
+            System.exit(1)
+        }
     }
 
-    static void execute() {
+    static int execute() {
         Properties properties = new Properties()
         properties.put("windowTitle", windowTitle)
         properties.put("docTitle", docTitle)
@@ -232,6 +243,7 @@ class Main {
                 println "Warning: Unable to copy specified stylesheet '" + styleSheetFile.absolutePath + "'. Using default stylesheet instead. Due to: " + e.message
             }
         }
+        return htmlTool.errorCount
     }
 
     static collectSourceFileNames(List<String> remainingArgs, String[] sourceDirs, List<String> exclusions) {

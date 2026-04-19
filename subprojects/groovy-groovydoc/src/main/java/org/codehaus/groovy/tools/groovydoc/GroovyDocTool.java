@@ -139,6 +139,13 @@ public class GroovyDocTool {
         return rootDocBuilder.getRootDoc();
     }
 
+    /**
+     * @return the number of source files that could not be parsed
+     */
+    public int getErrorCount() {
+        return rootDocBuilder.getErrorCount();
+    }
+
     public void renderToOutput(OutputTool output, String destdir) throws Exception {
         // expect just one scope to be set on the way in but now also set higher levels of visibility
         if ("true".equals(properties.getProperty("privateScope"))) properties.setProperty("packageScope", "true");
