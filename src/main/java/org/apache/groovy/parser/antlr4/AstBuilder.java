@@ -1163,8 +1163,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public ClassNode visitClassDeclaration(final ClassDeclarationContext ctx) {
         String packageName = Optional.ofNullable(this.moduleNode.getPackageName()).orElse("");
         String className = this.visitIdentifier(ctx.identifier());
-        if ("var".equals(className)) {
-            throw createParsingFailedException("var cannot be used for type declarations", ctx.identifier());
+        if ("var".equals(className) || "val".equals(className)) {
+            throw createParsingFailedException(className + " cannot be used for type declarations", ctx.identifier());
         }
 
         boolean isAnnotation = asBoolean(ctx.AT());
@@ -1685,8 +1685,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             throw createParsingFailedException("Only record can have compact constructor", ctx);
         }
 
-        if (new ModifierManager(this, ctx.getNodeMetaData(COMPACT_CONSTRUCTOR_DECLARATION_MODIFIERS)).containsAny(VAR)) {
-            throw createParsingFailedException("var cannot be used for compact constructor declaration", ctx);
+        if (new ModifierManager(this, ctx.getNodeMetaData(COMPACT_CONSTRUCTOR_DECLARATION_MODIFIERS)).containsAny(VAL, VAR)) {
+            throw createParsingFailedException("val/var cannot be used for compact constructor declaration", ctx);
         }
 
         String methodName = this.visitMethodName(ctx.methodName());
@@ -1723,8 +1723,8 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
     public MethodNode visitMethodDeclaration(final MethodDeclarationContext ctx) {
         ModifierManager modifierManager = createModifierManager(ctx);
 
-        if (modifierManager.containsAny(VAR)) {
-            throw createParsingFailedException("var cannot be used for method declarations", ctx);
+        if (modifierManager.containsAny(VAL, VAR)) {
+            throw createParsingFailedException("val/var cannot be used for method return types", ctx);
         }
 
         String methodName = this.visitMethodName(ctx.methodName());
@@ -4589,7 +4589,7 @@ public class AstBuilder extends GroovyParserBaseVisitor<Object> {
             return true;
         }
 
-        if (hasReturnType && (modifierManager.containsAny(DEF, VAR))) {
+        if (hasReturnType && (modifierManager.containsAny(DEF, VAL, VAR))) {
             return true;
         }
 

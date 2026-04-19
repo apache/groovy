@@ -38,6 +38,7 @@ import static org.apache.groovy.parser.antlr4.GroovyParser.STATIC;
 import static org.apache.groovy.parser.antlr4.GroovyParser.STRICTFP;
 import static org.apache.groovy.parser.antlr4.GroovyParser.SYNCHRONIZED;
 import static org.apache.groovy.parser.antlr4.GroovyParser.TRANSIENT;
+import static org.apache.groovy.parser.antlr4.GroovyParser.VAL;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VAR;
 import static org.apache.groovy.parser.antlr4.GroovyParser.VOLATILE;
 import static org.codehaus.groovy.runtime.DefaultGroovyMethods.asBoolean;
@@ -56,6 +57,7 @@ public class ModifierNode extends ASTNode {
     public static final Map<Integer, Integer> MODIFIER_OPCODE_MAP = Maps.of(
             ANNOTATION_TYPE, 0,
             DEF, 0,
+            VAL, Opcodes.ACC_FINAL,
             VAR, 0,
 
             NATIVE, Opcodes.ACC_NATIVE,
@@ -129,7 +131,11 @@ public class ModifierNode extends ASTNode {
     }
 
     public boolean isDef() {
-        return Objects.equals(DEF, this.type) || Objects.equals(VAR, this.type);
+        return Objects.equals(DEF, this.type) || Objects.equals(VAL, this.type) || Objects.equals(VAR, this.type);
+    }
+
+    public boolean isVal() {
+        return Objects.equals(VAL, this.type);
     }
 
     public Integer getType() {
