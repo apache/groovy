@@ -35,7 +35,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Single-pass tokenizer and renderer for Javadoc-style inline tags and
@@ -245,7 +247,7 @@ final class TagRenderer {
         // before an optional `:`, then a brace-balanced body that may contain
         // source code with its own `{`/`}`. Needs its own parser.
         if ("snippet".equals(name)) {
-            return renderSnippetAt(text, start, nameEnd, out, rootDoc, classDoc);
+            return renderSnippetAt(text, start, nameEnd, out, links, relPath, rootDoc, classDoc);
         }
         int bodyStart = skipWhitespace(text, nameEnd);
         // Match the previous regex's laxness: body extends to the first '}'.
@@ -280,6 +282,7 @@ final class TagRenderer {
      *         or 0 if the tag is malformed.
      */
     private static int renderSnippetAt(String text, int start, int nameEnd, StringBuilder out,
+                                       List<LinkArgument> links, String relPath,
                                        GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
         int n = text.length();
         int i = skipWhitespace(text, nameEnd);
@@ -378,11 +381,17 @@ final class TagRenderer {
         String combined = (langClass.isEmpty() ? "" : "language-" + langClass)
                 + (extraClass.isEmpty() ? "" : (langClass.isEmpty() ? extraClass : " " + extraClass));
         String dedented = dedent(body);
+        // GROOVY-11938 stage 3: process JEP 413 markup comments (// @highlight,
+        // // @replace, // @link) inside the snippet body. Markup-comment lines
+        // are stripped from the rendered output; their directives annotate the
+        // target line with bold/italic/highlight wrappers, inline replacements,
+        // or hyperlinks.
+        String processed = processSnippetMarkup(dedented, links, relPath, rootDoc, classDoc);
         out.append("<pre><code");
         if (!combined.isEmpty()) out.append(" class=\"").append(combined).append('"');
         String id = attrs.get("id");
         if (id != null && !id.isEmpty()) out.append(" id=\"").append(id).append('"');
-        out.append('>').append(SimpleGroovyClassDoc.encodeAngleBrackets(dedented)).append("</code></pre>");
+        out.append('>').append(processed).append("</code></pre>");
         return endPos - start;
     }
 
@@ -443,6 +452,271 @@ final class TagRenderer {
             sb.append(lines[k]);
         }
         return sb.toString();
+    }
+
+    /**
+     * GROOVY-11938 stage 3: JEP 413 markup-comment processor. Walks the snippet
+     * body line-by-line looking for {@code // @highlight}, {@code // @replace},
+     * and {@code // @link} directives. Directive comments are stripped from
+     * the output. Each directive targets the same line if written after code,
+     * or the next non-directive line if written standalone.
+     *
+     * <p>Directive forms accepted:
+     * <ul>
+     *   <li>{@code @highlight [substring="..."|regex="..."] [type="bold|italic|highlighted"]}
+     *       — wraps matching text in {@code <b>}/{@code <i>}/{@code <mark>}.
+     *       Default type is {@code bold}.</li>
+     *   <li>{@code @replace [substring="..."|regex="..."] replacement="..."}
+     *       — substitutes matching text.</li>
+     *   <li>{@code @link [substring="..."|regex="..."] target="Class[#member]"}
+     *       — resolves {@code target} via the existing {@code {@link}} machinery
+     *       and wraps matching text in an {@code <a href="...">} anchor.</li>
+     * </ul>
+     *
+     * <p>Out of scope in this pass: region-scoped variants
+     * ({@code region="name"}), which are a natural follow-up layered on top of
+     * the existing external-file region machinery.
+     */
+    private static String processSnippetMarkup(String body, List<LinkArgument> links, String relPath,
+                                               GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
+        String[] lines = body.split("\n", -1);
+        List<Directive> pending = new ArrayList<>();
+        // GROOVY-11938 stage 3 region support: directives that carry a
+        // `region="name"` attribute activate at their own line and remain in
+        // effect until the matching `// @end` marker (or end of snippet).
+        List<Directive> regionActive = new ArrayList<>();
+        StringBuilder out = new StringBuilder();
+        boolean first = true;
+        for (String line : lines) {
+            // Region markers `// @start region="name"` / `// @end [region="name"]`
+            // are stripped from the output regardless of any directive state.
+            if (isRegionStart(line) != null) continue;
+            String endRegion = isRegionEnd(line);
+            if (endRegion != null) {
+                deactivateRegion(regionActive, endRegion);
+                continue;
+            }
+            int commentIdx = findMarkupCommentStart(line);
+            Directive parsed = null;
+            if (commentIdx >= 0) {
+                String commentText = line.substring(commentIdx + 2).trim();
+                parsed = parseDirective(commentText);
+            }
+            if (parsed != null) {
+                String region = parsed.attrs.get("region");
+                String before = line.substring(0, commentIdx);
+                if (region != null && !region.isEmpty()) {
+                    // Region-scoped directive — activate, drop this line.
+                    regionActive.add(parsed);
+                    continue;
+                }
+                if (before.trim().isEmpty()) {
+                    // Standalone directive — queue for next code line, drop this line.
+                    pending.add(parsed);
+                    continue;
+                } else {
+                    // EOL directive — apply to the code portion only (trailing
+                    // whitespace trimmed off), drop the directive comment.
+                    String code = before.replaceFirst("\\s+$", "");
+                    List<Directive> effective = new ArrayList<>(regionActive);
+                    effective.add(parsed);
+                    String rendered = applyDirectives(code, effective, links, relPath, rootDoc, classDoc);
+                    if (!first) out.append('\n');
+                    out.append(rendered);
+                    first = false;
+                    continue;
+                }
+            }
+            // Normal line — apply active region directives plus any queued
+            // standalone directives (latter only consumed once).
+            List<Directive> effective = new ArrayList<>(regionActive);
+            effective.addAll(pending);
+            String rendered = applyDirectives(line, effective, links, relPath, rootDoc, classDoc);
+            pending.clear();
+            if (!first) out.append('\n');
+            out.append(rendered);
+            first = false;
+        }
+        return out.toString();
+    }
+
+    /** Return the region name if the line is a `// @start region="name"` marker, else {@code null}. */
+    private static String isRegionStart(String line) {
+        Matcher m = Pattern.compile("^\\s*//\\s*@start\\b([^\\n]*)").matcher(line);
+        if (!m.find()) return null;
+        Matcher r = Pattern.compile("region\\s*=\\s*(['\"]?)([^'\"\\s]+)\\1").matcher(m.group(1));
+        return r.find() ? r.group(2) : "";
+    }
+
+    /** Return the region name if the line is a `// @end [region="name"]` marker, empty string for an unnamed `// @end`, or {@code null} otherwise. */
+    private static String isRegionEnd(String line) {
+        Matcher m = Pattern.compile("^\\s*//\\s*@end\\b([^\\n]*)").matcher(line);
+        if (!m.find()) return null;
+        Matcher r = Pattern.compile("region\\s*=\\s*(['\"]?)([^'\"\\s]+)\\1").matcher(m.group(1));
+        return r.find() ? r.group(2) : "";
+    }
+
+    /** Remove directives from {@code regionActive} that match the given end-region name. An unnamed {@code // @end} deactivates every region-scoped directive. */
+    private static void deactivateRegion(List<Directive> regionActive, String endRegion) {
+        if (endRegion.isEmpty()) { regionActive.clear(); return; }
+        regionActive.removeIf(d -> endRegion.equals(d.attrs.get("region")));
+    }
+
+    /** Scan a line for the start of a recognised markup comment ({@code //} + optional space + {@code @highlight}/{@code @replace}/{@code @link}); returns the offset of the {@code //} or {@code -1}. */
+    private static int findMarkupCommentStart(String line) {
+        int i = 0, n = line.length();
+        while (i <= n - 2) {
+            if (line.charAt(i) == '/' && line.charAt(i + 1) == '/') {
+                int j = i + 2;
+                while (j < n && (line.charAt(j) == ' ' || line.charAt(j) == '\t')) j++;
+                if (j < n && line.charAt(j) == '@') {
+                    int k = j + 1;
+                    while (k < n && Character.isLetterOrDigit(line.charAt(k))) k++;
+                    String name = line.substring(j + 1, k);
+                    if ("highlight".equals(name) || "replace".equals(name) || "link".equals(name)) {
+                        return i;
+                    }
+                }
+            }
+            i++;
+        }
+        return -1;
+    }
+
+    /** Parsed markup directive with name + attributes. */
+    private static final class Directive {
+        final String name;
+        final Map<String, String> attrs;
+        Directive(String name, Map<String, String> attrs) { this.name = name; this.attrs = attrs; }
+    }
+
+    /** Parse a string of the form {@code @name attr1="v1" attr2=v2} into a {@link Directive}. Returns {@code null} on unrecognised names or malformed input. */
+    private static Directive parseDirective(String s) {
+        if (s == null || !s.startsWith("@")) return null;
+        int i = 1, n = s.length();
+        while (i < n && Character.isLetterOrDigit(s.charAt(i))) i++;
+        String name = s.substring(1, i);
+        if (!"highlight".equals(name) && !"replace".equals(name) && !"link".equals(name)) return null;
+        Map<String, String> attrs = new LinkedHashMap<>();
+        while (i < n) {
+            while (i < n && Character.isWhitespace(s.charAt(i))) i++;
+            if (i >= n) break;
+            int nameS = i;
+            while (i < n && (Character.isLetterOrDigit(s.charAt(i)) || s.charAt(i) == '_')) i++;
+            String attrName = s.substring(nameS, i);
+            if (attrName.isEmpty()) break;
+            while (i < n && Character.isWhitespace(s.charAt(i))) i++;
+            String val = "";
+            if (i < n && s.charAt(i) == '=') {
+                i++;
+                while (i < n && Character.isWhitespace(s.charAt(i))) i++;
+                if (i < n && (s.charAt(i) == '"' || s.charAt(i) == '\'')) {
+                    char q = s.charAt(i);
+                    int close = s.indexOf(q, i + 1);
+                    if (close < 0) return null;
+                    val = s.substring(i + 1, close);
+                    i = close + 1;
+                } else {
+                    int valS = i;
+                    while (i < n && !Character.isWhitespace(s.charAt(i))) i++;
+                    val = s.substring(valS, i);
+                }
+            }
+            attrs.put(attrName, val);
+        }
+        return new Directive(name, attrs);
+    }
+
+    /** Apply a list of directives to a single line, HTML-escaping untouched content. */
+    private static String applyDirectives(String line, List<Directive> directives,
+                                          List<LinkArgument> links, String relPath,
+                                          GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
+        String escaped = SimpleGroovyClassDoc.encodeAngleBrackets(line);
+        if (directives.isEmpty()) return escaped;
+        for (Directive d : directives) {
+            escaped = applyDirective(escaped, d, links, relPath, rootDoc, classDoc);
+        }
+        return escaped;
+    }
+
+    /** Apply one directive to an already HTML-escaped line. */
+    private static String applyDirective(String escaped, Directive d,
+                                         List<LinkArgument> links, String relPath,
+                                         GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
+        Pattern pat = buildMatchPattern(d);
+        if (pat == null) return escaped; // no match clause — nothing to do
+        Matcher m = pat.matcher(escaped);
+        StringBuilder sb = new StringBuilder();
+        int last = 0;
+        while (m.find()) {
+            sb.append(escaped, last, m.start());
+            String match = m.group();
+            String wrapped = wrapForDirective(match, d, links, relPath, rootDoc, classDoc);
+            sb.append(wrapped);
+            last = m.end();
+        }
+        sb.append(escaped, last, escaped.length());
+        return sb.toString();
+    }
+
+    /**
+     * Build a regex matching the directive's {@code substring} or {@code regex}
+     * attribute, run against the already-escaped line text. Returns {@code null}
+     * when neither attribute is present.
+     */
+    private static Pattern buildMatchPattern(Directive d) {
+        String substring = d.attrs.get("substring");
+        String regex = d.attrs.get("regex");
+        if (substring != null && !substring.isEmpty()) {
+            // Escape the user's literal substring with the same angle-bracket
+            // encoder applied to the line, then quote for regex.
+            String escapedSub = SimpleGroovyClassDoc.encodeAngleBrackets(substring);
+            return Pattern.compile(Pattern.quote(escapedSub));
+        }
+        if (regex != null && !regex.isEmpty()) {
+            try {
+                return Pattern.compile(regex);
+            } catch (PatternSyntaxException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /** Produce the HTML wrapping that a directive applies to one match. */
+    private static String wrapForDirective(String match, Directive d,
+                                           List<LinkArgument> links, String relPath,
+                                           GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
+        switch (d.name) {
+            case "highlight": {
+                String type = d.attrs.getOrDefault("type", "bold");
+                switch (type) {
+                    case "italic":      return "<i>" + match + "</i>";
+                    case "highlighted": return "<mark>" + match + "</mark>";
+                    case "bold":
+                    default:            return "<b>" + match + "</b>";
+                }
+            }
+            case "replace": {
+                String replacement = d.attrs.getOrDefault("replacement", "");
+                return SimpleGroovyClassDoc.encodeAngleBrackets(replacement);
+            }
+            case "link": {
+                String target = d.attrs.getOrDefault("target", "");
+                if (target.isEmpty()) return match;
+                String url = SimpleGroovyClassDoc.getDocUrl(target, false, links, relPath, rootDoc, classDoc);
+                // getDocUrl returns HTML like `<a href='...' title='...'>text</a>` —
+                // pull just the href and wrap the match in our own anchor so the
+                // visible text remains the code's own identifier.
+                Matcher hrefM = Pattern.compile("href='([^']+)'").matcher(url);
+                if (hrefM.find()) {
+                    return "<a href=\"" + hrefM.group(1) + "\">" + match + "</a>";
+                }
+                return match;
+            }
+            default:
+                return match;
+        }
     }
 
     /**
