@@ -59,6 +59,8 @@ public class GroovyRootDocBuilder {
         this.sourcepaths = sourcepaths == null ? null : Arrays.copyOf(sourcepaths, sourcepaths.length);
         this.links = links;
         this.rootDoc = new SimpleGroovyRootDoc("root");
+        // GROOVY-11938: propagate for render-time snippet-file resolution.
+        this.rootDoc.setSourcepaths(this.sourcepaths);
         this.properties = properties;
     }
 
