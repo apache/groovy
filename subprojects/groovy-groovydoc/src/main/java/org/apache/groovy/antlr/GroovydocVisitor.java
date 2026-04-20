@@ -550,14 +550,30 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         processModifiers(fieldDoc, node, node.getModifiers());
         processAnnotations(fieldDoc, node);
         fieldDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
-        // GROOVY-6016: record the source form of simple-constant initializers
-        // so {@value #FIELD} can resolve them at render time. Javadoc's
-        // convention is to re-quote strings/chars; ConstantExpression.getText()
-        // returns the raw value without quotes.
+        // GROOVY-6016: record the source form of compile-time-constant
+        // initializers so {@value #FIELD} can resolve them at render time.
+        // Leverage ExpressionUtils.transformInlineConstants (same utility used
+        // by Verifier, JavaStubGenerator, AnnotationVisitor, etc.) to fold
+        // simple constant expressions like `40 + 2`, `"a" + "b"`, references
+        // to other static-final constants, and casts — not just bare literals.
+        // Javadoc's convention is to re-quote strings/chars;
+        // ConstantExpression.getText() returns the raw value without quotes.
         org.codehaus.groovy.ast.expr.Expression init = node.getInitialExpression();
-        if (init instanceof org.codehaus.groovy.ast.expr.ConstantExpression) {
-            Object value = ((org.codehaus.groovy.ast.expr.ConstantExpression) init).getValue();
-            fieldDoc.setConstantValueExpression(formatConstantValue(value));
+        if (init != null) {
+            // Typed variant does numeric arithmetic folding but needs the
+            // target type to equal ClassHelper.STRING_TYPE for string concat,
+            // which isn't always the case at CONVERSION phase. Type-less
+            // variant handles string concat via isStringType on operand types.
+            // Try both; take whichever yields a ConstantExpression.
+            org.codehaus.groovy.ast.expr.Expression folded =
+                org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants(init, node.getType());
+            if (!(folded instanceof org.codehaus.groovy.ast.expr.ConstantExpression)) {
+                folded = org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants(init);
+            }
+            if (folded instanceof org.codehaus.groovy.ast.expr.ConstantExpression) {
+                Object value = ((org.codehaus.groovy.ast.expr.ConstantExpression) folded).getValue();
+                fieldDoc.setConstantValueExpression(formatConstantValue(value));
+            }
         }
         if (node.isEnum()) {
             currentClassDoc.addEnumConstant(fieldDoc);

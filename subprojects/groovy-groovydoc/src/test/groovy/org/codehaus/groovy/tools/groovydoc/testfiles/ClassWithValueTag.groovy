@@ -20,13 +20,18 @@ package org.codehaus.groovy.tools.groovydoc.testfiles
 
 /**
  * GROOVY-6016: demonstrates the {@code {@value}} inline tag referencing
- * constants. The class doc below uses {@value #MAX} and {@value #GREETING}
- * which should be substituted with the constants' source-form values.
+ * constants. Substitutions should happen for bare literals, folded
+ * constant expressions, string concatenations, and references to other
+ * static-final fields (via {@code ExpressionUtils.transformInlineConstants}).
  *
  * Max allowed: {@value #MAX}
  * Greeting: {@value #GREETING}
+ * Sum: {@value #SUM}
+ * Combined: {@value #COMBINED}
  */
 class ClassWithValueTag {
     public static final int MAX = 42
     public static final String GREETING = "hello"
+    public static final int SUM = 40 + 2
+    public static final String COMBINED = "hel" + "lo"
 }
