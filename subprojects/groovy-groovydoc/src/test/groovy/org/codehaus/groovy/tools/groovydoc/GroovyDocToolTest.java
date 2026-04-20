@@ -436,6 +436,113 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 + occurrences + " in:\n" + doc, 2, occurrences);
     }
 
+    // GROOVY-11542 stage 1: verify that /// Markdown doc comments are
+    // captured by GroovydocVisitor and surface as rawCommentText on the
+    // matching SimpleGroovy*Doc, with the `markdown` flag set. Rendering
+    // through CommonMark is stage 2.
+    public void testMarkdownDocCaptureStage1() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithMarkdownDoc.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ClassWithMarkdownDoc.html");
+        assertNotNull("Expected a page for the Markdown-doc class", page);
+        // Stage 1: content makes it through (not yet Markdown-rendered, so the
+        // raw * and ` characters may appear verbatim in the HTML output).
+        assertTrue("Class-level /// body should flow through in:\n" + page,
+                page.contains("stage 1 fixture"));
+        assertTrue("Field-level /// body should flow through in:\n" + page,
+                page.contains("Field-level Markdown doc"));
+        assertTrue("Method-level /// body should flow through in:\n" + page,
+                page.contains("Method Markdown body"));
+        // Block tags inside the /// run still surface — until stage 3 they
+        // travel as part of rawCommentText and get picked up by the existing
+        // block-tag handling.
+        assertTrue("@param x from /// run should be captured in:\n" + page,
+                page.contains("an input"));
+        assertTrue("@return from /// run should be captured in:\n" + page,
+                page.contains("the doubled value"));
+    }
+
+    // GROOVY-11542 stage 2: /// Markdown doc comments render through CommonMark;
+    // headings shift down (# -> <h3>), bullets, emphasis and fenced code blocks
+    // all survive; block tags still flow through the existing TagRenderer.
+    public void testMarkdownDocRendersAsHtml() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithMarkdownDoc.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ClassWithMarkdownDoc.html");
+        assertNotNull(page);
+        // Emphasis, code spans, and lists should become HTML.
+        assertTrue("Expected **body** to render as <strong>body</strong> in:\n" + page,
+                page.contains("<strong>body</strong>"));
+        assertTrue("Expected `Markdown` to render as <code>Markdown</code> in:\n" + page,
+                page.contains("<code>Markdown</code>"));
+        assertTrue("Expected bullet list to render as <ul><li>first bullet</li> in:\n" + page,
+                page.contains("<li>first bullet</li>"));
+        // Field-level doc: *emphasis* -> <em>emphasis</em>.
+        assertTrue("Expected *emphasis* to render as <em>emphasis</em> in:\n" + page,
+                page.contains("<em>emphasis</em>"));
+        // Block tags from the /// run still reach the rendered output.
+        assertTrue("@param description should survive through TagRenderer in:\n" + page,
+                page.contains("an input"));
+        assertTrue("@return description should survive through TagRenderer in:\n" + page,
+                page.contains("the doubled value"));
+    }
+
+    // GROOVY-11542 stage 3a: inline tags inside a Markdown code fence or
+    // code span stay literal (TagRenderer must not expand them).
+    public void testMarkdownCodeFencePreservesInlineTagSyntax() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithMarkdownCodeFence.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ClassWithMarkdownCodeFence.html");
+        assertNotNull(page);
+        // Outside the fence, {@code markdown-outside-fence} should expand —
+        // TagRenderer renders it as <CODE>markdown-outside-fence</CODE> (or
+        // similar) wrapped in code markup.
+        assertTrue("Expected {@code ...} outside the fence to expand in:\n" + page,
+                page.contains("markdown-outside-fence"));
+        // Inside a fenced block, {@link Foo} must stay LITERAL. The masked
+        // braces come back as &#123; / &#125; numeric entities — the browser
+        // shows them as { / } but TagRenderer never saw them as a tag.
+        assertFalse("{@link Foo} inside a ``` fence must NOT render as an anchor in:\n" + page,
+                page.contains(">Foo</a>"));
+        assertTrue("Inside fence, `{@link Foo}` should appear with masked braces as entities in:\n" + page,
+                page.contains("&#123;@link Foo&#125;"));
+        // Inside an inline `...` span, same rule applies to {@link Bar}.
+        assertFalse("{@link Bar} inside a code span must NOT render as an anchor in:\n" + page,
+                page.contains(">Bar</a>"));
+        assertTrue("Inside a code span, `{@link Bar}` should appear with masked braces in:\n" + page,
+                page.contains("&#123;@link Bar&#125;"));
+    }
+
+    // GROOVY-11542 stage 3b: /// leading a script file lifts to the
+    // synthetic Script class, parallel to the GROOVY-8877 /** */ lift.
+    public void testMarkdownScriptLevelDocLifts() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ScriptWithMarkdownTopLevelDoc.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ScriptWithMarkdownTopLevelDoc.html");
+        assertNotNull("Expected a page for the Markdown-script", page);
+        assertTrue("Expected the script-level /// body to surface on the script page in:\n" + page,
+                page.contains("Markdown"));
+        // The **Markdown** emphasis in the body should render as <strong>.
+        assertTrue("Expected **Markdown** to render as <strong>Markdown</strong> in:\n" + page,
+                page.contains("<strong>Markdown</strong>"));
+    }
+
     // Task #23: {@link} cross-references between a script and classes declared
     // in the same source file resolve to working hyperlinks. The script and
     // sibling classes compile to top-level classes in the same package, so the

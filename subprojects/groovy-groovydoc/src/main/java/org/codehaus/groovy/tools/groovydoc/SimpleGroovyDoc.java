@@ -49,6 +49,11 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
     private int definitionType;
     private boolean deprecated;
     private boolean isScript;
+    // GROOVY-11542 stage 1: marks a comment whose body is Markdown (/// runs
+    // per JEP 467). The flag is set during AST visit; templates / renderers
+    // inspect it to decide whether to route the body through a Markdown
+    // renderer (stage 2) instead of the traditional Javadoc/HTML handling.
+    private boolean markdown;
     private GroovyTag[] tags;
 
     public SimpleGroovyDoc(String name) {
@@ -93,6 +98,14 @@ public class SimpleGroovyDoc implements GroovyDoc/*, GroovyTokenTypes*/ {
     public void setRawCommentText(String rawCommentText) {
         this.rawCommentText = rawCommentText;
         calculateTags(rawCommentText);
+    }
+
+    public boolean isMarkdown() {
+        return markdown;
+    }
+
+    public void setMarkdown(boolean markdown) {
+        this.markdown = markdown;
     }
 
     public void setScript(boolean script) {

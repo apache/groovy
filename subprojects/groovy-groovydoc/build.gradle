@@ -26,6 +26,8 @@ dependencies {
 
     implementation projects.groovyTemplates
     implementation projects.groovyDocgenerator
+    // GROOVY-11542: JEP 467 Markdown doc comment rendering (/// runs).
+    implementation "org.commonmark:commonmark:${versions.commonmark}"
 
     testImplementation projects.groovyAnt
     testImplementation projects.groovyTest

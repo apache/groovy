@@ -84,6 +84,10 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private Map<String, GroovyClassDoc> classDocs = new LinkedHashMap<>();
     private final Properties properties;
     private static final String FS = "/";
+    // GROOVY-11542 stage 1: source cached lazily so per-member Markdown-run
+    // scans don't re-read the file per declaration.
+    private String cachedSource;
+    private String[] cachedSourceLines;
 
     public GroovydocVisitor(final SourceUnit unit, String packagePath, List<LinkArgument> links) {
         this(unit, packagePath, links, new Properties());
@@ -146,6 +150,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             currentClassDoc.addInterfaceName(makeType(iface));
         }
         String rawDoc = getDocContent(node.getGroovydoc());
+        boolean markdownFromSource = false;
         if (rawDoc.isEmpty() && node.isScript()) {
             // GROOVY-8877: the Groovy parser does not attach a leading /** */
             // comment to the synthetic script class. Fall back to scanning the
@@ -155,7 +160,22 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             // `@BaseScript` where the declaration gets transformed away) nor
             // duplicate member docs that the parser already attached.
             rawDoc = extractLeadingScriptDocContent(node);
+            // GROOVY-11542: Markdown sibling of the script-level lift.
+            if (rawDoc.isEmpty()) {
+                rawDoc = extractLeadingScriptMarkdownDocContent(node);
+                if (!rawDoc.isEmpty()) markdownFromSource = true;
+            }
         }
+        if (rawDoc.isEmpty() && node.getLineNumber() > 0) {
+            // GROOVY-11542 stage 1: try Markdown doc comment (/// run)
+            // immediately preceding the declaration.
+            String md = extractMarkdownDocContent(node.getLineNumber());
+            if (!md.isEmpty()) {
+                rawDoc = md;
+                markdownFromSource = true;
+            }
+        }
+        if (markdownFromSource) currentClassDoc.setMarkdown(true);
         currentClassDoc.setRawCommentText(rawDoc);
         currentClassDoc.setNameWithTypeArgs(name + genericTypesAsString(node.getGenericsTypes()));
         if (!node.isInterface() && !node.isEnum() && node.getSuperClass() != null) {
@@ -298,6 +318,127 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             return "";
         }
         return "";
+    }
+
+    /**
+     * GROOVY-11542 + GROOVY-8877: script-level Markdown lift. Scan the source
+     * from line 1 looking for the first contiguous run of {@code ///} lines
+     * that satisfies the same lift rules used for traditional Javadoc comments
+     * in {@link #extractLeadingScriptDocContent}: the run must be followed by
+     * a package/import/member declaration (or nothing), and must not be
+     * claimed by a member that the parser already attached doc to.
+     */
+    private String extractLeadingScriptMarkdownDocContent(ClassNode scriptNode) {
+        String[] lines = sourceLines();
+        if (lines == null) return "";
+        int i = 0;
+        // Skip blank lines and block comments before the candidate run.
+        while (i < lines.length) {
+            String trimmed = lines[i].trim();
+            if (trimmed.isEmpty()) { i++; continue; }
+            if (trimmed.startsWith("/*") && !trimmed.startsWith("/**")) {
+                // Skip multi-line /* ... */ header comments (e.g. ASF licences).
+                int closeLine = i;
+                while (closeLine < lines.length && !lines[closeLine].contains("*/")) closeLine++;
+                i = closeLine + 1;
+                continue;
+            }
+            // If we hit anything that isn't a /// line, there's no script-level
+            // Markdown doc here; don't consume single-line // comments either.
+            if (!trimmed.startsWith("///")) return "";
+            break;
+        }
+        if (i >= lines.length) return "";
+        int start = i;
+        while (i < lines.length && lines[i].trim().startsWith("///")) i++;
+        int end = i - 1;
+        // Peek ahead: require the next non-blank thing to be package/import
+        // or nothing. `@Foo` triggers the claim-check as for /** */.
+        int j = i;
+        while (j < lines.length && lines[j].trim().isEmpty()) j++;
+        boolean isClaim = false;
+        if (j < lines.length) {
+            String next = lines[j].trim();
+            if (next.startsWith("package ") || next.startsWith("import ")) {
+                // lift
+            } else if (next.startsWith("//") || next.startsWith("/*")) {
+                // lift
+            } else if (next.startsWith("@")) {
+                isClaim = true;
+            } else {
+                return "";
+            }
+        }
+        StringBuilder body = new StringBuilder();
+        for (int k = start; k <= end; k++) {
+            String trimmed = lines[k].trim();
+            String rest = trimmed.substring(3);
+            if (rest.startsWith(" ")) rest = rest.substring(1);
+            if (body.length() > 0) body.append('\n');
+            body.append(rest);
+        }
+        String content = body.toString();
+        if (isClaim && isClaimedByMember(scriptNode, content)) return "";
+        return content;
+    }
+
+    /**
+     * GROOVY-11542 stage 1: scan the source for a contiguous run of {@code ///}
+     * Markdown doc-comment lines immediately preceding the given declaration
+     * line. Returns the joined body (with {@code ///} and one optional leading
+     * space stripped from each line) or {@code ""} if no Markdown run is found.
+     *
+     * <p>Annotation-only lines and blank lines between the comment and the
+     * declaration are tolerated, matching JEP 467's "comment attaches to the
+     * declaration that immediately follows, allowing annotations in between"
+     * rule.
+     */
+    private String extractMarkdownDocContent(int declLineNumber) {
+        if (declLineNumber <= 1) return "";
+        String[] lines = sourceLines();
+        if (lines == null) return "";
+        // 1-based declLineNumber → 0-based index of line immediately above.
+        int i = declLineNumber - 2;
+        // Skip blank lines and lines that are only annotations.
+        while (i >= 0) {
+            String trimmed = lines[i].trim();
+            if (trimmed.isEmpty()) { i--; continue; }
+            if (trimmed.startsWith("@") && !trimmed.startsWith("///")) { i--; continue; }
+            break;
+        }
+        if (i < 0) return "";
+        // Walk upward collecting contiguous /// lines. Stop on anything else.
+        int end = i;
+        while (i >= 0 && lines[i].trim().startsWith("///")) i--;
+        int start = i + 1;
+        if (start > end) return "";
+        StringBuilder body = new StringBuilder();
+        for (int k = start; k <= end; k++) {
+            String trimmed = lines[k].trim();
+            // Strip the leading "///"; tolerate one optional space after.
+            String rest = trimmed.substring(3);
+            if (rest.startsWith(" ")) rest = rest.substring(1);
+            if (body.length() > 0) body.append('\n');
+            body.append(rest);
+        }
+        return body.toString();
+    }
+
+    private String[] sourceLines() {
+        if (cachedSourceLines != null) return cachedSourceLines;
+        if (cachedSource == null) {
+            try (Reader r = unit.getSource().getReader()) {
+                StringBuilder sb = new StringBuilder();
+                char[] buf = new char[8192];
+                int n;
+                while ((n = r.read(buf)) > 0) sb.append(buf, 0, n);
+                cachedSource = sb.toString();
+            } catch (IOException e) {
+                cachedSource = "";
+            }
+        }
+        cachedSourceLines = cachedSource.split("\n", -1);
+        return cachedSourceLines;
     }
 
     private enum LiftDecision { LIFT, SKIP, CHECK_CLAIM }
@@ -490,7 +631,12 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         if (!hasAnno(node.getField(), "PackageScope")) {
             processModifiers(fieldDoc, node.getField(), mods);
             Groovydoc groovydoc = node.getGroovydoc();
-            fieldDoc.setRawCommentText(groovydoc == null ? "" : getDocContent(groovydoc));
+            String propDoc = groovydoc == null ? "" : getDocContent(groovydoc);
+            if (propDoc.isEmpty() && node.getLineNumber() > 0) {
+                String md = extractMarkdownDocContent(node.getLineNumber());
+                if (!md.isEmpty()) { propDoc = md; fieldDoc.setMarkdown(true); }
+            }
+            fieldDoc.setRawCommentText(propDoc);
             currentClassDoc.addProperty(fieldDoc);
         }
         processAnnotations(fieldDoc, node.getField());
@@ -555,7 +701,12 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         fieldDoc.setType(new SimpleGroovyType(makeType(node.getType())));
         processModifiers(fieldDoc, node, node.getModifiers());
         processAnnotations(fieldDoc, node);
-        fieldDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
+        String fieldDoc0 = getDocContent(node.getGroovydoc());
+        if (fieldDoc0.isEmpty() && node.getLineNumber() > 0) {
+            String md = extractMarkdownDocContent(node.getLineNumber());
+            if (!md.isEmpty()) { fieldDoc0 = md; fieldDoc.setMarkdown(true); }
+        }
+        fieldDoc.setRawCommentText(fieldDoc0);
         // GROOVY-6016: record the source form of compile-time-constant
         // initializers so {@value #FIELD} can resolve them at render time.
         // Leverage ExpressionUtils.transformInlineConstants (same utility used
@@ -589,7 +740,12 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     }
 
     private void setConstructorOrMethodCommon(MethodNode node, SimpleGroovyExecutableMemberDoc methOrCons) {
-        methOrCons.setRawCommentText(getDocContent(node.getGroovydoc()));
+        String raw = getDocContent(node.getGroovydoc());
+        if (raw.isEmpty() && node.getLineNumber() > 0) {
+            String md = extractMarkdownDocContent(node.getLineNumber());
+            if (!md.isEmpty()) { raw = md; methOrCons.setMarkdown(true); }
+        }
+        methOrCons.setRawCommentText(raw);
         processModifiers(methOrCons, node, node.getModifiers());
         processAnnotations(methOrCons, node);
         if (node.isAbstract()) {

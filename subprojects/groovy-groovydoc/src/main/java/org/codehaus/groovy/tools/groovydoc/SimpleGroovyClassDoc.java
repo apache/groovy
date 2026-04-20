@@ -899,20 +899,38 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
      * to find its overridden parent) can resolve.
      */
     public String replaceTags(String comment, org.codehaus.groovy.groovydoc.GroovyMemberDoc memberDoc) {
-        // Strip the leading ' * ' block-comment prefix from each line.
-        String result = comment.replaceAll("(?m)^\\s*\\*", "");
-
-        // Expand {@docRoot} before tag processing since it is a path substitution
-        // rather than a tag-rendering operation.
         String relativeRootPath = getRelativeRootPath();
         if (!relativeRootPath.endsWith("/")) {
             relativeRootPath += "/";
         }
+        // GROOVY-11542: Markdown doc comments (/// runs per JEP 467).
+        // Pre-render the Markdown body to HTML and splice it in before
+        // TagRenderer processes inline and block tags. Block tags stay as
+        // source text so TagRenderer handles them through the normal path.
+        boolean markdown = (memberDoc instanceof SimpleGroovyDoc && ((SimpleGroovyDoc) memberDoc).isMarkdown())
+                || (memberDoc == null && this.isMarkdown());
+        String result;
+        if (markdown) {
+            String[] parts = MarkdownRenderer.splitBodyAndTags(comment);
+            String bodyHtml = MarkdownRenderer.render(parts[0]);
+            result = parts[1].isEmpty() ? bodyHtml : bodyHtml + "\n" + parts[1];
+        } else {
+            // Strip the leading ' * ' block-comment prefix from each line.
+            result = comment.replaceAll("(?m)^\\s*\\*", "");
+        }
+
+        // Expand {@docRoot} before tag processing since it is a path substitution
+        // rather than a tag-rendering operation.
         result = result.replaceAll(DOCROOT_PATTERN2, relativeRootPath);
         result = result.replaceAll(DOCROOT_PATTERN, relativeRootPath);
 
         // GROOVY-11939: single-pass tokenize + render for inline and block tags.
-        return TagRenderer.render(result, links, relativeRootPath, savedRootDoc, this, memberDoc);
+        String rendered = TagRenderer.render(result, links, relativeRootPath, savedRootDoc, this, memberDoc);
+        // GROOVY-11542: if the body came from a Markdown comment, swap the
+        // brace masks MarkdownRenderer used to hide `{@...}` inside code
+        // spans / code blocks back to numeric HTML entities. Safe on
+        // non-Markdown paths too (no masks present → no-op).
+        return markdown ? MarkdownRenderer.unmaskBracesInCode(rendered) : rendered;
     }
 
     /**
