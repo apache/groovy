@@ -207,13 +207,15 @@ public class MetaMethodIndex {
      * should be kept.
      */
     private static boolean isOverridden(final MetaMethod inIndex, final MetaMethod toIndex) {
-        // do not overwrite private methods
-        if (inIndex.isPrivate()) return false;
+        // don't overwrite private method
+        if (inIndex.isPrivate()) {
+            return false;
+        }
 
         CachedClass inIndexDC = inIndex.getDeclaringClass();
         CachedClass toIndexDC = toIndex.getDeclaringClass();
         if (inIndexDC == toIndexDC) {
-            return isNonRealMethod(toIndex) || inIndex.isSynthetic(); // GROOVY-10136, GROOVY-10594
+            return inIndex.isSynthetic() || isNonRealMethod(toIndex); // GROOVY-10136, GROOVY-10594
         }
 
         // interface vs instance method; be careful...
@@ -221,7 +223,7 @@ public class MetaMethodIndex {
                 && inIndexDC.isInterface() != toIndexDC.isInterface()
                 && !(toIndex instanceof ClosureMetaMethod || toIndex instanceof ClosureStaticMetaMethod)) { // GROOVY-3493
             // this is the old logic created for GROOVY-2391 and GROOVY-7879, which was labeled as "do not overwrite interface methods with instance methods"
-            return (isNonRealMethod(inIndex) || !inIndexDC.isInterface() || toIndexDC.isInterface()) && !toIndexDC.isAssignableFrom(inIndexDC.getTheClass());
+            return (toIndexDC.isInterface() || !inIndexDC.isInterface() || isNonRealMethod(inIndex)) && !toIndexDC.isAssignableFrom(inIndexDC.getTheClass());
         }
 
         // prefer most-specific or most-recent for type disjunction

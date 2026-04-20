@@ -519,8 +519,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         int matchedMethod = mopArrayIndex(method, c);
                         if (matchedMethod >= 0) {
                             methods.set(i, mopMethods[matchedMethod]);
-                        } else if (!useThis && !isDGM(method) && (isBridge(method)
-                                || c == method.getDeclaringClass().getTheClass())) {
+                        } else if (!useThis && notSuperUseful(method, c)) {
                             methods.remove(i--); // not fit for super usage
                         }
                     }
@@ -535,8 +534,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     if (matchedMethod >= 0) {
                         if (useThis) e.methods = mopMethods[matchedMethod];
                         else e.methodsForSuper = mopMethods[matchedMethod];
-                    } else if (!useThis && !isDGM(method) && (isBridge(method)
-                            || c == method.getDeclaringClass().getTheClass())) {
+                    } else if (!useThis && notSuperUseful(method, c)) {
                         e.methodsForSuper = null; // not fit for super usage
                     }
                 }
@@ -575,6 +573,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     }
                 }
                 return -1;
+            }
+
+            private boolean notSuperUseful(final MetaMethod method, final Class<?> c) {
+                return !isDGM(method) && (isBridge(method)
+                    || method.isAbstract() // GROOVY-11929
+                    || c == method.getDeclaringClass().getTheClass());
             }
 
             private boolean isBridge(final MetaMethod method) {
