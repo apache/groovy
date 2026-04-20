@@ -45,6 +45,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.tools.groovydoc.GroovydocAnnotationUtils;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAbstractableElementDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAnnotationRef;
@@ -273,13 +274,7 @@ public class GroovydocJavaVisitor
     private boolean shouldDocument(String name) {
         String fqn = resolveAnnotationFqn(name);
         if (fqn == null) return true; // unresolved — show
-        try {
-            Class<?> c = Class.forName(fqn);
-            if (!c.isAnnotation()) return true;
-            return c.isAnnotationPresent(java.lang.annotation.Documented.class);
-        } catch (Throwable t) {
-            return true;
-        }
+        return GroovydocAnnotationUtils.shouldDocument(fqn);
     }
 
     private String resolveAnnotationFqn(String name) {
