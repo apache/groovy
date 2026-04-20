@@ -71,6 +71,7 @@ public class Groovydoc extends Task {
     private Boolean noIndex;
     private Boolean noDeprecatedList;
     private Boolean noHelp;
+    private String syntaxHighlighter;
     private String javaVersion;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
@@ -105,6 +106,7 @@ public class Groovydoc extends Task {
         noIndex = false;
         noDeprecatedList = false;
         noHelp = false;
+        syntaxHighlighter = "none";
     }
 
     /**
@@ -200,6 +202,16 @@ public class Groovydoc extends Task {
      */
     public void setNoHelp(boolean noHelp) {
         this.noHelp = noHelp;
+    }
+
+    /**
+     * GROOVY-11938 stage 4: selects a client-side syntax highlighter for
+     * {@code {@snippet}} and fenced Markdown code blocks. Valid values are
+     * {@code "prism"} (bundled) or {@code "none"} (default). Any other value
+     * is treated as {@code "none"}.
+     */
+    public void setSyntaxHighlighter(String syntaxHighlighter) {
+        this.syntaxHighlighter = syntaxHighlighter;
     }
 
     /**
@@ -536,6 +548,7 @@ public class Groovydoc extends Task {
         properties.setProperty("noIndex", noIndex.toString());
         properties.setProperty("noDeprecatedList", noDeprecatedList.toString());
         properties.setProperty("noHelp", noHelp.toString());
+        properties.setProperty("syntaxHighlighter", syntaxHighlighter != null ? syntaxHighlighter : "none");
         // GROOVY-11941: expose additional stylesheet basenames to templates.
         StringBuilder extras = new StringBuilder();
         for (int k = 0; k < addStylesheetFiles.size(); k++) {

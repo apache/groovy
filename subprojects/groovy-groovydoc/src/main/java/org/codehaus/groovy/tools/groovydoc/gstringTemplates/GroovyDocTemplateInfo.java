@@ -33,6 +33,27 @@ public class GroovyDocTemplateInfo {
             TEMPLATE_BASEDIR + "topLevel/stylesheet.css", // copy default one, may override later
             TEMPLATE_BASEDIR + "topLevel/inherit.gif",
             DOCGEN_BASEDIR   + "groovy.ico",
+            // GROOVY-11938 stage 4: Prism.js for client-side syntax highlighting of
+            // {@snippet} bodies and fenced Markdown code blocks. These files are
+            // always copied so an opt-in flag ({@code -syntaxHighlighter=prism})
+            // can enable highlighting at any time without re-running with a
+            // different template set.
+            TEMPLATE_BASEDIR + "topLevel/prism.js",
+            TEMPLATE_BASEDIR + "topLevel/prism.min.css",
+            TEMPLATE_BASEDIR + "topLevel/prism-dark.min.css",
+            TEMPLATE_BASEDIR + "topLevel/prism-csv.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-groovy.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-java.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-javadoclike.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-javascript.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-json.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-markdown.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-properties.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-regex.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-sql.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-toml.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-xml-doc.min.js",
+            TEMPLATE_BASEDIR + "topLevel/prism-yaml.min.js",
     };
     public static final String[] DEFAULT_PACKAGE_TEMPLATES = new String[]{ // package level templates
             TEMPLATE_BASEDIR + "packageLevel/package-frame.html",

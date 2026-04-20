@@ -495,6 +495,48 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 page.contains("the doubled value"));
     }
 
+    // GROOVY-11938 stage 4: opt-in client-side syntax highlighting via Prism.
+    // When -syntaxHighlighter=prism is passed, the head of each content page
+    // should include prism.min.css and the bundled language scripts; when
+    // it's unset (default), none of the prism refs should appear.
+    public void testSyntaxHighlighterPrismInjectsHead() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        Properties props = new Properties();
+        props.put("syntaxHighlighter", "prism");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+        tool.add(List.of(base + "/DocumentedClass.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String classPage = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classPage);
+        assertTrue("Expected prism.min.css <link> in class page head:\n" + classPage,
+                classPage.contains("prism.min.css"));
+        assertTrue("Expected prism.js <script> in class page head:\n" + classPage,
+                classPage.contains("prism.js"));
+        assertTrue("Expected prism-groovy language component in class page head:\n" + classPage,
+                classPage.contains("prism-groovy.min.js"));
+
+        String overview = output.getText(MOCK_DIR + "/overview-summary.html");
+        assertNotNull(overview);
+        assertTrue("Expected prism.min.css in overview:\n" + overview,
+                overview.contains("prism.min.css"));
+    }
+
+    public void testSyntaxHighlighterOffByDefault() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/DocumentedClass.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+        String classPage = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classPage);
+        assertFalse("Prism should NOT be referenced when default (syntaxHighlighter=none):\n" + classPage,
+                classPage.contains("prism.js"));
+        assertFalse("Prism CSS should NOT be referenced when default:\n" + classPage,
+                classPage.contains("prism.min.css"));
+    }
+
     // GROOVY-11542 stage 3a: inline tags inside a Markdown code fence or
     // code span stay literal (TagRenderer must not expand them).
     public void testMarkdownCodeFencePreservesInlineTagSyntax() throws Exception {

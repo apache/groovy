@@ -31,6 +31,20 @@
 <% } %>
 <link href="groovy.ico" type="image/x-icon" rel="shortcut icon">
 <link href="groovy.ico" type="image/x-icon" rel="icon">
+<% if (props.syntaxHighlighter == 'prism') { def __p = '' %>
+<link rel="stylesheet" type="text/css" href="${__p}prism.min.css">
+<script src="${__p}prism.js"></script>
+<script src="${__p}prism-groovy.min.js"></script>
+<script src="${__p}prism-java.min.js"></script>
+<script src="${__p}prism-json.min.js"></script>
+<script src="${__p}prism-yaml.min.js"></script>
+<script src="${__p}prism-toml.min.js"></script>
+<script src="${__p}prism-sql.min.js"></script>
+<script src="${__p}prism-csv.min.js"></script>
+<script src="${__p}prism-markdown.min.js"></script>
+<script src="${__p}prism-xml-doc.min.js"></script>
+<script src="${__p}prism-javadoclike.min.js"></script>
+<% } %>
 </head>
 <body>
 <!-- ========= START OF TOP NAVBAR ======= -->

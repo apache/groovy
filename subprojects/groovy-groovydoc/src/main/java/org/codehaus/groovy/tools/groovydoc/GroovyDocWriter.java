@@ -183,7 +183,14 @@ public class GroovyDocWriter {
     }
 
     private static boolean hasBinaryExtension(String template) {
-        return template.endsWith(".gif") || template.endsWith(".ico");
+        if (template.endsWith(".gif") || template.endsWith(".ico")) return true;
+        // GROOVY-11938 stage 4: Prism.js bundle. The minified JS/CSS files
+        // contain `$` characters which the GString template engine would
+        // otherwise try to interpret as expressions, so copy verbatim.
+        int lastSlash = template.lastIndexOf('/');
+        String name = lastSlash >= 0 ? template.substring(lastSlash + 1) : template;
+        if (name.startsWith("prism") && (name.endsWith(".js") || name.endsWith(".css"))) return true;
+        return false;
     }
 
 }
