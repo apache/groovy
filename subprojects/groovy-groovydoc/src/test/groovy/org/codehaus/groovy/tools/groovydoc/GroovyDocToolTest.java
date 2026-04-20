@@ -495,6 +495,77 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 page.contains("the doubled value"));
     }
 
+    // GROOVY-11938 stage 3: {@snippet} markup comments. Recognises three
+    // directives inside a snippet body — @highlight, @replace, @link — in
+    // either EOL (after code) or standalone-line (applies to next line) form.
+    // Markup-comment lines are stripped from the output.
+    public void testSnippetMarkupDirectives() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithSnippetMarkup.groovy",
+                             base + "/ScriptWithSiblingClassLinks.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ClassWithSnippetMarkup.html");
+        assertNotNull(page);
+        int snippetIdx = page.indexOf("<pre><code class=\"language-groovy\">");
+        assertTrue("Snippet block expected in:\n" + page, snippetIdx >= 0);
+        int snippetEnd = page.indexOf("</code></pre>", snippetIdx);
+        String snippet = page.substring(snippetIdx, snippetEnd + "</code></pre>".length());
+
+        // @highlight: "greet" wrapped in <b>.
+        assertTrue("@highlight bold expected around `greet` in:\n" + snippet,
+                snippet.contains("<b>greet</b>"));
+        // @replace: "TODO: fill this in" string substituted with replacement text.
+        assertFalse("Replaced text TODO should NOT appear in snippet:\n" + snippet,
+                snippet.contains("TODO: fill this in"));
+        assertTrue("Replacement text expected in snippet:\n" + snippet,
+                snippet.contains("see SiblingHelper"));
+        // @link: SiblingHelper wrapped in an anchor to its doc page.
+        assertTrue("@link anchor wrapping SiblingHelper expected in:\n" + snippet,
+                snippet.matches("(?s).*<a href=\"[^\"]*SiblingHelper\\.html\">SiblingHelper</a>.*"));
+        // Markup-comment lines themselves must be stripped.
+        assertFalse("// @highlight directive line should be stripped:\n" + snippet,
+                snippet.contains("@highlight"));
+        assertFalse("// @replace directive line should be stripped:\n" + snippet,
+                snippet.contains("@replace"));
+        assertFalse("// @link directive line should be stripped:\n" + snippet,
+                snippet.contains("@link"));
+    }
+
+    // GROOVY-11938 stage 3 region support: a directive with region="name"
+    // activates at its line and applies until the matching // @end marker.
+    public void testSnippetMarkupRegionScoping() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithSnippetMarkup.groovy",
+                             base + "/ScriptWithSiblingClassLinks.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ClassWithSnippetMarkup.html");
+        assertNotNull(page);
+        // Locate the SECOND snippet block (the region-scoped one).
+        int first = page.indexOf("<pre><code class=\"language-groovy\">");
+        int second = page.indexOf("<pre><code class=\"language-groovy\">", first + 1);
+        assertTrue("Second snippet block expected", second > first);
+        int end = page.indexOf("</code></pre>", second);
+        String snippet = page.substring(second, end);
+
+        // Inside region: both `call` and `call2` should have <mark> wrapping "call".
+        assertTrue("Region-scoped highlight should mark `call` inside def call(x):\n" + snippet,
+                snippet.contains("def <mark>call</mark>(x)"));
+        assertTrue("Region-scoped highlight should mark `call` inside def call2(x):\n" + snippet,
+                snippet.contains("def <mark>call</mark>2(x)"));
+        // Outside region: `call` on the afterRegion line should NOT be highlighted.
+        int afterIdx = snippet.indexOf("afterRegion");
+        String afterPortion = snippet.substring(afterIdx);
+        assertFalse("Highlight must not leak past @end into afterRegion line:\n" + afterPortion,
+                afterPortion.contains("<mark>"));
+        // @end / @start marker lines themselves stripped.
+        assertFalse("@end region marker line should be stripped:\n" + snippet,
+                snippet.contains("@end"));
+    }
+
     // GROOVY-11938 stage 5: Markdown and {@snippet} interop. A /// doc comment
     // containing a Markdown heading, an inline {@snippet}, and a fenced
     // Markdown code block emits three distinct HTML chunks without the
