@@ -889,6 +889,16 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     public String replaceTags(String comment) {
+        return replaceTags(comment, null);
+    }
+
+    /**
+     * GROOVY-3782 / GROOVY-6016: overload that threads the current member
+     * through to {@link TagRenderer} so inline tags that need the enclosing
+     * member context (e.g. {@code {@inheritDoc}} needs the current method
+     * to find its overridden parent) can resolve.
+     */
+    public String replaceTags(String comment, org.codehaus.groovy.groovydoc.GroovyMemberDoc memberDoc) {
         // Strip the leading ' * ' block-comment prefix from each line.
         String result = comment.replaceAll("(?m)^\\s*\\*", "");
 
@@ -902,7 +912,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         result = result.replaceAll(DOCROOT_PATTERN, relativeRootPath);
 
         // GROOVY-11939: single-pass tokenize + render for inline and block tags.
-        return TagRenderer.render(result, links, relativeRootPath, savedRootDoc, this);
+        return TagRenderer.render(result, links, relativeRootPath, savedRootDoc, this, memberDoc);
     }
 
     /**
