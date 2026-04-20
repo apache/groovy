@@ -31,7 +31,9 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
@@ -51,6 +53,9 @@ import org.codehaus.groovy.tools.groovydoc.SimpleGroovyParameter;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyProgramElementDoc;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyType;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.lang.annotation.Documented;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -62,6 +67,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.deemedInternal;
+import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
 import static org.codehaus.groovy.transform.trait.Traits.isTrait;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
@@ -240,13 +246,13 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
      */
     private String extractLeadingScriptDocContent(ClassNode scriptNode) {
         String src;
-        try (java.io.Reader r = unit.getSource().getReader()) {
+        try (Reader r = unit.getSource().getReader()) {
             StringBuilder sb = new StringBuilder();
             char[] buf = new char[8192];
             int n;
             while ((n = r.read(buf)) > 0) sb.append(buf, 0, n);
             src = sb.toString();
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             return "";
         }
         int i = 0, n = src.length();
@@ -360,7 +366,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         try {
             Class<?> c = Class.forName(fqn);
             if (!c.isAnnotation()) return true;
-            return c.isAnnotationPresent(java.lang.annotation.Documented.class);
+            return c.isAnnotationPresent(Documented.class);
         } catch (Throwable t) {
             return true;
         }
@@ -558,20 +564,19 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         // to other static-final constants, and casts — not just bare literals.
         // Javadoc's convention is to re-quote strings/chars;
         // ConstantExpression.getText() returns the raw value without quotes.
-        org.codehaus.groovy.ast.expr.Expression init = node.getInitialExpression();
+        Expression init = node.getInitialExpression();
         if (init != null) {
             // Typed variant does numeric arithmetic folding but needs the
             // target type to equal ClassHelper.STRING_TYPE for string concat,
             // which isn't always the case at CONVERSION phase. Type-less
             // variant handles string concat via isStringType on operand types.
             // Try both; take whichever yields a ConstantExpression.
-            org.codehaus.groovy.ast.expr.Expression folded =
-                org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants(init, node.getType());
-            if (!(folded instanceof org.codehaus.groovy.ast.expr.ConstantExpression)) {
-                folded = org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants(init);
+            Expression folded = transformInlineConstants(init, node.getType());
+            if (!(folded instanceof ConstantExpression)) {
+                folded = transformInlineConstants(init);
             }
-            if (folded instanceof org.codehaus.groovy.ast.expr.ConstantExpression) {
-                Object value = ((org.codehaus.groovy.ast.expr.ConstantExpression) folded).getValue();
+            if (folded instanceof ConstantExpression) {
+                Object value = ((ConstantExpression) folded).getValue();
                 fieldDoc.setConstantValueExpression(formatConstantValue(value));
             }
         }

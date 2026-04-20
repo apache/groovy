@@ -20,6 +20,7 @@ package groovy.transform.stc;
 
 import org.apache.groovy.lang.annotation.Incubating;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,6 +31,7 @@ import java.lang.annotation.Target;
  *
  * @since 4.0.0
  */
+@Documented
 @Incubating
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)

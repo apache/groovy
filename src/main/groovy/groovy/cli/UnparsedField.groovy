@@ -21,6 +21,9 @@ package groovy.cli
 import groovy.transform.AnnotationCollector
 import groovy.transform.Field
 
+import java.lang.annotation.Documented
+
+@Documented
 @Unparsed
 @Field
 @AnnotationCollector
