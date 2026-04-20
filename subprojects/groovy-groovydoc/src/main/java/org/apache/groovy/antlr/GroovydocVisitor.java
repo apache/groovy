@@ -97,6 +97,11 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     @Override
     public void visitClass(ClassNode node) {
+        // GROOVY-10162: anonymous inner classes (e.g. those generated for each
+        // enum constant with a body when the enum has an abstract method)
+        // aren't user-visible types and shouldn't produce separate HTML pages
+        // like `Foo.1.html` / `Foo.2.html`.
+        if (node instanceof InnerClassNode && ((InnerClassNode) node).isAnonymous()) return;
         final Map<String, String> aliases = new LinkedHashMap<>();
         final List<String> imports = new ArrayList<>();
         for (ImportNode iNode : node.getModule().getImports()) {
@@ -163,7 +168,9 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         }
         Iterator<InnerClassNode> innerClasses = node.getInnerClasses();
         while (innerClasses.hasNext()) {
-            visitClass(innerClasses.next());
+            InnerClassNode inner = innerClasses.next();
+            if (inner.isAnonymous()) continue; // GROOVY-10162
+            visitClass(inner);
             parent.addNested(currentClassDoc);
             currentClassDoc = parent;
         }
