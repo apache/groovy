@@ -422,6 +422,42 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 + occurrences + " in:\n" + doc, 2, occurrences);
     }
 
+    // GROOVY-11942: overview-tree.html renders the class hierarchy rooted at
+    // java.lang.Object and an Interface Hierarchy section for traits/interfaces.
+    public void testTreePagesRenderExpectedHierarchy() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(
+                base + "/GroovyClassWithMultipleInterfaces.groovy",
+                base + "/GroovyInterface1.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String overview = output.getText(MOCK_DIR + "/overview-tree.html");
+        assertNotNull("Expected overview-tree.html in output", overview);
+        assertTrue("Overview tree should contain Class Hierarchy section:\n" + overview,
+                overview.contains("Class Hierarchy"));
+        assertTrue("Overview tree should list GroovyClassWithMultipleInterfaces under Object:\n" + overview,
+                overview.contains("GroovyClassWithMultipleInterfaces"));
+        assertTrue("Overview tree should contain Interface Hierarchy section:\n" + overview,
+                overview.contains("Interface Hierarchy"));
+        assertTrue("Interface tree should list GroovyInterface1:\n" + overview,
+                overview.contains("GroovyInterface1"));
+
+        String pkgTree = output.getText(MOCK_DIR + "/" + base + "/package-tree.html");
+        assertNotNull("Expected package-tree.html in output", pkgTree);
+        assertTrue("Package tree should mention the package name:\n" + pkgTree,
+                pkgTree.contains("org.codehaus.groovy.tools.groovydoc.testfiles"));
+        assertTrue("Package tree should link back to All Packages overview:\n" + pkgTree,
+                pkgTree.contains("overview-tree.html"));
+
+        // Nav bar on the class page should now link to package-tree.html.
+        String klassPage = output.getText(MOCK_DIR + "/" + base + "/GroovyClassWithMultipleInterfaces.html");
+        assertNotNull(klassPage);
+        assertTrue("Class page nav should link to package-tree.html:\n" + klassPage,
+                klassPage.contains("href=\"package-tree.html\""));
+    }
+
     // GROOVY-10162
     public void testAbstractMethodEnumWithPerConstantBodiesDoesNotProduceAnonymousInnerPages() throws Exception {
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
