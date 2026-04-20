@@ -40,6 +40,9 @@ def classTypes = [
 <meta name="keywords" content="${packageDoc.nameWithDots()} package">
 <meta http-equiv="Content-Type" content="text/html; charset=${props.charset}">
 <link rel ="stylesheet" TYPE="text/css" HREF="${packageDoc.relativeRootPath}stylesheet.css" title="Style">
+<% if (props.additionalStylesheets) props.additionalStylesheets.tokenize(',').each { __ss -> %>
+<link rel="stylesheet" type="text/css" href="${packageDoc.relativeRootPath}${__ss.trim()}">
+<% } %>
 <link href="${packageDoc.relativeRootPath}groovy.ico" type="image/x-icon" rel="shortcut icon">
 <link href="${packageDoc.relativeRootPath}groovy.ico" type="image/x-icon" rel="icon">
 <script type="text/javascript">

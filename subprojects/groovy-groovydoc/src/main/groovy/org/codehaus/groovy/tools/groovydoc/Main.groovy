@@ -32,6 +32,7 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 class Main {
     private static final MessageSource messages = new MessageSource(Main)
     private static File styleSheetFile;
+    private static List<File> addStylesheetFiles = []
     private static File overviewFile
     private static File destDir
     private static String windowTitle
@@ -91,6 +92,7 @@ class Main {
         cli.footer(args:1, argName: 'html', messages['cli.option.footer.description'])
         cli.exclude(args:1, argName: 'pkglist', messages['cli.option.exclude.description'])
         cli.stylesheetfile(args:1, argName: 'path', messages['cli.option.stylesheetfile.description'])
+        cli.addStylesheet(args:1, argName: 'path', messages['cli.option.addStylesheet.description'])
         cli.sourcepath(args:1, argName: 'pathlist', messages['cli.option.sourcepath.description'])
         cli.javaVersion(args: 1, argName: 'javaVersion', messages['cli.option.javaVersion.description'])
         cli.showInternal(messages['cli.option.showInternal.description'])
@@ -109,6 +111,14 @@ class Main {
 
         if (options.stylesheetfile) {
             styleSheetFile = new File(options.stylesheetfile)
+        }
+        if (options.addStylesheet) {
+            // CliBuilder with args:1 gives a single value; use comma separator
+            // to accept multiple paths in one flag. Example:
+            //   --add-stylesheet custom1.css,custom2.css
+            options.addStylesheet.toString().tokenize(',').each { p ->
+                addStylesheetFiles << new File(p.trim())
+            }
         }
 
         if (options.overview) {
@@ -216,6 +226,8 @@ class Main {
         properties.put("processScripts", (!noScripts).toString())
         properties.put("includeMainForScripts", (!noMainForScripts).toString())
         properties.put("showInternal", showInternal.toString())
+        // GROOVY-11941: expose additional stylesheet basenames to templates.
+        properties.put("additionalStylesheets", addStylesheetFiles*.name.join(','))
         properties.put("timestamp", (!noTimestamp).toString())
         properties.put("versionStamp", (!noVersionStamp).toString())
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")
@@ -245,6 +257,15 @@ class Main {
                 new File(destDir, "stylesheet.css").text = styleSheetFile.text
             } catch (IOException e) {
                 println "Warning: Unable to copy specified stylesheet '" + styleSheetFile.absolutePath + "'. Using default stylesheet instead. Due to: " + e.message
+            }
+        }
+        // GROOVY-11941: copy any additional stylesheets alongside the default,
+        // preserving each file's basename.
+        addStylesheetFiles.each { f ->
+            try {
+                new File(destDir, f.name).text = f.text
+            } catch (IOException e) {
+                System.err.println "Warning: Unable to copy additional stylesheet '${f.absolutePath}': ${e.message}"
             }
         }
         return htmlTool.errorCount

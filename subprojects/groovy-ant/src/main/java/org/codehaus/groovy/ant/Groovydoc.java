@@ -74,6 +74,8 @@ public class Groovydoc extends Task {
     private final List<LinkArgument> links = new ArrayList<>();
     private File overviewFile;
     private File styleSheetFile;
+    // GROOVY-11941: additional stylesheets populated via nested <addStylesheet file="..."/>.
+    private final List<File> addStylesheetFiles = new ArrayList<>();
     // dev note: update javadoc comment for #setExtensions(String) if updating below
     private String extensions = ".java:.groovy:.gv:.gvy:.gsh";
 
@@ -351,6 +353,28 @@ public class Groovydoc extends Task {
     }
 
     /**
+     * GROOVY-11941: Ant nested element {@code <addStylesheet file="custom.css"/>}
+     * to include an additional stylesheet in the generated docs alongside the
+     * default. Repeatable — specify once per extra stylesheet.
+     *
+     * @return a holder that Ant will populate with the nested element's file attribute
+     */
+    public AddStylesheet createAddStylesheet() {
+        AddStylesheet a = new AddStylesheet();
+        return a;
+    }
+
+    /** Nested-element holder populated by Ant introspection for {@code <addStylesheet file="..."/>}. */
+    public class AddStylesheet {
+        private File file;
+        public void setFile(File f) {
+            this.file = f;
+            if (f != null) addStylesheetFiles.add(f);
+        }
+        public File getFile() { return file; }
+    }
+
+    /**
      * Add the directories matched by the nested dirsets to the resulting
      * packages list and the base directories of the dirsets to the Path.
      * It also handles the packages and excludepackages attributes and
@@ -478,6 +502,13 @@ public class Groovydoc extends Task {
         properties.setProperty("timestamp", Boolean.valueOf(!noTimestamp).toString());
         properties.setProperty("versionStamp", Boolean.valueOf(!noVersionStamp).toString());
         properties.setProperty("showInternal", showInternal.toString());
+        // GROOVY-11941: expose additional stylesheet basenames to templates.
+        StringBuilder extras = new StringBuilder();
+        for (int k = 0; k < addStylesheetFiles.size(); k++) {
+            if (k > 0) extras.append(',');
+            extras.append(addStylesheetFiles.get(k).getName());
+        }
+        properties.setProperty("additionalStylesheets", extras.toString());
         String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override");
         if (phaseOverride != null) properties.put("phaseOverride", phaseOverride);
 
@@ -517,6 +548,18 @@ public class Groovydoc extends Task {
             } catch (IOException e) {
                 LOGGER.log(WARNING, "Unable to copy specified stylesheet ''{0}''. Using default stylesheet instead. Due to: {1}",
                         styleSheetFile.getAbsolutePath(), e.getMessage());
+            }
+        }
+        // GROOVY-11941: copy each additional stylesheet next to the default,
+        // preserving basename.
+        for (File f : addStylesheetFiles) {
+            try {
+                String css = ResourceGroovyMethods.getText(f);
+                File outfile = new File(destDir, f.getName());
+                ResourceGroovyMethods.setText(outfile, css);
+            } catch (IOException e) {
+                LOGGER.log(WARNING, "Unable to copy additional stylesheet ''{0}'': {1}",
+                        f.getAbsolutePath(), e.getMessage());
             }
         }
     }
