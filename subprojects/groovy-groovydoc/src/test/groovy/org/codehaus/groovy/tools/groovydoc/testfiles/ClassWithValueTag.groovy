@@ -30,8 +30,16 @@ package org.codehaus.groovy.tools.groovydoc.testfiles
  * Combined: {@value #COMBINED}
  */
 class ClassWithValueTag {
+    /** Max allowed (bare: {@value}). */
     public static final int MAX = 42
+    /** Greeting (bare: {@value}). */
     public static final String GREETING = "hello"
     public static final int SUM = 40 + 2
     public static final String COMBINED = "hel" + "lo"
+    public static final int SMALL_TIMEOUT = 1000
+    public static final int MEDIUM_TIMEOUT = 3000
+    /** Big timeout in ms. Default: {@value}. */
+    public static final int BIG_TIMEOUT = SMALL_TIMEOUT + MEDIUM_TIMEOUT
+    /** Four is: {@value}. */
+    public static final int FOUR = 'four'.size()
 }
