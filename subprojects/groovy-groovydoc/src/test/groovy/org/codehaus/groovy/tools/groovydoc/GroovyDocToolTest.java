@@ -144,11 +144,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertNotNull("Expected a page for the value-tag class", doc);
         assertTrue("Expected {@value #MAX} to render as 42 in:\n" + doc,
                 doc.contains("Max allowed: 42"));
-        // GREETING's source form is "hello" (quoted). Angle-bracket encoding
-        // doesn't affect the quotes — we expect to see &quot; or the literal "hello"
-        // depending on encoding. At minimum, 'hello' should appear next to 'Greeting:'.
         assertTrue("Expected {@value #GREETING} to render with 'hello' in:\n" + doc,
                 doc.contains("Greeting: \"hello\""));
+        // Folded via ExpressionUtils.transformInlineConstants:
+        assertTrue("Expected {@value #SUM} to fold 40+2 to 42 in:\n" + doc,
+                doc.contains("Sum: 42"));
+        assertTrue("Expected {@value #COMBINED} to fold string concat to \"hello\" in:\n" + doc,
+                doc.contains("Combined: \"hello\""));
     }
 
     // GROOVY-8025: annotations whose members are closure expressions must
