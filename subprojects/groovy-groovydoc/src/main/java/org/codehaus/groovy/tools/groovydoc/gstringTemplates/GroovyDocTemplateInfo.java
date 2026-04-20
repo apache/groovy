@@ -29,13 +29,15 @@ public class GroovyDocTemplateInfo {
             TEMPLATE_BASEDIR + "topLevel/help-doc.html",
             TEMPLATE_BASEDIR + "topLevel/index-all.html",
             TEMPLATE_BASEDIR + "topLevel/deprecated-list.html",
+            TEMPLATE_BASEDIR + "topLevel/overview-tree.html",
             TEMPLATE_BASEDIR + "topLevel/stylesheet.css", // copy default one, may override later
             TEMPLATE_BASEDIR + "topLevel/inherit.gif",
             DOCGEN_BASEDIR   + "groovy.ico",
     };
     public static final String[] DEFAULT_PACKAGE_TEMPLATES = new String[]{ // package level templates
             TEMPLATE_BASEDIR + "packageLevel/package-frame.html",
-            TEMPLATE_BASEDIR + "packageLevel/package-summary.html"
+            TEMPLATE_BASEDIR + "packageLevel/package-summary.html",
+            TEMPLATE_BASEDIR + "packageLevel/package-tree.html"
     };
     public static final String[] DEFAULT_CLASS_TEMPLATES = new String[]{ // class level templates
             TEMPLATE_BASEDIR + "classLevel/classDocName.html"
