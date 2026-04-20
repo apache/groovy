@@ -26,6 +26,7 @@ import org.apache.groovy.contracts.common.impl.ClassInvariantAnnotationProcessor
 import org.apache.groovy.lang.annotation.Incubating;
 import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
@@ -61,6 +62,7 @@ import java.lang.annotation.Target;
  * with the actual class's invariant (by using a logical AND).
  * </p>
  */
+@Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Incubating

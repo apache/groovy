@@ -21,6 +21,7 @@ package groovy.lang;
 import groovy.lang.annotation.ExtendedElementType;
 import groovy.lang.annotation.ExtendedTarget;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -46,6 +47,7 @@ import java.lang.annotation.Target;
  * Further information about customising grape behavior can be found on the Grape documentation page:
  * <a href="http://groovy-lang.org/grape.html">http://groovy-lang.org/grape.html</a>.
  */
+@Documented
 @Retention(RetentionPolicy.SOURCE)
 @Target({
         ElementType.CONSTRUCTOR,

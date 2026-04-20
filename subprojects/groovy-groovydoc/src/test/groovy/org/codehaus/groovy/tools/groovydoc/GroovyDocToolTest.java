@@ -27,14 +27,21 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.StringGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
@@ -205,10 +212,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // Synthesise a class on the fly that uses {@snippet file=... region=...}
         // Actually, just use a testfile in src/test/groovy that we add to sourcepath.
         // Here we reuse a class with an inline doc reference via the resource-dir.
-        java.nio.file.Path tmp = java.nio.file.Files.createTempDirectory("snippet-region-");
-        java.nio.file.Path pkgDir = tmp.resolve(pkg);
-        java.nio.file.Files.createDirectories(pkgDir);
-        java.nio.file.Files.writeString(pkgDir.resolve("RegionClass.groovy"),
+        Path tmp = Files.createTempDirectory("snippet-region-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        Files.writeString(pkgDir.resolve("RegionClass.groovy"),
                 "/*\n *  Licensed to the Apache Software Foundation (ASF) under one\n" +
                 " *  or more contributor license agreements.  See the NOTICE file\n" +
                 " *  distributed with this work for additional information\n" +
@@ -225,16 +232,16 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 " */\n" +
                 "class RegionClass {}\n");
         // Symlink/copy the snippet-files dir from fixture into the tmp tree.
-        java.nio.file.Path srcSnippetDir = java.nio.file.Paths.get(
+        Path srcSnippetDir = Paths.get(
                 "src/test/resources/docfiles-fixture", pkg, "snippet-files");
-        java.nio.file.Path dstSnippetDir = pkgDir.resolve("snippet-files");
-        java.nio.file.Files.createDirectories(dstSnippetDir);
-        try (java.util.stream.Stream<java.nio.file.Path> s = java.nio.file.Files.walk(srcSnippetDir)) {
-            s.filter(java.nio.file.Files::isRegularFile).forEach(f -> {
+        Path dstSnippetDir = pkgDir.resolve("snippet-files");
+        Files.createDirectories(dstSnippetDir);
+        try (Stream<Path> s = Files.walk(srcSnippetDir)) {
+            s.filter(Files::isRegularFile).forEach(f -> {
                 try {
-                    java.nio.file.Files.copy(f, dstSnippetDir.resolve(f.getFileName()),
-                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                } catch (java.io.IOException e) { throw new RuntimeException(e); }
+                    Files.copy(f, dstSnippetDir.resolve(f.getFileName()),
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) { throw new RuntimeException(e); }
             });
         }
 
@@ -260,9 +267,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
             assertFalse("Should not include 'def teardown' (outside region) in:\n" + doc,
                     doc.contains("def teardown()"));
         } finally {
-            try (java.util.stream.Stream<java.nio.file.Path> s = java.nio.file.Files.walk(tmp)) {
-                s.sorted(java.util.Comparator.reverseOrder())
-                        .forEach(p -> { try { java.nio.file.Files.delete(p); } catch (java.io.IOException ignore) {} });
+            try (Stream<Path> s = Files.walk(tmp)) {
+                s.sorted(Comparator.reverseOrder())
+                        .forEach(p -> { try { Files.delete(p); } catch (IOException ignore) {} });
             }
         }
     }
@@ -444,7 +451,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String fixtureSourcePath = "src/test/resources/docfiles-fixture";
         String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
 
-        java.nio.file.Path tmpOut = java.nio.file.Files.createTempDirectory("groovydoc-docfiles-");
+        Path tmpOut = Files.createTempDirectory("groovydoc-docfiles-");
         try {
             GroovyDocTool tool = new GroovyDocTool(
                 new FileSystemResourceManager("src/main/resources"),
@@ -457,33 +464,33 @@ public class GroovyDocToolTest extends GroovyTestCase {
             tool.add(List.of(pkg + "/HasDocFiles.groovy"));
             tool.renderToOutput(new FileOutputTool(), tmpOut.toString());
 
-            java.nio.file.Path docFilesSample = tmpOut.resolve(pkg + "/doc-files/sample.html");
-            java.nio.file.Path docFilesNested = tmpOut.resolve(pkg + "/doc-files/sub/nested.txt");
-            java.nio.file.Path snippetFile    = tmpOut.resolve(pkg + "/snippet-files/Example.groovy");
+            Path docFilesSample = tmpOut.resolve(pkg + "/doc-files/sample.html");
+            Path docFilesNested = tmpOut.resolve(pkg + "/doc-files/sub/nested.txt");
+            Path snippetFile    = tmpOut.resolve(pkg + "/snippet-files/Example.groovy");
 
             assertTrue("Expected doc-files/sample.html to be copied, not found at " + docFilesSample,
-                    java.nio.file.Files.isRegularFile(docFilesSample));
+                    Files.isRegularFile(docFilesSample));
             assertTrue("Expected doc-files/sub/nested.txt (nested subdir) to be copied, not found at " + docFilesNested,
-                    java.nio.file.Files.isRegularFile(docFilesNested));
+                    Files.isRegularFile(docFilesNested));
             assertTrue("Expected snippet-files/Example.groovy to be copied, not found at " + snippetFile,
-                    java.nio.file.Files.isRegularFile(snippetFile));
+                    Files.isRegularFile(snippetFile));
 
-            String sampleContent = java.nio.file.Files.readString(docFilesSample);
+            String sampleContent = Files.readString(docFilesSample);
             assertTrue("doc-files/sample.html content mismatch", sampleContent.contains("GROOVY-5986 sample doc-files content"));
-            String nestedContent = java.nio.file.Files.readString(docFilesNested);
+            String nestedContent = Files.readString(docFilesNested);
             assertTrue("doc-files/sub/nested.txt content mismatch", nestedContent.contains("nested doc-files content"));
-            String snippetContent = java.nio.file.Files.readString(snippetFile);
+            String snippetContent = Files.readString(snippetFile);
             assertTrue("snippet-files/Example.groovy content mismatch", snippetContent.contains("hello from Example"));
         } finally {
             deleteRecursively(tmpOut);
         }
     }
 
-    private static void deleteRecursively(java.nio.file.Path root) throws java.io.IOException {
-        if (!java.nio.file.Files.exists(root)) return;
-        try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.walk(root)) {
-            stream.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
-                try { java.nio.file.Files.delete(p); } catch (java.io.IOException ignored) {}
+    private static void deleteRecursively(Path root) throws IOException {
+        if (!Files.exists(root)) return;
+        try (Stream<Path> stream = Files.walk(root)) {
+            stream.sorted(Comparator.reverseOrder()).forEach(p -> {
+                try { Files.delete(p); } catch (IOException ignored) {}
             });
         }
     }

@@ -24,10 +24,17 @@ import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyParameter;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Single-pass tokenizer and renderer for Javadoc-style inline tags and
@@ -278,7 +285,7 @@ final class TagRenderer {
         int n = text.length();
         int i = skipWhitespace(text, nameEnd);
 
-        java.util.Map<String, String> attrs = new LinkedHashMap<>();
+        Map<String, String> attrs = new LinkedHashMap<>();
         while (i < n) {
             char c = text.charAt(i);
             if (c == ':' || c == '}') break;
@@ -385,11 +392,11 @@ final class TagRenderer {
         int lastSlash = full.lastIndexOf('/');
         String pkgPath = lastSlash >= 0 ? full.substring(0, lastSlash) : "";
         for (String sourcepath : sourcepaths) {
-            java.nio.file.Path path = java.nio.file.Paths.get(sourcepath, pkgPath, "snippet-files", fileName);
-            if (java.nio.file.Files.isRegularFile(path)) {
+            Path path = Paths.get(sourcepath, pkgPath, "snippet-files", fileName);
+            if (Files.isRegularFile(path)) {
                 try {
-                    return java.nio.file.Files.readString(path);
-                } catch (java.io.IOException e) {
+                    return Files.readString(path);
+                } catch (IOException e) {
                     return null;
                 }
             }
@@ -408,10 +415,10 @@ final class TagRenderer {
         String[] lines = source.split("\n", -1);
         int startIdx = -1;
         int endIdx = -1;
-        java.util.regex.Pattern startPat = java.util.regex.Pattern.compile(
-                "//\\s*@start\\b[^\\n]*\\bregion\\s*=\\s*(['\"]?)" + java.util.regex.Pattern.quote(regionName) + "\\1");
-        java.util.regex.Pattern endPat = java.util.regex.Pattern.compile(
-                "//\\s*@end\\b(?:[^\\n]*\\bregion\\s*=\\s*(['\"]?)" + java.util.regex.Pattern.quote(regionName) + "\\1)?");
+        Pattern startPat = Pattern.compile(
+                "//\\s*@start\\b[^\\n]*\\bregion\\s*=\\s*(['\"]?)" + Pattern.quote(regionName) + "\\1");
+        Pattern endPat = Pattern.compile(
+                "//\\s*@end\\b(?:[^\\n]*\\bregion\\s*=\\s*(['\"]?)" + Pattern.quote(regionName) + "\\1)?");
         for (int k = 0; k < lines.length; k++) {
             if (startIdx < 0 && startPat.matcher(lines[k]).find()) {
                 startIdx = k + 1;
@@ -525,7 +532,7 @@ final class TagRenderer {
             case "inheritDoc": {
                 // GROOVY-3782: only meaningful on a method; pull the parent
                 // method's already-rendered comment text into this position.
-                String inherited = resolveInheritDoc(memberDoc, classDoc, new java.util.HashSet<>());
+                String inherited = resolveInheritDoc(memberDoc, classDoc, new HashSet<>());
                 if (inherited != null) {
                     out.append(inherited);
                     return;
@@ -564,13 +571,13 @@ final class TagRenderer {
      */
     private static String resolveInheritDoc(GroovyMemberDoc memberDoc,
                                             SimpleGroovyClassDoc classDoc,
-                                            java.util.Set<GroovyMethodDoc> visited) {
+                                            Set<GroovyMethodDoc> visited) {
         if (!(memberDoc instanceof GroovyMethodDoc)) return null;
         GroovyMethodDoc thisMethod = (GroovyMethodDoc) memberDoc;
         if (!visited.add(thisMethod)) return null; // cycle
         if (classDoc == null) return null;
 
-        GroovyMethodDoc parent = findInheritedMethod(thisMethod, classDoc, new java.util.HashSet<>());
+        GroovyMethodDoc parent = findInheritedMethod(thisMethod, classDoc, new HashSet<>());
         if (parent == null) return null;
         // Calling commentText() on the parent runs it through the full
         // replaceTags pipeline — so any {@inheritDoc} nested in the parent
@@ -582,7 +589,7 @@ final class TagRenderer {
 
     private static GroovyMethodDoc findInheritedMethod(GroovyMethodDoc thisMethod,
                                                        GroovyClassDoc startingClass,
-                                                       java.util.Set<GroovyClassDoc> seen) {
+                                                       Set<GroovyClassDoc> seen) {
         // Javadoc's search order: superclass chain first, then interfaces.
         for (GroovyClassDoc sup = startingClass.superclass(); sup != null; sup = sup.superclass()) {
             if (!seen.add(sup)) break;
