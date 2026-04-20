@@ -348,6 +348,20 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains("Sum: 42"));
         assertTrue("Expected {@value #COMBINED} to fold string concat to \"hello\" in:\n" + doc,
                 doc.contains("Combined: \"hello\""));
+        // Bare {@value} on a field's own comment resolves to that field's value.
+        assertTrue("Expected bare {@value} on MAX to render as 42 in:\n" + doc,
+                doc.contains("Max allowed (bare: 42)"));
+        assertTrue("Expected bare {@value} on GREETING to render as \"hello\" in:\n" + doc,
+                doc.contains("Greeting (bare: \"hello\")"));
+        // PROBE: BIG_TIMEOUT = SMALL_TIMEOUT + MEDIUM_TIMEOUT
+        // Documented limits: {@value} only resolves when the initializer folds to
+        // a ConstantExpression at the phase groovydoc runs (CONVERSION by default).
+        // Same-class field references (VariableExpression) aren't resolved that
+        // early, and runtime method calls never fold. Both render verbatim.
+        assertTrue("BIG_TIMEOUT: cross-field arithmetic should stay verbatim in:\n" + doc,
+                doc.contains("Default: {@value}."));
+        assertTrue("FOUR: method-call initializer should stay verbatim in:\n" + doc,
+                doc.contains("Four is: {@value}."));
     }
 
     // GROOVY-8025: annotations whose members are closure expressions must

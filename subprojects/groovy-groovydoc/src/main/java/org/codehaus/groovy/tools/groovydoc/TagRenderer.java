@@ -19,6 +19,7 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 import org.codehaus.groovy.groovydoc.GroovyMemberDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyParameter;
@@ -45,7 +46,8 @@ import java.util.regex.Pattern;
  * <p>Supported inline tags: {@code {@link ...}}, {@code {@see ...}},
  * {@code {@code ...}}, {@code {@literal ...}} (class-level only),
  * {@code {@interface ...}} (swallowed), {@code {@value #FIELD}} /
- * {@code {@value pkg.Class#FIELD}} (GROOVY-6016),
+ * {@code {@value pkg.Class#FIELD}} / bare {@code {@value}} on a field's
+ * own comment (GROOVY-6016),
  * {@code {@inheritDoc}} (GROOVY-3782 — inline form, full parent comment
  * substituted), inline {@code {@snippet}} (GROOVY-11938 stage 1 — renders
  * as {@code <pre><code>} with language/id/class attributes and
@@ -59,9 +61,6 @@ import java.util.regex.Pattern;
  *
  * <h2>Known limitations / pending work</h2>
  * <ul>
- *   <li>Bare {@code {@value}} (no body, referencing the current field's own
- *       constant value) is not yet supported — see task #25. The forms
- *       {@code {@value #FIELD}} and {@code {@value Class#FIELD}} both work.</li>
  *   <li>{@code {@snippet}} external form ({@code file="..."} /
  *       {@code region="..."} reading from a package's
  *       {@code snippet-files/} directory) not yet implemented — stage 2
@@ -521,8 +520,14 @@ final class TagRenderer {
                 return;
             case "value": {
                 // GROOVY-6016: resolve {@value #FIELD} or {@value Class#FIELD}.
-                // Bare {@value} (current field) is pending — see task #25.
-                String resolved = resolveValueTag(body, rootDoc, classDoc);
+                // Bare {@value} resolves to the enclosing field's own value
+                // when the comment is attached to a field (Javadoc semantics).
+                String resolved;
+                if (body.isEmpty() && memberDoc instanceof GroovyFieldDoc) {
+                    resolved = ((GroovyFieldDoc) memberDoc).constantValueExpression();
+                } else {
+                    resolved = resolveValueTag(body, rootDoc, classDoc);
+                }
                 if (resolved != null) {
                     out.append(SimpleGroovyClassDoc.encodeAngleBrackets(resolved));
                     return;
@@ -646,13 +651,13 @@ final class TagRenderer {
             else return null;
         }
         if (target == null) return null;
-        for (org.codehaus.groovy.groovydoc.GroovyFieldDoc f : target.fields()) {
+        for (GroovyFieldDoc f : target.fields()) {
             if (fieldName.equals(f.name())) return f.constantValueExpression();
         }
-        for (org.codehaus.groovy.groovydoc.GroovyFieldDoc f : target.enumConstants()) {
+        for (GroovyFieldDoc f : target.enumConstants()) {
             if (fieldName.equals(f.name())) return f.constantValueExpression();
         }
-        for (org.codehaus.groovy.groovydoc.GroovyFieldDoc f : target.properties()) {
+        for (GroovyFieldDoc f : target.properties()) {
             if (fieldName.equals(f.name())) return f.constantValueExpression();
         }
         return null;
