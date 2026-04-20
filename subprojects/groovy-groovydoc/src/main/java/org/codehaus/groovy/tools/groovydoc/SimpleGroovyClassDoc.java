@@ -47,38 +47,22 @@ import java.util.regex.Pattern;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc implements GroovyClassDoc {
 
-    public static final Pattern TAG_REGEX = Pattern.compile("(?sm)\\s*@([a-zA-Z.]+)\\s+(.*?)(?=\\s+@)");
     public static final String DOCROOT_PATTERN2    = "(?m)[{]@docRoot}/";
     public static final String DOCROOT_PATTERN    = "(?m)[{]@docRoot}";
 
-    // group 1: tag name, group 2: tag body
-    public static final Pattern LINK_REGEX    = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
-    public static final Pattern LITERAL_REGEX = Pattern.compile("(?m)[{]@(literal)\\s+([^}]*)}");
+    // Retained for use by test helpers (SimpleGroovyClassDocTests) that pass it
+    // to {@link #encodeAngleBracketsInTagBody}. No longer used internally — the
+    // tag-processing pipeline is now {@link TagRenderer}.
     public static final Pattern CODE_REGEX    = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
 
     public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#\\$]*(\\(.*\\))?)(\\s(.*))?");
     public static final Pattern NAME_ARGS_REGEX = Pattern.compile("([^(]+)\\(([^)]*)\\)");
     public static final Pattern SPLIT_ARGS_REGEX = Pattern.compile(",\\s*");
     private static final List<String> PRIMITIVES = Arrays.asList("void", "boolean", "byte", "short", "char", "int", "long", "float", "double");
-    private static final Map<String, String> TAG_TEXT = new LinkedHashMap<>();
     private static final GroovyConstructorDoc[] EMPTY_GROOVYCONSTRUCTORDOC_ARRAY = new GroovyConstructorDoc[0];
     private static final GroovyClassDoc[] EMPTY_GROOVYCLASSDOC_ARRAY = new GroovyClassDoc[0];
     private static final GroovyFieldDoc[] EMPTY_GROOVYFIELDDOC_ARRAY = new GroovyFieldDoc[0];
     private static final GroovyMethodDoc[] EMPTY_GROOVYMETHODDOC_ARRAY = new GroovyMethodDoc[0];
-
-    static {
-        TAG_TEXT.put("see", "See Also");
-        TAG_TEXT.put("param", "Parameters");
-        TAG_TEXT.put("throw", "Throws");
-        TAG_TEXT.put("exception", "Throws");
-        TAG_TEXT.put("return", "Returns");
-        TAG_TEXT.put("since", "Since");
-        TAG_TEXT.put("author", "Authors");
-        TAG_TEXT.put("version", "Version");
-        TAG_TEXT.put("default", "Default");
-        // typeparam is used internally as a specialization of param to separate type params from regular params.
-        TAG_TEXT.put("typeparam", "Type Parameters");
-    }
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
     private final List<GroovyFieldDoc> properties;
@@ -905,8 +889,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     }
 
     public String replaceTags(String comment) {
-        String result = comment.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
+        // Strip the leading ' * ' block-comment prefix from each line.
+        String result = comment.replaceAll("(?m)^\\s*\\*", "");
 
+        // Expand {@docRoot} before tag processing since it is a path substitution
+        // rather than a tag-rendering operation.
         String relativeRootPath = getRelativeRootPath();
         if (!relativeRootPath.endsWith("/")) {
             relativeRootPath += "/";
@@ -914,100 +901,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
         result = result.replaceAll(DOCROOT_PATTERN2, relativeRootPath);
         result = result.replaceAll(DOCROOT_PATTERN, relativeRootPath);
 
-        // {@link processing hack}
-        result = replaceAllTags(result, "", "", LINK_REGEX);
-
-        // {@literal tag}
-        result = encodeAngleBracketsInTagBody(result, LITERAL_REGEX);
-        result = replaceAllTags(result, "", "", LITERAL_REGEX);
-
-        // {@code tag}
-        result = encodeAngleBracketsInTagBody(result, CODE_REGEX);
-        result = replaceAllTags(result, "<CODE>", "</CODE>", CODE_REGEX);
-
-        // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
-        result = replaceAllTagsCollated(result, "<DL><DT><B>", ":</B></DT><DD>", "</DD><DD>", "</DD></DL>", TAG_REGEX);
-
-        return decodeSpecialSymbols(result);
-    }
-
-    public String replaceAllTags(String self, String s1, String s2, Pattern regex) {
-        return replaceAllTags(self, s1, s2, regex, links, getRelativeRootPath(), savedRootDoc, this);
-    }
-
-    // TODO: this should go away once we have proper tags
-    public static String replaceAllTags(String self, String s1, String s2, Pattern regex, List<LinkArgument> links, String relPath, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
-        Matcher matcher = regex.matcher(self);
-        if (matcher.find()) {
-            matcher.reset();
-            StringBuilder sb = new StringBuilder();
-            while (matcher.find()) {
-                String tagname = matcher.group(1);
-                if (!"interface".equals(tagname)) {
-                    String content = encodeSpecialSymbols(matcher.group(2));
-                    if ("link".equals(tagname) || "see".equals(tagname)) {
-                        content = getDocUrl(content, false, links, relPath, rootDoc, classDoc);
-                    }
-                    matcher.appendReplacement(sb, s1 + content + s2);
-                }
-            }
-            matcher.appendTail(sb);
-            return sb.toString();
-        } else {
-            return self;
-        }
-    }
-
-    // TODO: is there a better way to do this?
-    public String replaceAllTagsCollated(String self, String preKey, String postKey,
-                                         String valueSeparator, String postValues, Pattern regex) {
-        Matcher matcher = regex.matcher(self + " @endMarker");
-        if (matcher.find()) {
-            matcher.reset();
-            Map<String, List<String>> savedTags = new LinkedHashMap<>();
-            StringBuilder sb = new StringBuilder();
-            while (matcher.find()) {
-                String tagname = matcher.group(1);
-                if (!"interface".equals(tagname)) {
-                    String content = encodeSpecialSymbols(matcher.group(2));
-                    if ("see".equals(tagname) || "link".equals(tagname)) {
-                        content = getDocUrl(content);
-                    } else if ("param".equals(tagname)) {
-                        int index = content.indexOf(' ');
-                        if (index >= 0) {
-                            String paramName = content.substring(0, index);
-                            String paramDesc = content.substring(index);
-                            if (paramName.startsWith("<") && paramName.endsWith(">")) {
-                                paramName = paramName.substring(1, paramName.length() - 1);
-                                tagname = "typeparam";
-                            }
-                            content = "<code>" + paramName + "</code> - " + paramDesc;
-                        }
-                    }
-                    if (TAG_TEXT.containsKey(tagname)) {
-                        String text = TAG_TEXT.get(tagname);
-                        List<String> contents = savedTags.computeIfAbsent(text, k -> new ArrayList<String>());
-                        contents.add(content);
-                        matcher.appendReplacement(sb, "");
-                    } else {
-                        matcher.appendReplacement(sb, preKey + tagname + postKey + content + postValues);
-                    }
-                }
-            }
-            matcher.appendTail(sb);
-            // remove @endMarker
-            sb = new StringBuilder(sb.substring(0, sb.length() - 10));
-            for (Map.Entry<String, List<String>> e : savedTags.entrySet()) {
-                sb.append(preKey);
-                sb.append(e.getKey());
-                sb.append(postKey);
-                sb.append(DefaultGroovyMethods.join((Iterable)e.getValue(), valueSeparator));
-                sb.append(postValues);
-            }
-            return sb.toString();
-        } else {
-            return self;
-        }
+        // GROOVY-11939: single-pass tokenize + render for inline and block tags.
+        return TagRenderer.render(result, links, relativeRootPath, savedRootDoc, this);
     }
 
     /**
@@ -1037,14 +932,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     public static String encodeAngleBrackets(String text) {
         return text == null ? null : text.replace("<", "&lt;").replace(">", "&gt;");
-    }
-
-    public static String encodeSpecialSymbols(String text) {
-        return Matcher.quoteReplacement(text.replace("@", "&at;"));
-    }
-
-    public static String decodeSpecialSymbols(String text) {
-        return text.replace("&at;", "@");
     }
 
     public void setNameWithTypeArgs(String nameWithTypeArgs) {

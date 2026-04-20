@@ -34,12 +34,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 import static java.lang.System.Logger.Level.WARNING;
-import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.CODE_REGEX;
-import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.LINK_REGEX;
-import static org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc.TAG_REGEX;
 
 /*
  *  todo: order methods alphabetically (implement compareTo enough?)
@@ -176,26 +172,11 @@ public class GroovyRootDocBuilder {
         return description;
     }
 
-    // TODO remove dup with SimpleGroovyClassDoc
+    // GROOVY-11939: package-info tag processing goes through the same single-pass
+    // tokenizer as class-level docs, just with a different rendering profile.
     private String replaceTags(String orig, String relPath) {
-        String result = orig.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
-
-        // {@link processing hack}
-        result = replaceAllTags(result, "", "", LINK_REGEX, relPath);
-
-        // {@code processing hack}
-        result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX, relPath);
-
-        // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
-        result = replaceAllTags(result + " @endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX, relPath);
-        // remove @endMarker
-        result = result.substring(0, result.length() - 10);
-
-        return SimpleGroovyClassDoc.decodeSpecialSymbols(result);
-    }
-
-    private String replaceAllTags(String self, String s1, String s2, Pattern regex, String relPath) {
-        return SimpleGroovyClassDoc.replaceAllTags(self, s1, s2, regex, links, relPath, rootDoc, null);
+        String result = orig.replaceAll("(?m)^\\s*\\*", "");
+        return TagRenderer.render(result, links, relPath, rootDoc, null, TagRenderer.PACKAGE_LEVEL);
     }
 
     private static void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
