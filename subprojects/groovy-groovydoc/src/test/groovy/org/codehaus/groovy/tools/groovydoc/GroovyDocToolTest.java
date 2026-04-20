@@ -131,6 +131,30 @@ public class GroovyDocToolTest extends GroovyTestCase {
             doc.contains("https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html"));
     }
 
+    // GROOVY-10162
+    public void testAbstractMethodEnumWithPerConstantBodiesDoesNotProduceAnonymousInnerPages() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        String klass = "EnumWithAbstractMethodAndConstantBodies";
+        Properties props = new Properties();
+        // phase 7 = CLASS_GENERATION, by which point the per-constant anonymous
+        // inner classes have been synthesised. The fix must keep them out of
+        // the doc output at any phase.
+        props.put("phaseOverride", "7");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+        tool.add(List.of(base + "/" + klass + ".groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String enumDoc = output.getText(MOCK_DIR + "/" + base + "/" + klass + ".html");
+        assertNotNull("Expected the enum's own HTML page", enumDoc);
+
+        assertNull("Unexpected anonymous inner page " + klass + ".1.html",
+                output.getText(MOCK_DIR + "/" + base + "/" + klass + ".1.html"));
+        assertNull("Unexpected anonymous inner page " + klass + ".2.html",
+                output.getText(MOCK_DIR + "/" + base + "/" + klass + ".2.html"));
+    }
+
     // GROOVY-5986
     public void testDocFilesAndSnippetFilesAreCopiedIntoOutput() throws Exception {
         String fixtureSourcePath = "src/test/resources/docfiles-fixture";
