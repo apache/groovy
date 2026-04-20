@@ -495,6 +495,44 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 page.contains("the doubled value"));
     }
 
+    // GROOVY-11938 stage 5: Markdown and {@snippet} interop. A /// doc comment
+    // containing a Markdown heading, an inline {@snippet}, and a fenced
+    // Markdown code block emits three distinct HTML chunks without the
+    // rendering passes interfering.
+    public void testMarkdownAndSnippetInterop() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithMarkdownAndSnippet.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ClassWithMarkdownAndSnippet.html");
+        assertNotNull(page);
+        // The Markdown heading (# Markdown + snippet interop) becomes <h3>
+        // (heading-shift from class-level context — see MarkdownRenderer).
+        assertTrue("Expected Markdown # heading shifted to <h3> in:\n" + page,
+                page.contains("<h3>Markdown + snippet interop</h3>"));
+        // Both code blocks should emit <pre><code class="language-groovy">.
+        // The {@snippet lang="groovy" :...} one (TagRenderer output) and the
+        // fenced ```groovy block (CommonMark output) share the same class.
+        int occurrences = page.split("<code class=\"language-groovy\">", -1).length - 1;
+        assertEquals("Expected exactly two <code class=\"language-groovy\"> blocks — "
+                + "one from {@snippet}, one from the Markdown fence — in:\n" + page,
+                2, occurrences);
+        // {@snippet} body: `$name` dollar-sign must be preserved (no GString
+        // interpretation, no mangling), inside-string quotes get HTML-escaped
+        // to &quot; but the value text is intact.
+        assertTrue("Expected snippet body to preserve $name literal in:\n" + page,
+                page.contains("$name!"));
+        assertTrue("Expected snippet greet() body in:\n" + page,
+                page.contains("def greet(name)"));
+        // Markdown fenced block body: CommonMark HTML-escapes quotes the same
+        // way TagRenderer does, and our CodeBraceMasker converts `{` / `}`
+        // inside code fences to numeric entities so inline-tag-looking text
+        // stays literal.
+        assertTrue("Expected fenced-block farewell body with masked braces in:\n" + page,
+                page.contains("def farewell() &#123; &quot;Bye!&quot; &#125;"));
+    }
+
     // GROOVY-11938 stage 4: opt-in client-side syntax highlighting via Prism.
     // When -syntaxHighlighter=prism is passed, the head of each content page
     // should include prism.min.css and the bundled language scripts; when

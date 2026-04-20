@@ -304,7 +304,17 @@ final class TagRenderer {
                 i = skipWhitespace(text, i);
                 if (i >= n) return 0;
                 char q = text.charAt(i);
-                if (q == '"' || q == '\'') {
+                // GROOVY-11938 stage 5: a Markdown body is HTML-escaped by
+                // CommonMark before TagRenderer runs, so `"` appears as
+                // `&quot;` (and `'` as `&apos;` / `&#39;`). Recognise those
+                // entity forms as quote delimiters in addition to literal.
+                String entityEnd = matchQuoteEntity(text, i);
+                if (entityEnd != null) {
+                    int close = text.indexOf(entityEnd, i + entityEnd.length());
+                    if (close < 0) return 0;
+                    attrValue = text.substring(i + entityEnd.length(), close);
+                    i = close + entityEnd.length();
+                } else if (q == '"' || q == '\'') {
                     int close = text.indexOf(q, i + 1);
                     if (close < 0) return 0;
                     attrValue = text.substring(i + 1, close);
@@ -803,6 +813,21 @@ final class TagRenderer {
         int n = text.length();
         while (i < n && Character.isWhitespace(text.charAt(i))) i++;
         return i;
+    }
+
+    /**
+     * GROOVY-11938 stage 5: detect an HTML-entity-encoded quote delimiter at
+     * position {@code i} in {@code text}. Returns the exact sequence
+     * ({@code "&quot;"}, {@code "&apos;"}, {@code "&#34;"}, or
+     * {@code "&#39;"}) when matched so the caller can find the matching
+     * closing sequence; returns {@code null} otherwise.
+     */
+    private static String matchQuoteEntity(String text, int i) {
+        if (text.startsWith("&quot;", i)) return "&quot;";
+        if (text.startsWith("&apos;", i)) return "&apos;";
+        if (text.startsWith("&#34;", i)) return "&#34;";
+        if (text.startsWith("&#39;", i)) return "&#39;";
+        return null;
     }
 
     /**
