@@ -147,6 +147,28 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains("{<DL><DT><B>inheritDoc") || doc.contains("inheritDoc:</B>"));
     }
 
+    // GROOVY-11941: additionalStylesheets property causes templates to emit
+    // extra <link rel="stylesheet"> tags at the appropriate relative-root path.
+    public void testAdditionalStylesheetsInTemplates() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("additionalStylesheets", "custom1.css,custom2.css");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        tool.add(List.of(base + "/DocumentedClass.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String classDoc = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classDoc);
+        // Class-level template uses classDoc.relativeRootPath as prefix.
+        String prefix = "../../../../../../";
+        assertTrue("Expected additional stylesheet link with relative root prefix in:\n" + classDoc,
+                classDoc.contains("href=\"" + prefix + "custom1.css\""));
+        assertTrue("Expected second additional stylesheet link in:\n" + classDoc,
+                classDoc.contains("href=\"" + prefix + "custom2.css\""));
+    }
+
     // GROOVY-11938 stage 2: external {@snippet file="..."} reads from the
     // package's snippet-files/ directory.
     public void testSnippetTagExternalFormLoadsFromSnippetFiles() throws Exception {

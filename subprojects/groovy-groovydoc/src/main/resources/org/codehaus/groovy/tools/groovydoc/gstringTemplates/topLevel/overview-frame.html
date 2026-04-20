@@ -26,6 +26,9 @@
 <meta name="keywords" content="Overview">
 
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
+<% if (props.additionalStylesheets) props.additionalStylesheets.tokenize(',').each { __ss -> %>
+<link rel="stylesheet" type="text/css" href="${__ss.trim()}">
+<% } %>
 
 </head>
 

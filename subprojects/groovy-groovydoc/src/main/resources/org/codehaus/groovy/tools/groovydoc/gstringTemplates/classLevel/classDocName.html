@@ -93,6 +93,9 @@
     <link href="${classDoc.relativeRootPath}groovy.ico" type="image/x-icon" rel="shortcut icon">
     <link href="${classDoc.relativeRootPath}groovy.ico" type="image/x-icon" rel="icon">
     <link rel="stylesheet" type="text/css" href="${classDoc.relativeRootPath}stylesheet.css" title="Style">
+<% if (props.additionalStylesheets) props.additionalStylesheets.tokenize(',').each { __ss -> %>
+    <link rel="stylesheet" type="text/css" href="${classDoc.relativeRootPath}${__ss.trim()}">
+<% } %>
 
 <body class="center">
 <script type="text/javascript"><!--

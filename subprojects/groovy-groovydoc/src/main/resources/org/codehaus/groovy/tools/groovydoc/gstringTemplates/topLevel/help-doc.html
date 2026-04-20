@@ -30,6 +30,9 @@
         <link href="groovy.ico" type="image/x-icon" rel="icon">
         <% if (props.timestamp != 'false') { %><meta name="date" content="${new java.text.SimpleDateFormat('yyyy-MM-dd').format(new Date())}"><% } %>
         <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
+<% if (props.additionalStylesheets) props.additionalStylesheets.tokenize(',').each { __ss -> %>
+        <link rel="stylesheet" type="text/css" href="${__ss.trim()}">
+<% } %>
     </head>
 <body class="center">
 <script type="text/javascript"><!--
