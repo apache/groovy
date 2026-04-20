@@ -131,6 +131,78 @@ public class GroovyDocToolTest extends GroovyTestCase {
             doc.contains("https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html"));
     }
 
+    // GROOVY-8025: annotations whose members are closure expressions must
+    // not NPE during groovydoc processing. The original bug was in the old
+    // SimpleGroovyClassDocAssembler — the refactor to GroovydocVisitor
+    // inherently handles ClosureExpression via the ClassCodeVisitorSupport
+    // walk, so these fixtures exercise the fixed path.
+    public void testAnnotationWithClosureMemberDoesNotCrash() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        String klass = "ClassWithClosureInAnnotation";
+        htmlTool.add(List.of(base + "/" + klass + ".groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/" + klass + ".html");
+        assertNotNull("Expected a page for the closure-annotated class", doc);
+        assertTrue("Expected the class title in:\n" + doc, doc.contains(klass));
+    }
+
+    // GROOVY-8025: broader coverage — single-expression closure, no-arg
+    // closure with explicit `-> body`, closure with generic-typed params, and
+    // multiline closure body, all as annotation members.
+    public void testSpockStyleClosureAnnotationsDoNotCrash() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        String klass = "ClassWithSpockStyleAnnotations";
+        htmlTool.add(List.of(base + "/" + klass + ".groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/" + klass + ".html");
+        assertNotNull("Expected a page for the Spock-style-annotated class", doc);
+        assertTrue("Expected method 'simpleClosure' in:\n" + doc, doc.contains("simpleClosure"));
+        assertTrue("Expected method 'multilineClosureWithGenericParam' in:\n" + doc,
+                doc.contains("multilineClosureWithGenericParam"));
+        assertTrue("Expected method 'multilineBodyClosure' in:\n" + doc, doc.contains("multilineBodyClosure"));
+    }
+
+    // GROOVY-8877
+    public void testScriptTopLevelDocCommentAppearsInOutput() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ScriptWithTopLevelDoc.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/ScriptWithTopLevelDoc.html");
+        assertNotNull("Expected a script page", doc);
+        assertTrue("Script-level doc should appear in:\n" + doc,
+                doc.contains("GROOVY-8877 script-level documentation"));
+    }
+
+    // GROOVY-8877: a script whose only /** */ is attached by the parser to a
+    // member should NOT also be lifted to script-level, or the same text
+    // would appear in three places (script description + method summary
+    // first-sentence + method detail) rather than two (summary + detail).
+    public void testScriptMemberDocIsNotLiftedToScriptLevel() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        String klass = "ScriptWithOnlyMemberDoc";
+        htmlTool.add(List.of(base + "/" + klass + ".groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/" + klass + ".html");
+        assertNotNull("Expected a script page", doc);
+        int occurrences = doc.split("member-doc-not-lifted-to-script", -1).length - 1;
+        // 2 = summary + detail. 3 would mean the comment was also lifted to
+        // the script-level description.
+        assertEquals("Member doc should appear exactly twice (summary + detail), got "
+                + occurrences + " in:\n" + doc, 2, occurrences);
+    }
+
     // GROOVY-10162
     public void testAbstractMethodEnumWithPerConstantBodiesDoesNotProduceAnonymousInnerPages() throws Exception {
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
