@@ -131,6 +131,40 @@ public class GroovyDocToolTest extends GroovyTestCase {
             doc.contains("https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html"));
     }
 
+    // GROOVY-3782 (stray-brace rendering bug): the old regex chain broke
+    // `{@inheritDoc}` into bogus `{<DL><DT><B>inheritDoc:</B>...` HTML. The
+    // GROOVY-11939 tokenizer refactor fixed that as a side-effect. Verify.
+    public void testInheritDocDoesNotLeaveStrayBrace() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithInheritDocStub.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/InheritDocChild.html");
+        assertNotNull("Expected InheritDocChild page", doc);
+        assertFalse("stray-{ or broken block tag around inheritDoc in:\n" + doc,
+                doc.contains("{<DL><DT><B>inheritDoc") || doc.contains("inheritDoc:</B>"));
+    }
+
+    // GROOVY-3782 (the actual {@inheritDoc} tag): the child method's doc
+    // should be expanded with the parent's rendered description plus tags.
+    public void testInheritDocSubstitutesParentMethodDoc() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithInheritDocStub.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/InheritDocChild.html");
+        assertNotNull(doc);
+        assertTrue("Parent description should be inherited into child in:\n" + doc,
+                doc.contains("Parent-level description"));
+        // The literal `{@inheritDoc}` must not appear anymore.
+        assertFalse("{@inheritDoc} should be substituted, not left literal in:\n" + doc,
+                doc.contains("{@inheritDoc}"));
+    }
+
     // GROOVY-6016: {@value #FIELD} inline tag resolves same-class constants.
     public void testValueTagResolvesSameClassConstants() throws Exception {
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";

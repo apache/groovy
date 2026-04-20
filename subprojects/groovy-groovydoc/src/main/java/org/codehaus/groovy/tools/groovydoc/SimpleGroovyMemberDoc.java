@@ -38,7 +38,7 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyAbstractableElementDoc im
     public String firstSentenceCommentText() {
         if (super.firstSentenceCommentText() == null) {
             SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) belongsToClass;
-            setFirstSentenceCommentText(classDoc.replaceTags(calculateFirstSentence(getRawCommentText())));
+            setFirstSentenceCommentText(classDoc.replaceTags(calculateFirstSentence(getRawCommentText()), this));
         }
         return super.firstSentenceCommentText();
     }
@@ -47,7 +47,7 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyAbstractableElementDoc im
     public String commentText() {
         if (super.commentText() == null) {
             SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) belongsToClass;
-            setCommentText(classDoc.replaceTags(getRawCommentText()));
+            setCommentText(classDoc.replaceTags(getRawCommentText(), this));
         }
         return super.commentText();
     }
