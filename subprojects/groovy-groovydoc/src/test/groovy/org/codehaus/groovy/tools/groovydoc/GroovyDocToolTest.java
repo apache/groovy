@@ -436,6 +436,34 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 + occurrences + " in:\n" + doc, 2, occurrences);
     }
 
+    // Task #23: {@link} cross-references between a script and classes declared
+    // in the same source file resolve to working hyperlinks. The script and
+    // sibling classes compile to top-level classes in the same package, so the
+    // existing same-package {@link} resolver handles them symmetrically — no
+    // code change needed; this test locks the behaviour down.
+    public void testScriptAndSiblingClassCrossLinks() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ScriptWithSiblingClassLinks.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String scriptPage = output.getText(MOCK_DIR + "/" + base + "/ScriptWithSiblingClassLinks.html");
+        String helperPage = output.getText(MOCK_DIR + "/" + base + "/SiblingHelper.html");
+        assertNotNull("Expected a page for the script", scriptPage);
+        assertNotNull("Expected a page for the sibling class", helperPage);
+
+        // Script → sibling class: {@link SiblingHelper#otherMethod()}
+        assertTrue("Script page should link to SiblingHelper.otherMethod in:\n" + scriptPage,
+                scriptPage.contains("SiblingHelper.html#otherMethod()")
+                        && scriptPage.contains(">SiblingHelper.otherMethod</a>"));
+
+        // Sibling class → script: {@link ScriptWithSiblingClassLinks#method()}
+        assertTrue("Sibling page should link to ScriptWithSiblingClassLinks.method in:\n" + helperPage,
+                helperPage.contains("ScriptWithSiblingClassLinks.html#method()")
+                        && helperPage.contains(">ScriptWithSiblingClassLinks.method</a>"));
+    }
+
     // GROOVY-11943: -noindex / -nodeprecatedlist / -nohelp skip the matching
     // auxiliary top-level page AND suppress its nav-bar link on every page
     // that would otherwise reference it.
