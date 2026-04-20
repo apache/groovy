@@ -38,7 +38,11 @@ import java.util.Map;
  * <p>Supported inline tags: {@code {@link ...}}, {@code {@see ...}},
  * {@code {@code ...}}, {@code {@literal ...}} (class-level only),
  * {@code {@interface ...}} (swallowed), {@code {@value #FIELD}} /
- * {@code {@value pkg.Class#FIELD}} (GROOVY-6016).
+ * {@code {@value pkg.Class#FIELD}} (GROOVY-6016),
+ * {@code {@inheritDoc}} (GROOVY-3782 — inline form, full parent comment
+ * substituted), inline {@code {@snippet}} (GROOVY-11938 stage 1 — renders
+ * as {@code <pre><code>} with language/id/class attributes and
+ * HTML-escaped body).
  *
  * <p>Supported block tags: {@code @see}, {@code @param}, {@code @return},
  * {@code @throws} / {@code @exception}, {@code @since}, {@code @author},
@@ -49,12 +53,21 @@ import java.util.Map;
  * <h2>Known limitations / pending work</h2>
  * <ul>
  *   <li>Bare {@code {@value}} (no body, referencing the current field's own
- *       constant value) is not yet supported. It requires threading the
- *       current member through {@code TagRenderer}; the tag currently falls
- *       through to verbatim emission. {@code {@value #FIELD}} and
- *       {@code {@value Class#FIELD}} both work.</li>
- *   <li>{@code {@inheritDoc}} — GROOVY-3782, pending.</li>
- *   <li>{@code {@snippet}} — GROOVY-11938, pending.</li>
+ *       constant value) is not yet supported — see task #25. The forms
+ *       {@code {@value #FIELD}} and {@code {@value Class#FIELD}} both work.</li>
+ *   <li>{@code {@snippet}} external form ({@code file="..."} /
+ *       {@code region="..."} reading from a package's
+ *       {@code snippet-files/} directory) not yet implemented — stage 2
+ *       of GROOVY-11938.</li>
+ *   <li>{@code {@snippet}} markup comments ({@code // @highlight},
+ *       {@code @replace}, {@code @link}, {@code @start}/{@code @end})
+ *       not yet implemented — stage 3 of GROOVY-11938.</li>
+ *   <li>Client-side syntax highlighting assets (Prism.js / highlight.js)
+ *       not yet wired in — stage 4 of GROOVY-11938.</li>
+ *   <li>{@code {@inheritDoc}} inherits the full parent comment rather than
+ *       position-aware substitution inside specific block tags (e.g.
+ *       {@code @param x {@inheritDoc}} inheriting just the parent's
+ *       {@code @param x}). Reasonable initial implementation.</li>
  *   <li>JEP 467 Markdown reference links — GROOVY-11542, pending.</li>
  * </ul>
  *
@@ -222,6 +235,12 @@ final class TagRenderer {
         if (nameEnd == nameStart) return 0;
         String name = text.substring(nameStart, nameEnd);
         if (!isKnownInlineTag(name, cfg)) return 0;
+        // GROOVY-11938: {@snippet} has JEP 413 body-parsing rules — attributes
+        // before an optional `:`, then a brace-balanced body that may contain
+        // source code with its own `{`/`}`. Needs its own parser.
+        if ("snippet".equals(name)) {
+            return renderSnippetAt(text, start, nameEnd, out);
+        }
         int bodyStart = skipWhitespace(text, nameEnd);
         // Match the previous regex's laxness: body extends to the first '}'.
         int close = text.indexOf('}', bodyStart);
@@ -229,6 +248,154 @@ final class TagRenderer {
         String body = text.substring(bodyStart, close);
         renderInlineTag(name, body, out, links, relPath, rootDoc, classDoc, memberDoc, cfg);
         return close + 1 - start;
+    }
+
+    /**
+     * GROOVY-11938: render a {@code {@snippet}} tag per JEP 413.
+     *
+     * <p>Stage 1 supports the inline form:
+     * <pre>
+     *   {@snippet [attr=value ...] :
+     *       ... code body (may contain matched braces) ...
+     *   }
+     * </pre>
+     * Emitted as {@code <pre><code class="language-xxx">...escaped body...</code></pre>}
+     * with HTML-safe angle-bracket encoding of the body so code is preserved
+     * verbatim. Attributes recognised so far: {@code lang} (→ language class),
+     * {@code id}, {@code class} (attribute merged with language).
+     *
+     * <p>Deferred stages: external form with {@code file=...}/{@code region=...}
+     * reading from a package's {@code snippet-files/} directory; markup comments
+     * {@code // @highlight}, {@code // @replace}, {@code // @link},
+     * {@code // @start}/{@code // @end} for annotated regions; client-side
+     * syntax highlighting assets. See the ticket for the full scope.
+     *
+     * @return characters consumed starting from {@code start} (the {@code '{'})
+     *         or 0 if the tag is malformed.
+     */
+    private static int renderSnippetAt(String text, int start, int nameEnd, StringBuilder out) {
+        int n = text.length();
+        int i = skipWhitespace(text, nameEnd);
+
+        java.util.Map<String, String> attrs = new LinkedHashMap<>();
+        while (i < n) {
+            char c = text.charAt(i);
+            if (c == ':' || c == '}') break;
+            if (Character.isWhitespace(c)) { i++; continue; }
+            // Read attribute name.
+            int nameS = i;
+            while (i < n) {
+                char ch = text.charAt(i);
+                if (ch == '=' || ch == ':' || ch == '}' || Character.isWhitespace(ch)) break;
+                i++;
+            }
+            String attrName = text.substring(nameS, i);
+            i = skipWhitespace(text, i);
+            String attrValue = "";
+            if (i < n && text.charAt(i) == '=') {
+                i++;
+                i = skipWhitespace(text, i);
+                if (i >= n) return 0;
+                char q = text.charAt(i);
+                if (q == '"' || q == '\'') {
+                    int close = text.indexOf(q, i + 1);
+                    if (close < 0) return 0;
+                    attrValue = text.substring(i + 1, close);
+                    i = close + 1;
+                } else {
+                    int valS = i;
+                    while (i < n) {
+                        char ch = text.charAt(i);
+                        if (ch == ':' || ch == '}' || Character.isWhitespace(ch)) break;
+                        i++;
+                    }
+                    attrValue = text.substring(valS, i);
+                }
+            }
+            if (!attrName.isEmpty()) attrs.put(attrName, attrValue);
+        }
+        if (i >= n) return 0;
+
+        String body;
+        int endPos;
+        if (text.charAt(i) == ':') {
+            int bodyStart = i + 1;
+            // Brace-balanced body — consume until the matching close of the
+            // outer {@snippet ...}.
+            int depth = 1;
+            int j = bodyStart;
+            while (j < n && depth > 0) {
+                char c = text.charAt(j);
+                if (c == '{') depth++;
+                else if (c == '}') {
+                    depth--;
+                    if (depth == 0) break;
+                }
+                j++;
+            }
+            if (depth != 0) return 0; // unterminated
+            body = text.substring(bodyStart, j);
+            endPos = j + 1; // past the final '}'
+        } else {
+            // External form ({@snippet file="..." region="..."}) — not yet
+            // implemented. Bail and let the outer caller emit verbatim.
+            return 0;
+        }
+
+        String langClass = attrs.getOrDefault("lang", "");
+        String extraClass = attrs.getOrDefault("class", "");
+        String combined = (langClass.isEmpty() ? "" : "language-" + langClass)
+                + (extraClass.isEmpty() ? "" : (langClass.isEmpty() ? extraClass : " " + extraClass));
+        String dedented = dedent(body);
+        out.append("<pre><code");
+        if (!combined.isEmpty()) out.append(" class=\"").append(combined).append('"');
+        String id = attrs.get("id");
+        if (id != null && !id.isEmpty()) out.append(" id=\"").append(id).append('"');
+        out.append('>').append(SimpleGroovyClassDoc.encodeAngleBrackets(dedented)).append("</code></pre>");
+        return endPos - start;
+    }
+
+    /**
+     * Strip leading blank lines from a snippet body and remove the common
+     * indentation (smallest non-empty leading-whitespace prefix) — matches
+     * JEP 413's convention so indentation in the source doesn't leak into
+     * the rendered snippet.
+     */
+    private static String dedent(String body) {
+        // Drop the first line if it's only whitespace (typical when the body
+        // starts right after the `:` with a newline).
+        int firstNl = body.indexOf('\n');
+        if (firstNl >= 0) {
+            boolean firstLineBlank = true;
+            for (int k = 0; k < firstNl; k++) {
+                if (!Character.isWhitespace(body.charAt(k))) { firstLineBlank = false; break; }
+            }
+            if (firstLineBlank) body = body.substring(firstNl + 1);
+        }
+        // Strip trailing whitespace on the final line (body text before the
+        // closing `}` often has one) so `</code></pre>` lands cleanly.
+        int end = body.length();
+        while (end > 0 && (body.charAt(end - 1) == ' ' || body.charAt(end - 1) == '\t')) end--;
+        body = body.substring(0, end);
+        // Compute common leading indentation across non-blank lines.
+        String[] lines = body.split("\n", -1);
+        int common = Integer.MAX_VALUE;
+        for (String line : lines) {
+            if (line.isEmpty()) continue;
+            int lead = 0;
+            while (lead < line.length() && (line.charAt(lead) == ' ' || line.charAt(lead) == '\t')) lead++;
+            if (lead == line.length()) continue; // all-whitespace line
+            if (lead < common) common = lead;
+        }
+        if (common == Integer.MAX_VALUE || common == 0) return body;
+        StringBuilder sb = new StringBuilder(body.length());
+        for (int li = 0; li < lines.length; li++) {
+            if (li > 0) sb.append('\n');
+            String line = lines[li];
+            if (line.length() >= common) sb.append(line, common, line.length());
+            else sb.append(line);
+        }
+        return sb.toString();
     }
 
     private static boolean isKnownInlineTag(String name, Config cfg) {
@@ -239,6 +406,7 @@ final class TagRenderer {
             case "interface":
             case "value":
             case "inheritDoc":
+            case "snippet":
                 return true;
             case "literal":
                 return cfg.literalEnabled;
