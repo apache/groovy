@@ -550,6 +550,15 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         processModifiers(fieldDoc, node, node.getModifiers());
         processAnnotations(fieldDoc, node);
         fieldDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
+        // GROOVY-6016: record the source form of simple-constant initializers
+        // so {@value #FIELD} can resolve them at render time. Javadoc's
+        // convention is to re-quote strings/chars; ConstantExpression.getText()
+        // returns the raw value without quotes.
+        org.codehaus.groovy.ast.expr.Expression init = node.getInitialExpression();
+        if (init instanceof org.codehaus.groovy.ast.expr.ConstantExpression) {
+            Object value = ((org.codehaus.groovy.ast.expr.ConstantExpression) init).getValue();
+            fieldDoc.setConstantValueExpression(formatConstantValue(value));
+        }
         if (node.isEnum()) {
             currentClassDoc.addEnumConstant(fieldDoc);
         } else {
@@ -583,5 +592,18 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
 
     public Map<String, GroovyClassDoc> getGroovyClassDocs() {
         return classDocs;
+    }
+
+    /**
+     * Format a compile-time constant value for {@code {@value}} rendering.
+     * Strings are wrapped in double quotes and characters in single quotes,
+     * matching Javadoc's behaviour. Null, numeric, and boolean values are
+     * emitted via {@code String.valueOf}.
+     */
+    private static String formatConstantValue(Object value) {
+        if (value == null) return "null";
+        if (value instanceof String) return "\"" + value + "\"";
+        if (value instanceof Character) return "'" + value + "'";
+        return String.valueOf(value);
     }
 }
