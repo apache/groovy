@@ -68,6 +68,9 @@ public class Groovydoc extends Task {
     private Boolean noTimestamp;
     private Boolean noVersionStamp;
     private Boolean showInternal;
+    private Boolean noIndex;
+    private Boolean noDeprecatedList;
+    private Boolean noHelp;
     private String javaVersion;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
@@ -99,6 +102,9 @@ public class Groovydoc extends Task {
         noTimestamp = false;
         noVersionStamp = false;
         showInternal = false;
+        noIndex = false;
+        noDeprecatedList = false;
+        noHelp = false;
     }
 
     /**
@@ -170,6 +176,30 @@ public class Groovydoc extends Task {
      */
     public void setShowInternal(boolean showInternal) {
         this.showInternal = showInternal;
+    }
+
+    /**
+     * GROOVY-11943: if set to true, suppress generation of the alphabetical
+     * index page ({@code index-all.html}) and its nav-bar link.
+     */
+    public void setNoIndex(boolean noIndex) {
+        this.noIndex = noIndex;
+    }
+
+    /**
+     * GROOVY-11943: if set to true, suppress generation of the deprecated-list
+     * page ({@code deprecated-list.html}) and its nav-bar link.
+     */
+    public void setNoDeprecatedList(boolean noDeprecatedList) {
+        this.noDeprecatedList = noDeprecatedList;
+    }
+
+    /**
+     * GROOVY-11943: if set to true, suppress generation of the help page
+     * ({@code help-doc.html}) and its nav-bar link.
+     */
+    public void setNoHelp(boolean noHelp) {
+        this.noHelp = noHelp;
     }
 
     /**
@@ -502,6 +532,10 @@ public class Groovydoc extends Task {
         properties.setProperty("timestamp", Boolean.valueOf(!noTimestamp).toString());
         properties.setProperty("versionStamp", Boolean.valueOf(!noVersionStamp).toString());
         properties.setProperty("showInternal", showInternal.toString());
+        // GROOVY-11943: javadoc-parity disable flags.
+        properties.setProperty("noIndex", noIndex.toString());
+        properties.setProperty("noDeprecatedList", noDeprecatedList.toString());
+        properties.setProperty("noHelp", noHelp.toString());
         // GROOVY-11941: expose additional stylesheet basenames to templates.
         StringBuilder extras = new StringBuilder();
         for (int k = 0; k < addStylesheetFiles.size(); k++) {
