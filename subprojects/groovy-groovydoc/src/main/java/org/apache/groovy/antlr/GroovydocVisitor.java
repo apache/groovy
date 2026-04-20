@@ -139,7 +139,18 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         for (ClassNode iface : node.getInterfaces()) {
             currentClassDoc.addInterfaceName(makeType(iface));
         }
-        currentClassDoc.setRawCommentText(getDocContent(node.getGroovydoc()));
+        String rawDoc = getDocContent(node.getGroovydoc());
+        if (rawDoc.isEmpty() && node.isScript()) {
+            // GROOVY-8877: the Groovy parser does not attach a leading /** */
+            // comment to the synthetic script class. Fall back to scanning the
+            // source for one. The helper applies a peek-ahead rule and (for
+            // the annotation case) a cross-check against existing member docs
+            // so we neither drop legitimate script-level docs (e.g. before
+            // `@BaseScript` where the declaration gets transformed away) nor
+            // duplicate member docs that the parser already attached.
+            rawDoc = extractLeadingScriptDocContent(node);
+        }
+        currentClassDoc.setRawCommentText(rawDoc);
         currentClassDoc.setNameWithTypeArgs(name + genericTypesAsString(node.getGenericsTypes()));
         if (!node.isInterface() && !node.isEnum() && node.getSuperClass() != null) {
             String superName = makeType(node.getSuperClass());
@@ -196,6 +207,132 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
             result = m.group(1).trim();
         }
         return result;
+    }
+
+    /**
+     * GROOVY-8877: extract the first Javadoc-style comment block
+     * ({@code /** ... *}{@code /}) from the top of the source file, skipping
+     * line comments, plain block comments, whitespace, {@code package}
+     * declarations, and {@code import} declarations.
+     *
+     * <p>Lifting policy, by what follows the candidate comment:
+     * <ul>
+     *   <li><b>package / import / another comment / end of file</b> — lift.
+     *       These are unambiguous; the comment cannot belong to a following
+     *       member because there isn't one.</li>
+     *   <li><b>an annotation ({@code &#64;Xxx})</b> — lift only if no member
+     *       of the script class already owns the same comment content. This
+     *       covers the {@code @BaseScript} / {@code @Grab} pattern where the
+     *       annotated declaration is consumed by an AST transform and no
+     *       member survives to carry the doc, while still avoiding duplication
+     *       for cases like {@code @Override void foo()} where the parser
+     *       attached the comment to a real method.</li>
+     *   <li><b>anything else</b> (e.g. {@code def x = 42} which could be a
+     *       local variable or a field/property, or a bare declaration) —
+     *       don't lift. Groovy's script form makes it unreliable to tell
+     *       these apart without full parsing, so we err toward preserving
+     *       what the parser decided.</li>
+     * </ul>
+     *
+     * <p>Script authors who want a script-level doc should follow the
+     * convention of separating it with a package/import/comment or putting
+     * another Javadoc comment before the next member.
+     */
+    private String extractLeadingScriptDocContent(ClassNode scriptNode) {
+        String src;
+        try (java.io.Reader r = unit.getSource().getReader()) {
+            StringBuilder sb = new StringBuilder();
+            char[] buf = new char[8192];
+            int n;
+            while ((n = r.read(buf)) > 0) sb.append(buf, 0, n);
+            src = sb.toString();
+        } catch (java.io.IOException e) {
+            return "";
+        }
+        int i = 0, n = src.length();
+        while (i < n) {
+            char c = src.charAt(i);
+            if (Character.isWhitespace(c)) { i++; continue; }
+            if (c == '/' && i + 1 < n) {
+                char next = src.charAt(i + 1);
+                if (next == '/') {
+                    int eol = src.indexOf('\n', i);
+                    i = eol < 0 ? n : eol + 1;
+                    continue;
+                }
+                if (next == '*') {
+                    boolean isJavadoc = i + 2 < n && src.charAt(i + 2) == '*'
+                            && (i + 3 >= n || src.charAt(i + 3) != '/');
+                    int close = src.indexOf("*/", i + 2);
+                    if (close < 0) return "";
+                    if (isJavadoc) {
+                        String full = src.substring(i, close + 2);
+                        Matcher m = JAVADOC_COMMENT_PATTERN.matcher(full);
+                        String content = m.find() ? m.group(1).trim() : "";
+                        LiftDecision decision = decideLift(src, close + 2);
+                        switch (decision) {
+                            case LIFT: return content;
+                            case SKIP: return "";
+                            case CHECK_CLAIM:
+                                return isClaimedByMember(scriptNode, content) ? "" : content;
+                        }
+                        return "";
+                    }
+                    i = close + 2;
+                    continue;
+                }
+            }
+            // Skip `package X` / `import X` declarations by advancing to end
+            // of line; any other construct means there's no leading script doc.
+            if (src.startsWith("package", i) || src.startsWith("import", i)) {
+                int eol = src.indexOf('\n', i);
+                i = eol < 0 ? n : eol + 1;
+                continue;
+            }
+            return "";
+        }
+        return "";
+    }
+
+    private enum LiftDecision { LIFT, SKIP, CHECK_CLAIM }
+
+    /**
+     * Classify what follows the candidate leading Javadoc comment and return
+     * the matching lift decision. See {@link #extractLeadingScriptDocContent}
+     * for the rationale.
+     */
+    private static LiftDecision decideLift(String src, int from) {
+        int i = from, n = src.length();
+        while (i < n && Character.isWhitespace(src.charAt(i))) i++;
+        if (i >= n) return LiftDecision.LIFT;
+        char c = src.charAt(i);
+        if (c == '/' && i + 1 < n) {
+            char next = src.charAt(i + 1);
+            if (next == '/' || next == '*') return LiftDecision.LIFT;
+        }
+        if (src.startsWith("package", i) || src.startsWith("import", i)) return LiftDecision.LIFT;
+        if (c == '@') return LiftDecision.CHECK_CLAIM;
+        return LiftDecision.SKIP;
+    }
+
+    /**
+     * Returns true if any method, field, or property of the script class
+     * already owns a Groovydoc whose stripped content matches the candidate.
+     * Used to resolve the {@code @Xxx} peek-ahead case — if a real member
+     * claims the comment, don't lift it to script-level.
+     */
+    private boolean isClaimedByMember(ClassNode scriptNode, String candidate) {
+        if (candidate.isEmpty()) return false;
+        for (MethodNode m : scriptNode.getMethods()) {
+            if (candidate.equals(getDocContent(m.getGroovydoc()))) return true;
+        }
+        for (FieldNode f : scriptNode.getFields()) {
+            if (candidate.equals(getDocContent(f.getGroovydoc()))) return true;
+        }
+        for (PropertyNode p : scriptNode.getProperties()) {
+            if (candidate.equals(getDocContent(p.getGroovydoc()))) return true;
+        }
+        return false;
     }
 
     private void processAnnotations(SimpleGroovyProgramElementDoc element, AnnotatedNode node) {
