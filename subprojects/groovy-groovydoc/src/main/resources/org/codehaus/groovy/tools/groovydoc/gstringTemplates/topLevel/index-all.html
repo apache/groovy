@@ -67,9 +67,9 @@ if (location.href.indexOf('is-external=true') == -1) {
         <li><a href="overview-summary.html">Overview</a></li>
         <li>Package</li>
         <li>Class</li>
-        <li><a href="deprecated-list.html">Deprecated</a></li>
+        <% if (props.noDeprecatedList != 'true') { %><li><a href="deprecated-list.html">Deprecated</a></li><% } %>
         <li class="navBarCell1Rev">Index</li>
-        <li><a href="help-doc.html">Help</a></li>
+        <% if (props.noHelp != 'true') { %><li><a href="help-doc.html">Help</a></li><% } %>
     </ul>
 </div>
 <div class="subNav">
@@ -156,9 +156,9 @@ letters.each { letter ->
         <li><a href="overview-summary.html">Overview</a></li>
         <li>Package</li>
         <li>Class</li>
-        <li><a href="deprecated-list.html">Deprecated</a></li>
+        <% if (props.noDeprecatedList != 'true') { %><li><a href="deprecated-list.html">Deprecated</a></li><% } %>
         <li class="navBarCell1Rev">Index</li>
-        <li><a href="help-doc.html">Help</a></li>
+        <% if (props.noHelp != 'true') { %><li><a href="help-doc.html">Help</a></li><% } %>
     </ul>
 </div>
 <div class="subNav">

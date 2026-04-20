@@ -161,6 +161,7 @@ public class GroovyDocWriter {
         Iterator<String> templates = templateEngine.docTemplatesIterator();
         while (templates.hasNext()) {
             String template = templates.next();
+            if (isDisabledRootTemplate(template)) continue;
             String destFileName = destdir + FS + GroovyDocUtil.getFile(template);
             log.debug("Generating " + destFileName);
             if (hasBinaryExtension(template)) {
@@ -170,6 +171,15 @@ public class GroovyDocWriter {
                 output.writeToOutput(destFileName, renderedSrc, properties.getProperty("fileEncoding"));
             }
         }
+    }
+
+    // GROOVY-11943: javadoc-parity disable flags skip the matching top-level page.
+    private boolean isDisabledRootTemplate(String template) {
+        String name = GroovyDocUtil.getFile(template);
+        if ("true".equals(properties.getProperty("noIndex")) && "index-all.html".equals(name)) return true;
+        if ("true".equals(properties.getProperty("noDeprecatedList")) && "deprecated-list.html".equals(name)) return true;
+        if ("true".equals(properties.getProperty("noHelp")) && "help-doc.html".equals(name)) return true;
+        return false;
     }
 
     private static boolean hasBinaryExtension(String template) {

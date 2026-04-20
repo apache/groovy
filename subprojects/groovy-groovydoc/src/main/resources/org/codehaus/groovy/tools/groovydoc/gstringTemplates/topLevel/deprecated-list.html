@@ -113,8 +113,8 @@ if (location.href.indexOf('is-external=true') == -1) {
         <li>Package</li>
         <li>Class</li>
         <li class="navBarCell1Rev">Deprecated</li>
-        <li><a href="index-all.html">Index</a></li>
-        <li><a href="help-doc.html">Help</a></li>
+        <% if (props.noIndex != 'true') { %><li><a href="index-all.html">Index</a></li><% } %>
+        <% if (props.noHelp != 'true') { %><li><a href="help-doc.html">Help</a></li><% } %>
     </ul>
 </div>
 <div class="subNav">
@@ -250,8 +250,8 @@ methodTypes.each{ k, v ->
         <li>Package</li>
         <li>Class</li>
         <li class="navBarCell1Rev">Deprecated</li>
-        <li><a href="index-all.html">Index</a></li>
-        <li><a href="help-doc.html">Help</a></li>
+        <% if (props.noIndex != 'true') { %><li><a href="index-all.html">Index</a></li><% } %>
+        <% if (props.noHelp != 'true') { %><li><a href="help-doc.html">Help</a></li><% } %>
     </ul>
 </div>
 <div class="subNav">

@@ -436,6 +436,47 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 + occurrences + " in:\n" + doc, 2, occurrences);
     }
 
+    // GROOVY-11943: -noindex / -nodeprecatedlist / -nohelp skip the matching
+    // auxiliary top-level page AND suppress its nav-bar link on every page
+    // that would otherwise reference it.
+    public void testDisableFlagsSkipPageAndNavLink() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        Properties props = new Properties();
+        props.put("noIndex", "true");
+        props.put("noDeprecatedList", "true");
+        props.put("noHelp", "true");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+        tool.add(List.of(base + "/DocumentedClass.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        assertNull("index-all.html should be skipped when noIndex=true",
+                output.getText(MOCK_DIR + "/index-all.html"));
+        assertNull("deprecated-list.html should be skipped when noDeprecatedList=true",
+                output.getText(MOCK_DIR + "/deprecated-list.html"));
+        assertNull("help-doc.html should be skipped when noHelp=true",
+                output.getText(MOCK_DIR + "/help-doc.html"));
+
+        String overview = output.getText(MOCK_DIR + "/overview-summary.html");
+        assertNotNull(overview);
+        assertFalse("Overview nav should not link to suppressed index-all.html:\n" + overview,
+                overview.contains("href=\"index-all.html\""));
+        assertFalse("Overview nav should not link to suppressed deprecated-list.html:\n" + overview,
+                overview.contains("href=\"deprecated-list.html\""));
+        assertFalse("Overview nav should not link to suppressed help-doc.html:\n" + overview,
+                overview.contains("href=\"help-doc.html\""));
+
+        String classPage = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classPage);
+        assertFalse("Class nav should not link to suppressed index-all.html:\n" + classPage,
+                classPage.contains("index-all.html"));
+        assertFalse("Class nav should not link to suppressed deprecated-list.html:\n" + classPage,
+                classPage.contains("deprecated-list.html"));
+        assertFalse("Class nav should not link to suppressed help-doc.html:\n" + classPage,
+                classPage.contains("help-doc.html"));
+    }
+
     // GROOVY-11942: overview-tree.html renders the class hierarchy rooted at
     // java.lang.Object and an Interface Hierarchy section for traits/interfaces.
     public void testTreePagesRenderExpectedHierarchy() throws Exception {
