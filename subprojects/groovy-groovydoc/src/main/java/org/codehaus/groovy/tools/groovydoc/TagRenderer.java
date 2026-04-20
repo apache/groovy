@@ -18,6 +18,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 import java.util.ArrayList;
@@ -26,17 +27,39 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Single-pass tokenizer and renderer for Javadoc-style inline tags
- * ({@code {@link ...}}, {@code {@code ...}}, {@code {@literal ...}}) and
- * block tags ({@code @see}, {@code @param}, {@code @return}, etc.) in
- * groovydoc text. Replaces the earlier chain of regex-based passes in
- * {@link SimpleGroovyClassDoc#replaceTags} and provides a single extension
- * point for new tags (GROOVY-6016 {@code {@value}}, GROOVY-3782
- * {@code {@inheritDoc}}, GROOVY-11938 {@code {@snippet}}, GROOVY-11542
- * Markdown reference links).
+ * Single-pass tokenizer and renderer for Javadoc-style inline tags and
+ * block tags in groovydoc text. Replaces the earlier chain of regex-based
+ * passes in {@link SimpleGroovyClassDoc#replaceTags} and provides a single
+ * extension point for new tags.
  *
- * <p>Output is intentionally byte-identical to the previous multi-pass
- * implementation so the refactor is invisible in rendered docs.</p>
+ * <p>Supported inline tags: {@code {@link ...}}, {@code {@see ...}},
+ * {@code {@code ...}}, {@code {@literal ...}} (class-level only),
+ * {@code {@interface ...}} (swallowed), {@code {@value #FIELD}} /
+ * {@code {@value pkg.Class#FIELD}} (GROOVY-6016).
+ *
+ * <p>Supported block tags: {@code @see}, {@code @param}, {@code @return},
+ * {@code @throws} / {@code @exception}, {@code @since}, {@code @author},
+ * {@code @version}, {@code @default}, plus synthesised {@code typeparam}
+ * (from {@code @param <T>}). Unknown block tags fall through to a generic
+ * {@code <DL>} rendering.
+ *
+ * <h2>Known limitations / pending work</h2>
+ * <ul>
+ *   <li>Bare {@code {@value}} (no body, referencing the current field's own
+ *       constant value) is not yet supported. It requires threading the
+ *       current member through {@code TagRenderer}; the tag currently falls
+ *       through to verbatim emission. {@code {@value #FIELD}} and
+ *       {@code {@value Class#FIELD}} both work.</li>
+ *   <li>{@code {@inheritDoc}} — GROOVY-3782, pending.</li>
+ *   <li>{@code {@snippet}} — GROOVY-11938, pending.</li>
+ *   <li>JEP 467 Markdown reference links — GROOVY-11542, pending.</li>
+ * </ul>
+ *
+ * <p>Output is byte-for-byte compatible with the previous multi-pass
+ * implementation for inputs the old code handled; see the GROOVY-11939
+ * commit notes for the small set of semantic improvements introduced by
+ * the refactor (e.g. {@code {@linkplain X}} passed through verbatim
+ * instead of broken as a bogus block tag).
  */
 final class TagRenderer {
 
@@ -196,6 +219,7 @@ final class TagRenderer {
             case "see":
             case "code":
             case "interface":
+            case "value":
                 return true;
             case "literal":
                 return cfg.literalEnabled;
@@ -226,9 +250,69 @@ final class TagRenderer {
             case "code":
                 out.append(cfg.codeOpen).append(SimpleGroovyClassDoc.encodeAngleBrackets(body)).append(cfg.codeClose);
                 return;
+            case "value": {
+                // GROOVY-6016: resolve {@value #FIELD} or {@value Class#FIELD}
+                // to the field's source-form constant value. Bare {@value}
+                // (current field) is not supported here because we don't
+                // thread the current member through TagRenderer — fall back
+                // to emitting the tag verbatim in that case.
+                String resolved = resolveValueTag(body, rootDoc, classDoc);
+                if (resolved != null) {
+                    out.append(SimpleGroovyClassDoc.encodeAngleBrackets(resolved));
+                    return;
+                }
+                break; // unresolved — emit verbatim
+            }
         }
-        // Unknown inline tag — emit body verbatim (matches prior regex pass not matching).
-        out.append('{').append('@').append(name).append(' ').append(body).append('}');
+        // Unknown or unresolved inline tag — emit body verbatim (matches prior regex behaviour).
+        out.append('{').append('@').append(name);
+        if (!body.isEmpty()) out.append(' ').append(body);
+        out.append('}');
+    }
+
+    /**
+     * Resolve a {@code {@value}} tag body to the target field's source-form
+     * constant value, or {@code null} if the reference couldn't be resolved.
+     *
+     * <p>Body forms:
+     * <ul>
+     *   <li>{@code #FIELD} — field {@code FIELD} in {@code classDoc}</li>
+     *   <li>{@code Class#FIELD} / {@code pkg.Class#FIELD} — field in another class</li>
+     *   <li>empty — not supported here (needs current-member context); returns {@code null}</li>
+     * </ul>
+     */
+    private static String resolveValueTag(String body, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
+        if (body == null || body.isEmpty()) return null;
+        String className;
+        String fieldName;
+        int hash = body.indexOf('#');
+        if (hash < 0) {
+            // Bare name — treat as same-class field ref (lenient).
+            className = null;
+            fieldName = body.trim();
+        } else {
+            className = body.substring(0, hash).trim();
+            fieldName = body.substring(hash + 1).trim();
+        }
+        if (fieldName.isEmpty()) return null;
+        SimpleGroovyClassDoc target = classDoc;
+        if (className != null && !className.isEmpty() && classDoc != null && rootDoc != null) {
+            String slashed = className.replace('.', '/');
+            GroovyClassDoc resolved = rootDoc.classNamed(classDoc, slashed);
+            if (resolved instanceof SimpleGroovyClassDoc) target = (SimpleGroovyClassDoc) resolved;
+            else return null;
+        }
+        if (target == null) return null;
+        for (org.codehaus.groovy.groovydoc.GroovyFieldDoc f : target.fields()) {
+            if (fieldName.equals(f.name())) return f.constantValueExpression();
+        }
+        for (org.codehaus.groovy.groovydoc.GroovyFieldDoc f : target.enumConstants()) {
+            if (fieldName.equals(f.name())) return f.constantValueExpression();
+        }
+        for (org.codehaus.groovy.groovydoc.GroovyFieldDoc f : target.properties()) {
+            if (fieldName.equals(f.name())) return f.constantValueExpression();
+        }
+        return null;
     }
 
     // -------- block tags --------

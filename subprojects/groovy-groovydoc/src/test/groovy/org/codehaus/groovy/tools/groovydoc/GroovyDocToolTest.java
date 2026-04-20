@@ -131,6 +131,26 @@ public class GroovyDocToolTest extends GroovyTestCase {
             doc.contains("https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html"));
     }
 
+    // GROOVY-6016: {@value #FIELD} inline tag resolves same-class constants.
+    public void testValueTagResolvesSameClassConstants() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        String klass = "ClassWithValueTag";
+        htmlTool.add(List.of(base + "/" + klass + ".groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/" + klass + ".html");
+        assertNotNull("Expected a page for the value-tag class", doc);
+        assertTrue("Expected {@value #MAX} to render as 42 in:\n" + doc,
+                doc.contains("Max allowed: 42"));
+        // GREETING's source form is "hello" (quoted). Angle-bracket encoding
+        // doesn't affect the quotes — we expect to see &quot; or the literal "hello"
+        // depending on encoding. At minimum, 'hello' should appear next to 'Greeting:'.
+        assertTrue("Expected {@value #GREETING} to render with 'hello' in:\n" + doc,
+                doc.contains("Greeting: \"hello\""));
+    }
+
     // GROOVY-8025: annotations whose members are closure expressions must
     // not NPE during groovydoc processing. The original bug was in the old
     // SimpleGroovyClassDocAssembler — the refactor to GroovydocVisitor
