@@ -269,9 +269,10 @@ under the hood. Three `create()` factory methods are added to the interface:
 
 - `create()` — uses the annotation URL and default settings
 - `create(String baseUrl)` — overrides the base URL at runtime
-- `create(Closure config)` — full control over the underlying `HttpBuilder`,
-  including base URL, headers, timeouts, redirects, and `clientConfig` for
-  JDK-level settings (authenticator, SSL, proxy)
+- `create(Closure config)` — full control over the underlying `HttpBuilder`
+  for runtime values (e.g. auth tokens) or anything not covered by the
+  annotations, including `clientConfig` for JDK-level settings
+  (authenticator, SSL, proxy)
 
 [source,groovy]
 ----
