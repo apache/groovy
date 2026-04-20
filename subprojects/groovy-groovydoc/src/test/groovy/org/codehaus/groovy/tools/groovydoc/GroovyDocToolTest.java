@@ -147,6 +147,42 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains("{<DL><DT><B>inheritDoc") || doc.contains("inheritDoc:</B>"));
     }
 
+    // GROOVY-11938 stage 1: the inline {@snippet} tag renders its body as a
+    // verbatim <pre><code>...</code></pre> block with HTML-escaped content,
+    // an optional language class, id, and extra class.
+    public void testSnippetTagInlineFormRendersAsPreCode() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithSnippetTag.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + base + "/ClassWithSnippetTag.html");
+        assertNotNull(doc);
+        // Groovy snippet: check <pre><code class="language-groovy"> wrapping.
+        assertTrue("Expected <pre><code class='language-groovy'> in:\n" + doc,
+                doc.contains("<pre><code class=\"language-groovy\">"));
+        // Body content preserved: the `def greet` line should appear escape-free
+        // (Groovy has no angle brackets in this snippet).
+        assertTrue("Expected snippet body content in:\n" + doc,
+                doc.contains("def greet(String name)"));
+        // HTML escaping: `<` in the Java snippet must appear as &lt;
+        assertTrue("Expected HTML-escaped '<' in snippet body in:\n" + doc,
+                doc.contains("if (x &lt; y)"));
+        // Language + class merged.
+        assertTrue("Expected language-java + example class merged in:\n" + doc,
+                doc.contains("class=\"language-java example\""));
+        // id attribute emitted.
+        assertTrue("Expected id=\"hello\" in:\n" + doc,
+                doc.contains("id=\"hello\""));
+        // No literal `{@snippet lang=...` with attributes (i.e. an unprocessed
+        // real snippet tag). Note that `{@code {@snippet}}` patterns in the
+        // surrounding description legitimately render as literal text inside
+        // a <CODE> block, so checking for bare `{@snippet` is too strict.
+        assertFalse("{@snippet ... } with attributes should be substituted in:\n" + doc,
+                doc.contains("{@snippet lang="));
+    }
+
     // GROOVY-3782 (the actual {@inheritDoc} tag): the child method's doc
     // should be expanded with the parent's rendered description plus tags.
     public void testInheritDocSubstitutesParentMethodDoc() throws Exception {
