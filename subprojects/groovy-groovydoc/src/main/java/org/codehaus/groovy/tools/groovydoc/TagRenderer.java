@@ -90,6 +90,14 @@ final class TagRenderer {
     /** Block-tag names that get merged under a single display heading. */
     static final Map<String, String> COLLATED_TAGS = new LinkedHashMap<>();
     static {
+        // GROOVY-11945: three "note" tags standardised by Javadoc's stdlib
+        // doclet since JEP 172. Recognised so the display heading is right
+        // (not the raw lowercase tag name) and so the bodies are collated
+        // with the rest of the block tags rather than emitted inline at
+        // source position.
+        COLLATED_TAGS.put("apiNote", "API Note");
+        COLLATED_TAGS.put("implSpec", "Implementation Requirements");
+        COLLATED_TAGS.put("implNote", "Implementation Note");
         COLLATED_TAGS.put("see", "See Also");
         COLLATED_TAGS.put("param", "Parameters");
         COLLATED_TAGS.put("throw", "Throws");

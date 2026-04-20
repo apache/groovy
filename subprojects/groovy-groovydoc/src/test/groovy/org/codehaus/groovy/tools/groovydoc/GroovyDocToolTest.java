@@ -533,6 +533,40 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 snippet.contains("@link"));
     }
 
+    // GROOVY-11945: @apiNote / @implSpec / @implNote render with their
+    // Javadoc-standard display headings (not the raw lowercase tag names),
+    // and their bodies get collated into the tags section alongside
+    // @param / @return.
+    public void testImplNoteTagsRenderWithProperHeadings() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/ClassWithImplNoteTags.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String page = output.getText(MOCK_DIR + "/" + base + "/ClassWithImplNoteTags.html");
+        assertNotNull(page);
+        assertTrue("API Note heading expected in:\n" + page,
+                page.contains("<B>API Note:</B>"));
+        assertTrue("Implementation Requirements heading expected in:\n" + page,
+                page.contains("<B>Implementation Requirements:</B>"));
+        assertTrue("Implementation Note heading expected in:\n" + page,
+                page.contains("<B>Implementation Note:</B>"));
+        // Bodies reach the rendered page.
+        assertTrue("apiNote body expected:\n" + page,
+                page.contains("null-check the result"));
+        assertTrue("implSpec body expected:\n" + page,
+                page.contains("non-negative contract"));
+        assertTrue("implNote body expected:\n" + page,
+                page.contains("uses a sieve for efficiency"));
+        // Raw lowercase tag name should NOT appear as a heading.
+        assertFalse("Raw 'implNote:' should not leak as a heading:\n" + page,
+                page.contains("<B>implNote:</B>"));
+        assertFalse("Raw 'implSpec:' should not leak as a heading:\n" + page,
+                page.contains("<B>implSpec:</B>"));
+        assertFalse("Raw 'apiNote:' should not leak as a heading:\n" + page,
+                page.contains("<B>apiNote:</B>"));
+    }
+
     // GROOVY-11938 stage 3 region support: a directive with region="name"
     // activates at its line and applies until the matching // @end marker.
     public void testSnippetMarkupRegionScoping() throws Exception {
