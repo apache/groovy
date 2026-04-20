@@ -41,6 +41,7 @@ import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.runtime.ArrayGroovyMethods;
+import org.codehaus.groovy.tools.groovydoc.GroovydocAnnotationUtils;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyAnnotationRef;
 import org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc;
@@ -55,7 +56,6 @@ import org.codehaus.groovy.tools.groovydoc.SimpleGroovyType;
 
 import java.io.IOException;
 import java.io.Reader;
-import java.lang.annotation.Documented;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -485,7 +485,7 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private void processAnnotations(SimpleGroovyProgramElementDoc element, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
-            if (!shouldDocument(name)) continue;
+            if (!GroovydocAnnotationUtils.shouldDocument(name)) continue;
             element.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
         }
     }
@@ -493,23 +493,8 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
     private void processAnnotations(SimpleGroovyParameter param, AnnotatedNode node) {
         for (AnnotationNode an : node.getAnnotations()) {
             String name = an.getClassNode().getName();
-            if (!shouldDocument(name)) continue;
+            if (!GroovydocAnnotationUtils.shouldDocument(name)) continue;
             param.addAnnotationRef(new SimpleGroovyAnnotationRef(name, an.getText()));
-        }
-    }
-
-    // GROOVY-4634: emit an annotation reference only when the annotation type is
-    // itself marked {@code @Documented}, matching Javadoc's behavior. When the
-    // annotation type cannot be resolved on the current classpath (common for
-    // user-defined annotations in the source tree being documented), default
-    // to including it so that groovydoc does not silently drop user annotations.
-    private static boolean shouldDocument(String fqn) {
-        try {
-            Class<?> c = Class.forName(fqn);
-            if (!c.isAnnotation()) return true;
-            return c.isAnnotationPresent(Documented.class);
-        } catch (Throwable t) {
-            return true;
         }
     }
 
