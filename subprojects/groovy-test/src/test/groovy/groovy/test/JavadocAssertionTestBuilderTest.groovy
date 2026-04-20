@@ -135,6 +135,79 @@ class JavadocAssertionTestBuilderTest {
         }
     }
 
+    // Stage A — /// Markdown doc comment with the existing HTML-wrapper convention.
+    @Test
+    void testTripleSlashCommentWithHtmlWrapper() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// <pre class="groovyTestCase"> assert 1 + 1 == 2 </pre>
+            class SomeClass { }
+        ''')
+        assert test != null
+        assert test.methods.findAll { it.name =~ /test.*/ }.size() == 1
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    // Stage A — /// Markdown doc comment spanning multiple lines with a HTML wrapper.
+    @Test
+    void testTripleSlashCommentMultilineHtmlWrapper() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// <pre class="groovyTestCase">
+            /// assert 2 + 2 == 4
+            /// assert "x".size() == 1
+            /// </pre>
+            class SomeClass { }
+        ''')
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    // Stage B — fenced Markdown code block inside a /// run. The infostring
+    // `groovy groovyTestCase` uses the first word as the language (keeps syntax
+    // highlighting working) and the second as the test marker.
+    @Test
+    void testFencedCodeBlockAssertion() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// Some intro prose.
+            ///
+            /// ```groovy groovyTestCase
+            /// assert 2 + 2 == 4
+            /// ```
+            ///
+            /// More prose.
+            class SomeClass { }
+        ''')
+        assert test != null
+        assert test.methods.findAll { it.name =~ /test.*/ }.size() == 1
+        test.newInstance().testAssertionFromSomeClassLine4()
+    }
+
+    // Stage B — fenced block assertion that fails still fails.
+    @Test
+    void testFencedCodeBlockFailingAssertion() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// ```groovy groovyTestCase
+            /// assert false
+            /// ```
+            class SomeClass { }
+        ''')
+        shouldFail(AssertionError) {
+            test.newInstance().testAssertionFromSomeClassLine2()
+        }
+    }
+
+    // Stage B — a fenced block whose infostring is just `groovy` (no
+    // groovyTestCase marker) must NOT be turned into a test.
+    @Test
+    void testFencedCodeBlockWithoutMarkerIgnored() {
+        Class test = builder.buildTest("SomeClass.groovy", '''
+            /// ```groovy
+            /// assert false
+            /// ```
+            class SomeClass { }
+        ''')
+        assert test == null
+    }
+
     @Test
     void testDecodesCommonHtml() {
         Class test = builder.buildTest("SomeClass.java", '''

@@ -21,20 +21,44 @@ package groovy.test
 import java.util.regex.Pattern
 
 /**
- * <code>JavadocAssertionTestBuilder</code> will dynamically create a test cases from Groovy assertions placed within
- * the Javadoc comments of a source file. Assertions should be placed within an html tag with a <code>class="groovyTestCase"</code>
- * attribute assignment. Example:
- * <pre>&lt;pre class="groovyTestCase"&gt; assert "example".size() == 7 &lt;/pre&gt;</pre>
- * When extracting the code for the test, single-line snippets of code without braces within a {{@code @code} ...}
- * tag will have the javadoc {@code code} tag stripped. Similarly, html entities are converted back when extracting
- * code, so {@code &lt;} and {@code &gt;} will be converted to {@code <} and {@code >}.
+ * <code>JavadocAssertionTestBuilder</code> dynamically creates test cases from Groovy assertions placed within
+ * the doc comments of a source file. Three authoring forms are recognised:
+ *
+ * <ol>
+ * <li>Traditional Javadoc with an HTML wrapper carrying <code>class="groovyTestCase"</code>:
+ * <pre>/&#42;&#42; &lt;pre class="groovyTestCase"&gt; assert "example".size() == 7 &lt;/pre&gt; &#42;/</pre></li>
+ * <li>JEP 467 Markdown doc comments (triple-slash <code>///</code> runs) with the same HTML wrapper — Markdown
+ * passes inline HTML through, so the existing convention works unchanged:
+ * <pre>/// &lt;pre class="groovyTestCase"&gt; assert 1 + 1 == 2 &lt;/pre&gt;</pre></li>
+ * <li>Fenced Markdown code block inside a <code>///</code> run whose infostring is <code>groovy groovyTestCase</code>.
+ * CommonMark uses the first word as the language (so Prism/highlight.js still highlight the body as Groovy); the
+ * second word is the test marker recognised by this builder when it scans the source:
+ * <pre>
+ * /// ```groovy groovyTestCase
+ * /// assert 2 + 2 == 4
+ * /// ```
+ * </pre></li>
+ * </ol>
+ *
+ * When extracting the code for an HTML-wrapper test, single-line snippets of code within a {{@code @code} ...}
+ * tag have the javadoc {@code code} tag stripped, and HTML entities are converted back so that {@code &lt;} and
+ * {@code &gt;} become {@code <} and {@code >}. Fenced-block extractions pass through without HTML decoding
+ * because Markdown fenced blocks hold raw source already.
  */
 class JavadocAssertionTestBuilder {
     // TODO write tests for this classes functionality
+    // Match both traditional `/&#42;&#42; ... &#42;/` Javadoc and contiguous `///` Markdown doc-comment runs.
     private static final Pattern javadocPattern =
-        Pattern.compile( /(?ims)\/\*\*.*?\*\// )
+        Pattern.compile( /(?ims)\/\*\*.*?\*\/|(?-s:(?:^[ \t]*\/\/\/[^\n]*\n?)+)/ )
+    // Two authoring forms for the assertion inside a doc comment:
+    //   - HTML wrapper:   <pre class="groovyTestCase">...</pre>  (or <code>, <samp>, ...)
+    //   - Fenced Markdown: ```groovy groovyTestCase ... ``` — only recognised within `///` runs
+    //     (Javadoc `/** */` is not Markdown, so there's no ambiguity).
     private static final Pattern assertionPattern =
-        Pattern.compile( /(?ims)<([a-z]+)\s+class\s*=\s*['"]groovyTestCase['"]\s*>.*?<\s*\/\s*\1>/ )
+        Pattern.compile(
+            /(?ims)<([a-z]+)\s+class\s*=\s*['"]groovyTestCase['"]\s*>.*?<\s*\/\s*\1>/
+            + /|(?m:^[ \t]*\/\/\/[ \t]*```groovy[ \t]+groovyTestCase\b[^\n]*\n(?s:.*?)^[ \t]*\/\/\/[ \t]*```)/
+        )
 
     Class buildTest(String filename, String code) {
         Class test = null
@@ -77,7 +101,12 @@ class JavadocAssertionTestBuilder {
         int codeIndex = 0
         assertionTags.each { tag ->
             codeIndex = code.indexOf(tag, codeIndex)
-            int lineNumber = code.substring(0, codeIndex).findAll("(?m)^").size()
+            // Counting newlines (+1 for the starting line) rather than matching
+            // `(?m)^` avoids the end-of-input edge case where a match that
+            // anchors at a line start lands on the first character right after
+            // the substring's trailing newline — Java's (?m)^ does not match
+            // at end-of-input, which would otherwise under-count by one.
+            int lineNumber = code.substring(0, codeIndex).count('\n') + 1
             codeIndex += tag.size()
 
             String assertion = getAssertion(tag)
@@ -89,8 +118,19 @@ class JavadocAssertionTestBuilder {
     }
 
     private String getAssertion(String tag) {
+        // Dispatch on the leading non-whitespace character — the unified
+        // assertion pattern can match either an HTML wrapper (`<...>...</...>`)
+        // or a fenced code block (whose first non-blank line starts with
+        // `///` leading a backtick fence).
+        String trimmed = tag.trim()
+        if (trimmed.startsWith('<')) return getHtmlWrapperAssertion(tag)
+        return getFencedAssertion(tag)
+    }
+
+    private String getHtmlWrapperAssertion(String tag) {
         String tagInner = tag.substring(tag.indexOf(">")+1, tag.lastIndexOf("<"))
-        String htmlAssertion = tagInner.replaceAll("(?m)^\\s*\\*\\s?", "")
+        // Strip `* ` (traditional Javadoc) OR `/// ` (JEP 467 Markdown) line prefixes.
+        String htmlAssertion = tagInner.replaceAll("(?m)^\\s*(?:\\*|\\/\\/\\/)\\s?", "")
         String assertion = htmlAssertion
         // TODO improve on this
         [nbsp:' ', gt:'>', lt:'<', quot:'"', apos:"'", at:'@', '#64':'@', ndash:'-', amp:'&'].each { key, value ->
@@ -98,6 +138,26 @@ class JavadocAssertionTestBuilder {
         }
         assertion = assertion.replaceAll(/(?i)\{@code ([^}]*)\}/, '$1')
         return assertion
+    }
+
+    // Extract the body of a fenced `` ```groovy groovyTestCase ... ``` `` block
+    // embedded in a `///` run. Strip the opening and closing fence lines, and
+    // remove the `///` line prefix (plus one optional space) from each body line.
+    // No HTML-entity decoding — fenced code holds raw source already.
+    private String getFencedAssertion(String tag) {
+        def lines = tag.split('\n', -1)
+        if (lines.size() < 2) return ''
+        // Drop the opening fence line. Also drop the closing fence line if the
+        // last line is one; otherwise keep everything after the opener.
+        int start = 1
+        int end = lines.size()
+        if (lines[-1].trim().matches(/\/\/\/\s*```.*/)) end = lines.size() - 1
+        StringBuilder sb = new StringBuilder()
+        for (int k = start; k < end; k++) {
+            if (sb.length() > 0) sb.append('\n')
+            sb.append(lines[k].replaceFirst(/^\s*\/\/\/\s?/, ''))
+        }
+        return sb.toString()
     }
 
     private List getTestMethods(Map lineNumberToAssertions, String filename) {
