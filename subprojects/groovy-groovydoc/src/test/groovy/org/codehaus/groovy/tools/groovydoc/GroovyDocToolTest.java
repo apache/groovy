@@ -147,6 +147,104 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains("{<DL><DT><B>inheritDoc") || doc.contains("inheritDoc:</B>"));
     }
 
+    // GROOVY-11938 stage 2: external {@snippet file="..."} reads from the
+    // package's snippet-files/ directory.
+    public void testSnippetTagExternalFormLoadsFromSnippetFiles() throws Exception {
+        String fixtureSourcePath = "src/test/resources/docfiles-fixture";
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+
+        GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src/main/resources"),
+                new String[]{fixtureSourcePath},
+                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                new ArrayList<>(), null, new Properties()
+        );
+        tool.add(List.of(pkg + "/HasDocFiles.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String doc = output.getText(MOCK_DIR + "/" + pkg + "/HasDocFiles.html");
+        assertNotNull(doc);
+        assertTrue("Expected <pre><code class='language-groovy'> wrapping snippet file in:\n" + doc,
+                doc.contains("<pre><code class=\"language-groovy\">"));
+        // Example.groovy's content should appear:
+        assertTrue("Expected snippet file content in:\n" + doc,
+                doc.contains("hello from Example"));
+    }
+
+    // GROOVY-11938 stage 2: external snippet with region= selects a slice.
+    public void testSnippetTagExternalFormWithRegion() throws Exception {
+        String fixtureSourcePath = "src/test/resources/docfiles-fixture";
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+
+        // Synthesise a class on the fly that uses {@snippet file=... region=...}
+        // Actually, just use a testfile in src/test/groovy that we add to sourcepath.
+        // Here we reuse a class with an inline doc reference via the resource-dir.
+        java.nio.file.Path tmp = java.nio.file.Files.createTempDirectory("snippet-region-");
+        java.nio.file.Path pkgDir = tmp.resolve(pkg);
+        java.nio.file.Files.createDirectories(pkgDir);
+        java.nio.file.Files.writeString(pkgDir.resolve("RegionClass.groovy"),
+                "/*\n *  Licensed to the Apache Software Foundation (ASF) under one\n" +
+                " *  or more contributor license agreements.  See the NOTICE file\n" +
+                " *  distributed with this work for additional information\n" +
+                " *  regarding copyright ownership.  The ASF licenses this file\n" +
+                " *  to you under the Apache License, Version 2.0 (the\n" +
+                " *  \"License\"); you may not use this file except in compliance\n" +
+                " *  with the License.  You may obtain a copy of the License at\n" +
+                " *\n" +
+                " *    http://www.apache.org/licenses/LICENSE-2.0\n" +
+                " */\n" +
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * {@snippet file=\"Regioned.groovy\" region=\"core\"}\n" +
+                " */\n" +
+                "class RegionClass {}\n");
+        // Symlink/copy the snippet-files dir from fixture into the tmp tree.
+        java.nio.file.Path srcSnippetDir = java.nio.file.Paths.get(
+                "src/test/resources/docfiles-fixture", pkg, "snippet-files");
+        java.nio.file.Path dstSnippetDir = pkgDir.resolve("snippet-files");
+        java.nio.file.Files.createDirectories(dstSnippetDir);
+        try (java.util.stream.Stream<java.nio.file.Path> s = java.nio.file.Files.walk(srcSnippetDir)) {
+            s.filter(java.nio.file.Files::isRegularFile).forEach(f -> {
+                try {
+                    java.nio.file.Files.copy(f, dstSnippetDir.resolve(f.getFileName()),
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                } catch (java.io.IOException e) { throw new RuntimeException(e); }
+            });
+        }
+
+        try {
+            GroovyDocTool tool = new GroovyDocTool(
+                    new FileSystemResourceManager("src/main/resources"),
+                    new String[]{tmp.toString()},
+                    GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                    GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                    GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                    new ArrayList<>(), null, new Properties()
+            );
+            tool.add(List.of(pkg + "/RegionClass.groovy"));
+            MockOutputTool output = new MockOutputTool();
+            tool.renderToOutput(output, MOCK_DIR);
+
+            String doc = output.getText(MOCK_DIR + "/" + pkg + "/RegionClass.html");
+            assertNotNull(doc);
+            assertTrue("Expected coreLogic (inside region) in:\n" + doc,
+                    doc.contains("def coreLogic(int x)"));
+            assertFalse("Should not include 'def setup' (outside region) in:\n" + doc,
+                    doc.contains("def setup()"));
+            assertFalse("Should not include 'def teardown' (outside region) in:\n" + doc,
+                    doc.contains("def teardown()"));
+        } finally {
+            try (java.util.stream.Stream<java.nio.file.Path> s = java.nio.file.Files.walk(tmp)) {
+                s.sorted(java.util.Comparator.reverseOrder())
+                        .forEach(p -> { try { java.nio.file.Files.delete(p); } catch (java.io.IOException ignore) {} });
+            }
+        }
+    }
+
     // GROOVY-11938 stage 1: the inline {@snippet} tag renders its body as a
     // verbatim <pre><code>...</code></pre> block with HTML-escaped content,
     // an optional language class, id, and extra class.

@@ -16,16 +16,17 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.tools.groovydoc.testfiles.docfiles
 
-/**
- * GROOVY-5986: sample class in a package that has a {@code doc-files/}
- * and {@code snippet-files/} subdirectory to be copied verbatim into
- * the generated docs.
- *
- * <p>GROOVY-11938 stage 2: reference a snippet file from the class doc.
- *
- * {@snippet file="Example.groovy" lang=groovy}
- */
-class HasDocFiles {
+def setup() {
+    println "this is outside the region"
+}
+
+// @start region=core
+def coreLogic(int x) {
+    return x * 2
+}
+// @end region=core
+
+def teardown() {
+    println "also outside"
 }

@@ -44,6 +44,8 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     private final ClassNamedCache classNamedCache;
 
     private String description = "";
+    /** GROOVY-11938: snippet-file resolution needs access to source dirs at render time. */
+    private String[] sourcepaths = new String[0];
 
     public SimpleGroovyRootDoc(String name) {
         super(name);
@@ -51,6 +53,14 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         classDocs = new LinkedHashMap<>();
         equivalentPackageImports = new LinkedHashMap<>();
         classNamedCache = new ClassNamedCache(classDocs);
+    }
+
+    public String[] getSourcepaths() {
+        return sourcepaths;
+    }
+
+    public void setSourcepaths(String[] sourcepaths) {
+        this.sourcepaths = sourcepaths == null ? new String[0] : java.util.Arrays.copyOf(sourcepaths, sourcepaths.length);
     }
 
     @Override

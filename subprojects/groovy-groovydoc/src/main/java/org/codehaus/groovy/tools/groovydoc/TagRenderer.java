@@ -239,7 +239,7 @@ final class TagRenderer {
         // before an optional `:`, then a brace-balanced body that may contain
         // source code with its own `{`/`}`. Needs its own parser.
         if ("snippet".equals(name)) {
-            return renderSnippetAt(text, start, nameEnd, out);
+            return renderSnippetAt(text, start, nameEnd, out, rootDoc, classDoc);
         }
         int bodyStart = skipWhitespace(text, nameEnd);
         // Match the previous regex's laxness: body extends to the first '}'.
@@ -273,7 +273,8 @@ final class TagRenderer {
      * @return characters consumed starting from {@code start} (the {@code '{'})
      *         or 0 if the tag is malformed.
      */
-    private static int renderSnippetAt(String text, int start, int nameEnd, StringBuilder out) {
+    private static int renderSnippetAt(String text, int start, int nameEnd, StringBuilder out,
+                                       GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
         int n = text.length();
         int i = skipWhitespace(text, nameEnd);
 
@@ -337,9 +338,23 @@ final class TagRenderer {
             body = text.substring(bodyStart, j);
             endPos = j + 1; // past the final '}'
         } else {
-            // External form ({@snippet file="..." region="..."}) — not yet
-            // implemented. Bail and let the outer caller emit verbatim.
-            return 0;
+            // External form: {@snippet file="..." [region="..."]}
+            // Read the referenced file from the current package's
+            // snippet-files/ directory (already copied into output by
+            // GROOVY-5986's resource-copy pass).
+            String fileName = attrs.get("file");
+            if (fileName == null || fileName.isEmpty()) return 0;
+            String loaded = loadSnippetFile(fileName, rootDoc, classDoc);
+            if (loaded == null) return 0;
+            String region = attrs.get("region");
+            if (region != null && !region.isEmpty()) {
+                String extracted = extractRegion(loaded, region);
+                if (extracted == null) return 0;
+                loaded = extracted;
+            }
+            body = loaded;
+            endPos = text.charAt(i) == '}' ? i + 1 : 0;
+            if (endPos == 0) return 0;
         }
 
         String langClass = attrs.getOrDefault("lang", "");
@@ -353,6 +368,65 @@ final class TagRenderer {
         if (id != null && !id.isEmpty()) out.append(" id=\"").append(id).append('"');
         out.append('>').append(SimpleGroovyClassDoc.encodeAngleBrackets(dedented)).append("</code></pre>");
         return endPos - start;
+    }
+
+    /**
+     * GROOVY-11938 stage 2: look up a snippet file in the current package's
+     * {@code snippet-files/} directory under any configured sourcepath and
+     * return its contents, or {@code null} if not found.
+     */
+    private static String loadSnippetFile(String fileName, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
+        if (classDoc == null || !(rootDoc instanceof SimpleGroovyRootDoc)) return null;
+        String[] sourcepaths = ((SimpleGroovyRootDoc) rootDoc).getSourcepaths();
+        if (sourcepaths == null || sourcepaths.length == 0) return null;
+        // Package path is fullPathName minus the class simple name.
+        String full = classDoc.getFullPathName();
+        if (full == null) return null;
+        int lastSlash = full.lastIndexOf('/');
+        String pkgPath = lastSlash >= 0 ? full.substring(0, lastSlash) : "";
+        for (String sourcepath : sourcepaths) {
+            java.nio.file.Path path = java.nio.file.Paths.get(sourcepath, pkgPath, "snippet-files", fileName);
+            if (java.nio.file.Files.isRegularFile(path)) {
+                try {
+                    return java.nio.file.Files.readString(path);
+                } catch (java.io.IOException e) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * GROOVY-11938 stage 2: extract a named region from a snippet file.
+     * Regions are bounded by {@code // @start region=NAME} and
+     * {@code // @end [region=NAME]} markers. The markers themselves are
+     * stripped from the returned slice. Returns {@code null} if the region
+     * isn't found.
+     */
+    private static String extractRegion(String source, String regionName) {
+        String[] lines = source.split("\n", -1);
+        int startIdx = -1;
+        int endIdx = -1;
+        java.util.regex.Pattern startPat = java.util.regex.Pattern.compile(
+                "//\\s*@start\\b[^\\n]*\\bregion\\s*=\\s*(['\"]?)" + java.util.regex.Pattern.quote(regionName) + "\\1");
+        java.util.regex.Pattern endPat = java.util.regex.Pattern.compile(
+                "//\\s*@end\\b(?:[^\\n]*\\bregion\\s*=\\s*(['\"]?)" + java.util.regex.Pattern.quote(regionName) + "\\1)?");
+        for (int k = 0; k < lines.length; k++) {
+            if (startIdx < 0 && startPat.matcher(lines[k]).find()) {
+                startIdx = k + 1;
+            } else if (startIdx >= 0 && endPat.matcher(lines[k]).find()) {
+                endIdx = k;
+                break;
+            }
+        }
+        if (startIdx < 0 || endIdx < 0) return null;
+        StringBuilder sb = new StringBuilder();
+        for (int k = startIdx; k < endIdx; k++) {
+            if (k > startIdx) sb.append('\n');
+            sb.append(lines[k]);
+        }
+        return sb.toString();
     }
 
     /**
