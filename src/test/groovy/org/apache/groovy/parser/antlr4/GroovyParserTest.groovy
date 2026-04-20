@@ -460,6 +460,7 @@ final class GroovyParserTest {
         compilerConfiguration.setOptimizationOptions([(CompilerConfiguration.RUNTIME_GROOVYDOC): true])
 
         doRunAndTestAntlr4('core/Groovydoc_01x.groovy', compilerConfiguration)
+        doRunAndTestAntlr4('core/Groovydoc_02x.groovy', compilerConfiguration)
     }
 
     @Test
