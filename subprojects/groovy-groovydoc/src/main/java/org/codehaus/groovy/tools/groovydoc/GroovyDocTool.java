@@ -36,6 +36,7 @@ public class GroovyDocTool {
     private final GroovyRootDocBuilder rootDocBuilder;
     private final GroovyDocTemplateEngine templateEngine;
     private final ParserConfiguration.LanguageLevel javaLanguageLevel;
+    private final String[] sourcepaths;
 
     protected Properties properties;
 
@@ -65,6 +66,7 @@ public class GroovyDocTool {
      * @param properties       additional properties to be used when generating the groovydoc
      */
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, String javaVersion, Properties properties) {
+        this.sourcepaths = sourcepaths == null ? new String[0] : java.util.Arrays.copyOf(sourcepaths, sourcepaths.length);
         rootDocBuilder = new GroovyRootDocBuilder(sourcepaths, links, properties);
         javaLanguageLevel = calculateLanguageLevel(javaVersion);
 
@@ -152,7 +154,7 @@ public class GroovyDocTool {
         if ("true".equals(properties.getProperty("packageScope"))) properties.setProperty("protectedScope", "true");
         if ("true".equals(properties.getProperty("protectedScope"))) properties.setProperty("publicScope", "true");
         if (templateEngine != null) {
-            GroovyDocWriter writer = new GroovyDocWriter(output, templateEngine, properties);
+            GroovyDocWriter writer = new GroovyDocWriter(output, templateEngine, properties, sourcepaths);
             GroovyRootDoc rootDoc = rootDocBuilder.getRootDoc();
             writer.writeRoot(rootDoc, destdir);
             writer.writePackages(rootDoc, destdir);

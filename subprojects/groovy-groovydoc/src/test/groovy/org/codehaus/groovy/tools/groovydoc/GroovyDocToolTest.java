@@ -131,6 +131,55 @@ public class GroovyDocToolTest extends GroovyTestCase {
             doc.contains("https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html"));
     }
 
+    // GROOVY-5986
+    public void testDocFilesAndSnippetFilesAreCopiedIntoOutput() throws Exception {
+        String fixtureSourcePath = "src/test/resources/docfiles-fixture";
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+
+        java.nio.file.Path tmpOut = java.nio.file.Files.createTempDirectory("groovydoc-docfiles-");
+        try {
+            GroovyDocTool tool = new GroovyDocTool(
+                new FileSystemResourceManager("src/main/resources"),
+                new String[]{fixtureSourcePath},
+                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                new ArrayList<>(), null, new Properties()
+            );
+            tool.add(List.of(pkg + "/HasDocFiles.groovy"));
+            tool.renderToOutput(new FileOutputTool(), tmpOut.toString());
+
+            java.nio.file.Path docFilesSample = tmpOut.resolve(pkg + "/doc-files/sample.html");
+            java.nio.file.Path docFilesNested = tmpOut.resolve(pkg + "/doc-files/sub/nested.txt");
+            java.nio.file.Path snippetFile    = tmpOut.resolve(pkg + "/snippet-files/Example.groovy");
+
+            assertTrue("Expected doc-files/sample.html to be copied, not found at " + docFilesSample,
+                    java.nio.file.Files.isRegularFile(docFilesSample));
+            assertTrue("Expected doc-files/sub/nested.txt (nested subdir) to be copied, not found at " + docFilesNested,
+                    java.nio.file.Files.isRegularFile(docFilesNested));
+            assertTrue("Expected snippet-files/Example.groovy to be copied, not found at " + snippetFile,
+                    java.nio.file.Files.isRegularFile(snippetFile));
+
+            String sampleContent = java.nio.file.Files.readString(docFilesSample);
+            assertTrue("doc-files/sample.html content mismatch", sampleContent.contains("GROOVY-5986 sample doc-files content"));
+            String nestedContent = java.nio.file.Files.readString(docFilesNested);
+            assertTrue("doc-files/sub/nested.txt content mismatch", nestedContent.contains("nested doc-files content"));
+            String snippetContent = java.nio.file.Files.readString(snippetFile);
+            assertTrue("snippet-files/Example.groovy content mismatch", snippetContent.contains("hello from Example"));
+        } finally {
+            deleteRecursively(tmpOut);
+        }
+    }
+
+    private static void deleteRecursively(java.nio.file.Path root) throws java.io.IOException {
+        if (!java.nio.file.Files.exists(root)) return;
+        try (java.util.stream.Stream<java.nio.file.Path> stream = java.nio.file.Files.walk(root)) {
+            stream.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                try { java.nio.file.Files.delete(p); } catch (java.io.IOException ignored) {}
+            });
+        }
+    }
+
     // GROOVY-9057
     public void testParseErrorIsTrackedInErrorCount() throws Exception {
         assertEquals("Initial error count should be zero", 0, xmlToolForTests.getErrorCount());

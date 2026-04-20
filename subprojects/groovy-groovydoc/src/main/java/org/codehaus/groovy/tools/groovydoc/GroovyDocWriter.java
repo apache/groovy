@@ -25,8 +25,16 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.tools.shell.util.Logger;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 /**
  * Write GroovyDoc resources to destination.
@@ -36,7 +44,15 @@ public class GroovyDocWriter {
     private final OutputTool output;
     private final GroovyDocTemplateEngine templateEngine;
     private static final String FS = "/";
+    /**
+     * Per-package subdirectories in source whose contents are mirrored verbatim
+     * into the output. GROOVY-5986 ({@code doc-files}) is the Javadoc-inherited
+     * case; GROOVY-11938 ({@code snippet-files}, for {@code {@snippet file=...}})
+     * piggybacks on the same scanner.
+     */
+    private static final List<String> RESOURCE_DIRS = Arrays.asList("doc-files", "snippet-files");
     private final Properties properties;
+    private final String[] sourcepaths;
 
     @Deprecated
     public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
@@ -44,9 +60,14 @@ public class GroovyDocWriter {
     }
 
     public GroovyDocWriter(OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
+        this(output, templateEngine, properties, null);
+    }
+
+    public GroovyDocWriter(OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties, String[] sourcepaths) {
         this.output = output;
         this.templateEngine = templateEngine;
         this.properties = properties;
+        this.sourcepaths = sourcepaths == null ? new String[0] : Arrays.copyOf(sourcepaths, sourcepaths.length);
     }
 
     public void writeClasses(GroovyRootDoc rootDoc, String destdir) throws Exception {
@@ -70,6 +91,7 @@ public class GroovyDocWriter {
             if (new File(packageDoc.name()).isAbsolute()) continue;
             output.makeOutputArea(destdir + FS + packageDoc.name());
             writePackageToOutput(packageDoc, destdir);
+            copyResourceFiles(packageDoc, destdir);
         }
         StringBuilder sb = new StringBuilder();
         for (GroovyPackageDoc packageDoc : rootDoc.specifiedPackages()) {
@@ -79,6 +101,44 @@ public class GroovyDocWriter {
         String destFileName = destdir + FS + "package-list";
         log.debug("Generating " + destFileName);
         output.writeToOutput(destFileName, sb.toString(), properties.getProperty("fileEncoding"));
+    }
+
+    /**
+     * GROOVY-5986 / GROOVY-11938: mirror any {@code doc-files/} or
+     * {@code snippet-files/} subdirectory found under the package in any
+     * sourcepath entry into the corresponding output package. Matches
+     * Javadoc's "Miscellaneous Unprocessed Files" behaviour.
+     */
+    private void copyResourceFiles(GroovyPackageDoc packageDoc, String destdir) {
+        for (String sourcepath : sourcepaths) {
+            for (String resourceDir : RESOURCE_DIRS) {
+                Path srcDir = Paths.get(sourcepath, packageDoc.name(), resourceDir);
+                if (!Files.isDirectory(srcDir)) continue;
+                Path dstDir = Paths.get(destdir, packageDoc.name(), resourceDir);
+                copyTree(srcDir, dstDir);
+            }
+        }
+    }
+
+    private void copyTree(Path srcDir, Path dstDir) {
+        try (Stream<Path> stream = Files.walk(srcDir)) {
+            stream.forEach(srcFile -> {
+                Path rel = srcDir.relativize(srcFile);
+                Path dstFile = dstDir.resolve(rel);
+                try {
+                    if (Files.isDirectory(srcFile)) {
+                        Files.createDirectories(dstFile);
+                    } else {
+                        Files.createDirectories(dstFile.getParent());
+                        Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (IOException e) {
+                    log.warn("Failed to copy " + srcFile + " to " + dstFile + ": " + e.getMessage());
+                }
+            });
+        } catch (IOException e) {
+            log.warn("Failed to walk " + srcDir + ": " + e.getMessage());
+        }
     }
 
     public void writePackageToOutput(GroovyPackageDoc packageDoc, String destdir) throws Exception {
