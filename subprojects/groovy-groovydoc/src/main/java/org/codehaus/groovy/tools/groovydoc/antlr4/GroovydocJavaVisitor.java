@@ -328,7 +328,15 @@ public class GroovydocJavaVisitor
             String name = an.getNameAsString();
             if ("Internal".equals(name) || name.endsWith(".Internal")) return true;
         }
-        if (n instanceof FieldDeclaration fd && fd.getVariable(0).getNameAsString().contains("$")) return true;
+        if (n instanceof FieldDeclaration fd) {
+            // Java allows multiple variables per field declaration (`int a, b$;`).
+            // Treat the whole declaration as internal if *any* variable name
+            // contains the synthetic-name marker; picking only the first would
+            // mis-classify `int a, b$;` as non-internal.
+            for (int k = 0; k < fd.getVariables().size(); k++) {
+                if (fd.getVariable(k).getNameAsString().contains("$")) return true;
+            }
+        }
         if (n instanceof MethodDeclaration md && md.getNameAsString().contains("$")) return true;
         if (n instanceof ConstructorDeclaration cd && cd.getNameAsString().contains("$")) return true;
         return false;
