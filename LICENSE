@@ -268,3 +268,14 @@ The stylesheet.css file (originally normalize.css) is used by the
 groovydoc and docgenerator components for groovy-jdk/gapi documentation.
 It is made available under a MIT License:
 licenses/normalize-stylesheet-license.txt
+
+------------------------------------------------------------------------
+
+Prism License
+
+The prism.js, prism.min.css, prism-dark.min.css, and the
+prism-*.min.js language components bundled by the groovydoc
+component provide client-side syntax highlighting for code
+snippets in the generated documentation. They are made available
+under a MIT License:
+licenses/prism-license.txt
