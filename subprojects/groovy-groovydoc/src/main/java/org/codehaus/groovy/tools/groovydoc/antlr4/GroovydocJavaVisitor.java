@@ -34,6 +34,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.RecordDeclaration;
 import com.github.javaparser.ast.body.TypeDeclaration;
+import com.github.javaparser.ast.comments.JavadocComment;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
@@ -129,8 +130,7 @@ public class GroovydocJavaVisitor
         enumConstantDoc.setPublic(true);
         currentClassDoc.addEnumConstant(enumConstantDoc);
         processAnnotations(enumConstantDoc, n);
-        n.getJavadocComment().ifPresent(javadocComment ->
-                enumConstantDoc.setRawCommentText(javadocComment.getContent()));
+        applyJavadocComment(n.getJavadocComment(), enumConstantDoc);
         super.visit(n, arg);
     }
 
@@ -156,10 +156,13 @@ public class GroovydocJavaVisitor
         fieldDoc.setPublic(true);
         processAnnotations(fieldDoc, n);
         currentClassDoc.add(fieldDoc);
-        n.getJavadocComment().ifPresent(javadocComment ->
-                fieldDoc.setRawCommentText(javadocComment.getContent()));
+        applyJavadocComment(n.getJavadocComment(), fieldDoc);
         n.getDefaultValue().ifPresent(defValue -> {
-            fieldDoc.setRawCommentText(fieldDoc.getRawCommentText() + "\n* @default " + defValue);
+            // For Markdown-form comments (no `*` line prefix), the synthesised
+            // @default tag goes on a bare line; traditional /** */ form keeps
+            // the `* ` prefix for visual parity with existing continuation lines.
+            String prefix = fieldDoc.isMarkdown() ? "\n@default " : "\n* @default ";
+            fieldDoc.setRawCommentText(fieldDoc.getRawCommentText() + prefix + defValue);
             fieldDoc.setConstantValueExpression(defValue.toString());
         });
         super.visit(n, arg);
@@ -246,8 +249,7 @@ public class GroovydocJavaVisitor
         processAnnotations(currentClassDoc, n);
         currentClassDoc.setFullPathName(withSlashes(packagePath + FS + name));
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
-        n.getJavadocComment().ifPresent(javadocComment ->
-                currentClassDoc.setRawCommentText(javadocComment.getContent()));
+        applyJavadocComment(n.getJavadocComment(), currentClassDoc);
         return parent;
     }
 
@@ -392,8 +394,7 @@ public class GroovydocJavaVisitor
     }
 
     private void setConstructorOrMethodCommon(CallableDeclaration<? extends CallableDeclaration<?>> n, SimpleGroovyExecutableMemberDoc methOrCons) {
-        n.getJavadocComment().ifPresent(javadocComment ->
-                methOrCons.setRawCommentText(javadocComment.getContent()));
+        applyJavadocComment(n.getJavadocComment(), methOrCons);
         NodeList<Modifier> mods = n.getModifiers();
         if (currentClassDoc.isInterface()) {
             mods.add(Modifier.publicModifier());
@@ -433,14 +434,62 @@ public class GroovydocJavaVisitor
         field.setType(makeType(f.getVariable(0).getType()));
         setModifiers(f.getModifiers(), field);
         processAnnotations(field, f);
-        f.getJavadocComment().ifPresent(javadocComment ->
-                field.setRawCommentText(javadocComment.getContent()));
+        applyJavadocComment(f.getJavadocComment(), field);
         currentClassDoc.add(field);
         super.visit(f, arg);
     }
 
     public Map<String, GroovyClassDoc> getGroovyClassDocs() {
         return classDocs;
+    }
+
+    /**
+     * Apply the content of a JavaParser-recognised Javadoc comment to the
+     * given target. Handles both traditional {@code /** ... *}{@code /} form and
+     * JEP 467 Markdown form (runs of {@code ///} lines). For Markdown, the
+     * {@code ///} line prefixes are stripped and the target is flagged via
+     * {@link SimpleGroovyDoc#setMarkdown(boolean)} so downstream rendering
+     * routes through CommonMark.
+     */
+    private static void applyJavadocComment(Optional<JavadocComment> optComment, SimpleGroovyDoc target) {
+        if (!optComment.isPresent()) return;
+        String content = optComment.get().getContent();
+        String markdownBody = tryExtractMarkdownBody(content);
+        if (markdownBody != null) {
+            target.setRawCommentText(markdownBody);
+            target.setMarkdown(true);
+        } else {
+            target.setRawCommentText(content);
+        }
+    }
+
+    /**
+     * If {@code content} is a JEP 467 Markdown Javadoc body (every non-blank
+     * line starts with {@code ///}), return the body with those line prefixes
+     * stripped (one optional trailing space after {@code ///} is also
+     * consumed). Returns {@code null} if the content isn't Markdown form.
+     */
+    private static String tryExtractMarkdownBody(String content) {
+        if (content == null || content.isEmpty()) return null;
+        String[] lines = content.split("\n", -1);
+        boolean anyMarkdownLine = false;
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) continue;
+            if (!trimmed.startsWith("///")) return null;
+            anyMarkdownLine = true;
+        }
+        if (!anyMarkdownLine) return null;
+        StringBuilder body = new StringBuilder();
+        for (int k = 0; k < lines.length; k++) {
+            if (k > 0) body.append('\n');
+            String trimmed = lines[k].trim();
+            if (trimmed.isEmpty()) continue;
+            String rest = trimmed.substring(3);
+            if (rest.startsWith(" ")) rest = rest.substring(1);
+            body.append(rest);
+        }
+        return body.toString();
     }
 
 }
