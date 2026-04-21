@@ -44,14 +44,26 @@ import java.util.regex.Pattern;
  */
 public final class PreLanguageRewriter {
 
-    private static final Pattern PRE_PATTERN = Pattern.compile("<pre\\s*>([\\s\\S]*?)</pre>");
+    private static final Pattern PRE_PATTERN = Pattern.compile("<pre(\\s[^>]*)?>([\\s\\S]*?)</pre>");
 
     private PreLanguageRewriter() {}
 
     /**
-     * Returns {@code html} with bare {@code <pre>} blocks rewritten per the
-     * class contract. If {@code preLanguage} is {@code null} or empty, the
-     * input is returned unchanged.
+     * Returns {@code html} with {@code <pre>} blocks rewritten so Prism can
+     * highlight them. Three cases:
+     * <ul>
+     *   <li>Bare {@code <pre>body</pre>} with no attributes becomes
+     *       {@code <pre class="language-xxx"><code>body</code></pre>}.</li>
+     *   <li>{@code <pre class="...language-...">body</pre>} that lacks an
+     *       inner {@code <code>} gets its body wrapped in {@code <code>}
+     *       (Prism walks {@code <code>} descendants, so a language-classed
+     *       {@code <pre>} without a {@code <code>} child is skipped by the
+     *       highlighter).</li>
+     *   <li>All other cases — {@code <pre>} with an existing {@code <code>}
+     *       descendant, or with a class that doesn't mention
+     *       {@code language-*} — are left untouched.</li>
+     * </ul>
+     * No-op when {@code preLanguage} is {@code null} or empty.
      */
     public static String rewriteTags(String html, String preLanguage) {
         if (preLanguage == null || preLanguage.isEmpty()) return html;
@@ -59,12 +71,24 @@ public final class PreLanguageRewriter {
         StringBuilder sb = new StringBuilder();
         String langClass = "language-" + preLanguage;
         while (m.find()) {
-            String body = m.group(1);
+            String attrs = m.group(1); // null or leading-whitespace-prefixed attribute run
+            String body = m.group(2);
+            boolean hasCode = body.contains("<code");
             String replacement;
-            if (body.contains("<code")) {
-                replacement = "<pre class=\"" + langClass + "\">" + body + "</pre>";
+            if (attrs == null || attrs.trim().isEmpty()) {
+                // Bare <pre>: add class + wrap body in <code> (unless already present).
+                if (hasCode) {
+                    replacement = "<pre class=\"" + langClass + "\">" + body + "</pre>";
+                } else {
+                    replacement = "<pre class=\"" + langClass + "\"><code>" + body + "</code></pre>";
+                }
+            } else if (attrs.contains("language-") && !hasCode) {
+                // Already has a language-* class but no <code>; wrap body only.
+                replacement = "<pre" + attrs + "><code>" + body + "</code></pre>";
             } else {
-                replacement = "<pre class=\"" + langClass + "\"><code>" + body + "</code></pre>";
+                // <pre> with attributes that are either non-language (leave alone)
+                // or already contain a <code> descendant (leave alone).
+                continue;
             }
             m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
         }

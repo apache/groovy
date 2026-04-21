@@ -55,10 +55,12 @@ class PreLanguageRewriterTest {
     }
 
     @Test
-    void testPreWithExistingLanguageClassIsNotRewritten() {
+    void testPreWithExistingLanguageClassGetsCodeWrap() {
+        // <pre class="language-sql"> still needs a <code> child for Prism
+        // to highlight it; the wrap is added without touching the class.
         String input = '<pre class="language-sql">select 1</pre>'
         String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
-        assert out == input
+        assert out == '<pre class="language-sql"><code>select 1</code></pre>'
     }
 
     @Test
@@ -82,5 +84,32 @@ class PreLanguageRewriterTest {
         String input = '<pre>x</pre>'
         assert PreLanguageRewriter.rewriteTags(input, '') == input
         assert PreLanguageRewriter.rewriteTags(input, null) == input
+    }
+
+    @Test
+    void testPreWithDualLanguageClassGetsCodeWrap() {
+        // <pre class="language-groovy groovyTestCase"> has a language-* class
+        // but no <code> inner — Prism requires <code>, so body is wrapped.
+        String input = '<pre class="language-groovy groovyTestCase">assert 1 == 1</pre>'
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
+        assert out == '<pre class="language-groovy groovyTestCase"><code>assert 1 == 1</code></pre>'
+    }
+
+    @Test
+    void testPreWithLanguageClassAndInnerCodeLeftAlone() {
+        // Already has both a language-* class and a <code> descendant.
+        String input = '<pre class="language-groovy"><code>x</code></pre>'
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
+        assert out == input
+    }
+
+    @Test
+    void testPreWithNonLanguageClassAndNoCodeLeftAlone() {
+        // e.g. <pre class="groovyTestCase"> — old-form, no language class.
+        // The sweep should have combined it with language-groovy, but if
+        // one slipped through, we don't silently inject the class here.
+        String input = '<pre class="groovyTestCase">body</pre>'
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
+        assert out == input
     }
 }
