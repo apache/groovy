@@ -22,7 +22,7 @@ import java.util.regex.Pattern
 
 /**
  * <code>JavadocAssertionTestBuilder</code> dynamically creates test cases from Groovy assertions placed within
- * the doc comments of a source file. Three authoring forms are recognised:
+ * the doc comments of a source file. Four authoring forms are recognised:
  *
  * <ol>
  * <li>Traditional Javadoc with an HTML wrapper carrying <code>class="groovyTestCase"</code>:
@@ -38,29 +38,47 @@ import java.util.regex.Pattern
  * /// assert 2 + 2 == 4
  * /// ```
  * </pre></li>
+ * <li>JEP 413 <code>{@snippet}</code> tag with a <code>class</code> attribute containing <code>groovyTestCase</code>.
+ * The body is brace-balanced per JEP 413, so the containing assertion may use literal <code>&lt;</code> /
+ * <code>&gt;</code> without HTML escaping. Any <code>{</code> / <code>}</code> pairs inside the body must still
+ * balance (groovydoc's snippet parser does dumb brace counting with no string-awareness; the same rule applies here).
+ * <pre>/&#42;&#42; {&#64;snippet lang="groovy" class="groovyTestCase" :
+ *   assert "a&lt;b&gt;c".size() == 5
+ * } &#42;/</pre></li>
  * </ol>
  *
  * When extracting the code for an HTML-wrapper test, single-line snippets of code within a {{@code @code} ...}
  * tag have the javadoc {@code code} tag stripped, and HTML entities are converted back so that {@code &lt;} and
- * {@code &gt;} become {@code <} and {@code >}. Fenced-block extractions pass through without HTML decoding
- * because Markdown fenced blocks hold raw source already.
+ * {@code &gt;} become {@code <} and {@code >}. Fenced-block and {@code {@snippet}} extractions pass through
+ * without HTML decoding because those forms hold raw source already.
  */
 class JavadocAssertionTestBuilder {
     // TODO write tests for this classes functionality
     // Match both traditional `/&#42;&#42; ... &#42;/` Javadoc and contiguous `///` Markdown doc-comment runs.
     private static final Pattern javadocPattern =
         Pattern.compile( /(?ims)\/\*\*.*?\*\/|(?-s:(?:^[ \t]*\/\/\/[^\n]*\n?)+)/ )
-    // Two authoring forms for the assertion inside a doc comment:
+    // Three authoring forms for the assertion inside a doc comment:
     //   - HTML wrapper:   <pre class="groovyTestCase">...</pre>  (or <code>, <samp>, ...).
     //     Other classes may be present alongside groovyTestCase — e.g.
     //     <pre class="language-groovy groovyTestCase"> combines Prism highlighting
     //     with test extraction.
     //   - Fenced Markdown: ```groovy groovyTestCase ... ``` — only recognised within `///` runs
     //     (Javadoc `/** */` is not Markdown, so there's no ambiguity).
+    //   - JEP 413 {@snippet}: {@snippet lang="groovy" class="groovyTestCase" : body}
+    //     The body is brace-balanced per JEP 413, so regex can't capture it
+    //     directly. The opener regex below locates the tag; the body is then
+    //     extracted programmatically by walking braces in findSnippetTestCaseTags.
     private static final Pattern assertionPattern =
         Pattern.compile(
             /(?ims)<([a-z]+)\s+class\s*=\s*['"][^'"]*\bgroovyTestCase\b[^'"]*['"]\s*>.*?<\s*\/\s*\1>/
             + /|(?m:^[ \t]*\/\/\/[ \t]*```groovy[ \t]+groovyTestCase\b[^\n]*\n(?s:.*?)^[ \t]*\/\/\/[ \t]*```)/
+        )
+    // {@snippet ... class="...groovyTestCase..." ... :   — opener up to the body-introducing colon.
+    // [^:{}]* keeps the match inside a single tag; attribute values don't
+    // contain braces or colons in practice.
+    private static final Pattern snippetOpenerPattern =
+        Pattern.compile(
+            /(?s)\{@snippet\b[^:{}]*class\s*=\s*['"][^'"]*\bgroovyTestCase\b[^'"]*['"][^:{}]*:/
         )
 
     Class buildTest(String filename, String code) {
@@ -85,9 +103,41 @@ class JavadocAssertionTestBuilder {
 
         code.eachMatch(javadocPattern) { javadoc ->
             assertions.addAll(javadoc.findAll(assertionPattern))
+            assertions.addAll(findSnippetTestCaseTags(javadoc))
         }
 
         return assertions
+    }
+
+    // Scan {@snippet ... class="...groovyTestCase..." : body } tags and return
+    // each full tag string from '{@snippet' to the matching close brace.
+    // Body brace-balancing is done programmatically because regex can't count
+    // nested braces — this mirrors the parser in
+    // org.codehaus.groovy.tools.groovydoc.TagRenderer which does the same dumb
+    // counting (no string/comment awareness) so the semantics stay consistent
+    // between rendered output and test extraction.
+    private static List<String> findSnippetTestCaseTags(String javadoc) {
+        List<String> results = []
+        def m = snippetOpenerPattern.matcher(javadoc)
+        while (m.find()) {
+            int start = m.start()
+            int bodyStart = m.end()  // immediately after the `:` that opens the body
+            int depth = 1
+            int j = bodyStart
+            int n = javadoc.length()
+            while (j < n && depth > 0) {
+                char c = javadoc.charAt(j)
+                if (c == (char) '{') depth++
+                else if (c == (char) '}') {
+                    depth--
+                    if (depth == 0) break
+                }
+                j++
+            }
+            if (depth != 0) continue  // unterminated tag; skip
+            results << javadoc.substring(start, j + 1)
+        }
+        return results
     }
 
     private String getTestName(String filename) {
@@ -121,13 +171,45 @@ class JavadocAssertionTestBuilder {
     }
 
     private String getAssertion(String tag) {
-        // Dispatch on the leading non-whitespace character — the unified
-        // assertion pattern can match either an HTML wrapper (`<...>...</...>`)
-        // or a fenced code block (whose first non-blank line starts with
-        // `///` leading a backtick fence).
+        // Dispatch on the leading non-whitespace character.
         String trimmed = tag.trim()
         if (trimmed.startsWith('<')) return getHtmlWrapperAssertion(tag)
+        if (trimmed.startsWith('{@snippet')) return getSnippetAssertion(tag)
         return getFencedAssertion(tag)
+    }
+
+    // Extract the body of a {@snippet ... class="...groovyTestCase..." : body }
+    // tag. The body is the text between the body-opener `:` and the matching
+    // closing `}` (tag was pre-sliced by findSnippetTestCaseTags). Line
+    // prefixes (`*` for /** */ comments, `///` for Markdown doc comments) are
+    // stripped. No HTML-entity decoding — snippet bodies are verbatim per JEP 413.
+    private String getSnippetAssertion(String tag) {
+        int colon = findSnippetBodyColon(tag)
+        int bodyEnd = tag.lastIndexOf('}')
+        if (colon < 0 || bodyEnd <= colon) return ''
+        String body = tag.substring(colon + 1, bodyEnd)
+        return body.replaceAll("(?m)^\\s*(?:\\*|\\/\\/\\/)\\s?", "")
+    }
+
+    // Find the `:` that introduces the body, skipping any `:` that appears
+    // inside a quoted attribute value. Returns -1 if not found.
+    private static int findSnippetBodyColon(String tag) {
+        int i = '{@snippet'.length()
+        int n = tag.length()
+        while (i < n) {
+            char c = tag.charAt(i)
+            if (c == (char) '"' || c == (char) "'") {
+                char q = c
+                i++
+                while (i < n && tag.charAt(i) != q) i++
+                if (i < n) i++  // consume closing quote
+            } else if (c == (char) ':') {
+                return i
+            } else {
+                i++
+            }
+        }
+        return -1
     }
 
     private String getHtmlWrapperAssertion(String tag) {

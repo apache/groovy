@@ -65,6 +65,65 @@ class JavadocAssertionTestBuilderTest {
     }
 
     @Test
+    void testSnippetTagWithGroovyTestCaseClassIsRecognised() {
+        // {@snippet} body is verbatim per JEP 413, so no HTML-entity escaping.
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" class="groovyTestCase" :
+                   | * assert "a<b>c".size() == 5
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    @Test
+    void testSnippetTagAssertionsAreExecuted() {
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" class="groovyTestCase" :
+                   | * assert false
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        shouldFail(AssertionError) {
+            test.newInstance().testAssertionFromSomeClassLine2()
+        }
+    }
+
+    @Test
+    void testSnippetTagWithBalancedBracesInBody() {
+        // Brace-balanced body — closures and GStrings contribute {/} pairs that
+        // must balance for the tag parser to find the correct closing brace.
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" class="groovyTestCase" :
+                   | * def items = [1, 2, 3]
+                   | * def sum = items.inject(0) { acc, x -> acc + x }
+                   | * assert sum == 6
+                   | * assert "${sum}" == "6"
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine2()
+    }
+
+    @Test
+    void testSnippetTagWithoutGroovyTestCaseClassIsIgnored() {
+        Class test = builder.buildTest("SomeClass.java",
+                '''/**
+                   | * {@snippet lang="groovy" :
+                   | * assert false
+                   | * }
+                   | */
+                   |public class SomeClass { }'''.stripMargin())
+        // No groovyTestCase marker — snippet is a plain example, not a test.
+        assert test == null
+    }
+
+    @Test
     void testLineNumbering() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert true </pre>

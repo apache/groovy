@@ -479,6 +479,39 @@ The language is optional; when set, it becomes the Prism language class
 used for syntax highlighting. Any text from the opening brace to the
 matching closing brace is the snippet body.
 
+==== Brace balancing in the inline form
+
+Body parsing is a simple brace counter: the parser starts at depth 1 on
+the `{` after `{@snippet`, increments on every `{` it sees, decrements on
+every `}`, and the matching close is reached when depth returns to zero.
+The counter has *no awareness* of string literals, character escapes, or
+comments, so every `{` in the body must have a matching `}`, including
+braces inside GString interpolations and string literals. Code like
+`"${x}"` or `catalog.each { book -> ... }` is fine — GString `${...}`
+blocks and closure bodies already balance. A lone `{` or `}` inside a
+plain string, however, will confuse the parser:
+
+[source,groovy]
+----
+/**
+ * {@snippet lang="groovy" :
+ * println '}'    // <-- stray literal } terminates the snippet body here
+ * }
+ */
+----
+
+Three workarounds when an example really needs an unbalanced literal
+brace:
+
+* Rewrite the example so all braces balance (often trivially possible,
+  e.g. `println '${"}"}'` or a string-concatenation alternative).
+* Move the sample into a file and use the external form
+  (`{@snippet file="Example.groovy"}`), which reads the file verbatim
+  without brace-balanced parsing.
+* Write the `}` as the HTML entity `&#125;`, which groovydoc counts as a
+  single non-brace character during body extraction but renders as `}`
+  in the output.
+
 ==== External file reference
 
 Place the source of the snippet in a `snippet-files/` subdirectory of
