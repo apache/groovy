@@ -23,6 +23,7 @@ pluginManager.apply(GroovydocAntPlugin)
 
 groovydocAnt {
     syntaxHighlighter = 'prism'
+    preLanguage = 'groovy'
 }
 
 configurations {

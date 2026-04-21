@@ -77,6 +77,7 @@ class GroovydocAntPlugin implements Plugin<Project> {
             gdoc.inputs.property('antNoHelp', extension.noHelp)
             gdoc.inputs.property('antSyntaxHighlighter', extension.syntaxHighlighter)
             gdoc.inputs.property('antTheme', extension.theme)
+            gdoc.inputs.property('antPreLanguage', extension.preLanguage)
             gdoc.inputs.files(extension.additionalStylesheets)
                     .withPropertyName('antAdditionalStylesheets')
                     .optional(true)
@@ -142,6 +143,9 @@ class GroovydocAntPlugin implements Plugin<Project> {
 
         String jv = extension.javaVersion.getOrNull()
         if (jv) antArgs.put('javaVersion', jv)
+
+        String preLang = extension.preLanguage.getOrNull()
+        if (preLang) antArgs.put('preLanguage', preLang)
 
         def overviewText = gdoc.overviewText
         if (overviewText != null) {

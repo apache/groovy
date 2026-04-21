@@ -43,6 +43,7 @@ class GroovydocAntExtension {
     final Property<Boolean> noHelp
     final Property<String> syntaxHighlighter
     final Property<String> theme
+    final Property<String> preLanguage
     final ConfigurableFileCollection additionalStylesheets
 
     @Inject
@@ -55,6 +56,7 @@ class GroovydocAntExtension {
         noHelp = objects.property(Boolean).convention(false)
         syntaxHighlighter = objects.property(String).convention('none')
         theme = objects.property(String).convention('auto')
+        preLanguage = objects.property(String).convention('')
         additionalStylesheets = objects.fileCollection()
     }
 }

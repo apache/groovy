@@ -50,6 +50,21 @@ class JavadocAssertionTestBuilderTest {
     }
 
     @Test
+    void testCombinedClassesAreRecognised() {
+        Class test = builder.buildTest("SomeClass.java",
+                '/** <pre class="language-groovy groovyTestCase"> assert 1 + 1 == 2 </pre> */ public class SomeClass { }')
+        assert test != null
+        test.newInstance().testAssertionFromSomeClassLine1()
+    }
+
+    @Test
+    void testSimilarClassNameIsNotMatched() {
+        Class test = builder.buildTest("SomeClass.java",
+                '/** <pre class="notAGroovyTestCaseAtAll"> assert false </pre> */ public class SomeClass { }')
+        assert test == null
+    }
+
+    @Test
     void testLineNumbering() {
         Class test = builder.buildTest("SomeClass.java", '''
             /** <pre class="groovyTestCase"> assert true </pre>

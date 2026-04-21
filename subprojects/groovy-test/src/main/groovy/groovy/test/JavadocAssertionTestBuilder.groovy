@@ -51,12 +51,15 @@ class JavadocAssertionTestBuilder {
     private static final Pattern javadocPattern =
         Pattern.compile( /(?ims)\/\*\*.*?\*\/|(?-s:(?:^[ \t]*\/\/\/[^\n]*\n?)+)/ )
     // Two authoring forms for the assertion inside a doc comment:
-    //   - HTML wrapper:   <pre class="groovyTestCase">...</pre>  (or <code>, <samp>, ...)
+    //   - HTML wrapper:   <pre class="groovyTestCase">...</pre>  (or <code>, <samp>, ...).
+    //     Other classes may be present alongside groovyTestCase — e.g.
+    //     <pre class="language-groovy groovyTestCase"> combines Prism highlighting
+    //     with test extraction.
     //   - Fenced Markdown: ```groovy groovyTestCase ... ``` — only recognised within `///` runs
     //     (Javadoc `/** */` is not Markdown, so there's no ambiguity).
     private static final Pattern assertionPattern =
         Pattern.compile(
-            /(?ims)<([a-z]+)\s+class\s*=\s*['"]groovyTestCase['"]\s*>.*?<\s*\/\s*\1>/
+            /(?ims)<([a-z]+)\s+class\s*=\s*['"][^'"]*\bgroovyTestCase\b[^'"]*['"]\s*>.*?<\s*\/\s*\1>/
             + /|(?m:^[ \t]*\/\/\/[ \t]*```groovy[ \t]+groovyTestCase\b[^\n]*\n(?s:.*?)^[ \t]*\/\/\/[ \t]*```)/
         )
 

@@ -74,6 +74,7 @@ public class Groovydoc extends Task {
     private String syntaxHighlighter;
     private String theme;
     private String javaVersion;
+    private String preLanguage;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
     private final List<LinkArgument> links = new ArrayList<>();
@@ -169,6 +170,21 @@ public class Groovydoc extends Task {
      */
     public void setJavaVersion(String javaVersion) {
         this.javaVersion = javaVersion;
+    }
+
+    /**
+     * Default language id for {@code <pre>} blocks in rendered doc comments
+     * that carry no {@code class=} attribute. When set (e.g. {@code "groovy"}),
+     * a post-pass rewrites such {@code <pre>} openings to
+     * {@code <pre class="language-xxx">}, which enables Prism syntax
+     * highlighting for legacy doc-comment code blocks without touching
+     * source files. {@code <pre>} blocks that already have any {@code class}
+     * attribute (including {@code class="groovyTestCase"}) are left alone.
+     *
+     * @param preLanguage the language id, or empty/null to disable
+     */
+    public void setPreLanguage(String preLanguage) {
+        this.preLanguage = preLanguage;
     }
 
     /**
@@ -642,6 +658,46 @@ public class Groovydoc extends Task {
             } catch (IOException e) {
                 LOGGER.log(WARNING, "Unable to copy additional stylesheet ''{0}'': {1}",
                         f.getAbsolutePath(), e.getMessage());
+            }
+        }
+        if (preLanguage != null && !preLanguage.isEmpty()) {
+            applyPreLanguageToHtml(destDir);
+        }
+    }
+
+    /**
+     * Walk the generated HTML under {@code destDir} and rewrite each
+     * classless {@code <pre>} opening tag to {@code <pre class="language-xxx">}.
+     * {@code <pre>} tags that already carry a {@code class} attribute — e.g.
+     * {@code <pre class="groovyTestCase">}, or blocks emitted for inline
+     * {@code {@snippet}} tags — are untouched.
+     */
+    /**
+     * Match {@code <pre>} or {@code <pre\s*>} (no attributes at all). Any
+     * existing attribute — class, id, style, data-... — blocks the rewrite so
+     * we only touch the legacy bare form. Package-private for test access.
+     */
+    static String rewritePreTags(String html, String preLanguage) {
+        return html.replaceAll("<pre\\s*>", "<pre class=\"language-" + preLanguage + "\">");
+    }
+
+    private void applyPreLanguageToHtml(File dir) {
+        File[] entries = dir.listFiles();
+        if (entries == null) return;
+        for (File f : entries) {
+            if (f.isDirectory()) {
+                applyPreLanguageToHtml(f);
+            } else if (f.getName().endsWith(".html")) {
+                try {
+                    String html = ResourceGroovyMethods.getText(f);
+                    String rewritten = rewritePreTags(html, preLanguage);
+                    if (!rewritten.equals(html)) {
+                        ResourceGroovyMethods.setText(f, rewritten);
+                    }
+                } catch (IOException e) {
+                    LOGGER.log(WARNING, "Unable to apply preLanguage to ''{0}'': {1}",
+                            f.getAbsolutePath(), e.getMessage());
+                }
             }
         }
     }
