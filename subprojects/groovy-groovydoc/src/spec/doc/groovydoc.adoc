@@ -405,6 +405,7 @@ default stylesheet's CSS custom properties (`--fg`, `--bg`, `--link`,
 `--bg-panel`, `--border`, `--caption-bg`, and related semantic tokens).
 Doing so makes the added stylesheet automatically dark-mode aware.
 
+[[Groovydoc-Theme]]
 === Theme
 
 `-theme <mode>` / `theme="..."` controls the palette strategy:
