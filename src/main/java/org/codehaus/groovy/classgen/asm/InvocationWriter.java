@@ -763,7 +763,7 @@ public class InvocationWriter {
             if (controller.isConstructor()) {
                 // in this case we need one "this", so a SWAP will exchange
                 // "this" and Object[], a DUP_X1 will then copy the Object[]
-                /// to the last place in the stack:
+                // to the last place in the stack:
                 //     Object[],this -SWAP-> this,Object[]
                 //     this,Object[] -DUP_X1-> Object[],this,Object[]
                 mv.visitInsn(SWAP);
