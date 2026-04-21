@@ -63,8 +63,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.apache.groovy.ast.tools.AnnotatedNodeUtils.deemedInternal;
 import static org.apache.groovy.ast.tools.ExpressionUtils.transformInlineConstants;
@@ -222,17 +220,18 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
         return imports;
     }
 
-    private static final Pattern JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
-
     private String getDocContent(Groovydoc groovydoc) {
         if (groovydoc == null) return "";
         String result = groovydoc.getContent();
-        if (result == null) result = "";
-        Matcher m = JAVADOC_COMMENT_PATTERN.matcher(result);
-        if (m.find()) {
-            result = m.group(1).trim();
+        if (result == null) return "";
+        // The parser supplies the raw `/** ... */` token; strip the delimiters
+        // directly instead of a regex match. Equivalent to the former
+        // (?s)/\*\*(.*?)\*/ pattern but avoids a spurious CodeQL polynomial-
+        // regex alert and runs in linear time unambiguously.
+        if (result.length() >= 5 && result.startsWith("/**") && result.endsWith("*/")) {
+            return result.substring(3, result.length() - 2).trim();
         }
-        return result;
+        return result.trim();
     }
 
     /**
@@ -292,9 +291,10 @@ public class GroovydocVisitor extends ClassCodeVisitorSupport {
                     int close = src.indexOf("*/", i + 2);
                     if (close < 0) return "";
                     if (isJavadoc) {
-                        String full = src.substring(i, close + 2);
-                        Matcher m = JAVADOC_COMMENT_PATTERN.matcher(full);
-                        String content = m.find() ? m.group(1).trim() : "";
+                        // full = `/** ... */`; `close` is the first `*/` from
+                        // position i+2 so the delimiters bound exactly. Strip
+                        // them without a regex match.
+                        String content = src.substring(i + 3, close).trim();
                         LiftDecision decision = decideLift(src, close + 2);
                         switch (decision) {
                             case LIFT: return content;
