@@ -77,6 +77,20 @@ def javadocAll = tasks.register("javadocAll", Javadoc) {
     docAggregation.excludedFromJavadocs.each {
         exclude it
     }
+    options {
+        // Javadoc's {@snippet file=...} tag (JEP 413, JDK 18+) resolves
+        // external files via <snippet-path-entry>/<pkg>/snippet-files/<file>,
+        // falling back to <source-path-entry>/<pkg>/snippet-files/<file>.
+        // The aggregator feeds .java files from many modules directly, so
+        // Javadoc's default source-path inference doesn't cover each
+        // module's per-package snippet-files/ directory. Feed both paths
+        // explicitly when Javadoc supports the flag.
+        if (JavaVersion.current() >= JavaVersion.VERSION_18) {
+            def sourceDirs = configurations.allSources.asPath
+            addStringOption('-source-path', sourceDirs)
+            addStringOption('-snippet-path', sourceDirs)
+        }
+    }
 }
 
 def javadocAllJar = tasks.register("javadocAllJar", Jar) {
