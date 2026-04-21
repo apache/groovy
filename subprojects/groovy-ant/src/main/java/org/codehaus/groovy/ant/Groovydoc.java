@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -673,12 +675,38 @@ public class Groovydoc extends Task {
      * {@code {@snippet}} tags — are untouched.
      */
     /**
-     * Match {@code <pre>} or {@code <pre\s*>} (no attributes at all). Any
-     * existing attribute — class, id, style, data-... — blocks the rewrite so
-     * we only touch the legacy bare form. Package-private for test access.
+     * Rewrite bare {@code <pre>...</pre>} blocks — those with no attributes
+     * on the opening tag — so that Prism picks them up for syntax
+     * highlighting. {@code <pre>} tags that already have any attribute
+     * ({@code class}, {@code id}, anything) are left alone.
+     *
+     * <p>Prism only highlights {@code <code>} descendants of an element
+     * carrying a {@code language-xxx} class, so a bare {@code <pre>} body
+     * must be wrapped in {@code <code>} for highlighting to apply. If the
+     * body already contains a {@code <code>} (e.g. the canonical form
+     * emitted by {@code {@snippet}}), only the opening {@code <pre>} is
+     * given the class — no inner wrap is added, to avoid nested
+     * {@code <code><code>}.
+     *
+     * <p>Package-private for test access.
      */
     static String rewritePreTags(String html, String preLanguage) {
-        return html.replaceAll("<pre\\s*>", "<pre class=\"language-" + preLanguage + "\">");
+        Pattern p = Pattern.compile("<pre\\s*>([\\s\\S]*?)</pre>");
+        Matcher m = p.matcher(html);
+        StringBuilder sb = new StringBuilder();
+        String langClass = "language-" + preLanguage;
+        while (m.find()) {
+            String body = m.group(1);
+            String replacement;
+            if (body.contains("<code")) {
+                replacement = "<pre class=\"" + langClass + "\">" + body + "</pre>";
+            } else {
+                replacement = "<pre class=\"" + langClass + "\"><code>" + body + "</code></pre>";
+            }
+            m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+        }
+        m.appendTail(sb);
+        return sb.toString();
     }
 
     private void applyPreLanguageToHtml(File dir) {

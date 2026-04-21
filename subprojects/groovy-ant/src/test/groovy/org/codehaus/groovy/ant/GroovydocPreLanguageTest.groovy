@@ -29,17 +29,28 @@ import org.junit.jupiter.api.Test
 class GroovydocPreLanguageTest {
 
     @Test
-    void testBarePreIsRewritten() {
+    void testBarePreIsWrappedInCodeForPrism() {
+        // Prism only highlights <code> descendants of language-classed elements,
+        // so we must insert a <code> wrapper around bare <pre> bodies.
         String input = "<p>hi</p><pre>assert 1 == 1</pre>"
         String out = Groovydoc.rewritePreTags(input, 'groovy')
-        assert out == "<p>hi</p><pre class=\"language-groovy\">assert 1 == 1</pre>"
+        assert out == '<p>hi</p><pre class="language-groovy"><code>assert 1 == 1</code></pre>'
     }
 
     @Test
-    void testPreWithWhitespaceBeforeCloseIsRewritten() {
+    void testPreWithWhitespaceBeforeCloseIsWrappedInCode() {
         String input = "<pre   >code</pre>"
         String out = Groovydoc.rewritePreTags(input, 'groovy')
-        assert out.startsWith('<pre class="language-groovy">')
+        assert out == '<pre class="language-groovy"><code>code</code></pre>'
+    }
+
+    @Test
+    void testPreWithExistingInnerCodeOnlyGetsClassOnPre() {
+        // {@snippet} emits <pre><code class="language-xxx">...</code></pre>.
+        // Don't double-wrap; just add the class to the outer <pre>.
+        String input = '<pre><code class="language-groovy">assert 1 == 1</code></pre>'
+        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        assert out == '<pre class="language-groovy"><code class="language-groovy">assert 1 == 1</code></pre>'
     }
 
     @Test
@@ -68,7 +79,7 @@ class GroovydocPreLanguageTest {
     void testMultipleBlocksInSameFile() {
         String input = '<pre>first</pre> and <pre class="groovyTestCase">second</pre> and <pre>third</pre>'
         String out = Groovydoc.rewritePreTags(input, 'groovy')
-        int count = (out =~ /<pre class="language-groovy">/).count
+        int count = (out =~ /<pre class="language-groovy"><code>/).count
         assert count == 2
         assert out.contains('<pre class="groovyTestCase">second</pre>')
     }
