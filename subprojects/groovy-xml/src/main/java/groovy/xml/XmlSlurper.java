@@ -57,30 +57,30 @@ import static groovy.xml.XmlUtil.setFeatureQuietly;
 /**
  * Parse XML into a document tree that may be traversed similar to XPath
  * expressions.  For example:
- * <pre class="language-groovy groovyTestCase">
+ * {@snippet lang="groovy" class="groovyTestCase" :
  * import groovy.xml.XmlSlurper
  * def rootNode = new XmlSlurper().parseText(
- *    '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;' )
+ *    '<root><one a1="uno!"/><two>Some text!</two></root>' )
  *
  * assert rootNode.name() == 'root'
  * assert rootNode.one[0].@a1 == 'uno!'
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }
- * </pre>
+ * }
  * <p>
  * Note that in some cases, a 'selector' expression may not resolve to a
  * single node.  For example:
- * <pre class="language-groovy groovyTestCase">
+ * {@snippet lang="groovy" class="groovyTestCase" :
  * import groovy.xml.XmlSlurper
  * def rootNode = new XmlSlurper().parseText(
- *    '''&lt;root&gt;
- *         &lt;a&gt;one!&lt;/a&gt;
- *         &lt;a&gt;two!&lt;/a&gt;
- *       &lt;/root&gt;''' )
+ *    '''<root>
+ *         <a>one!</a>
+ *         <a>two!</a>
+ *       </root>''' )
  *
  * assert rootNode.a.size() == 2
  * rootNode.a.each { assert it.text() in ['one!','two!'] }
- * </pre>
+ * }
  *
  * <p>
  * A more realistic example — a book catalog. Given this XML:
