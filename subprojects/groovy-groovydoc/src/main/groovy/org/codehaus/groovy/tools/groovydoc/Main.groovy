@@ -50,6 +50,7 @@ class Main {
     private static Boolean noDeprecatedList
     private static Boolean noHelp
     private static String syntaxHighlighter
+    private static String theme
     private static Boolean privateScope
     private static Boolean packageScope
     private static Boolean publicScope
@@ -87,6 +88,7 @@ class Main {
         cli.nodeprecatedlist(messages['cli.option.nodeprecatedlist.description'])
         cli.nohelp(messages['cli.option.nohelp.description'])
         cli.syntaxHighlighter(args: 1, argName: 'name', messages['cli.option.syntaxHighlighter.description'])
+        cli.theme(args: 1, argName: 'mode', messages['cli.option.theme.description'])
         cli.overview(args:1, argName: 'file', messages['cli.option.overview.description'])
         cli.public(messages['cli.option.public.description'])
         cli.protected(messages['cli.option.protected.description'])
@@ -157,6 +159,12 @@ class Main {
         noDeprecatedList = Boolean.valueOf(options.nodeprecatedlist) ?: false
         noHelp = Boolean.valueOf(options.nohelp) ?: false
         syntaxHighlighter = options.syntaxHighlighter ?: 'none'
+        theme = options.theme ?: 'auto'
+        if (!(theme in ['auto', 'light', 'dark'])) {
+            System.err.println "groovydoc: Error - -theme must be one of auto, light, dark (was: $theme)."
+            cli.usage()
+            System.exit(1)
+        }
         showInternal = Boolean.valueOf(options.showInternal) ?: false
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
@@ -248,6 +256,8 @@ class Main {
         properties.put("noHelp", noHelp.toString())
         // GROOVY-11938 stage 4: client-side syntax highlighter ("prism"|"none").
         properties.put("syntaxHighlighter", syntaxHighlighter)
+        // GROOVY-11947: generator-level theme lock ("auto"|"light"|"dark").
+        properties.put("theme", theme)
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")
         String phaseOverride = SystemUtil.getSystemPropertySafe("groovydoc.phase.override")
         if (phaseOverride) properties.put("phaseOverride", phaseOverride)
