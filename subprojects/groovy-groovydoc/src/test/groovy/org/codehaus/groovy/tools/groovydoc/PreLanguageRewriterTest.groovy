@@ -16,31 +16,25 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.codehaus.groovy.ant
+package org.codehaus.groovy.tools.groovydoc
 
 import org.junit.jupiter.api.Test
 
-/**
- * Exercises the {@code preLanguage} post-pass on the Ant Groovydoc task —
- * bare {@code <pre>} opening tags get a {@code class="language-xxx"}
- * attribute injected, while tags that already carry any attribute are
- * left alone.
- */
-class GroovydocPreLanguageTest {
+class PreLanguageRewriterTest {
 
     @Test
     void testBarePreIsWrappedInCodeForPrism() {
         // Prism only highlights <code> descendants of language-classed elements,
         // so we must insert a <code> wrapper around bare <pre> bodies.
         String input = "<p>hi</p><pre>assert 1 == 1</pre>"
-        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
         assert out == '<p>hi</p><pre class="language-groovy"><code>assert 1 == 1</code></pre>'
     }
 
     @Test
     void testPreWithWhitespaceBeforeCloseIsWrappedInCode() {
         String input = "<pre   >code</pre>"
-        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
         assert out == '<pre class="language-groovy"><code>code</code></pre>'
     }
 
@@ -49,38 +43,44 @@ class GroovydocPreLanguageTest {
         // {@snippet} emits <pre><code class="language-xxx">...</code></pre>.
         // Don't double-wrap; just add the class to the outer <pre>.
         String input = '<pre><code class="language-groovy">assert 1 == 1</code></pre>'
-        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
         assert out == '<pre class="language-groovy"><code class="language-groovy">assert 1 == 1</code></pre>'
     }
 
     @Test
     void testPreWithExistingClassIsNotRewritten() {
         String input = '<pre class="groovyTestCase">assert 2 == 2</pre>'
-        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
         assert out == input
     }
 
     @Test
     void testPreWithExistingLanguageClassIsNotRewritten() {
         String input = '<pre class="language-sql">select 1</pre>'
-        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
         assert out == input
     }
 
     @Test
     void testPreWithIdAttributeIsNotRewritten() {
-        // A `<pre>` with any attribute is considered deliberate and left alone.
         String input = '<pre id="sample">x</pre>'
-        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
         assert out == input
     }
 
     @Test
     void testMultipleBlocksInSameFile() {
         String input = '<pre>first</pre> and <pre class="groovyTestCase">second</pre> and <pre>third</pre>'
-        String out = Groovydoc.rewritePreTags(input, 'groovy')
+        String out = PreLanguageRewriter.rewriteTags(input, 'groovy')
         int count = (out =~ /<pre class="language-groovy"><code>/).count
         assert count == 2
         assert out.contains('<pre class="groovyTestCase">second</pre>')
+    }
+
+    @Test
+    void testEmptyPreLanguageIsNoOp() {
+        String input = '<pre>x</pre>'
+        assert PreLanguageRewriter.rewriteTags(input, '') == input
+        assert PreLanguageRewriter.rewriteTags(input, null) == input
     }
 }

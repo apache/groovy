@@ -51,6 +51,7 @@ class Main {
     private static Boolean noHelp
     private static String syntaxHighlighter
     private static String theme
+    private static String preLanguage
     private static Boolean privateScope
     private static Boolean packageScope
     private static Boolean publicScope
@@ -106,6 +107,7 @@ class Main {
         cli.sourcepath(args:1, argName: 'pathlist', messages['cli.option.sourcepath.description'])
         cli.javaVersion(args: 1, argName: 'javaVersion', messages['cli.option.javaVersion.description'])
         cli.showInternal(messages['cli.option.showInternal.description'])
+        cli.preLanguage(args: 1, argName: 'lang', messages['cli.option.preLanguage.description'])
 
         def options = cli.parse(args)
 
@@ -170,6 +172,7 @@ class Main {
             System.exit(1)
         }
         showInternal = Boolean.valueOf(options.showInternal) ?: false
+        preLanguage = options.preLanguage ?: ''
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
         protectedScope = Boolean.valueOf(options.protected) ?: false
@@ -300,6 +303,7 @@ class Main {
                 System.err.println "Warning: Unable to copy additional stylesheet '${f.absolutePath}': ${e.message}"
             }
         }
+        PreLanguageRewriter.rewriteDirectory(destDir, preLanguage)
         return htmlTool.errorCount
     }
 

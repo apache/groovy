@@ -30,6 +30,7 @@ import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager;
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
+import org.codehaus.groovy.tools.groovydoc.PreLanguageRewriter;
 import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
 import java.io.File;
@@ -38,8 +39,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -662,72 +661,7 @@ public class Groovydoc extends Task {
                         f.getAbsolutePath(), e.getMessage());
             }
         }
-        if (preLanguage != null && !preLanguage.isEmpty()) {
-            applyPreLanguageToHtml(destDir);
-        }
-    }
-
-    /**
-     * Walk the generated HTML under {@code destDir} and rewrite each
-     * classless {@code <pre>} opening tag to {@code <pre class="language-xxx">}.
-     * {@code <pre>} tags that already carry a {@code class} attribute — e.g.
-     * {@code <pre class="groovyTestCase">}, or blocks emitted for inline
-     * {@code {@snippet}} tags — are untouched.
-     */
-    /**
-     * Rewrite bare {@code <pre>...</pre>} blocks — those with no attributes
-     * on the opening tag — so that Prism picks them up for syntax
-     * highlighting. {@code <pre>} tags that already have any attribute
-     * ({@code class}, {@code id}, anything) are left alone.
-     *
-     * <p>Prism only highlights {@code <code>} descendants of an element
-     * carrying a {@code language-xxx} class, so a bare {@code <pre>} body
-     * must be wrapped in {@code <code>} for highlighting to apply. If the
-     * body already contains a {@code <code>} (e.g. the canonical form
-     * emitted by {@code {@snippet}}), only the opening {@code <pre>} is
-     * given the class — no inner wrap is added, to avoid nested
-     * {@code <code><code>}.
-     *
-     * <p>Package-private for test access.
-     */
-    static String rewritePreTags(String html, String preLanguage) {
-        Pattern p = Pattern.compile("<pre\\s*>([\\s\\S]*?)</pre>");
-        Matcher m = p.matcher(html);
-        StringBuilder sb = new StringBuilder();
-        String langClass = "language-" + preLanguage;
-        while (m.find()) {
-            String body = m.group(1);
-            String replacement;
-            if (body.contains("<code")) {
-                replacement = "<pre class=\"" + langClass + "\">" + body + "</pre>";
-            } else {
-                replacement = "<pre class=\"" + langClass + "\"><code>" + body + "</code></pre>";
-            }
-            m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
-        }
-        m.appendTail(sb);
-        return sb.toString();
-    }
-
-    private void applyPreLanguageToHtml(File dir) {
-        File[] entries = dir.listFiles();
-        if (entries == null) return;
-        for (File f : entries) {
-            if (f.isDirectory()) {
-                applyPreLanguageToHtml(f);
-            } else if (f.getName().endsWith(".html")) {
-                try {
-                    String html = ResourceGroovyMethods.getText(f);
-                    String rewritten = rewritePreTags(html, preLanguage);
-                    if (!rewritten.equals(html)) {
-                        ResourceGroovyMethods.setText(f, rewritten);
-                    }
-                } catch (IOException e) {
-                    LOGGER.log(WARNING, "Unable to apply preLanguage to ''{0}'': {1}",
-                            f.getAbsolutePath(), e.getMessage());
-                }
-            }
-        }
+        PreLanguageRewriter.rewriteDirectory(destDir, preLanguage);
     }
 
     private void checkScopeProperties(Properties properties) {
