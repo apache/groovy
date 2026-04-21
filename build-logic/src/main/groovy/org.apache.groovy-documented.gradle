@@ -17,6 +17,14 @@
  *  under the License.
  */
 
+import org.apache.groovy.gradle.GroovydocAntPlugin
+
+pluginManager.apply(GroovydocAntPlugin)
+
+groovydocAnt {
+    syntaxHighlighter = 'prism'
+}
+
 configurations {
     /*
      * This setup is very specific to the Groovy project:
@@ -73,7 +81,6 @@ tasks.withType(Groovydoc).configureEach {
         source = sourceSets.main.groovy.srcDirs + sourceSets.main.java.srcDirs
     }
     groovyClasspath = configurations.groovydocClasspath
-    use = true
     windowTitle = "Groovy ${versions.groovy}"
     docTitle = "Groovy ${versions.groovy}"
     header = "Groovy ${versions.groovy}"

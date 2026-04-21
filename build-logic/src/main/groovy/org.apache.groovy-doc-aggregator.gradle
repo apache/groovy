@@ -91,6 +91,11 @@ def groovydocAll = tasks.register("groovydocAll", Groovydoc) {
     includeAuthor = false
     processScripts = false
     includeMainForScripts = false
+    // GroovydocAntPlugin consumes this to produce the Ant task's sourcepath:
+    // configurations.allSources resolves to source directories (see
+    // sourcesForAggregation in groovy-core.gradle), so we pass the directories
+    // rather than the flattened file tree Gradle would otherwise infer.
+    ext.groovydocSourceDirs = configurations.allSources
 }
 
 def groovydocAllJar = tasks.register("groovydocAllJar", Jar) {
