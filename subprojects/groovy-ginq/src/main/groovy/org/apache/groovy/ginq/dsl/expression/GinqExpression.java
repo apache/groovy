@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *     |__ [innerjoin/leftjoin/rightjoin/fulljoin/crossjoin]*
  *     |   |__ on
  *     |__ [where]
- *     |__ [groupby]
+ *     |__ [groupby] [into]
  *     |   |__ [having]
  *     |__ [orderby]
  *     |__ [limit]
