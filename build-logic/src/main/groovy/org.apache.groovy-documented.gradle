@@ -74,6 +74,22 @@ tasks.withType(Javadoc).configureEach {
               "https://junit.org/junit4/javadoc/${versions.junit}/",
               "https://docs.junit.org/${versions.junit5}/api/",
               'https://picocli.info/apidocs/')
+        // JEP 413 {@snippet file=...} resolution (JDK 18+): Gradle's default
+        // source-path inference doesn't reliably surface per-package
+        // snippet-files/ dirs to Javadoc when source files are passed
+        // individually. Feed both --source-path and --snippet-path so the
+        // lookup has the module's source roots. JDK 17's javadoc silently
+        // drops the unknown tag, so skip these flags there (they'd error).
+        if (JavaVersion.current() >= JavaVersion.VERSION_18 && sourceSets.findByName('main')) {
+            def srcPath = (sourceSets.main.java.srcDirs + sourceSets.main.groovy.srcDirs)
+                    .findAll { it.exists() }
+                    .collect { it.absolutePath }
+                    .join(File.pathSeparator)
+            if (srcPath) {
+                addStringOption('-source-path', srcPath)
+                addStringOption('-snippet-path', srcPath)
+            }
+        }
     }
 }
 
