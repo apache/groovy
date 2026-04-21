@@ -47,7 +47,7 @@ public @interface RecordOptions {
      * If {@code true}, this adds a method {@code getAt(int)} which given
      * an integer n, returns the n'th component in the record.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import static groovy.test.GroovyAssert.shouldFail
      *
      * record Point(int x, int y, String color) {}
@@ -77,7 +77,7 @@ public @interface RecordOptions {
      * which returns the record's components as a list.
      *
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * record Point(int x, int y, String color) {}
      * def p = new Point(100, 200, 'green')
      * assert p.toList() == [100, 200, 'green']
@@ -92,7 +92,7 @@ public @interface RecordOptions {
      * If {@code true}, this adds a method {@code toMap()} to the record.
      *
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * record Point(int x, int y, String color) {}
      * def p = new Point(100, 200, 'green')
      * assert p.toMap() == [x:100, y:200, color:'green']
@@ -107,7 +107,7 @@ public @interface RecordOptions {
      * If {@code true}, this adds a method {@code size()} to the record which returns the number of components.
      *
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * record Point(int x, int y, String color) {}
      * def p = new Point(100, 200, 'green')
      * assert p.size() == 3
@@ -123,7 +123,7 @@ public @interface RecordOptions {
      * new property values and returns a new instance of the record class with
      * these values set.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * {@code @groovy.transform.RecordType}(copyWith = true)
      * class Person {
      *     String first, last
@@ -148,7 +148,7 @@ public @interface RecordOptions {
      * which returns its components as a typed tuple {@code Tuple0}, {@code Tuple1}...
      *
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.transform.*
      *
      * {@code @RecordOptions(components=true)}

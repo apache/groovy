@@ -36,7 +36,7 @@ import java.util.regex.Pattern
  * automatically ends with a verify().
  *
  * Typical usage is as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.mock.interceptor.MockFor
  *
  * class Person {
@@ -97,7 +97,7 @@ class MockFor {
      * The optional <code>interceptConstruction</code> flag allows mocking of
      * constructor calls. These are represented in the demand specification
      * using the class name as this example shows:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.mock.interceptor.MockFor
      * class Person {
      *   String first, last
@@ -157,7 +157,7 @@ class MockFor {
      * The <code>filter</code> object is invoked using the normal Groovy <code>isCase()</code> semantics.
      *
      * Here are some examples:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.mock.interceptor.MockFor
      * class Person {
      *   String first, last
@@ -209,7 +209,7 @@ class MockFor {
      * will be instantiated for the original class.
      *
      * Typical example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.mock.interceptor.MockFor
      *
      * class Person {

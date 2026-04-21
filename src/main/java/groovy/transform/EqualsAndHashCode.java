@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * Class annotation used to assist in creating appropriate {@code equals()} and {@code hashCode()} methods.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.EqualsAndHashCode
  * {@code @EqualsAndHashCode}
  * class Person {
@@ -85,7 +85,7 @@ import java.lang.annotation.Target;
  * to be used in limited cases where its purpose is for overriding implementation details rather than
  * creating a derived type with different behavior. This is useful when using JPA Proxies for example or
  * as shown in the following examples:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  * {@code @Canonical} class IntPair { int x, y }
  * def p1 = new IntPair(1, 2)
@@ -162,7 +162,7 @@ import java.lang.annotation.Target;
  * </pre>
  * There is also support for including or excluding fields/properties by name when constructing
  * the equals and hashCode methods as shown here:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  * {@code @EqualsAndHashCode}(excludes="z")
  * {@code @TupleConstructor}
@@ -196,7 +196,7 @@ import java.lang.annotation.Target;
  * you have such structures.
  * A future version of this transform may better handle some additional recursive scenarios.
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.EqualsAndHashCode
  *
  * &#64;EqualsAndHashCode(includeFields=true)

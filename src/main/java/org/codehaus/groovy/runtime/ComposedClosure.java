@@ -29,7 +29,7 @@ import java.util.List;
  * <code>leftShift()</code> methods on <code>Closure</code>.
  * <p>
  * Typical usages:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * def twice = { a {@code ->} a * 2 }
  * def inc = { b {@code ->} b + 1 }
  * def f = { x {@code ->} twice(inc(x)) } // longhand

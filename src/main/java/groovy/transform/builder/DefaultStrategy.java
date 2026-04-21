@@ -69,7 +69,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * static method or constructor levels.
  *
  * You use it as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.builder.*
  *
  * {@code @Builder}
@@ -85,7 +85,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * </pre>
  * The {@code prefix} annotation attribute can be used to create setters with a different naming convention. The default is the
  * empty string but you could change that to "set" as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.builder.Builder}(prefix='set')
  * class Person {
  *     String firstName
@@ -101,7 +101,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  *
  * You can also use the {@code @Builder} annotation in combination with this strategy on one or more constructor or
  * static method instead of or in addition to using it at the class level. An example with a constructor follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.ToString
  * import groovy.transform.builder.Builder
  *
@@ -129,7 +129,7 @@ import static org.objectweb.asm.Opcodes.ACC_STATIC;
  * have unique names. E.g.&nbsp;we can modify the previous example to have three builders. At least two of the builders
  * in our case will need to set the 'builderClassName' and 'builderMethodName' annotation attributes to ensure
  * we have unique names. This is shown in the following example:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.builder.*
  * import groovy.transform.*
  *

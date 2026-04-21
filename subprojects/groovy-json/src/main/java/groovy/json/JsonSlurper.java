@@ -43,7 +43,7 @@ import java.util.Map;
  * JSON slurper parses text or reader content into a data structure of lists and maps.
  * <p>
  * Example usage:
- * <code><pre class="groovyTestCase">
+ * <code><pre class="language-groovy groovyTestCase">
  * def slurper = new groovy.json.JsonSlurper()
  * def result = slurper.parseText('{"person":{"name":"Guillaume","age":33,"pets":["dog","cat"]}}')
  *

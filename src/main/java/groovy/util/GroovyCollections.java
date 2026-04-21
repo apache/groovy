@@ -252,7 +252,7 @@ public class GroovyCollections {
 
     /**
      * Returns an ordered set of all the unique items found in the provided argument iterables.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert GroovyCollections.union([1, 2], [2, 3], [1, 4]) == [1, 2, 3, 4]
      * </pre>
      *
@@ -266,7 +266,7 @@ public class GroovyCollections {
 
     /**
      * Returns an ordered set of all the unique items found in the provided argument iterables.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert GroovyCollections.union([[1, 2], [2, 3], [1, 4]]) == [1, 2, 3, 4]
      * </pre>
      *
@@ -281,7 +281,7 @@ public class GroovyCollections {
     /**
      * Returns an ordered set of all the unique items found in the provided argument iterables
      * using the provided comparator to compare items.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert GroovyCollections.union(n -&gt; n.abs(), [1, 2, 5], [-3, -4, -5], [4, 6]) == [1, 2, 5, -3, -4, 6]
      * assert GroovyCollections.union(n -&gt; n.trunc(), [1.1, 2.2], [2.5, 3.3], [3.9, 4.1]) == [1.1, 2.2, 3.3, 4.1]
      * assert GroovyCollections.union(w -&gt; w.toUpperCase(), ['a', 'A'], ['B', 'a', 'c', 'b']) == ['a', 'B', 'c']
@@ -299,7 +299,7 @@ public class GroovyCollections {
     /**
      * Returns an ordered set of all the unique items found in the provided argument iterables
      * using the provided comparator to compare items.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert GroovyCollections.union([[1, 2, 5], [-3, -4, -5], [4, 6]], n -&gt; n.abs()) == [1, 2, 5, -3, -4, 6]
      * assert GroovyCollections.union([[1.1, 2.2], [2.5, 3.3], [3.9, 4.1]], n -&gt; n.trunc()) == [1.1, 2.2, 3.3, 4.1]
      * assert GroovyCollections.union([['a', 'A'], ['B', 'a', 'c', 'b']], w -&gt; w.toUpperCase()) == ['a', 'B', 'c']
@@ -326,7 +326,7 @@ public class GroovyCollections {
     /**
      * Returns an ordered set of all the unique items found in the provided argument iterables
      * using the provided closure to compare items.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def abs = { n -&gt; n.abs() }
      * assert GroovyCollections.union(abs, [1, 2, 5], [-3, -4, -5], [4, 6]) == [1, 2, 5, -3, -4, 6]
      * </pre>
@@ -343,7 +343,7 @@ public class GroovyCollections {
     /**
      * Returns an ordered set of all the unique items found in the provided argument iterables
      * using the provided closure to compare items.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert GroovyCollections.union([[1, 2, 5], [-3, -4, -5], [4, 6]]){ n -&gt; n.abs() } == [1, 2, 5, -3, -4, 6]
      * </pre>
      *

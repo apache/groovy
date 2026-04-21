@@ -64,7 +64,7 @@ import java.lang.annotation.Target;
  * The type of delegate parameters must be compatible with Groovy's {@code as} cast operation from a {@code Map}.
  *
  * Here is an example using implicit named parameters.
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @NamedVariant}
@@ -75,7 +75,7 @@ import java.lang.annotation.Target;
  * assert makeSense(dollars: 2, cents: 50) == 250
  * </pre>
  * Here is an example using a delegate parameter.
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @ToString(includeNames=true)}

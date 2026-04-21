@@ -128,7 +128,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a boolean Array, and checks whether
      * any element is true.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array1 = [false, true]
      * assert array1.any()
      * boolean[] array2 = [false]
@@ -150,7 +150,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a boolean Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true]
      * assert array.any{ it }
      * assert !array.any{ !it }
@@ -173,7 +173,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a byte Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1, 2]
      * assert array.any{ it > 1 }
      * assert !array.any{ it > 3 }
@@ -196,7 +196,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a char Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = ['a', 'b', 'c']
      * assert array.any{ it &lt;= 'a' }
      * assert !array.any{ it &lt; 'a' }
@@ -219,7 +219,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a short Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1, 2]
      * assert array.any{ it > 1 }
      * assert !array.any{ it > 3 }
@@ -242,7 +242,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an int Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 1, 2]
      * assert array.any{ it > 1 }
      * assert !array.any{ it > 3 }
@@ -265,7 +265,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a long Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 1L, 2L]
      * assert array.any{ it > 1L }
      * assert !array.any{ it > 3L }
@@ -288,7 +288,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a float Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0.0f, 1.0f, 2.0f]
      * assert array.any{ it > 1.5f }
      * assert !array.any{ it > 2.5f }
@@ -311,7 +311,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a double Array, and checks whether a
      * predicate is valid for at least one element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0.0d, 1.0d, 2.0d]
      * assert array.any{ it > 1.5d }
      * assert !array.any{ it > 2.5d }
@@ -369,7 +369,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Coerces a byte array to a boolean value.
      * A byte array is false if the array is null or of length 0,
      * and true otherwise.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array1 = []
      * assert !array1
      * byte[] array2 = [0]
@@ -506,7 +506,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the average of the bytes in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as byte[]).average()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 5.0G == ([2,4,6,8] as byte[]).average()</pre>
      *
      * @param self The array of values to calculate the average of
      * @return The average of the items
@@ -523,7 +523,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the average of the shorts in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as short[]).average()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 5.0G == ([2,4,6,8] as short[]).average()</pre>
      *
      * @param self The array of values to calculate the average of
      * @return The average of the items
@@ -540,7 +540,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the average of the ints in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as int[]).average()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 5.0G == ([2,4,6,8] as int[]).average()</pre>
      *
      * @param self The array of values to calculate the average of
      * @return The average of the items
@@ -557,7 +557,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the average of the longs in the array.
-     * <pre class="groovyTestCase">assert 5.0G == ([2,4,6,8] as long[]).average()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 5.0G == ([2,4,6,8] as long[]).average()</pre>
      *
      * @param self The array of values to calculate the average of
      * @return The average of the items
@@ -574,7 +574,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the average of the floats in the array.
-     * <pre class="groovyTestCase">assert 5.0d == ([2,4,6,8] as float[]).average()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 5.0d == ([2,4,6,8] as float[]).average()</pre>
      *
      * @param self The array of values to calculate the average of
      * @return The average of the items
@@ -591,7 +591,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Calculates the average of the doubles in the array.
-     * <pre class="groovyTestCase">assert 5.0d == ([2,4,6,8] as double[]).average()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 5.0d == ([2,4,6,8] as double[]).average()</pre>
      *
      * @param self The array of values to calculate the average of
      * @return The average of the items
@@ -610,7 +610,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Averages the items in an array. This is equivalent to invoking the
      * "plus" method on all items in the array and then dividing by the
      * total count using the "div" method for the resulting sum.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert 3 == ([1, 2, 6] as Integer[]).average()
      * </pre>
      *
@@ -630,7 +630,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Averages the result of applying a closure to each item of an array.
      * <code>array.average(closure)</code> is equivalent to:
      * <code>array.collect(closure).average()</code>.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def (nums, strings) = [[1, 3] as Integer[], ['to', 'from'] as String[]]
      * assert 20 == nums.average { it * 10 }
      * assert 3 == strings.average { it.size() }
@@ -654,7 +654,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the boolean array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, false]
      * assert array.chop(1, 2) == [[false], [true, false]]
      * </pre>
@@ -673,7 +673,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the byte array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1, 2]
      * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
@@ -692,7 +692,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the char array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = [0, 1, 2]
      * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
@@ -711,7 +711,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the short array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1, 2]
      * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
@@ -730,7 +730,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the int array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 1, 2]
      * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
@@ -749,7 +749,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the long array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0, 1, 2]
      * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
@@ -768,7 +768,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the float array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0, 1, 2]
      * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
@@ -787,7 +787,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Chops the double array into pieces, returning lists with sizes corresponding to the supplied chop sizes.
      * If the array isn't large enough, truncated (possibly empty) pieces are returned.
      * Using a chop size of -1 will cause that piece to contain all remaining items from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0, 1, 2]
      * assert array.chop(1, 2) == [[0], [1, 2]]
      * </pre>
@@ -895,7 +895,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this Array transforming each item into a new value using the <code>transform</code> closure
      * and adding it to the supplied <code>collector</code>.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] nums = [1,2,3]
      * List<Integer> answer = []
      * nums.collect(answer) { it * 2 }
@@ -944,7 +944,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this array transforming each item using the <code>transform</code> closure
      * and returning a map of the resulting transformed entries.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = "abc"
      * def nums = [0, 1, 2] as Integer[]
      * // collect letters with index using list style
@@ -972,7 +972,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this array transforming each item using the <code>transform</code> closure
      * and returning a map of the resulting transformed entries.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def letters = "abc"
      * def nums = [0, 1, 2] as Integer[]
      * // collect letters with index
@@ -1000,7 +1000,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A variant of collectEntries for arrays with separate functions for transforming the keys and values.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] languages = ['Groovy', 'Java', 'Kotlin', 'Scala']
      * def firstLetter = (s) -&gt; s[0]
      * assert languages.collectEntries(firstLetter, String::size) == [G:6, J:4, K:6, S:5]
@@ -1036,7 +1036,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [1, 2, 3, 4, 5, 6] as Object[]
      * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
@@ -1053,7 +1053,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Projects each item from a source array to a collection and concatenates (flattens) the resulting collections into a single list.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [1, 2, 3, 4, 5, 6] as Object[]
      * def squaresAndCubesOfEvens = nums.collectMany{ it % 2 ? [] : [it**2, it**3] }
      * assert squaresAndCubesOfEvens == [4, 8, 16, 64, 36, 216]
@@ -1074,7 +1074,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Select a column from a 2D array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] nums = [[1.0d, 2.0d], [10.0d, 20.0d]]
      * assert nums.column(0) == [1.0d, 10.0d] as double[]
      * assert nums.column(1) == [2.0d, 20.0d] as double[]
@@ -1100,7 +1100,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Select a column from a 2D array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[][] nums = [[1.0f, 2.0f], [10.0f, 20.0f]]
      * assert nums.column(0) == [1.0f, 10.0f] as float[]
      * assert nums.column(1) == [2.0f, 20.0f] as float[]
@@ -1126,7 +1126,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Select a column from a 2D array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[][] nums = [[1, 2], [10, 20]]
      * assert nums.column(0) == [1, 10] as int[]
      * assert nums.column(1) == [2, 20] as int[]
@@ -1152,7 +1152,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Select a column from a 2D array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[][] nums = [[1L, 2L], [10L, 20L]]
      * assert nums.column(0) == [1L, 10L] as long[]
      * assert nums.column(1) == [2L, 20L] as long[]
@@ -1362,7 +1362,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, true]
      * assert array.count(true) == 2
      * </pre>
@@ -1381,7 +1381,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [10, 20, 20, 30]
      * assert array.count(20) == 2
      * </pre>
@@ -1400,7 +1400,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = ['x', 'y', 'z', 'z', 'y']
      * assert array.count('y') == 2
      * </pre>
@@ -1419,7 +1419,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [10, 20, 20, 30]
      * assert array.count(20) == 2
      * </pre>
@@ -1438,7 +1438,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [10, 20, 20, 30]
      * assert array.count(20) == 2
      * </pre>
@@ -1457,7 +1457,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [10L, 20L, 20L, 30L]
      * assert array.count(20L) == 2
      * </pre>
@@ -1476,7 +1476,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [10.0f, 20.0f, 20.0f, 30.0f]
      * assert array.count(20.0f) == 2
      * </pre>
@@ -1495,7 +1495,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this array.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code>).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [10.0d, 20.0d, 20.0d, 30.0d]
      * assert array.count(20.0d) == 2
      * </pre>
@@ -1547,7 +1547,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * items occurring for that group.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">assert ([1,2,2,2,3] as Object[]).countBy{ it % 2 } == [1:2, 0:3]</pre>
+     * <pre class="language-groovy groovyTestCase">assert ([1,2,2,2,3] as Object[]).countBy{ it % 2 } == [1:2, 0:3]</pre>
      *
      * @param self    an array to group and count
      * @param closure a closure mapping items to the frequency keys
@@ -1563,7 +1563,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates a multiset-like map of the array members.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1:2, 2:2, 3:1] == ([1,2,1,2,3] as Object[]).countBy()
      * </pre>
      *
@@ -1581,7 +1581,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Drops the given number of elements from the head of this array
      * if they are available.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] strings = [ 'a', 'b', 'c' ]
      * assert strings.drop( 0 ) == [ 'a', 'b', 'c' ] as String[]
      * assert strings.drop( 2 ) == [ 'c' ] as String[]
@@ -1616,7 +1616,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Drops the given number of elements from the tail of this array
      * if they are available.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] strings = [ 'a', 'b', 'c' ]
      * assert strings.dropRight( 0 ) == [ 'a', 'b', 'c' ] as String[]
      * assert strings.dropRight( 2 ) == [ 'a' ] as String[]
@@ -1652,7 +1652,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a suffix of the given array by dropping as many elements as possible from the
      * front of the original array such that calling the given closure condition evaluates to
      * true when passed each of the dropped elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [ 1, 3, 2 ] as Integer[]
      * assert nums.dropWhile{ it {@code <=} 3 } == [ ] as Integer[]
      * assert nums.dropWhile{ it {@code <} 3 } == [ 3, 2 ] as Integer[]
@@ -1685,7 +1685,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a boolean[] passing each boolean to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, false]
      * String result = ''
      * array.each{ result += it.toString()[0] }
@@ -1708,7 +1708,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a byte[] passing each byte to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1, 2]
      * String result = ''
      * array.each{ result += it }
@@ -1731,7 +1731,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a char[] passing each char to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = ['a' as char, 'b' as char, 'c' as char]
      * String result = ''
      * array.each{ result += it }
@@ -1754,7 +1754,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a short[] passing each short to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1, 2]
      * String result = ''
      * array.each{ result += it }
@@ -1777,7 +1777,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through an int[] passing each int to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 1, 2]
      * String result = ''
      * array.each{ result += it }
@@ -1800,7 +1800,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a long[] passing each long to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 1L, 2L]
      * String result = ''
      * array.each{ result += it }
@@ -1823,7 +1823,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a float[] passing each float to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0f, 1f, 2f]
      * String result = ''
      * array.each{ result += it }
@@ -1846,7 +1846,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a double[] passing each double to the given consumer.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0d, 1d, 2d]
      * String result = ''
      * array.each{ result += it }
@@ -1869,7 +1869,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through an array passing each array entry to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['a', 'b', 'c']
      * String result = ''
      * letters.each{ result += it }
@@ -1921,7 +1921,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Process the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] nums = [[1.0d, 2.0d], [10.0d, 20.0d]]
      * nums.eachColumn {
      *     assert it[0] * 10.0d == it[1]
@@ -1940,7 +1940,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Process the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] nums = [[1.0f, 2.0f], [10.0f, 20.0f]]
      * nums.eachColumn {
      *     assert it[0] * 10.0f == it[1]
@@ -1959,7 +1959,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Process the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] nums = [[1, 2], [10, 20]]
      * nums.eachColumn {
      *     assert it[0] * 10 == it[1]
@@ -1978,7 +1978,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Process the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] nums = [[1L, 2L], [10L, 20L]]
      * nums.eachColumn {
      *     assert it[0] * 10L == it[1]
@@ -2002,7 +2002,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through a boolean[],
      * passing each boolean and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, false]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2029,7 +2029,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through a byte[],
      * passing each byte and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [10, 20, 30]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2056,7 +2056,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through a char[],
      * passing each char and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = ['a' as char, 'b' as char, 'c' as char]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2083,7 +2083,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through a short[],
      * passing each short and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [10, 20, 30]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2110,7 +2110,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through an int[],
      * passing each int and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [10, 20, 30]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2137,7 +2137,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through a long[],
      * passing each long and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [10L, 20L, 30L]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2164,7 +2164,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through a float[],
      * passing each float and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [10f, 20f, 30f]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2191,7 +2191,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through a double[],
      * passing each double and the element's index (a counter starting at
      * zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [10d, 20d, 30d]
      * String result = ''
      * array.eachWithIndex{ item, index {@code ->} result += "$index($item)" }
@@ -2217,7 +2217,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through an array, passing each array element and the element's
      * index (a counter starting at zero) to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['a', 'b', 'c']
      * String result = ''
      * letters.eachWithIndex{ letter, index {@code ->} result += "$index:$letter" }
@@ -2247,7 +2247,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array1 = [true, false]
      * boolean[] array2 = [true, false]
      * assert array1 !== array2
@@ -2267,7 +2267,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array1 = [4, 8]
      * byte[] array2 = [4, 8]
      * assert array1 !== array2
@@ -2287,7 +2287,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array1 = ['a', 'b']
      * char[] array2 = ['a', 'b']
      * assert array1 !== array2
@@ -2307,7 +2307,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array1 = [4, 8]
      * short[] array2 = [4, 8]
      * assert array1 !== array2
@@ -2327,7 +2327,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array1 = [4, 8]
      * int[] array2 = [4, 8]
      * assert array1 !== array2
@@ -2347,7 +2347,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array1 = [4L, 8L]
      * long[] array2 = [4L, 8L]
      * assert array1 !== array2
@@ -2367,7 +2367,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array1 = [4.0f, 8.0f]
      * float[] array2 = [4.0f, 8.0f]
      * assert array1 !== array2
@@ -2387,7 +2387,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Compares the contents of this array to the contents of the given array.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array1 = [4.0d, 8.0d]
      * double[] array2 = [4.0d, 8.0d]
      * assert array1 !== array2
@@ -2423,7 +2423,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a boolean Array, and checks whether
      * every element is true.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array1 = [false, true]
      * assert !array1.every()
      * boolean[] array2 = [true, true]
@@ -2445,7 +2445,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a boolean Array, and checks whether a
      * predicate is valid for every element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true]
      * assert array.every{ it }
      * assert !array.every{ !it }
@@ -2468,7 +2468,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a byte Array, and checks whether a
      * predicate is valid for all elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1, 2]
      * assert array.every{ it &lt; 3 }
      * assert !array.every{ it > 1 }
@@ -2491,7 +2491,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a char Array, and checks whether a
      * predicate is valid for all elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = ['a', 'b', 'c']
      * assert array.every{ it &lt;= 'd' }
      * assert !array.every{ it > 'b' }
@@ -2514,7 +2514,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a short Array, and checks whether a
      * predicate is valid for all elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1, 2]
      * assert array.every{ it &lt; 3 }
      * assert !array.every{ it > 1 }
@@ -2537,7 +2537,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of an int Array, and checks whether a
      * predicate is valid for all elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 1, 2]
      * assert array.every{ it &lt; 3 }
      * assert !array.every{ it > 1 }
@@ -2560,7 +2560,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a long Array, and checks whether a
      * predicate is valid for all elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 1L, 2L]
      * assert array.every{ it &lt; 3L }
      * assert !array.every{ it > 1L }
@@ -2583,7 +2583,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a float Array, and checks whether a
      * predicate is valid for all elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0.0f, 1.0f, 2.0f]
      * assert array.every{ it &lt; 2.5f }
      * assert !array.every{ it > 1.5f }
@@ -2606,7 +2606,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the contents of a double Array, and checks whether a
      * predicate is valid for all elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0.0d, 1.0d, 2.0d]
      * assert array.every{ it &lt; 2.5d }
      * assert !array.every{ it > 1.5d }
@@ -2650,7 +2650,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Finds the first element in the array that matches the given closure condition.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def list = [1,2,3] as Integer[]
      * assert 2 == list.find { it {@code >} 1 }
      * assert null == list.find { it {@code >} 5 }
@@ -2676,7 +2676,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds the elements of the array matching the IDENTITY Closure (i.e.&#160;matching Groovy truth).
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Object[]
      * assert items.findAll() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -2692,7 +2692,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds all elements of the array matching the given Closure condition.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1,2,3,4] as Integer[]
      * assert [2,4] == items.findAll { it % 2 == 0 }
      * </pre>
@@ -2773,7 +2773,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the index of the last item that matches the specified condition.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = new Number[]{1, 2, 1, 2, 1}
      * assert array.findLastIndexOf{it==1} ==  4
      * assert array.findLastIndexOf{it==2} ==  3
@@ -2796,7 +2796,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the index of the last item that matches the specified condition
      * that is at or beyond the given index.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = new Number[]{3, 1, 2, 1, 2, 1}
      * assert array.findLastIndexOf(1,{it==0}) == -1
      * assert array.findLastIndexOf(1,{it==1}) ==  5
@@ -2912,7 +2912,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the boolean array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true, false]
      * assert array.first() == true
      * </pre>
@@ -2931,7 +2931,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the byte array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] bytes = [1, 2, 3]
      * assert bytes.first() == 1
      * </pre>
@@ -2950,7 +2950,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the char array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] chars = ['a', 'b', 'c']
      * assert chars.first() == 'a'
      * </pre>
@@ -2969,7 +2969,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the short array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] shorts = [10, 20, 30]
      * assert shorts.first() == 10
      * </pre>
@@ -2988,7 +2988,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the int array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] ints = [1, 3, 5]
      * assert ints.first() == 1
      * </pre>
@@ -3007,7 +3007,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the long array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] longs = [2L, 4L, 6L]
      * assert longs.first() == 2L
      * </pre>
@@ -3026,7 +3026,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the float array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] floats = [2.0f, 4.0f, 6.0f]
      * assert floats.first() == 2.0f
      * </pre>
@@ -3045,7 +3045,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the double array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] doubles = [10.0d, 20.0d, 30.0d]
      * assert doubles.first() == 10.0d
      * </pre>
@@ -3064,7 +3064,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = [3, 4, 2].toArray()
      * assert array.first() == 3
      * </pre>
@@ -3087,7 +3087,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true]
      * assert array.flatten() == [false, true]
      * </pre>
@@ -3104,7 +3104,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1]
      * assert array.flatten() == [0, 1]
      * </pre>
@@ -3121,7 +3121,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'ab'.chars
      * assert array.flatten() == ['a', 'b']
      * </pre>
@@ -3138,7 +3138,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1]
      * assert array.flatten() == [0, 1]
      * </pre>
@@ -3155,7 +3155,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 1]
      * assert array.flatten() == [0, 1]
      * </pre>
@@ -3172,7 +3172,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 1L]
      * assert array.flatten() == [0L, 1L]
      * </pre>
@@ -3189,7 +3189,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0.0f, 1.0f]
      * assert array.flatten() == [0.0f, 1.0f]
      * </pre>
@@ -3206,7 +3206,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Flattens an array. This array is added to a new collection.
      * It is an alias for {@code toList()} but allows algorithms to be written which also
      * work on multidimensional arrays or non-arrays where flattening would be applicable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0.0d, 1.0d]
      * assert array.flatten() == [0.0d, 1.0d]
      * </pre>
@@ -3238,7 +3238,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[][] array = [[true, false], [true, false]]
      * assert array.flatten() == [true, false, true, false]
      * </pre>
@@ -3261,7 +3261,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[][] array = [[0, 1], [2, 3]]
      * assert array.flatten() == [0, 1, 2, 3]
      * </pre>
@@ -3284,7 +3284,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[][] array = ['ab'.chars, 'cd'.chars]
      * assert array.flatten() == ['a', 'b', 'c', 'd']
      * </pre>
@@ -3307,7 +3307,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[][] array = [[0, 1], [2, 3]]
      * assert array.flatten() == [0, 1, 2, 3]
      * </pre>
@@ -3330,7 +3330,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[][] array = [[0, 1], [2, 3]]
      * assert array.flatten() == [0, 1, 2, 3]
      * </pre>
@@ -3353,7 +3353,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[][] array = [[0, 1], [2, 3]]
      * assert array.flatten() == [0, 1, 2, 3]
      * </pre>
@@ -3376,7 +3376,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[][] array = [[0.0f, 1.0f], [2.0f, 3.0f]]
      * assert array.flatten() == [0.0f, 1.0f, 2.0f, 3.0f]
      * </pre>
@@ -3399,7 +3399,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The items are copied row by row.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] array = [[0.0f, 1.0f], [2.0f, 3.0f]]
      * assert array.flatten() == [0.0f, 1.0f, 2.0f, 3.0f]
      * </pre>
@@ -3439,7 +3439,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a boolean array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, false, true, false, true]
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [false, false, false] // NumberRange
@@ -3458,7 +3458,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a byte array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [1, 3, 5, 7, 9, 11]
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
@@ -3477,7 +3477,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a char array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'abcdef'.chars
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == ['a', 'c', 'e']  // NumberRange
@@ -3496,7 +3496,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a short array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [1, 3, 5, 7, 9, 11]
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
@@ -3515,7 +3515,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for an int array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [1, 3, 5, 7, 9, 11]
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1, 5, 9]   // NumberRange
@@ -3534,7 +3534,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a long array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [1L, 3L, 5L, 7L, 9L, 11L]
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1L, 5L, 9L]   // NumberRange
@@ -3553,7 +3553,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a float array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [1.0f, 3.0f, 5.0f, 7.0f, 9.0f, 11.0f]
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1.0f, 5.0f, 9.0f]   // NumberRange
@@ -3572,7 +3572,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a double array with a range giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [1.0d, 3.0d, 5.0d, 7.0d, 9.0d, 11.0d]
      * assert array[2..&lt;2] == [] // EmptyRange
      * assert array[(0..5.5).step(2)] == [1.0d, 5.0d, 9.0d]   // NumberRange
@@ -3606,7 +3606,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a boolean array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, false, true, true, false]
      * assert array[2..3] == [true, true]
      * assert array[-2..-1] == [true, false]
@@ -3627,7 +3627,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a byte array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 10, 20, 30, 40]
      * assert array[2..3] == [20, 30]
      * assert array[-2..-1] == [30, 40]
@@ -3648,7 +3648,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a char array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'abcdef'.chars
      * assert array[2..3] == ['c', 'd']
      * assert array[-2..-1] == ['e', 'f']
@@ -3669,7 +3669,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a short array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 10, 20, 30, 40]
      * assert array[2..3] == [20, 30]
      * assert array[-2..-1] == [30, 40]
@@ -3690,7 +3690,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for an int array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 10, 20, 30, 40]
      * assert array[2..3] == [20, 30]
      * assert array[-2..-1] == [30, 40]
@@ -3711,7 +3711,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a long array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 10L, 20L, 30L, 40L]
      * assert array[2..3] == [20L, 30L]
      * assert array[-2..-1] == [30L, 40L]
@@ -3732,7 +3732,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a float array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0.0f, 10.0f, 20.0f, 30.0f, 40.0f]
      * assert array[2..3] == [20.0f, 30.0f]
      * assert array[-2..-1] == [30.0f, 40.0f]
@@ -3753,7 +3753,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a double array with an IntRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0.0d, 10.0d, 20.0d, 30.0d, 40.0d]
      * assert array[2..3] == [20.0d, 30.0d]
      * assert array[-2..-1] == [30.0d, 40.0d]
@@ -3789,7 +3789,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a boolean array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, false, true, true, false]
      * def range = new ObjectRange(2, 3)
      * assert array[range] == [true, true]
@@ -3807,7 +3807,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a byte array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 10, 20, 30, 40]
      * def range = new ObjectRange(2, 3)
      * assert array[range] == [20, 30]
@@ -3825,7 +3825,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a boolean array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'abcdef'.chars
      * def range = new ObjectRange(2, 3)
      * assert array[range] == ['c', 'd']
@@ -3843,7 +3843,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a short array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 10, 20, 30, 40]
      * def range = new ObjectRange(2, 3)
      * assert array[range] == [20, 30]
@@ -3861,7 +3861,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for an int array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 10, 20, 30, 40]
      * def range = new ObjectRange(2, 3)
      * assert array[range] == [20, 30]
@@ -3879,7 +3879,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a long array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 10L, 20L, 30L, 40L]
      * def range = new ObjectRange(2, 3)
      * assert array[range] == [20L, 30L]
@@ -3897,7 +3897,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a float array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0.0f, 10.0f, 20.0f, 30.0f, 40.0f]
      * def range = new ObjectRange(2, 3)
      * assert array[range] == [20.0f, 30.0f]
@@ -3915,7 +3915,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Supports the subscript operator for a double array with an ObjectRange giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0.0d, 10.0d, 20.0d, 30.0d, 40.0d]
      * def range = new ObjectRange(2, 3)
      * assert array[range] == [20.0d, 30.0d]
@@ -3963,7 +3963,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for a boolean array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, false, true, true, false]
      * assert array[2, 3] == [true, true]
      * assert array[0, 0..1, [1, [-1]]] == [false, false, false, false, false]
@@ -3982,7 +3982,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for a byte array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 2, 4, 6, 8]
      * assert array[2, 3] == [4, 6]
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
@@ -4001,7 +4001,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for a char array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'abcde'.chars
      * assert array[2, 3] == ['c', 'd']
      * assert array[1, 0..1, [0, [-1]]] == ['b', 'a', 'b', 'a', 'e']
@@ -4020,7 +4020,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for a short array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 2, 4, 6, 8]
      * assert array[2, 3] == [4, 6]
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
@@ -4039,7 +4039,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for an int array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 2, 4, 6, 8]
      * assert array[2, 3] == [4, 6]
      * assert array[1, 0..1, [0, [-1]]] == [2, 0, 2, 0, 8]
@@ -4058,7 +4058,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for a long array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 2L, 4L, 6L, 8L]
      * assert array[2, 3] == [4L, 6L]
      * assert array[1, 0..1, [0, [-1]]] == [2L, 0L, 2L, 0L, 8L]
@@ -4077,7 +4077,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for a float array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0.0f, 2.0f, 4.0f, 6.0f, 8.0f]
      * assert array[2, 3] == [4.0f, 6.0f]
      * assert array[1, 0..1, [0, [-1]]] == [2.0f, 0.0f, 2.0f, 0.0f, 8.0f]
@@ -4096,7 +4096,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Supports the subscript operator for a double array
      * with a (potentially nested) collection giving the desired indices.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0.0d, 2.0d, 4.0d, 6.0d, 8.0d]
      * assert array[2, 3] == [4.0d, 6.0d]
      * assert array[1, 0..1, [0, [-1]]] == [2.0d, 0.0d, 2.0d, 0.0d, 8.0d]
@@ -4141,7 +4141,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the boolean array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true]
      * assert array.indices == 0..1
      * </pre>
@@ -4156,7 +4156,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the byte array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1]
      * assert array.indices == 0..1
      * </pre>
@@ -4171,7 +4171,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the char array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'ab'.chars
      * assert array.indices == 0..1
      * </pre>
@@ -4186,7 +4186,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the short array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1]
      * assert array.indices == 0..1
      * </pre>
@@ -4201,7 +4201,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the int array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 1]
      * assert array.indices == 0..1
      * </pre>
@@ -4216,7 +4216,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the long array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0L, 1L]
      * assert array.indices == 0..1
      * </pre>
@@ -4231,7 +4231,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the float array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0.0f, 1.0f]
      * assert array.indices == 0..1
      * </pre>
@@ -4246,7 +4246,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns indices of the double array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0.0d, 1.0d]
      * assert array.indices == 0..1
      * </pre>
@@ -4263,7 +4263,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns indices of the array.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['a', 'b', 'c', 'd']
      * {@code assert 0..<4 == letters.indices}
      * </pre>
@@ -4284,7 +4284,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the IDENTITY Closure as a filter - effectively returning all elements which satisfy Groovy truth.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null] as Object[]
      * assert items.grep() == [1, 2, true, 'foo', [4, 5]]
      * </pre>
@@ -4304,7 +4304,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * method used by switch statements. This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def items = ['a', 'b', 'aa', 'bc', 3, 4.5] as Object[]
      * assert items.grep( ~/a+/ )  == ['a', 'aa']
      * assert items.grep( ~/../ )  == ['aa', 'bc']
@@ -4337,7 +4337,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * with each value being a list of items for that group.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] items = [1,2,3,4,5,6]
      * assert [0:[2,4,6], 1:[1,3,5]] == items.groupBy { it % 2 }
      * </pre>
@@ -4386,14 +4386,14 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The member will be grouped under each key from the list.
      *
      * Example usage finding the words with capital letters:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] words = ['TO', 'be', 'Or', 'nOT', 'To', 'be']
      * assert words.groupByMany(w -> w.toSet().grep(~'[A-Z]')) == [T:['TO', 'nOT', 'To'], O:['TO', 'Or', 'nOT']]
      * </pre>
      *
      * If the lists of generated keys are all of size 1, the result will be the same as
      * {@code groupBy} with a closure returning the value in the key list:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] animals = ['cat', 'dog', 'bird', 'pony']
      * assert animals.groupByMany(a -> [a.size()]) == animals.groupBy(String::size)
      * </pre>
@@ -4570,7 +4570,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the boolean array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true, false]
      * assert array.head() == true
      * </pre>
@@ -4589,7 +4589,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the byte array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] bytes = [1, 2, 3]
      * assert bytes.head() == 1
      * </pre>
@@ -4608,7 +4608,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the char array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] chars = ['a', 'b', 'c']
      * assert chars.head() == 'a'
      * </pre>
@@ -4627,7 +4627,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the short array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] shorts = [10, 20, 30]
      * assert shorts.head() == 10
      * </pre>
@@ -4646,7 +4646,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the int array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] ints = [1, 3, 5]
      * assert ints.head() == 1
      * </pre>
@@ -4665,7 +4665,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the long array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] longs = [2L, 4L, 6L]
      * assert longs.head() == 2L
      * </pre>
@@ -4684,7 +4684,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the float array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] floats = [2.0f, 4.0f, 6.0f]
      * assert floats.head() == 2.0f
      * </pre>
@@ -4703,7 +4703,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the double array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] doubles = [10.0d, 20.0d, 30.0d]
      * assert doubles.head() == 10.0d
      * </pre>
@@ -4722,7 +4722,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the Object array.
-     * <pre class="groovyTestCase">def array = [3, 4, 2].toArray()
+     * <pre class="language-groovy groovyTestCase">def array = [3, 4, 2].toArray()
      * assert array.head() == 3</pre>
      *
      * @param self an array
@@ -4744,7 +4744,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * array. That is, the lowest index {@code i} such that
      * {@code Objects.equals(array[i], object)} or -1 if there is no such index.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] array = ['foo','bar','foo']
      * assert array.indexOf('foo') ==  0
      * assert array.indexOf('bar') ==  1
@@ -4770,7 +4770,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an int[] with indices in (index, value) order starting from index 0.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, 20, 30]
      * assert [0: 10, 1: 20, 2: 30] == nums.indexed()
      * </pre>
@@ -4786,7 +4786,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a long[] with indices in (index, value) order starting from index 0.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, 20L, 30L]
      * assert [0: 10L, 1: 20L, 2: 30L] == nums.indexed()
      * </pre>
@@ -4802,7 +4802,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a float[] with indices in (index, value) order starting from index 0.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [10.0f, 20.0f, 30.0f]
      * assert [0: 10.0f, 1: 20.0f, 2: 30.0f] == nums.indexed()
      * </pre>
@@ -4818,7 +4818,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a double[] with indices in (index, value) order starting from index 0.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10.0d, 20.0d, 30.0d]
      * assert [0: 10.0d, 1: 20.0d, 2: 30.0d] == nums.indexed()
      * </pre>
@@ -4834,7 +4834,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an int[] with indices in (index, value) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, 20, 30]
      * assert [5: 10, 6: 20, 7: 30] == nums.indexed(5)
      * assert ["1: 10", "2: 20", "3: 30"] == nums.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
@@ -4854,7 +4854,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a long[] with indices in (index, value) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, 20L, 30L]
      * assert [5: 10L, 6: 20L, 7: 30L] == nums.indexed(5)
      * </pre>
@@ -4873,7 +4873,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a float[] with indices in (index, value) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [10.0f, 20.0f, 30.0f]
      * assert [5: 10.0f, 6: 20.0f, 7: 30.0f] == nums.indexed(5)
      * </pre>
@@ -4892,7 +4892,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a double[] with indices in (index, value) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10.0d, 20.0d, 30.0d]
      * assert [5: 10.0d, 6: 20.0d, 7: 30.0d] == nums.indexed(5)
      * </pre>
@@ -4911,7 +4911,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an object array with indices in (index, value) order starting from index 0.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = 'A'..'C'
      * assert [0: 'A', 1: 'B', 2: 'C'] == letters.indexed()
      * </pre>
@@ -4927,7 +4927,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an object array with indices in (index, value) order starting from a given index.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = 'A'..'C'
      * assert [5: 'A', 6: 'B', 7: 'C'] == letters.indexed(5)
      * assert ["1: A", "2: B", "3: C"] == letters.indexed(1).collect { idx, str {@code ->} "$idx: $str" }
@@ -4948,7 +4948,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the boolean array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true, false, true]
      * def result = array.init()
      * assert result == [true, false]
@@ -4968,7 +4968,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the byte array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] bytes = [1, 2, 3]
      * def result = bytes.init()
      * assert result == [1, 2]
@@ -4988,7 +4988,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the char array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] chars = ['a', 'b', 'c']
      * def result = chars.init()
      * assert result == ['a', 'b']
@@ -5008,7 +5008,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the short array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] shorts = [10, 20, 30]
      * def result = shorts.init()
      * assert result == [10, 20]
@@ -5028,7 +5028,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the int array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] ints = [1, 3, 5]
      * def result = ints.init()
      * assert result == [1, 3]
@@ -5048,7 +5048,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the long array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] longs = [2L, 4L, 6L]
      * def result = longs.init()
      * assert result == [2L, 4L]
@@ -5068,7 +5068,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the float array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] floats = [2.0f, 4.0f, 6.0f]
      * def result = floats.init()
      * assert result == [2.0f, 4.0f]
@@ -5088,7 +5088,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the double array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] doubles = [10.0d, 20.0d, 30.0d]
      * def result = doubles.init()
      * assert result == [10.0d, 20.0d]
@@ -5108,7 +5108,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the Object array excluding the last item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      *     String[] strings = ["a", "b", "c"]
      *     def result = strings.init()
      *     assert result.length == 2
@@ -5134,7 +5134,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure. The result is passed back (injected) to the closure along with
      * the third element and so on until all array elements have been consumed.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = new Number[] {1, 2, 3, 4}
      * def value = array.inject { acc, val -> acc * val }
      * assert value == 24
@@ -5175,7 +5175,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * second element. The new result is injected back into the closure with the
      * third element and so on until all elements have been consumed.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = new Number[] {2, 3, 4}
      * def value = array.inject(1) { acc, val -> acc * val }
      * assert value == 24
@@ -5235,7 +5235,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through the given array, injecting values as per <tt>inject</tt>
      * but returns the list of all calculated values instead of just the final result.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] nums = 1..5
      * var prefixSum = nums.injectAll(0, Integer::sum)
      * Arrays.parallelPrefix(nums, Integer::sum) // built-in JDK mutating method
@@ -5262,7 +5262,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Determines if the array is sorted in natural order using a {@link NumberAwareComparator}.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] nums = [1, 2, 3]
      * assert nums.isSorted()
      * Integer[] unsorted = [3, 1, 2]
@@ -5282,7 +5282,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Determines if the array is sorted according to the given Comparator.
      * This is efficient — it checks adjacent pairs in a single pass and
      * short-circuits on the first out-of-order pair.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] words = ["hello","Hey","hi"]
      * assert words.isSorted(String.CASE_INSENSITIVE_ORDER)
      * </pre>
@@ -5426,7 +5426,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Concatenates the string representation of each item in this array.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = new Number[]{1,2L,3G}
      * assert array.join() == "123"
      * </pre>
@@ -5549,7 +5549,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Concatenates the string representation of each item in this array,
      * with the given String as a separator between each item.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Serializable[] array = [1,2L,-3G]
      * assert array.join("+") == "1+2+-3"
      * </pre>
@@ -5568,7 +5568,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the boolean array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true, false, true]
      * assert array.last() == true
      * </pre>
@@ -5586,7 +5586,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the byte array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] bytes = [1, 2, 3]
      * assert bytes.last() == 3
      * </pre>
@@ -5604,7 +5604,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the char array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] chars = ['a', 'b', 'c']
      * assert chars.last() == 'c'
      * </pre>
@@ -5622,7 +5622,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the short array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] shorts = [10, 20, 30]
      * assert shorts.last() == 30
      * </pre>
@@ -5640,7 +5640,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the int array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] ints = [1, 3, 5]
      * assert ints.last() == 5
      * </pre>
@@ -5658,7 +5658,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the long array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] longs = [2L, 4L, 6L]
      * assert longs.last() == 6L
      * </pre>
@@ -5676,7 +5676,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the float array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] floats = [2.0f, 4.0f, 6.0f]
      * assert floats.last() == 6.0f
      * </pre>
@@ -5694,7 +5694,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the double array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] doubles = [10.0d, 20.0d, 30.0d]
      * assert doubles.last() == 30.0d
      * </pre>
@@ -5712,7 +5712,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = [3, 4, 2].toArray()
      * assert array.last() == 2
      * </pre>
@@ -5737,7 +5737,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * array. That is, the highest index {@code i} such that
      * {@code Objects.equals(array[i], object)} or -1 if there is no such index.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] array = ['foo','bar','foo']
      * assert array.lastIndexOf('foo') ==  2
      * assert array.lastIndexOf('bar') ==  1
@@ -5763,7 +5763,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds max() method to int arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [1, 3, 2]
      * assert 3 == nums.max()
      * </pre>
@@ -5787,7 +5787,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds max() method to long arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [1L, 3L, 2L]
      * assert 3L == nums.max()
      * </pre>
@@ -5811,7 +5811,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds max() method to float arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [1.1f, 3.3f, 2.2f]
      * assert 3.3f == nums.max()
      * </pre>
@@ -5835,7 +5835,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds max() method to double arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [1.1d, 3.3d, 2.2d]
      * assert 3.3d == nums.max()
      * </pre>
@@ -5873,7 +5873,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the int array
      * using the supplied IntComparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, 20, -30]
      * assert 20 == nums.max{ n, m {@code ->} n {@code <=>} m }
      * assert -30 == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -5906,7 +5906,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied IntUnaryOperator to determine the maximum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, 20, -30]
      * assert 20 == nums.max{ it }
      * assert -30 == nums.max{ it.abs() }
@@ -5938,7 +5938,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the long array
      * using the supplied LongBinaryOperator as a comparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, 20L, -30L]
      * assert 20L == nums.max{ n, m {@code ->} n {@code <=>} m }
      * assert -30L == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -5971,7 +5971,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied LongUnaryOperator to determine the maximum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, 20L, -30L]
      * assert 20L == nums.max{ it }
      * assert -30L == nums.max{ it.abs() }
@@ -6003,7 +6003,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the float array
      * using the supplied FloatComparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10f, 20f, -30f]
      * assert 20f == nums.max{ n, m {@code ->} n {@code <=>} m }
      * assert -30f == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -6036,7 +6036,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied FloatUnaryOperator to determine the maximum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [10f, 20f, -30f]
      * assert -30f == nums.max{ it.abs() }
      * assert 20f == nums.max{ it }
@@ -6068,7 +6068,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the double array
      * using the supplied DoubleComparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10d, 20d, -30d]
      * assert 20d == nums.max{ n, m {@code ->} n {@code <=>} m }
      * assert -30d == nums.max{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -6101,7 +6101,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied DoubleUnaryOperator to determine the maximum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10d, 20d, -30d]
      * assert -30d == nums.max{ it.abs() }
      * assert 20d == nums.max{ it }
@@ -6170,7 +6170,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the int array
      * using the comparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, 20, 30]
      * assert 30 == nums.maxComparing(Comparator.naturalOrder())
      * assert 10 == nums.maxComparing(Comparator.reverseOrder())
@@ -6192,7 +6192,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the long array
      * using the comparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, 20L, 30L]
      * assert 30L == nums.maxComparing(Comparator.naturalOrder())
      * assert 10L == nums.maxComparing(Comparator.reverseOrder())
@@ -6214,7 +6214,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the float array
      * using the comparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10.0f, 20.0f, 30.0f]
      * assert 30f == nums.maxComparing(Comparator.naturalOrder())
      * assert 10f == nums.maxComparing(Comparator.reverseOrder())
@@ -6236,7 +6236,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the maximum value found from the double array
      * using the comparator to determine the maximum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10.0d, 20.0d, 30.0d]
      * assert 30d == nums.maxComparing(Comparator.naturalOrder())
      * assert 10d == nums.maxComparing(Comparator.reverseOrder())
@@ -6261,7 +6261,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds min() method to int arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [20, 10, 30]
      * assert 10 == nums.min()
      * </pre>
@@ -6285,7 +6285,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds min() method to long arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [20L, 10L, 30L]
      * assert 10L == nums.min()
      * </pre>
@@ -6309,7 +6309,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds min() method to float arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [1.1f, 3.3f, 2.2f]
      * assert 1.1f == nums.min()
      * </pre>
@@ -6333,7 +6333,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Adds min() method to double arrays.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [20.0d, 10.0d, 30.0d]
      * assert 10.0d == nums.min()
      * </pre>
@@ -6371,7 +6371,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the int array
      * using the supplied IntComparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, -20, 30]
      * assert -20 == nums.min{ n, m {@code ->} n {@code <=>} m }
      * assert 10 == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -6404,7 +6404,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied IntUnaryOperator to determine the minimum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, -20, 30]
      * assert -20 == nums.min{ n {@code ->} n }
      * assert 10 == nums.min{ n {@code ->} n.abs() }
@@ -6436,7 +6436,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the long array
      * using the supplied LongComparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, -20L, 30L]
      * assert -20L == nums.min{ n, m {@code ->} n {@code <=>} m }
      * assert 10L == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -6469,7 +6469,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied LongUnaryOperator to determine the minimum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, -20L, 30L]
      * assert -20L == nums.min{ it }
      * assert 10L == nums.min{ it.abs() }
@@ -6501,7 +6501,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the float array
      * using the supplied FloatComparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10f, -20f, 30f]
      * assert -20f == nums.min{ n, m {@code ->} n {@code <=>} m }
      * assert 10f == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -6534,7 +6534,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied FloatUnaryOperator to determine the minimum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10f, -20f, 30f]
      * assert -20f == nums.min{ it }
      * assert 10f == nums.min{ it.abs() }
@@ -6566,7 +6566,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the double array
      * using the supplied DoubleComparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10d, -20d, 30d]
      * assert -20d == nums.min{ n, m {@code ->} n {@code <=>} m }
      * assert 10d == nums.min{ n, m {@code ->} n.abs() {@code <=>} m.abs() }
@@ -6599,7 +6599,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * using the supplied DoubleUnaryOperator to determine the minimum of any two values.
      * The operator is applied to each array element and the results are compared.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10d, -20d, 30d]
      * assert -20d == nums.min{ it }
      * assert 10d == nums.min{ it.abs() }
@@ -6669,7 +6669,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the int array
      * using the comparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [1, 2, 3]
      * assert 1 == nums.minComparing(Comparator.naturalOrder())
      * assert 3 == nums.minComparing(Comparator.reverseOrder())
@@ -6691,7 +6691,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the long array
      * using the comparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [10L, 20L, 30L]
      * assert 10L == nums.minComparing(Comparator.naturalOrder())
      * assert 30L == nums.minComparing(Comparator.reverseOrder())
@@ -6713,7 +6713,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the float array
      * using the comparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10.0f, 20.0f, 30.0f]
      * assert 10f == nums.minComparing(Comparator.naturalOrder())
      * assert 30f == nums.minComparing(Comparator.reverseOrder())
@@ -6735,7 +6735,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Selects the minimum value found from the double array
      * using the comparator to determine the minimum of any two values.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [10.0d, 20.0d, 30.0d]
      * assert 10d == nums.minComparing(Comparator.naturalOrder())
      * assert 30d == nums.minComparing(Comparator.reverseOrder())
@@ -6759,7 +6759,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new array composed of the elements of the first array minus the
      * elements of the given Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] ints = [1, 2, 3, 1]
      * List&lt;Integer> nope = [1, 3]
      * def result = ints - nope
@@ -6786,7 +6786,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new array composed of the elements of the first array minus the
      * elements of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] ints = [1, 2, 3, 1]
      * Integer[] nope = [1, 3]
      * def result = ints - nope
@@ -6818,7 +6818,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new array composed of the elements of the given array minus every occurrence the given object.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] ints = [1, 2, 3, 1]
      * def result = ints - 1
      * assert result.class == Integer[]
@@ -6858,12 +6858,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as Integer[]
      * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
@@ -6906,12 +6906,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as Integer[]
      * assert arr.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as Integer[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint{ it &lt; 4 } == 4
@@ -6936,12 +6936,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as char[]
      * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as char[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
@@ -6984,12 +6984,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as char[]
      * assert arr.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as char[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint{ it &lt; 4 } == 4
@@ -7014,12 +7014,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as short[]
      * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as short[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
@@ -7062,12 +7062,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as short[]
      * assert arr.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as short[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint{ it &lt; 4 } == 4
@@ -7092,12 +7092,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as int[]
      * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as int[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
@@ -7140,12 +7140,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as int[]
      * assert arr.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as int[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint{ it &lt; 4 } == 4
@@ -7170,12 +7170,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as long[]
      * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
@@ -7218,12 +7218,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as long[]
      * assert arr.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as long[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint{ it &lt; 4 } == 4
@@ -7248,12 +7248,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as float[]
      * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as float[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
@@ -7296,12 +7296,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as float[]
      * assert arr.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as float[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint{ it &lt; 4 } == 4
@@ -7326,12 +7326,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as double[]
      * assert arr.partitionPoint(0..&lt;arr.size()) { it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as double[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint(0..&lt;arr.size()) { it &lt; 4 } == 4
@@ -7374,12 +7374,12 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns the index of the partition point according to the given predicate
      * (the index of the first element of the second partition).
      * The arr is assumed to be partitioned according to the given predicate.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [7, 15, 3, 5, 4, 12, 6] as double[]
      * assert arr.partitionPoint{ it%2 != 0 } == 4
      * </pre>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def arr = [1, 2, 3, 3, 4, 4, 5, 6, 7] as double[]
      * // usage case like lower_bound(cpp), bisect_left(python)
      * assert arr.partitionPoint{ it &lt; 4 } == 4
@@ -7405,7 +7405,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates an array containing elements from an original array plus those from a Collection.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * def result = a + [4, 5, 6]
      * assert result.class == Integer[]
@@ -7444,7 +7444,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates an array containing elements from an original array plus those from an Iterable.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
@@ -7467,7 +7467,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates an array as a union of two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * Integer[] b = [4, 5, 6]
      * def result = a + b
@@ -7504,7 +7504,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates an array containing elements from an original array plus an additional appended element.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * def result = a + 4
      * assert result.class == Integer[]
@@ -7536,7 +7536,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] from = [70, 80, 90]
      * Integer[] nums = [1, 2, 3, 4, 5]
      * nums[1..3] = from
@@ -7557,7 +7557,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * Null will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [70, 80, 90]
      * Integer[] nums = [1, 2, 3, 4, 5]
      * nums[1..3] = from
@@ -7580,7 +7580,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] from = [true, true, true]
      * boolean[] to = [false, false, false, false, false]
      * to[1..3] = from
@@ -7601,7 +7601,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * False will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [true, true, true]
      * boolean[] to = [false, false, false, false, false]
      * to[1..3] = from
@@ -7624,7 +7624,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] from = [1, 1, 1]
      * byte[] to = [0, 0, 0, 0, 0]
      * to[1..3] = from
@@ -7645,7 +7645,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * Zero will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [1, 1, 1]
      * byte[] to = [0, 0, 0, 0, 0]
      * to[1..3] = from
@@ -7668,7 +7668,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] from = 'XYZ'.chars
      * char[] to = 'abcde'.chars
      * to[1..3] = from
@@ -7689,7 +7689,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * The null character, \0, will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = 'XYZ'.chars.toList()
      * char[] to = 'abcde'.chars
      * to[1..3] = from
@@ -7712,7 +7712,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] from = [1, 1, 1]
      * short[] to = [0, 0, 0, 0, 0]
      * to[1..3] = from
@@ -7733,7 +7733,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * Zero will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [1, 1, 1]
      * short[] to = [0, 0, 0, 0, 0]
      * to[1..3] = from
@@ -7756,7 +7756,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] from = [1, 1, 1]
      * int[] to = [0, 0, 0, 0, 0]
      * to[1..3] = from
@@ -7777,7 +7777,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * Zero will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [1, 1, 1]
      * int[] to = [0, 0, 0, 0, 0]
      * to[1..3] = from
@@ -7800,7 +7800,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] from = [1L, 1L, 1L]
      * long[] to = [0L, 0L, 0L, 0L, 0L]
      * to[1..3] = from
@@ -7821,7 +7821,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * Zero will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [1L, 1L, 1L]
      * long[] to = [0L, 0L, 0L, 0L, 0L]
      * to[1..3] = from
@@ -7844,7 +7844,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] from = [1f, 1f, 1f]
      * float[] to = [0f, 0f, 0f, 0f, 0f]
      * to[1..3] = from
@@ -7865,7 +7865,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * Zero will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [1f, 1f, 1f]
      * float[] to = [0f, 0f, 0f, 0f, 0f]
      * to[1..3] = from
@@ -7888,7 +7888,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow arrays to be set with subscript operators.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] from = [1d, 1d, 1d]
      * double[] to = [0d, 0d, 0d, 0d, 0d]
      * to[1..3] = from
@@ -7909,7 +7909,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * A helper method to allow arrays to be set with subscript operators.
      * Zero will be used if the source iterable has insufficient elements.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def from = [1d, 1d, 1d]
      * double[] to = [0d, 0d, 0d, 0d, 0d]
      * to[1..3] = from
@@ -7935,7 +7935,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new boolean array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true]
      * assert array.reverse() == [true, false]
      * </pre>
@@ -7952,7 +7952,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, true]
      * def yarra = array.reverse(true)
      * assert array == [true, true, false]
@@ -7979,7 +7979,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new byte array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = 1..2
      * assert array.reverse() == 2..1
      * </pre>
@@ -7996,7 +7996,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = 1..3
      * def yarra = array.reverse(true)
      * assert array == 3..1
@@ -8023,7 +8023,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new char array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = ['a', 'b']
      * assert array.reverse() == ['b', 'a'] as char[]
      * </pre>
@@ -8040,7 +8040,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = ['a', 'b', 'c']
      * def yarra = array.reverse(true)
      * assert array == ['c', 'b', 'a']
@@ -8067,7 +8067,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new short array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = 1..2
      * assert array.reverse() == 2..1
      * </pre>
@@ -8084,7 +8084,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = 1..3
      * def yarra = array.reverse(true)
      * assert array == 3..1
@@ -8111,7 +8111,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new int array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = 1..2
      * assert array.reverse() == 2..1
      * </pre>
@@ -8128,7 +8128,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = 1..3
      * def yarra = array.reverse(true)
      * assert array == 3..1
@@ -8155,7 +8155,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new long array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = 1L..2L
      * assert array.reverse() == 2L..1L
      * </pre>
@@ -8172,7 +8172,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = 1L..3L
      * def yarra = array.reverse(true)
      * assert array == 3L..1L
@@ -8199,7 +8199,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new float array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [1f, 2f]
      * assert array.reverse() == [2f, 1f]
      * </pre>
@@ -8216,7 +8216,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = 1f..3f
      * def yarra = array.reverse(true)
      * assert array == 3f..1f
@@ -8243,7 +8243,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new double array containing items which are the same as this array but in reverse order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [1d, 2d]
      * assert array.reverse() == [2d, 1d]
      * </pre>
@@ -8260,7 +8260,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = 1d..3d
      * def yarra = array.reverse(true)
      * assert array == 3d..1d
@@ -8301,7 +8301,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Reverses the items in an array. If mutate is true, the original array is modified in place and returned.
      * Otherwise, a new array containing the reversed items is produced.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def array = new Object[] {1,2,3}
      * def yarra = array.reverse(true)
      * assert array == 3..1
@@ -8328,7 +8328,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a boolean[] in reverse order passing each boolean to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, true]
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8350,7 +8350,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a byte[] in reverse order passing each byte to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [0, 1, 2]
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8372,7 +8372,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a char[] in reverse order passing each char to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'abc'.chars
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8394,7 +8394,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a short[] in reverse order passing each short to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [0, 1, 2]
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8416,7 +8416,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through an int[] in reverse order passing each int to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [0, 1, 2]
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8438,7 +8438,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a long[] in reverse order passing each long to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [0, 1, 2]
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8460,7 +8460,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a float[] in reverse order passing each float to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [0, 1, 2]
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8482,7 +8482,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through a double[] in reverse order passing each double to the given closure.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [0, 1, 2]
      * String result = ''
      * array.reverseEach{ result += it }
@@ -8525,7 +8525,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Randomly reorders the elements of the specified array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] array = [10, 5, 20]
      * def origSize = array.size()
      * def items = array.toList()
@@ -8547,7 +8547,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Randomly reorders the elements of the specified array using the
      * specified random instance as the source of randomness.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def r = new Random()
      * Integer[] array = [10, 5, 20]
      * def origSize = array.size()
@@ -8574,7 +8574,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Creates a new array containing the elements of the specified array but in a random order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] array = [10, 5, 20]
      * def result = array.shuffled()
      * assert array !== result
@@ -8597,7 +8597,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a new array containing the elements of the specified array but in a random
      * order using the specified random instance as the source of randomness.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def r = new Random()
      * Integer[] array = [10, 5, 20]
      * def result = array.shuffled(r)
@@ -8622,7 +8622,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Provides arrays with a {@code size} method similar to collections.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true, false, true]
      * assert array.size() == 3
      * </pre>
@@ -8744,7 +8744,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * The array items are assumed to be comparable.
      * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
      * array is returned and the original array remains unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ["hello","hi","Hey"] as String[]
      * def sorted = orig.sort(false)
      * assert orig == ["hello","hi","Hey"] as String[]
@@ -8780,7 +8780,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sorts the elements from this array into sorted order as determined by the given comparator.
      * If mutate is true, the array is sorted in place and returned. Otherwise, a new sorted
      * array is returned and the original array remains unchanged.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ["hello","hi","Hey"] as String[]
      * def sorted = orig.sort(false, String.CASE_INSENSITIVE_ORDER)
      * assert orig == ["hello","hi","Hey"] as String[]
@@ -8849,7 +8849,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
      * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
      * which is then used for further comparison.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def orig = ["hello","hi","Hey"] as String[]
      * def sorted = orig.sort(false) { it.size() }
      * assert orig == ["hello","hi","Hey"] as String[]
@@ -8882,7 +8882,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * first parameter is less than, equal to, or greater than the second respectively. Otherwise,
      * the Closure is assumed to take a single parameter and return a Comparable (typically an Integer)
      * which is then used for further comparison.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * // an array with some odd then even numbers
      * Integer[] nums = [5, 9, 1, 7, 3, 4, 8, 6, 0, 2]
      *
@@ -8949,7 +8949,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert (1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum()</pre>
      *
      * @param self The array of values to add together
      * @return The sum of all the items
@@ -8961,7 +8961,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as char) == ([1,2,3,4] as char[]).sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert (1+2+3+4 as char) == ([1,2,3,4] as char[]).sum()</pre>
      *
      * @param self The array of values to add together
      * @return The sum of all the items
@@ -8973,7 +8973,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as short) == ([1,2,3,4] as short[]).sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert (1+2+3+4 as short) == ([1,2,3,4] as short[]).sum()</pre>
      *
      * @param self The array of values to add together
      * @return The sum of all the items
@@ -8985,7 +8985,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array.
-     * <pre class="groovyTestCase">assert 1+2+3+4 == ([1,2,3,4] as int[]).sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert 1+2+3+4 == ([1,2,3,4] as int[]).sum()</pre>
      *
      * @param self The array of values to add together
      * @return The sum of all the items
@@ -8998,7 +8998,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Calculates the sum of values found from applying the operator to members of the int array.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, -20, 30]
      * assert 20 == nums.sum{ n {@code ->} n }
      * assert 60 == nums.sum{ n {@code ->} n.abs() }
@@ -9028,7 +9028,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as long) == ([1,2,3,4] as long[]).sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert (1+2+3+4 as long) == ([1,2,3,4] as long[]).sum()</pre>
      *
      * @param self The array of values to add together
      * @return The sum of all the items
@@ -9041,7 +9041,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Calculates the sum of values found from applying the operator to members of the int array.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, -20, 30]
      * assert 20 == nums.sum{ n {@code ->} n }
      * assert 60 == nums.sum{ n {@code ->} n.abs() }
@@ -9068,7 +9068,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as float) == ([1,2,3,4] as float[]).sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert (1+2+3+4 as float) == ([1,2,3,4] as float[]).sum()</pre>
      *
      * @param self The array of values to add together
      * @return The sum of all the items
@@ -9081,7 +9081,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Calculates the sum of values found from applying the operator to members of the float array.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [10f, -20f, 30f]
      * assert 20f == nums.sum{ n {@code ->} n }
      * assert 60f == nums.sum{ n {@code ->} n.abs() }
@@ -9108,7 +9108,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array.
-     * <pre class="groovyTestCase">assert (1+2+3+4 as double) == ([1,2,3,4] as double[]).sum()</pre>
+     * <pre class="language-groovy groovyTestCase">assert (1+2+3+4 as double) == ([1,2,3,4] as double[]).sum()</pre>
      *
      * @param self The array of values to add together
      * @return The sum of all the items
@@ -9121,7 +9121,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Calculates the sum of values found from applying the operator to members of the int array.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [10, -20, 30]
      * assert 20 == nums.sum{ n {@code ->} n }
      * assert 60 == nums.sum{ n {@code ->} n.abs() }
@@ -9161,7 +9161,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum(5 as byte)</pre>
+     * <pre class="language-groovy groovyTestCase">assert (5+1+2+3+4 as byte) == ([1,2,3,4] as byte[]).sum(5 as byte)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -9179,7 +9179,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as char) == ([1,2,3,4] as char[]).sum(5 as char)</pre>
+     * <pre class="language-groovy groovyTestCase">assert (5+1+2+3+4 as char) == ([1,2,3,4] as char[]).sum(5 as char)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -9197,7 +9197,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as short) == ([1,2,3,4] as short[]).sum(5 as short)</pre>
+     * <pre class="language-groovy groovyTestCase">assert (5+1+2+3+4 as short) == ([1,2,3,4] as short[]).sum(5 as short)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -9215,7 +9215,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert 5+1+2+3+4 == ([1,2,3,4] as int[]).sum(5)</pre>
+     * <pre class="language-groovy groovyTestCase">assert 5+1+2+3+4 == ([1,2,3,4] as int[]).sum(5)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -9233,7 +9233,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as long) == ([1,2,3,4] as long[]).sum(5)</pre>
+     * <pre class="language-groovy groovyTestCase">assert (5+1+2+3+4 as long) == ([1,2,3,4] as long[]).sum(5)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -9251,7 +9251,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as float) == ([1,2,3,4] as float[]).sum(5)</pre>
+     * <pre class="language-groovy groovyTestCase">assert (5+1+2+3+4 as float) == ([1,2,3,4] as float[]).sum(5)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -9269,7 +9269,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in an array, adding the result to some initial value.
-     * <pre class="groovyTestCase">assert (5+1+2+3+4 as double) == ([1,2,3,4] as double[]).sum(5)</pre>
+     * <pre class="language-groovy groovyTestCase">assert (5+1+2+3+4 as double) == ([1,2,3,4] as double[]).sum(5)</pre>
      *
      * @param self         an array of values to sum
      * @param initialValue the items in the array will be summed to this initial value
@@ -9335,7 +9335,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([false, true, false, true] as boolean[]) == ([false, false, true, true] as boolean[]).swap(1, 2)
      * </pre>
      *
@@ -9357,7 +9357,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([1, 3, 2, 4] as byte[]) == ([1, 2, 3, 4] as byte[]).swap(1, 2)
      * </pre>
      *
@@ -9379,7 +9379,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([1, 3, 2, 4] as char[]) == ([1, 2, 3, 4] as char[]).swap(1, 2)
      * </pre>
      *
@@ -9401,7 +9401,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([1, 3, 2, 4] as short[]) == ([1, 2, 3, 4] as short[]).swap(1, 2)
      * </pre>
      *
@@ -9423,7 +9423,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([1, 3, 2, 4] as int[]) == ([1, 2, 3, 4] as int[]).swap(1, 2)
      * </pre>
      *
@@ -9445,7 +9445,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([1, 3, 2, 4] as long[]) == ([1, 2, 3, 4] as long[]).swap(1, 2)
      * </pre>
      *
@@ -9467,7 +9467,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([1, 3, 2, 4] as float[]) == ([1, 2, 3, 4] as float[]).swap(1, 2)
      * </pre>
      *
@@ -9489,7 +9489,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert ([1, 3, 2, 4] as double[]) == ([1, 2, 3, 4] as double[]).swap(1, 2)
      * </pre>
      *
@@ -9511,7 +9511,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Swaps two elements at the specified positions.
      * <p>
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert (["a", "c", "b", "d"] as String[]) == (["a", "b", "c", "d"] as String[]).swap(1, 2)
      * </pre>
      *
@@ -9533,7 +9533,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the boolean array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true, false, true]
      * def result = array.tail()
      * assert result == [false, true]
@@ -9553,7 +9553,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the byte array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] bytes = [1, 2, 3]
      * def result = bytes.tail()
      * assert result == [2, 3]
@@ -9573,7 +9573,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the char array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] chars = ['a', 'b', 'c']
      * def result = chars.tail()
      * assert result == ['b', 'c']
@@ -9593,7 +9593,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the short array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] shorts = [10, 20, 30]
      * def result = shorts.tail()
      * assert result == [20, 30]
@@ -9613,7 +9613,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the int array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] ints = [1, 3, 5]
      * def result = ints.tail()
      * assert result == [3, 5]
@@ -9633,7 +9633,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the long array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] longs = [2L, 4L, 6L]
      * def result = longs.tail()
      * assert result == [4L, 6L]
@@ -9653,7 +9653,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the float array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] floats = [2.0f, 4.0f, 6.0f]
      * def result = floats.tail()
      * assert result == [4.0f, 6.0f]
@@ -9673,7 +9673,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the double array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] doubles = [10.0d, 20.0d, 30.0d]
      * def result = doubles.tail()
      * assert result == [20.0d, 30.0d]
@@ -9693,7 +9693,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the array excluding the first item.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] strings = ["a", "b", "c"]
      * def result = strings.tail()
      * assert result.class.componentType == String
@@ -9717,7 +9717,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first <code>num</code> elements from the head of this array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] strings = [ 'a', 'b', 'c' ]
      * assert strings.take( 0 ) == [] as String[]
      * assert strings.take( 2 ) == [ 'a', 'b' ] as String[]
@@ -9751,7 +9751,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last <code>num</code> elements from the tail of this array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] strings = [ 'a', 'b', 'c' ]
      * assert strings.takeRight( 0 ) == [] as String[]
      * assert strings.takeRight( 2 ) == [ 'b', 'c' ] as String[]
@@ -9786,7 +9786,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns the longest prefix of this array where each element
      * passed to the given closure evaluates to true.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def nums = [ 1, 3, 2 ] as Integer[]
      * assert nums.takeWhile{ it {@code <} 1 } == [] as Integer[]
      * assert nums.takeWhile{ it {@code <} 3 } == [ 1 ] as Integer[]
@@ -9938,7 +9938,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [true, false, true]
      * Set expected = [true, false]
      * assert array.toSet() == expected
@@ -9955,7 +9955,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [1, 2, 3, 2, 1]
      * Set expected = [1, 2, 3]
      * assert array.toSet() == expected
@@ -9972,7 +9972,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'xyzzy'.chars
      * Set expected = ['x', 'y', 'z']
      * assert array.toSet() == expected
@@ -9989,7 +9989,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [1, 2, 3, 2, 1]
      * Set expected = [1, 2, 3]
      * assert array.toSet() == expected
@@ -10006,7 +10006,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [1, 2, 3, 2, 1]
      * Set expected = [1, 2, 3]
      * assert array.toSet() == expected
@@ -10023,7 +10023,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [1, 2, 3, 2, 1]
      * Set expected = [1, 2, 3]
      * assert array.toSet() == expected
@@ -10040,7 +10040,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [1.0f, 2.0f, 3.0f, 2.0f, 1.0f]
      * Set expected = [1.0f, 2.0f, 3.0f]
      * assert array.toSet() == expected
@@ -10057,7 +10057,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this array to a Set, with each unique element added to the set.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [1.0d, 2.0d, 3.0d, 2.0d, 1.0d]
      * Set expected = [1.0d, 2.0d, 3.0d]
      * assert array.toSet() == expected
@@ -10100,7 +10100,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns a sorted version of the given array using the supplied comparator to determine the resulting order.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def sumDigitsComparator = [compare: { num1, num2 {@code ->} num1.toString().toList()*.toInteger().sum() {@code <=>} num2.toString().toList()*.toInteger().sum() }] as Comparator
      * Integer[] nums = [9, 44, 222, 7000]
      * def result = nums.toSorted(sumDigitsComparator)
@@ -10164,7 +10164,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[] array = [false, true, false]
      * assert array.toString() == '[false, true, false]'
      * </pre>
@@ -10179,7 +10179,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[] array = [1, 2, 3, 2, 1]
      * assert array.toString() == '[1, 2, 3, 2, 1]'
      * </pre>
@@ -10194,7 +10194,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[] array = 'abcd'.chars
      * assert array instanceof char[]
      * assert array.toString() == 'abcd'
@@ -10210,7 +10210,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[] array = [1, 2, 3, 2, 1]
      * assert array.toString() == '[1, 2, 3, 2, 1]'
      * </pre>
@@ -10225,7 +10225,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] array = [1, 2, 3, 2, 1]
      * assert array.toString() == '[1, 2, 3, 2, 1]'
      * </pre>
@@ -10240,7 +10240,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] array = [1, 2, 3, 2, 1]
      * assert array.toString() == '[1, 2, 3, 2, 1]'
      * </pre>
@@ -10255,7 +10255,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] array = [1, 2, 3, 2, 1]
      * assert array.toString() == '[1.0, 2.0, 3.0, 2.0, 1.0]'
      * </pre>
@@ -10270,7 +10270,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] array = [1, 2, 3, 2, 1]
      * assert array.toString() == '[1.0, 2.0, 3.0, 2.0, 1.0]'
      * </pre>
@@ -10301,7 +10301,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a new Array containing the items from the original Array but with duplicates removed using the
      * natural ordering of the items in the array.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['c', 'a', 't', 's', 'a', 't', 'h', 'a', 't']
      * String[] expected = ['c', 'a', 't', 's', 'h']
      * def result = letters.toUnique()
@@ -10321,7 +10321,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a new Array containing the items from the original Array but with duplicates removed with the supplied
      * comparator determining which items are unique.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['c', 'a', 't', 's', 'A', 't', 'h', 'a', 'T']
      * String[] lower = ['c', 'a', 't', 's', 'h']
      * class LowerComparator implements Comparator {
@@ -10345,7 +10345,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Returns a new Array containing the items from the original Array but with duplicates removed with the supplied
      * closure determining which items are unique.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['c', 'a', 't', 's', 'A', 't', 'h', 'a', 'T']
      * String[] expected = ['c', 'a', 't', 's', 'h']
      * assert letters.toUnique{ p1, p2 {@code ->} p1.toLowerCase() {@code <=>} p2.toLowerCase() } == expected
@@ -10370,7 +10370,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D boolean arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean[][] array = [[false, false], [true, true]]
      * boolean[][] expected = [[false, true], [false, true]]
      * def result = array.transpose()
@@ -10397,7 +10397,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D byte arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * byte[][] bytes = [[1, 10], [2, 20]]
      * byte[][] expected = [[1, 2], [10, 20]]
      * def result = bytes.transpose()
@@ -10424,7 +10424,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D char arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * char[][] chars = [['a', 'b'], ['A', 'B']]
      * char[][] expected = [['a', 'A'], ['b', 'B']]
      * def result = chars.transpose()
@@ -10451,7 +10451,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D short arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * short[][] shorts = [[1, 10], [100, 1000]]
      * short[][] expected = [[1, 100], [10, 1000]]
      * def result = shorts.transpose()
@@ -10478,7 +10478,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D int arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[][] nums = [[10, 15, 20], [30, 35, 40]]
      * int[][] expected = [[10, 30], [15, 35], [20, 40]]
      * assert nums.transpose() == expected
@@ -10503,7 +10503,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D long arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[][] longs = [[1L, 3L, 5L], [2L, 4L, 6L]]
      * long[][] expected = [[1L, 2L], [3L, 4L], [5L, 6L]]
      * def result = longs.transpose()
@@ -10530,7 +10530,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D float arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[][] floats = [[1.0f, 10.0f], [2.0f, 20.0f]]
      * float[][] expected = [[1.0f, 2.0f], [10.0f, 20.0f]]
      * def result = floats.transpose()
@@ -10557,7 +10557,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * A transpose method for 2D double arrays.
      * <p>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] doubles = [[1.0d, 10.0d], [2.0d, 20.0d]]
      * double[][] expected = [[1.0d, 2.0d], [10.0d, 20.0d]]
      * def result = doubles.transpose()
@@ -10585,7 +10585,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[][] nums = [[1.0d, 2.0d], [10.0d, 20.0d]]
      * assert nums.transpose() == nums.transposing().toList()
      * </pre>
@@ -10600,7 +10600,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[][] nums = [[1.0f, 2.0f], [10.0f, 20.0f]]
      * assert nums.transpose() == nums.transposing().toList()
      * </pre>
@@ -10615,7 +10615,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[][] nums = [[1, 2], [10, 20]]
      * assert nums.transpose() == nums.transposing().toList()
      * assert nums.transposing().collect{ int[] col -> col.sum() } == [11, 22]
@@ -10631,7 +10631,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of the columns of the array.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[][] nums = [[1L, 2L], [10L, 20L]]
      * assert nums.transpose() == nums.transposing().toList()
      * assert nums.transposing().collect{ long[] col -> col.sum() } == [11L, 22L]
@@ -10652,7 +10652,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates an object array containing elements from an original array plus those from a Collection.
      * This is similar to {@link #plus(Object[], Collection)} but always return an Object array
      * and so might be more applicable when adding heterogeneous arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * def result = a.union(['foo', 'bar'])
      * assert result.class == Object[]
@@ -10679,7 +10679,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates an Object array containing elements from an original array plus those from an Iterable.
      * This is similar to {@link #plus(Object[], Iterable)} but always return an Object array
      * and so might be more applicable when adding heterogeneous arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class AbcIterable implements Iterable<String> {
      *     Iterator<String> iterator() { "abc".iterator() }
      * }
@@ -10702,7 +10702,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates an Object array as a union of two arrays.
      * This is similar to {@link #plus(Object[], Object[])} but always return an Object array
      * and so might be more applicable when adding heterogeneous arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * String[] b = ['foo', 'bar']
      * def result = a.union(b)
@@ -10726,7 +10726,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates an Object array containing elements from an original array plus an additional appended element.
      * This is similar to {@link #plus(Object[], Object)} but always return an Object array
      * and so might be more applicable when adding heterogeneous arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * Integer[] a = [1, 2, 3]
      * def result = a.union('foo')
      * assert result.class == Object[]
@@ -10810,7 +10810,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an int array with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [42, -1]
      * assert [[42, 0], [-1, 1]] == nums.withIndex()
      * assert ["0: 42", "1: -1"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
@@ -10829,7 +10829,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an int array with indices in (value, index) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [42, -1]
      * assert [[42, 5], [-1, 6]] == nums.withIndex(5)
      * assert ["5: 42", "6: -1"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
@@ -10849,7 +10849,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a long array with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [42L, -1L]
      * assert [[42L, 0], [-1L, 1]] == nums.withIndex()
      * assert ["0: 42", "1: -1"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
@@ -10868,7 +10868,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a long array with indices in (value, index) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [42L, -1L]
      * assert [[42L, 5], [-1L, 6]] == nums.withIndex(5)
      * assert ["5: 42", "6: -1"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
@@ -10888,7 +10888,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a float array with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [42.0f, -1.0f]
      * assert [[42.0f, 0], [-1.0f, 1]] == nums.withIndex()
      * assert ["0: 42.0", "1: -1.0"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
@@ -10907,7 +10907,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a float array with indices in (value, index) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] nums = [42.0f, -1.0f]
      * assert [[42.0f, 5], [-1.0f, 6]] == nums.withIndex(5)
      * assert ["5: 42.0", "6: -1.0"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
@@ -10927,7 +10927,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a double array with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [42.0d, -1.0d]
      * assert [[42.0d, 0], [-1.0d, 1]] == nums.withIndex()
      * assert ["0: 42.0", "1: -1.0"] == nums.withIndex().collect { n, idx {@code ->} "$idx: $n" }
@@ -10946,7 +10946,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips a double array with indices in (value, index) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [42.0d, -1.0d]
      * assert [[42.0d, 5], [-1.0d, 6]] == nums.withIndex(5)
      * assert ["5: 42.0", "6: -1.0"] == nums.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
@@ -10966,7 +10966,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an object array with indices in (value, index) order.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['a', 'z']
      * assert [['a', 0], ['z', 1]] == letters.withIndex()
      * </pre>
@@ -10984,7 +10984,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
      * Zips an object array with indices in (value, index) order starting from a given index.
      * <p/>
      * Example usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * String[] letters = ['a', 'z']
      * assert [['a', 5], ['z', 6]] == letters.withIndex(5)
      * assert ["5: a", "6: z"] == letters.withIndex(5).collect { n, idx {@code ->} "$idx: $n" }
@@ -11005,7 +11005,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A list of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] small = [1.0d, 2.0d, 3.0d]
      * double[] large = [100d, 200d, 300d]
      * assert [small, large].transpose() == small.zip(large)
@@ -11022,7 +11022,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] small = [1.0d, 2.0d, 3.0d]
      * double[] large = [100d, 200d, 300d]
      * assert [small, large].transpose() == small.zipping(large).toList()
@@ -11039,7 +11039,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A list of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] small = [1.0f, 2.0f, 3.0f]
      * float[] large = [100f, 200f, 300f]
      * assert [small, large].transpose() == small.zip(large)
@@ -11056,7 +11056,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * float[] small = [1.0f, 2.0f, 3.0f]
      * float[] large = [100f, 200f, 300f]
      * assert [small, large].transpose() == small.zipping(large).toList()
@@ -11073,7 +11073,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A list of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] small = [1, 2, 3]
      * int[] large = [100, 200, 300]
      * assert [101, 202, 303] == small.zip(large).collect{ a, b -> a + b }
@@ -11091,7 +11091,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] small = [1, 2, 3]
      * int[] large = [100, 200, 300]
      * assert [101, 202, 303] == small.zipping(large).collect{ a, b -> a + b }
@@ -11109,7 +11109,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A list of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] small = [1L, 2L, 3L]
      * long[] large = [100L, 200L, 300L]
      * assert [101L, 202L, 303L] == small.zip(large).collect{ a, b -> a + b }
@@ -11127,7 +11127,7 @@ public class ArrayGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * An iterator of all the pairs from two arrays.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] small = [1L, 2L, 3L]
      * long[] large = [100L, 200L, 300L]
      * assert [101L, 202L, 303L] == small.zipping(large).collect{ a, b -> a + b }

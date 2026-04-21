@@ -24,7 +24,7 @@ import java.util.TimeZone;
 
 /**
  * Apply a number of methods to allow convenient Date/Time manipulation,such as:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * use (groovy.time.TimeCategory) {
  *     // application on numbers:
  *     println 1.minute.from.now

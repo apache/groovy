@@ -189,7 +189,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Coerce an {@code Optional} instance to a {@code boolean} value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().asBoolean()
      * assert Optional.of(1234).asBoolean()
      * </pre>
@@ -205,7 +205,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalInt}, returns the value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert OptionalInt.of(1234).get() == 1234
      * </pre>
      *
@@ -220,7 +220,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalLong}, returns the value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert OptionalLong.of(1234L).get() == 1234L
      * </pre>
      *
@@ -235,7 +235,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalDouble}, returns the value.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert OptionalDouble.of(Math.PI).get() == Math.PI
      * </pre>
      *
@@ -250,7 +250,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns the value or null.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def opt = Optional.empty()
      * assert opt[-1] == null
      * assert opt[0] == null
@@ -284,7 +284,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalInt}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = OptionalInt.empty()
      * def out = opt.peek{ called = true }
@@ -308,7 +308,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalLong}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = OptionalLong.empty()
      * def out = opt.peek{ called = true }
@@ -332,7 +332,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalDouble}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = OptionalDouble.empty()
      * def out = opt.peek{ called = true }
@@ -356,7 +356,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code Optional}, executes the specified
      * {@code action} with the value as input and then returns {@code self}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * boolean called = false
      * def opt = Optional.empty()
      * def out = opt.peek{ called = true }
@@ -380,7 +380,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code Optional}, returns transformed value
      * obtained using the {@code transform} closure or no value as an optional.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Optional.of("foobar").collect{ it.size() }.get() == 6
      * assert !Optional.empty().collect{ it.size() }.isPresent()
      * </pre>
@@ -399,7 +399,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Tests given value against specified type and changes generics of result.
      * This is equivalent to: <code>self.filter(it -&gt; it instanceof Type).map(it -&gt; (Type) it)</code>
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().filter(Number).isPresent()
      * assert !Optional.of('x').filter(Number).isPresent()
      * assert Optional.of(1234).filter(Number).isPresent()
@@ -416,7 +416,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalInt}, tests the value using
      * the given predicate and returns the optional if the test returns true or
      * else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalInt.empty().filter(i -&gt; true).isPresent()
      * assert  OptionalInt.of(1234).filter(i -&gt; true).isPresent()
      * assert !OptionalInt.of(1234).filter(i -&gt; false).isPresent()
@@ -436,7 +436,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalLong}, tests the value using
      * the given predicate and returns the optional if the test returns true or
      * else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalLong.empty().filter(n -&gt; true).isPresent()
      * assert  OptionalLong.of(123L).filter(n -&gt; true).isPresent()
      * assert !OptionalLong.of(123L).filter(n -&gt; false).isPresent()
@@ -456,7 +456,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If a value is present in the {@code OptionalDouble}, tests the value using
      * the given predicate and returns the optional if the test returns true or
      * empty otherwise.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalDouble.empty().filter(n -&gt; true).isPresent()
      * assert  OptionalDouble.of(Math.PI).filter(n -&gt; true).isPresent()
      * assert !OptionalDouble.of(Math.PI).filter(n -&gt; false).isPresent()
@@ -475,7 +475,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalInt}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalInt.empty().mapToObj(x -&gt; new Object()).isPresent()
      * assert  OptionalInt.of(1234).mapToObj(x -&gt; new Object()).isPresent()
      * assert !OptionalInt.of(1234).mapToObj(x -&gt; null).isPresent()
@@ -494,7 +494,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalLong}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalLong.empty().mapToObj(x -&gt; new Object()).isPresent()
      * assert  OptionalLong.of(123L).mapToObj(x -&gt; new Object()).isPresent()
      * assert !OptionalLong.of(123L).mapToObj(x -&gt; null).isPresent()
@@ -513,7 +513,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code OptionalDouble}, returns an {@code Optional}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !OptionalDouble.empty().mapToObj(x -&gt; new Object()).isPresent()
      * assert  OptionalDouble.of(Math.PI).mapToObj(x -&gt; new Object()).isPresent()
      * assert !OptionalDouble.of(Math.PI).mapToObj(x -&gt; null).isPresent()
@@ -532,7 +532,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns an {@code OptionalInt}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().mapToInt(x -&gt; 42).isPresent()
      * assert  Optional.of('x').mapToInt(x -&gt; 42).getAsInt() == 42
      * </pre>
@@ -546,7 +546,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns an {@code OptionalLong}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().mapToLong(x -&gt; 42L).isPresent()
      * assert  Optional.of('x').mapToLong(x -&gt; 42L).getAsLong() == 42L
      * </pre>
@@ -560,7 +560,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * If a value is present in the {@code Optional}, returns an {@code OptionalDouble}
      * consisting of the result of applying the given function to the value or else empty.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert !Optional.empty().mapToDouble(x -&gt; Math.PI).isPresent()
      * assert  Optional.of('x').mapToDouble(x -&gt; Math.PI).getAsDouble() == Math.PI
      * </pre>
@@ -574,7 +574,7 @@ public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Provides similar functionality to JDK9 {@code or} on JDK8.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def x = Optional.empty()
      * def y = Optional.of('y')
      * assert y.orOptional(() -&gt; Optional.of('z')).get() == 'y'

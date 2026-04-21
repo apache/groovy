@@ -57,7 +57,7 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
  *
  * You use it by creating and annotating an explicit builder class which will be filled in by during
  * annotation processing with the appropriate build method and setters. An example is shown here:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.builder.*
  *
  * class Person {

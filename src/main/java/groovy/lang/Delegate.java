@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
  * methods is code which calls through to the delegate as per the normal delegate pattern.
  * <p>
  * As an example, consider this code:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * class Event {
  *     {@code @Delegate} Date when
  *     String title, url

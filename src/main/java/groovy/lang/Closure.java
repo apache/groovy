@@ -47,7 +47,7 @@ import java.util.function.Function;
  * <p>
  * Groovy allows instances of Closures to be called in a
  * short form. For example:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * def a = 1
  * def c = { a }
  * assert c() == 1
@@ -59,7 +59,7 @@ import java.util.function.Function;
  * {@link #getParameterTypes()} will work too without any
  * additional code. If no doCall method is provided a
  * closure must be used in its long form like
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * def a = 1
  * def c = {a}
  * assert c.call() == 1
@@ -72,7 +72,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * owner first, then the delegate (<b>this is the default strategy</b>).
      *
      * For example the following code:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -100,7 +100,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * delegate first then the owner.
      *
      * For example the following code:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -128,7 +128,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * With this resolveStrategy set the closure will resolve property references and methods to the owner only
      * and not call the delegate at all. For example the following code :
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -160,7 +160,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * With this resolveStrategy set the closure will resolve property references and methods to the delegate
      * only and entirely bypass the owner. For example the following code :
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Test {
      *     def x = 30
      *     def y = 40
@@ -548,7 +548,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Support for Closure currying.
      * <p>
      * Typical usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def multiply = { a, b {@code ->} a * b }
      * def doubler = multiply.curry(2)
      * assert doubler(4) == 8
@@ -556,7 +556,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Note: special treatment is given to Closure vararg-style capability.
      * If you curry a vararg parameter, you don't consume the entire vararg array
      * but instead the first parameter of the vararg array as the following example shows:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def a = { one, two, Object[] others {@code ->} one + two + others.sum() }
      * assert a.parameterTypes.name == ['java.lang.Object', 'java.lang.Object', '[Ljava.lang.Object;']
      * assert a(1,2,3,4) == 10
@@ -598,7 +598,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Support for Closure "right" currying.
      * Parameters are supplied on the right rather than left as per the normal curry() method.
      * Typical usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def divide = { a, b {@code ->} a / b }
      * def halver = divide.rcurry(2)
      * assert halver(8) == 4
@@ -680,7 +680,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Support for Closure forward composition.
      * <p>
      * Typical usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def times2 = { a {@code ->} a * 2 }
      * def add3 = { a {@code ->} a + 3 }
      * def timesThenAdd = times2 {@code >>} add3
@@ -699,7 +699,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Support for Closure reverse composition.
      * <p>
      * Typical usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def times2 = { a {@code ->} a * 2 }
      * def add3 = { a {@code ->} a + 3 }
      * def addThenTimes = times2 {@code <<} add3
@@ -778,7 +778,7 @@ public abstract class Closure<V> extends GroovyObjectSupport implements Cloneabl
      * Alias for calling a Closure for non-closure arguments.
      * <p>
      * Typical usage:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def times2 = { a {@code ->} a * 2 }
      * def add3 = { a {@code ->} a + 3 }
      * assert add3 {@code <<} times2 {@code <<} 3 == 9

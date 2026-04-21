@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * Limitations" for more details.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.TupleConstructor} class Customer {
  *     String first, last
  *     int age
@@ -62,7 +62,7 @@ import java.lang.annotation.Target;
  * by the fields of the class (if {@code includeFields} is set). Within each grouping the order
  * is as attributes appear within the respective class.
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.TupleConstructor
  *
@@ -83,7 +83,7 @@ import java.lang.annotation.Target;
  * assert person.name == 'mrhaki'
  * assert !person.likes
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // includeFields in the constructor creation.
  * import groovy.transform.TupleConstructor
@@ -103,7 +103,7 @@ import java.lang.annotation.Target;
  * assert person.likes == ['Groovy', 'Java']
  * assert person.activated
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // use force attribute to force creation of constructor
  * // even if we define our own constructors.
@@ -132,7 +132,7 @@ import java.lang.annotation.Target;
  *
  * assert person.activated
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // include properties and fields from super class.
  * import groovy.transform.TupleConstructor

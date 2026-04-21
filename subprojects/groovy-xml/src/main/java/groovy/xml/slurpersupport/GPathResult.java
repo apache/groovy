@@ -422,7 +422,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
     /**
      * Supports the subscript operator for a GPathResult.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.xml.slurpersupport.*
      * import groovy.xml.XmlSlurper
      * def text = """
@@ -466,7 +466,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
 
     /**
      * Supports the range subscript operator for a GPathResult.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import groovy.xml.slurpersupport.*
      * import groovy.xml.XmlSlurper
      * def text = """

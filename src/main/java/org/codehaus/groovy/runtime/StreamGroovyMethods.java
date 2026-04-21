@@ -54,7 +54,7 @@ public class StreamGroovyMethods {
      * <p>
      * This is a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/stream/package-summary.html#StreamOps">short-circuiting terminal operation</a>.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * import static groovy.test.GroovyAssert.shouldFail
      *
@@ -87,7 +87,7 @@ public class StreamGroovyMethods {
      * <p>
      * This is a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/stream/package-summary.html#StreamOps">short-circuiting terminal operation</a>.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * import static groovy.test.GroovyAssert.shouldFail
      *
@@ -128,7 +128,7 @@ public class StreamGroovyMethods {
     /**
      * Returns an empty list.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * Stream&lt;String&gt; stream = ['foo','bar','baz'].stream()
      * assert stream[1..&lt;1].isEmpty()
@@ -145,7 +145,7 @@ public class StreamGroovyMethods {
      * <p>
      * This is a <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/stream/package-summary.html#StreamOps">short-circuiting intermediate operation</a>.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * import static groovy.test.GroovyAssert.shouldFail
      *
@@ -189,7 +189,7 @@ public class StreamGroovyMethods {
     /**
      * Returns an empty stream.
      * <p>
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * Stream&lt;String&gt; stream = ['foo','bar','baz'].stream()
      * assert !stream.from(1..&lt;1).findAny().isPresent()
@@ -206,7 +206,7 @@ public class StreamGroovyMethods {
     /**
      * Returns a lazily concatenated stream whose elements are all the elements of this stream followed by all the elements of the {@link Collection} object.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * assert (Stream.of(1) + [2]).toList() == [1,2]
      * assert (Stream.of(1) + []).toList() == [1]
@@ -221,7 +221,7 @@ public class StreamGroovyMethods {
     /**
      * Returns a lazily concatenated stream whose elements are all the elements of this stream followed by all the elements of the {@link Iterable} object.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * assert (Stream.of(1) + [2]).toList() == [1,2]
      * assert (Stream.of(1) + []).toList() == [1]
@@ -236,7 +236,7 @@ public class StreamGroovyMethods {
     /**
      * Returns a lazily concatenated stream whose elements are all the elements of this stream followed by all the elements of the second stream.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.util.stream.Stream
      * assert (Stream.of(1) + Stream.&lt;Integer&gt;empty()).toList() == [1]
      * assert (Stream.of(1) + Stream.of(2)).toList() == [1,2]
@@ -254,7 +254,7 @@ public class StreamGroovyMethods {
     /**
      * Returns a sequential {@link Stream} containing a single element.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def item = 'string'
      * assert item.stream().toList() == ['string']
      * assert item.stream().findFirst().isPresent()
@@ -387,7 +387,7 @@ public class StreamGroovyMethods {
     /**
      * Returns a sequential {@link Stream} with the specified element(s) as its
      * source.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def tokens = new StringTokenizer('one two')
      * assert tokens.stream().toList() == ['one', 'two']
      * </pre>
@@ -417,7 +417,7 @@ public class StreamGroovyMethods {
      * Returns a sequential {@link Stream} with the specified element(s) as its
      * source.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * class Items implements Iterable<String> {
      *   Iterator&lt;String&gt; iterator() {
      *     ['one', 'two'].iterator()
@@ -437,7 +437,7 @@ public class StreamGroovyMethods {
      * Returns a sequential {@link Stream} with the specified element(s) as its
      * source.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * [].iterator().stream().toList().isEmpty()
      * ['one', 'two'].iterator().stream().toList() == ['one', 'two']
      * </pre>
@@ -452,7 +452,7 @@ public class StreamGroovyMethods {
      * Returns a sequential {@link Stream} with the specified element(s) as its
      * source.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [].spliterator().stream().toList().isEmpty()
      * assert ['one', 'two'].spliterator().stream().toList() == ['one', 'two']
      * </pre>
@@ -466,7 +466,7 @@ public class StreamGroovyMethods {
     /**
      * Returns an empty sequential {@link Stream}.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * def item = null
      * assert item.stream().toList() == []
      * assert !item.stream().findFirst().isPresent()
@@ -574,7 +574,7 @@ public class StreamGroovyMethods {
      * the stream pipeline, leaving it empty after this call.
      * Care should be taken with stream pipelines that have side effects.
      * This method should not be called on an infinite stream.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert [1, 2, 3].stream().size() == 3
      * </pre>
      *
@@ -594,7 +594,7 @@ public class StreamGroovyMethods {
      * the stream pipeline, leaving it empty after this call.
      * Care should be taken with stream pipelines that have side effects.
      * This method should not be called on an infinite stream.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * int[] nums = [1, 2, 3]
      * assert nums.intStream().size() == 3
      * </pre>
@@ -615,7 +615,7 @@ public class StreamGroovyMethods {
      * the stream pipeline, leaving it empty after this call.
      * Care should be taken with stream pipelines that have side effects.
      * This method should not be called on an infinite stream.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * long[] nums = [1, 2, 3]
      * assert nums.longStream().size() == 3
      * </pre>
@@ -636,7 +636,7 @@ public class StreamGroovyMethods {
      * the stream pipeline, leaving it empty after this call.
      * Care should be taken with stream pipelines that have side effects.
      * This method should not be called on an infinite stream.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * double[] nums = [1.0d, 2.0d, 3.0d]
      * assert nums.doubleStream().size() == 3
      * </pre>
@@ -655,7 +655,7 @@ public class StreamGroovyMethods {
 
     /**
      * Returns an array containing the elements of the stream.
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import static groovy.test.GroovyAssert.shouldFail
      *
      * assert Arrays.equals([].stream().toArray(Object), new Object[0])

@@ -60,7 +60,7 @@ import java.util.Map;
  * {@link MarkdownDocument} backed by nested lists and maps.
  * <p>
  * Usage:
- * <pre><code class="groovyTestCase">
+ * <pre><code class="language-groovy groovyTestCase">
  * def doc = new groovy.markdown.MarkdownSlurper().parseText('# Hello')
  * assert doc.headings[0].text == 'Hello'
  * </code></pre>

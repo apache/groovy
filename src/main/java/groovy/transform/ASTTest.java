@@ -37,7 +37,7 @@ import java.lang.annotation.Target;
  * or parameters), then use a script which is run against this AST node at a specific phase. For example,
  * you could test the {@link Field} AST transformation this way:
  *
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @ASTTest}(value = {

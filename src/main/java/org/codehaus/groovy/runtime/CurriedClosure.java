@@ -30,7 +30,7 @@ import static org.codehaus.groovy.runtime.ArrayGroovyMethods.last;
  * <code>ncurry()</code> methods on <code>Closure</code>.
  * <p>
  * Typical usages:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * // normal usage
  * def unitAdder = { first, second, unit {@code ->} "${first + second} $unit" }
  * assert unitAdder(10, 15, "minutes") == "25 minutes"

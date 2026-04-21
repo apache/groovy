@@ -29,7 +29,7 @@ import java.lang.annotation.Target
  * Meta annotation used when defining immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * {@code @groovy.transform.Immutable} class Customer {
  *     String first, last
  *     int age
@@ -133,7 +133,7 @@ import java.lang.annotation.Target
  * </ul>
  * <p>More examples:</p>
  --------------------------------------------------------------------------------
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * &#64;Immutable(defaults=true, noArg=false)

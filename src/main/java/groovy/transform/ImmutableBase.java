@@ -56,7 +56,7 @@ public @interface ImmutableBase {
      * new property values and returns a new instance of the Immutable class with
      * these values set.
      * Example:
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * {@code @groovy.transform.Immutable}(copyWith = true)
      * class Person {
      *     String first, last

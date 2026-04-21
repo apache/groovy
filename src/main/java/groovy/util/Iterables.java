@@ -35,7 +35,7 @@ public class Iterables {
     /**
      * An iterator returning a map for each combination of elements the iterables sources.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * assert Iterables.combine(x: 1..2, y: 'a'..'c').collect().toString()
      *     == '[[x:1, y:a], [x:1, y:b], [x:1, y:c], [x:2, y:a], [x:2, y:b], [x:2, y:c]]'
      * assert Iterables.combine(x: 1..3, y: 'a'..'b').collect().toString()

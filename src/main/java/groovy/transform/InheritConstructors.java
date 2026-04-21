@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  * {@code @InheritConstructors} saves you typing some boilerplate code.
  * <p>
  * <em>Example usage:</em>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * class Person {
  *     String first, last
  *     Person(String first, String last) {
@@ -113,7 +113,7 @@ import java.lang.annotation.Target;
  * If you get it wrong you will get a compile-time error about the duplication.</li>
  * </ul>
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.InheritConstructors
  *
@@ -125,7 +125,7 @@ import java.lang.annotation.Target;
  * def e1 = new MyException('message')   // Other constructors are available.
  * assert 'message' == e1.message
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.InheritConstructors
 

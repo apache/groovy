@@ -88,7 +88,7 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * // Script variable which is changed when increment()

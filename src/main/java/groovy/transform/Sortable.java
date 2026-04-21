@@ -50,7 +50,7 @@ import java.lang.annotation.Target;
  * </ul>
  * The properties within the class must themselves be {@code Comparable} or {@code @Sortable}.
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * import groovy.transform.Sortable
  * import groovy.transform.ToString
@@ -83,7 +83,7 @@ import java.lang.annotation.Target;
  * assert sorted.last().title == 'Groovy'
  * assert sorted.maxAttendees == [20, 50, 40]
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Order of fields for includes determines priority when sorting
  * import groovy.transform.Sortable

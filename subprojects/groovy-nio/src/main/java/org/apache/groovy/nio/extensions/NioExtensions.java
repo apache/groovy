@@ -2049,7 +2049,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * non-blocking. The returned {@link CompletableFuture} completes
      * when the entire file has been read.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.nio.file.Files
      * def path = Files.createTempFile('test', '.txt')
      * path.text = 'Hello async'
@@ -2069,7 +2069,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * Asynchronously read the content of the Path and return it as a String
      * using the specified charset.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.nio.file.Files
      * def path = Files.createTempFile('test', '.txt')
      * path.text = 'Hello async'
@@ -2092,7 +2092,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * Uses {@link AsynchronousFileChannel} internally. The entire file content
      * is read into a byte array.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.nio.file.Files
      * def path = Files.createTempFile('test', '.txt')
      * path.bytes = [72, 105] as byte[]
@@ -2165,7 +2165,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * Asynchronously write the String content to the Path using the
      * platform's default charset.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.nio.file.Files
      * def path = Files.createTempFile('test', '.txt')
      * path.writeAsync('Hello async').get()
@@ -2186,7 +2186,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * Asynchronously write the String content to the Path using the
      * specified charset.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.nio.file.Files
      * def path = Files.createTempFile('test', '.txt')
      * path.writeAsync('Hello async', 'UTF-8').get()
@@ -2214,7 +2214,7 @@ public class NioExtensions extends DefaultGroovyMethodsSupport {
      * Asynchronously write the byte array to the Path, creating the file
      * if it doesn't exist and truncating it if it does.
      *
-     * <pre class="groovyTestCase">
+     * <pre class="language-groovy groovyTestCase">
      * import java.nio.file.Files
      * def path = Files.createTempFile('test', '.txt')
      * path.writeBytesAsync([72, 105] as byte[]).get()

@@ -101,7 +101,7 @@ public interface JsonGenerator {
      *
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      *     def generator = new groovy.json.JsonGenerator.Options()
      *                         .excludeNulls()
      *                         .dateFormat('yyyy')
@@ -223,7 +223,7 @@ public interface JsonGenerator {
          *
          * <p>
          * Example:
-         * <pre><code class="groovyTestCase">
+         * <pre><code class="language-groovy groovyTestCase">
          *     def generator = new groovy.json.JsonGenerator.Options()
          *                         .addConverter(URL) { URL u {@code ->}
          *                             u.getHost()

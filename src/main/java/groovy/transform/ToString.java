@@ -65,7 +65,7 @@ import java.lang.annotation.Target;
  * Customer(first:Tom, last:Jones, age:21, answer:42)
  * </pre>
  * If you have this example:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.ToString
  * {@code @ToString} class NamedThing {
  *     String name
@@ -80,7 +80,7 @@ import java.lang.annotation.Target;
  * {@code @ToString} can also be used in conjunction with {@code @Canonical} and {@code @Immutable}.
  * <p>
  * If you want to omit fields or properties referring to <tt>null</tt>, you can use the <tt>ignoreNulls</tt> flag:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.ToString
  * {@code @ToString(ignoreNulls = true)} class NamedThing {
  *     String name
@@ -107,7 +107,7 @@ import java.lang.annotation.Target;
  * my.company.NamedThing(name: Lassie)
  * </pre>
  * <p>More examples:</p>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Most simple implementation of toString.
  * import groovy.transform.ToString
@@ -123,7 +123,7 @@ import java.lang.annotation.Target;
  *
  * assert person.toString() == 'Person(mrhaki, [Groovy, Java])'
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // includeNames to output the names of the properties.
  * import groovy.transform.ToString
@@ -139,7 +139,7 @@ import java.lang.annotation.Target;
  *
  * assert person.toString() == 'Person(name:mrhaki, likes:[Groovy, Java])'
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // includeFields to not only output properties, but also field values.
  * import groovy.transform.ToString
@@ -176,7 +176,7 @@ import java.lang.annotation.Target;
  *
  * assert student.toString() == 'Student(courses:[IT, Business], super:Person(name:mrhaki, likes:[Groovy, Java]))'
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // excludes active field and likes property from output
  * import groovy.transform.ToString
@@ -192,7 +192,7 @@ import java.lang.annotation.Target;
  *
  * assert person.toString() == 'Person(name:mrhaki)'
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Don't include the package name in the output
  * package com.mrhaki.blog.groovy
@@ -209,7 +209,7 @@ import java.lang.annotation.Target;
  *
  * assert course.toString() == 'Course(Groovy 101, 200)'
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Don't use properties with null value.
  * package com.mrhaki.blog.groovy
@@ -226,7 +226,7 @@ import java.lang.annotation.Target;
  *
  * assert course.toString() == 'com.mrhaki.blog.groovy.Course(Groovy 101)'
  * </pre>
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * //--------------------------------------------------------------------------
  * // Cache toString() result.
  * package com.mrhaki.blog.groovy

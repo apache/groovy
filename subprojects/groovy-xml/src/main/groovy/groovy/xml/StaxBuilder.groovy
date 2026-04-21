@@ -21,7 +21,7 @@ package groovy.xml
 /**
  * A Groovy builder that works with Stax processors.
  * A typical usage is as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import javax.xml.stream.XMLOutputFactory
  * def factory = XMLOutputFactory.newInstance()
  * def writer = new StringWriter()
@@ -37,7 +37,7 @@ package groovy.xml
  *                  '<root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7"/></root1>']
  * </pre>
  * Or an external library such as Jettison can be used as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * @Grab('org.codehaus.jettison:jettison:1.2')
  * import org.codehaus.jettison.mapped.*
  * import javax.xml.stream.XMLStreamException

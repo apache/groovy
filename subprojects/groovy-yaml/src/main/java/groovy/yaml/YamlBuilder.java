@@ -72,7 +72,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * Named arguments can be passed to the YAML builder instance to create a root YAML object
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * yaml name: "Guillaume", age: 33
      *
@@ -93,7 +93,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * A list of elements as arguments to the YAML builder creates a root YAML array
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * def result = yaml([1, 2, 3])
      *
@@ -116,7 +116,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * Varargs elements as arguments to the YAML builder create a root YAML array
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * def result = yaml 1, 2, 3
      *
@@ -140,7 +140,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * the closure to each object in the collection
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * class Author {
      *      String name
      * }
@@ -178,7 +178,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * A closure passed to a YAML builder will create a root YAML object
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * def result = yaml {
      *      name "Guillaume"
@@ -211,7 +211,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * </ul>
      * <p>
      * Example with a classical builder-style:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * def result = yaml.person {
      *      name "Guillaume"
@@ -227,7 +227,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * </code></pre>
      *
      * Or alternatively with a method call taking named arguments:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * yaml.person name: "Guillaume", age: 33
      *
@@ -244,7 +244,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * will be merged together &mdash;
      * the closure properties overriding the map key/values
      * in case the same key is used.
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * yaml.person(name: "Guillaume", age: 33) { town "Paris" }
      *
@@ -257,7 +257,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * </code></pre>
      *
      * The empty args call will create a key whose value will be an empty YAML object:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * yaml.person()
      *
@@ -279,7 +279,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * Serializes the internal data structure built with the builder to a conformant YAML payload string
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * yaml { temperature 37 }
      *
@@ -300,7 +300,7 @@ public class YamlBuilder extends GroovyObjectSupport implements Writable {
      * so that you can have the builder serialize itself the YAML payload to a writer.
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def yaml = new groovy.yaml.YamlBuilder()
      * yaml { temperature 37 }
      *

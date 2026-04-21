@@ -38,7 +38,7 @@ import java.util.Map;
  * Represents a CSV parser.
  * <p>
  * Usage:
- * <pre><code class="groovyTestCase">
+ * <pre><code class="language-groovy groovyTestCase">
  * def csv = new groovy.csv.CsvSlurper().parseText('name,age\nAlice,30\nBob,25')
  * assert csv[0].name == 'Alice'
  * assert csv[1].age == '25'

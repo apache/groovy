@@ -32,7 +32,7 @@ import java.util.Map;
  * Builds CSV output from collections of maps or typed objects.
  * <p>
  * Example with maps:
- * <pre><code class="groovyTestCase">
+ * <pre><code class="language-groovy groovyTestCase">
  * def data = [[name: 'Alice', age: 30], [name: 'Bob', age: 25]]
  * def csv = groovy.csv.CsvBuilder.toCsv(data)
  * assert csv.contains('name,age')

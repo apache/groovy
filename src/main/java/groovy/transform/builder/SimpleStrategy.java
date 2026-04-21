@@ -51,7 +51,7 @@ import static org.codehaus.groovy.transform.BuilderASTTransformation.NO_EXCEPTIO
  * setter methods for properties return the original object, thus allowing chained usage of the setters.
  * <p>
  * You use it as follows:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.builder.*
  *
  * {@code @Builder}(builderStrategy=SimpleStrategy)

@@ -70,7 +70,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * Named arguments can be passed to the TOML builder instance to create a root TOML object
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * toml name: "Guillaume", age: 33
      *
@@ -91,7 +91,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * A list of elements as arguments to the TOML builder creates a root TOML array
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * def result = toml([1, 2, 3])
      *
@@ -112,7 +112,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * Varargs elements as arguments to the TOML builder create a root TOML array
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * def result = toml 1, 2, 3
      *
@@ -134,7 +134,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * the closure to each object in the collection
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * class Author {
      *      String name
      * }
@@ -171,7 +171,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * A closure passed to a TOML builder will create a root TOML object
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * def result = toml {
      *      name "Guillaume"
@@ -204,7 +204,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * </ul>
      * <p>
      * Example with a classical builder-style:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * def result = toml.person {
      *      name "Guillaume"
@@ -219,7 +219,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * </code></pre>
      *
      * Or alternatively with a method call taking named arguments:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * toml.person name: "Guillaume", age: 33
      *
@@ -235,7 +235,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * will be merged together &mdash;
      * the closure properties overriding the map key/values
      * in case the same key is used.
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * toml.person(name: "Guillaume", age: 33) { town "Paris" }
      *
@@ -247,7 +247,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * </code></pre>
      *
      * The empty args call will create a key whose value will be an empty YAML object:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * toml.person()
      *
@@ -269,7 +269,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * Serializes the internal data structure built with the builder to a conformant TOML payload string
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * toml { temperature 37 }
      *
@@ -290,7 +290,7 @@ public class TomlBuilder extends GroovyObjectSupport implements Writable {
      * so that you can have the builder serialize itself the TOML payload to a writer.
      * <p>
      * Example:
-     * <pre><code class="groovyTestCase">
+     * <pre><code class="language-groovy groovyTestCase">
      * def toml = new groovy.toml.TomlBuilder()
      * toml { temperature 37 }
      *

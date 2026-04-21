@@ -28,7 +28,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * booleanPart? truePart : y
  * </pre>
  * Even if x is no atomic expression, x will be evaluated only once. Example:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * class Foo {
  *   def index=0
  *   def getX(){ index++; return index }

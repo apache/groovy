@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
  * constructor will contain additional code needed for immutable classes.
  * <p>
  * It allows you to write classes in this shortened form:
- * <pre class="groovyTestCase">
+ * <pre class="language-groovy groovyTestCase">
  * import groovy.transform.*
  *
  * {@code @TupleConstructor}
