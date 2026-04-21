@@ -477,6 +477,25 @@ public class Groovydoc extends Task {
      * @param sourcePath        a path to which we add each basedir found
      * @since 1.5
      */
+    /**
+     * Whether {@code relativeDir} (file-separator-delimited path) has every
+     * segment a valid Java/Groovy package identifier. Rejects empty segments
+     * and segments containing characters illegal in identifiers, which
+     * filters out resource directories like {@code snippet-files/} and
+     * {@code doc-files/} whose hyphenated names can't be packages.
+     */
+    private static boolean isValidPackagePath(String relativeDir) {
+        if (relativeDir == null || relativeDir.isEmpty()) return true;
+        for (String segment : relativeDir.split(java.util.regex.Pattern.quote(File.separator))) {
+            if (segment.isEmpty()) return false;
+            if (!Character.isJavaIdentifierStart(segment.charAt(0))) return false;
+            for (int k = 1; k < segment.length(); k++) {
+                if (!Character.isJavaIdentifierPart(segment.charAt(k))) return false;
+            }
+        }
+        return true;
+    }
+
     private void parsePackages(List<String> resultantPackages, Path sourcePath) {
         List<String> addedPackages = new ArrayList<>();
         List<DirSet> dirSets = new ArrayList<DirSet>(packageSets);
@@ -529,6 +548,12 @@ public class Groovydoc extends Task {
             String[] dirs = dsc.getIncludedDirectories();
             boolean containsPackages = false;
             for (String dir : dirs) {
+                // Skip directories whose path contains a segment that isn't a
+                // valid Java/Groovy identifier — notably `snippet-files` (for
+                // {@snippet file=...}) and `doc-files` (Javadoc-inherited).
+                // Source files inside such directories are resources consumed
+                // at render time, not package members to be documented.
+                if (!isValidPackagePath(dir)) continue;
                 // are there any groovy or java files in this directory?
                 File pd = new File(baseDir, dir);
                 String[] files = pd.list((dir1, name) -> {
