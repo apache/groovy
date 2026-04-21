@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -371,7 +372,8 @@ final class TagRenderer {
             // GROOVY-5986's resource-copy pass).
             String fileName = attrs.get("file");
             if (fileName == null || fileName.isEmpty()) return 0;
-            String loaded = loadSnippetFile(fileName, rootDoc, classDoc);
+            boolean keepHeader = "true".equalsIgnoreCase(attrs.getOrDefault("keepHeader", ""));
+            String loaded = loadSnippetFile(fileName, rootDoc, classDoc, keepHeader);
             if (loaded == null) return 0;
             String region = attrs.get("region");
             if (region != null && !region.isEmpty()) {
@@ -385,6 +387,10 @@ final class TagRenderer {
         }
 
         String langClass = attrs.getOrDefault("lang", "");
+        if (langClass.isEmpty()) {
+            String inferSource = attrs.get("file");
+            if (inferSource != null) langClass = inferLangFromFilename(inferSource);
+        }
         String extraClass = attrs.getOrDefault("class", "");
         String combined = (langClass.isEmpty() ? "" : "language-" + langClass)
                 + (extraClass.isEmpty() ? "" : (langClass.isEmpty() ? extraClass : " " + extraClass));
@@ -408,7 +414,7 @@ final class TagRenderer {
      * {@code snippet-files/} directory under any configured sourcepath and
      * return its contents, or {@code null} if not found.
      */
-    private static String loadSnippetFile(String fileName, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
+    private static String loadSnippetFile(String fileName, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc, boolean keepHeader) {
         if (classDoc == null || !(rootDoc instanceof SimpleGroovyRootDoc)) return null;
         String[] sourcepaths = ((SimpleGroovyRootDoc) rootDoc).getSourcepaths();
         if (sourcepaths == null || sourcepaths.length == 0) return null;
@@ -421,13 +427,78 @@ final class TagRenderer {
             Path path = Paths.get(sourcepath, pkgPath, "snippet-files", fileName);
             if (Files.isRegularFile(path)) {
                 try {
-                    return Files.readString(path);
+                    String text = Files.readString(path);
+                    return keepHeader ? text : stripLicenseHeader(text);
                 } catch (IOException e) {
                     return null;
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * If the file begins with a C-style block comment whose content contains
+     * {@code "Licensed"} (i.e. the standard ASF header), strip that comment and
+     * any whitespace before the first line of real content. Conservative — only
+     * matches a leading {@code /* ... *}{@code /} whose text looks like a
+     * license.
+     */
+    private static String stripLicenseHeader(String text) {
+        int i = 0;
+        while (i < text.length() && Character.isWhitespace(text.charAt(i))) i++;
+        if (i + 1 >= text.length() || text.charAt(i) != '/' || text.charAt(i + 1) != '*') return text;
+        int close = text.indexOf("*/", i + 2);
+        if (close < 0) return text;
+        String comment = text.substring(i, close + 2);
+        if (!comment.contains("Licensed")) return text;
+        int after = close + 2;
+        while (after < text.length() && Character.isWhitespace(text.charAt(after))) after++;
+        return text.substring(after);
+    }
+
+    /**
+     * Map a snippet file's extension to a Prism language id for
+     * {@code <pre><code class="language-xxx">} output. Returns an empty string
+     * if the extension is unrecognised.
+     */
+    private static String inferLangFromFilename(String fileName) {
+        int dot = fileName.lastIndexOf('.');
+        if (dot < 0) return "";
+        String ext = fileName.substring(dot + 1).toLowerCase(Locale.ROOT);
+        switch (ext) {
+            case "groovy":
+            case "gvy":
+            case "gy":
+            case "gsh":
+                return "groovy";
+            case "java":
+                return "java";
+            case "json":
+                return "json";
+            case "sql":
+                return "sql";
+            case "xml":
+            case "html":
+            case "htm":
+                return "xml-doc";
+            case "md":
+            case "markdown":
+                return "markdown";
+            case "yaml":
+            case "yml":
+                return "yaml";
+            case "toml":
+                return "toml";
+            case "csv":
+                return "csv";
+            case "properties":
+                return "properties";
+            case "js":
+                return "javascript";
+            default:
+                return "";
+        }
     }
 
     /**

@@ -202,6 +202,70 @@ public class GroovyDocToolTest extends GroovyTestCase {
         // Example.groovy's content should appear:
         assertTrue("Expected snippet file content in:\n" + doc,
                 doc.contains("hello from Example"));
+        // ASF license header on Example.groovy should be stripped by default.
+        int snipStart = doc.indexOf("<pre><code class=\"language-groovy\">");
+        int snipEnd = doc.indexOf("</code></pre>", snipStart);
+        String snip = doc.substring(snipStart, snipEnd);
+        assertFalse("ASF header should be stripped from external snippet by default:\n" + snip,
+                snip.contains("Licensed to the Apache"));
+    }
+
+    // Auto-strip opt-out: {@snippet file="X" keepHeader=true} preserves the
+    // file content verbatim, and lang is inferred from the file's extension
+    // when no explicit lang= is given.
+    public void testSnippetTagExternalFormKeepHeaderAndInfersLang() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("snippet-keepheader-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        Files.writeString(pkgDir.resolve("KeepHeader.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * {@snippet file=\"Example.groovy\" keepHeader=true}\n" +
+                " */\n" +
+                "class KeepHeader {}\n");
+        Path srcSnippetDir = Paths.get(
+                "src/test/resources/docfiles-fixture", pkg, "snippet-files");
+        Path dstSnippetDir = pkgDir.resolve("snippet-files");
+        Files.createDirectories(dstSnippetDir);
+        try (Stream<Path> s = Files.walk(srcSnippetDir)) {
+            s.filter(Files::isRegularFile).forEach(f -> {
+                try {
+                    Files.copy(f, dstSnippetDir.resolve(f.getFileName()),
+                            StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) { throw new RuntimeException(e); }
+            });
+        }
+        try {
+            GroovyDocTool tool = new GroovyDocTool(
+                    new FileSystemResourceManager("src/main/resources"),
+                    new String[]{tmp.toString()},
+                    GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                    GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                    GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                    new ArrayList<>(), null, new Properties()
+            );
+            tool.add(List.of(pkg + "/KeepHeader.groovy"));
+            MockOutputTool output = new MockOutputTool();
+            tool.renderToOutput(output, MOCK_DIR);
+
+            String doc = output.getText(MOCK_DIR + "/" + pkg + "/KeepHeader.html");
+            assertNotNull(doc);
+            // Lang inferred from .groovy extension even without explicit lang=.
+            assertTrue("Expected inferred language-groovy class in:\n" + doc,
+                    doc.contains("<pre><code class=\"language-groovy\">"));
+            // With keepHeader=true, ASF boilerplate is preserved.
+            int snipStart = doc.indexOf("<pre><code class=\"language-groovy\">");
+            int snipEnd = doc.indexOf("</code></pre>", snipStart);
+            String snip = doc.substring(snipStart, snipEnd);
+            assertTrue("keepHeader=true should preserve ASF header:\n" + snip,
+                    snip.contains("Licensed to the Apache"));
+        } finally {
+            try (Stream<Path> s = Files.walk(tmp)) {
+                s.sorted(Comparator.reverseOrder())
+                        .forEach(p -> { try { Files.delete(p); } catch (IOException ignore) {} });
+            }
+        }
     }
 
     // GROOVY-11938 stage 2: external snippet with region= selects a slice.
