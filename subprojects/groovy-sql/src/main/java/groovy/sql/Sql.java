@@ -71,17 +71,26 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * and a few <code>newInstance</code> factory methods available to do this.
  * In simple cases, you can just provide
  * the necessary details to set up a connection (e.g. for hsqldb):
- * <pre>
+ * {@snippet lang="groovy" :
  * def db = [url:'jdbc:hsqldb:mem:testDB', user:'sa', password:'', driver:'org.hsqldb.jdbc.JDBCDriver']
  * def sql = Sql.newInstance(db.url, db.user, db.password, db.driver)
- * </pre>
+ * }
  * or if you have an existing connection (perhaps from a connection pool) or a
  * datasource use one of the constructors:
- * <pre>
+ * {@snippet lang="groovy" :
  * def sql = new Sql(datasource)
- * </pre>
- * Now you can invoke sql, e.g. to create a table:
- * <pre>
+ * }
+ * Now you can invoke sql, e.g. to create a table. Here is the DDL we want to
+ * execute:
+ * {@snippet lang="sql" :
+ * create table PROJECT (
+ *     id integer not null,
+ *     name varchar(50),
+ *     url varchar(100),
+ * )
+ * }
+ * And the Groovy that runs it via the facade:
+ * {@snippet lang="groovy" :
  * sql.execute '''
  *     create table PROJECT (
  *         id integer not null,
@@ -89,72 +98,74 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  *         url varchar(100),
  *     )
  * '''
- * </pre>
+ * }
  * Or insert a row using JDBC PreparedStatement inspired syntax:
- * <pre>
- * def params = [10, 'Groovy', 'http://groovy.codehaus.org']
+ * {@snippet lang="groovy" :
+ * def params = [10, 'Groovy', 'https://groovy-lang.org']
  * sql.execute 'insert into PROJECT (id, name, url) values (?, ?, ?)', params
- * </pre>
+ * }
  * Or insert a row using GString syntax:
- * <pre>
- * def map = [id:20, name:'Grails', url:'http://grails.codehaus.org']
+ * {@snippet lang="groovy" :
+ * def map = [id:20, name:'Grails', url:'https://grails.org']
  * sql.execute "insert into PROJECT (id, name, url) values ($map.id, $map.name, $map.url)"
- * </pre>
+ * }
  * Or a row update:
- * <pre>
- * def newUrl = 'http://grails.org'
+ * {@snippet lang="groovy" :
+ * def newUrl = 'https://grails.org'
  * def project = 'Grails'
  * sql.executeUpdate "update PROJECT set url=$newUrl where name=$project"
- * </pre>
+ * }
  * Now try a query using <code>eachRow</code>:
- * <pre>
+ * {@snippet lang="groovy" :
  * println 'Some GR8 projects:'
- * sql.eachRow('select * from PROJECT') { row {@code ->}
+ * sql.eachRow('select * from PROJECT') { row ->
  *     println "${row.name.padRight(10)} ($row.url)"
  * }
- * </pre>
+ * }
  * Which will produce something like this:
- * <pre>
+ * {@snippet :
  * Some GR8 projects:
- * Groovy     (http://groovy.codehaus.org)
- * Grails     (http://grails.org)
- * Griffon    (http://griffon.codehaus.org)
- * Gradle     (http://gradle.org)
- * </pre>
+ * Groovy     (https://groovy-lang.org)
+ * Grails     (https://grails.org)
+ * Griffon    (https://griffon-framework.org)
+ * Gradle     (https://gradle.org)
+ * }
  * Now try a query using <code>rows</code>:
- * <pre>
+ * {@snippet lang="groovy" :
  * def rows = sql.rows("select * from PROJECT where name like 'Gra%'")
  * assert rows.size() == 2
  * println rows.join('\n')
- * </pre>
+ * }
  * with output like this:
- * <pre>
- * [ID:20, NAME:Grails, URL:http://grails.org]
- * [ID:40, NAME:Gradle, URL:http://gradle.org]
- * </pre>
- * Also, <code>eachRow</code> and <code>rows</code> support paging.  Here's an example:
- * <pre>
- * sql.eachRow('select * from PROJECT', 2, 2) { row {@code ->}
+ * {@snippet :
+ * [ID:20, NAME:Grails, URL:https://grails.org]
+ * [ID:40, NAME:Gradle, URL:https://gradle.org]
+ * }
+ * Also, <code>eachRow</code> and <code>rows</code> support paging. Here's an example:
+ * {@snippet lang="groovy" :
+ * sql.eachRow('select * from PROJECT', 2, 2) { row ->
  *     println "${row.name.padRight(10)} ($row.url)"
  * }
- * </pre>
- * Which will start at the second row and return a maximum of 2 rows.  Here's an example result:
- * <pre>
- * Grails     (http://grails.org)
- * Griffon    (http://griffon.codehaus.org)
- * </pre>
+ * }
+ * Which will start at the second row and return a maximum of 2 rows. Here's an example result:
+ * {@snippet :
+ * Grails     (https://grails.org)
+ * Griffon    (https://griffon-framework.org)
+ * }
  *
  * Finally, we should clean up:
- * <pre>
+ * {@snippet lang="groovy" :
  * sql.close()
- * </pre>
+ * }
  * If we are using a DataSource and we haven't enabled statement caching, then
  * strictly speaking the final <code>close()</code> method isn't required - as all connection
  * handling is performed transparently on our behalf; however, it doesn't hurt to
  * have it there as it will return silently in that case.
  * <p>
  * If instead of <code>newInstance</code> you use <code>withInstance</code>, then
- * <code>close()</code> will be called automatically for you.
+ * <code>close()</code> will be called automatically for you. A complete end-to-end
+ * example combining setup, creation, insertion, querying, and cleanup:
+ * {@snippet file="QuickStart.groovy"}
  *
  * <h4>Avoiding SQL injection</h4>
  *
@@ -186,7 +197,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * ':propname1' and '?.propname2'. For these variations, a single <em>model</em> object is
  * supplied in the parameter list/array/map. The propname refers to a property of that model object.
  * The model object could be a map, Expando or domain class instance. Here are some examples:
- * <pre>
+ * {@snippet lang="groovy" :
  * // using rows() with a named parameter with the parameter supplied in a map
  * println sql.rows('select * from PROJECT where name=:foo', [foo:'Gradle'])
  * // as above for eachRow()
@@ -206,11 +217,11 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * sql.eachRow('select * from PROJECT where name=?.baz', [new MyDomainClass()]) {
  *     // process row
  * }
- * </pre>
+ * }
  * Named ordinal parameter queries have multiple model objects with the index number (starting
  * at 1) also supplied in the placeholder. Only the question mark variation of placeholder is supported.
  * Here are some examples:
- * <pre>
+ * {@snippet lang="groovy" :
  * // an example showing the model objects as vararg style parameters (since rows() has an Object[] variant)
  * println sql.rows("select * from PROJECT where name=?1.baz and id=?2.num", new MyDomainClass(), [num:30])
  *
@@ -218,7 +229,7 @@ import static org.apache.groovy.sql.extensions.SqlExtensions.toRowResult;
  * sql.eachRow("select * from PROJECT where name=?1.baz and id=?2.num", [new MyDomainClass(), [num:30]]) {
  *     // do something with row
  * }
- * </pre>
+ * }
  *
  * <h4>More details</h4>
  *

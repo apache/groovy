@@ -82,6 +82,32 @@ import static groovy.xml.XmlUtil.setFeatureQuietly;
  * rootNode.a.each { assert it.text() in ['one!','two!'] }
  * </pre>
  *
+ * <p>
+ * A more realistic example — a book catalog. Given this XML:
+ * {@snippet lang="xml" :
+ * <catalog>
+ *   <book id="b1">
+ *     <title>Programming Groovy 3</title>
+ *     <author>Venkat Subramaniam</author>
+ *     <year>2024</year>
+ *   </book>
+ *   <book id="b2">
+ *     <title>Groovy in Action</title>
+ *     <author>Dierk Koenig</author>
+ *     <year>2015</year>
+ *   </book>
+ * </catalog>
+ * }
+ * the equivalent Groovy to slurp it and navigate the tree:
+ * {@snippet lang="groovy" :
+ * def catalog = new XmlSlurper().parseText(xml)
+ * assert catalog.book.size() == 2
+ * assert catalog.book[0].title.text() == 'Programming Groovy 3'
+ * catalog.book.findAll { it.year.text().toInteger() >= 2020 }.each { book ->
+ *     println "${book.title} by ${book.author}"
+ * }
+ * }
+ *
  * @see GPathResult
  */
 public class XmlSlurper extends DefaultHandler {
