@@ -122,12 +122,16 @@ class Main {
         if (options.stylesheetfile) {
             styleSheetFile = new File(options.stylesheetfile)
         }
-        if (options.addStylesheet) {
-            // CliBuilder with args:1 gives a single value; use comma separator
-            // to accept multiple paths in one flag. Example:
-            //   --add-stylesheet custom1.css,custom2.css
-            options.addStylesheet.toString().tokenize(',').each { p ->
-                addStylesheetFiles << new File(p.trim())
+        if (options.addStylesheets) {
+            // Accept both `-addStylesheet a.css -addStylesheet b.css`
+            // (repeated flag — `options.addStylesheets` plural returns every
+            // occurrence) and comma-separated forms in a single flag
+            // (e.g. `-addStylesheet a.css,b.css`). Empty tokens dropped.
+            options.addStylesheets.each { raw ->
+                String.valueOf(raw).tokenize(',').each { p ->
+                    def trimmed = p.trim()
+                    if (trimmed) addStylesheetFiles << new File(trimmed)
+                }
             }
         }
 

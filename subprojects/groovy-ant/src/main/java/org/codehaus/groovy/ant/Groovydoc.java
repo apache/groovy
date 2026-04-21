@@ -287,7 +287,8 @@ public class Groovydoc extends Task {
     public void setExcludePackageNames(String packages) {
         StringTokenizer tok = new StringTokenizer(packages, ",:");
         while (tok.hasMoreTokens()) {
-            excludePackageNames.add(tok.nextToken());
+            String name = tok.nextToken().trim();
+            if (!name.isEmpty()) excludePackageNames.add(name);
         }
     }
 
