@@ -286,12 +286,25 @@ package specs to exclude. |No
 |doctitle |HTML shown at the top of the overview page. |No
 |header, footer |HTML shown at the top/bottom of every page. |No
 |overview |HTML file read as the overview page. |No
+|charset |Charset for cross-platform viewing of generated HTML. |No
+|fileEncoding |Charset used when writing the generated files. |No
+|author |Include `@author` paragraphs. Defaults to `true`. |No
+|processScripts |Process Groovy scripts. Defaults to `true`; set to
+`false` to mirror the CLI `-noscripts` flag. |No
+|includeMainForScripts |Include the synthetic `public static void main`
+method when documenting scripts. Defaults to `true`; set to `false` to
+mirror the CLI `-nomainforscripts` flag. |No
 |stylesheetFile |Replace the default stylesheet with a supplied one. |No
 |private |Show all classes and members (including private ones). |No
-|access |Visibility scope: `public`, `protected`, `package`, `private`. |No
+|public, protected, package |Set individually to control the visibility
+scope; equivalent to the CLI `-public`, `-protected`, `-package` flags. |No
+|access |Alternative to the boolean scope attributes above. Accepts
+`public`, `protected`, `package`, or `private`. |No
 |javaVersion |Language version for Java source files. |No
 |extensions |Colon-separated source extensions (default
 `.java:.groovy:.gv:.gvy:.gsh`). |No
+|use |Legacy Javadoc option accepted for parity. Has no effect on
+groovydoc output. |No
 |showInternal |Include members annotated with
 `groovy.transform.@Internal`. |No
 |noIndex, noDeprecatedList, noHelp |Suppress the matching auxiliary page. |No
