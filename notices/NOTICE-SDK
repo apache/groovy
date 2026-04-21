@@ -33,5 +33,8 @@ Contribution License Agreement" and for which the following copyright notices ap
     (C) Copyright 2005-2006 Intel Corporation
     (C) Copyright 2006 Intel Corporation
 
+This product bundles Prism.js (prismjs.com)
+which is available under the terms of the MIT License.
+
 This convenience zip embeds Groovy's src and doc zips.
 See also src/NOTICE and doc/NOTICE files for additional notice information.

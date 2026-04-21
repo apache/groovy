@@ -48,4 +48,5 @@ plugins.withId('eclipse') {
 
 tasks.named('rat') {
     excludes << '**/stylesheet.css' // MIT license as per NOTICE/LICENSE files
+    excludes << '**/prism*.js' << '**/prism*.css' // Prism, MIT license as per NOTICE/LICENSE files
 }

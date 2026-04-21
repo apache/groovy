@@ -11,3 +11,6 @@ Copyright 2010-2012 Google Inc. All Rights Reserved.
 The Java source file src/main/java/org/apache/groovy/util/concurrent/ConcurrentReferenceHashMap
 is from https://github.com/hazelcast/hazelcast and the following notice applies:
 Copyright (c) 2008-2020, Hazelcast, Inc. All Rights Reserved.
+
+This product bundles Prism.js (prismjs.com)
+which is available under the terms of the MIT License.
