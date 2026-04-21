@@ -1,5 +1,48 @@
 @charset "${props.charset}";
 
+/* GROOVY-11946: semantic CSS tokens for theming. Light values match the
+   historical palette (so OS-light users see no visible change); dark
+   overrides live in the @media (prefers-color-scheme: dark) block at
+   the bottom of this file. Author stylesheets supplied via
+   -addStylesheet can reference these same tokens to stay theme-aware.
+   GROOVY-11947: -theme=light|dark locks the palette; -theme=auto (default)
+   keeps the media-query-driven OS preference behaviour. */
+<% if (props.theme == 'dark') { %>
+:root {
+    --fg: #e4e4e4;
+    --bg-outer: #1a1a1a;
+    --bg: #242424;
+    --bg-alt: #2a2a2a;
+    --bg-panel: #2f2f2f;
+    --heading-fg: #f0f0f0;
+    --link: #7cc7dc;
+    --muted-fg: #808080;
+    --muted-fg-2: #a0a0a0;
+    --border: #3a3a3a;
+    --caption-bg: #e05a1a;
+    --caption-fg: #fff;
+    --mark-bg: #5a4e1c;
+    --mark-fg: #fff1a8;
+}
+<% } else { %>
+:root {
+    --fg: #343437;
+    --bg-outer: #ededed;
+    --bg: #FFF;
+    --bg-alt: #f9f9f9;
+    --bg-panel: #f2f2f2;
+    --heading-fg: #333;
+    --link: #4290ad;
+    --muted-fg: #BBB;
+    --muted-fg-2: #999;
+    --border: #EEE;
+    --caption-bg: #db4800;
+    --caption-fg: #fff;
+    --mark-bg: #ff0;
+    --mark-fg: #000;
+}
+<% } %>
+
 /*! normalize.css v2.1.0 | MIT License | git.io/normalize */
 article, aside, details, figcaption, figure, footer, header, hgroup, main, nav, section, summary {
     display: block
@@ -60,8 +103,8 @@ hr {
 }
 
 mark {
-    background: #ff0;
-    color: #000
+    background: var(--mark-bg);
+    color: var(--mark-fg)
 }
 
 code, kbd, pre, samp {
@@ -2043,8 +2086,8 @@ input[type="submit"].btn-block, input[type="reset"].btn-block, input[type="butto
 body, html {
     font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
     margin: 0;
-    background: #ededed;
-    color: #343437;
+    background: var(--bg-outer);
+    color: var(--fg);
     line-height: 2em;
     font-weight: 300;
     font-size: .95em
@@ -2057,7 +2100,7 @@ h1 {
 
 body.center {
     padding: 0 30px;
-    background: #FFF;
+    background: var(--bg);
     font-size: 1em
 }
 
@@ -2066,7 +2109,7 @@ ul li {
 }
 
 a {
-    color: #4290ad;
+    color: var(--link);
     text-decoration: none;
     font-weight: normal
 }
@@ -2081,7 +2124,7 @@ h1, h2, h3 {
 }
 
 .topNav, .bottomNav {
-    background: #f2f2f2;
+    background: var(--bg-panel);
     margin: 0 -30px;
     margin-bottom: 20px
 }
@@ -2116,8 +2159,8 @@ h1, h2, h3 {
 }
 
 .aboutLanguage {
-    color: #BBB;
-    background: white;
+    color: var(--muted-fg);
+    background: var(--bg);
     text-align: center;
     padding: 20px 0
 }
@@ -2125,7 +2168,7 @@ h1, h2, h3 {
 .subNav {
     padding-bottom: 10px;
     margin-bottom: 10px;
-    border-bottom: 1px solid #EEE
+    border-bottom: 1px solid var(--border)
 }
 
 .subNav:before, .subNav:after {
@@ -2171,8 +2214,8 @@ table.overviewSummary caption, .contentContainer ul li table caption {
     float: left;
     padding: 0 10px;
     margin-top: 10px;
-    background: #db4800;
-    color: white
+    background: var(--caption-bg);
+    color: var(--caption-fg)
 }
 
 table.overviewSummary tr th, .contentContainer ul li table tr th {
@@ -2186,11 +2229,11 @@ table.overviewSummary tr td, .contentContainer ul li table tr td {
     vertical-align: top;
     font-size: .9em;
     padding: 5px 10px;
-    border-top: 1px solid #EEE
+    border-top: 1px solid var(--border)
 }
 
 table.overviewSummary tbody > tr:nth-child(odd) > td, .contentContainer ul li table tbody > tr:nth-child(odd) > td {
-    background-color: #f9f9f9
+    background-color: var(--bg-alt)
 }
 
 body.left {
@@ -2205,8 +2248,8 @@ body.left h1, body.left h2 {
     margin: 0 10px;
     padding: 3px 10px;
     margin-top: 10px;
-    background: #db4800;
-    color: white;
+    background: var(--caption-bg);
+    color: var(--caption-fg);
     line-height: 40px
 }
 
@@ -2260,13 +2303,13 @@ body.left ul li a:hover {
 
 .contentContainer hr {
     border: 0 none;
-    border-top: 1px solid #EEE;
+    border-top: 1px solid var(--border);
     margin-top: 30px;
     margin-botom: 0
 }
 
 ul.blockList ul.blockList, ul.blockList ul.blockListLast {
-    border: 1px solid #EEE;
+    border: 1px solid var(--border);
     margin: 20px 0;
     padding: 0 20px
 }
@@ -2276,10 +2319,10 @@ ul.blockList ul.blockList h4, ul.blockList ul.blockListLast h4, ul.blockList ul.
     font-weight: bold;
     line-height: 2em;
     text-indent: 10px;
-    border-bottom: 1px solid #EEE;
+    border-bottom: 1px solid var(--border);
     margin: 0 -20px;
     padding: 5px 0;
-    background: #f2f2f2
+    background: var(--bg-panel)
 }
 
 ul.blockList ul.blockList li, ul.blockList ul.blockListLast li {
@@ -2304,3 +2347,29 @@ span.strong {
 a span.strong {
     font-weight: normal
 }
+
+<% if (!(props.theme in ['light', 'dark'])) { %>
+/* GROOVY-11946: dark-mode palette. Triggered automatically by the OS /
+   browser reporting prefers-color-scheme: dark. Tokens only — no new
+   selectors — so the HTML structure is unchanged. The Groovy-orange
+   caption is kept brand-true but slightly warmed for a darker background.
+   Omitted when -theme=light|dark locks the palette at doc-gen time. */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fg: #e4e4e4;
+        --bg-outer: #1a1a1a;
+        --bg: #242424;
+        --bg-alt: #2a2a2a;
+        --bg-panel: #2f2f2f;
+        --heading-fg: #f0f0f0;
+        --link: #7cc7dc;
+        --muted-fg: #808080;
+        --muted-fg-2: #a0a0a0;
+        --border: #3a3a3a;
+        --caption-bg: #e05a1a;
+        --caption-fg: #fff;
+        --mark-bg: #5a4e1c;
+        --mark-fg: #fff1a8;
+    }
+}
+<% } %>

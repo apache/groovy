@@ -97,7 +97,14 @@
     <link rel="stylesheet" type="text/css" href="${classDoc.relativeRootPath}${__ss.trim()}">
 <% } %>
 <% if (props.syntaxHighlighter == 'prism') { def __p = "${classDoc.relativeRootPath}" %>
+    <% if (props.theme == 'dark') { %>
+    <link rel="stylesheet" type="text/css" href="${__p}prism-dark.min.css">
+    <% } else if (props.theme == 'light') { %>
     <link rel="stylesheet" type="text/css" href="${__p}prism.min.css">
+    <% } else { %>
+    <link rel="stylesheet" type="text/css" href="${__p}prism.min.css" media="(prefers-color-scheme: light)">
+    <link rel="stylesheet" type="text/css" href="${__p}prism-dark.min.css" media="(prefers-color-scheme: dark)">
+    <% } %>
     <script src="${__p}prism.js"></script>
     <script src="${__p}prism-groovy.min.js"></script>
     <script src="${__p}prism-java.min.js"></script>

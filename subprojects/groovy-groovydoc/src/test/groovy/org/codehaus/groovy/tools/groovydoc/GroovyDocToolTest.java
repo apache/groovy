@@ -638,6 +638,140 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 page.contains("def farewell() &#123; &quot;Bye!&quot; &#125;"));
     }
 
+    // GROOVY-11947: -theme=light locks the palette to light. The stylesheet
+    // should emit only the light :root values and NO prefers-color-scheme
+    // dark @media block. Prism templates link only the light theme.
+    public void testThemeLightLocksLightPaletteAndOmitsDarkMedia() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        Properties props = new Properties();
+        props.put("theme", "light");
+        props.put("syntaxHighlighter", "prism");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+        tool.add(List.of(base + "/DocumentedClass.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String stylesheet = output.getText(MOCK_DIR + "/stylesheet.css");
+        assertNotNull(stylesheet);
+        // Light-palette values only; no dark media block.
+        assertTrue("Light --fg expected in stylesheet",
+                stylesheet.contains("--fg: #343437"));
+        assertFalse("@media (prefers-color-scheme: dark) must NOT appear when theme=light",
+                stylesheet.contains("@media (prefers-color-scheme: dark) {"));
+
+        String classPage = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classPage);
+        assertTrue("Prism light theme expected (no media attr) when theme=light:\n" + classPage,
+                classPage.matches("(?s).*href=\"[^\"]*prism\\.min\\.css\">.*"));
+        assertFalse("Prism dark theme must NOT be linked when theme=light",
+                classPage.contains("prism-dark.min.css"));
+    }
+
+    // GROOVY-11947: -theme=dark locks the palette to dark. The stylesheet
+    // :root gets dark values; no @media block. Prism links only the dark theme.
+    public void testThemeDarkLocksDarkPaletteAndOmitsMediaBlock() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        Properties props = new Properties();
+        props.put("theme", "dark");
+        props.put("syntaxHighlighter", "prism");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+        tool.add(List.of(base + "/DocumentedClass.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String stylesheet = output.getText(MOCK_DIR + "/stylesheet.css");
+        assertNotNull(stylesheet);
+        assertTrue("Dark --fg expected in stylesheet",
+                stylesheet.contains("--fg: #e4e4e4"));
+        assertFalse("Light --fg should NOT appear when theme=dark",
+                stylesheet.contains("--fg: #343437"));
+        assertFalse("@media (prefers-color-scheme: dark) must NOT appear when theme=dark",
+                stylesheet.contains("@media (prefers-color-scheme: dark) {"));
+
+        String classPage = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classPage);
+        assertTrue("Prism dark theme expected (no media attr) when theme=dark:\n" + classPage,
+                classPage.matches("(?s).*href=\"[^\"]*prism-dark\\.min\\.css\">.*"));
+        // Light theme link must NOT appear — careful not to confuse with prism-dark.min.css
+        // which also contains 'prism.' — check for 'prism.min.css' with the expected href terminator.
+        assertFalse("Prism light theme must NOT be linked when theme=dark:\n" + classPage,
+                classPage.matches("(?s).*href=\"[^\"]*/prism\\.min\\.css[\"].*"));
+    }
+
+    // GROOVY-11947: -theme=auto (default) keeps the media-query-driven
+    // behaviour — both palettes and both Prism themes present with media.
+    public void testThemeAutoKeepsMediaQueryBehaviour() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        Properties props = new Properties();
+        props.put("theme", "auto");
+        props.put("syntaxHighlighter", "prism");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+        tool.add(List.of(base + "/DocumentedClass.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String stylesheet = output.getText(MOCK_DIR + "/stylesheet.css");
+        assertNotNull(stylesheet);
+        assertTrue(stylesheet.contains("--fg: #343437"));
+        assertTrue(stylesheet.contains("@media (prefers-color-scheme: dark) {"));
+
+        String classPage = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classPage);
+        assertTrue(classPage.contains("prism.min.css\" media=\"(prefers-color-scheme: light)\""));
+        assertTrue(classPage.contains("prism-dark.min.css\" media=\"(prefers-color-scheme: dark)\""));
+    }
+
+    // GROOVY-11946: the stylesheet declares CSS custom properties on :root and
+    // a matching @media (prefers-color-scheme: dark) override. OS-light readers
+    // see no visual change; OS-dark readers get the dark palette automatically.
+    public void testStylesheetContainsCssVariablesAndDarkMediaBlock() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        htmlTool.add(List.of(base + "/DocumentedClass.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String stylesheet = output.getText(MOCK_DIR + "/stylesheet.css");
+        assertNotNull("stylesheet.css expected in output", stylesheet);
+        // Semantic tokens live on :root and are referenced via var(--...).
+        assertTrue(":root block expected:\n" + stylesheet.substring(0, Math.min(stylesheet.length(), 600)),
+                stylesheet.contains(":root"));
+        assertTrue("--fg token expected:\n" + stylesheet.substring(0, Math.min(stylesheet.length(), 600)),
+                stylesheet.contains("--fg:"));
+        assertTrue("var(--fg) reference expected somewhere in stylesheet",
+                stylesheet.contains("var(--fg)"));
+        // Dark-mode media query with token overrides.
+        assertTrue("@media prefers-color-scheme: dark block expected in stylesheet",
+                stylesheet.contains("@media (prefers-color-scheme: dark) {"));
+        // Key tokens should be redefined inside the dark block — a reasonable
+        // assertion that at minimum --fg and --bg have dark-mode values.
+        int darkStart = stylesheet.indexOf("@media (prefers-color-scheme: dark)");
+        String darkBlock = stylesheet.substring(darkStart);
+        assertTrue("--fg override expected in dark block:\n" + darkBlock,
+                darkBlock.contains("--fg:"));
+        assertTrue("--bg override expected in dark block:\n" + darkBlock,
+                darkBlock.contains("--bg:"));
+    }
+
+    // GROOVY-11946: when syntax highlighting is on, both Prism themes should
+    // be linked with matching prefers-color-scheme media attributes so the
+    // browser auto-selects the appropriate one.
+    public void testPrismThemesHaveColorSchemeMediaAttributes() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        Properties props = new Properties();
+        props.put("syntaxHighlighter", "prism");
+        GroovyDocTool tool = makeHtmltool(new ArrayList<>(), null, props);
+        tool.add(List.of(base + "/DocumentedClass.groovy"));
+        MockOutputTool output = new MockOutputTool();
+        tool.renderToOutput(output, MOCK_DIR);
+
+        String classPage = output.getText(MOCK_DIR + "/" + base + "/DocumentedClass.html");
+        assertNotNull(classPage);
+        assertTrue("Light Prism theme should carry prefers-color-scheme:light media:\n" + classPage,
+                classPage.contains("prism.min.css\" media=\"(prefers-color-scheme: light)\""));
+        assertTrue("Dark Prism theme should be linked with prefers-color-scheme:dark media:\n" + classPage,
+                classPage.contains("prism-dark.min.css\" media=\"(prefers-color-scheme: dark)\""));
+    }
+
     // GROOVY-11938 stage 4: opt-in client-side syntax highlighting via Prism.
     // When -syntaxHighlighter=prism is passed, the head of each content page
     // should include prism.min.css and the bundled language scripts; when

@@ -72,6 +72,7 @@ public class Groovydoc extends Task {
     private Boolean noDeprecatedList;
     private Boolean noHelp;
     private String syntaxHighlighter;
+    private String theme;
     private String javaVersion;
     private final List<DirSet> packageSets;
     private final List<String> sourceFilesToDoc;
@@ -107,6 +108,7 @@ public class Groovydoc extends Task {
         noDeprecatedList = false;
         noHelp = false;
         syntaxHighlighter = "none";
+        theme = "auto";
     }
 
     /**
@@ -215,6 +217,20 @@ public class Groovydoc extends Task {
     }
 
     /**
+     * GROOVY-11947: theme lock mode for the generated docs.
+     * <ul>
+     *   <li>{@code "auto"} (default) — emit a {@code prefers-color-scheme}
+     *       media query so each reader sees their OS preference.</li>
+     *   <li>{@code "light"} — lock the palette to light regardless of OS.</li>
+     *   <li>{@code "dark"} — lock the palette to dark regardless of OS.</li>
+     * </ul>
+     * Any other value is treated as {@code "auto"}.
+     */
+    public void setTheme(String theme) {
+        this.theme = theme;
+    }
+
+    /**
      * If set to false, Scripts will not be processed.
      * Defaults to true.
      *
@@ -255,6 +271,23 @@ public class Groovydoc extends Task {
         while (tok.hasMoreTokens()) {
             String packageName = tok.nextToken();
             packageNames.add(packageName);
+        }
+    }
+
+    /**
+     * Set the packages to exclude from documentation. Mirrors the CLI
+     * {@code -exclude} option; the Ant task already honoured
+     * {@code excludePackageNames} internally when generating but lacked
+     * the public setter.
+     *
+     * @param packages a comma-separated (or colon-separated, to match
+     *                 the CLI form) list of package specs, possibly
+     *                 wildcarded.
+     */
+    public void setExcludePackageNames(String packages) {
+        StringTokenizer tok = new StringTokenizer(packages, ",:");
+        while (tok.hasMoreTokens()) {
+            excludePackageNames.add(tok.nextToken());
         }
     }
 
@@ -549,6 +582,7 @@ public class Groovydoc extends Task {
         properties.setProperty("noDeprecatedList", noDeprecatedList.toString());
         properties.setProperty("noHelp", noHelp.toString());
         properties.setProperty("syntaxHighlighter", syntaxHighlighter != null ? syntaxHighlighter : "none");
+        properties.setProperty("theme", theme != null ? theme : "auto");
         // GROOVY-11941: expose additional stylesheet basenames to templates.
         StringBuilder extras = new StringBuilder();
         for (int k = 0; k < addStylesheetFiles.size(); k++) {
