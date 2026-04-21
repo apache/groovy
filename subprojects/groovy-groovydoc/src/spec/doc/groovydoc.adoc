@@ -21,73 +21,242 @@
 
 = groovydoc, the Groovy & Java documentation generator
 
-GroovyDoc is a tool responsible for generating documentation from your code. It acts like the Javadoc tool in the
-Java world but is capable of handling both `groovy` and `java` files. The distribution comes with two ways of generating
-documentation: from <<Groovydoc-CommandLine,command line>> or from <<Groovydoc-Ant,Apache Ant>>. Other build tools
-like Maven or Gradle also offer wrappers for Groovydoc.
+GroovyDoc generates API documentation from your source code. It plays the
+role the Javadoc tool plays in the Java ecosystem, but accepts both
+`.groovy` and `.java` sources and adds conveniences suited to Groovy.
+
+The documentation generator is driven from the
+<<Groovydoc-CommandLine,command line>>, from <<Groovydoc-Ant,Apache Ant>>,
+or from build-tool wrappers such as the GMavenPlus Maven plugin. The
+sections below cover the everyday authoring and invocation patterns;
+<<Groovydoc-Advanced,Advanced topics>> collects the lesser-used features.
+
+[[Groovydoc-Writing]]
+== Writing doc comments
+
+GroovyDoc recognises three forms of doc comment, all of which can
+coexist in the same source file:
+
+* Traditional Javadoc `/**`&nbsp;...&nbsp;`*/` block comments.
+* https://openjdk.org/jeps/467[JEP 467]-style Markdown comments using
+  runs of `///` line prefixes.
+* Runtime-retained Javadoc `/**@`&nbsp;...&nbsp;`*/` block comments, whose
+  content is reflectable at runtime via the `@Groovydoc` annotation (see
+  <<Groovydoc-Runtime,Runtime Groovydoc>>).
+
+[[Groovydoc-CommentForms]]
+=== Comment forms
+
+==== Traditional Javadoc
+
+[source,groovy]
+----
+/**
+ * Summary sentence. More description.
+ *
+ * @param name the subject to greet
+ * @return the greeting
+ */
+String greet(String name) { "Hello, $name" }
+----
+
+Leading `*&nbsp;` prefixes on each line are stripped. The first sentence
+(up to the first period followed by whitespace) is used as the short
+summary on index/package pages.
+
+==== JEP 467 Markdown (`///`)
+
+Each line of the run starts with `///`. Inside the comment, CommonMark
+Markdown is supported — headings, bullets, emphasis, links, and fenced
+code blocks all render as you would expect:
+
+[source,groovy]
+----
+/// # Greet
+///
+/// Returns a friendly greeting. Supports the usual inline tags:
+/// {@link String} and {@code greet} still work.
+///
+/// ```groovy
+/// assert greeter.greet('world') == 'Hello, world'
+/// ```
+///
+/// @param name the subject to greet
+/// @return the greeting
+String greet(String name) { "Hello, $name" }
+----
+
+Markdown is rendered through CommonMark. Headings are shifted down by
+two levels (so `#` becomes `<h3>`) to fit under the page's existing
+title and section banners. Inline Javadoc tags like `{@link ...}` are
+preserved inside Markdown bodies. `{@link ...}` tokens appearing inside
+fenced code blocks are left literal — the fence is treated as code, not
+documentation.
+
+For the full Markdown syntax and semantics, see
+https://openjdk.org/jeps/467[JEP 467] and
+https://commonmark.org[CommonMark].
+
+==== Runtime Groovydoc (`/**@`)
+
+If the comment opens with `/**@` instead of `/**`, Groovy's parser can
+retain the raw comment text as a `groovy.lang.@Groovydoc` annotation on
+the enclosing class/method/field. Enable the feature through the
+compiler option `runtimeGroovydoc`; see <<Groovydoc-Runtime,Runtime
+Groovydoc>>.
+
+[[Groovydoc-BlockTags]]
+=== Block tags
+
+Block tags appear at the end of the comment, one per paragraph, leading
+with `@`. Common tags:
+
+[cols="1,3",options="header"]
+|===
+|Tag |Purpose
+
+|`@param <name> <description>`
+|Describes a parameter. Use `@param <T>` for a type parameter.
+
+|`@return <description>`
+|Describes the return value.
+
+|`@throws <exception> <description>`, `@exception <exception> <description>`
+|Describes an exception the method might throw.
+
+|`@since <version>`
+|Indicates when the feature was added.
+
+|`@author <name>`
+|Author of the element. Rendered only when `-author` is enabled.
+
+|`@version <text>`
+|Version information.
+
+|`@deprecated <explanation>`
+|Marks the element as deprecated; recommend a replacement.
+
+|`@see <reference>`
+|Adds a "See Also" entry. The reference is a class or member.
+
+|`@apiNote <text>`
+|Guidance intended for callers of the API.
+
+|`@implSpec <text>`
+|Contract that overriders must preserve.
+
+|`@implNote <text>`
+|Non-contract implementation detail.
+|===
+
+Multiple `@param`, `@throws`, and `@see` entries are collated under a
+single heading in the rendered output.
+
+[[Groovydoc-InlineTags]]
+=== Inline tags
+
+Inline tags appear within a comment body and are expanded in place.
+
+[cols="1,3",options="header"]
+|===
+|Tag |Purpose
+
+|`{@link <reference>}`
+|Cross-reference to a class or member. Produces a hyperlink.
+
+|`{@code <text>}`
+|Renders the text in a monospaced code style. HTML metacharacters are
+escaped.
+
+|`{@literal <text>}`
+|Renders the text verbatim without code styling.
+
+|`{@value #FIELD}`, `{@value Class#FIELD}`
+|Inlines the value of a compile-time-constant field. Same-class
+references and cross-class references both work. On a constant field's
+own comment, bare `{@value}` inlines that field's own value.
+
+|`{@inheritDoc}`
+|Inherits the parent class's/interface's corresponding doc.
+
+|`{@snippet ...}`
+|Embeds a code snippet. See <<Groovydoc-Snippet,{@snippet}>> under
+advanced topics.
+
+|`{@docRoot}`
+|Path to the root of the generated documentation. Useful when writing
+a relative link that must work from pages at any depth.
+|===
+
+[[Groovydoc-Running]]
+== Running groovydoc
 
 [[Groovydoc-CommandLine]]
-== The groovydoc command line tool
+=== The `groovydoc` command line tool
 
-The `groovydoc` command line can be invoked to generate groovydocs:
+The `groovydoc` command line invocation:
 
 ----
 groovydoc [options] [packagenames] [sourcefiles]
 ----
 
-where options must be picked from the following table:
+Most commonly-used options:
 
 [cols="2,2,5",options="header,footer"]
 |=======================================================================
 |Short version |Long version |Description
-|-author | |Include @author paragraphs (currently not used)
-|-charset <charset>| |Charset for cross-platform viewing of generated documentation
-|-classpath, -cp | --classpath |Specify where to find the class files - must be
-first argument
+
 |-d |--destdir <dir> |Destination directory for output files
-| |--debug|Enable debug output
-|-doctitle <html> | |Include title for the overview page
-|-exclude <pkglist>| | Specify a list of packages to exclude
-(separated by colons for all operating systems)
-|-fileEncoding <charset>| |Charset for generated documentation files
-|-footer <html> | |Include footer text for each page
-|-header <html> | |Include header text for each page
-|-help|--help|Display help message
-|-nomainforscripts| |Don't include the implicit 'public static void
-main' method for scripts
-|-noscripts| |Don't process Groovy Scripts
-|-notimestamp| |Don't include timestamp within hidden comment in generated HTML
-|-noversionstamp| |Don't include Groovy version within hidden comment in generated HTML
-|-overview <file>| |Read overview documentation from HTML file
+|-sourcepath <pathlist>| |Directories to find source files (platform path separator)
+|-classpath, -cp | --classpath |Where to find class files (must be first argument)
+
+|-public| |Show only public classes and members
+|-protected| |Show protected/public classes and members (default)
 |-package| |Show package/protected/public classes and members
 |-private| |Show all classes and members
-|-protected| |Show protected/public classes and members (default)
-|-public| |Show only public classes and members
-|-quiet| |Suppress superfluous output
-|-sourcepath <pathlist>| |Specify where to find source files (dirs
-separated by platform path separator)
-|-stylesheetfile <path>| |File to change style of the generated documentation
-|-verbose| |Enable verbose output
+
+|-charset <charset>| |Charset for cross-platform viewing of generated HTML
+|-fileEncoding <charset>| |Charset for generated documentation files
+
+|-doctitle <html> | |Title for the overview page
+|-windowtitle <text>| |Browser window title
+|-header <html> | |Include header text on each page
+|-footer <html> | |Include footer text on each page
+|-overview <file>| |Read overview documentation from HTML file
+
+|-exclude <pkglist>| |Exclude listed packages (colon-separated)
+|-noscripts| |Don't process Groovy Scripts
+|-author| |Include `@author` paragraphs
+
+|-stylesheetfile <path>| |Replace the default stylesheet with a supplied one
+|-addStylesheet <path>| |Add a stylesheet *alongside* the default (can be
+given multiple times with comma-separated values)
+|-theme <mode>| |Theme: `auto` (default, follow OS), `light`, or `dark`
+|-syntaxHighlighter <name>| |Client-side syntax highlighter: `prism`
+(bundled) or `none` (default)
+
+|-showInternal| |Include members annotated with `groovy.transform.@Internal`
+(hidden by default)
+|-noindex| |Skip generating the alphabetical index page
+|-nodeprecatedlist| |Skip generating the deprecated list
+|-nohelp| |Skip generating the help page
+
+|-notimestamp| |Don't include generation timestamp in output
+|-noversionstamp| |Don't include Groovy version in output
+|-nomainforscripts| |Don't include the implicit `public static void main`
+method for scripts
+
+|-help, -h |--help |Display help message
+|-verbose, -quiet, --debug| |Adjust logging verbosity
 | |--version|Display the version
-|-windowtitle <text>| |Browser window title for the documentation
-|-javaversion <version> | | The version of the Java source files
+|-javaVersion <version> | | Language version for parsed Java files (e.g. `JAVA_17`)
 |=======================================================================
 
-=== Java Versions
-
-The supported Java Versions for `groovydoc` are defined by the JavaParser library's link:https://www.javadoc.io/doc/com.github.javaparser/javaparser-core/{javaParserVersion}/com/github/javaparser/ParserConfiguration.LanguageLevel.html[LanguageLevel] class.
-
 [[Groovydoc-Ant]]
-== The groovydoc Ant task
+=== The `groovydoc` Ant task
 
-The `groovydoc` Ant task allows generating groovydocs from an Ant build.
-
-[[ThegroovydocAnttask-Requiredtaskdef]]
-=== Required taskdef
-
-Assuming all the groovy jars you need are in _my.classpath_ (this will be `groovy-VERSION.jar`,
-`groovy-ant-VERSION.jar`, `groovy-groovydoc-VERSION.jar` plus any modules and transitive dependencies you might be using)
-you will need to declare this task at some point in the build.xml prior to the groovydoc task being invoked.
+The Ant task exposes the same feature set. You will need the task
+defined before invoking it:
 
 [source,xml]
 -----------------------------------------------------------
@@ -96,45 +265,69 @@ you will need to declare this task at some point in the build.xml prior to the g
          classpathref = "my.classpath"/>
 -----------------------------------------------------------
 
-[[ThegroovydocAnttask-groovydocAttributes]]
-=== <groovydoc> Attributes
+where _my.classpath_ references the Groovy distribution jars
+(`groovy-VERSION.jar`, `groovy-ant-VERSION.jar`,
+`groovy-groovydoc-VERSION.jar`, plus any modules and transitive
+dependencies you use).
 
-[cols="1,2,1",options="header,footer"]
+==== `<groovydoc>` attributes
+
+[cols="1,3,1",options="header,footer"]
 |=======================================================================
 |Attribute |Description |Required
-|destdir |Location to store the class files. |Yes
-|sourcepath |The sourcepath to use. |No
-|packagenames |Comma separated list of package files (with terminating
-wildcard). |No
-|use |Create class and package usage pages. |No
-|windowtitle |Browser window title for the documentation (text). |No
-|doctitle |Include title for the package index(first) page (html-code).
-|No
-|header |Include header text for each page (html-code). |No
-|footer |Include footer text for each page (html-code). |No
-|overview |Read overview documentation from HTML file. |No
-|private |Show all classes and members (i.e. including private ones) if
-set to ``true''. |No
-|javaversion |The version of the Java source files. |No
+
+|destdir |Location to write generated documentation to. |Yes
+|sourcepath |Directories to scan for source files. |No
+|packagenames |Comma-separated list of package specs (wildcards allowed,
+e.g. `com.foo.**`). |No
+|excludePackageNames |Comma-separated (or colon-separated) list of
+package specs to exclude. |No
+|windowtitle |Browser window title. |No
+|doctitle |HTML shown at the top of the overview page. |No
+|header, footer |HTML shown at the top/bottom of every page. |No
+|overview |HTML file read as the overview page. |No
+|stylesheetFile |Replace the default stylesheet with a supplied one. |No
+|private |Show all classes and members (including private ones). |No
+|access |Visibility scope: `public`, `protected`, `package`, `private`. |No
+|javaVersion |Language version for Java source files. |No
+|extensions |Colon-separated source extensions (default
+`.java:.groovy:.gv:.gvy:.gsh`). |No
+|showInternal |Include members annotated with
+`groovy.transform.@Internal`. |No
+|noIndex, noDeprecatedList, noHelp |Suppress the matching auxiliary page. |No
+|syntaxHighlighter |`prism` or `none` (default). |No
+|theme |Theme lock: `auto` (default), `light`, or `dark`. |No
+|noTimestamp, noVersionStamp |Omit the matching stamp from output. |No
 |=======================================================================
 
-[[ThegroovydocAnttask-groovydocNestedElements]]
-=== <groovydoc> Nested Elements
+==== `<groovydoc>` nested elements
 
-[[ThegroovydocAnttask-link]]
-==== link
+===== `<link>`
 
-Create link to groovydoc/javadoc output at the given URL.
+Create cross-references to external Javadoc/groovydoc output. See
+<<Groovydoc-Link,Linking to external APIs>>.
 
-[cols="<,<,<",options="header,footer"]
+[cols="1,3,1",options="header,footer"]
 |=======================================================
 |Attribute |Description |Required
-|packages |Comma separated list of package prefixes |Yes
-|href |Base URL of external site |Yes
+|packages |Comma-separated list of package prefixes. |Yes
+|href |Base URL of the external site. |Yes
+|module |JPMS module name; inserted as a path segment for
+modular Javadoc layouts. |No
 |=======================================================
 
-[[ThegroovydocAnttask-Example1-groovydocAnttask]]
-==== Example #1 - <groovydoc> Ant task
+===== `<addStylesheet>`
+
+Add an extra stylesheet alongside the default. Repeat the element to add
+multiple stylesheets.
+
+[cols="1,3,1",options="header,footer"]
+|=======================================================
+|Attribute |Description |Required
+|file |Path to the stylesheet file. |Yes
+|=======================================================
+
+==== Ant task example
 
 [source,xml]
 ----------------------------------------------------------------------------------------------------------------
@@ -152,50 +345,233 @@ Create link to groovydoc/javadoc output at the given URL.
            footer       = "${docFooter}"
            overview     = "src/main/overview.html"
            private      = "false">
-        <link packages="java.,org.xml.,javax.,org.xml." href="http://docs.oracle.com/javase/8/docs/api/"/>
-        <link packages="org.apache.tools.ant."          href="http://docs.groovy-lang.org/docs/ant/api/"/>
-        <link packages="org.junit.,junit.framework."    href="http://junit.org/junit4/javadoc/latest/"/>
-        <link packages="groovy.,org.codehaus.groovy."   href="http://docs.groovy-lang.org/latest/html/api/"/>
-        <link packages="org.codehaus.gmaven."           href="http://groovy.github.io/gmaven/apidocs/"/>
+        <link packages="java.,org.xml.,javax.,org.xml." href="https://docs.oracle.com/javase/8/docs/api/"/>
+        <link packages="org.apache.tools.ant."          href="https://docs.groovy-lang.org/docs/ant/api/"/>
+        <link packages="org.junit.,junit.framework."    href="https://junit.org/junit4/javadoc/latest/"/>
+        <link packages="groovy.,org.codehaus.groovy."   href="https://docs.groovy-lang.org/latest/html/api/"/>
 </groovydoc>
 ----------------------------------------------------------------------------------------------------------------
 
-[[ThegroovydocAnttask-Example2-ExecutinggroovydocfromGroovy]]
-==== Example #2 - Executing <groovydoc> from Groovy
+Running the task from Groovy via `AntBuilder` works the same way.
+
+[[Groovydoc-Link]]
+== Linking to external APIs
+
+`<link>` (Ant) and `-link` (CLI) let cross-references resolve to an
+external Javadoc/groovydoc site. Packages are matched by the `packages`
+attribute as a comma-separated list of prefixes; when a documented
+reference matches one of the prefixes the link goes to the configured
+`href` base.
+
+The `module` attribute on `<link>` supports modular Javadoc layouts,
+where an external site places each JPMS module's docs under a
+module-named subdirectory. With `module="java.base"` and
+`href="https://docs.oracle.com/en/java/javase/17/docs/api/"`, a link to
+`java.lang.Object` resolves to
+`https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/lang/Object.html`.
+
+[[Groovydoc-Customising]]
+== Customising the output
+
+=== Stylesheets
+
+Two mechanisms cover most customisation needs:
+
+* `-stylesheetfile <path>` (CLI) / `stylesheetFile="..."` (Ant) —
+  *replaces* the default stylesheet. The supplied file is copied verbatim
+  over `stylesheet.css` in the output. If the file has no dark-mode
+  support of its own, the generated docs will be light-only regardless
+  of the theme settings below.
+* `-addStylesheet <path>` (CLI) / `<addStylesheet file="..."/>` (Ant) —
+  *adds* an extra stylesheet alongside the default. The default is still
+  loaded and supplies the baseline look; the added stylesheet layers on
+  top. This is the safer choice for theme tweaks.
+
+Author stylesheets can opt into the baseline palette by referencing the
+default stylesheet's CSS custom properties (`--fg`, `--bg`, `--link`,
+`--bg-panel`, `--border`, `--caption-bg`, and related semantic tokens).
+Doing so makes the added stylesheet automatically dark-mode aware.
+
+=== Theme
+
+`-theme <mode>` / `theme="..."` controls the palette strategy:
+
+* `auto` (default) — the generated stylesheet emits a
+  `prefers-color-scheme` media query. Each reader's browser picks the
+  light or dark palette that matches their OS preference. Syntax
+  highlighting (if enabled) switches Prism themes in sync.
+* `light` — locks the output to the light palette regardless of OS
+  preference.
+* `dark` — locks the output to the dark palette regardless of OS
+  preference.
+
+`auto` is the right choice for public-facing docs that should adapt to
+the reader. `light` and `dark` are useful for branded sites where a
+consistent look matters more than honouring OS preference.
+
+=== Syntax highlighting
+
+`-syntaxHighlighter prism` / `syntaxHighlighter="prism"` enables
+client-side syntax highlighting for `{@snippet}` blocks and Markdown
+fenced code blocks. Prism.js is bundled and covers at minimum Groovy,
+Java, XML, JSON, YAML, TOML, SQL, CSV, Markdown, JavaScript, and
+regex. The light/dark theme selection tracks the
+<<Groovydoc-Theme,theme>> setting automatically. The default is `none`
+(no highlighting); code blocks are rendered as plain preformatted text.
+
+=== Disable optional pages
+
+GroovyDoc generates auxiliary pages by default:
+
+* `index-all.html` — alphabetical index of every class and member
+* `deprecated-list.html` — everything marked `@deprecated`
+* `help-doc.html` — explanation of the page layout
+
+Any of these can be suppressed with `-noindex`, `-nodeprecatedlist`,
+`-nohelp` (CLI) or the corresponding `noIndex`, `noDeprecatedList`,
+`noHelp` Ant attributes. When suppressed, the page is not generated and
+navigation bars on other pages omit the corresponding link.
+
+[[Groovydoc-GMavenPlus]]
+== GMavenPlus Maven plugin
+
+https://github.com/groovy/GMavenPlus[GMavenPlus] is a Maven plugin with
+goals that drive groovydoc. Consult the plugin documentation for the
+current list of options it exposes.
+
+[[Groovydoc-Advanced]]
+== Advanced topics
+
+[[Groovydoc-Snippet]]
+=== `{@snippet}` code snippets
+
+`{@snippet}` embeds a code sample that renders as a preformatted block
+and, when syntax highlighting is enabled, is coloured according to its
+declared language. Three forms are supported:
+
+==== Inline body
 
 [source,groovy]
---------------------------------------------------------------------------------------------------------------
-def ant = new AntBuilder()
-ant.taskdef(name: "groovydoc", classname: "org.codehaus.groovy.ant.Groovydoc")
-ant.groovydoc(
-    destdir      : "${docsDirectory}/gapi",
-    sourcepath   : "${mainSourceDirectory}",
-    packagenames : "**.*",
-    use          : "true",
-    windowtitle  : "${title}",
-    doctitle     : "${title}",
-    header       : "${title}",
-    footer       : "${docFooter}",
-    overview     : "src/main/overview.html",
-    private      : "false") {
-        link(packages:"java.,org.xml.,javax.,org.xml.",href:"http://docs.oracle.com/javase/8/docs/api/")
-        link(packages:"groovy.,org.codehaus.groovy.",  href:"http://docs.groovy-lang.org/latest/html/api/")
-        link(packages:"org.apache.tools.ant.",         href:"http://docs.groovy-lang.org/docs/ant/api/")
-        link(packages:"org.junit.,junit.framework.",   href:"http://junit.org/junit4/javadoc/latest/")
-        link(packages:"org.codehaus.gmaven.",          href:"http://groovy.github.io/gmaven/apidocs/")
-}
---------------------------------------------------------------------------------------------------------------
+----
+/**
+ * {@snippet lang="groovy" :
+ * def greet(name) { "Hello, $name" }
+ * greet('world')
+ * }
+ */
+----
+
+The language is optional; when set, it becomes the Prism language class
+used for syntax highlighting. Any text from the opening brace to the
+matching closing brace is the snippet body.
+
+==== External file reference
+
+Place the source of the snippet in a `snippet-files/` subdirectory of
+the current package, then reference it:
+
+[source,groovy]
+----
+/** {@snippet file="GreetExample.groovy"} */
+----
+
+The `snippet-files/` directory is discovered via the `-sourcepath`.
+The file is copied to the output site verbatim so that the snippet
+remains browsable in the rendered docs.
+
+A `region="name"` attribute selects a slice of the file bounded by
+`// @start region="name"` and `// @end region="name"` marker comments.
+
+==== Markup comments inside a snippet body
+
+Markup comments let snippet authors highlight, replace, or link portions
+of the code without changing the source itself:
+
+[cols="1,3",options="header"]
+|===
+|Directive |Effect
+
+|`// @highlight [substring="text"\|regex="pattern"] [type="bold\|italic\|highlighted"]`
+|Wrap matches in `<b>`/`<i>`/`<mark>`. Type defaults to `bold`.
+
+|`// @replace [substring="text"\|regex="pattern"] replacement="text"`
+|Replace matching text in the rendered output.
+
+|`// @link [substring="text"\|regex="pattern"] target="Class[#member]"`
+|Turn matches into anchors pointing at the referenced element.
+
+|`// @start region="name"`, `// @end [region="name"]`
+|Define a named region for the external-file form, or as a scoping
+bound for any of the above directives.
+|===
+
+A directive written on its own line applies to the next code line. A
+directive written at the end of a code line (after the code) applies to
+that line's code portion. Adding a `region="name"` attribute to a
+directive activates it until the matching `// @end`. Directive comment
+lines are stripped from the rendered output.
+
+For the complete semantics see https://openjdk.org/jeps/413[JEP 413].
+
+=== Class hierarchy tree pages
+
+GroovyDoc generates a global `overview-tree.html` and per-package
+`package-tree.html` showing class and interface hierarchies. Classes are
+rooted at `java.lang.Object`; interfaces and traits form a separate
+tree. External ancestors (types the tool can't see) render as plain
+text joining documented classes up the chain.
+
+[[Groovydoc-Runtime]]
+=== Runtime Groovydoc (`/**@`)
+
+A doc comment whose opening marker is `/**@` instead of `/**` can be
+retained as runtime metadata. Enable it by setting the compiler
+option:
+
+[source,groovy]
+----
+compilerConfiguration.setOptimizationOptions(
+    [(CompilerConfiguration.RUNTIME_GROOVYDOC): true]
+)
+----
+
+When enabled, the parser attaches the raw comment text (still in source
+form — including `/**@`, per-line `*`, and `*/`) to the declaration as
+a `groovy.lang.@Groovydoc` annotation. Readers access the text
+reflectively:
+
+[source,groovy]
+----
+assert SomeClass.class.groovydoc.content.contains('class summary')
+----
+
+`/**@` comments do not need to be marked specially to participate in
+normal groovydoc HTML generation; they render identically to `/**`.
+
+[[Groovydoc-DocFiles]]
+=== `doc-files/` and `snippet-files/`
+
+Each package may contain a `doc-files/` subdirectory whose content is
+copied verbatim into the rendered output under the same package path.
+Useful for bundling images, diagrams, and supplementary HTML alongside
+the generated pages.
+
+The sibling convention `snippet-files/` is used by
+<<Groovydoc-Snippet,`{@snippet file=...`>>. Both conventions are sourced
+from `-sourcepath` directories and preserve nested subdirectories.
+
+=== Java source version
+
+`-javaVersion` (CLI) / `javaVersion` (Ant attribute) declares the
+language level at which `.java` source files are parsed. The accepted
+values are the names of the
+link:https://www.javadoc.io/doc/com.github.javaparser/javaparser-core/{javaParserVersion}/com/github/javaparser/ParserConfiguration.LanguageLevel.html[`ParserConfiguration.LanguageLevel`]
+enum — for example `JAVA_8`, `JAVA_17`, `JAVA_21`.
 
 === Custom templates
 
-The `groovydoc` Ant task supports custom templates, but it requires two steps:
-
-. A custom groovydoc class
-. A new groovydoc task definition
-
-==== Custom Groovydoc class
-
-The first step requires you to extend the `Groovydoc` class, like in the following example:
+The default template set can be replaced by extending `Groovydoc` in a
+small Java class:
 
 [source,java]
 ----
@@ -203,43 +579,34 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.ant.Groovydoc;
 
-/**
- * Overrides GroovyDoc's default class template - for testing purpose only.
- */
 public class CustomGroovyDoc extends Groovydoc {
 
     @Override
     protected String[] getClassTemplates() {
-        return new String[]{"org/codehaus/groovy/tools/groovydoc/testfiles/classDocName.html"};
+        return new String[]{"path/to/custom/classDocName.html"};
     }
 }
 ----
 
-You can override the following methods:
+The following methods can be overridden:
 
-* `getClassTemplates` for class-level templates
-* `getPackageTemplates` for package-level templates
-* `getDocTemplates` for top-level templates
+* `getClassTemplates` — class-level templates
+* `getPackageTemplates` — package-level templates
+* `getDocTemplates` — top-level (overview, index, tree, etc.) templates
 
-You can find the list of default templates in the `org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo`
-class.
+The list of default templates is in
+`org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo`.
 
-==== Using the custom groovydoc task
-
-Once you've written the class, using it is just a matter of redefining the `groovydoc` task:
+Having extended the task, you then register it as an Ant task under the
+same name:
 
 [source,xml]
 ----
-<taskdef name           = "groovydoc"
-         classname      = "org.codehaus.groovy.ant.CustomGroovyDoc"
-         classpathref   = "path_to_groovy_all"/>
+<taskdef name         = "groovydoc"
+         classname    = "org.codehaus.groovy.tools.groovydoc.CustomGroovyDoc"
+         classpathref = "path_to_groovy_all"/>
 ----
 
-Please note that template customization is provided as is. APIs are subject to change, so you must consider this as a
-fragile feature.
-
-[[Groovydoc-GMavenPlus]]
-== GMavenPlus Maven Plugin
-https://github.com/groovy/GMavenPlus[GMavenPlus] is a Maven plugin with goals that
-support GroovyDoc generation.
+Template customisation is provided as is — the template APIs are subject
+to change between releases.
 
