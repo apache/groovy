@@ -23,28 +23,26 @@ import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
-import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.PathSensitive
-import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
 
 import javax.inject.Inject
 
 /**
- * Runs groovydoc (via {@code GDKDocTool}) against the mock source tree produced
- * by {@link GenerateGDKMocks}, writing the Groovy-JDK documentation. Replaces
- * the old monolithic {@code DocGenerator}-based step — theme, prism, and snippet
- * support come from groovydoc directly, and {@code PrimitiveNameRewriter}
- * restores historical URLs such as {@code primitives-and-primitive-arrays/int[].html}.
+ * Runs {@code MockSourceGenerator} against the supplied DGM source files,
+ * emitting one Java mock per receiver type plus a manifest file used by the
+ * downstream rename pass. Upstream half of the pipeline that replaced the old
+ * monolithic {@code DocGenerator} step.
  */
 @CacheableTask
 @CompileStatic
-class DocGDK extends DefaultTask {
+class GenerateGDKMocks extends DefaultTask {
 
     private final ExecOperations execOperations
 
@@ -52,32 +50,25 @@ class DocGDK extends DefaultTask {
     @Classpath
     final ConfigurableFileCollection classpath = project.objects.fileCollection()
 
-    @InputDirectory
-    @PathSensitive(PathSensitivity.RELATIVE)
-    final DirectoryProperty mocksDirectory = project.objects.directoryProperty()
+    @Input
+    final ListProperty<String> classes = project.objects.listProperty(String)
 
     @OutputDirectory
     final DirectoryProperty outputDirectory = project.objects.directoryProperty()
-            .convention(project.layout.buildDirectory.dir('html/groovy-jdk'))
+            .convention(project.layout.buildDirectory.dir('tmp/groovy-jdk-mocks'))
 
     @Inject
-    DocGDK(ExecOperations execOperations) {
+    GenerateGDKMocks(ExecOperations execOperations) {
         this.execOperations = execOperations
     }
 
     @TaskAction
     @CompileDynamic
-    void generateDocs() {
+    void generate() {
         execOperations.javaexec {
-            it.mainClass.set('org.apache.groovy.docgenerator.GDKDocTool')
+            it.mainClass.set('org.apache.groovy.docgenerator.MockSourceGenerator')
             it.classpath = this.classpath
-            it.args([
-                    '-s', mocksDirectory.get().asFile.absolutePath,
-                    '-o', outputDirectory.get().asFile.absolutePath,
-                    '-title', 'Groovy JDK enhancements',
-                    '-link', 'groovy,org.codehaus.groovy,org.apache.groovy=https://docs.groovy-lang.org/latest/html/gapi/',
-                    '-link', 'java,org.xml,javax,org.w3c=https://docs.oracle.com/en/java/javase/17/docs/api/java.base/'
-            ])
+            it.args(['-o', outputDirectory.get().asFile.absolutePath] + classes.get())
         }
     }
 }

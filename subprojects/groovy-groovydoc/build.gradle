@@ -25,7 +25,9 @@ dependencies {
     api "com.github.javaparser:javaparser-core:${versions.javaParser}" // GroovydocJavaVisitor extends VoidVisitorAdapter...
 
     implementation projects.groovyTemplates
-    implementation projects.groovyDocgenerator
+    // groovy-docgenerator ships groovy.ico which GroovyDocTemplateInfo references
+    // via classpath resource lookup. Only needed at runtime.
+    runtimeOnly projects.groovyDocgenerator
     // GROOVY-11542: JEP 467 Markdown doc comment rendering (/// runs).
     implementation "org.commonmark:commonmark:${versions.commonmark}"
 
