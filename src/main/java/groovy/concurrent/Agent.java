@@ -18,6 +18,7 @@
  */
 package groovy.concurrent;
 
+import org.apache.groovy.runtime.async.AsyncSupport;
 import org.apache.groovy.runtime.async.GroovyPromise;
 
 import java.util.Objects;
@@ -25,6 +26,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 
@@ -63,9 +67,15 @@ import java.util.function.Function;
  */
 public final class Agent<T> {
 
+    /** Default per-subscriber buffer size for {@link #changes()}. */
+    public static final int DEFAULT_CHANGES_BUFFER = 256;
+
     private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
     private final ExecutorService updateExecutor;
+    private final Object lifecycleLock = new Object();
     private volatile T value;
+    private volatile SubmissionPublisher<T> changesPublisher;
+    private volatile boolean shutdownInvoked;
 
     private Agent(T initialValue, ExecutorService executor) {
         this.value = initialValue;
@@ -179,9 +189,72 @@ public final class Agent<T> {
     /**
      * Shuts down the agent's update executor. No further updates will
      * be accepted. Pending updates are executed before shutdown completes.
+     * The changes publisher (if any subscribers attached) is closed after
+     * pending updates drain, signalling {@code onComplete} to all live
+     * subscribers. Calling {@code shutdown()} more than once is a no-op.
      */
     public void shutdown() {
+        SubmissionPublisher<T> p;
+        synchronized (lifecycleLock) {
+            if (shutdownInvoked) return;
+            shutdownInvoked = true;
+            p = changesPublisher;
+        }
+        if (p != null) {
+            // Submit close as a terminator task so it runs after any queued
+            // updates have drained — ensures applyUpdate never offers to a
+            // publisher that has already been closed.
+            try {
+                updateExecutor.execute(p::close);
+            } catch (RejectedExecutionException ex) {
+                p.close();
+            }
+        }
         updateExecutor.shutdown();
+    }
+
+    /**
+     * Returns a {@link Flow.Publisher} that emits the agent's value after
+     * every successful update. The publisher is hot and per-subscriber:
+     * <ul>
+     *   <li>Subscribers see only changes that occur after they subscribe;
+     *       the current value at subscription time is <em>not</em> replayed.</li>
+     *   <li>Each subscriber gets an independent buffer (default
+     *       {@value #DEFAULT_CHANGES_BUFFER} items).</li>
+     *   <li>Slow subscribers drop the most recent value rather than
+     *       blocking the agent's update thread. Values already buffered
+     *       are delivered in order; only newly-offered values that cannot
+     *       fit are discarded.</li>
+     *   <li>Closes (signals {@code onComplete}) when {@link #shutdown()} is
+     *       called. If {@code changes()} is first called after
+     *       {@code shutdown()}, the returned publisher is already closed
+     *       and subscribers receive {@code onComplete} immediately.</li>
+     * </ul>
+     * <p>
+     * Typical use:
+     * <pre>{@code
+     * for await (newValue in agent.changes()) {
+     *     log.info "Agent value is now {}", newValue
+     * }
+     * }</pre>
+     *
+     * @return a hot publisher of state transitions
+     * @since 6.0.0
+     */
+    public Flow.Publisher<T> changes() {
+        SubmissionPublisher<T> p = changesPublisher;
+        if (p == null) {
+            synchronized (lifecycleLock) {
+                p = changesPublisher;
+                if (p == null) {
+                    p = new SubmissionPublisher<>(
+                            AsyncSupport.getExecutor(), DEFAULT_CHANGES_BUFFER);
+                    if (shutdownInvoked) p.close();
+                    changesPublisher = p;
+                }
+            }
+        }
+        return p;
     }
 
     @Override
@@ -191,12 +264,25 @@ public final class Agent<T> {
 
     private T applyUpdate(Function<T, T> updateFn) {
         rwLock.writeLock().lock();
+        T newValue;
         try {
             value = updateFn.apply(value);
-            return value;
+            newValue = value;
         } finally {
             rwLock.writeLock().unlock();
         }
+        SubmissionPublisher<T> p = changesPublisher;
+        if (p != null) {
+            try {
+                // Non-blocking offer: drop on slow subscribers rather than
+                // back-pressuring the agent's serialised update loop.
+                p.offer(newValue, (sub, item) -> false);
+            } catch (IllegalStateException ignore) {
+                // Publisher was closed concurrently (changes() created
+                // after shutdown() marked the flag). Drop this emission.
+            }
+        }
+        return newValue;
     }
 
     /**
