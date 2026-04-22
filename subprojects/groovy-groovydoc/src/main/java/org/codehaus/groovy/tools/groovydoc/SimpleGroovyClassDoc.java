@@ -34,6 +34,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -91,6 +92,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private final List<GroovyClassDoc> nested;
     private final List<LinkArgument> links;
     private final Map<String, Class<?>> resolvedExternalClassesCache;
+    private final Map<String, GroovyClassDoc> localResolvedClasses = new HashMap<>();
     private GroovyClassDoc superClass;
     private GroovyClassDoc outer;
     private String superClassName;
@@ -569,20 +571,22 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         if (isPrimitiveType(name)) return null;
-        GroovyClassDoc groovyClassDoc;
-        Map<String, GroovyClassDoc> resolvedClasses = null;
-        if (rootDoc != null) {
-            resolvedClasses = rootDoc.getResolvedClasses();
-            groovyClassDoc = resolvedClasses.get(name);
-            if (groovyClassDoc != null) {
-                return groovyClassDoc;
-            }
-        }
-        groovyClassDoc = doResolveClass(rootDoc, name);
-        if (resolvedClasses != null) {
-            resolvedClasses.put(name, groovyClassDoc);
-        }
-        return groovyClassDoc;
+        if (rootDoc == null) return doResolveClass(rootDoc, name);
+
+        // Short names resolve against this class's imports/aliases/package,
+        // so caching them on the shared root-level map (GROOVY-11954) lets
+        // the first resolver's context poison every later resolver. Fully
+        // qualified names (containing '/') bypass import resolution and are
+        // safe to share globally.
+        Map<String, GroovyClassDoc> cache = name.indexOf('/') >= 0
+                ? rootDoc.getResolvedClasses()
+                : localResolvedClasses;
+        GroovyClassDoc cached = cache.get(name);
+        if (cached != null) return cached;
+
+        GroovyClassDoc resolved = doResolveClass(rootDoc, name);
+        if (resolved != null) cache.put(name, resolved);
+        return resolved;
     }
 
     private GroovyClassDoc doResolveClass(final GroovyRootDoc rootDoc, final String name) {
