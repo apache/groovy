@@ -154,6 +154,36 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 doc.contains("{<DL><DT><B>inheritDoc") || doc.contains("inheritDoc:</B>"));
     }
 
+    // GROOVY-11954: resolveClass must not let a shared root-level cache smear
+    // a short-name resolution across classes with different imports. Here two
+    // classes in the same run both use the short name "Date" — one imports
+    // java.util.Date, the other java.sql.Date. Both must render links to their
+    // own import, regardless of which class is resolved first.
+    public void testShortNameResolutionHonoursPerClassImports() throws Exception {
+        String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
+        // Feed both files into the same doc run so they share a GroovyRootDoc.
+        htmlTool.add(List.of(
+                base + "/AmbiguousDateUtil.groovy",
+                base + "/AmbiguousDateSql.groovy"));
+
+        MockOutputTool output = new MockOutputTool();
+        htmlTool.renderToOutput(output, MOCK_DIR);
+
+        String utilDoc = output.getText(MOCK_DIR + "/" + base + "/AmbiguousDateUtil.html");
+        assertNotNull("Expected AmbiguousDateUtil.html in output", utilDoc);
+        assertTrue("AmbiguousDateUtil should link java.util.Date, got:\n" + utilDoc,
+                utilDoc.contains("java/util/Date.html"));
+        assertFalse("AmbiguousDateUtil must not link java.sql.Date:\n" + utilDoc,
+                utilDoc.contains("java/sql/Date.html"));
+
+        String sqlDoc = output.getText(MOCK_DIR + "/" + base + "/AmbiguousDateSql.html");
+        assertNotNull("Expected AmbiguousDateSql.html in output", sqlDoc);
+        assertTrue("AmbiguousDateSql should link java.sql.Date, got:\n" + sqlDoc,
+                sqlDoc.contains("java/sql/Date.html"));
+        assertFalse("AmbiguousDateSql must not link java.util.Date:\n" + sqlDoc,
+                sqlDoc.contains("java/util/Date.html"));
+    }
+
     // GROOVY-11941: additionalStylesheets property causes templates to emit
     // extra <link rel="stylesheet"> tags at the appropriate relative-root path.
     public void testAdditionalStylesheetsInTemplates() throws Exception {
