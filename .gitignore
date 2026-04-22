@@ -26,3 +26,5 @@ out/
 .vscode
 .jqwik-database
 verification-metadata.dryrun.xml
+
+.claude/
