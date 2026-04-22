@@ -23,7 +23,6 @@ tasks.register('updateLicenses') {
     ext.licenseBaseFile = "${licensesDir}/LICENSE-BASE"
 
     ext.licenseSrcFile = "${projectDir}/LICENSE"
-    ext.licenseDocGeneratorFile = "${projectDir}/subprojects/groovy-docgenerator/LICENSE"
     ext.licenseGroovyDocFile = "${projectDir}/subprojects/groovy-groovydoc/LICENSE"
     ext.licenseJsr223File = "${projectDir}/subprojects/groovy-jsr223/LICENSE"
     ext.licenseJLine3File = "${projectDir}/subprojects/groovy-groovysh/LICENSE"
@@ -33,7 +32,7 @@ tasks.register('updateLicenses') {
     ext.licenseSdkFile = "${licensesDir}/LICENSE-SDK"
     inputs.files(licenseBaseFile, fileTree(licensesDir).include('*.txt'))
     outputs.files(licenseBinZipFile, licenseDocFile, licenseJarJarFile, licenseSrcFile,
-        licenseDocGeneratorFile, licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
+        licenseGroovyDocFile, licenseJsr223File, licenseSdkFile)
 
     doLast {
         def srcFiles = fileTree(licensesDir).include('*-SRC*.txt').sort { it.name }
@@ -43,7 +42,6 @@ tasks.register('updateLicenses') {
             include '*-JARJAR*.txt'
             include '*-BINZIP*.txt'
         }.sort { it.name }
-        def docgeneratorFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-docgenerator.txt')
         def groovydocFiles = fileTree(licensesDir).include('normalize-stylesheet-groovy-groovydoc.txt')
         def jsr223Files = fileTree(licensesDir).include('jsr223-BINZIP-SRC.txt')
         def jline3Files = fileTree(licensesDir).include('jline3-BINZIP-SRC.txt')
@@ -53,7 +51,6 @@ tasks.register('updateLicenses') {
             (licenseDocFile)         : docFiles,
             (licenseJarJarFile)      : jarjarFiles,
             (licenseSrcFile)         : srcFiles,
-            (licenseDocGeneratorFile): docgeneratorFiles,
             (licenseGroovyDocFile)   : groovydocFiles,
             (licenseJsr223File)      : jsr223Files,
             (licenseJLine3File)      : jline3Files,
