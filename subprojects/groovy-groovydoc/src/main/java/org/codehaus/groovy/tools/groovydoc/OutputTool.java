@@ -21,4 +21,12 @@ package org.codehaus.groovy.tools.groovydoc;
 public interface OutputTool {
     void makeOutputArea(String filename);
     void writeToOutput(String fileName, String text, String charset) throws Exception;
+
+    /**
+     * Copy a resource file (doc-files/, snippet-files/ content) from
+     * {@code srcPath} to {@code dstPath}. Routed through the tool rather
+     * than calling {@code Files.copy} directly so that alternative tools
+     * (notably {@link MockOutputTool}) can intercept the side-effect.
+     */
+    void copyResource(String srcPath, String dstPath) throws Exception;
 }

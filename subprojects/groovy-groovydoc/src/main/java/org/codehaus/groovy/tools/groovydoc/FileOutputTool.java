@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -56,5 +57,15 @@ public class FileOutputTool implements OutputTool {
             }
         }
         ResourceGroovyMethods.write(file, text, charset, true);
+    }
+
+    @Override
+    public void copyResource(String srcPath, String dstPath) throws IOException {
+        Path dst = Paths.get(dstPath);
+        Path parent = dst.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Files.copy(Paths.get(srcPath), dst, StandardCopyOption.REPLACE_EXISTING);
     }
 }

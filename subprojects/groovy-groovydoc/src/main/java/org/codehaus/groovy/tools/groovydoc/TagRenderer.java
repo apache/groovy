@@ -438,11 +438,17 @@ final class TagRenderer {
     }
 
     /**
-     * If the file begins with a C-style block comment whose content contains
-     * {@code "Licensed"} (i.e. the standard ASF header), strip that comment and
-     * any whitespace before the first line of real content. Conservative — only
-     * matches a leading {@code /* ... *}{@code /} whose text looks like a
-     * license.
+     * If the file begins with a C-style block comment that looks like a
+     * license or copyright notice, strip that comment and any whitespace
+     * before the first line of real content. Conservative — only matches a
+     * leading {@code /* ... *}{@code /} whose text contains either
+     * {@code "Licensed"} (Apache 2.0, many others) or {@code "Copyright"}
+     * (MIT, BSD, GPL, proprietary notices — the word is present in every
+     * standard open-source license header). Snippet files whose first
+     * content isn't a license-looking block comment are returned
+     * unchanged; authors who want a matching header preserved can opt out
+     * via the {@code keepHeader=true} attribute on the {@code {@snippet}}
+     * tag.
      */
     private static String stripLicenseHeader(String text) {
         int i = 0;
@@ -451,7 +457,7 @@ final class TagRenderer {
         int close = text.indexOf("*/", i + 2);
         if (close < 0) return text;
         String comment = text.substring(i, close + 2);
-        if (!comment.contains("Licensed")) return text;
+        if (!comment.contains("Licensed") && !comment.contains("Copyright")) return text;
         int after = close + 2;
         while (after < text.length() && Character.isWhitespace(text.charAt(after))) after++;
         return text.substring(after);

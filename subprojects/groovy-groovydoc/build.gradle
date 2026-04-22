@@ -40,6 +40,14 @@ compileJava {
     }
 }
 
+// Forward the MockOutputTool debug dump flag to the test JVM so
+//   ./gradlew :groovy-groovydoc:test -Dgroovydoc.mockOutputTool.dumpDir=build/mock-dump
+// mirrors in-memory test output to disk for inspection. Property is opt-in.
+tasks.named('test') {
+    def dumpDir = System.getProperty('groovydoc.mockOutputTool.dumpDir')
+    if (dumpDir) systemProperty('groovydoc.mockOutputTool.dumpDir', dumpDir)
+}
+
 plugins.withId('eclipse') {
     eclipse.classpath.file.whenMerged {
         entries.removeAll { entry -> entry.path in ['/groovy-ant', '/groovy-xml'] }

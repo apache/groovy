@@ -268,6 +268,65 @@ public class GroovyDocToolTest extends GroovyTestCase {
         }
     }
 
+    // License-header auto-strip covers MIT / BSD / GPL style headers, not
+    // just ASF: the heuristic matches a leading block comment containing
+    // either "Licensed" or "Copyright", so standard MIT and BSD boilerplate
+    // (which use "Copyright" but not "Licensed") is handled too.
+    public void testSnippetTagExternalFormStripsMitStyleHeader() throws Exception {
+        String pkg = "org/codehaus/groovy/tools/groovydoc/testfiles/docfiles";
+        Path tmp = Files.createTempDirectory("snippet-mit-");
+        Path pkgDir = tmp.resolve(pkg);
+        Files.createDirectories(pkgDir);
+        Files.writeString(pkgDir.resolve("MitHeader.groovy"),
+                "package " + pkg.replace('/', '.') + "\n" +
+                "/**\n" +
+                " * {@snippet file=\"Mit.groovy\"}\n" +
+                " */\n" +
+                "class MitHeader {}\n");
+        Path snippetDir = pkgDir.resolve("snippet-files");
+        Files.createDirectories(snippetDir);
+        Files.writeString(snippetDir.resolve("Mit.groovy"),
+                "/*\n" +
+                " * MIT License\n" +
+                " *\n" +
+                " * Copyright (c) 2026 The Example Authors\n" +
+                " *\n" +
+                " * Permission is hereby granted, free of charge, to any person\n" +
+                " * obtaining a copy of this software...\n" +
+                " */\n" +
+                "println 'mit sample'\n");
+        try {
+            GroovyDocTool tool = new GroovyDocTool(
+                    new FileSystemResourceManager("src/main/resources"),
+                    new String[]{tmp.toString()},
+                    GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                    GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                    GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
+                    new ArrayList<>(), null, new Properties()
+            );
+            tool.add(List.of(pkg + "/MitHeader.groovy"));
+            MockOutputTool output = new MockOutputTool();
+            tool.renderToOutput(output, MOCK_DIR);
+
+            String doc = output.getText(MOCK_DIR + "/" + pkg + "/MitHeader.html");
+            assertNotNull(doc);
+            int snipStart = doc.indexOf("<pre><code class=\"language-groovy\">");
+            int snipEnd = doc.indexOf("</code></pre>", snipStart);
+            String snip = doc.substring(snipStart, snipEnd);
+            assertFalse("MIT header ('Copyright' but not 'Licensed') should be stripped:\n" + snip,
+                    snip.contains("MIT License"));
+            assertFalse("Copyright line should be stripped too:\n" + snip,
+                    snip.contains("Copyright (c) 2026"));
+            assertTrue("Snippet body should survive:\n" + snip,
+                    snip.contains("println 'mit sample'"));
+        } finally {
+            try (Stream<Path> s = Files.walk(tmp)) {
+                s.sorted(Comparator.reverseOrder())
+                        .forEach(p -> { try { Files.delete(p); } catch (IOException ignore) {} });
+            }
+        }
+    }
+
     // GROOVY-11938 stage 2: external snippet with region= selects a slice.
     public void testSnippetTagExternalFormWithRegion() throws Exception {
         String fixtureSourcePath = "src/test/resources/docfiles-fixture";

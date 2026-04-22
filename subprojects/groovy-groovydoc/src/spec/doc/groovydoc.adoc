@@ -234,6 +234,9 @@ given multiple times with comma-separated values)
 |-theme <mode>| |Theme: `auto` (default, follow OS), `light`, or `dark`
 |-syntaxHighlighter <name>| |Client-side syntax highlighter: `prism`
 (bundled) or `none` (default)
+|-preLanguage <lang>| |Default Prism language id for unattributed `<pre>`
+blocks in doc comments. When set, a post-render pass wraps their bodies
+so Prism highlights them (see <<Groovydoc-PreLanguage>>).
 
 |-showInternal| |Include members annotated with `groovy.transform.@Internal`
 (hidden by default)
@@ -310,6 +313,8 @@ groovydoc output. |No
 |noIndex, noDeprecatedList, noHelp |Suppress the matching auxiliary page. |No
 |syntaxHighlighter |`prism` or `none` (default). |No
 |theme |Theme lock: `auto` (default), `light`, or `dark`. |No
+|preLanguage |Default Prism language for unattributed `<pre>` blocks in
+doc comments. See <<Groovydoc-PreLanguage>>. |No
 |noTimestamp, noVersionStamp |Omit the matching stamp from output. |No
 |=======================================================================
 
@@ -433,6 +438,33 @@ regex. The light/dark theme selection tracks the
 <<Groovydoc-Theme,theme>> setting automatically. The default is `none`
 (no highlighting); code blocks are rendered as plain preformatted text.
 
+[[Groovydoc-PreLanguage]]
+=== Highlighting plain `<pre>` blocks
+
+Doc comments written before the `{@snippet}` era often use bare
+`<pre>...</pre>` wrappers for code samples. Prism only walks `<code>`
+descendants of language-classed elements, so a bare `<pre>` with prose
+inside is skipped even when `-syntaxHighlighter=prism` is on. The
+`-preLanguage <lang>` option (CLI) or `preLanguage="lang"` attribute
+(Ant task) closes that gap without touching source files:
+
+[source]
+----
+groovydoc -syntaxHighlighter prism -preLanguage groovy ...
+----
+
+When set, a post-render pass rewrites each unattributed
+`<pre>body</pre>` to
+`<pre class="language-xxx"><code>body</code></pre>`, using the
+configured language id. A `<pre class="language-xxx">` that lacks an
+inner `<code>` is also completed with a `<code>` wrapper so
+hand-authored language-classed blocks highlight whether or not the
+author remembered the nested `<code>`. `<pre>` tags with any existing
+attribute (authored `class="language-sql"`, `id="..."`, or similar)
+are left untouched.
+
+The option is off by default; unset, no rewriting occurs.
+
 === Disable optional pages
 
 GroovyDoc generates auxiliary pages by default:
@@ -528,6 +560,30 @@ remains browsable in the rendered docs.
 
 A `region="name"` attribute selects a slice of the file bounded by
 `// @start region="name"` and `// @end region="name"` marker comments.
+
+Two author-facing conveniences apply to the external form:
+
+* *Language inference from file extension* — when no explicit
+  `lang="..."` attribute is given, the Prism language class is derived
+  from the referenced file's extension. The recognised extensions are
+  `.groovy` / `.gvy` / `.gy` / `.gsh` (groovy), `.java`, `.xml` /
+  `.html` / `.htm` (xml-doc), `.json`, `.yaml` / `.yml`, `.toml`, `.sql`,
+  `.csv`, `.md` / `.markdown`, `.properties`, and `.js` (javascript).
+  Explicit `lang=` still wins when both are present.
+* *License-header auto-strip* — external snippet files typically carry
+  a license or copyright notice as their first block comment, which
+  isn't useful in the rendered output. If the file begins with a
+  leading `/* ... */` block comment whose text contains either
+  "Licensed" or "Copyright", the block is stripped before rendering
+  (covers Apache, MIT, BSD, GPL and most proprietary notices). Files
+  whose first content isn't a license-looking block comment are left
+  verbatim. To preserve a matching header (or suppress the strip for a
+  file that happens to match), add `keepHeader=true`:
++
+[source,groovy]
+----
+/** {@snippet file="GreetExample.groovy" keepHeader=true} */
+----
 
 ==== Markup comments inside a snippet body
 

@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -127,12 +126,11 @@ public class GroovyDocWriter {
                 Path dstFile = dstDir.resolve(rel);
                 try {
                     if (Files.isDirectory(srcFile)) {
-                        Files.createDirectories(dstFile);
+                        output.makeOutputArea(dstFile.toString());
                     } else {
-                        Files.createDirectories(dstFile.getParent());
-                        Files.copy(srcFile, dstFile, StandardCopyOption.REPLACE_EXISTING);
+                        output.copyResource(srcFile.toString(), dstFile.toString());
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     log.warn("Failed to copy " + srcFile + " to " + dstFile + ": " + e.getMessage());
                 }
             });
