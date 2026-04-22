@@ -19,6 +19,7 @@
 
 import org.apache.groovy.gradle.DistributionExtension
 import org.apache.groovy.gradle.DocGDK
+import org.apache.groovy.gradle.GenerateGDKMocks
 
 plugins {
     id 'jvm-ecosystem'
@@ -111,11 +112,14 @@ dependencies {
     docgeneratorTool projects.groovyDocgenerator
 }
 
-def docGDK = tasks.register('docGDK', DocGDK) {
+def generateGDKMocks = tasks.register('generateGDKMocks', GenerateGDKMocks) {
     classpath.from configurations.docgeneratorTool
     classes.set(distributionExtension.docgeneratorClasses)
-    resources.from project.project(projects.groovyDocgenerator.path).file('src/main/resources/org/apache/groovy/docgenerator/groovy.ico')
-    resources.from project.project(projects.groovyDocgenerator.path).file('src/main/resources/org/apache/groovy/docgenerator/stylesheet.css')
+}
+
+def docGDK = tasks.register('docGDK', DocGDK) {
+    classpath.from configurations.docgeneratorTool
+    mocksDirectory.set(generateGDKMocks.flatMap { it.outputDirectory })
 }
 
 def distBin = tasks.register('distBin', Zip) {

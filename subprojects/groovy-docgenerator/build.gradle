@@ -23,6 +23,7 @@ plugins {
 dependencies {
     implementation rootProject
     implementation projects.groovyTemplates
+    implementation projects.groovyGroovydoc
     implementation "com.thoughtworks.qdox:qdox:${versions.qdox}"
 
     testImplementation projects.groovyTest
@@ -32,8 +33,4 @@ plugins.withId('eclipse') {
     eclipse.classpath.file.whenMerged {
         entries.removeAll { entry -> entry.path == '/groovy-xml' }
     }
-}
-
-tasks.named('rat') {
-    excludes << '**/stylesheet.css' // MIT license as per NOTICE/LICENSE files
 }
