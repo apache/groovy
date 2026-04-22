@@ -65,11 +65,11 @@ class JavadocAssertionTestBuilderTest {
     }
 
     @Test
-    void testSnippetTagWithGroovyTestCaseClassIsRecognised() {
+    void testSnippetTagWithGroovyTestCaseIdIsRecognised() {
         // {@snippet} body is verbatim per JEP 413, so no HTML-entity escaping.
         Class test = builder.buildTest("SomeClass.java",
                 '''/**
-                   | * {@snippet lang="groovy" class="groovyTestCase" :
+                   | * {@snippet lang="groovy" id="groovyTestCase" :
                    | * assert "a<b>c".size() == 5
                    | * }
                    | */
@@ -82,7 +82,7 @@ class JavadocAssertionTestBuilderTest {
     void testSnippetTagAssertionsAreExecuted() {
         Class test = builder.buildTest("SomeClass.java",
                 '''/**
-                   | * {@snippet lang="groovy" class="groovyTestCase" :
+                   | * {@snippet lang="groovy" id="groovyTestCase" :
                    | * assert false
                    | * }
                    | */
@@ -98,7 +98,7 @@ class JavadocAssertionTestBuilderTest {
         // must balance for the tag parser to find the correct closing brace.
         Class test = builder.buildTest("SomeClass.java",
                 '''/**
-                   | * {@snippet lang="groovy" class="groovyTestCase" :
+                   | * {@snippet lang="groovy" id="groovyTestCase" :
                    | * def items = [1, 2, 3]
                    | * def sum = items.inject(0) { acc, x -> acc + x }
                    | * assert sum == 6
@@ -111,7 +111,7 @@ class JavadocAssertionTestBuilderTest {
     }
 
     @Test
-    void testSnippetTagWithoutGroovyTestCaseClassIsIgnored() {
+    void testSnippetTagWithoutGroovyTestCaseIdIsIgnored() {
         Class test = builder.buildTest("SomeClass.java",
                 '''/**
                    | * {@snippet lang="groovy" :

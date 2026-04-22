@@ -57,7 +57,7 @@ import static groovy.xml.XmlUtil.setFeatureQuietly;
 /**
  * Parse XML into a document tree that may be traversed similar to XPath
  * expressions.  For example:
- * {@snippet lang="groovy" class="groovyTestCase" :
+ * {@snippet lang="groovy" id="groovyTestCase" :
  * import groovy.xml.XmlSlurper
  * def rootNode = new XmlSlurper().parseText(
  *    '<root><one a1="uno!"/><two>Some text!</two></root>' )
@@ -70,7 +70,7 @@ import static groovy.xml.XmlUtil.setFeatureQuietly;
  * <p>
  * Note that in some cases, a 'selector' expression may not resolve to a
  * single node.  For example:
- * {@snippet lang="groovy" class="groovyTestCase" :
+ * {@snippet lang="groovy" id="groovyTestCase" :
  * import groovy.xml.XmlSlurper
  * def rootNode = new XmlSlurper().parseText(
  *    '''<root>
