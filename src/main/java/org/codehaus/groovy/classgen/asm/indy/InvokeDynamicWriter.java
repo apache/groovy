@@ -124,12 +124,40 @@ public class InvokeDynamicWriter extends InvocationWriter {
         return "(" + getTypeDescription(operandStack.getTopOperand());
     }
 
+    // GROOVY-11955: chains shorter than this go through the normal recursive
+    // visitor, which lets InvocationWriter emit direct invokevirtual when a
+    // method target is resolved. Only when the chain is deep enough to risk
+    // JVM stack overflow do we switch to the iterative indy path.
+    private static final int CHAIN_FLATTEN_THRESHOLD = 64;
+
     /**
-     * Visits receiver expression, using iterative approach for method call chains.
-     * GROOVY-7785: Flattens deep recursive AST structures to avoid stack overflow.
+     * Visits receiver expression. For short chains, delegates to the normal
+     * recursive visitor to preserve compact direct-invoke bytecode. For long
+     * chains, flattens iteratively to avoid StackOverflowError (GROOVY-7785).
      */
     private void visitReceiverOfMethodCall(final Expression receiver) {
-        // Collect chain of simple method calls that can use indy optimization
+        AsmClassGenerator acg = controller.getAcg();
+
+        // Fast probe: measure chain depth without allocating the deque.
+        int depth = 0;
+        Expression probe = receiver;
+        while (probe instanceof MethodCallExpression mce
+                && !mce.isSpreadSafe() && !mce.isImplicitThis()
+                && !isSuperExpression(mce.getObjectExpression())
+                && !isThisExpression(mce.getObjectExpression())) {
+            String name = getMethodName(mce.getMethod());
+            if (name == null || "call".equals(name)) break;
+            depth++;
+            if (depth >= CHAIN_FLATTEN_THRESHOLD) break;
+            probe = mce.getObjectExpression();
+        }
+
+        if (depth < CHAIN_FLATTEN_THRESHOLD) {
+            receiver.visit(acg);
+            return;
+        }
+
+        // Deep chain: flatten iteratively to avoid visitor recursion overflow.
         Deque<MethodCallExpression> chain = new ArrayDeque<>();
         Expression current = receiver;
         while (current instanceof MethodCallExpression) {
@@ -143,7 +171,6 @@ public class InvokeDynamicWriter extends InvocationWriter {
             current = mce.getObjectExpression();
         }
 
-        AsmClassGenerator acg = controller.getAcg();
         current.visit(acg);
 
         while (!chain.isEmpty()) {
