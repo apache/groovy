@@ -106,8 +106,8 @@ public class ConstructorCallTransformer {
             this.originalCall = originalCall;
             this.copyNodeMetaData(originalCall);
             this.setSourcePosition(originalCall);
-            Expression originalArgs = originalCall.getArguments();
-            this.innerClassCall = (2 == ((TupleExpression) originalArgs).getExpressions().size());
+            var originalArgs = (TupleExpression) originalCall.getArguments();
+            this.innerClassCall = (2 == originalArgs.getExpressions().size());
         }
 
         @Override
@@ -145,20 +145,22 @@ public class ConstructorCallTransformer {
             String signature = "()V";
             if (innerClassCall && ctorType.getOuterClass() != null) {
                 acg.visitVariableExpression(varX("this")); // GROOVY-11122
-                Parameter[] params = {new Parameter(ctorType.getOuterClass(), "$p$")};
+                Parameter[] params = {new Parameter(ctorType.getOuterClass(),"$p$")};
                 signature = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, params);
             }
             mv.visitMethodInsn(INVOKESPECIAL, ctorTypeName, "<init>", signature, false);
             mv.visitVarInsn(ASTORE, tmpObj);
 
+            Expression objExpression = bytecodeX(ctorType, v -> v.visitVarInsn(ALOAD, tmpObj));
+
             // process property initializers
             for (MapEntryExpression entryExpression : map.getMapEntryExpressions()) {
                 Expression keyExpression = entryExpression.getKeyExpression();
+                Expression varExpression = propX(objExpression, keyExpression);
                 Expression valExpression = entryExpression.getValueExpression();
-                Expression varExpression = propX(
-                        bytecodeX(ctorType, v -> v.visitVarInsn(ALOAD, tmpObj)),
-                        keyExpression
-                );
+
+                objExpression.setSourcePosition(keyExpression); // GROOVY-11956
+
                 varExpression.putNodeMetaData(DIRECT_METHOD_CALL_TARGET,
                         keyExpression.getNodeMetaData(DIRECT_METHOD_CALL_TARGET));
 
