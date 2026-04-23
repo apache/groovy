@@ -20,3 +20,14 @@ Please visit the
 [project development website](https://groovy.apache.org/)
 to find out more about contributing to the project.
 We welcome all contributors.
+
+## Using AI tooling
+
+Contributors using AI coding assistants (Claude Code, Codex, Cursor, Copilot,
+Gemini, Aider, and similar) should read [AGENTS.md](AGENTS.md) for
+project-specific guidance, and in particular follow the ASF's
+[Generative Tooling guidance](https://www.apache.org/legal/generative-tooling.html).
+If AI tooling authored a non-trivial part of a change, consider adding a
+`Generated-by: <tool name and version>` trailer to the commit message.
+The contributor remains responsible for the licensing, correctness, and
+style of everything they submit.
