@@ -20,7 +20,7 @@ We welcome all contributors. This file covers code contributions to the
 Groovy repository. For ways to contribute that don't involve changing the
 code — helping on the mailing lists, reporting issues, writing blog posts,
 or contributing to the reference documentation on the website — see the
-[project contribute page](https://groovy.apache.org/contribute.html).
+[project contribute page](https://groovy.apache.org/).
 
 ## Building and testing
 
@@ -65,7 +65,7 @@ contributing code, please treat documentation as part of the change:
 
 Cross-version reference documentation, the GDK, and the website itself
 live in the separate [`groovy-website`](https://github.com/apache/groovy-website)
-repository; see the [project contribute page](https://groovy.apache.org/contribute.html)
+repository; see the [project contribute page](https://groovy.apache.org/)
 for how to contribute there.
 
 ## Submitting a pull request
