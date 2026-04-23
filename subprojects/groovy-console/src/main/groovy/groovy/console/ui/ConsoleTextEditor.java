@@ -151,6 +151,9 @@ public class ConsoleTextEditor extends JScrollPane {
     private TextUndoManager undoManager;
     private int fontSize;
 
+    /**
+     * @since 6.0.0
+     */
     public TextUndoManager getUndoManager() {
         return undoManager;
     }
@@ -161,6 +164,8 @@ public class ConsoleTextEditor extends JScrollPane {
      * this doesn't pollute the undo/redo stack. Used after undo/redo
      * because UndoableEdits restore attributes captured at edit time,
      * which may no longer match the active theme.
+     *
+     * @since 6.0.0
      */
     public void reapplyHighlighting() {
         Document doc = textEditor.getDocument();

@@ -33,6 +33,8 @@ import java.util.zip.ZipFile
 
 /**
  * Utility methods shared between GrapeIvy and GrapeMaven implementations.
+ *
+ * @since 6.0.0
  */
 @CompileStatic
 class GrapeUtil {

@@ -28,6 +28,9 @@ import org.junit.platform.launcher.listeners.SummaryGeneratingListener
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 
+/**
+ * @since 6.0.0
+ */
 class GroovyJUnitRunnerHelper {
     @SuppressWarnings('Println')
     static Throwable execute(Class testClass) {

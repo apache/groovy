@@ -232,6 +232,7 @@ public class XmlSlurper extends DefaultHandler {
      * Determine if namespace handling is enabled.
      *
      * @return true if namespace handling is enabled
+     * @since 6.0.0
      */
     public boolean isNamespaceAware() {
         return namespaceAware;

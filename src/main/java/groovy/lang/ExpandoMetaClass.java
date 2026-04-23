@@ -443,6 +443,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         addMixinClass(mixin);
     }
 
+    /**
+     * @since 6.0.0
+     */
     public boolean addMixinClass(MixinInMetaClass mixin) {
         return mixinClasses.add(mixin);
     }

@@ -19,5 +19,7 @@
 
 /**
  * Classes for parsing <a href="https://commonmark.org/">CommonMark</a> Markdown.
+ *
+ * @since 6.0.0
  */
 package groovy.markdown;

@@ -34,6 +34,8 @@ import java.util.concurrent.CompletableFuture
 
 /**
  * Tiny DSL over JDK {@link HttpClient}.
+ *
+ * @since 6.0.0
  */
 @Incubating
 final class HttpBuilder {

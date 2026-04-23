@@ -28,6 +28,8 @@ import java.util.Locale
 
 /**
  * Simple response wrapper for the {@link HttpBuilder} DSL.
+ *
+ * @since 6.0.0
  */
 @Incubating
 record HttpResult(int status, String body, HttpHeaders headers, HttpResponse<String> raw) {

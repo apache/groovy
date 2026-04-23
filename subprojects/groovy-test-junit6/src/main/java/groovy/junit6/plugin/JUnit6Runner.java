@@ -30,6 +30,8 @@ import java.util.Set;
 
 /**
  * Integration code for running JUnit 6 (Jupiter) tests in Groovy.
+ *
+ * @since 6.0.0
  */
 public class JUnit6Runner implements GroovyRunner {
 

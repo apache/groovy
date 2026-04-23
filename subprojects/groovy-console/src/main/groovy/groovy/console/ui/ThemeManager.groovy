@@ -31,9 +31,14 @@ import java.util.prefs.Preferences
 
 /**
  * Manages theme state (light/dark/system) for GroovyConsole.
+ *
+ * @since 6.0.0
  */
 class ThemeManager {
 
+    /**
+     * @since 6.0.0
+     */
     enum ThemeMode {
         LIGHT, DARK, SYSTEM
     }

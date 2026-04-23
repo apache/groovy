@@ -42,6 +42,8 @@ import java.util.function.Function
  * Both families return {@link DynamicSVGIcon} proxies so the outer
  * reference held by Actions/components stays stable; {@link #refreshAll()}
  * forces every icon (toolbar and menu) to re-render — use after a LaF switch.
+ *
+ * @since 6.0.0
  */
 class Icons {
     static final int SIZE_SMALL = 16

@@ -94,6 +94,8 @@ import static org.codehaus.groovy.syntax.Types.isAssignment
  *
  * Over time, the idea would be to support more cases as per:
  * https://checkerframework.org/manual/#nullness-checker
+ *
+ * @since 6.0.0
  */
 @Incubating
 class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {

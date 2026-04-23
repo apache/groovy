@@ -23,6 +23,8 @@ import groovy.grape.GrapeEngine
 
 /**
  * Adds Groovy Grape feedback for the Maven Resolver based engine.
+ *
+ * @since 6.0.0
  */
 class ConsoleMavenPlugin {
     Console savedConsole

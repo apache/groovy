@@ -19,5 +19,7 @@
 
 /**
  * Classes to support running JUnit 6 (Jupiter) tests as scripts.
+ *
+ * @since 6.0.0
  */
 package groovy.junit6.plugin;

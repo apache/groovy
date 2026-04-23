@@ -53,6 +53,8 @@ public class TextUndoManager extends UndoManager {
      * Toggle recording of undoable edits. Used to suppress capture of
      * programmatic style changes (e.g. a theme switch re-parsing the
      * document) that shouldn't be reachable via user-initiated Undo.
+     *
+     * @since 6.0.0
      */
     public void setRecording(boolean recording) {
         this.recording = recording;

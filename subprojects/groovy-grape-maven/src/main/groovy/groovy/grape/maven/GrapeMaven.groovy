@@ -55,6 +55,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Implementation supporting {@code @Grape} and {@code @Grab} annotations based on Maven.
+ *
+ * @since 6.0.0
  */
 @AutoFinal
 @CompileStatic

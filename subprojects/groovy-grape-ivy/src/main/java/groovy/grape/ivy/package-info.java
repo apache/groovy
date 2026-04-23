@@ -16,18 +16,10 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package groovy.sql;
-
-import java.util.Collection;
 
 /**
- * Marker that expands a collection into a comma-separated list of
- * positional placeholders when bound to a SQL {@code IN} clause.
- * <p>
- * Create instances via {@link Sql#inList(Collection)}.
+ * Classes supporting the {@code @Grape} and {@code @Grab} annotations backed by <a href="https://ant.apache.org/ivy/">Apache Ivy</a>.
  *
  * @since 6.0.0
  */
-public interface InListParameter {
-    Collection<?> getValues();
-}
+package groovy.grape.ivy;

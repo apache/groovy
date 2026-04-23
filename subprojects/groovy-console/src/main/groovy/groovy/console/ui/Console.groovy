@@ -756,9 +756,13 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         prefs.putBoolean('autoClearOutput', autoClearOutput)
     }
 
+    /** @since 6.0.0 */
     void lightTheme(EventObject evt = null) { switchTheme(ThemeManager.ThemeMode.LIGHT) }
+    /** @since 6.0.0 */
     void darkTheme(EventObject evt = null) { switchTheme(ThemeManager.ThemeMode.DARK) }
+    /** @since 6.0.0 */
     void systemTheme(EventObject evt = null) { switchTheme(ThemeManager.ThemeMode.SYSTEM) }
+    /** @since 6.0.0 */
     void cycleTheme(EventObject evt = null) { switchTheme(ThemeManager.cycleMode()) }
 
     private void switchTheme(ThemeManager.ThemeMode mode) {
@@ -1271,17 +1275,24 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         lf.visible = true
     }
 
+    /** @since 6.0.0 */
     boolean isScaleIconsWithFont() { prefs.getBoolean('scaleIconsWithFont', false) }
+    /** @since 6.0.0 */
     int getCurrentIconSize() { Icons.currentSize }
 
+    /** @since 6.0.0 */
     void smallIcons(EventObject evt = null) { applyIconSize(Icons.SIZE_SMALL) }
+    /** @since 6.0.0 */
     void normalIcons(EventObject evt = null) { applyIconSize(Icons.SIZE_NORMAL) }
+    /** @since 6.0.0 */
     void largeIcons(EventObject evt = null) { applyIconSize(Icons.SIZE_LARGE) }
 
+    /** @since 6.0.0 */
     void scaleIconsWithFont(EventObject evt = null) {
         setScaleIconsWithFont(evt?.source?.isSelected() as boolean)
     }
 
+    /** @since 6.0.0 */
     void setScaleIconsWithFont(boolean enabled) {
         prefs.putBoolean('scaleIconsWithFont', enabled)
         if (enabled) {
@@ -1291,6 +1302,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         }
     }
 
+    /** @since 6.0.0 */
     void applyIconSize(int size) {
         // only persist the preset when not tracking the font
         if (!prefs.getBoolean('scaleIconsWithFont', false)) {
@@ -1301,10 +1313,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         toolbar?.repaint()
     }
 
+    /** @since 6.0.0 */
     void reapplyTheme() {
         switchTheme(ThemeManager.currentMode)
     }
 
+    /** @since 6.0.0 */
     void reloadThemes() {
         ThemeManager.reloadThemes()
         reapplyTheme()
@@ -1541,6 +1555,7 @@ void largerFont(EventObject evt = null) {
         binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
     }
 
+    /** @since 6.0.0 */
     void setScriptArgs(EventObject evt = null) {
         def result = JOptionPane.showInputDialog(frame, 'Enter script arguments (space-separated):',
                 'Set Script Arguments', JOptionPane.PLAIN_MESSAGE, null, null, scriptArgs)

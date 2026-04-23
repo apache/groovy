@@ -413,6 +413,8 @@ public class SmartDocumentFilter extends DocumentFilter {
      * Forces a full re-parse and re-render of the document with current styles.
      * Clears the incremental-render cache first so every token is restyled,
      * not just the ones that differ from the last parse.
+     *
+     * @since 6.0.0
      */
     public void reparseDocument() {
         this.latestTokenList = Collections.emptyList();
@@ -428,6 +430,8 @@ public class SmartDocumentFilter extends DocumentFilter {
      * Attribute values are sourced from ThemeManager so custom .theme files
      * feed both this (ANTLR-token-driven) path and the regex-driven GroovyFilter
      * path from one place. Called at init time and on theme switch.
+     *
+     * @since 6.0.0
      */
     public static void updateStyles() {
         StyleContext sc = StyleContext.getDefaultStyleContext();

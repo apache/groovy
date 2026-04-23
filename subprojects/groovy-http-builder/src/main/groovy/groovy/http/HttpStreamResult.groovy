@@ -40,6 +40,8 @@ import java.util.concurrent.atomic.AtomicReference
  * incrementally — typically via {@code for await (chunk in result.bodyAsPublisher())}
  * once the {@code groovy-concurrent-java} {@code FlowPublisherAdapter} is on
  * the classpath.
+ *
+ * @since 6.0.0
  */
 @Incubating
 record HttpStreamResult(

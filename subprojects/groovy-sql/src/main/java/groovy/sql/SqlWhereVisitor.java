@@ -83,6 +83,9 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
         buffer.append(expression.getPropertyAsString());
     }
 
+    /**
+     * @since 6.0.0
+     */
     public void setClosure(Closure<?> closure) {
         this.closure = closure;
     }
