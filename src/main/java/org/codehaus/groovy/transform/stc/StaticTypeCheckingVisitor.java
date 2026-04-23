@@ -1532,11 +1532,13 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                 String propName = keyExpression.getText();
                 Set<ClassNode> propertyTypes = new HashSet<>();
                 Expression valueExpression = entryExpression.getValueExpression();
+                PropertyExpression dummyExpression = propX(varX("", receiverType), propName);
+                dummyExpression.setSourcePosition(keyExpression);
                 typeCheckingContext.pushEnclosingBinaryExpression(assignX(keyExpression, valueExpression, entryExpression));
-                if (!existsProperty(propX(varX("_", receiverType), propName), false, new PropertyLookup(receiverType, propertyTypes::add))) {
+                if (!existsProperty(dummyExpression, /*read*/false, new PropertyLookup(receiverType, propertyTypes::add))) {
                     typeCheckingContext.popEnclosingBinaryExpression();
-                    addStaticTypeError("No such property: " + propName + " for class: " + prettyPrintTypeName(receiverType), receiver);
-                } else {
+                    addStaticTypeError("No such property: " + propName + " for class: " + prettyPrintTypeName(receiverType), keyExpression);
+                } else if (receiverType.isRecord() || !addedReadOnlyPropertyError(dummyExpression)) { // GROOVY-11956
                     SetterInfo setterInfo = removeSetterInfo(keyExpression);
                     if (setterInfo != null) { // GROOVY-11451: select setter
                         ensureValidSetter(entryExpression, keyExpression, valueExpression, setterInfo);
@@ -1544,8 +1546,9 @@ out:    if ((samParameterTypes.length == 1 && isOrImplements(samParameterTypes[0
                     ClassNode valueType = getType(valueExpression);
                     BinaryExpression kv = typeCheckingContext.popEnclosingBinaryExpression();
                     if (propertyTypes.stream().noneMatch(targetType -> checkCompatibleAssignmentTypes(targetType, getResultType(targetType, ASSIGN, valueType, kv), valueExpression))) {
-                        if (!extension.handleIncompatibleAssignment(newUnionTypeClassNode(propertyTypes), valueType, entryExpression)) {
-                            addAssignmentError(newUnionTypeClassNode(propertyTypes), valueType, entryExpression);
+                        ClassNode targetType = propertyTypes.isEmpty() ? VOID_TYPE : newUnionTypeClassNode(propertyTypes);
+                        if (!extension.handleIncompatibleAssignment(targetType, valueType, entryExpression)) {
+                            addAssignmentError(targetType, valueType, entryExpression);
                         }
                     }
                 }

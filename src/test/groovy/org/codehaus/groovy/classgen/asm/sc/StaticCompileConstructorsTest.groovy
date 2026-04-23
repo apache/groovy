@@ -19,6 +19,7 @@
 package org.codehaus.groovy.classgen.asm.sc
 
 import groovy.transform.stc.ConstructorsSTCTest
+import groovy.transform.stc.Pojo11956
 import org.junit.jupiter.api.Test
 
 /**
@@ -125,5 +126,14 @@ final class StaticCompileConstructorsTest extends ConstructorsSTCTest implements
         assert  asserts.contains('INVOKEVIRTUAL C.setP (Ljava/lang/String;)V')
         assert  asserts.contains('INVOKEVIRTUAL C.setP (Ljava/util/regex/Pattern;)V')
         assert !asserts.contains('INVOKESTATIC org/codehaus/groovy/runtime/ScriptBytecodeAdapter.setGroovyObjectProperty')
+    }
+
+    // GROOVY-11956
+    @Override @Test
+    void testMapStyleConstructorWithInaccessibleSetter() {
+        shouldFailWithMessages """import ${Pojo11956.canonicalName}
+            new Pojo11956(foo: 'bar')
+        """,
+        "Cannot access method: setFoo(java.lang.String) of class: ${Pojo11956.canonicalName} @ line 2, column 27"
     }
 }

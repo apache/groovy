@@ -20,6 +20,7 @@ package org.codehaus.groovy.classgen.asm.sc;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -49,20 +50,27 @@ public abstract class StaticPropertyAccessHelper {
         Expression result;
         if (returnValue) {
             var temp = new TemporaryVariableExpression(valueExpression);
+            temp.setSourcePosition(valueExpression);
+
             var pmce = new PoppingMethodCallExpression(receiver, setterMethod, temp);
             result = new PoppingListOfExpressionsExpression(temp, pmce);
             result.setSourcePosition(sourceExpression);
             call = pmce;
         } else {
-            call = new MethodCallExpression(receiver, setterMethod.getName(), valueExpression);
+            var args = new ArgumentListExpression(valueExpression);
+            args.setSourcePosition(valueExpression);
+
+            call = new MethodCallExpression(receiver, setterMethod.getName(), args);
             call.setMethodTarget(setterMethod);
             result = call;
         }
         call.setSafe(safe);
         call.setSpreadSafe(spreadSafe);
         call.setImplicitThis(implicitThis);
-        call.setNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE, Boolean.TRUE); // GROOVY-11843
         call.setSourcePosition(sourceExpression);
+        call.setLastLineNumber(valueExpression.getLastLineNumber());
+        call.setLastColumnNumber(valueExpression.getLastColumnNumber());
+        call.setNodeMetaData(AsmClassGenerator.ELIDE_EXPRESSION_VALUE, Boolean.TRUE); // GROOVY-11843
 
         return result;
     }
@@ -100,7 +108,8 @@ public abstract class StaticPropertyAccessHelper {
         private final TemporaryVariableExpression tmp;
 
         public PoppingMethodCallExpression(final Expression receiver, final MethodNode setterMethod, final TemporaryVariableExpression tmp) {
-            super(receiver, setterMethod.getName(), tmp);
+            super(receiver, setterMethod.getName(), new ArgumentListExpression(tmp));
+            getArguments().setSourcePosition(tmp);
             setMethodTarget(setterMethod);
             this.tmp = tmp;
         }

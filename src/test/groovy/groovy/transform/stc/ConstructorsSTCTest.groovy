@@ -464,7 +464,7 @@ import static groovy.test.GroovyAssert.shouldFail
     }
 
     @Test
-    void testMapConstructorShouldFail() {
+    void testMapConstructorIncompatibleType() {
         shouldFailWithMessages '''
             class Foo {
                 ByteArrayOutputStream out
@@ -495,19 +495,12 @@ import static groovy.test.GroovyAssert.shouldFail
     void testConstructorsWithVarargsAndArrayParameters() {
         assertScript '''
             class MultipleConstructors {
-
-                public MultipleConstructors(String s, short[] arr) {}
-                public MultipleConstructors(String s, int... arr) {}
-                public MultipleConstructors(short[] arr) {}
+                MultipleConstructors(String s, short[] arr) {}
+                MultipleConstructors(String s, int...  arr) {}
+                MultipleConstructors(          short[] arr) {}
             }
 
-            class Clz {
-                  void run() {
-                        new MultipleConstructors('d',1)
-                }
-            }
-
-            new Clz().run()
+            new MultipleConstructors('d', 1)
         '''
     }
 
@@ -522,6 +515,7 @@ import static groovy.test.GroovyAssert.shouldFail
                 }
                 String toString() { var }
             }
+
             def b = new MyBean(foo: 'Test')
             assert b.toString() == 'Test'
         '''
@@ -560,6 +554,26 @@ import static groovy.test.GroovyAssert.shouldFail
             }
             new C(timestamp: new Date())
         '''
+    }
+
+    // GROOVY-11956
+    @Test
+    void testMapStyleConstructorWithReadOnlyProperty() {
+        shouldFailWithMessages ''' // line 1
+            class C {
+                String getFoo() {}
+            }
+            new C(foo: 'bar')
+        ''',
+        'Cannot set read-only property: foo','@ line 5, column 19'
+    }
+
+    // GROOVY-11956
+    @Test
+    void testMapStyleConstructorWithInaccessibleSetter() {
+        assertScript """import ${Pojo11956.canonicalName}
+            new Pojo11956(foo: 'bar')
+        """
     }
 
     // GROOVY-10787
