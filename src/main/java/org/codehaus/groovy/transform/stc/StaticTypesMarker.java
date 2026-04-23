@@ -57,5 +57,9 @@ public enum StaticTypesMarker {
     /** used to store the condition expression type of the switch-case statement */
     SWITCH_CONDITION_EXPRESSION_TYPE,
     /** used to store the result of {@link StaticTypeCheckingVisitor#getType} */
-    TYPE
+    TYPE,
+    /** indicates a parameter or method return is known to be non-null (e.g., inferred from {@code @Requires}/{@code @Ensures} contracts) */
+    INFERRED_NON_NULL,
+    /** list of {@code return null} statements recorded on a method before its body is rewritten, so a downstream checker can still report them as non-null violations */
+    INFERRED_NON_NULL_RETURN_VIOLATIONS
 }

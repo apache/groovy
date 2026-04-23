@@ -765,6 +765,50 @@ We would see the following error at compile-time:
 include::../test/NullCheckerTest.groovy[tags=nonnull_by_default_message,indent=0]
 ----
 
+=== Integration with @Requires and @Ensures
+
+When `groovy-contracts` is on the classpath, `NullChecker` recognises null-safety
+facts expressed through Design-by-Contract annotations. Top-level `x != null`
+conjuncts inside a `@Requires` closure mark the corresponding parameter as
+effectively `@NonNull`; a `result != null` conjunct inside an `@Ensures` closure
+marks the method return the same way. Both orderings (`x != null` and
+`null != x`) are recognised. Disjunctions (`||`) are deliberately not used for
+inference, since they do not establish non-nullness of any individual operand.
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=requires_integration,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=requires_integration_message,indent=0]
+----
+
+The same applies on the return side with `@Ensures`:
+
+[source,groovy]
+----
+include::../test/NullCheckerTest.groovy[tags=ensures_integration,indent=0]
+----
+
+We would see the following error at compile-time:
+
+[source]
+----
+include::../test/NullCheckerTest.groovy[tags=ensures_integration_message,indent=0]
+----
+
+This coexists with explicit `@NonNull` annotations: a method marked `@NonNull`
+that also carries any `@Ensures` postcondition, or that lives in a class with
+an `@Invariant` class invariant, still has its literal `return null` statements
+flagged. Without this coordination, the `groovy-contracts` AST transform would
+rewrite the return statement before the type-checking pass runs, hiding the
+literal from the checker. The runtime postcondition continues to guard non-literal
+cases.
+
 === Flow-sensitive mode with strict option
 
 `NullChecker` only flags issues involving annotated code. `NullChecker(strict: true)` adds

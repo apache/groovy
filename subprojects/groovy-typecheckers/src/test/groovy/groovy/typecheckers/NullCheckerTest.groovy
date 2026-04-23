@@ -994,4 +994,129 @@ final class NullCheckerTest {
             assert y.toString() == 'hello'
         '''
     }
+
+    // === groovy-contracts: @Requires/@Ensures inferring @NonNull ===
+
+    @Test
+    void testRequiresNotEqualNullInfersNonNullParam() {
+        def err = shouldFail shell, '''
+            import groovy.contracts.Requires
+            class Foo {
+                @Requires({ x != null })
+                String bar(x) { x.toString() }
+            }
+            new Foo().bar(null)
+        '''
+        assert err.message.contains("Cannot pass null to @NonNull parameter 'x'")
+    }
+
+    @Test
+    void testRequiresReverseNullComparisonInfersNonNullParam() {
+        def err = shouldFail shell, '''
+            import groovy.contracts.Requires
+            class Foo {
+                @Requires({ null != x })
+                String bar(x) { x.toString() }
+            }
+            new Foo().bar(null)
+        '''
+        assert err.message.contains("Cannot pass null to @NonNull parameter 'x'")
+    }
+
+    @Test
+    void testRequiresConjunctionInfersNonNullForEachParam() {
+        def err = shouldFail shell, '''
+            import groovy.contracts.Requires
+            class Foo {
+                @Requires({ left != null && right != null && right.size() > 0 })
+                String concat(left, middle, right) { left + middle + right }
+            }
+            new Foo().concat('a', 'b', null)
+        '''
+        assert err.message.contains("Cannot pass null to @NonNull parameter 'right'")
+    }
+
+    @Test
+    void testRequiresNonNullParamAcceptsNonNullArg() {
+        assertScript shell, '''
+            import groovy.contracts.Requires
+            class Foo {
+                @Requires({ x != null })
+                String bar(x) { x.toString() }
+            }
+            assert new Foo().bar('hi') == 'hi'
+        '''
+    }
+
+    @Test
+    void testEnsuresResultNonNullRejectsNullReturn() {
+        def err = shouldFail shell, '''
+            import groovy.contracts.Ensures
+            class Foo {
+                @Ensures({ result != null })
+                String bar() {
+                    return null
+                }
+            }
+        '''
+        assert err.message.contains("Cannot return null from @NonNull method 'bar'")
+    }
+
+    @Test
+    void testEnsuresResultNonNullAcceptsNonNullReturn() {
+        assertScript shell, '''
+            import groovy.contracts.Ensures
+            class Foo {
+                @Ensures({ result != null })
+                String bar() { return 'hi' }
+            }
+            assert new Foo().bar() == 'hi'
+        '''
+    }
+
+    @Test
+    void testExplicitNonNullWithEnsuresRejectsNullReturn() {
+        // Contracts rewrites the return statement (because of @Ensures), which
+        // would otherwise hide the literal null from NullChecker. The stashed
+        // violation list carries the fact through.
+        def err = shouldFail shell, ANNOS + '''
+            import groovy.contracts.Ensures
+            class Foo {
+                @NonNull
+                @Ensures({ result.size() >= 0 })
+                String bar() {
+                    return null
+                }
+            }
+        '''
+        assert err.message.contains("Cannot return null from @NonNull method 'bar'")
+    }
+
+    @Test
+    void testExplicitNonNullWithClassInvariantRejectsNullReturn() {
+        def err = shouldFail shell, ANNOS + '''
+            import groovy.contracts.Invariant
+            @Invariant({ true })
+            class Foo {
+                @NonNull
+                String bar() {
+                    return null
+                }
+            }
+        '''
+        assert err.message.contains("Cannot return null from @NonNull method 'bar'")
+    }
+
+    @Test
+    void testRequiresDisjunctionDoesNotInferNonNull() {
+        // x != null || y != null does not guarantee either is non-null
+        assertScript shell, '''
+            import groovy.contracts.Requires
+            class Foo {
+                @Requires({ x != null || y != null })
+                String bar(x, y) { 'ok' }
+            }
+            assert new Foo().bar(null, 'present') == 'ok'
+        '''
+    }
 }

@@ -416,4 +416,54 @@ class NullCheckerTest {
         ''')
     }
 
+    @Test
+    void testRequiresIntegration() {
+        def err = shouldFail('''
+        import groovy.transform.TypeChecked
+        import groovy.contracts.Requires
+
+        // tag::requires_integration[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        class Greeter {
+            @Requires({ name != null })
+            static String greet(name) { "Hello, $name!" }
+
+            static void main(String[] args) {
+                greet(null)                              // caught at compile time
+            }
+        }
+        // end::requires_integration[]
+        ''')
+        def expectedError = '''\
+        # tag::requires_integration_message[]
+        [Static type checking] - Cannot pass null to @NonNull parameter 'name' of 'greet'
+        # end::requires_integration_message[]
+        '''
+        assert err.message.contains(expectedError.readLines()[1].trim())
+    }
+
+    @Test
+    void testEnsuresIntegration() {
+        def err = shouldFail('''
+        import groovy.transform.TypeChecked
+        import groovy.contracts.Ensures
+
+        // tag::ensures_integration[]
+        @TypeChecked(extensions='groovy.typecheckers.NullChecker')
+        class Greeter {
+            @Ensures({ result != null })
+            String greet() {
+                return null                              // caught at compile time
+            }
+        }
+        // end::ensures_integration[]
+        ''')
+        def expectedError = '''\
+        # tag::ensures_integration_message[]
+        [Static type checking] - Cannot return null from @NonNull method 'greet'
+        # end::ensures_integration_message[]
+        '''
+        assert err.message.contains(expectedError.readLines()[1].trim())
+    }
+
 }

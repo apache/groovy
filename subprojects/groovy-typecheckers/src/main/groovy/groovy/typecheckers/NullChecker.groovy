@@ -118,6 +118,14 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     private CheckingVisitor makeVisitor(boolean flowSensitive, MethodNode method) {
         boolean classNonNullByDefault = method.declaringClass != null && hasNonNullByDefaultAnno(method.declaringClass)
         boolean methodNonNull = method.returnType != VOID_TYPE && (hasNonNullAnno(method) || (classNonNullByDefault && !hasNullableAnno(method)))
+        if (methodNonNull) {
+            def stash = method.getNodeMetaData(StaticTypesMarker.INFERRED_NON_NULL_RETURN_VIOLATIONS)
+            if (stash instanceof List) {
+                stash.each { node ->
+                    addStaticTypeError("Cannot return null from @NonNull method '${method.name}'", node)
+                }
+            }
+        }
         def initialNullable = method.parameters.findAll { hasNullableAnno(it) } as Set<Variable>
 
         new CheckingVisitor() {
@@ -348,6 +356,7 @@ class NullChecker extends GroovyTypeCheckingExtensionSupport.TypeCheckingDSL {
     }
 
     private static boolean hasNonNullAnno(AnnotatedNode node) {
+        if (node.getNodeMetaData(StaticTypesMarker.INFERRED_NON_NULL) == Boolean.TRUE) return true
         node.annotations?.any { it.classNode?.nameWithoutPackage in NONNULL_ANNOS } ?: false
     }
 
