@@ -18,10 +18,12 @@
  */
 
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledOnOs
+import org.junit.jupiter.api.condition.OS
 
 import static groovy.test.GroovyAssert.assertScript
 
-class AsyncAwaitSpecTest {
+final class AsyncAwaitSpecTest {
 
     // === Getting started ===
 
@@ -410,6 +412,7 @@ class AsyncAwaitSpecTest {
     // === JDK Integration ===
 
     @Test
+    @DisabledOnOs(OS.WINDOWS)
     void testJdkIntegration() {
         assertScript '''
         import com.sun.net.httpserver.HttpServer

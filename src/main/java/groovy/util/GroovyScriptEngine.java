@@ -365,7 +365,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         for (URL root : roots) {
             URL scriptURL = null;
             try {
-                scriptURL = root.toURI().resolve(resourceName).toURL();
+                scriptURL = root.toURI().resolve(resourceName.replace('\\','/')).toURL();
                 groovyScriptConn = openConnection(scriptURL);
 
                 break; // Now this is a bit unusual
