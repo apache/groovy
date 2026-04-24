@@ -171,7 +171,9 @@ Closure buildExcludeFilter(boolean legacyTestSuite) {
     }
 
     return { f ->
-        excludes.any { f.file =~ it }
+        // normalise to forward slashes so the path-fragment patterns match on Windows too
+        def path = f.file.toString().replace('\\', '/')
+        excludes.any { path =~ it }
     }
 }
 

@@ -27,7 +27,7 @@ final class GrapeDefaultProviderSelectionTest {
             assert Grape.instance != null
         }
 
-        assert output.contains("ignoring provider 'groovy.grape.maven.GrapeMaven'")
+        assert output.contains("Ignoring provider 'groovy.grape.maven.GrapeMaven'")
         assert output.contains("in favour of default 'groovy.grape.ivy.GrapeIvy'")
     }
 }

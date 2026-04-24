@@ -30,7 +30,7 @@ final class GrapeImplementationSelectionTest {
             assert Grape.instance == null
         }
 
-        assert output.contains("configured implementation 'groovy.grape.nonexistent.DoesNotExist' not found")
+        assert output.contains("Configured implementation 'groovy.grape.nonexistent.DoesNotExist' not found")
         assert output.contains('Grapes disabled')
     }
 }

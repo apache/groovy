@@ -28,7 +28,7 @@ final class GrapeConfiguredMavenSelectionTest {
             assert Grape.instance != null
         }
 
-        assert output.contains("ignoring provider 'groovy.grape.ivy.GrapeIvy'")
+        assert output.contains("Ignoring provider 'groovy.grape.ivy.GrapeIvy'")
         assert output.contains("'groovy.grape.maven.GrapeMaven' configured via -Dgroovy.grape.impl")
     }
 }
