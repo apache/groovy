@@ -32,4 +32,5 @@ dependencies {
 // exclude it from javadoc to avoid "no public classes found" error.
 tasks.withType(Javadoc).configureEach {
     exclude '**/PlatformLoggingMessageLogger.java'
+    exclude '**/package-info.java'
 }
