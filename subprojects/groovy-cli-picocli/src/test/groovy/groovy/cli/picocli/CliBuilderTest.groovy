@@ -173,10 +173,10 @@ class CliBuilderTest {
         cli.parse([])
         // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
 
-        assert stringWriter.toString().normalize() ==
+        assert stringWriter.toString().normalize().trim() ==
                 "error: Missing required option: '-x'\n" +
                 "Usage: groovy -x\n" +
-                "  -x     message\n"
+                "  -x     message"
     }
 
     @Test
@@ -1101,7 +1101,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [-configscript=PARAM]
       -pr, -enable-preview, --enable-preview
                             cli.option.preview.description
   -V, -version, --version   cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
+        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
 
         resetPrintWriter()
         cli = new CliBuilder(acceptLongOptionsWithSingleHyphen: false, writer: printWriter)
@@ -1126,7 +1126,7 @@ Usage: groovy [-hV] [-cp] [-pa] [-pr] [--configscript=PARAM]
       -pa, --parameters      cli.option.parameters.description
       -pr, --enable-preview  cli.option.preview.description
   -V, --version              cli.option.version.description"""
-        assertEquals(expectedUsage, stringWriter.toString().trim().normalize())
+        assertEquals(expectedUsage, stringWriter.toString().normalize().trim())
     }
 
     @Test
