@@ -1036,6 +1036,62 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds the first occurrence of a regular expression within a CharSequence and returns the
+     * full match followed by each capture group as a List. If the regex doesn't match, an empty
+     * List is returned. Because multi-assignment pads missing elements with null, the same
+     * destructuring expression works whether or not the regex matches:
+     * <pre class="language-groovy groovyTestCase">
+     * def (all, zip, plus4) = "New York, NY 10292-0098".findGroups(/(\d{5})-(\d{4})/)
+     * assert all == "10292-0098"
+     * assert zip == "10292"
+     * assert plus4 == "0098"
+     *
+     * def (a2, z2, p2) = "New York, NY".findGroups(/(\d{5})-(\d{4})/)
+     * assert [a2, z2, p2] == [null, null, null]
+     * </pre>
+     *
+     * @param self  a CharSequence
+     * @param regex the capturing regex CharSequence
+     * @return a List containing the full match followed by each capture group, or an empty List if there is no match
+     *
+     * @since 6.0.0
+     *
+     * @see #findGroups(CharSequence,Pattern)
+     */
+    public static List<String> findGroups(final CharSequence self, final CharSequence regex) {
+        return findGroups(self, Pattern.compile(regex.toString()));
+    }
+
+    /**
+     * Finds the first occurrence of a compiled regular expression Pattern within a CharSequence
+     * and returns the full match followed by each capture group as a List. If the pattern doesn't
+     * match, an empty List is returned.
+     * <pre class="language-groovy groovyTestCase">
+     * def (all, zip, plus4) = "New York, NY 10292-0098".findGroups(~/(\d{5})-(\d{4})/)
+     * assert all == "10292-0098"
+     * assert zip == "10292"
+     * assert plus4 == "0098"
+     *
+     * assert "New York, NY".findGroups(~/(\d{5})-(\d{4})/) == []
+     * def (a2, z2, p2) = "New York, NY".findGroups(~/(\d{5})-(\d{4})/)
+     * assert [a2, z2, p2] == [null, null, null]
+     * </pre>
+     *
+     * @param self    a CharSequence
+     * @param pattern the compiled regex Pattern
+     * @return a List containing the full match followed by each capture group, or an empty List if there is no match
+     *
+     * @since 6.0.0
+     */
+    public static List<String> findGroups(final CharSequence self, final Pattern pattern) {
+        Matcher matcher = pattern.matcher(self.toString());
+        if (matcher.find()) {
+            return getGroups(matcher);
+        }
+        return new ArrayList<>();
+    }
+
+    /**
      * Returns a (possibly empty) list of all occurrences of a regular expression (provided as a CharSequence) found within a CharSequence.
      * <p>
      * For example, if the regex doesn't match, it returns an empty list:
@@ -1160,6 +1216,57 @@ public class StringGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <T> List<T> findAll(final CharSequence self, final Pattern pattern, @ClosureParams(value=FromString.class, options={"java.util.List<java.lang.String>","java.lang.String[]"}) final Closure<T> closure) {
         Matcher matcher = pattern.matcher(self.toString());
         return DefaultGroovyMethods.collect(matcher, closure);
+    }
+
+    /**
+     * Returns a (possibly empty) list of all occurrences of a regular expression within a
+     * CharSequence, with each occurrence represented by a List containing the full match
+     * followed by each capture group.
+     * <pre class="language-groovy groovyTestCase">
+     * def input = "Type=apple Price=2.34; Type=pear Price=3.56"
+     * def pairs = input.findAllGroups(/Type=(\w+) Price=([\d.]+)/).collect { all, t, p {@code ->} "$t:$p" }
+     * assert pairs == ["apple:2.34", "pear:3.56"]
+     *
+     * assert "none here".findAllGroups(/Type=(\w+) Price=([\d.]+)/) == []
+     * </pre>
+     *
+     * @param self  a CharSequence
+     * @param regex the capturing regex CharSequence
+     * @return a List of Lists, one per match, each containing the full match followed by each capture group; an empty List if there are no matches
+     *
+     * @since 6.0.0
+     *
+     * @see #findAllGroups(CharSequence,Pattern)
+     */
+    public static List<List<String>> findAllGroups(final CharSequence self, final CharSequence regex) {
+        return findAllGroups(self, Pattern.compile(regex.toString()));
+    }
+
+    /**
+     * Returns a (possibly empty) list of all occurrences of a compiled regular expression Pattern
+     * within a CharSequence, with each occurrence represented by a List containing the full match
+     * followed by each capture group.
+     * <pre class="language-groovy groovyTestCase">
+     * def input = "Type=apple Price=2.34; Type=pear Price=3.56"
+     * def pairs = input.findAllGroups(~/Type=(\w+) Price=([\d.]+)/).collect { all, t, p {@code ->} "$t:$p" }
+     * assert pairs == ["apple:2.34", "pear:3.56"]
+     *
+     * assert "none here".findAllGroups(~/Type=(\w+) Price=([\d.]+)/) == []
+     * </pre>
+     *
+     * @param self    a CharSequence
+     * @param pattern the compiled regex Pattern
+     * @return a List of Lists, one per match, each containing the full match followed by each capture group; an empty List if there are no matches
+     *
+     * @since 6.0.0
+     */
+    public static List<List<String>> findAllGroups(final CharSequence self, final Pattern pattern) {
+        Matcher matcher = pattern.matcher(self.toString());
+        List<List<String>> list = new ArrayList<>();
+        while (matcher.find()) {
+            list.add(getGroups(matcher));
+        }
+        return list;
     }
 
     // TODO: Expose this for stream based scenarios?
