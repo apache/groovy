@@ -7736,6 +7736,90 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     //--------------------------------------------------------------------------
+    // grepping
+
+    /**
+     * Lazily returns an Iterator of items matching the given filter - calling the
+     * <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code> method used by
+     * switch statements. This method can be used with different kinds of filters like
+     * regular expressions, classes, ranges etc.
+     * <pre class="groovyTestCase">
+     * def iter = [1, 'a', 'aa', 2, 'bc', 3, 4.5].iterator()
+     * assert iter.grepping(Number).toList() == [1, 2, 3, 4.5]
+     * </pre>
+     *
+     * @param self   a source Iterator
+     * @param filter the filter to perform on each element (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
+     * @return an Iterator returning the filtered elements
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> grepping(Iterator<T> self, Object filter) {
+        return new GrepIterator<>(self, filter);
+    }
+
+    /**
+     * Lazily returns an Iterator of elements which satisfy Groovy truth.
+     * Equivalent to calling {@link #grepping(Iterator, Object)} with the IDENTITY Closure.
+     * <pre class="groovyTestCase">
+     * def iter = [1, 2, 0, false, true, '', 'foo', [], [4, 5], null].iterator()
+     * assert iter.grepping().toList() == [1, 2, true, 'foo', [4, 5]]
+     * </pre>
+     *
+     * @param self a source Iterator
+     * @return an Iterator of elements satisfying Groovy truth
+     * @see Closure#IDENTITY
+     * @since 6.0.0
+     */
+    public static <T> Iterator<T> grepping(Iterator<T> self) {
+        return grepping(self, Closure.IDENTITY);
+    }
+
+    private static final class GrepIterator<T> implements Iterator<T> {
+        private final Iterator<T> source;
+        private final Object filter;
+        private T current;
+        private boolean found;
+
+        private GrepIterator(Iterator<T> source, Object filter) {
+            this.source = source;
+            this.filter = filter;
+            this.found = false;
+            advance();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return found;
+        }
+
+        private void advance() {
+            while (!found && source.hasNext()) {
+                current = source.next();
+                if (DefaultTypeTransformation.castToBoolean(InvokerHelper.invokeMethod(filter, "isCase", current))) {
+                    found = true;
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("GrepIterator has been exhausted and contains no more elements");
+            }
+            T result = current;
+            found = false;
+            advance();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //--------------------------------------------------------------------------
     // groupBy
 
     /**
