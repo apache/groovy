@@ -162,9 +162,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     public void testShortNameResolutionHonoursPerClassImports() throws Exception {
         String base = "org/codehaus/groovy/tools/groovydoc/testfiles";
         // Feed both files into the same doc run so they share a GroovyRootDoc.
-        htmlTool.add(List.of(
-            base + "/AmbiguousDateUtil.groovy",
-            base + "/AmbiguousDateSql.groovy"));
+        List<String> filenames = new ArrayList<>();
+        filenames.add(base + "/AmbiguousDateUtil.groovy");
+        filenames.add(base + "/AmbiguousDateSql.groovy");
+        htmlTool.add(filenames);
 
         MockOutputTool output = new MockOutputTool();
         htmlTool.renderToOutput(output, MOCK_DIR);
